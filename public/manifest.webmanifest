@@ -1,0 +1,12 @@
+{
+  "name": "Finjaro",
+  "short_name": "Finjaro",
+  "description": "Au-delà des rêves — Marketplace beauté, mode, parfum & décoration.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F4C4C",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
