@@ -92,7 +92,17 @@
   background-size: 800px 100%;
   animation: finjaro-shimmer 1.4s linear infinite;
 }
+/* Like/favorite "pop" — replays whenever the count changes (keyed remount). */
+@keyframes finjaro-like-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.animate-like-pop { animation: finjaro-like-pop 0.35s ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
+  .animate-like-pop { animation: none; }
   * { transition: none !important; }
 }

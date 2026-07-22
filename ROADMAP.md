@@ -85,10 +85,17 @@
   orders` trigger (`award_seller_points`, SECURITY DEFINER) grants +10 points
   when an order flips to `delivered`. Not yet surfaced in the UI. (migration 0010)
 
+## Done — Cycle 6b (surfacing + first "wow" touches)
+- **Points vendeur** shown on the vendor dashboard (brass card, `seller_points`).
+- **"Vous aimerez aussi"** on ProductDetail via `similar_products` RPC (verified
+  returning results against live data).
+- **Like "pop"** bounce on the reel heart (keyed remount + `finjaro-like-pop`,
+  reduced-motion safe) and `active:scale-90` press feedback.
+
 ## Backlog — remaining
-1. **Surface gamification** — show `seller_points` + a leaderboard on the vendor
-   dashboard; decide the reward (Beau floated a paid tier ~200€ for top
-   client-drivers). Wire `similar_products` into ProductDetail ("Vous aimerez aussi").
+1. **Gamification leaderboard + reward** — a vendor ranking screen; decide the
+   reward (Beau floated a paid tier ~200€ for top client-drivers). Points column
+   + trigger already live.
 2. **Elite design pass (Beau's 8-chantier brief)** — glassmorphism nav/headers,
    iOS-style bottom sheets replacing modals, like-button bounce, pinned FAB on
    product detail, skeletons matching card geometry, swipeable galleries,

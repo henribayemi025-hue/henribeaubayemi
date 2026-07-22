@@ -79,8 +79,8 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
       </button>
 
       <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-5 text-white">
-        <button onClick={toggleLike} className="flex flex-col items-center" aria-label={t('fin.like')}>
-          {liked ? <IconHeartFilled size={30} className="text-danger" /> : <IconHeart size={30} />}
+        <button onClick={toggleLike} className="flex flex-col items-center transition-transform active:scale-90" aria-label={t('fin.like')}>
+          {liked ? <IconHeartFilled key={likes} size={30} className="text-danger animate-like-pop" /> : <IconHeart size={30} />}
           <span className="text-[11px]">{likes}</span>
         </button>
         <button onClick={openComments} className="flex flex-col items-center" aria-label={t('fin.comment')}>

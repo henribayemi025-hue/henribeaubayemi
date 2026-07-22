@@ -10,6 +10,7 @@ import { useUI } from '../../hooks/useUI';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
 import { Price } from '../../components/Price';
+import { ProductCard } from '../../components/ProductCard';
 import { SmartImage } from '../../components/SmartImage';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
@@ -31,8 +32,24 @@ export default function ProductDetail() {
   const [color, setColor] = useState('');
   const [starting, setStarting] = useState(false);
 
+  const [similar, setSimilar] = useState([]);
+
   useEffect(() => {
     track('product_view', id);
+  }, [id]);
+
+  // "Vous aimerez aussi" — best-effort; never blocks the page.
+  useEffect(() => {
+    let active = true;
+    setSimilar([]);
+    supabase
+      .rpc('similar_products', { p_product_id: id, p_limit: 6 })
+      .then(({ data }) => {
+        if (active && Array.isArray(data)) setSimilar(data);
+      });
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const { data, loading, error, retry } = useAsync(async () => {
@@ -176,6 +193,17 @@ export default function ProductDetail() {
             </ul>
           )}
         </section>
+
+        {similar.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-2 text-section text-ink">{t('product.similarTitle')}</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {similar.map((sp) => (
+                <ProductCard key={sp.id} product={sp} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <div className="sticky bottom-0 z-30 flex gap-2 border-t border-hairline bg-white p-3">

@@ -1,6 +1,6 @@
 import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSwitchHorizontal, IconChartBar, IconMovie } from '@tabler/icons-react';
+import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { Price } from '../../components/Price';
@@ -15,14 +15,15 @@ export default function VendorDashboard() {
 
   const { data, loading, error, retry } = useAsync(async () => {
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
-    const [{ data: orders }, { data: convs }, { count: pending }, { count: todayCount }] = await Promise.all([
+    const [{ data: orders }, { data: convs }, { count: pending }, { count: todayCount }, { data: shopRow }] = await Promise.all([
       supabase.from('orders').select('id, order_no, status, total_fcfa, created_at, buyer_name').eq('shop_id', shop.id).order('created_at', { ascending: false }).limit(5),
       supabase.from('conversations').select('id, last_message, last_message_at, vendor_unread, buyer_id, profiles:buyer_id(name)').eq('shop_id', shop.id).order('last_message_at', { ascending: false }).limit(5),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).in('status', ['new', 'confirmed']),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).gte('created_at', startOfDay.toISOString()),
+      supabase.from('shops').select('seller_points').eq('id', shop.id).maybeSingle(),
     ]);
     const unread = (convs || []).reduce((n, c) => n + (c.vendor_unread || 0), 0);
-    return { orders: orders || [], convs: convs || [], pending: pending || 0, unread, today: todayCount || 0 };
+    return { orders: orders || [], convs: convs || [], pending: pending || 0, unread, today: todayCount || 0, points: shopRow?.seller_points || 0 };
   }, [shop.id]);
 
   return (
@@ -41,6 +42,17 @@ export default function VendorDashboard() {
         <ErrorState onRetry={retry} />
       ) : (
         <div className="space-y-6 p-4">
+          <div className="flex items-center gap-3 rounded-card border border-brass/30 bg-brass/5 p-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass">
+              <IconAward size={24} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-caption text-muted">{t('vendor.sellerPoints')}</p>
+              <p className="text-title font-semibold text-ink">{data.points}</p>
+            </div>
+            <p className="max-w-[45%] text-right text-caption text-muted">{t('vendor.sellerPointsHint')}</p>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <Stat value={data.today} label={t('vendor.todayOrders')} />
             <Stat value={data.unread} label={t('vendor.unreadMessages')} />

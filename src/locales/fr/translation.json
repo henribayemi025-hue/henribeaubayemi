@@ -131,7 +131,8 @@
     "selectVariant": "Choisis une option",
     "quantity": "Quantité",
     "inStock": "En stock",
-    "soldBy": "Vendu par"
+    "soldBy": "Vendu par",
+    "similarTitle": "Vous aimerez aussi"
   },
   "shop": {
     "products": "Produits",
@@ -325,7 +326,9 @@
     "locationSet": "Position enregistrée.",
     "locationSetBtn": "Définir la position de ma boutique",
     "locationUpdate": "Mettre à jour ma position",
-    "imageStillUploading": "Image en cours d’envoi…"
+    "imageStillUploading": "Image en cours d’envoi…",
+    "sellerPoints": "Points vendeur",
+    "sellerPointsHint": "+10 par commande livrée"
   },
   "orderStatus": {
     "new": "Nouvelle",
