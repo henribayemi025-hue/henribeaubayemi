@@ -89,15 +89,43 @@ export function countryLabel(code, locale = 'fr') {
   return locale === 'fr' ? c.fr : c.en;
 }
 
-// Mock IP-geolocation. Structured so a real service (ipapi, Cloudflare, etc.)
-// can replace the fetch body without changing callers.
+// IANA time zone → ISO country. The device time zone is the most reliable
+// offline signal for where the user actually is (a French phone set to French
+// keyboard still reports Europe/Paris), which is why it's tried before locale.
+const TZ_COUNTRY = {
+  'Europe/Paris': 'FR', 'Europe/Brussels': 'BE', 'Europe/London': 'GB',
+  'Europe/Berlin': 'DE', 'Europe/Madrid': 'ES', 'Europe/Rome': 'IT',
+  'Europe/Lisbon': 'PT', 'Europe/Zurich': 'CH', 'Europe/Amsterdam': 'NL',
+  'Africa/Douala': 'CM', 'Africa/Lagos': 'NG', 'Africa/Dakar': 'SN',
+  'Africa/Abidjan': 'CI', 'Africa/Accra': 'GH', 'Africa/Libreville': 'GA',
+  'Africa/Kinshasa': 'CD', 'Africa/Bangui': 'CF', 'Africa/Brazzaville': 'CG',
+  'Africa/Cotonou': 'BJ', 'Africa/Lome': 'TG', 'Africa/Ouagadougou': 'BF',
+  'Africa/Bamako': 'ML', 'Africa/Casablanca': 'MA', 'Africa/Tunis': 'TN',
+  'Africa/Algiers': 'DZ', 'America/New_York': 'US', 'America/Toronto': 'CA',
+};
+
+// Best-effort geolocation without any network call. Order: device time zone
+// (most reliable), then the locale region tag. Returns null rather than forcing
+// a market default, so we never mislabel a diaspora user as being in Cameroun.
 export async function detectCountry() {
   try {
-    const locale = (navigator.language || 'fr').toUpperCase();
-    const guess = locale.split('-')[1];
-    if (guess && COUNTRIES.some((c) => c.code === guess)) return guess;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TZ_COUNTRY[tz] && COUNTRIES.some((c) => c.code === TZ_COUNTRY[tz])) {
+      return TZ_COUNTRY[tz];
+    }
   } catch {
     /* ignore */
   }
-  return 'CM'; // conservative default for the primary launch market
+  try {
+    const region = (navigator.language || '').toUpperCase().split('-')[1];
+    if (region && COUNTRIES.some((c) => c.code === region)) return region;
+    // Multiple locales configured? Scan them for a usable region.
+    for (const l of navigator.languages || []) {
+      const r = l.toUpperCase().split('-')[1];
+      if (r && COUNTRIES.some((c) => c.code === r)) return r;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
 }

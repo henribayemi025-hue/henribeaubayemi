@@ -23,6 +23,7 @@ export default function VendorChat({ vendor = false }) {
   const [input, setInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const scroller = useRef(null);
+  const endRef = useRef(null);
   const fileRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -76,7 +77,9 @@ export default function VendorChat({ vendor = false }) {
   }, [conversationId]);
 
   useEffect(() => {
-    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
+    // Anchor-based scroll is more reliable than scrollTop math when the
+    // keyboard resizes the viewport (WhatsApp behaviour).
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
 
   async function deliver(payload, tempId) {
@@ -152,7 +155,9 @@ export default function VendorChat({ vendor = false }) {
             </div>
             {messages.length === 0 && <p className="py-4 text-center text-caption text-muted">{t('chat.empty')}</p>}
             {messages.map((m) => {
-              const mine = m.sender_role === role;
+              // WhatsApp rule: my messages (by user id) on the right, everyone
+              // else on the left — unambiguous on both buyer and vendor sides.
+              const mine = m.sender_id === user.id;
               return (
                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${mine ? 'bg-[#E6F0F0]' : 'border border-hairline bg-white'}`}>
@@ -171,6 +176,7 @@ export default function VendorChat({ vendor = false }) {
                 </div>
               );
             })}
+            <div ref={endRef} />
           </div>
 
           <form

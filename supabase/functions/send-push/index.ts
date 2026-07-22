@@ -63,15 +63,23 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // VAPID keys are optional in Phase 1; without them we skip delivery cleanly.
+    // VAPID keys: prefer the env secret, else fall back to the private
+    // app_config table (so keys can be provisioned entirely from tooling).
+    let keysJson: unknown = null;
     const rawKeys = Deno.env.get('VAPID_KEYS');
-    if (!rawKeys) {
+    if (rawKeys) {
+      keysJson = JSON.parse(rawKeys);
+    } else {
+      const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'vapid_keys').maybeSingle();
+      if (cfg?.value) keysJson = cfg.value;
+    }
+    if (!keysJson) {
       return new Response(JSON.stringify({ delivered: 0, reason: 'vapid_not_configured' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const vapidKeys = await webpush.importVapidKeys(JSON.parse(rawKeys), { extractable: false });
+    const vapidKeys = await webpush.importVapidKeys(keysJson, { extractable: false });
     const appServer = await webpush.ApplicationServer.new({
       contactInformation: Deno.env.get('VAPID_SUBJECT') ?? 'mailto:support@finjaro.app',
       vapidKeys,

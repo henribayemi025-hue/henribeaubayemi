@@ -33,6 +33,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://bokwivwizghdlaedczbw.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_UMnuj2_xJ7uZt76TspkBAA_EiAMg6zt
+          # VAPID application server (public) key for Web Push. Public by design.
+          VITE_VAPID_PUBLIC_KEY: BMd-k0e9sRisx9rduYzSe9TWZx64zvpqjMlIhJP9NtPnsp_fjDxkHKCs17J9emm1NJcd3J3z8pkVGJjx4W6392A
       - name: Guard — require deploy token
         run: |
           if [ -z "${{ secrets.NETLIFY_AUTH_TOKEN }}" ]; then

@@ -28,6 +28,7 @@ export default function VendorProductEdit() {
   const [form, setForm] = useState(blank);
   const [loading, setLoading] = useState(!isNew);
   const [busy, setBusy] = useState(false);
+  const [uploads, setUploads] = useState(0); // images still uploading
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -56,26 +57,37 @@ export default function VendorProductEdit() {
 
   async function save() {
     if (!validate()) return;
-    setBusy(true);
-    const payload = {
-      shop_id: shop.id,
-      name: form.name.trim(),
-      price_fcfa: toFcfa(Number(form.price_fcfa), shopCurrency),
-      description: form.description.trim() || null,
-      category: form.category,
-      stock: Math.max(0, Math.round(Number(form.stock) || 0)),
-      images: form.images,
-    };
-    const res = isNew
-      ? await supabase.from('products').insert(payload)
-      : await supabase.from('products').update(payload).eq('id', id);
-    setBusy(false);
-    if (res.error) {
-      toast.error(res.error.message);
+    if (uploads > 0) {
+      toast.info(t('vendor.imageStillUploading'));
       return;
     }
-    toast.success(t('vendor.productSaved'));
-    navigate('/vendor/products');
+    setBusy(true);
+    // Guard against a stalled network request leaving the button spinning
+    // forever: abort after 25s and surface a retryable error instead.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25000);
+    try {
+      const payload = {
+        shop_id: shop.id,
+        name: form.name.trim(),
+        price_fcfa: toFcfa(Number(form.price_fcfa), shopCurrency),
+        description: form.description.trim() || null,
+        category: form.category,
+        stock: Math.max(0, Math.round(Number(form.stock) || 0)),
+        images: form.images.filter(Boolean),
+      };
+      const res = isNew
+        ? await supabase.from('products').insert(payload).abortSignal(controller.signal)
+        : await supabase.from('products').update(payload).eq('id', id).abortSignal(controller.signal);
+      if (res.error) throw res.error;
+      toast.success(t('vendor.productSaved'));
+      navigate('/vendor/products');
+    } catch (err) {
+      toast.error(err?.name === 'AbortError' ? t('errors.network') : err?.message || t('errors.generic'));
+    } finally {
+      clearTimeout(timer);
+      setBusy(false);
+    }
   }
 
   async function del() {
@@ -114,7 +126,14 @@ export default function VendorProductEdit() {
           <span className="label">{t('vendor.productImages')}</span>
           <div className="grid grid-cols-3 gap-2">
             {[0, 1, 2].map((i) => (
-              <ImageUpload key={i} bucket="products" value={form.images[i] || null} onChange={(p) => setImage(i, p)} shape="square" />
+              <ImageUpload
+                key={i}
+                bucket="products"
+                value={form.images[i] || null}
+                onChange={(p) => setImage(i, p)}
+                onBusyChange={(b) => setUploads((n) => Math.max(0, n + (b ? 1 : -1)))}
+                shape="square"
+              />
             ))}
           </div>
         </div>
@@ -139,7 +158,9 @@ export default function VendorProductEdit() {
         </Field>
       </div>
       <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
-        <Button onClick={save} loading={busy}>{t('common.save')}</Button>
+        <Button onClick={save} loading={busy} disabled={uploads > 0}>
+          {uploads > 0 ? t('vendor.imageStillUploading') : t('common.save')}
+        </Button>
       </div>
     </div>
   );

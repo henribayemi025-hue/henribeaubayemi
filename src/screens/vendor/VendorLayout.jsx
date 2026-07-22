@@ -27,7 +27,7 @@ export function VendorLayout() {
   return (
     <div className="md:bg-[#F5F5F5]">
       <div
-        className="relative mx-auto flex max-w-app flex-col overflow-hidden bg-white"
+        className="fixed inset-x-0 top-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white"
         style={{ height: 'var(--app-height, 100dvh)' }}
       >
         <main className="flex-1 overflow-y-auto overscroll-contain">

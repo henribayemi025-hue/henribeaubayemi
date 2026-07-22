@@ -56,16 +56,48 @@
 - **Delivery by country** — checkout shows a pickup-first warning in FCFA zones
   (Cameroun etc.); delivery still gated by the vendor's `offers_delivery`.
 
+## Done — Cycle 6 (keyboard/chat hardening + push LIVE + gamification)
+- **Push notifications are REAL now.** VAPID P-256 keypair generated; the full
+  keypair is stored in the private `public.app_config` table (key `vapid_keys`,
+  RLS on + no policies = service-role only) — NOT in git. `send-push` (v7) reads
+  the env secret `VAPID_KEYS` if present else falls back to `app_config`. The
+  **public** app-server key is committed as `VITE_VAPID_PUBLIC_KEY` in
+  `deploy.yml` (public by design). To rotate keys: regenerate, update the
+  `app_config` row via SQL AND the workflow env var. iOS still requires
+  "Add to Home Screen" before the browser will grant push permission.
+- **Chat keyboard gap fixed for real** — the app-shell (Buyer+VendorLayout) is
+  now `position: fixed; top:0; inset-x:0` (was in-flow) so iOS Safari can't
+  scroll the document to "reveal" a focused input; combined with `--app-height`
+  the shell = the space above the keyboard, input pinned right on top of it.
+- **Chat bubbles align WhatsApp-style** by `sender_id === user.id` (was the
+  fragile `sender_role === role`, which inverted on the vendor side). Scroll to
+  newest via an invisible end-anchor + `scrollIntoView`.
+- **Product save can't hang** — `VendorProductEdit.save()` wrapped in
+  try/catch/finally with a 25s AbortController; Save is disabled while any image
+  is still uploading (`ImageUpload` now reports busy via `onBusyChange`).
+- **Country no longer forced to Cameroun** — `detectCountry()` uses the device
+  time zone first (Europe/Paris → FR) then locale region, returns null instead
+  of a hard CM default.
+- **Recommendations RPC** `similar_products(product_id, limit)` via `pg_trgm`
+  (same-category + trigram name similarity). pgvector/Gemini embeddings can
+  replace the body later without changing callers. (migration 0010)
+- **Vendor gamification** — `shops.seller_points` + `AFTER UPDATE OF status ON
+  orders` trigger (`award_seller_points`, SECURITY DEFINER) grants +10 points
+  when an order flips to `delivered`. Not yet surfaced in the UI. (migration 0010)
+
 ## Backlog — remaining
-1. **Real push notifications** — needs VAPID keys. NOTE: Supabase edge-function
-   **secrets can't be set via MCP**, so either (a) Beau pastes `VAPID_KEYS` in
-   Supabase → Edge Functions → Secrets, or (b) store the keypair in a private
-   `app_config` table that `send-push` reads with the service role (assistant can
-   do this fully). Also set `VITE_VAPID_PUBLIC_KEY` in Netlify. iOS requires the
-   PWA be "Added to Home Screen" first. Verify `send-push` end to end on device.
-2. **`@finou` inside buyer↔vendor chats** — optional: detect `@finou` in a chat
-   and insert an AI reply (Finou Vision already covers photo search in the overlay).
-3. **Search UX** — make results feel inline as you type (Amazon-style).
+1. **Surface gamification** — show `seller_points` + a leaderboard on the vendor
+   dashboard; decide the reward (Beau floated a paid tier ~200€ for top
+   client-drivers). Wire `similar_products` into ProductDetail ("Vous aimerez aussi").
+2. **Elite design pass (Beau's 8-chantier brief)** — glassmorphism nav/headers,
+   iOS-style bottom sheets replacing modals, like-button bounce, pinned FAB on
+   product detail, skeletons matching card geometry, swipeable galleries,
+   optimistic UI everywhere, Error Boundaries. Do this WITHOUT destabilising the
+   locked "Lagune & Encre" tokens — it's a big, careful cycle on its own.
+3. **`@finou` inside buyer↔vendor chats** — detect `@finou` and insert an AI reply.
+4. **Search UX** — inline results as you type (Amazon-style).
+5. **Real IP geolocation edge function** (cf-ipcountry / x-forwarded-for) to
+   replace the timezone/locale heuristic in `detectCountry`.
 
 ## Open items to reproduce / re-test with Beau
 - Search UX: make it filter inline as you type (Amazon-style) + confirm the

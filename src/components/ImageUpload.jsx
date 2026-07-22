@@ -7,12 +7,16 @@ import { useToast } from '../hooks/useToast';
 
 // Uploads a single image to a Supabase Storage bucket and returns its path
 // via onChange. `shape` = 'wide' | 'square' | 'round'.
-export function ImageUpload({ bucket, value, onChange, label, shape = 'square', accept = 'image/*' }) {
+export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shape = 'square', accept = 'image/*' }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
   const inputRef = useRef(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusyState] = useState(false);
+  const setBusy = (v) => {
+    setBusyState(v);
+    onBusyChange?.(v);
+  };
 
   const aspect = shape === 'wide' ? 'aspect-[16/7]' : 'aspect-square';
   const rounded = shape === 'round' ? 'rounded-full' : 'rounded-card';
