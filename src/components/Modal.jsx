@@ -17,8 +17,8 @@ export function Modal({ open, onClose, title, children }) {
   if (!open) return null;
   return (
     <div
-      className="fixed inset-x-0 top-0 z-[90] flex items-end justify-center sm:items-center"
-      style={{ height: 'var(--app-height, 100dvh)' }}
+      className="fixed inset-x-0 z-[90] flex items-end justify-center sm:items-center"
+      style={{ top: 'var(--app-top, 0px)', height: 'var(--app-height, 100dvh)' }}
       role="dialog"
       aria-modal="true"
       aria-label={title}
