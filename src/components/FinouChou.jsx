@@ -50,9 +50,18 @@ export function FinouChou() {
   if (!finouOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={t('finou.title')}>
+    <div
+      className="fixed inset-x-0 top-0 z-[95] flex items-end justify-center sm:items-center"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('finou.title')}
+    >
       <button className="absolute inset-0 bg-black/40" aria-label={t('common.close')} onClick={closeFinou} />
-      <div className="relative z-10 flex h-[85vh] w-full max-w-app flex-col rounded-t-2xl bg-white sm:h-[70vh] sm:rounded-2xl">
+      <div
+        className="relative z-10 flex h-[85vh] w-full max-w-app flex-col rounded-t-2xl bg-white sm:h-[70vh] sm:rounded-2xl"
+        style={{ maxHeight: 'var(--app-height, 100dvh)' }}
+      >
         <div className="flex items-center gap-2 border-b border-hairline p-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-teal text-white">
             <IconSparkles size={20} />

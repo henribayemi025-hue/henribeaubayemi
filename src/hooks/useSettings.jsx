@@ -77,7 +77,13 @@ export function SettingsProvider({ children }) {
     (code) => {
       setCountryState(code);
       localStorage.setItem(COUNTRY_KEY, code);
-      persist({ country: code });
+      // Picking a country also switches the display currency to that country's
+      // currency (e.g. France → EUR, Cameroun → FCFA). Manual currency choice
+      // in Settings still overrides afterwards.
+      const cur = currencyForCountry(code);
+      setCurrencyState(cur);
+      localStorage.setItem(CUR_KEY, cur);
+      persist({ country: code, currency: cur });
     },
     [persist]
   );

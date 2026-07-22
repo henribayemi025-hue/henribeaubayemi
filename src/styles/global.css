@@ -3,10 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+  /* The document itself never scrolls — each screen scrolls inside its own
+     container. This is what stops the iOS keyboard from pushing the whole app
+     up ("tout monte") when you focus an input. */
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   html,
   body {
-    /* Prevent any horizontal drift/clipping of floating elements. */
-    overflow-x: hidden;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
   html {
     -webkit-text-size-adjust: 100%;

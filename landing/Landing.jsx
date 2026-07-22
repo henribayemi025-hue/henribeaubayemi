@@ -10,7 +10,10 @@ export default function Landing() {
   const { language, setLanguage } = useSettings();
 
   return (
-    <div className="mx-auto min-h-screen max-w-app bg-white">
+    <div
+      className="mx-auto max-w-app overflow-y-auto bg-white"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+    >
       <header className="flex h-14 items-center px-4">
         <span className="flex items-center gap-1 text-title font-semibold text-teal">Finjaro<span className="h-1.5 w-1.5 rounded-full bg-brass" /></span>
         <div className="ml-auto flex items-center gap-3">

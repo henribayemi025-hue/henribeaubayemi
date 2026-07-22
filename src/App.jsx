@@ -7,6 +7,7 @@ import { ToastProvider } from './hooks/useToast';
 import { UIProvider } from './hooks/useUI';
 import { Spinner } from './components/Spinner';
 import { RequireAuth } from './components/RequireAuth';
+import { useViewportHeight } from './hooks/useViewportHeight';
 import { BuyerLayout } from './screens/buyer/BuyerLayout';
 import { VendorLayout } from './screens/vendor/VendorLayout';
 
@@ -51,6 +52,7 @@ function Loading() {
 }
 
 export default function App() {
+  useViewportHeight();
   return (
     <BrowserRouter>
       <AuthProvider>
