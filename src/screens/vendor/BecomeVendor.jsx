@@ -19,11 +19,24 @@ const empty = {
   banner_url: null, avatar_url: null, description: '', whatsapp: '',
 };
 
+// Accent-free, url-safe slug from the shop name (a random suffix is added for uniqueness).
+function slugify(s) {
+  return (
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '') // strip accents
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'boutique'
+  );
+}
+
 export default function BecomeVendor() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { loading, status } = useVendorStatus();
+  const { loading, status, reload } = useVendorStatus();
   const toast = useToast();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(empty);
@@ -43,46 +56,61 @@ export default function BecomeVendor() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.from('vendor_applications').insert({ user_id: user.id, ...form });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      // Keep the application record (stores ID docs when provided, useful for a
+      // future Admin) — but it no longer gates activation.
+      await supabase.from('vendor_applications').insert({ user_id: user.id, ...form });
+      // Create the shop immediately: the user becomes a vendor right away, even
+      // without an ID. is_verified stays false until the 4 badge conditions hold.
+      const slug = `${slugify(form.shop_name)}-${Math.random().toString(36).slice(2, 6)}`;
+      const { error: shopErr } = await supabase.from('shops').insert({
+        owner_id: user.id,
+        slug,
+        name: form.shop_name.trim(),
+        country: form.country,
+        city: form.city || null,
+        categories: form.categories,
+        bio: form.description || null,
+        whatsapp: form.whatsapp || form.phone || null,
+        avatar_url: form.avatar_url,
+        banner_url: form.banner_url,
+      });
+      if (shopErr) throw shopErr;
+      await supabase.from('profiles').update({ is_vendor: true }).eq('id', user.id);
+      await reload();
+      setDone(true);
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+    } finally {
+      setBusy(false);
     }
-    setDone(true);
   }
 
   if (loading) return <div className="flex h-64 items-center justify-center"><Spinner /></div>;
-  if (!done && (status === 'pending' || status === 'approved')) {
+  // Already a vendor (has a shop) — send them to their seller space.
+  if (!done && status === 'approved') {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <p className="text-section text-ink">{t('becomeVendor.alreadyPending')}</p>
-        <Button className="mt-6 max-w-xs" onClick={() => navigate('/profile')}>{t('common.back')}</Button>
+      <div className="flex min-h-full flex-col items-center justify-center px-6 text-center">
+        <p className="text-section text-ink">{t('becomeVendor.alreadyVendor')}</p>
+        <Button className="mt-6 max-w-xs" onClick={() => navigate('/switch/to-vendor')}>{t('profile.switchToVendor')}</Button>
       </div>
     );
   }
 
   if (done) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <div className="flex min-h-full flex-col items-center justify-center px-6 text-center">
         <IconCircleCheck size={64} className="text-success" stroke={1.5} />
-        <h1 className="mt-4 text-title text-ink">{t('becomeVendor.successTitle')}</h1>
-        <p className="mt-2 text-body text-muted">{t('becomeVendor.successBody')}</p>
-        <div className="mt-6 w-full max-w-xs space-y-2 text-left">
-          {['next1', 'next2', 'next3', 'next4'].map((k, i) => (
-            <div key={k} className="flex items-center gap-3 rounded-card border border-hairline p-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-teal/10 text-caption font-semibold text-teal">{i + 1}</span>
-              <span className="text-body text-ink">{t(`becomeVendor.${k}`)}</span>
-            </div>
-          ))}
-        </div>
-        <Button className="mt-8 max-w-xs" onClick={() => navigate('/profile')}>{t('common.continue')}</Button>
+        <h1 className="mt-4 text-title text-ink">{t('becomeVendor.activatedTitle')}</h1>
+        <p className="mt-2 max-w-sm text-body text-muted">{t('becomeVendor.activatedBody')}</p>
+        <Button className="mt-8 max-w-xs" onClick={() => navigate('/switch/to-vendor')}>{t('becomeVendor.goToVendorSpace')}</Button>
+        <Button variant="ghost" className="mt-2" onClick={() => navigate('/profile')}>{t('common.back')}</Button>
       </div>
     );
   }
 
   return (
-    <div className="pb-24">
+    <div>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-4">
         <button onClick={() => (step > 1 ? setStep(step - 1) : navigate(-1))} aria-label={t('common.back')} className="-ml-2 p-1"><IconChevronLeft size={24} /></button>
         <h1 className="text-section text-ink">{t('becomeVendor.title')}</h1>
@@ -121,6 +149,7 @@ export default function BecomeVendor() {
               <Field label={t('becomeVendor.firstName')}>{(id) => <TextInput id={id} value={form.first_name} onChange={(e) => set({ first_name: e.target.value })} />}</Field>
               <Field label={t('becomeVendor.lastName')}>{(id) => <TextInput id={id} value={form.last_name} onChange={(e) => set({ last_name: e.target.value })} />}</Field>
             </div>
+            <p className="text-caption text-muted">{t('becomeVendor.idOptional')}</p>
             <div className="grid grid-cols-2 gap-3">
               <ImageUpload bucket="ids" value={form.id_front_url} onChange={(p) => set({ id_front_url: p })} label={t('becomeVendor.idFront')} shape="wide" />
               <ImageUpload bucket="ids" value={form.id_back_url} onChange={(p) => set({ id_back_url: p })} label={t('becomeVendor.idBack')} shape="wide" />
@@ -160,7 +189,7 @@ export default function BecomeVendor() {
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-app border-t border-hairline bg-white p-3">
+      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
         {step < 4 ? (
           <Button disabled={step === 1 && !step1Valid} onClick={() => setStep(step + 1)}>{t('common.continue')}</Button>
         ) : (

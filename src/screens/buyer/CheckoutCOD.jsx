@@ -101,7 +101,7 @@ export default function CheckoutCOD() {
 
   if (placed) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <div className="flex min-h-full flex-col items-center justify-center px-6 text-center">
         <IconCircleCheck size={64} className="text-success" stroke={1.5} />
         <h1 className="mt-4 text-title text-ink">{t('checkout.successTitle')}</h1>
         <p className="mt-2 text-body text-muted">{t('checkout.successBody')}</p>
@@ -125,7 +125,7 @@ export default function CheckoutCOD() {
   }
 
   return (
-    <div className="pb-28">
+    <div>
       <AppHeader title={t('checkout.title')} back />
       <div className="space-y-4 p-4">
         <section>
@@ -189,7 +189,7 @@ export default function CheckoutCOD() {
         </section>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-app border-t border-hairline bg-white p-3">
+      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
         <Button onClick={submit} loading={submitting}>{t('checkout.confirm')}</Button>
       </div>
     </div>

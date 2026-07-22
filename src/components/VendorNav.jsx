@@ -16,7 +16,7 @@ const items = [
 export function VendorNav() {
   const { t } = useTranslation();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-app items-stretch border-t border-hairline bg-white">
+    <nav className="flex items-stretch border-t border-hairline bg-white">
       {items.map((it) => (
         <NavLink key={it.key} to={it.to} end={it.end} className="flex flex-1 flex-col items-center gap-0.5 py-2">
           {({ isActive }) => {

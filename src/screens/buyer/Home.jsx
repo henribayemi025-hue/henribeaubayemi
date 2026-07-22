@@ -44,7 +44,7 @@ export default function Home() {
           <span className="h-1.5 w-1.5 rounded-full bg-brass" />
         </Link>
         <div className="ml-auto flex items-center gap-3">
-          <Link to="/near-you" aria-label={t('common.search')} className="text-ink">
+          <Link to="/search" aria-label={t('common.search')} className="text-ink">
             <IconSearch size={24} />
           </Link>
           <Link to="/cart" aria-label={t('cart.title')} className="relative text-ink">

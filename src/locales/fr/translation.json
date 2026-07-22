@@ -99,6 +99,23 @@
     "noProducts": "Aucun produit pour le moment. Reviens bientôt !",
     "noShops": "Aucune boutique à afficher pour l'instant."
   },
+  "search": {
+    "placeholder": "Rechercher catégories, boutiques, articles…",
+    "hint": "Commence à taper pour rechercher.",
+    "noResults": "Aucun résultat pour « {{q}} »",
+    "followed": "Tu suis",
+    "items": "Articles"
+  },
+  "help": {
+    "contactCta": "Nous écrire",
+    "faqTitle": "Questions fréquentes",
+    "q1": "Comment passer une commande ?",
+    "a1": "Ajoute des articles au panier puis valide avec le paiement à la livraison (COD). Tu paies à la réception.",
+    "q2": "Comment devenir vendeur ?",
+    "a2": "Va dans Profil → Devenir vendeur, remplis les infos de ta boutique : c'est activé immédiatement.",
+    "q3": "Comment obtenir le badge vérifié ?",
+    "a3": "Le badge apparaît quand ton identité est validée, ton téléphone confirmé, ta photo de boutique ajoutée et au moins un produit publié."
+  },
   "product": {
     "addToCart": "Ajouter au panier",
     "requestQuote": "Demander un devis",
@@ -196,6 +213,7 @@
     "noOrders": "Tu n'as pas encore de commande.",
     "orderNumber": "Commande n° {{n}}",
     "helpText": "Besoin d'aide ? Écris-nous à support@finjaro.app et notre équipe te répondra sous 24 h.",
+    "helpTitle": "Aide",
     "displayName": "Nom affiché"
   },
   "fin": {
@@ -370,6 +388,11 @@
     "uploadImage": "Choisir une image",
     "imageSelected": "Image sélectionnée",
     "alreadyPending": "Ta demande est déjà en cours de validation.",
+    "alreadyVendor": "Tu es déjà vendeur.",
+    "idOptional": "Facultatif — à fournir plus tard pour obtenir le badge vérifié.",
+    "activatedTitle": "Ta boutique est créée !",
+    "activatedBody": "Tu es maintenant vendeur. Ajoute tes produits pour commencer à vendre. Le badge vérifié apparaîtra quand ton identité sera validée, ton téléphone confirmé, ta photo de boutique ajoutée et un premier produit publié.",
+    "goToVendorSpace": "Aller à mon espace vendeur",
     "selectCategories": "Sélectionne au moins une catégorie"
   },
   "switchMode": {

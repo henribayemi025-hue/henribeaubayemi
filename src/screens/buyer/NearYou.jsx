@@ -30,11 +30,24 @@ export default function NearYou() {
   const { data, loading, error, retry } = useAsync(async () => {
     const shopsQuery = supabase.from('shops').select('*').eq('status', 'active').order('followers_count', { ascending: false }).limit(40);
     if (radius === 'country' && country) shopsQuery.eq('country', country);
-    const [{ data: shops }, { data: listings }] = await Promise.all([
+    // Explicit FK join (near_you_listings.user_id -> profiles) so PostgREST can
+    // resolve the poster's name. The FK is added in migration 0007.
+    const [shopsRes, listingsRes] = await Promise.all([
       shopsQuery,
-      supabase.from('near_you_listings').select('*, profiles(name)').order('created_at', { ascending: false }).limit(40),
+      supabase
+        .from('near_you_listings')
+        .select('*, profiles!near_you_listings_profile_fk(name)')
+        .order('created_at', { ascending: false })
+        .limit(40),
     ]);
-    return { shops: shops || [], listings: listings || [] };
+    if (shopsRes.error) throw shopsRes.error;
+    // Surface (don't silently swallow) a listings error, but keep Boutiques usable.
+    if (listingsRes.error) console.error('[NearYou] listings query failed:', listingsRes.error.message);
+    return {
+      shops: shopsRes.data || [],
+      listings: listingsRes.data || [],
+      listingsError: listingsRes.error ? listingsRes.error.message : null,
+    };
   }, [country, radius]);
 
   async function openListingChat(listing) {
@@ -96,6 +109,8 @@ export default function NearYou() {
             ))}
           </ul>
         )
+      ) : data.listingsError ? (
+        <ErrorState onRetry={retry} />
       ) : data.listings.length === 0 ? (
         <EmptyState icon={IconBuildingStore} title={t('nearYou.noListings')} />
       ) : (
@@ -117,12 +132,14 @@ export default function NearYou() {
         </ul>
       )}
 
-      <button
-        onClick={() => (user ? setPublishOpen(true) : requireLogin())}
-        className="fixed bottom-20 right-4 z-40 flex h-12 items-center gap-1 rounded-pill bg-teal px-4 text-white shadow-lg"
-      >
-        <IconPlus size={20} /> <span className="text-caption font-semibold">{t('nearYou.publishListing')}</span>
-      </button>
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 mx-auto flex max-w-app justify-end px-4">
+        <button
+          onClick={() => (user ? setPublishOpen(true) : requireLogin())}
+          className="pointer-events-auto flex h-12 items-center gap-1 rounded-pill bg-teal px-4 text-white shadow-lg"
+        >
+          <IconPlus size={20} /> <span className="text-caption font-semibold">{t('nearYou.publishListing')}</span>
+        </button>
+      </div>
 
       <PublishListingModal open={publishOpen} onClose={() => setPublishOpen(false)} onDone={retry} />
     </div>

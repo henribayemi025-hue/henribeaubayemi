@@ -52,11 +52,6 @@ export default function Settings() {
             <button onClick={turnOnPush} className="btn-secondary">{t('notifications.enable')}</button>
           </section>
         )}
-
-        <section id="help">
-          <h2 className="mb-2 text-section text-ink">{t('profile.help')}</h2>
-          <p className="text-body text-muted">{t('profile.helpText')}</p>
-        </section>
       </div>
     </div>
   );

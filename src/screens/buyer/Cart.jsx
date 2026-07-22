@@ -34,7 +34,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="pb-40">
+    <div>
       <AppHeader title={t('cart.title')} back />
       <div className="space-y-4 p-4">
         {Object.entries(byShop).map(([shopId, group]) => (
@@ -72,7 +72,7 @@ export default function Cart() {
         ))}
       </div>
 
-      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto max-w-app border-t border-hairline bg-white p-4">
+      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-4">
         <div className="flex items-center justify-between">
           <span className="text-body text-muted">{t('cart.subtotal')}</span>
           <Price fcfa={subtotal} className="text-section font-semibold text-ink" />

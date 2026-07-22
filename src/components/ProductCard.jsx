@@ -5,6 +5,7 @@ import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { isQuoteOnly } from '../lib/categories';
 import { storageUrl } from '../lib/supabase';
+import { track } from '../lib/track';
 
 // 2-column grid product card. Memoized to avoid re-renders on parent state churn.
 function ProductCardBase({ product }) {
@@ -14,6 +15,7 @@ function ProductCardBase({ product }) {
   return (
     <Link
       to={`/product/${product.id}`}
+      onClick={() => track('product_click', product.id)}
       className="block overflow-hidden rounded-card border border-hairline bg-white transition-transform duration-150 active:scale-[0.99]"
     >
       <div className="relative">

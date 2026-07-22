@@ -90,7 +90,7 @@ export default function VendorProductEdit() {
   if (loading) return <div className="flex h-64 items-center justify-center"><Spinner /></div>;
 
   return (
-    <div className="pb-24">
+    <div>
       <AppHeader
         title={isNew ? t('vendor.newProduct') : t('vendor.editProduct')}
         back
@@ -125,7 +125,7 @@ export default function VendorProductEdit() {
           {(fid) => <TextArea id={fid} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />}
         </Field>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-app border-t border-hairline bg-white p-3">
+      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
         <Button onClick={save} loading={busy}>{t('common.save')}</Button>
       </div>
     </div>

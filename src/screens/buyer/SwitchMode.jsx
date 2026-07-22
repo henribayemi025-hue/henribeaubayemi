@@ -46,7 +46,7 @@ export default function SwitchMode() {
   }, [toVendor, user]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center">
+    <div className="flex min-h-full flex-col items-center justify-center bg-white px-6 text-center">
       <span className="flex h-20 w-20 items-center justify-center rounded-full bg-teal/10 text-teal">
         {toVendor ? <IconSparkles size={40} /> : <IconShoppingCart size={40} />}
       </span>

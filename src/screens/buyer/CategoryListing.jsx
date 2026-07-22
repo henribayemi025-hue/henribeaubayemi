@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMoodSmile } from '@tabler/icons-react';
@@ -7,11 +8,16 @@ import { AppHeader } from '../../components/AppHeader';
 import { ProductCard } from '../../components/ProductCard';
 import { ProductGridSkeleton, EmptyState, ErrorState } from '../../components/states';
 import { CATEGORIES } from '../../lib/categories';
+import { track } from '../../lib/track';
 
 export default function CategoryListing() {
   const { categoryId } = useParams();
   const { t } = useTranslation();
   const cat = CATEGORIES.find((c) => c.id === categoryId);
+
+  useEffect(() => {
+    track('category_view', categoryId);
+  }, [categoryId]);
 
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: products, error: err } = await supabase

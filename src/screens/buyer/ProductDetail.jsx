@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessage, IconChevronLeft, IconArrowBackUp } from '@tabler/icons-react';
@@ -17,6 +17,7 @@ import { Skeleton, ErrorState } from '../../components/states';
 import { isQuoteOnly } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
+import { track } from '../../lib/track';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -29,6 +30,10 @@ export default function ProductDetail() {
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [starting, setStarting] = useState(false);
+
+  useEffect(() => {
+    track('product_view', id);
+  }, [id]);
 
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: product, error: err } = await supabase
@@ -77,7 +82,7 @@ export default function ProductDetail() {
   if (error) return <ErrorState onRetry={retry} />;
   if (!data?.product) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-section text-ink">{t('product.notFound')}</p>
         <Button variant="secondary" className="max-w-xs" onClick={() => navigate('/')}>
           <IconArrowBackUp size={18} /> {t('common.back')}
@@ -93,7 +98,7 @@ export default function ProductDetail() {
   const images = (p.images || []).map((im) => storageUrl('products', im));
 
   return (
-    <div className="pb-24">
+    <div className="relative">
       <button
         onClick={() => navigate(-1)}
         aria-label={t('common.back')}
@@ -172,7 +177,7 @@ export default function ProductDetail() {
         </section>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-app gap-2 border-t border-hairline bg-white p-3">
+      <div className="sticky bottom-0 z-30 flex gap-2 border-t border-hairline bg-white p-3">
         <button
           onClick={startChat}
           disabled={starting}

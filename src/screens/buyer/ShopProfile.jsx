@@ -16,6 +16,7 @@ import { ReportModal } from '../../components/ReportModal';
 import { Skeleton, EmptyState, ErrorState } from '../../components/states';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
+import { track } from '../../lib/track';
 
 export default function ShopProfile() {
   const { slug } = useParams();
@@ -55,6 +56,10 @@ export default function ShopProfile() {
       .then(({ data: f }) => setFollowing(!!f));
   }, [user, data]);
 
+  useEffect(() => {
+    if (data?.shop?.id) track('shop_view', data.shop.id);
+  }, [data?.shop?.id]);
+
   async function share() {
     const url = `${window.location.origin}/boutique/${slug}`;
     if (navigator.share) {
@@ -83,6 +88,7 @@ export default function ShopProfile() {
       } else {
         await supabase.from('shop_follows').insert({ follower_id: user.id, shop_id: data.shop.id });
         setFollowing(true);
+        track('follow', data.shop.id);
       }
     } finally {
       setBusy(false);
@@ -109,7 +115,7 @@ export default function ShopProfile() {
   if (error) return <ErrorState onRetry={retry} />;
   if (!data?.shop) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-section text-ink">{t('shop.notFound')}</p>
         <Button variant="secondary" className="max-w-xs" onClick={() => navigate('/')}>
           <IconArrowBackUp size={18} /> {t('common.back')}

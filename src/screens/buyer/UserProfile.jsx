@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout,
-  IconBuildingStore, IconMessage, IconChevronRight, IconClockHour4, IconSwitchHorizontal, IconUserCircle,
+  IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal, IconUserCircle,
 } from '@tabler/icons-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
@@ -34,12 +34,12 @@ export default function UserProfile() {
     );
   }
 
+  // Messages now lives in the bottom nav (FIX 6), so it's not repeated here.
   const rows = [
     { icon: IconShoppingBag, label: t('profile.myOrders'), to: '/profile/orders' },
     { icon: IconHeart, label: t('profile.myFavorites'), to: '/profile/favorites' },
-    { icon: IconMessage, label: t('nav.messages'), to: '/inbox' },
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
-    { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/settings#help' },
+    { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
   ];
 
   return (

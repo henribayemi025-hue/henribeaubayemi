@@ -12,6 +12,7 @@ import { VendorLayout } from './screens/vendor/VendorLayout';
 
 // Lazy-load every route for a small initial payload on 3G / low-end devices.
 const Home = lazy(() => import('./screens/buyer/Home'));
+const Search = lazy(() => import('./screens/buyer/Search'));
 const CategoryListing = lazy(() => import('./screens/buyer/CategoryListing'));
 const ProductDetail = lazy(() => import('./screens/buyer/ProductDetail'));
 const ShopProfile = lazy(() => import('./screens/buyer/ShopProfile'));
@@ -26,6 +27,7 @@ const Settings = lazy(() => import('./screens/buyer/Settings'));
 const EditProfile = lazy(() => import('./screens/buyer/EditProfile'));
 const MyOrders = lazy(() => import('./screens/buyer/MyOrders'));
 const MyFavorites = lazy(() => import('./screens/buyer/MyFavorites'));
+const Help = lazy(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazy(() => import('./screens/vendor/BecomeVendor'));
 const SwitchMode = lazy(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazy(() => import('./screens/Auth'));
@@ -63,6 +65,7 @@ export default function App() {
 
                     <Route element={<BuyerLayout />}>
                       <Route index element={<Home />} />
+                      <Route path="search" element={<Search />} />
                       <Route path="category/:categoryId" element={<CategoryListing />} />
                       <Route path="product/:id" element={<ProductDetail />} />
                       <Route path="boutique/:slug" element={<ShopProfile />} />
@@ -77,6 +80,7 @@ export default function App() {
                       <Route path="profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
                       <Route path="profile/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
                       <Route path="profile/favorites" element={<RequireAuth><MyFavorites /></RequireAuth>} />
+                      <Route path="profile/help" element={<Help />} />
                       <Route path="become-vendor" element={<RequireAuth><BecomeVendor /></RequireAuth>} />
                       <Route path="switch/:direction" element={<RequireAuth><SwitchMode /></RequireAuth>} />
                     </Route>

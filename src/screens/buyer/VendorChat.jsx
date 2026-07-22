@@ -133,7 +133,7 @@ export default function VendorChat({ vendor = false }) {
   const shop = meta?.shops;
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-full flex-col">
       <AppHeader title={shop?.name || t('nav.messages')} back />
       {loading ? (
         <div className="flex-1 space-y-3 p-4">

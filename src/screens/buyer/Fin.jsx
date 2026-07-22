@@ -65,7 +65,7 @@ export default function Fin() {
   }
 
   return (
-    <div className="relative h-screen bg-black">
+    <div className="relative h-full bg-black">
       <div className="absolute inset-x-0 top-0 z-20 flex justify-center gap-6 pt-3">
         {['forYou', 'following'].map((tb) => (
           <button
@@ -99,7 +99,7 @@ export default function Fin() {
           className="no-scrollbar h-full snap-y snap-mandatory overflow-y-scroll"
         >
           {reels.map((reel, i) => (
-            <div key={reel.id} className="h-screen w-full">
+            <div key={reel.id} className="h-full w-full">
               {Math.abs(i - activeIdx) <= 1 ? (
                 <ReelPlayer reel={reel} muted={muted} onToggleMute={() => setMuted((m) => !m)} active={i === activeIdx} />
               ) : (

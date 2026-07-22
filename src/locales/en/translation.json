@@ -99,6 +99,23 @@
     "noProducts": "No products yet. Check back soon!",
     "noShops": "No shops to show yet."
   },
+  "search": {
+    "placeholder": "Search categories, shops, items…",
+    "hint": "Start typing to search.",
+    "noResults": "No results for « {{q}} »",
+    "followed": "You follow",
+    "items": "Items"
+  },
+  "help": {
+    "contactCta": "Email us",
+    "faqTitle": "Frequently asked",
+    "q1": "How do I place an order?",
+    "a1": "Add items to your cart, then confirm with cash on delivery (COD). You pay when you receive it.",
+    "q2": "How do I become a vendor?",
+    "a2": "Go to Profile → Become a vendor, fill in your shop details: it's activated right away.",
+    "q3": "How do I get the verified badge?",
+    "a3": "The badge appears once your identity is verified, your phone confirmed, your shop photo added and at least one product posted."
+  },
   "product": {
     "addToCart": "Add to cart",
     "requestQuote": "Request a quote",
@@ -196,6 +213,7 @@
     "noOrders": "You don't have any orders yet.",
     "orderNumber": "Order #{{n}}",
     "helpText": "Need help? Email us at support@finjaro.app and our team will reply within 24h.",
+    "helpTitle": "Help",
     "displayName": "Display name"
   },
   "fin": {
@@ -370,6 +388,11 @@
     "uploadImage": "Choose an image",
     "imageSelected": "Image selected",
     "alreadyPending": "Your application is already under review.",
+    "alreadyVendor": "You're already a vendor.",
+    "idOptional": "Optional — provide later to earn the verified badge.",
+    "activatedTitle": "Your shop is live!",
+    "activatedBody": "You're now a vendor. Add your products to start selling. The verified badge will appear once your identity is verified, your phone confirmed, your shop photo added and a first product posted.",
+    "goToVendorSpace": "Go to my seller space",
     "selectCategories": "Select at least one category"
   },
   "switchMode": {

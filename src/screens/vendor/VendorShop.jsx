@@ -63,7 +63,7 @@ export default function VendorShop() {
   }
 
   return (
-    <div className="pb-24">
+    <div>
       <AppHeader title={t('vendor.shopEdit')} right={<button onClick={share} aria-label={t('common.shareShop')} className="p-1 text-teal"><IconShare2 size={20} /></button>} />
       <div className="space-y-4 p-4">
         <ImageUpload bucket="shops" value={form.banner_url} onChange={(p) => setForm({ ...form, banner_url: p })} label={t('vendor.shopBanner')} shape="wide" />
@@ -98,7 +98,7 @@ export default function VendorShop() {
         )}
         <Link to={`/boutique/${shop.slug}`} className="btn-ghost inline-flex"><IconExternalLink size={18} /> {t('vendor.previewShop')}</Link>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-app border-t border-hairline bg-white p-3">
+      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
         <Button onClick={save} loading={busy}>{t('common.save')}</Button>
       </div>
     </div>
