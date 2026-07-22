@@ -153,7 +153,10 @@
     "placeholder": "Ask Finou Chou anything…",
     "greeting": "Hi! I'm Finou Chou 💫 Tell me what you're looking for and I'll help you find the perfect piece.",
     "unavailable": "Finou Chou is temporarily unavailable.",
-    "typing": "Finou Chou is typing…"
+    "typing": "Finou Chou is typing…",
+    "attach": "Attach a photo",
+    "imageReady": "Photo ready to send",
+    "seeCategory": "See {{cat}}"
   },
   "chat": {
     "placeholder": "Write a message…",

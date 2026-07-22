@@ -153,7 +153,10 @@
     "placeholder": "Pose ta question à Finou Chou…",
     "greeting": "Salut ! Je suis Finou Chou 💫 Dis-moi ce que tu cherches et je t'aide à trouver la perle rare.",
     "unavailable": "Finou Chou est indisponible pour le moment.",
-    "typing": "Finou Chou écrit…"
+    "typing": "Finou Chou écrit…",
+    "attach": "Joindre une photo",
+    "imageReady": "Photo prête à envoyer",
+    "seeCategory": "Voir {{cat}}"
   },
   "chat": {
     "placeholder": "Écris un message…",
