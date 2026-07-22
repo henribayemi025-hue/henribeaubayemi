@@ -198,7 +198,9 @@
     "overrideLocation": "Changer ma localisation",
     "publish": "Publier",
     "published": "Annonce publiée",
-    "openChat": "Contacter"
+    "openChat": "Contacter",
+    "aroundMe": "Autour de moi",
+    "locationDenied": "Localisation indisponible ou refusée."
   },
   "profile": {
     "title": "Profil",
@@ -318,7 +320,10 @@
     "shopCategories": "Catégories",
     "previewShop": "Aperçu de la boutique publique",
     "shopSaved": "Boutique mise à jour",
-    "noShopYet": "Tu n'as pas encore de boutique active."
+    "noShopYet": "Tu n'as pas encore de boutique active.",
+    "locationSet": "Position enregistrée.",
+    "locationSetBtn": "Définir la position de ma boutique",
+    "locationUpdate": "Mettre à jour ma position"
   },
   "orderStatus": {
     "new": "Nouvelle",

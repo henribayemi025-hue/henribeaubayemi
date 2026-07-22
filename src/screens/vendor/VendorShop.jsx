@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconExternalLink } from '@tabler/icons-react';
+import { IconShare2, IconExternalLink, IconCurrentLocation } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -9,11 +9,31 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { CATEGORIES } from '../../lib/categories';
+import { getPosition } from '../../lib/geo';
 
 export default function VendorShop() {
   const { shop } = useOutletContext();
   const { t } = useTranslation();
   const toast = useToast();
+  const [hasGeo, setHasGeo] = useState(shop.lat != null);
+  const [geoBusy, setGeoBusy] = useState(false);
+
+  async function useMyLocation() {
+    setGeoBusy(true);
+    const pos = await getPosition();
+    if (!pos) {
+      setGeoBusy(false);
+      toast.error(t('nearYou.locationDenied'));
+      return;
+    }
+    const { error } = await supabase.from('shops').update({ lat: pos.lat, lng: pos.lng }).eq('id', shop.id);
+    setGeoBusy(false);
+    if (error) toast.error(error.message);
+    else {
+      setHasGeo(true);
+      toast.success(t('vendor.locationSet'));
+    }
+  }
   const [form, setForm] = useState({
     name: shop.name || '',
     bio: shop.bio || '',
@@ -96,6 +116,10 @@ export default function VendorShop() {
             {(id) => <TextInput id={id} type="number" inputMode="numeric" value={form.delivery_fee_fcfa} onChange={(e) => setForm({ ...form, delivery_fee_fcfa: e.target.value })} />}
           </Field>
         )}
+        <button type="button" onClick={useMyLocation} disabled={geoBusy} className="btn-secondary">
+          <IconCurrentLocation size={18} className={geoBusy ? 'animate-spin' : ''} />
+          {hasGeo ? t('vendor.locationUpdate') : t('vendor.locationSetBtn')}
+        </button>
         <Link to={`/boutique/${shop.slug}`} className="btn-ghost inline-flex"><IconExternalLink size={18} /> {t('vendor.previewShop')}</Link>
       </div>
       <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">

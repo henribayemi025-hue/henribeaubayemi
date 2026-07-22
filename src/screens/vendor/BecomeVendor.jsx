@@ -12,6 +12,7 @@ import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
 import { CATEGORIES } from '../../lib/categories';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
+import { getPosition } from '../../lib/geo';
 
 const empty = {
   shop_name: '', country: 'CM', city: '', categories: [],
@@ -63,6 +64,7 @@ export default function BecomeVendor() {
       // Create the shop immediately: the user becomes a vendor right away, even
       // without an ID. is_verified stays false until the 4 badge conditions hold.
       const slug = `${slugify(form.shop_name)}-${Math.random().toString(36).slice(2, 6)}`;
+      const pos = await getPosition(); // best-effort, for "Autour de moi"
       const { error: shopErr } = await supabase.from('shops').insert({
         owner_id: user.id,
         slug,
@@ -74,6 +76,8 @@ export default function BecomeVendor() {
         whatsapp: form.whatsapp || form.phone || null,
         avatar_url: form.avatar_url,
         banner_url: form.banner_url,
+        lat: pos?.lat ?? null,
+        lng: pos?.lng ?? null,
       });
       if (shopErr) throw shopErr;
       await supabase.from('profiles').update({ is_vendor: true }).eq('id', user.id);

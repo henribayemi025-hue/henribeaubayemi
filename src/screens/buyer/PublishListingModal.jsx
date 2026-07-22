@@ -9,6 +9,7 @@ import { Button } from '../../components/Button';
 import { Field, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { CATEGORIES } from '../../lib/categories';
+import { getPosition } from '../../lib/geo';
 
 export function PublishListingModal({ open, onClose, onDone }) {
   const { t } = useTranslation();
@@ -24,6 +25,8 @@ export function PublishListingModal({ open, onClose, onDone }) {
   async function submit() {
     if (!description.trim()) return;
     setBusy(true);
+    // Best-effort geolocation so the listing shows up in "Autour de moi".
+    const pos = await getPosition();
     const { error } = await supabase.from('near_you_listings').insert({
       user_id: user.id,
       type,
@@ -31,6 +34,8 @@ export function PublishListingModal({ open, onClose, onDone }) {
       description: description.trim(),
       photo_url: photo,
       country,
+      lat: pos?.lat ?? null,
+      lng: pos?.lng ?? null,
     });
     setBusy(false);
     if (error) {

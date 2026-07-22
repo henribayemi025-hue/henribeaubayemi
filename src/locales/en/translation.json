@@ -198,7 +198,9 @@
     "overrideLocation": "Change my location",
     "publish": "Post",
     "published": "Listing posted",
-    "openChat": "Contact"
+    "openChat": "Contact",
+    "aroundMe": "Around me",
+    "locationDenied": "Location unavailable or denied."
   },
   "profile": {
     "title": "Profile",
@@ -318,7 +320,10 @@
     "shopCategories": "Categories",
     "previewShop": "Preview public shop",
     "shopSaved": "Shop updated",
-    "noShopYet": "You don't have an active shop yet."
+    "noShopYet": "You don't have an active shop yet.",
+    "locationSet": "Location saved.",
+    "locationSetBtn": "Set my shop location",
+    "locationUpdate": "Update my location"
   },
   "orderStatus": {
     "new": "New",

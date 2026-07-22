@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled } from '@tabler/icons-react';
+import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
 import { useUI } from '../../hooks/useUI';
+import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { SmartImage } from '../../components/SmartImage';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
@@ -16,6 +17,7 @@ import { PublishListingModal } from './PublishListingModal';
 import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
+import { getPosition, distanceKm } from '../../lib/geo';
 
 export default function NearYou() {
   const { t, i18n } = useTranslation();
@@ -23,9 +25,41 @@ export default function NearYou() {
   const { user } = useAuth();
   const { country, setCountry } = useSettings();
   const { requireLogin } = useUI();
+  const toast = useToast();
   const [tab, setTab] = useState('shops');
   const [publishOpen, setPublishOpen] = useState(false);
   const [radius, setRadius] = useState('country');
+  const [userPos, setUserPos] = useState(null);
+  const [locating, setLocating] = useState(false);
+
+  async function locateMe() {
+    if (userPos) {
+      setUserPos(null);
+      return;
+    }
+    setLocating(true);
+    const pos = await getPosition();
+    setLocating(false);
+    if (pos) {
+      setUserPos(pos);
+      setRadius('all'); // "around me" spans countries, sorted by real distance
+    } else {
+      toast.error(t('nearYou.locationDenied'));
+    }
+  }
+
+  // Attach real distance + sort nearest-first when a position is known.
+  function byDistance(items) {
+    if (!userPos) return items;
+    return items
+      .map((x) => ({ ...x, _km: distanceKm(userPos, { lat: x.lat, lng: x.lng }) }))
+      .sort((a, b) => {
+        if (a._km == null && b._km == null) return 0;
+        if (a._km == null) return 1;
+        if (b._km == null) return -1;
+        return a._km - b._km;
+      });
+  }
 
   const { data, loading, error, retry } = useAsync(async () => {
     const shopsQuery = supabase.from('shops').select('*').eq('status', 'active').order('followers_count', { ascending: false }).limit(40);
@@ -68,15 +102,24 @@ export default function NearYou() {
     <div className="pb-20">
       <AppHeader title={t('nav.nearYou')} />
       <div className="flex items-center gap-2 px-4 pt-3">
+        <button
+          onClick={locateMe}
+          className={`chip shrink-0 ${userPos ? 'chip-active' : 'border-teal text-teal'}`}
+          aria-pressed={!!userPos}
+        >
+          <IconCurrentLocation size={14} className={locating ? 'animate-spin' : ''} />
+          {t('nearYou.aroundMe')}
+        </button>
         <select
           value={country || ''}
-          onChange={(e) => setCountry(e.target.value)}
-          className="input h-9 w-auto flex-1 py-1 text-caption"
+          onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
+          disabled={!!userPos}
+          className="input h-9 w-auto flex-1 py-1 text-caption disabled:opacity-50"
           aria-label={t('nearYou.overrideLocation')}
         >
           {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
         </select>
-        {tab === 'shops' && (
+        {tab === 'shops' && !userPos && (
           <button onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))} className="chip text-teal">
             {radius === 'country' ? t('nearYou.broaden') : countryLabel(country, i18n.language)}
           </button>
@@ -100,7 +143,7 @@ export default function NearYou() {
           <EmptyState icon={IconMapPinOff} title={t('nearYou.noShops')} action={<Button variant="secondary" onClick={() => setRadius('all')}>{t('nearYou.broaden')}</Button>} />
         ) : (
           <ul className="divide-y divide-hairline">
-            {data.shops.map((s) => (
+            {byDistance(data.shops).map((s) => (
               <li key={s.id}>
                 <button onClick={() => navigate(`/boutique/${s.slug}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
                   <SmartImage src={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-12 w-12" rounded="rounded-full" />
@@ -108,6 +151,7 @@ export default function NearYou() {
                     <p className="flex items-center gap-1 text-body font-semibold text-ink">{s.name} {s.is_verified && <VerifiedBadge size={14} />}</p>
                     <p className="flex items-center gap-1 text-caption text-muted"><IconStarFilled size={12} className="text-brass" />{Number(s.rating || 0).toFixed(1)} · {[s.city, countryLabel(s.country, i18n.language)].filter(Boolean).join(', ')}</p>
                   </div>
+                  {s._km != null && <span className="shrink-0 text-caption font-semibold text-teal">{s._km} km</span>}
                 </button>
               </li>
             ))}
@@ -119,13 +163,16 @@ export default function NearYou() {
         <EmptyState icon={IconBuildingStore} title={t('nearYou.noListings')} />
       ) : (
         <ul className="space-y-3 p-4">
-          {data.listings.map((l) => (
+          {byDistance(data.listings).map((l) => (
             <li key={l.id} className="card">
               <div className="flex items-center justify-between">
                 <span className={`chip ${l.type === 'cherche' ? 'chip-active' : 'text-brass border-brass'}`}>
                   {t(l.type === 'cherche' ? 'nearYou.iLookFor' : 'nearYou.iOffer')}
                 </span>
-                <span className="text-caption text-muted">{timeAgo(l.created_at, i18n.language)}</span>
+                <span className="text-caption text-muted">
+                  {l._km != null && <span className="mr-1 font-semibold text-teal">{l._km} km ·</span>}
+                  {timeAgo(l.created_at, i18n.language)}
+                </span>
               </div>
               {l.photo_url && <SmartImage src={storageUrl('listings', l.photo_url)} alt="" className="mt-2 h-40 w-full rounded-input" />}
               <p className="mt-2 text-body text-ink">{l.description}</p>
