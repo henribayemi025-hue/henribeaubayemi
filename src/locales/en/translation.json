@@ -163,7 +163,8 @@
     "delivered": "Delivered",
     "attachImage": "Attach an image",
     "empty": "Start the conversation with a first message.",
-    "quoteIntro": "Hello, I'd like to request a quote."
+    "quoteIntro": "Hello, I'd like to request a quote.",
+    "ownShop": "This is your own shop."
   },
   "cart": {
     "title": "Cart",
@@ -280,7 +281,7 @@
     "editProduct": "Edit product",
     "newProduct": "New product",
     "productName": "Product name",
-    "productPrice": "Price (FCFA)",
+    "productPrice": "Price",
     "productStock": "Stock quantity",
     "productCategory": "Category",
     "productDescription": "Description",

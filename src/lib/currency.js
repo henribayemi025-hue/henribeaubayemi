@@ -31,6 +31,12 @@ export function convertFromFcfa(amountFcfa, currency) {
   return (Number(amountFcfa) || 0) * rate;
 }
 
+/** Convert an amount expressed in `currency` back into canonical FCFA (integer). */
+export function toFcfa(amount, currency) {
+  const rate = RATES[currency] ?? 1;
+  return Math.round((Number(amount) || 0) / rate);
+}
+
 /** Format an FCFA amount into a localized currency string for display. */
 export function formatPrice(amountFcfa, currency = 'FCFA', locale = 'fr') {
   const value = convertFromFcfa(amountFcfa, currency);

@@ -60,7 +60,8 @@ export default function ProductDetail() {
       const convId = await getOrCreateConversation(user.id, data.product.shops.id, data.product.id);
       navigate(`/chat/${convId}`);
     } catch (e) {
-      toast.error(e.message);
+      if (e.code === 'own_shop') toast.info(t('chat.ownShop'));
+      else toast.error(e.message);
     } finally {
       setStarting(false);
     }

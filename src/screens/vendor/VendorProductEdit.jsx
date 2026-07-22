@@ -10,6 +10,8 @@ import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
 import { CATEGORIES } from '../../lib/categories';
+import { currencyForCountry } from '../../lib/currency';
+import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
 const blank = { name: '', price_fcfa: '', description: '', category: 'mode', stock: '1', images: [] };
 
@@ -20,6 +22,9 @@ export default function VendorProductEdit() {
   const navigate = useNavigate();
   const toast = useToast();
   const isNew = id === 'new';
+  // Vendors enter prices in their shop's own currency (France → EUR, Cameroun →
+  // FCFA…). We store canonically in FCFA and convert on the way in/out.
+  const shopCurrency = currencyForCountry(shop.country);
   const [form, setForm] = useState(blank);
   const [loading, setLoading] = useState(!isNew);
   const [busy, setBusy] = useState(false);
@@ -28,10 +33,18 @@ export default function VendorProductEdit() {
   useEffect(() => {
     if (isNew) return;
     supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data }) => {
-      if (data) setForm({ ...data, price_fcfa: String(data.price_fcfa), stock: String(data.stock ?? 0), images: data.images || [] });
+      if (data) {
+        const shown = convertFromFcfa(data.price_fcfa, shopCurrency);
+        setForm({
+          ...data,
+          price_fcfa: String(shopCurrency === 'FCFA' ? Math.round(shown) : Number(shown.toFixed(2))),
+          stock: String(data.stock ?? 0),
+          images: data.images || [],
+        });
+      }
       setLoading(false);
     });
-  }, [id, isNew]);
+  }, [id, isNew, shopCurrency]);
 
   function validate() {
     const e = {};
@@ -47,7 +60,7 @@ export default function VendorProductEdit() {
     const payload = {
       shop_id: shop.id,
       name: form.name.trim(),
-      price_fcfa: Math.round(Number(form.price_fcfa)),
+      price_fcfa: toFcfa(Number(form.price_fcfa), shopCurrency),
       description: form.description.trim() || null,
       category: form.category,
       stock: Math.max(0, Math.round(Number(form.stock) || 0)),
@@ -108,8 +121,8 @@ export default function VendorProductEdit() {
         <Field label={t('vendor.productName')} required error={errors.name}>
           {(fid) => <TextInput id={fid} value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
         </Field>
-        <Field label={t('vendor.productPrice')} required error={errors.price}>
-          {(fid) => <TextInput id={fid} type="number" inputMode="numeric" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
+        <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
+          {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
         </Field>
         <Field label={t('vendor.productCategory')}>
           {(fid) => (

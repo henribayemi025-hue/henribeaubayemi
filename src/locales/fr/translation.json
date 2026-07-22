@@ -163,7 +163,8 @@
     "delivered": "Distribué",
     "attachImage": "Joindre une image",
     "empty": "Démarre la conversation avec un premier message.",
-    "quoteIntro": "Bonjour, je souhaite demander un devis."
+    "quoteIntro": "Bonjour, je souhaite demander un devis.",
+    "ownShop": "C'est ta propre boutique."
   },
   "cart": {
     "title": "Panier",
@@ -280,7 +281,7 @@
     "editProduct": "Modifier le produit",
     "newProduct": "Nouveau produit",
     "productName": "Nom du produit",
-    "productPrice": "Prix (FCFA)",
+    "productPrice": "Prix",
     "productStock": "Quantité en stock",
     "productCategory": "Catégorie",
     "productDescription": "Description",

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessageOff } from '@tabler/icons-react';
@@ -29,6 +30,18 @@ export function ConversationList({ vendor = false }) {
     if (err) throw err;
     return convs || [];
   }, [user, vendor]);
+
+  // Live-refresh the list when a conversation changes (new/updated message).
+  useEffect(() => {
+    if (!user) return undefined;
+    const channel = supabase
+      .channel(`inbox-${vendor ? 'v' : 'b'}-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => retry())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, vendor, retry]);
 
   const base = vendor ? '/vendor/messages' : '/chat';
 

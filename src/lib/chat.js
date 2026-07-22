@@ -1,7 +1,14 @@
 import { supabase } from './supabase';
 
 // Get the existing buyer<->shop conversation or create one. Returns the id.
+// Throws 'own_shop' if the user is the shop owner (you can't message yourself).
 export async function getOrCreateConversation(buyerId, shopId, productId = null) {
+  const { data: owner } = await supabase.from('shops').select('owner_id').eq('id', shopId).maybeSingle();
+  if (owner?.owner_id === buyerId) {
+    const err = new Error('own_shop');
+    err.code = 'own_shop';
+    throw err;
+  }
   const { data: existing } = await supabase
     .from('conversations')
     .select('id')

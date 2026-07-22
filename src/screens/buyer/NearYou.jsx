@@ -56,8 +56,12 @@ export default function NearYou() {
     // shop when they have one, otherwise there's no chat entry point.
     const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', listing.user_id).maybeSingle();
     if (!shop) return;
-    const convId = await getOrCreateConversation(user.id, shop.id);
-    navigate(`/chat/${convId}`);
+    try {
+      const convId = await getOrCreateConversation(user.id, shop.id);
+      navigate(`/chat/${convId}`);
+    } catch {
+      /* own listing/shop — nothing to open */
+    }
   }
 
   return (

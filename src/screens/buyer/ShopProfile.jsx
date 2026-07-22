@@ -97,8 +97,13 @@ export default function ShopProfile() {
 
   async function contact() {
     if (!user) return requireLogin();
-    const convId = await getOrCreateConversation(user.id, data.shop.id);
-    navigate(`/chat/${convId}`);
+    try {
+      const convId = await getOrCreateConversation(user.id, data.shop.id);
+      navigate(`/chat/${convId}`);
+    } catch (e) {
+      if (e.code === 'own_shop') toast.info(t('chat.ownShop'));
+      else toast.error(e.message);
+    }
   }
 
   if (loading) {
