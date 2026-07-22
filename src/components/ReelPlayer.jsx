@@ -78,7 +78,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         {muted ? <IconVolumeOff size={20} /> : <IconVolume size={20} />}
       </button>
 
-      <div className="absolute bottom-24 right-3 flex flex-col items-center gap-5 text-white">
+      <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-5 text-white">
         <button onClick={toggleLike} className="flex flex-col items-center" aria-label={t('fin.like')}>
           {liked ? <IconHeartFilled size={30} className="text-danger" /> : <IconHeart size={30} />}
           <span className="text-[11px]">{likes}</span>
@@ -92,7 +92,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         </button>
       </div>
 
-      <div className="absolute inset-x-0 bottom-20 px-4 text-white">
+      <div className="absolute inset-x-0 bottom-20 z-10 px-4 pr-20 text-white">
         <Link to={`/boutique/${reel.shops?.slug}`} className="flex items-center gap-2">
           <img
             src={reel.shops?.avatar_url ? storageUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
