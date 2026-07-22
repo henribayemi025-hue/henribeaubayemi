@@ -16,26 +16,31 @@
 - Build env vars set: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - `netlify.toml` in repo (build `npm run build`, publish `dist`, SPA redirects)
 
-## Final step — connect the repo so Netlify builds it (1 minute)
+## Final step — your only manual action
 
-The automated code upload could not run from the build environment (its egress
-policy blocks `api.netlify.com`). Trigger the first build one of these ways:
+The build environment's egress policy blocks `api.netlify.com`, so the deploy
+runs from **GitHub Actions** instead (`.github/workflows/deploy.yml`), whose
+runners have full network access. It builds and ships to the Netlify site on
+every push to `main` (and on manual dispatch).
 
-**Option A — connect GitHub (recommended, enables auto-deploy):**
-1. Netlify → project **finjaro** → *Project configuration → Build & deploy →
-   Link repository* → GitHub → `henribayemi025-hue/henribeaubayemi`.
-2. Production branch: `claude/finjaro-marketplace-build-xsripr` (or merge it to
-   `main` and use `main`).
-3. Build command `npm run build`, publish directory `dist` (already in
-   `netlify.toml`). Deploy.
+**You only need to add ONE repository secret:**
+1. Netlify → **User settings → Applications → Personal access tokens → New
+   access token** → copy it.
+2. GitHub repo → **Settings → Secrets and variables → Actions → New repository
+   secret** → name `NETLIFY_AUTH_TOKEN`, paste the token.
 
-**Option B — one-off CLI deploy from any normal machine:**
-```bash
-git clone <repo> && cd henribeaubayemi
-npm install
-npm run build
-npx netlify deploy --prod --dir=dist --site=7239e5ca-25b6-4b75-88c4-2adcf02a2d94
-```
+Then merge PR #2 to `main` (or run the **Deploy to Netlify** workflow via
+*Actions → Run workflow*). The site goes live at `https://finjaro.netlify.app`.
+
+### Alternatives (if you'd rather not use a token)
+- **Link the repo in Netlify UI:** project **finjaro** → *Build & deploy → Link
+  repository* → `henribayemi025-hue/henribeaubayemi`, production branch `main`,
+  build `npm run build`, publish `dist` (already in `netlify.toml`).
+- **One-off CLI deploy from any normal machine:**
+  ```bash
+  git clone <repo> && cd henribeaubayemi && npm install && npm run build
+  npx netlify deploy --prod --dir=dist --site=7239e5ca-25b6-4b75-88c4-2adcf02a2d94
+  ```
 
 ## Optional secrets (features degrade gracefully without them)
 
