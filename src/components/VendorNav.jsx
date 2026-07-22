@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconLayoutDashboard, IconLayoutDashboardFilled,
@@ -15,6 +15,9 @@ const items = [
 
 export function VendorNav() {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
+  // Hide the tab bar inside a message thread so the input sits on the keyboard.
+  if (pathname.startsWith('/vendor/messages/')) return null;
   return (
     <nav className="flex items-stretch border-t border-hairline bg-white">
       {items.map((it) => (

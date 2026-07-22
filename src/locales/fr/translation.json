@@ -229,6 +229,12 @@
     "viewProduct": "Voir le produit",
     "loadError": "Impossible de charger les reels."
   },
+  "reel": {
+    "commentsTitle": "Commentaires",
+    "commentPlaceholder": "Ajoute un commentaire…",
+    "noComments": "Aucun commentaire. Sois le premier !",
+    "postComment": "Publier"
+  },
   "inbox": {
     "title": "Messages",
     "empty": "Aucun message.",

@@ -229,6 +229,12 @@
     "viewProduct": "View product",
     "loadError": "Couldn't load reels."
   },
+  "reel": {
+    "commentsTitle": "Comments",
+    "commentPlaceholder": "Add a comment…",
+    "noComments": "No comments yet. Be the first!",
+    "postComment": "Post"
+  },
   "inbox": {
     "title": "Messages",
     "empty": "No messages yet.",

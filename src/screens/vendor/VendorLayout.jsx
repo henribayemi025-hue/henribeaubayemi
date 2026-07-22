@@ -5,12 +5,14 @@ import { SuspendedNotice } from '../../components/SuspendedNotice';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
 import { Spinner } from '../../components/Spinner';
+import { useViewportHeight } from '../../hooks/useViewportHeight';
 
 // Vendor space is only reachable by approved vendors (owns a shop).
-// Same fixed app-shell as the buyer side (see BuyerLayout).
+// Same fixed, keyboard-aware app-shell as the buyer side (see BuyerLayout).
 export function VendorLayout() {
   const { profile } = useAuth();
   const { loading, shop } = useVendorStatus();
+  useViewportHeight();
 
   if (profile?.is_suspended) return <SuspendedNotice />;
   if (loading) {
@@ -24,7 +26,10 @@ export function VendorLayout() {
 
   return (
     <div className="md:bg-[#F5F5F5]">
-      <div className="relative mx-auto flex h-[100dvh] max-w-app flex-col overflow-hidden bg-white">
+      <div
+        className="relative mx-auto flex max-w-app flex-col overflow-hidden bg-white"
+        style={{ height: 'var(--app-height, 100dvh)' }}
+      >
         <main className="flex-1 overflow-y-auto overscroll-contain">
           <Outlet context={{ shop }} />
         </main>

@@ -79,7 +79,7 @@ export default function Search() {
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('search.placeholder')}
             aria-label={t('search.placeholder')}
-            className="w-full bg-transparent py-2.5 text-body text-ink placeholder:text-muted focus:outline-none"
+            className="w-full bg-transparent py-2.5 text-[16px] text-ink placeholder:text-muted focus:outline-none"
           />
         </div>
       </header>

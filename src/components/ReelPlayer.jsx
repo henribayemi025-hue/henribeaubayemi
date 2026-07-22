@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconTag } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
-import { getOrCreateConversation } from '../lib/chat';
+import { ReelCommentsSheet } from './ReelCommentsSheet';
+import { track } from '../lib/track';
 
 // One full-screen reel. Autoplays when >60% visible; muted by default.
 export function ReelPlayer({ reel, muted, onToggleMute, active }) {
@@ -14,10 +15,11 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
   const { user } = useAuth();
   const { requireLogin } = useUI();
   const toast = useToast();
-  const navigate = useNavigate();
   const videoRef = useRef(null);
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(reel.likes || 0);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState(reel.comments || 0);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -55,10 +57,9 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     try { await navigator.clipboard.writeText(url); toast.success(t('common.shareCopied')); } catch { toast.error(t('errors.generic')); }
   }
 
-  async function comment() {
-    if (!user) return requireLogin();
-    const convId = await getOrCreateConversation(user.id, reel.shop_id, reel.product_id);
-    navigate(`/chat/${convId}`);
+  function openComments() {
+    setCommentsOpen(true);
+    track('comment', reel.id);
   }
 
   return (
@@ -82,9 +83,9 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
           {liked ? <IconHeartFilled size={30} className="text-danger" /> : <IconHeart size={30} />}
           <span className="text-[11px]">{likes}</span>
         </button>
-        <button onClick={comment} className="flex flex-col items-center" aria-label={t('fin.comment')}>
+        <button onClick={openComments} className="flex flex-col items-center" aria-label={t('fin.comment')}>
           <IconMessageCircle size={30} />
-          <span className="text-[11px]">{reel.comments || 0}</span>
+          <span className="text-[11px]">{commentCount}</span>
         </button>
         <button onClick={share} className="flex flex-col items-center" aria-label={t('common.share')}>
           <IconShare3 size={30} />
@@ -107,6 +108,13 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
           </Link>
         )}
       </div>
+
+      <ReelCommentsSheet
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        reelId={reel.id}
+        onAdded={() => setCommentCount((n) => n + 1)}
+      />
     </div>
   );
 }

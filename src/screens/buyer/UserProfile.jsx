@@ -69,13 +69,13 @@ export default function UserProfile() {
           {status === 'approved' ? (
             <button onClick={() => navigate('/switch/to-vendor')} className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3.5 text-left text-body text-teal">
               <IconSwitchHorizontal size={22} />
-              <span className="flex-1 font-semibold">🔄 {t('profile.switchToVendor')}</span>
+              <span className="flex-1 font-semibold">{t('profile.switchToVendor')}</span>
               <IconChevronRight size={18} className="text-hairline" />
             </button>
           ) : status === 'pending' ? (
             <div className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-muted">
               <IconClockHour4 size={22} />
-              <span className="flex-1">⏳ {t('profile.vendorPending')}</span>
+              <span className="flex-1">{t('profile.vendorPending')}</span>
             </div>
           ) : (
             <Link to="/become-vendor" className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-ink">

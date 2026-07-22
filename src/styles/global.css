@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body {
+    /* Prevent any horizontal drift/clipping of floating elements. */
+    overflow-x: hidden;
+  }
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
@@ -10,6 +15,13 @@
   body {
     @apply bg-base text-ink font-sans text-body antialiased;
     margin: 0;
+  }
+  /* Form controls must be >=16px so iOS Safari never auto-zooms on focus
+     (that zoom is what made the app "shift left/right" while typing). */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
   /* Accessibility: always-visible focus ring on interactive elements. */
   a:focus-visible,
@@ -41,7 +53,7 @@
     @apply rounded-card border border-hairline bg-white p-4 md:shadow-sm;
   }
   .input {
-    @apply block w-full rounded-input border border-hairline bg-white px-3 py-3 text-body text-ink placeholder:text-muted focus:border-teal focus:outline-none;
+    @apply block w-full rounded-input border border-hairline bg-white px-3 py-3 text-[16px] text-ink placeholder:text-muted focus:border-teal focus:outline-none;
   }
   .label {
     @apply mb-1 block text-caption font-semibold text-ink;
