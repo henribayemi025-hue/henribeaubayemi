@@ -46,20 +46,26 @@
   (Supabase secret) + `VITE_VAPID_PUBLIC_KEY` (Netlify). On iPhone the user must
   "Add to Home Screen" first (Apple limitation). (todo — Lot 2)
 
-## Backlog — Lot 2 (next, needs on-device testing)
-1. **GPS Near You** — add `lat`/`lng` to `shops` + `near_you_listings`, capture
-   via `navigator.geolocation` on create, distance sort, map/list "around me".
-2. **Delivery by country** — vendor country drives checkout options + warning.
-3. **Real push notifications** — VAPID setup + verify `send-push` end to end.
+## Done — Cycle 5
+- **Finou Vision** — `finou-chat` (v2) accepts an image (data URL) → Gemini 2.5
+  Flash multimodal; returns a suggested category (trailing `CAT: <id>`). Finou
+  overlay: attach a downscaled photo, image bubble, "See <category>" shortcut.
+- **GPS Near You** — migration 0009 (`lat`/`lng` on shops + listings); `lib/geo.js`
+  (`getPosition`, haversine `distanceKm`); "Autour de moi" sorts by real distance;
+  location captured on shop/listing creation + settable from Ma Boutique.
+- **Delivery by country** — checkout shows a pickup-first warning in FCFA zones
+  (Cameroun etc.); delivery still gated by the vendor's `offers_delivery`.
 
-## Backlog — Finou AI in chat + vision (dedicated cycle)
-Beau's ask: type `@finou` in a chat to summon the AI (WhatsApp-style); ask any
-question; **send a photo** and say "find me this dress in blue" → Finou
-understands the image and searches/recommends products.
-- Upgrade Finou Chou to accept image attachments; use **Gemini 2.5 Flash vision**
-  (multimodal) via an edge function (evolve `finou-vision`).
-- Optionally allow `@finou` inside buyer↔vendor chats to insert an AI reply.
-- Ground answers in real catalogue (query `products` by category/keywords).
+## Backlog — remaining
+1. **Real push notifications** — needs VAPID keys. NOTE: Supabase edge-function
+   **secrets can't be set via MCP**, so either (a) Beau pastes `VAPID_KEYS` in
+   Supabase → Edge Functions → Secrets, or (b) store the keypair in a private
+   `app_config` table that `send-push` reads with the service role (assistant can
+   do this fully). Also set `VITE_VAPID_PUBLIC_KEY` in Netlify. iOS requires the
+   PWA be "Added to Home Screen" first. Verify `send-push` end to end on device.
+2. **`@finou` inside buyer↔vendor chats** — optional: detect `@finou` in a chat
+   and insert an AI reply (Finou Vision already covers photo search in the overlay).
+3. **Search UX** — make results feel inline as you type (Amazon-style).
 
 ## Open items to reproduce / re-test with Beau
 - Search UX: make it filter inline as you type (Amazon-style) + confirm the

@@ -269,6 +269,7 @@
     "invalidPhone": "Numéro de téléphone invalide.",
     "selectCountry": "Sélectionner un pays",
     "pickupNote": "Tu récupères ta commande directement en boutique.",
+    "pickupZoneWarning": "Dans ce pays, la livraison à domicile n'est pas encore partout disponible — le retrait en boutique est recommandé.",
     "empty": "Ton panier est vide, impossible de commander."
   },
   "vendor": {

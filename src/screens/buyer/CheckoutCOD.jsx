@@ -14,6 +14,7 @@ import { Price } from '../../components/Price';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
+import { currencyForCountry } from '../../lib/currency';
 import { pushNotify } from '../../lib/notify';
 
 export default function CheckoutCOD() {
@@ -37,12 +38,16 @@ export default function CheckoutCOD() {
   const { data: shop, loading, error, retry } = useAsync(async () => {
     const { data, error: err } = await supabase
       .from('shops')
-      .select('id, name, offers_delivery, delivery_fee_fcfa')
+      .select('id, name, offers_delivery, delivery_fee_fcfa, country')
       .eq('id', shopId)
       .maybeSingle();
     if (err) throw err;
     return data;
   }, [shopId]);
+
+  // Pickup-first zones (FCFA countries, e.g. Cameroun): home delivery isn't
+  // widespread yet, so we nudge toward shop pickup with a short warning.
+  const pickupFirst = shop ? currencyForCountry(shop.country) === 'FCFA' : false;
 
   const deliveryFee = method === 'delivery' ? shop?.delivery_fee_fcfa || 0 : 0;
   const total = subtotal + deliveryFee;
@@ -137,6 +142,9 @@ export default function CheckoutCOD() {
             )}
           </div>
           <p className="mt-2 text-caption text-muted">{method === 'pickup' ? t('checkout.pickupNote') : ''}</p>
+          {pickupFirst && (
+            <p className="mt-2 rounded-card bg-warning-bg p-3 text-caption text-warning">{t('checkout.pickupZoneWarning')}</p>
+          )}
         </section>
 
         {method === 'delivery' && (

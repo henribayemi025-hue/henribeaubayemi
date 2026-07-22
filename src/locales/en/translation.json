@@ -269,6 +269,7 @@
     "invalidPhone": "Invalid phone number.",
     "selectCountry": "Select a country",
     "pickupNote": "You'll collect your order directly at the shop.",
+    "pickupZoneWarning": "In this country, home delivery isn't available everywhere yet — shop pickup is recommended.",
     "empty": "Your cart is empty, nothing to order."
   },
   "vendor": {
