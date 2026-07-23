@@ -6,13 +6,21 @@
 > button, respect the "Lagune & Encre" design system, and always i18n FR+EN.
 
 ## Live facts
-- **Live app:** https://finjaro.netlify.app
+- **Live app (Cloudflare):** https://henribeaubayemi.henribayemi025.workers.dev
+  (migrated off Netlify 2026-07-23 — Netlify free credits were exhausted).
 - **Repo:** `henribayemi025-hue/henribeaubayemi` — work on branch
   `claude/finjaro-marketplace-build-xsripr`, then fast-forward `main` and push.
-- **Deploy:** GitHub Actions `.github/workflows/deploy.yml` builds + deploys to
-  Netlify on push to `main` (secret `NETLIFY_AUTH_TOKEN` is set). A PR merged via
-  the API does NOT trigger it — push to `main` from git does.
-- **Netlify site id:** `7239e5ca-25b6-4b75-88c4-2adcf02a2d94` (team `IFnou`).
+- **Deploy (Cloudflare Workers static assets):** the CF project `henribeaubayemi`
+  is a **Workers Build** connected to the git repo (account
+  `35889b325c205cf3966eabf6bca0f7f7`, subdomain `henribayemi025`). On push it runs
+  `npm run build` then `npx wrangler deploy`. `wrangler.toml` points `[assets]` at
+  `./dist` with `not_found_handling="single-page-application"` (SPA fallback).
+  Env vars (`VITE_SUPABASE_URL/ANON_KEY`, `VITE_VAPID_PUBLIC_KEY`, `VITE_STRIPE_PK`)
+  are set in the CF dashboard → Settings → Variables (NOT in git).
+  `public/_headers` sets cache policy. **Do NOT add `public/_redirects`** — CF
+  rejects `/* /index.html 200` as an infinite loop (code 100324); the SPA fallback
+  is `wrangler.toml`'s job now. The old Netlify + GitHub-Actions workflows were
+  removed. `netlify.toml` is dormant (ignored by CF).
 - **Supabase project:** `finjaro` = `bokwivwizghdlaedczbw` (URL
   https://bokwivwizghdlaedczbw.supabase.co). Migrations in `supabase/migrations`
   are **applied directly by the assistant via tooling** (Beau doesn't run SQL).

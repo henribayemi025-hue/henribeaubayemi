@@ -206,6 +206,10 @@
   "profile": {
     "title": "Profil",
     "editProfile": "Modifier le profil",
+    "statOrders": "Commandes",
+    "statFavorites": "Favoris",
+    "statMember": "Membre",
+    "vendorBadge": "Vendeur vérifié",
     "myOrders": "Mes commandes",
     "myFavorites": "Mes favoris",
     "settings": "Paramètres",
