@@ -24,14 +24,13 @@ export default function ProductDetail() {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { add } = useCart();
+  const { add, justAdded } = useCart();
   const { user } = useAuth();
   const { requireLogin } = useUI();
   const toast = useToast();
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [starting, setStarting] = useState(false);
-  const [added, setAdded] = useState(false);
 
   const [similar, setSimilar] = useState([]);
 
@@ -221,13 +220,13 @@ export default function ProductDetail() {
         ) : (
           <Button
             disabled={outOfStock}
-            onClick={() => {
-              add({ ...p, shop_name: shop.name });
-              setAdded(true);
-              setTimeout(() => setAdded(false), 1500);
-            }}
+            onClick={() => add({ ...p, shop_name: shop.name })}
           >
-            {outOfStock ? t('product.outOfStock') : added ? `✓ ${t('product.added')}` : t('product.addToCart')}
+            {outOfStock
+              ? t('product.outOfStock')
+              : justAdded?.item?.id === p.id
+                ? `✓ ${t('product.added')}`
+                : t('product.addToCart')}
           </Button>
         )}
       </div>
