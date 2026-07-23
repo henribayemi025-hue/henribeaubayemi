@@ -118,6 +118,7 @@
   },
   "product": {
     "addToCart": "Add to cart",
+    "added": "Added",
     "requestQuote": "Request a quote",
     "contactSeller": "Contact seller",
     "addedToCart": "Added to cart",
@@ -179,7 +180,11 @@
     "checkout": "Place order",
     "remove": "Remove",
     "item": "item",
-    "items": "items"
+    "items": "items",
+    "addedToCart": "Added to cart",
+    "viewCart": "View cart",
+    "itemsCount_one": "{{count}} item",
+    "itemsCount_other": "{{count}} items"
   },
   "nearYou": {
     "shops": "Shops",

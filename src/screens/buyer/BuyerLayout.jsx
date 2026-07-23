@@ -3,6 +3,7 @@ import { BuyerNav } from '../../components/BuyerNav';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
+import CartDrawer from '../../components/CartDrawer';
 import { useAuth } from '../../hooks/useAuth';
 import { useViewportHeight } from '../../hooks/useViewportHeight';
 
@@ -25,6 +26,7 @@ export function BuyerLayout() {
         <BuyerNav />
         <FinouChou />
         <LoginPrompt />
+        <CartDrawer />
       </div>
     </div>
   );

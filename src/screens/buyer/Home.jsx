@@ -50,7 +50,7 @@ export default function Home() {
           <Link to="/cart" aria-label={t('cart.title')} className="relative text-ink">
             <IconShoppingCart size={24} />
             {count > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
+              <span key={count} className="animate-like-pop absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
                 {count}
               </span>
             )}

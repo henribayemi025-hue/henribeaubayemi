@@ -118,6 +118,7 @@
   },
   "product": {
     "addToCart": "Ajouter au panier",
+    "added": "Ajouté",
     "requestQuote": "Demander un devis",
     "contactSeller": "Contacter le vendeur",
     "addedToCart": "Ajouté au panier",
@@ -179,7 +180,11 @@
     "checkout": "Passer commande",
     "remove": "Retirer",
     "item": "article",
-    "items": "articles"
+    "items": "articles",
+    "addedToCart": "Ajouté au panier",
+    "viewCart": "Voir le panier",
+    "itemsCount_one": "{{count}} article",
+    "itemsCount_other": "{{count}} articles"
   },
   "nearYou": {
     "shops": "Boutiques",

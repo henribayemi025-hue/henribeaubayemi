@@ -17,23 +17,27 @@ export function CartProvider({ children }) {
     localStorage.setItem(KEY, JSON.stringify(items));
   }, [items]);
 
+  // Drives the confirmation mini-drawer: bumps a nonce on every add so the
+  // drawer re-opens even when the same product is added twice.
+  const [justAdded, setJustAdded] = useState(null);
+  const dismissJustAdded = useCallback(() => setJustAdded(null), []);
+
   const add = useCallback((product, qty = 1) => {
+    const line = {
+      id: product.id,
+      name: product.name,
+      price_fcfa: product.price_fcfa,
+      image: product.images?.[0] || null,
+      shop_id: product.shop_id,
+      shop_name: product.shop_name || '',
+      qty,
+    };
     setItems((prev) => {
       const found = prev.find((i) => i.id === product.id);
       if (found) return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i));
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-          price_fcfa: product.price_fcfa,
-          image: product.images?.[0] || null,
-          shop_id: product.shop_id,
-          shop_name: product.shop_name || '',
-          qty,
-        },
-      ];
+      return [...prev, line];
     });
+    setJustAdded({ item: line, n: Date.now() });
   }, []);
 
   const setQty = useCallback((id, qty) => {
@@ -52,7 +56,7 @@ export function CartProvider({ children }) {
   const count = useMemo(() => items.reduce((n, i) => n + i.qty, 0), [items]);
   const subtotal = useMemo(() => items.reduce((n, i) => n + i.price_fcfa * i.qty, 0), [items]);
 
-  const value = { items, add, setQty, remove, clear, clearShop, count, subtotal };
+  const value = { items, add, setQty, remove, clear, clearShop, count, subtotal, justAdded, dismissJustAdded };
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
 

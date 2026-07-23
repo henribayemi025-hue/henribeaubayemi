@@ -31,6 +31,7 @@ export default function ProductDetail() {
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [starting, setStarting] = useState(false);
+  const [added, setAdded] = useState(false);
 
   const [similar, setSimilar] = useState([]);
 
@@ -222,10 +223,11 @@ export default function ProductDetail() {
             disabled={outOfStock}
             onClick={() => {
               add({ ...p, shop_name: shop.name });
-              toast.success(t('product.addedToCart'));
+              setAdded(true);
+              setTimeout(() => setAdded(false), 1500);
             }}
           >
-            {outOfStock ? t('product.outOfStock') : t('product.addToCart')}
+            {outOfStock ? t('product.outOfStock') : added ? `✓ ${t('product.added')}` : t('product.addToCart')}
           </Button>
         )}
       </div>
