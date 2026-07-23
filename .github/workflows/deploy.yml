@@ -35,6 +35,9 @@ jobs:
           VITE_SUPABASE_ANON_KEY: sb_publishable_UMnuj2_xJ7uZt76TspkBAA_EiAMg6zt
           # VAPID application server (public) key for Web Push. Public by design.
           VITE_VAPID_PUBLIC_KEY: BMd-k0e9sRisx9rduYzSe9TWZx64zvpqjMlIhJP9NtPnsp_fjDxkHKCs17J9emm1NJcd3J3z8pkVGJjx4W6392A
+          # Stripe publishable key (TEST). Public by design; enables the card
+          # button. Swap for the pk_live_ key when going live.
+          VITE_STRIPE_PK: pk_test_51TwH38PWe7shhIOrU0Yq13F8jLxvWF97JVsRi1u8FbuU1iF0o08h2cnqgg1xp5LhzqysUmouLTdtzcvgZ2FhdKGv00cUxChcFx
       - name: Guard — require deploy token
         run: |
           if [ -z "${{ secrets.NETLIFY_AUTH_TOKEN }}" ]; then

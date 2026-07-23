@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
           quantity: 1,
         },
       ],
-      success_url: `${origin}/orders?paid=${order.id}`,
+      success_url: `${origin}/profile/orders?paid=${order.id}`,
       cancel_url: `${origin}/checkout/${order.shop_id}?canceled=1`,
       client_reference_id: order.id,
       metadata: { order_id: order.id },

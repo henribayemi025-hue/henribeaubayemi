@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconShoppingBag } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Price } from '../../components/Price';
@@ -14,7 +16,19 @@ import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 export default function MyOrders() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const toast = useToast();
   const [reviewOrder, setReviewOrder] = useState(null);
+  const [params, setParams] = useSearchParams();
+
+  // Coming back from Stripe checkout: confirm success once and clean the URL.
+  useEffect(() => {
+    if (params.get('paid')) {
+      toast.success(t('checkout.paymentSuccess'));
+      params.delete('paid');
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: orders, error: err } = await supabase
