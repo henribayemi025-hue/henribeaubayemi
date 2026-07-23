@@ -10,7 +10,9 @@ import { ShopCard } from '../../components/ShopCard';
 import { ProductGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/states';
 
 async function fetchHome() {
-  const [{ data: products, error: pErr }, { data: shops, error: sErr }] = await Promise.all([
+  // allSettled so a transient hiccup on ONE section doesn't blank the whole
+  // home — we render whatever loaded. Only fail if both truly failed.
+  const [pRes, sRes] = await Promise.allSettled([
     supabase
       .from('products')
       .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name, slug)')
@@ -24,7 +26,9 @@ async function fetchHome() {
       .order('followers_count', { ascending: false })
       .limit(12),
   ]);
-  if (pErr || sErr) throw pErr || sErr;
+  const products = pRes.status === 'fulfilled' && !pRes.value.error ? pRes.value.data : null;
+  const shops = sRes.status === 'fulfilled' && !sRes.value.error ? sRes.value.data : null;
+  if (products === null && shops === null) throw new Error('home_failed');
   return {
     products: (products || []).map((p) => ({ ...p, shop_name: p.shops?.name })),
     shops: shops || [],

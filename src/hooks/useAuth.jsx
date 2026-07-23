@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthCtx = createContext(null);
@@ -7,8 +7,12 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Which user's profile we've already loaded — lets us skip redundant fetches
+  // on the frequent auth events (TOKEN_REFRESHED, focus) that don't change user.
+  const loadedFor = useRef(undefined);
 
   const loadProfile = useCallback(async (userId) => {
+    loadedFor.current = userId || null;
     if (!userId) {
       setProfile(null);
       return;
@@ -27,7 +31,10 @@ export function AuthProvider({ children }) {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
-      loadProfile(s?.user?.id);
+      const uid = s?.user?.id || null;
+      // Only refetch when the user actually changed (sign in/out/switch),
+      // not on token refreshes for the same user.
+      if (uid !== loadedFor.current) loadProfile(uid);
     });
     return () => {
       active = false;
