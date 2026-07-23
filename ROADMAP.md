@@ -18,6 +18,10 @@
   are **applied directly by the assistant via tooling** (Beau doesn't run SQL).
 - **Edge functions:** `finou-chat` (Gemini 2.5 Flash, text), `send-push`
   (Web Push), `finou-vision` (stub — for the vision feature below).
+- **Auto-update:** `public/sw.js` is network-first for navigations + skipWaiting/
+  claim; `main.jsx` calls `reg.update()` on focus and reloads once when a new
+  worker takes control. Users never need to delete/reinstall to get a new build.
+  Bump `SHELL_CACHE` in sw.js when you need to force an immediate SW refresh.
 - Stack: Vite + React + Tailwind, react-i18next, @tabler/icons-react.
 
 ## Done — Cycles 1→4
