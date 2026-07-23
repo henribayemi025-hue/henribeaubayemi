@@ -4,6 +4,8 @@
     "tagline": "Au-delà des rêves",
     "loading": "Chargement…",
     "retry": "Réessayer",
+    "increase": "Augmenter",
+    "decrease": "Diminuer",
     "cancel": "Annuler",
     "save": "Enregistrer",
     "saved": "Enregistré",
@@ -119,6 +121,8 @@
   "product": {
     "addToCart": "Ajouter au panier",
     "added": "Ajouté",
+    "inCart_one": "{{count}} au panier",
+    "inCart_other": "{{count}} au panier",
     "requestQuote": "Demander un devis",
     "contactSeller": "Contacter le vendeur",
     "addedToCart": "Ajouté au panier",

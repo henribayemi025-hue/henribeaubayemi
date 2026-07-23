@@ -4,6 +4,8 @@
     "tagline": "Beyond dreams",
     "loading": "Loading…",
     "retry": "Retry",
+    "increase": "Increase",
+    "decrease": "Decrease",
     "cancel": "Cancel",
     "save": "Save",
     "saved": "Saved",
@@ -119,6 +121,8 @@
   "product": {
     "addToCart": "Add to cart",
     "added": "Added",
+    "inCart_one": "{{count}} in cart",
+    "inCart_other": "{{count}} in cart",
     "requestQuote": "Request a quote",
     "contactSeller": "Contact seller",
     "addedToCart": "Added to cart",

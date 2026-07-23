@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessage, IconChevronLeft, IconArrowBackUp } from '@tabler/icons-react';
+import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useCart } from '../../hooks/useCart';
@@ -24,7 +24,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { add, justAdded } = useCart();
+  const { add, items, setQty, remove } = useCart();
   const { user } = useAuth();
   const { requireLogin } = useUI();
   const toast = useToast();
@@ -113,6 +113,7 @@ export default function ProductDetail() {
   const shop = p.shops;
   const quote = isQuoteOnly(p.category);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
+  const cartLine = items.find((i) => i.id === p.id);
   const images = (p.images || []).map((im) => storageUrl('products', im));
 
   return (
@@ -217,16 +218,30 @@ export default function ProductDetail() {
         </button>
         {quote ? (
           <Button onClick={startChat} loading={starting}>{t('product.requestQuote')}</Button>
+        ) : cartLine ? (
+          // Already in the cart → a stepper reflecting the real cart quantity,
+          // capped at available stock. No confusing transient "added" label.
+          <div className="flex flex-1 items-center justify-between rounded-[10px] border-[1.5px] border-teal px-2">
+            <button
+              onClick={() => (cartLine.qty <= 1 ? remove(p.id) : setQty(p.id, cartLine.qty - 1))}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-teal transition active:scale-90 active:bg-teal/10"
+              aria-label={cartLine.qty <= 1 ? t('cart.remove') : t('common.decrease')}
+            >
+              {cartLine.qty <= 1 ? <IconTrash size={20} /> : <IconMinus size={20} />}
+            </button>
+            <span className="text-body font-semibold text-ink">{t('product.inCart', { count: cartLine.qty })}</span>
+            <button
+              onClick={() => setQty(p.id, cartLine.qty + 1)}
+              disabled={cartLine.qty >= (p.stock ?? Infinity)}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-teal transition active:scale-90 active:bg-teal/10 disabled:opacity-30"
+              aria-label={t('common.increase')}
+            >
+              <IconPlus size={20} />
+            </button>
+          </div>
         ) : (
-          <Button
-            disabled={outOfStock}
-            onClick={() => add({ ...p, shop_name: shop.name })}
-          >
-            {outOfStock
-              ? t('product.outOfStock')
-              : justAdded?.item?.id === p.id
-                ? `✓ ${t('product.added')}`
-                : t('product.addToCart')}
+          <Button disabled={outOfStock} onClick={() => add({ ...p, shop_name: shop.name })}>
+            {outOfStock ? t('product.outOfStock') : t('product.addToCart')}
           </Button>
         )}
       </div>
