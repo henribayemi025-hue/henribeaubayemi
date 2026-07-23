@@ -13,6 +13,12 @@ self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
+// Let a page ask a waiting worker to activate now (belt-and-suspenders on top
+// of install-time skipWaiting): postMessage({ type: 'SKIP_WAITING' }).
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {

@@ -16,26 +16,35 @@ export default function Search() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const inputRef = useRef(null);
+  const abortRef = useRef(null);
   const [q, setQ] = useState('');
   const [state, setState] = useState({ loading: false, error: false, data: null });
 
   useEffect(() => {
     inputRef.current?.focus();
+    return () => abortRef.current?.abort();
   }, []);
 
   const runSearch = useCallback(
     async (term) => {
+      // Cancel any in-flight search so a slow response can't overwrite a newer one.
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const { signal } = controller;
+
       setState({ loading: true, error: false, data: null });
       try {
         const lower = term.toLowerCase();
         const cats = CATEGORIES.filter((c) => t(`categories.${c.id}`).toLowerCase().includes(lower));
         const [shopsRes, prodRes, followsRes] = await Promise.all([
-          supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').ilike('name', `%${term}%`).limit(10),
-          supabase.from('products').select('id,name,price_fcfa,images,category,stock,shop_id,shops(name)').eq('is_active', true).ilike('name', `%${term}%`).limit(12),
+          supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').ilike('name', `%${term}%`).limit(10).abortSignal(signal),
+          supabase.from('products').select('id,name,price_fcfa,images,category,stock,shop_id,shops(name)').eq('is_active', true).ilike('name', `%${term}%`).limit(12).abortSignal(signal),
           user
-            ? supabase.from('shop_follows').select('shops(id,slug,name,avatar_url,is_verified,rating)').eq('follower_id', user.id)
+            ? supabase.from('shop_follows').select('shops(id,slug,name,avatar_url,is_verified,rating)').eq('follower_id', user.id).abortSignal(signal)
             : Promise.resolve({ data: [] }),
         ]);
+        if (signal.aborted) return; // a newer search superseded this one
         if (shopsRes.error || prodRes.error) throw shopsRes.error || prodRes.error;
         const followed = (followsRes.data || [])
           .map((r) => r.shops)
@@ -43,7 +52,8 @@ export default function Search() {
         const products = (prodRes.data || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
         setState({ loading: false, error: false, data: { cats, shops: shopsRes.data || [], products, followed } });
         track('search', null, { q: term });
-      } catch {
+      } catch (err) {
+        if (signal.aborted || err?.name === 'AbortError') return; // stale, ignore
         setState({ loading: false, error: true, data: null });
       }
     },
