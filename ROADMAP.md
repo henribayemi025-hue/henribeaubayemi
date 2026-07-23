@@ -24,8 +24,12 @@
 - **Supabase project:** `finjaro` = `bokwivwizghdlaedczbw` (URL
   https://bokwivwizghdlaedczbw.supabase.co). Migrations in `supabase/migrations`
   are **applied directly by the assistant via tooling** (Beau doesn't run SQL).
-- **Edge functions:** `finou-chat` (Gemini 2.5 Flash, text), `send-push`
-  (Web Push), `finou-vision` (stub — for the vision feature below).
+- **Edge functions:** `finou-chat` (Gemini 2.5 Flash, text+vision), `send-push`
+  (Web Push), `finou-vision` (stub), `vendor-copilot` (Gemini → marketing
+  product description for the vendor product form; reuses the project-level
+  `GEMINI_API_KEY`, no new secret), `create-checkout` + `stripe-webhook`
+  (Stripe), `miroir-ia` (v6 — a Mirror-AI/try-on function already exists on the
+  project; inspect it before building the Mirror AI UI).
 - **Auto-update:** `public/sw.js` is network-first for navigations + skipWaiting/
   claim; `main.jsx` calls `reg.update()` on focus and reloads once when a new
   worker takes control. Users never need to delete/reinstall to get a new build.

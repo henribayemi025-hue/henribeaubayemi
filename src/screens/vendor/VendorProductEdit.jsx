@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconTrash, IconPhotoPlus } from '@tabler/icons-react';
+import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -20,7 +20,7 @@ const MAX_IMAGES = 10;
 export default function VendorProductEdit() {
   const { id } = useParams();
   const { shop } = useOutletContext();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -34,6 +34,36 @@ export default function VendorProductEdit() {
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState(0); // images still uploading
   const [errors, setErrors] = useState({});
+  const [genLoading, setGenLoading] = useState(false);
+  const [suggestion, setSuggestion] = useState(null); // AI draft, editable before use
+
+  // Vendor Copilot: ask Gemini (via the vendor-copilot edge fn) for a marketing
+  // description. Never auto-fills — the draft lands in an editable preview the
+  // vendor validates with "Utiliser".
+  async function generateDescription() {
+    if (!form.name.trim()) {
+      toast.info(t('vendor.copilotNeedName'));
+      return;
+    }
+    setGenLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vendor-copilot', {
+        body: {
+          name: form.name.trim(),
+          category: form.category,
+          price: form.price_fcfa,
+          currency: shopCurrency,
+          lang: i18n.language,
+        },
+      });
+      if (error || !data?.description) throw error || new Error('empty');
+      setSuggestion(data.description);
+    } catch {
+      toast.error(t('vendor.copilotError'));
+    } finally {
+      setGenLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (isNew) return;
@@ -204,9 +234,54 @@ export default function VendorProductEdit() {
         <Field label={t('vendor.productStock')}>
           {(fid) => <TextInput id={fid} type="number" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />}
         </Field>
-        <Field label={t('vendor.productDescription')}>
-          {(fid) => <TextArea id={fid} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />}
-        </Field>
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="label mb-0">{t('vendor.productDescription')}</span>
+            <button
+              type="button"
+              onClick={generateDescription}
+              disabled={genLoading}
+              className="btn-ghost text-caption text-teal disabled:opacity-50"
+            >
+              {genLoading ? <IconLoader2 size={16} className="animate-spin" /> : <IconSparkles size={16} />}
+              {t('vendor.copilotGenerate')}
+            </button>
+          </div>
+          <TextArea id="product-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+
+          {suggestion != null && (
+            <div className="mt-2 rounded-card border border-teal/40 bg-teal/5 p-3">
+              <p className="mb-1.5 flex items-center gap-1 text-caption font-semibold text-teal">
+                <IconSparkles size={14} /> {t('vendor.copilotSuggestion')}
+              </p>
+              <TextArea id="copilot-suggestion" value={suggestion} onChange={(e) => setSuggestion(e.target.value)} />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setForm((f) => ({ ...f, description: suggestion })); setSuggestion(null); }}
+                  className="rounded-input bg-teal px-3 py-1.5 text-caption font-semibold text-white transition active:scale-95"
+                >
+                  {t('vendor.copilotUse')}
+                </button>
+                <button
+                  type="button"
+                  onClick={generateDescription}
+                  disabled={genLoading}
+                  className="rounded-input border border-hairline px-3 py-1.5 text-caption font-semibold text-ink disabled:opacity-50"
+                >
+                  {t('vendor.copilotRegenerate')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuggestion(null)}
+                  className="rounded-input px-3 py-1.5 text-caption text-muted"
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
         <Button onClick={save} loading={busy} disabled={uploads > 0}>
