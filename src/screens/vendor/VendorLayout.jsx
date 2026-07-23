@@ -1,5 +1,6 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { VendorNav } from '../../components/VendorNav';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { LoginPrompt } from '../../components/LoginPrompt';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
 import { useAuth } from '../../hooks/useAuth';
@@ -12,6 +13,7 @@ import { useViewportHeight } from '../../hooks/useViewportHeight';
 export function VendorLayout() {
   const { profile } = useAuth();
   const { loading, shop } = useVendorStatus();
+  const { pathname } = useLocation();
   useViewportHeight();
 
   if (profile?.is_suspended) return <SuspendedNotice />;
@@ -31,7 +33,9 @@ export function VendorLayout() {
         style={{ paddingBottom: 'var(--kb, 0px)' }}
       >
         <main className="flex-1 overflow-y-auto overscroll-contain">
-          <Outlet context={{ shop }} />
+          <ErrorBoundary key={pathname}>
+            <Outlet context={{ shop }} />
+          </ErrorBoundary>
         </main>
         <VendorNav />
         <LoginPrompt />

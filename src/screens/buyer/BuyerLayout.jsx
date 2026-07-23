@@ -1,5 +1,6 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { BuyerNav } from '../../components/BuyerNav';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
@@ -12,6 +13,7 @@ import { useViewportHeight } from '../../hooks/useViewportHeight';
 // keyboard can't push the shell around. Desktop = centered 480px white column.
 export function BuyerLayout() {
   const { profile } = useAuth();
+  const { pathname } = useLocation();
   useViewportHeight();
   if (profile?.is_suspended) return <SuspendedNotice />;
   return (
@@ -21,7 +23,9 @@ export function BuyerLayout() {
         style={{ paddingBottom: 'var(--kb, 0px)' }}
       >
         <main className="flex-1 overflow-y-auto overscroll-contain">
-          <Outlet />
+          <ErrorBoundary key={pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
         <BuyerNav />
         <FinouChou />

@@ -486,6 +486,8 @@
   "errors": {
     "network": "Problème de connexion. Vérifie ta connexion internet.",
     "generic": "Quelque chose n'a pas fonctionné. Réessaie.",
+    "crashTitle": "Oups, un souci est survenu",
+    "crashHint": "Cette page a rencontré une erreur. Réessaie — le reste de l'app fonctionne toujours.",
     "notFound": "Introuvable."
   }
 }
