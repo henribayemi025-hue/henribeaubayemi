@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconCircleCheck, IconBuildingStore, IconTruckDelivery } from '@tabler/icons-react';
+import { IconCircleCheck, IconBuildingStore, IconTruckDelivery, IconCreditCard } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useCart } from '../../hooks/useCart';
@@ -33,7 +33,12 @@ export default function CheckoutCOD() {
   const [form, setForm] = useState({ name: '', phone: '', address: '', city: '', country: geoCountry || 'CM' });
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [payingCard, setPayingCard] = useState(false);
   const [placed, setPlaced] = useState(null);
+
+  // Card payment appears only once a Stripe key is configured for the build,
+  // so there's never a dead button. Cash-on-delivery is always available.
+  const stripeEnabled = !!import.meta.env.VITE_STRIPE_PK;
 
   const { data: shop, loading, error, retry } = useAsync(async () => {
     const { data, error: err } = await supabase
@@ -62,45 +67,73 @@ export default function CheckoutCOD() {
   }
   const valid = required.every((k) => form[k]) && (method === 'pickup' || phoneOk);
 
+  // Create the order + its items. Returns the order row, or null on failure.
+  // `payment_status` defaults to 'cod'; the card flow flips it via the edge fn.
+  async function placeOrder(paymentStatus) {
+    const { data: order, error: oErr } = await supabase
+      .from('orders')
+      .insert({
+        buyer_id: user.id,
+        shop_id: shopId,
+        status: 'new',
+        delivery_method: method,
+        subtotal_fcfa: subtotal,
+        delivery_fee_fcfa: deliveryFee,
+        total_fcfa: total,
+        payment_status: paymentStatus,
+        buyer_name: form.name || null,
+        buyer_phone: form.phone || null,
+        address: method === 'delivery' ? form.address : null,
+        city: method === 'delivery' ? form.city : null,
+        country: method === 'delivery' ? form.country : null,
+      })
+      .select('id, order_no, shop_id')
+      .single();
+    if (oErr) throw oErr;
+
+    await supabase.from('order_items').insert(
+      shopItems.map((it) => ({ order_id: order.id, product_id: it.id, name: it.name, price_fcfa: it.price_fcfa, qty: it.qty }))
+    );
+    return order;
+  }
+
+  async function notifyOwner(order) {
+    const { data: ownerRow } = await supabase.from('shops').select('owner_id').eq('id', shopId).maybeSingle();
+    if (ownerRow?.owner_id) {
+      pushNotify({ user_id: ownerRow.owner_id, title: t('notifications.orderReceived'), body: `#${order.order_no}`, url: '/vendor/orders' });
+    }
+  }
+
   async function submit() {
     setTouched({ name: true, phone: true, address: true, city: true, country: true });
     if (!valid) return;
     setSubmitting(true);
     try {
-      const { data: order, error: oErr } = await supabase
-        .from('orders')
-        .insert({
-          buyer_id: user.id,
-          shop_id: shopId,
-          status: 'new',
-          delivery_method: method,
-          subtotal_fcfa: subtotal,
-          delivery_fee_fcfa: deliveryFee,
-          total_fcfa: total,
-          buyer_name: form.name || null,
-          buyer_phone: form.phone || null,
-          address: method === 'delivery' ? form.address : null,
-          city: method === 'delivery' ? form.city : null,
-          country: method === 'delivery' ? form.country : null,
-        })
-        .select('id, order_no, shop_id')
-        .single();
-      if (oErr) throw oErr;
-
-      await supabase.from('order_items').insert(
-        shopItems.map((it) => ({ order_id: order.id, product_id: it.id, name: it.name, price_fcfa: it.price_fcfa, qty: it.qty }))
-      );
-
-      const { data: ownerRow } = await supabase.from('shops').select('owner_id').eq('id', shopId).maybeSingle();
-      if (ownerRow?.owner_id) {
-        pushNotify({ user_id: ownerRow.owner_id, title: t('notifications.orderReceived'), body: `#${order.order_no}`, url: '/vendor/orders' });
-      }
+      const order = await placeOrder('cod');
+      await notifyOwner(order);
       clearShop(shopId);
       setPlaced(order.order_no);
     } catch (e) {
       toast.error(e.message || t('errors.generic'));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function payByCard() {
+    setTouched({ name: true, phone: true, address: true, city: true, country: true });
+    if (!valid) return;
+    setPayingCard(true);
+    try {
+      const order = await placeOrder('unpaid');
+      const { data, error } = await supabase.functions.invoke('create-checkout', { body: { order_id: order.id } });
+      if (error || !data?.url) throw new Error(data?.error || t('errors.generic'));
+      await notifyOwner(order);
+      clearShop(shopId);
+      window.location.href = data.url; // Stripe hosted checkout
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+      setPayingCard(false);
     }
   }
 
@@ -197,8 +230,20 @@ export default function CheckoutCOD() {
         </section>
       </div>
 
-      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
-        <Button onClick={submit} loading={submitting}>{t('checkout.confirm')}</Button>
+      <div className="sticky bottom-0 z-30 space-y-2 border-t border-hairline bg-white p-3">
+        {stripeEnabled && (
+          <Button onClick={payByCard} loading={payingCard} disabled={submitting}>
+            <IconCreditCard size={20} /> {t('checkout.payByCard')}
+          </Button>
+        )}
+        <Button
+          variant={stripeEnabled ? 'secondary' : 'primary'}
+          onClick={submit}
+          loading={submitting}
+          disabled={payingCard}
+        >
+          {t('checkout.payOnDelivery')}
+        </Button>
       </div>
     </div>
   );

@@ -101,6 +101,29 @@
 - **Like "pop"** bounce on the reel heart (keyed remount + `finjaro-like-pop`,
   reduced-motion safe) and `active:scale-90` press feedback.
 
+## Payments (Cycle 7 — Stripe first, scaffolding LIVE, dormant until keys)
+- **DB:** migration 0011 adds `orders.payment_status` ('cod'|'unpaid'|'paid'|
+  'failed'|'refunded', default 'cod'), `payment_provider`, `payment_ref`,
+  `platform_fee_fcfa`, `paid_at`.
+- **Edge functions deployed:** `create-checkout` (verify_jwt=true — buyer creates
+  a Stripe Checkout Session for an order, returns hosted URL; charges EUR from
+  the FCFA total) and `stripe-webhook` (verify_jwt=false — verifies Stripe
+  signature, marks the order paid). Both read Stripe keys from the private
+  `app_config` row key `stripe` = `{ secret, publishable, webhook_secret }`.
+- **Frontend:** CheckoutCOD shows a "Payer par carte" button ONLY when
+  `VITE_STRIPE_PK` is set at build time (else hidden — COD unchanged, no dead
+  button). Card flow: create order (payment_status 'unpaid') → invoke
+  create-checkout → redirect to Stripe → webhook confirms → order 'paid'.
+- **TO GO LIVE (needs Beau):** (1) create a Stripe account; (2) give me
+  `pk_test_…` + `sk_test_…`; (3) I insert `app_config` key `stripe` and add
+  `VITE_STRIPE_PK` to deploy.yml; (4) set a webhook endpoint in Stripe →
+  `https://bokwivwizghdlaedczbw.supabase.co/functions/v1/stripe-webhook`, paste
+  its signing secret (`whsec_…`) into the `stripe` app_config value; (5) test
+  with Stripe test cards; (6) swap to live keys once Beau is auto-entrepreneur.
+- **Later:** Stripe Connect for automatic vendor payouts + the fixed platform
+  fee (application_fee); mobile-money aggregator (Fapshi/Notch Pay) for
+  Orange Money / MoMo in Cameroun.
+
 ## Backlog — remaining
 1. **Gamification leaderboard + reward** — a vendor ranking screen; decide the
    reward (Beau floated a paid tier ~200€ for top client-drivers). Points column

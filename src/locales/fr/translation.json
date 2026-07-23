@@ -271,7 +271,9 @@
     "selectCountry": "Sélectionner un pays",
     "pickupNote": "Tu récupères ta commande directement en boutique.",
     "pickupZoneWarning": "Dans ce pays, la livraison à domicile n'est pas encore partout disponible — le retrait en boutique est recommandé.",
-    "empty": "Ton panier est vide, impossible de commander."
+    "empty": "Ton panier est vide, impossible de commander.",
+    "payByCard": "Payer par carte",
+    "payOnDelivery": "Payer à la livraison"
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",

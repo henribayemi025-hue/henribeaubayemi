@@ -271,7 +271,9 @@
     "selectCountry": "Select a country",
     "pickupNote": "You'll collect your order directly at the shop.",
     "pickupZoneWarning": "In this country, home delivery isn't available everywhere yet — shop pickup is recommended.",
-    "empty": "Your cart is empty, nothing to order."
+    "empty": "Your cart is empty, nothing to order.",
+    "payByCard": "Pay by card",
+    "payOnDelivery": "Pay on delivery"
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
