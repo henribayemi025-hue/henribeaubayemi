@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// The Supabase project URL and the *publishable* anon key are public by design
+// (they ship in every client bundle and are protected by RLS). We hardcode them
+// as defaults so the app works even when the host doesn't inject VITE_* vars at
+// BUILD time — e.g. Cloudflare "Variables and secrets" are runtime-only, so a
+// build with no env would otherwise point the client at localhost and every
+// request would fail. An env var, when present at build time, still overrides.
+const url = import.meta.env.VITE_SUPABASE_URL || 'https://bokwivwizghdlaedczbw.supabase.co';
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_UMnuj2_xJ7uZt76TspkBAA_EiAMg6zt';
 
-// Fail loud in dev if env is missing, but never crash the render tree in prod.
-if (!url || !anonKey) {
-  // eslint-disable-next-line no-console
-  console.warn('[Finjaro] Supabase env vars missing — check VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.');
-}
-
-export const supabase = createClient(url || 'http://localhost', anonKey || 'anon', {
+export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

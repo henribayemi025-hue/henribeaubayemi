@@ -1,6 +1,10 @@
 import { supabase } from './supabase';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+// Public VAPID application-server key (public by design). Hardcoded default so
+// Web Push works even when the host doesn't inject VITE_* at build time.
+const VAPID_PUBLIC_KEY =
+  import.meta.env.VITE_VAPID_PUBLIC_KEY ||
+  'BMd-k0e9sRisx9rduYzSe9TWZx64zvpqjMlIhJP9NtPnsp_fjDxkHKCs17J9emm1NJcd3J3z8pkVGJjx4W6392A';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);

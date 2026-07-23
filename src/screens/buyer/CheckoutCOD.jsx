@@ -36,9 +36,13 @@ export default function CheckoutCOD() {
   const [payingCard, setPayingCard] = useState(false);
   const [placed, setPlaced] = useState(null);
 
-  // Card payment appears only once a Stripe key is configured for the build,
-  // so there's never a dead button. Cash-on-delivery is always available.
-  const stripeEnabled = !!import.meta.env.VITE_STRIPE_PK;
+  // Card payment appears only once a Stripe (publishable, public) key is set.
+  // Hardcoded test-key default so the button works even when the host doesn't
+  // inject VITE_* at build time; swap to pk_live_… to go live.
+  const stripeEnabled = !!(
+    import.meta.env.VITE_STRIPE_PK ||
+    'pk_test_51TwH38PWe7shhIOrU0Yq13F8jLxvWF97JVsRi1u8FbuU1iF0o08h2cnqgg1xp5LhzqysUmouLTdtzcvgZ2FhdKGv00cUxChcFx'
+  );
 
   const { data: shop, loading, error, retry } = useAsync(async () => {
     const { data, error: err } = await supabase
