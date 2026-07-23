@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconPhotoPlus } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
@@ -20,8 +21,10 @@ export default function VendorProductEdit() {
   const { id } = useParams();
   const { shop } = useOutletContext();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const multiRef = useRef(null);
   const isNew = id === 'new';
   // Vendors enter prices in their shop's own currency (France → EUR, Cameroun →
   // FCFA…). We store canonically in FCFA and convert on the way in/out.
@@ -113,6 +116,39 @@ export default function VendorProductEdit() {
     });
   }
 
+  // Pick many photos at once from the gallery and upload them in parallel.
+  // Uses allSettled so one bad file never blocks the others, and unique UUID
+  // names so two uploads can't collide.
+  async function onMultiFiles(e) {
+    const files = Array.from(e.target.files || []);
+    if (multiRef.current) multiRef.current.value = '';
+    if (!files.length) return;
+    const room = MAX_IMAGES - form.images.length;
+    if (room <= 0) {
+      toast.info(t('vendor.productImagesHint', { count: MAX_IMAGES }));
+      return;
+    }
+    const batch = files.slice(0, room);
+    setUploads((n) => n + batch.length);
+    try {
+      const results = await Promise.allSettled(
+        batch.map(async (file) => {
+          const ext = file.name.split('.').pop();
+          const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+          const { error } = await supabase.storage.from('products').upload(path, file, { upsert: false });
+          if (error) throw error;
+          return path;
+        })
+      );
+      const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+      const failed = results.length - ok.length;
+      if (ok.length) setForm((f) => ({ ...f, images: [...f.images, ...ok].slice(0, MAX_IMAGES) }));
+      if (failed) toast.error(t('errors.generic'));
+    } finally {
+      setUploads((n) => Math.max(0, n - batch.length));
+    }
+  }
+
   if (loading) return <div className="flex h-64 items-center justify-center"><Spinner /></div>;
 
   return (
@@ -124,7 +160,19 @@ export default function VendorProductEdit() {
       />
       <div className="space-y-4 p-4">
         <div>
-          <span className="label">{t('vendor.productImages')}</span>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="label mb-0">{t('vendor.productImages')}</span>
+            {form.images.length < MAX_IMAGES && (
+              <button
+                type="button"
+                onClick={() => multiRef.current?.click()}
+                className="btn-ghost text-caption"
+              >
+                <IconPhotoPlus size={18} /> {t('vendor.addPhotos')}
+              </button>
+            )}
+          </div>
+          <input ref={multiRef} type="file" accept="image/*" multiple className="hidden" onChange={onMultiFiles} />
           {/* Existing photos + one empty slot to add another, up to MAX_IMAGES. */}
           <div className="grid grid-cols-3 gap-2">
             {Array.from({ length: Math.min(form.images.length + 1, MAX_IMAGES) }).map((_, i) => (

@@ -329,7 +329,8 @@
     "imageStillUploading": "Image en cours d’envoi…",
     "sellerPoints": "Points vendeur",
     "sellerPointsHint": "+10 par commande livrée",
-    "productImagesHint": "Jusqu’à {{count}} photos"
+    "productImagesHint": "Jusqu’à {{count}} photos",
+    "addPhotos": "Ajouter des photos"
   },
   "orderStatus": {
     "new": "Nouvelle",
