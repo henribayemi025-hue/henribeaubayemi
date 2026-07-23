@@ -114,12 +114,18 @@
   `VITE_STRIPE_PK` is set at build time (else hidden — COD unchanged, no dead
   button). Card flow: create order (payment_status 'unpaid') → invoke
   create-checkout → redirect to Stripe → webhook confirms → order 'paid'.
-- **TO GO LIVE (needs Beau):** (1) create a Stripe account; (2) give me
-  `pk_test_…` + `sk_test_…`; (3) I insert `app_config` key `stripe` and add
-  `VITE_STRIPE_PK` to deploy.yml; (4) set a webhook endpoint in Stripe →
-  `https://bokwivwizghdlaedczbw.supabase.co/functions/v1/stripe-webhook`, paste
-  its signing secret (`whsec_…`) into the `stripe` app_config value; (5) test
-  with Stripe test cards; (6) swap to live keys once Beau is auto-entrepreneur.
+- **TEST MODE IS LIVE (done).** Stripe account `acct_1TwH38PWe7shhIOr` ("Finjaro").
+  `app_config.stripe` holds { publishable, secret (sk_test), webhook_secret,
+  webhook_id }. Test webhook `we_1TwHE1PWe7shhIOrPUtFfahI` →
+  `…/functions/v1/stripe-webhook`. `VITE_STRIPE_PK` (pk_test) is in deploy.yml so
+  the "Payer par carte" button is enabled. Validated: key works, Checkout session
+  creates, function boots. Test card 4242 4242 4242 4242, any future date/CVC.
+- **Also connected:** Stripe MCP (Beau authorized "Claude" on his account) — used
+  for inspection; the app itself uses the stored keys, not the MCP.
+- **TO GO LIVE later (needs Beau):** register auto-entrepreneur; then swap
+  `VITE_STRIPE_PK`→`pk_live_…` in deploy.yml and `app_config.stripe.secret`→
+  `sk_live_…`, and create a LIVE webhook (repeat the POST with the live key) →
+  store its `whsec_…`. Enabled the `http` (pg) extension for server-side calls.
 - **Later:** Stripe Connect for automatic vendor payouts + the fixed platform
   fee (application_fee); mobile-money aggregator (Fapshi/Notch Pay) for
   Orange Money / MoMo in Cameroun.
