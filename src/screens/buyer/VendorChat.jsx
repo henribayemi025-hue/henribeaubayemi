@@ -148,7 +148,7 @@ export default function VendorChat({ vendor = false }) {
         <ErrorState onRetry={load} />
       ) : (
         <>
-          <div ref={scroller} className="flex-1 space-y-2 overflow-y-auto p-4 pb-2">
+          <div ref={scroller} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-4 pb-2">
             <div className="mx-auto mb-3 max-w-xs rounded-card border border-hairline p-3 text-center">
               <SmartImage src={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null} alt={shop?.name} className="mx-auto h-12 w-12" rounded="rounded-full" />
               <p className="mt-2 text-caption text-muted">{t('chat.chattingWith', { name: shop?.name || '' })}</p>
@@ -181,7 +181,7 @@ export default function VendorChat({ vendor = false }) {
 
           <form
             onSubmit={(e) => { e.preventDefault(); send(input); }}
-            className="flex items-center gap-2 border-t border-hairline p-3"
+            className="flex shrink-0 items-center gap-2 border-t border-hairline bg-white p-3"
           >
             <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
               <IconPhoto size={24} />
