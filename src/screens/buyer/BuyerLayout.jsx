@@ -16,8 +16,8 @@ export function BuyerLayout() {
   return (
     <div className="md:bg-[#F5F5F5]">
       <div
-        className="fixed inset-x-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white"
-        style={{ top: 'var(--app-top, 0px)', height: 'var(--app-height, 100dvh)' }}
+        className="fixed inset-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white"
+        style={{ paddingBottom: 'var(--kb, 0px)' }}
       >
         <main className="flex-1 overflow-y-auto overscroll-contain">
           <Outlet />

@@ -65,10 +65,15 @@
   `deploy.yml` (public by design). To rotate keys: regenerate, update the
   `app_config` row via SQL AND the workflow env var. iOS still requires
   "Add to Home Screen" before the browser will grant push permission.
-- **Chat keyboard gap fixed for real** — the app-shell (Buyer+VendorLayout) is
-  now `position: fixed; top:0; inset-x:0` (was in-flow) so iOS Safari can't
-  scroll the document to "reveal" a focused input; combined with `--app-height`
-  the shell = the space above the keyboard, input pinned right on top of it.
+- **Chat keyboard — final approach: still shell + keyboard padding.** Chasing
+  `visualViewport.offsetTop` fought iOS's own scroll-into-view (Beau saw it jump
+  up then snap back). Now the shell is `fixed inset-0` (full height, never moves)
+  and `useViewportHeight` publishes `--kb` = keyboard height
+  (`innerHeight - visualViewport.height - offsetTop`); the shell adds
+  `padding-bottom:var(--kb)` which lifts the input above the keyboard. Because
+  the input is already visible, iOS has no reason to scroll → no fight. Same
+  padding applied to Finou + Modal bottom sheets. Verified headless: `--kb:300px`
+  lifts the bottom bar exactly 300px.
 - **Chat bubbles align WhatsApp-style** by `sender_id === user.id` (was the
   fragile `sender_role === role`, which inverted on the vendor side). Scroll to
   newest via an invisible end-anchor + `scrollIntoView`.

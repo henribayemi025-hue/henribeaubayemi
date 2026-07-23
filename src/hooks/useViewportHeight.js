@@ -1,17 +1,18 @@
 import { useEffect } from 'react';
 
-// Keeps the app shell locked to the *visible* viewport on iOS Safari.
+// Keyboard-aware layout for iOS Safari — the *non-fighting* approach.
 //
-// Two CSS vars are published on <html>:
-//   --app-height : the height available above the on-screen keyboard
-//   --app-top    : how far the visual viewport has been scrolled down
+// Earlier we shrank/re-pinned the shell to window.visualViewport (height +
+// offsetTop). The problem: chasing offsetTop fights iOS's own "scroll the
+// focused input into view", so the view oscillates (jumps up, snaps back).
 //
-// The second one is the piece that was missing: when the keyboard opens iOS
-// doesn't just shrink window.visualViewport, it also SCROLLS it (offsetTop > 0).
-// A `position: fixed; top: 0` shell is anchored to the layout viewport, so it
-// gets left behind — the header slides off the top and the input ends up
-// floating with a big gap above the keyboard. Re-pinning the shell to
-// offsetTop (via --app-top) makes it track the visible area exactly.
+// Instead we keep the shell perfectly still (fixed, full height) and publish
+// the on-screen keyboard's height as --kb. The shell adds that as padding at
+// the bottom, which lifts the message input above the keyboard. Because the
+// input is then already visible, iOS has no reason to scroll → no fight.
+//
+//   --kb         : height of the on-screen keyboard (0 when closed)
+//   --app-height : visible height above the keyboard (used by bottom sheets)
 export function useViewportHeight() {
   useEffect(() => {
     const vv = window.visualViewport;
@@ -20,10 +21,12 @@ export function useViewportHeight() {
     const apply = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        const h = vv ? vv.height : window.innerHeight;
-        const top = vv ? vv.offsetTop : 0;
-        root.style.setProperty('--app-height', `${Math.round(h)}px`);
-        root.style.setProperty('--app-top', `${Math.round(top)}px`);
+        const visible = vv ? vv.height : window.innerHeight;
+        const offset = vv ? vv.offsetTop : 0;
+        // Layout height minus what's visible = space the keyboard covers.
+        const kb = Math.max(0, Math.round(window.innerHeight - visible - offset));
+        root.style.setProperty('--kb', `${kb}px`);
+        root.style.setProperty('--app-height', `${Math.round(visible)}px`);
       });
     };
     apply();

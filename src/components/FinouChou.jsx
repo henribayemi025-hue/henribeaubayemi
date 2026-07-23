@@ -107,8 +107,8 @@ export function FinouChou() {
 
   return (
     <div
-      className="fixed inset-x-0 z-[95] flex items-end justify-center sm:items-center"
-      style={{ top: 'var(--app-top, 0px)', height: 'var(--app-height, 100dvh)' }}
+      className="fixed inset-0 z-[95] flex items-end justify-center sm:items-center"
+      style={{ paddingBottom: 'var(--kb, 0px)' }}
       role="dialog"
       aria-modal="true"
       aria-label={t('finou.title')}
