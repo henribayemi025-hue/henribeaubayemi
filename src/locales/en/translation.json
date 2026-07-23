@@ -201,6 +201,10 @@
     "published": "Listing posted",
     "openChat": "Contact",
     "aroundMe": "Around me",
+    "viewList": "List",
+    "viewMap": "Map",
+    "viewOnMap": "View",
+    "noGeoPoints": "No mapped points yet. Shops and listings will appear here once they have a location.",
     "locationDenied": "Location unavailable or denied."
   },
   "profile": {

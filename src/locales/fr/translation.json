@@ -201,6 +201,10 @@
     "published": "Annonce publiée",
     "openChat": "Contacter",
     "aroundMe": "Autour de moi",
+    "viewList": "Liste",
+    "viewMap": "Carte",
+    "viewOnMap": "Voir",
+    "noGeoPoints": "Aucun point géolocalisé pour l'instant. Les boutiques et annonces apparaîtront ici dès qu'elles auront une position.",
     "locationDenied": "Localisation indisponible ou refusée."
   },
   "profile": {

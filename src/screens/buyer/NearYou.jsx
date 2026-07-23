@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation } from '@tabler/icons-react';
+import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation, IconList, IconMap2 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -19,6 +19,9 @@ import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { getPosition, distanceKm } from '../../lib/geo';
 
+// Leaflet is heavy — only pull it in when the user opens the map view.
+const NearYouMap = lazy(() => import('../../components/NearYouMap'));
+
 export default function NearYou() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -27,6 +30,7 @@ export default function NearYou() {
   const { requireLogin } = useUI();
   const toast = useToast();
   const [tab, setTab] = useState('shops');
+  const [view, setView] = useState('list'); // 'list' | 'map'
   const [publishOpen, setPublishOpen] = useState(false);
   const [radius, setRadius] = useState('country');
   const [userPos, setUserPos] = useState(null);
@@ -134,10 +138,36 @@ export default function NearYou() {
         ))}
       </div>
 
+      {/* List / Map segmented control (Airbnb/Vinted style). */}
+      <div className="flex items-center justify-center px-4 pt-3">
+        <div className="inline-flex rounded-pill border border-hairline p-0.5">
+          {[['list', IconList, t('nearYou.viewList')], ['map', IconMap2, t('nearYou.viewMap')]].map(([v, Icon, label]) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`flex items-center gap-1.5 rounded-pill px-4 py-1.5 text-caption font-semibold transition ${view === v ? 'bg-teal text-white' : 'text-muted'}`}
+            >
+              <Icon size={15} /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {loading ? (
         <div className="space-y-3 p-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
       ) : error ? (
         <ErrorState onRetry={retry} />
+      ) : view === 'map' ? (
+        <div className="mt-3">
+          <Suspense fallback={<div className="space-y-3 p-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>}>
+            <NearYouMap
+              items={byDistance(tab === 'shops' ? data.shops : data.listings)}
+              userPos={userPos}
+              onSelect={(x) => (tab === 'shops' ? navigate(`/boutique/${x.slug}`) : openListingChat(x))}
+            />
+          </Suspense>
+        </div>
       ) : tab === 'shops' ? (
         data.shops.length === 0 ? (
           <EmptyState icon={IconMapPinOff} title={t('nearYou.noShops')} action={<Button variant="secondary" onClick={() => setRadius('all')}>{t('nearYou.broaden')}</Button>} />
