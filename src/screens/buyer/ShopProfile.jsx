@@ -150,7 +150,7 @@ export default function ShopProfile() {
         </div>
       </div>
 
-      <div className="px-4">
+      <div className="relative z-10 px-4">
         <div className="-mt-8 flex items-end gap-3">
           <SmartImage src={avatar} alt={shop.name} className="h-16 w-16 border-2 border-white" rounded="rounded-full" />
           <div className="flex-1 pb-1">

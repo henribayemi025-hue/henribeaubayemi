@@ -14,6 +14,7 @@ import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
 const blank = { name: '', price_fcfa: '', description: '', category: 'mode', stock: '1', images: [] };
+const MAX_IMAGES = 10;
 
 export default function VendorProductEdit() {
   const { id } = useParams();
@@ -124,8 +125,9 @@ export default function VendorProductEdit() {
       <div className="space-y-4 p-4">
         <div>
           <span className="label">{t('vendor.productImages')}</span>
+          {/* Existing photos + one empty slot to add another, up to MAX_IMAGES. */}
           <div className="grid grid-cols-3 gap-2">
-            {[0, 1, 2].map((i) => (
+            {Array.from({ length: Math.min(form.images.length + 1, MAX_IMAGES) }).map((_, i) => (
               <ImageUpload
                 key={i}
                 bucket="products"
@@ -136,6 +138,7 @@ export default function VendorProductEdit() {
               />
             ))}
           </div>
+          <p className="mt-1 text-caption text-muted">{t('vendor.productImagesHint', { count: MAX_IMAGES })}</p>
         </div>
         <Field label={t('vendor.productName')} required error={errors.name}>
           {(fid) => <TextInput id={fid} value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}

@@ -328,7 +328,8 @@
     "locationUpdate": "Mettre à jour ma position",
     "imageStillUploading": "Image en cours d’envoi…",
     "sellerPoints": "Points vendeur",
-    "sellerPointsHint": "+10 par commande livrée"
+    "sellerPointsHint": "+10 par commande livrée",
+    "productImagesHint": "Jusqu’à {{count}} photos"
   },
   "orderStatus": {
     "new": "Nouvelle",

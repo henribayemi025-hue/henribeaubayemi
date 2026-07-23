@@ -7,6 +7,9 @@ import { AppHeader } from '../../components/AppHeader';
 import { CURRENCIES } from '../../lib/currency';
 import { enablePush } from '../../lib/push';
 
+/* global __BUILD_ID__ */
+const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
+
 export default function Settings() {
   const { t } = useTranslation();
   const { language, setLanguage, currency, setCurrency } = useSettings();
@@ -52,6 +55,8 @@ export default function Settings() {
             <button onClick={turnOnPush} className="btn-secondary">{t('notifications.enable')}</button>
           </section>
         )}
+
+        <p className="pt-2 text-center text-caption text-muted">Finjaro · build {BUILD_ID}</p>
       </div>
     </div>
   );
