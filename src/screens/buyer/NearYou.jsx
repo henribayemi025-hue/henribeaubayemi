@@ -31,6 +31,7 @@ export default function NearYou() {
   const { requireLogin } = useUI();
   const toast = useToast();
   const [tab, setTab] = useState('shops');
+  const [kindFilter, setKindFilter] = useState('all'); // 'all' | 'service' | 'article' — listings tab only
   const [view, setView] = useState('list'); // 'list' | 'map'
   const [publishOpen, setPublishOpen] = useState(false);
   const [radius, setRadius] = useState('country');
@@ -103,6 +104,11 @@ export default function NearYou() {
     }
   }
 
+  const filteredListings = (data?.listings || []).filter((l) => {
+    if (kindFilter === 'all') return true;
+    return kindFilter === 'service' ? isServiceCategory(l.category) : !isServiceCategory(l.category);
+  });
+
   return (
     <div className="pb-20">
       <AppHeader title={t('nav.nearYou')} />
@@ -155,6 +161,20 @@ export default function NearYou() {
         </div>
       </div>
 
+      {tab === 'listings' && (
+        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-3">
+          {[['all', t('nearYou.filterAll')], ['service', t('nearYou.filterServices')], ['article', t('nearYou.filterArticles')]].map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setKindFilter(k)}
+              className={`chip shrink-0 ${kindFilter === k ? 'chip-active' : 'text-ink'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-3 p-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
       ) : error ? (
@@ -163,7 +183,7 @@ export default function NearYou() {
         <div className="mt-3">
           <Suspense fallback={<div className="space-y-3 p-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>}>
             <NearYouMap
-              items={byDistance(tab === 'shops' ? data.shops : data.listings)}
+              items={byDistance(tab === 'shops' ? data.shops : filteredListings)}
               userPos={userPos}
               onSelect={(x) => (tab === 'shops' ? navigate(`/boutique/${x.slug}`) : openListingChat(x))}
             />
@@ -190,11 +210,11 @@ export default function NearYou() {
         )
       ) : data.listingsError ? (
         <ErrorState onRetry={retry} />
-      ) : data.listings.length === 0 ? (
+      ) : filteredListings.length === 0 ? (
         <EmptyState icon={IconBuildingStore} title={t('nearYou.noListings')} />
       ) : (
         <ul className="space-y-3 p-4">
-          {byDistance(data.listings).map((l) => (
+          {byDistance(filteredListings).map((l) => (
             <li key={l.id} className="card">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
