@@ -315,7 +315,11 @@
     "copied": "Lien copié !",
     "share": "Partager mon lien",
     "invited": "Amis invités",
-    "emptyInvited": "Personne pour l'instant — partage ton lien pour commencer !"
+    "emptyInvited": "Personne pour l'instant — partage ton lien pour commencer !",
+    "friendsGoal": "{{goal}} amis invités",
+    "friendsReward": "5€ / 3 300 FCFA",
+    "vendorsGoal": "{{goal}} vendeurs actifs",
+    "vendorsReward": "50€ / 33 000 FCFA"
   },
   "fin": {
     "forYou": "Pour toi",
