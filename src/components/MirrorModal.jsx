@@ -19,11 +19,13 @@ export function MirrorModal({ open, onClose, product }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { image, mimeType }
   const [error, setError] = useState(null); // 'limit' | 'generic'
+  const [errorDetail, setErrorDetail] = useState(null); // raw server/Gemini message, shown for diagnosis
 
   function reset() {
     setSelfie(null);
     setResult(null);
     setError(null);
+    setErrorDetail(null);
   }
 
   function handleClose() {
@@ -49,25 +51,45 @@ export function MirrorModal({ open, onClose, product }) {
     if (!selfie) return;
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
     try {
       const prompt = product.name + (product.description ? ` (${product.description.slice(0, 120)})` : '');
       const { data, error: fnErr } = await supabase.functions.invoke('miroir-ia', {
         body: { selfieBase64: selfie.base64, prompt },
       });
       if (fnErr) {
-        // supabase-js surfaces non-2xx as fnErr without the parsed body in
-        // some cases; fall back to a generic message when we can't tell.
-        const status = fnErr.context?.status;
-        setError(status === 429 ? 'limit' : 'generic');
+        // supabase-js only gives us the HTTP status by default on a non-2xx
+        // response (fnErr.context is the raw Response) — read the actual JSON
+        // body our function sent so we distinguish OUR daily quota from a
+        // real error (e.g. Gemini billing/quota) instead of mislabeling any
+        // 429 as "you hit today's limit".
+        let body = null;
+        try {
+          body = await fnErr.context?.json();
+        } catch {
+          /* body unreadable — fall through to generic */
+        }
+        if (body?.error === 'daily_limit_reached') {
+          setError('limit');
+        } else {
+          setError('generic');
+          setErrorDetail(body?.error || fnErr.message);
+        }
         return;
       }
       if (data?.error) {
-        setError(data.error === 'daily_limit_reached' ? 'limit' : 'generic');
+        if (data.error === 'daily_limit_reached') {
+          setError('limit');
+        } else {
+          setError('generic');
+          setErrorDetail(data.error);
+        }
         return;
       }
       setResult({ image: data.image, mimeType: data.mimeType || 'image/png' });
-    } catch {
+    } catch (e) {
       setError('generic');
+      setErrorDetail(e?.message);
     } finally {
       setLoading(false);
     }
@@ -116,6 +138,9 @@ export function MirrorModal({ open, onClose, product }) {
           <p className="text-body text-danger">
             {error === 'limit' ? t('mirror.limitReached') : t('mirror.error')}
           </p>
+          {/* Raw server/Gemini message — helps diagnose (e.g. billing/quota)
+              instead of a dead-end generic error. */}
+          {errorDetail && <p className="max-w-xs text-caption text-muted">{errorDetail}</p>}
           {error !== 'limit' && (
             <button onClick={generate} className="btn-ghost text-caption">
               <IconRefresh size={16} /> {t('common.retry')}
