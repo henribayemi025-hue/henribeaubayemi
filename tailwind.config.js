@@ -1,22 +1,22 @@
-/** Finjaro — "Lagune & Encre" design system (locked values). */
+/** Finjaro — "Terre & Or" design system (locked values). */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}', './landing/**/*.{js,jsx,html}'],
   theme: {
     extend: {
       colors: {
-        base: '#FFFFFF',
-        ink: '#0B132B', // text primary ("encre")
-        'ink-soft': '#1C2541', // secondary ink shade, used in gradients
+        base: '#FAF6F0', // warm cream page background
+        ink: '#171B26', // text primary
+        'ink-soft': '#232B3E', // secondary ink shade, used in gradients
         muted: '#6B6B6B', // text secondary
         teal: {
-          DEFAULT: '#00A896', // primary accent ("lagune")
-          hover: '#028090', // hover/active
-          light: '#E6F7F5', // light tint background (badges, selected rows)
+          DEFAULT: '#C25E38', // primary accent (terracotta)
+          hover: '#D95D39', // hover/active
+          light: '#F4EFE6', // light tint background (badges, selected rows)
         },
-        brass: '#B8935F', // secondary accent
-        hairline: '#E5E5E5', // dividers
+        brass: '#E09F3E', // secondary accent (gold)
+        hairline: '#E8DFD1', // dividers
         danger: { DEFAULT: '#D14343', bg: '#FDEDED' },
-        success: { DEFAULT: '#2E7D32', bg: '#EAF6EA' },
+        success: { DEFAULT: '#2A9D8F', bg: '#EAF6EA' },
         warning: { DEFAULT: '#B8860B', bg: '#FDF6E3' },
       },
       fontFamily: {

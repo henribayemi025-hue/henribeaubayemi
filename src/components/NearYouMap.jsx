@@ -12,7 +12,7 @@ import { storageUrl } from '../lib/supabase';
 const pinIcon = L.divIcon({
   className: 'finjaro-pin',
   html:
-    '<svg width="30" height="30" viewBox="0 0 24 24" fill="#00A896" xmlns="http://www.w3.org/2000/svg">' +
+    '<svg width="30" height="30" viewBox="0 0 24 24" fill="#C25E38" xmlns="http://www.w3.org/2000/svg">' +
     '<path d="M12 2C7.6 2 4 5.6 4 10c0 5.4 7 11.5 7.3 11.7.4.4 1 .4 1.4 0C13 21.5 20 15.4 20 10c0-4.4-3.6-8-8-8z" ' +
     'stroke="#FFFFFF" stroke-width="1.5"/><circle cx="12" cy="10" r="3" fill="#FFFFFF"/></svg>',
   iconSize: [30, 30],
@@ -22,7 +22,7 @@ const pinIcon = L.divIcon({
 
 const userIcon = L.divIcon({
   className: 'finjaro-pin-me',
-  html: '<div style="width:16px;height:16px;border-radius:9999px;background:#B8935F;border:3px solid #fff;box-shadow:0 0 0 2px #B8935F"></div>',
+  html: '<div style="width:16px;height:16px;border-radius:9999px;background:#E09F3E;border:3px solid #fff;box-shadow:0 0 0 2px #E09F3E"></div>',
   iconSize: [16, 16],
   iconAnchor: [8, 8],
 });

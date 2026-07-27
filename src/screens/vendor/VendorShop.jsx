@@ -118,7 +118,7 @@ export default function VendorShop() {
           </div>
         </div>
         <label className="flex items-center gap-3 rounded-card border border-hairline p-3">
-          <input type="checkbox" checked={form.offers_delivery} onChange={(e) => setForm({ ...form, offers_delivery: e.target.checked })} className="h-5 w-5 accent-[#00A896]" />
+          <input type="checkbox" checked={form.offers_delivery} onChange={(e) => setForm({ ...form, offers_delivery: e.target.checked })} className="h-5 w-5 accent-[#C25E38]" />
           <span className="flex-1 text-body text-ink">{t('checkout.delivery')}</span>
         </label>
         {form.offers_delivery && (

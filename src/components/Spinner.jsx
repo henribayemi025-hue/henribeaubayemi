@@ -7,8 +7,8 @@ export function Spinner({ size = 24, light = false }) {
       style={{
         width: size,
         height: size,
-        borderColor: light ? 'rgba(255,255,255,0.4)' : '#E5E5E5',
-        borderTopColor: light ? '#FFFFFF' : '#00A896',
+        borderColor: light ? 'rgba(255,255,255,0.4)' : '#E8DFD1',
+        borderTopColor: light ? '#FFFFFF' : '#C25E38',
       }}
     />
   );

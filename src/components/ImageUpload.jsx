@@ -51,7 +51,7 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
   return (
     <div>
       {label && <span className="label">{label}</span>}
-      <div className={`relative ${aspect} w-full overflow-hidden ${rounded} border border-dashed border-hairline bg-[#FAFAFA] ${shape === 'round' ? 'mx-auto max-w-[112px]' : ''}`}>
+      <div className={`relative ${aspect} w-full overflow-hidden ${rounded} border border-dashed border-hairline bg-[#FAF6F0] ${shape === 'round' ? 'mx-auto max-w-[112px]' : ''}`}>
         {preview && <img src={preview} alt="" className={`h-full w-full object-cover ${rounded}`} />}
         <button
           type="button"

@@ -21,7 +21,7 @@ export function BuyerLayout() {
   useViewportHeight();
   if (profile?.is_suspended) return <SuspendedNotice />;
   return (
-    <div className="lg:flex lg:h-dvh lg:bg-[#FAFAFA]">
+    <div className="lg:flex lg:h-dvh lg:bg-[#FAF6F0]">
       <BuyerSidebarNav />
       <div
         className="fixed inset-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:inset-auto lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
