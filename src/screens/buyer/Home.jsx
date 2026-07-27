@@ -1,13 +1,21 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSearch, IconShoppingCart, IconMoodSmile } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
-import { useAsync } from '../../hooks/useAsync';
 import { useCart } from '../../hooks/useCart';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { ProductCard } from '../../components/ProductCard';
 import { ShopCard } from '../../components/ShopCard';
 import { ProductGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/states';
+
+// Stale-while-revalidate: Home is the most-visited screen (bottom nav tab),
+// so re-fetching from scratch every time you tap back to it means a real
+// network round-trip is felt as a ~1s wait for "nothing new". Keep the last
+// successful result in memory (module-level, survives remounts within the
+// same app session) and show it INSTANTLY on next visit while a fresh fetch
+// happens silently behind it — only the very first visit shows the skeleton.
+let homeCache = null;
 
 async function fetchHome() {
   // allSettled so a transient hiccup on ONE section doesn't blank the whole
@@ -38,7 +46,28 @@ async function fetchHome() {
 export default function Home() {
   const { t } = useTranslation();
   const { count } = useCart();
-  const { data, loading, error, retry } = useAsync(fetchHome, []);
+  const [data, setData] = useState(homeCache);
+  const [loading, setLoading] = useState(!homeCache);
+  const [error, setError] = useState(false);
+
+  async function load() {
+    if (!homeCache) setLoading(true);
+    setError(false);
+    try {
+      const result = await fetchHome();
+      homeCache = result;
+      setData(result);
+    } catch {
+      if (!homeCache) setError(true); // no stale data to fall back to
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>
@@ -76,7 +105,7 @@ export default function Home() {
           <ProductGridSkeleton />
         </div>
       ) : error ? (
-        <ErrorState message={t('home.loadError')} onRetry={retry} />
+        <ErrorState message={t('home.loadError')} onRetry={load} />
       ) : (
         <>
           {data.shops.length > 0 && (
