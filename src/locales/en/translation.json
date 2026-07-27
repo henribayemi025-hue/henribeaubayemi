@@ -105,6 +105,9 @@
     "autre_service": "Other service"
   },
   "home": {
+    "heroTag": "Africa & Diaspora's Marketplace",
+    "heroTitle": "Exceptional Fashion, Beauty & Events",
+    "heroSubtitle": "Discover unique creations, try them on virtually with Mirror, and chat with Finou Chou.",
     "trending": "Trending",
     "shopsNearYou": "Shops near you",
     "loadError": "Couldn't load products.",

@@ -21,7 +21,7 @@ export async function fetchHome() {
       .limit(12),
     supabase
       .from('shops')
-      .select('id, slug, name, avatar_url, rating, is_verified')
+      .select('id, slug, name, avatar_url, rating, is_verified, followers_count')
       .eq('status', 'active')
       .order('followers_count', { ascending: false })
       .limit(12),
