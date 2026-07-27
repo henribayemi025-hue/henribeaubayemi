@@ -97,7 +97,10 @@ export default function Search() {
       <div className="p-4">
         {!q.trim() ? (
           <p className="py-10 text-center text-caption text-muted">{t('search.hint')}</p>
-        ) : loading ? (
+        ) : loading || !data ? (
+          // `!data` covers the ~300ms window between typing and the debounced
+          // search actually starting (state.data is still its initial `null`
+          // there) — without this the render below would crash on `data.cats`.
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
           </div>
