@@ -163,7 +163,10 @@
     "attach": "Joindre une photo",
     "imageReady": "Photo prête à envoyer",
     "seeCategory": "Voir {{cat}}",
-    "seeMore": "Voir plus"
+    "seeMore": "Voir plus",
+    "actionLogin": "Se connecter",
+    "actionAddProduct": "Ajouter un produit",
+    "actionBecomeVendor": "Devenir vendeur"
   },
   "chat": {
     "placeholder": "Écris un message…",

@@ -9,6 +9,7 @@ import { SmartImage } from '../../components/SmartImage';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { pushNotify } from '../../lib/notify';
+import { FinouAction } from '../../components/FinouAction';
 
 // Mentioning @finouchou (or @finou) inside a buyer<->vendor chat pulls in the
 // AI assistant. Its reply is shown inline, visually distinct, but is a LOCAL,
@@ -104,7 +105,7 @@ export default function VendorChat({ vendor = false }) {
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       setMessages((m) => [
         ...m,
-        { id: `finou-${Date.now()}`, isFinou: true, body: data.reply, category: data.category, created_at: new Date().toISOString() },
+        { id: `finou-${Date.now()}`, isFinou: true, body: data.reply, category: data.category, action: data.action, created_at: new Date().toISOString() },
       ]);
     } catch {
       setFinouError(true);
@@ -204,6 +205,7 @@ export default function VendorChat({ vendor = false }) {
                           {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
                         </Link>
                       )}
+                      {m.action && <FinouAction action={m.action} />}
                     </div>
                   </div>
                 );

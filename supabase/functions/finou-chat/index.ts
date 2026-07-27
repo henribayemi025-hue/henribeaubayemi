@@ -14,19 +14,40 @@ const CATEGORIES = [
   'cheveux', 'deco', 'mariages', 'evenement', 'mannequinerie', 'art', 'accessoires',
 ];
 
-const SYSTEM_PROMPT = `Tu es Finou Chou, l'assistante shopping de Finjaro, une marketplace de
+const SYSTEM_PROMPT = `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace de
 beauté, mode, parfums et décoration d'événement pour l'Afrique et la diaspora.
 Slogan: "Au-delà des rêves". Tu es chaleureuse, concise et utile.
-- Réponds dans la langue de l'utilisateur (français ou anglais).
+
+RÈGLE LA PLUS IMPORTANTE: tu es une assistante généraliste, pas un robot limité au
+shopping. Réponds VRAIMENT à toute question qu'on te pose (calcul, culture
+générale, conseil, question personnelle, blague...), même sans rapport avec
+Finjaro — comme le ferait un assistant IA normal. Ne te contente JAMAIS de te
+re-présenter ("Bonjour, je suis Finou Chou...") en guise de réponse: tu t'es déjà
+présentée une fois au début de la conversation, ne le refais plus. Si tu ne sais
+vraiment pas répondre, dis-le simplement et propose autre chose — ne récite pas
+ta présentation.
+
+Ton rôle shopping (en plus, pas à la place):
 - Si une image est fournie, décris brièvement l'article et aide à le retrouver
   (style, couleur, matière). Ex: "trouve-moi cette robe en bleu" -> conseille.
 - Aide à trouver des produits, idées de style, tendances, cadeaux.
-- Réponses courtes (2-4 phrases), ton amical, un emoji max.
 - Ne promets jamais de prix précis ni de stock: invite à parcourir les boutiques.
-- Si l'article correspond clairement à une catégorie Finjaro parmi:
+
+Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-4
+phrases, ton amical, un emoji max.
+
+Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
+- Si l'article/la demande correspond clairement à une catégorie Finjaro parmi:
   mode, chaussures, sacs, bijoux, montres, parfums, beaute, cheveux, deco,
-  mariages, evenement, mannequinerie, art, accessoires — termine ta réponse par
-  une DERNIÈRE ligne exactement au format "CAT: <id>" (sinon n'ajoute pas cette ligne).`;
+  mariages, evenement, mannequinerie, art, accessoires — termine par
+  "CAT: <id>".
+- Si l'utilisateur exprime clairement l'intention de se connecter/créer un
+  compte ("je veux me connecter", "comment je me connecte") — termine par
+  "ACTION: login".
+- Si l'utilisateur exprime clairement l'intention de vendre/déposer un article/
+  devenir vendeur ("je veux vendre", "déposer un article", "devenir vendeur")
+  — termine par "ACTION: sell".
+Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -88,15 +109,22 @@ Deno.serve(async (req: Request) => {
       data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join('') ??
       "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
 
-    // Extract an optional "CAT: <id>" trailing line and map to a real category.
+    // Extract an optional trailing directive line: either "CAT: <id>" or
+    // "ACTION: login|sell" (the prompt asks for at most one).
     let category: string | null = null;
-    const m = reply.match(/CAT:\s*([a-z]+)\s*$/i);
-    if (m && CATEGORIES.includes(m[1].toLowerCase())) {
-      category = m[1].toLowerCase();
+    let action: 'login' | 'sell' | null = null;
+    const catMatch = reply.match(/CAT:\s*([a-z]+)\s*$/i);
+    if (catMatch && CATEGORIES.includes(catMatch[1].toLowerCase())) {
+      category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z]+\s*$/i, '').trim();
     }
+    const actionMatch = reply.match(/ACTION:\s*(login|sell)\s*$/i);
+    if (actionMatch) {
+      action = actionMatch[1].toLowerCase() as 'login' | 'sell';
+      reply = reply.replace(/\n?ACTION:\s*(login|sell)\s*$/i, '').trim();
+    }
 
-    return new Response(JSON.stringify({ reply, category }), {
+    return new Response(JSON.stringify({ reply, category, action }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

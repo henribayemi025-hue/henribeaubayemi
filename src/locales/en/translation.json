@@ -163,7 +163,10 @@
     "attach": "Attach a photo",
     "imageReady": "Photo ready to send",
     "seeCategory": "See {{cat}}",
-    "seeMore": "See more"
+    "seeMore": "See more",
+    "actionLogin": "Log in",
+    "actionAddProduct": "Add a product",
+    "actionBecomeVendor": "Become a vendor"
   },
   "chat": {
     "placeholder": "Write a message…",

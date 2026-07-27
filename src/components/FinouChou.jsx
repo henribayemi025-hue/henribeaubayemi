@@ -6,6 +6,7 @@ import { supabase, storageUrl } from '../lib/supabase';
 import { useUI } from '../hooks/useUI';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
+import { FinouAction } from './FinouAction';
 
 // Downscale + JPEG-encode an image to a small data URL (keeps the payload light
 // on 3G and within Gemini's inline-image limits).
@@ -88,7 +89,7 @@ export function FinouChou() {
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       const mid = Date.now();
-      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category }]);
+      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action }]);
       // Visual search: if Finou identified a category, surface real, buyable
       // products from the marketplace as a carousel under the reply.
       if (data.category) {
@@ -176,6 +177,7 @@ export function FinouChou() {
                       {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
                     </button>
                   )}
+                  {m.action && <FinouAction action={m.action} onNavigate={closeFinou} />}
                 </div>
               </div>
 
