@@ -12,7 +12,8 @@ export default function Auth() {
   const location = useLocation();
   const { signIn, signUp } = useAuth();
   const toast = useToast();
-  const [mode, setMode] = useState('login');
+  const refCode = new URLSearchParams(location.search).get('ref');
+  const [mode, setMode] = useState(refCode ? 'signup' : 'login');
   const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [busy, setBusy] = useState(false);
   const from = location.state?.from || '/';
@@ -26,7 +27,7 @@ export default function Auth() {
         if (error) throw error;
         navigate(from, { replace: true });
       } else {
-        const { data, error } = await signUp(form.email.trim(), form.password, form.name.trim());
+        const { data, error } = await signUp(form.email.trim(), form.password, form.name.trim(), refCode);
         if (error) throw error;
         if (data.session) navigate(from, { replace: true });
         else toast.success(t('auth.checkEmail'));

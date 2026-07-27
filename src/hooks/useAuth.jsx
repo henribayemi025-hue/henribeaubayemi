@@ -49,8 +49,8 @@ export function AuthProvider({ children }) {
     loading,
     refreshProfile: () => loadProfile(session?.user?.id),
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
-    signUp: (email, password, name) =>
-      supabase.auth.signUp({ email, password, options: { data: { name } } }),
+    signUp: (email, password, name, ref) =>
+      supabase.auth.signUp({ email, password, options: { data: { name, ...(ref ? { ref } : {}) } } }),
     signOut: () => supabase.auth.signOut(),
   };
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout,
   IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal,
-  IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart,
+  IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -53,6 +53,7 @@ export default function UserProfile() {
   const rows = [
     { icon: IconShoppingBag, label: t('profile.myOrders'), to: '/profile/orders' },
     { icon: IconHeart, label: t('profile.myFavorites'), to: '/profile/favorites' },
+    { icon: IconGift, label: t('referral.navLabel'), to: '/profile/invite' },
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
     { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
   ];

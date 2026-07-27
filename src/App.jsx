@@ -54,6 +54,7 @@ const Settings = lazyWithReload(() => import('./screens/buyer/Settings'));
 const EditProfile = lazyWithReload(() => import('./screens/buyer/EditProfile'));
 const MyOrders = lazyWithReload(() => import('./screens/buyer/MyOrders'));
 const MyFavorites = lazyWithReload(() => import('./screens/buyer/MyFavorites'));
+const InviteFriend = lazyWithReload(() => import('./screens/buyer/InviteFriend'));
 const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
 const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
@@ -109,6 +110,7 @@ export default function App() {
                       <Route path="profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
                       <Route path="profile/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
                       <Route path="profile/favorites" element={<RequireAuth><MyFavorites /></RequireAuth>} />
+                      <Route path="profile/invite" element={<RequireAuth><InviteFriend /></RequireAuth>} />
                       <Route path="profile/help" element={<Help />} />
                       <Route path="become-vendor" element={<RequireAuth><BecomeVendor /></RequireAuth>} />
                       <Route path="switch/:direction" element={<RequireAuth><SwitchMode /></RequireAuth>} />

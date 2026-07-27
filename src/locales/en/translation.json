@@ -306,6 +306,17 @@
     "helpTitle": "Help",
     "displayName": "Display name"
   },
+  "referral": {
+    "navLabel": "Invite friends",
+    "title": "Invite friends",
+    "intro": "Share your link: when a friend signs up with it, you're both linked on Finjaro.",
+    "yourLink": "Your invite link",
+    "copy": "Copy",
+    "copied": "Link copied!",
+    "share": "Share my link",
+    "invited": "Friends invited",
+    "emptyInvited": "No one yet — share your link to get started!"
+  },
   "fin": {
     "forYou": "For you",
     "followingTab": "Following",
