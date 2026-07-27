@@ -168,9 +168,9 @@ export function FinouChou() {
       aria-modal="true"
       aria-label={t('finou.title')}
     >
-      <button className="absolute inset-0 bg-black/40" aria-label={t('common.close')} onClick={closeFinou} />
+      <button className="animate-fade-in absolute inset-0 bg-black/40" aria-label={t('common.close')} onClick={closeFinou} />
       <div
-        className="relative z-10 flex h-[85vh] w-full max-w-app flex-col rounded-t-2xl bg-white sm:h-[70vh] sm:rounded-2xl"
+        className="animate-slide-up relative z-10 flex h-[85vh] w-full max-w-app flex-col rounded-t-2xl bg-white sm:h-[70vh] sm:animate-fade-in sm:rounded-2xl"
         style={{ maxHeight: 'var(--app-height, 100dvh)' }}
       >
         <div className="flex items-center gap-2 border-b border-hairline p-4">

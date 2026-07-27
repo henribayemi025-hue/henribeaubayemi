@@ -23,9 +23,9 @@ export function Modal({ open, onClose, title, children }) {
       aria-modal="true"
       aria-label={title}
     >
-      <button className="absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
+      <button className="animate-fade-in absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
       <div
-        className="relative z-10 flex w-full max-w-app flex-col overflow-y-auto rounded-t-2xl bg-white p-4 sm:rounded-2xl"
+        className="animate-slide-up relative z-10 flex w-full max-w-app flex-col overflow-y-auto rounded-t-2xl bg-white p-4 sm:rounded-2xl sm:animate-fade-in"
         style={{ maxHeight: 'var(--app-height, 100dvh)' }}
       >
         <div className="mb-3 flex items-center justify-between">
