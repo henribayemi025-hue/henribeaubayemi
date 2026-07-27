@@ -105,12 +105,13 @@ export function FinouChou() {
           /* best-effort */
         }
       }
+      const shopUrl = vendorStatus === 'approved' && shop?.slug ? `${window.location.origin}/boutique/${shop.slug}` : undefined;
       const { data, error: fnErr } = await supabase.functions.invoke('finou-chat', {
         body: {
           message: content,
           image: img || undefined,
           history,
-          context: { screen: location.pathname, ...(vendorStats ? { vendorStats } : {}) },
+          context: { screen: location.pathname, ...(vendorStats ? { vendorStats } : {}), ...(shopUrl ? { shopUrl } : {}) },
         },
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');

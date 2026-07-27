@@ -46,6 +46,16 @@ export default function VendorShop() {
   });
   const [busy, setBusy] = useState(false);
 
+  // Photos save the instant they're picked (not gated behind the bottom
+  // "Enregistrer" button) — otherwise an upload-then-navigate-away silently
+  // reverts to the old photo, which is exactly what happened to Beau.
+  async function saveImage(field, path) {
+    setForm((f) => ({ ...f, [field]: path }));
+    const { error } = await supabase.from('shops').update({ [field]: path }).eq('id', shop.id);
+    if (error) toast.error(error.message);
+    else toast.success(t('vendor.shopSaved'));
+  }
+
   function toggleCat(id) {
     setForm((f) => ({
       ...f,
@@ -86,8 +96,8 @@ export default function VendorShop() {
     <div>
       <AppHeader title={t('vendor.shopEdit')} right={<button onClick={share} aria-label={t('common.shareShop')} className="p-1 text-teal"><IconShare2 size={20} /></button>} />
       <div className="space-y-4 p-4">
-        <ImageUpload bucket="shops" value={form.banner_url} onChange={(p) => setForm({ ...form, banner_url: p })} label={t('vendor.shopBanner')} shape="wide" />
-        <ImageUpload bucket="shops" value={form.avatar_url} onChange={(p) => setForm({ ...form, avatar_url: p })} label={t('vendor.shopAvatar')} shape="round" />
+        <ImageUpload bucket="shops" value={form.banner_url} onChange={(p) => saveImage('banner_url', p)} label={t('vendor.shopBanner')} shape="wide" />
+        <ImageUpload bucket="shops" value={form.avatar_url} onChange={(p) => saveImage('avatar_url', p)} label={t('vendor.shopAvatar')} shape="round" />
         <Field label={t('vendor.shopName')}>
           {(id) => <TextInput id={id} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
         </Field>
