@@ -200,7 +200,7 @@ export default function ShopProfile() {
             (data.products.length === 0 ? (
               <EmptyState title={t('shop.emptyProducts')} />
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {data.products.map((p) => (
                   <ProductCard key={p.id} product={{ ...p, shop_name: shop.name }} />
                 ))}

@@ -39,7 +39,6 @@ export default function Home() {
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-hairline bg-white px-4">
         <Link to="/" className="flex items-center gap-1">
           <span className="text-title font-semibold text-teal">Finjaro</span>
-          <span className="h-1.5 w-1.5 rounded-full bg-brass" />
         </Link>
         <div className="ml-auto flex items-center gap-3">
           <Link to="/search" aria-label={t('common.search')} className="text-ink">
@@ -89,7 +88,7 @@ export default function Home() {
             {data.products.length === 0 ? (
               <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
             ) : (
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {data.products.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}

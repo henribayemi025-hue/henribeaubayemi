@@ -46,7 +46,7 @@ export default function CategoryListing() {
         ) : data.length === 0 ? (
           <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {data.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

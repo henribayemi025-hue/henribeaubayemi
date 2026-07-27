@@ -14,7 +14,6 @@ export function AppHeader({ title, back = false, right = null, logo = false }) {
       {logo ? (
         <Link to="/" className="flex items-center gap-1">
           <span className="text-title font-semibold text-teal">Finjaro</span>
-          <span className="h-1.5 w-1.5 rounded-full bg-brass" />
         </Link>
       ) : (
         <h1 className="line-clamp-1 flex-1 text-section text-ink">{title}</h1>

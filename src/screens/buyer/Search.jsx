@@ -134,7 +134,7 @@ export default function Search() {
 
             {data.products.length > 0 && (
               <Section title={t('search.items')}>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {data.products.map((p) => <ProductCard key={p.id} product={p} />)}
                 </div>
               </Section>

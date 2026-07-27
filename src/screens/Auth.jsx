@@ -45,7 +45,6 @@ export default function Auth() {
     >
       <Link to="/" className="mb-8 flex items-center justify-center gap-1">
         <span className="text-title font-semibold text-teal">Finjaro</span>
-        <span className="h-1.5 w-1.5 rounded-full bg-brass" />
       </Link>
       <p className="mb-6 text-center text-caption text-muted">{t('common.tagline')}</p>
 

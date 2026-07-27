@@ -33,7 +33,7 @@ export function BuyerNav() {
   return (
     <>
       {showFinou && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4">
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4 lg:bottom-6 lg:px-6">
           <button
             onClick={openFinou}
             aria-label={t('finou.title')}
@@ -44,7 +44,7 @@ export function BuyerNav() {
         </div>
       )}
       {showNav && (
-      <nav className="flex items-stretch border-t border-hairline bg-white">
+      <nav className="flex items-stretch border-t border-hairline bg-white lg:hidden">
         {items.map((it) => (
           <NavLink key={it.key} to={it.to} end={it.end} className="flex flex-1 flex-col items-center gap-0.5 py-2">
             {({ isActive }) => {
