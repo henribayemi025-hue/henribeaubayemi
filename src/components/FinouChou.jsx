@@ -252,6 +252,18 @@ export function FinouChou() {
               )}
             </div>
           ))}
+          {messages.length === 1 && !sending && (
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => send(t('finou.suggestTrends'))} className="chip text-ink">{t('finou.suggestTrends')}</button>
+              <button onClick={() => send(t('finou.suggestGift'))} className="chip text-ink">{t('finou.suggestGift')}</button>
+              <button onClick={() => fileRef.current?.click()} className="chip text-ink">{t('finou.suggestPhoto')}</button>
+              {vendorStatus === 'approved' ? (
+                <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
+              ) : (
+                <button onClick={() => send(t('finou.suggestSell'))} className="chip text-ink">{t('finou.suggestSell')}</button>
+              )}
+            </div>
+          )}
           {wizardOpen && (
             <FinouProductWizard
               onClose={() => setWizardOpen(false)}

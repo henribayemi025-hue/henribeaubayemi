@@ -180,7 +180,12 @@
     "actionLogin": "Se connecter",
     "actionAddProduct": "Ajouter un produit",
     "actionFullForm": "Formulaire complet",
-    "actionBecomeVendor": "Devenir vendeur"
+    "actionBecomeVendor": "Devenir vendeur",
+    "suggestTrends": "Tendances du moment",
+    "suggestGift": "Idée cadeau",
+    "suggestPhoto": "Recherche par photo",
+    "suggestSell": "Devenir vendeur",
+    "suggestSales": "Mes ventes cette semaine"
   },
   "mirror": {
     "title": "Essayage virtuel",

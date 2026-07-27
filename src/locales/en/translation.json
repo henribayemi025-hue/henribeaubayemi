@@ -180,7 +180,12 @@
     "actionLogin": "Log in",
     "actionAddProduct": "Add a product",
     "actionFullForm": "Full form",
-    "actionBecomeVendor": "Become a vendor"
+    "actionBecomeVendor": "Become a vendor",
+    "suggestTrends": "Trending now",
+    "suggestGift": "Gift idea",
+    "suggestPhoto": "Search by photo",
+    "suggestSell": "Become a vendor",
+    "suggestSales": "My sales this week"
   },
   "mirror": {
     "title": "Virtual try-on",
