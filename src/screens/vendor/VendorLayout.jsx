@@ -3,18 +3,27 @@ import { VendorNav } from '../../components/VendorNav';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { LoginPrompt } from '../../components/LoginPrompt';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
+import { FinouChou } from '../../components/FinouChou';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
+import { useUI } from '../../hooks/useUI';
 import { Spinner } from '../../components/Spinner';
 import { useViewportHeight } from '../../hooks/useViewportHeight';
+import { IconSparkles } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 // Vendor space is only reachable by approved vendors (owns a shop).
 // Same fixed, keyboard-aware app-shell as the buyer side (see BuyerLayout).
 export function VendorLayout() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const { loading, shop } = useVendorStatus();
   const { pathname } = useLocation();
+  const { openFinou } = useUI();
   useViewportHeight();
+  // A message thread is a focused screen (send button already there) — hide
+  // the Finou FAB there, same rule as the buyer side's chat threads.
+  const showFinou = !pathname.startsWith('/vendor/messages/');
 
   if (profile?.is_suspended) return <SuspendedNotice />;
   if (loading) {
@@ -37,8 +46,23 @@ export function VendorLayout() {
             <Outlet context={{ shop }} />
           </ErrorBoundary>
         </main>
+        {showFinou && (
+          // Positions relative to the fixed shell above (not <main>'s scroll),
+          // same pattern as the buyer side's BuyerNav FAB — viewport-pinned
+          // regardless of scroll position, sitting just above the tab bar.
+          <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4">
+            <button
+              onClick={openFinou}
+              aria-label={t('finou.title')}
+              className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal text-white shadow-lg transition-transform duration-150 hover:bg-teal-hover active:scale-95"
+            >
+              <IconSparkles size={26} />
+            </button>
+          </div>
+        )}
         <VendorNav />
         <LoginPrompt />
+        <FinouChou />
       </div>
     </div>
   );

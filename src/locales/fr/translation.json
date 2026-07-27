@@ -166,6 +166,7 @@
     "seeMore": "Voir plus",
     "actionLogin": "Se connecter",
     "actionAddProduct": "Ajouter un produit",
+    "actionFullForm": "Formulaire complet",
     "actionBecomeVendor": "Devenir vendeur"
   },
   "mirror": {
@@ -181,6 +182,19 @@
     "error": "Impossible de générer l'image pour l'instant. Réessaie.",
     "save": "Enregistrer",
     "tryAgain": "Réessayer"
+  },
+  "finouWizard": {
+    "title": "Déposer un article",
+    "askPhotos": "Envoie les photos de l'article (jusqu'à 5).",
+    "askCategory": "Choisis la catégorie.",
+    "askDetails": "Le nom de l'article et son prix.",
+    "askDescription": "Ajoute une description, ou laisse Finou la rédiger.",
+    "writeForMe": "Rédige-la pour moi",
+    "confirm": "On publie ça ?",
+    "publish": "Publier l'article",
+    "published": "C'est en ligne ! 🎉",
+    "viewDashboard": "Voir mon tableau de bord",
+    "publishedMessage": "Ton article est publié ! Tu peux suivre tes ventes depuis ton tableau de bord vendeur."
   },
   "chat": {
     "placeholder": "Écris un message…",

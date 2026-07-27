@@ -9,6 +9,7 @@ import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
 import { MirrorModal } from './MirrorModal';
+import { FinouProductWizard } from './FinouProductWizard';
 import { MIRROR_CATEGORIES } from '../lib/categories';
 
 // Floating AI assistant overlay (text + vision), wired to the finou-chat function.
@@ -23,6 +24,7 @@ export function FinouChou() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
   const [mirrorProduct, setMirrorProduct] = useState(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const scroller = useRef(null);
   const fileRef = useRef(null);
 
@@ -35,7 +37,7 @@ export function FinouChou() {
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, sending]);
+  }, [messages, sending, wizardOpen]);
 
   async function onPick(e) {
     const file = e.target.files?.[0];
@@ -151,7 +153,13 @@ export function FinouChou() {
                       {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
                     </button>
                   )}
-                  {m.action && <FinouAction action={m.action} onNavigate={closeFinou} />}
+                  {m.action && (
+                    <FinouAction
+                      action={m.action}
+                      onNavigate={closeFinou}
+                      onStartWizard={m.action === 'sell' ? () => setWizardOpen(true) : undefined}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -193,6 +201,15 @@ export function FinouChou() {
               )}
             </div>
           ))}
+          {wizardOpen && (
+            <FinouProductWizard
+              onClose={() => setWizardOpen(false)}
+              onPublished={() => {
+                setWizardOpen(false);
+                setMessages((prev) => [...prev, { id: Date.now(), role: 'assistant', text: t('finouWizard.publishedMessage') }]);
+              }}
+            />
+          )}
           {sending && (
             <div className="flex justify-start" aria-label={t('finou.typing')}>
               <div className="flex gap-1 rounded-2xl border border-hairline px-3 py-3">

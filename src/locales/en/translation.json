@@ -166,6 +166,7 @@
     "seeMore": "See more",
     "actionLogin": "Log in",
     "actionAddProduct": "Add a product",
+    "actionFullForm": "Full form",
     "actionBecomeVendor": "Become a vendor"
   },
   "mirror": {
@@ -181,6 +182,19 @@
     "error": "Can't generate the image right now. Try again.",
     "save": "Save",
     "tryAgain": "Try again"
+  },
+  "finouWizard": {
+    "title": "List an item",
+    "askPhotos": "Send the item's photos (up to 5).",
+    "askCategory": "Pick the category.",
+    "askDetails": "The item's name and price.",
+    "askDescription": "Add a description, or let Finou write it.",
+    "writeForMe": "Write it for me",
+    "confirm": "Ready to publish?",
+    "publish": "Publish item",
+    "published": "It's live! 🎉",
+    "viewDashboard": "View my dashboard",
+    "publishedMessage": "Your item is live! You can track your sales from your vendor dashboard."
   },
   "chat": {
     "placeholder": "Write a message…",

@@ -11,7 +11,10 @@ import { useUI } from '../hooks/useUI';
 // existing login prompt; selling routes to add-product if already an
 // approved vendor, to become-vendor otherwise. Pending applications render
 // nothing (no dead button — the reply text already explains).
-export function FinouAction({ action, onNavigate }) {
+// `onStartWizard` (only passed from FinouChou) offers the guided in-chat
+// product wizard as the primary path for an approved vendor, alongside the
+// classic full-form shortcut.
+export function FinouAction({ action, onNavigate, onStartWizard }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -43,12 +46,26 @@ export function FinouAction({ action, onNavigate }) {
     }
     if (status === 'approved') {
       return (
-        <button
-          onClick={() => { onNavigate?.(); navigate('/vendor/products/new'); }}
-          className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
-        >
-          <IconPlus size={14} /> {t('finou.actionAddProduct')}
-        </button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {onStartWizard && (
+            <button
+              onClick={onStartWizard}
+              className="inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+            >
+              <IconPlus size={14} /> {t('finou.actionAddProduct')}
+            </button>
+          )}
+          <button
+            onClick={() => { onNavigate?.(); navigate('/vendor/products/new'); }}
+            className={
+              onStartWizard
+                ? 'inline-flex items-center gap-1 rounded-pill border border-hairline px-3 py-1 text-caption font-semibold text-ink'
+                : 'inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white'
+            }
+          >
+            <IconPlus size={14} /> {onStartWizard ? t('finou.actionFullForm') : t('finou.actionAddProduct')}
+          </button>
+        </div>
       );
     }
     if (status === 'pending') return null; // already applying — reply text covers it
