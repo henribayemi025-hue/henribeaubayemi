@@ -17,8 +17,8 @@ export async function fetchHome() {
       .from('products')
       .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name, slug)')
       .eq('is_active', true)
-      .order('views', { ascending: false })
-      .limit(12),
+      .order('created_at', { ascending: false })
+      .limit(24),
     supabase
       .from('shops')
       .select('id, slug, name, avatar_url, rating, is_verified, followers_count')
