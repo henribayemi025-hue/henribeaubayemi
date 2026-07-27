@@ -27,7 +27,7 @@ export function HomeHeroCarousel() {
   }, []);
 
   return (
-    <div className="relative aspect-[2/1] w-full max-w-2xl overflow-hidden rounded-2xl">
+    <div className="relative aspect-[2/1] w-full max-h-96 overflow-hidden rounded-2xl lg:aspect-[3/1]">
       {SLIDES.map((s, i) => (
         <button
           key={s.cat}
