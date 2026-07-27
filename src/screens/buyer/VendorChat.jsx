@@ -111,8 +111,25 @@ export default function VendorChat({ vendor = false }) {
     setFinouError(false);
     setFinouThinking(true);
     try {
+      // If the current user is viewing this thread as the vendor, give
+      // Finou real sales numbers so it can answer business questions here
+      // too (e.g. "@finouchou combien j'ai vendu cette semaine ?").
+      let vendorStats;
+      if (vendor && meta?.shop_id) {
+        try {
+          const now = new Date();
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
+          const { data: weekOrders } = await supabase.from('orders').select('total_fcfa').eq('shop_id', meta.shop_id).gte('created_at', weekAgo);
+          vendorStats = {
+            ordersThisWeek: weekOrders?.length || 0,
+            revenueThisWeekFcfa: (weekOrders || []).reduce((s, o) => s + (o.total_fcfa || 0), 0),
+          };
+        } catch {
+          /* best-effort */
+        }
+      }
       const { data, error: fnErr } = await supabase.functions.invoke('finou-chat', {
-        body: { message: query, context: { screen: 'chat', shop: meta?.shops?.name } },
+        body: { message: query, context: { screen: 'chat', shop: meta?.shops?.name, ...(vendorStats ? { vendorStats } : {}) } },
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       setMessages((m) => [

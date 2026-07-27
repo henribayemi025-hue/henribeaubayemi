@@ -31,17 +31,26 @@ export default function ShopProfile() {
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error, retry } = useAsync(async () => {
-    const { data: shop, error: err } = await supabase
-      .from('shops')
-      .select('*')
-      .eq('slug', slug)
-      .maybeSingle();
-    if (err) throw err;
-    if (!shop) return null;
-    const [{ data: products }, { data: reviews }] = await Promise.all([
-      supabase.from('products').select('id, name, price_fcfa, images, category, stock, shop_id').eq('shop_id', shop.id).eq('is_active', true).order('created_at', { ascending: false }),
-      supabase.from('reviews').select('id, rating, body, created_at').eq('shop_id', shop.id).order('created_at', { ascending: false }),
+    // All three filter directly by slug (products/reviews via an inner join
+    // on shops) so they fire in PARALLEL instead of waiting for the shop
+    // lookup to resolve first — was a real 2-round-trip waterfall before.
+    const [{ data: shop, error: sErr }, { data: products, error: pErr }, { data: reviews, error: rErr }] = await Promise.all([
+      supabase.from('shops').select('*').eq('slug', slug).maybeSingle(),
+      supabase
+        .from('products')
+        .select('id, name, price_fcfa, images, category, stock, shop_id, shops!inner(slug)')
+        .eq('shops.slug', slug)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('reviews')
+        .select('id, rating, body, created_at, shops!inner(slug)')
+        .eq('shops.slug', slug)
+        .order('created_at', { ascending: false }),
     ]);
+    if (sErr) throw sErr;
+    if (!shop) return null;
+    if (pErr) throw pErr;
     return { shop, products: products || [], reviews: reviews || [] };
   }, [slug]);
 

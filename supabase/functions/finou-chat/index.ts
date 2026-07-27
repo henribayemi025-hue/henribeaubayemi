@@ -1,6 +1,9 @@
 // Finou Chou — Finjaro's AI shopping assistant (text + vision).
-// Accepts { message, image?, context? } and returns { reply, category? }.
-// image is a data URL (data:image/...;base64,....). Uses Gemini 2.5 Flash.
+// Accepts { message, image?, context?, history? } and returns { reply,
+// category?, action? }. image is a data URL. Uses Gemini 2.5 Flash.
+// `history` is the last few turns [{ role: 'user'|'assistant', text }] so
+// Gemini actually has conversational memory within the session — previously
+// only the current message was sent, so Finou "forgot" everything instantly.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 const corsHeaders = {
@@ -32,6 +35,13 @@ Ton rôle shopping (en plus, pas à la place):
   (style, couleur, matière). Ex: "trouve-moi cette robe en bleu" -> conseille.
 - Aide à trouver des produits, idées de style, tendances, cadeaux.
 - Ne promets jamais de prix précis ni de stock: invite à parcourir les boutiques.
+- Tu as une vraie mémoire de cette conversation (les messages précédents te
+  sont fournis) — utilise-la, ne redemande pas une info déjà donnée.
+- Si le [Contexte écran] contient "vendorStats", ce sont de VRAIES données de
+  vente du vendeur (nombre de commandes et revenu en FCFA sur 7 et 30 jours).
+  Utilise CES CHIFFRES RÉELS pour répondre à toute question sur ses ventes/
+  revenus/chiffre d'affaires. Ne dis JAMAIS "je n'ai pas accès" si ces
+  données sont présentes dans le contexte.
 
 Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-4
 phrases, ton amical, un emoji max.
@@ -61,7 +71,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { message, image, context } = await req.json();
+    const { message, image, context, history } = await req.json();
     if ((!message || typeof message !== 'string') && !image) {
       return new Response(JSON.stringify({ error: 'invalid_message' }), {
         status: 400,
@@ -70,7 +80,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const ctxLine = context && typeof context === 'object'
-      ? `\n[Contexte écran: ${JSON.stringify(context).slice(0, 500)}]`
+      ? `\n[Contexte écran: ${JSON.stringify(context).slice(0, 800)}]`
       : '';
 
     const parts: Array<Record<string, unknown>> = [
@@ -81,6 +91,21 @@ Deno.serve(async (req: Request) => {
       if (match) parts.push({ inline_data: { mime_type: match[1], data: match[2] } });
     }
 
+    // Prior turns give Gemini real conversational memory. Keep it short
+    // (last 8) to bound latency/cost; text-only (images from earlier turns
+    // aren't replayed).
+    const contents: Array<Record<string, unknown>> = [];
+    if (Array.isArray(history)) {
+      for (const turn of history.slice(-8)) {
+        if (!turn?.text || typeof turn.text !== 'string') continue;
+        contents.push({
+          role: turn.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: turn.text.slice(0, 1000) }],
+        });
+      }
+    }
+    contents.push({ role: 'user', parts });
+
     const endpoint =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' +
       apiKey;
@@ -90,7 +115,7 @@ Deno.serve(async (req: Request) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts }],
+        contents,
         generationConfig: { temperature: 0.7, maxOutputTokens: 400 },
       }),
     });

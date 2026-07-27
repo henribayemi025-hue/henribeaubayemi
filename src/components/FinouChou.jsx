@@ -5,18 +5,41 @@ import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRigh
 import { supabase, storageUrl } from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
 import { useUI } from '../hooks/useUI';
+import { useVendorStatus } from '../hooks/useVendorStatus';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
 import { MirrorModal } from './MirrorModal';
 import { FinouProductWizard } from './FinouProductWizard';
 import { MIRROR_CATEGORIES } from '../lib/categories';
+import { loadHome } from '../lib/homeCache';
+
+// Real numbers for the vendor's sales, so Finou can answer "combien j'ai
+// vendu cette semaine ?" instead of saying it has no access. Best-effort —
+// a failure here should never block the chat.
+async function fetchVendorSnapshot(shopId) {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString();
+  const [{ data: weekOrders }, { data: monthOrders }] = await Promise.all([
+    supabase.from('orders').select('total_fcfa').eq('shop_id', shopId).gte('created_at', weekAgo),
+    supabase.from('orders').select('total_fcfa').eq('shop_id', shopId).gte('created_at', monthAgo),
+  ]);
+  const sum = (rows) => (rows || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
+  return {
+    ordersThisWeek: weekOrders?.length || 0,
+    revenueThisWeekFcfa: sum(weekOrders),
+    ordersThisMonth: monthOrders?.length || 0,
+    revenueThisMonthFcfa: sum(monthOrders),
+  };
+}
 
 // Floating AI assistant overlay (text + vision), wired to the finou-chat function.
 export function FinouChou() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { finouOpen, closeFinou } = useUI();
+  const { shop, status: vendorStatus } = useVendorStatus();
   const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -57,11 +80,32 @@ export function FinouChou() {
     setError(false);
     setInput('');
     setPendingImage(null);
+    // History BEFORE appending this turn — gives Gemini real conversational
+    // memory (previously only the current message was ever sent).
+    const history = messages
+      .filter((m) => m.text)
+      .slice(-8)
+      .map((m) => ({ role: m.role, text: m.text }));
     setMessages((m) => [...m, { role: 'user', text: content, image: img }]);
     setSending(true);
     try {
+      // Real sales numbers for an approved vendor, so Finou can answer
+      // business questions instead of claiming it has no access.
+      let vendorStats;
+      if (vendorStatus === 'approved' && shop) {
+        try {
+          vendorStats = await fetchVendorSnapshot(shop.id);
+        } catch {
+          /* best-effort */
+        }
+      }
       const { data, error: fnErr } = await supabase.functions.invoke('finou-chat', {
-        body: { message: content, image: img || undefined, context: { screen: location.pathname } },
+        body: {
+          message: content,
+          image: img || undefined,
+          history,
+          context: { screen: location.pathname, ...(vendorStats ? { vendorStats } : {}) },
+        },
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       const mid = Date.now();
@@ -207,6 +251,10 @@ export function FinouChou() {
               onPublished={() => {
                 setWizardOpen(false);
                 setMessages((prev) => [...prev, { id: Date.now(), role: 'assistant', text: t('finouWizard.publishedMessage') }]);
+                // Refresh Home's cache right away so if the vendor checks
+                // Home next, the new product is already there instead of
+                // waiting for the natural stale-while-revalidate cycle.
+                loadHome().catch(() => {});
               }}
             />
           )}
