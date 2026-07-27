@@ -425,6 +425,11 @@
     "imageStillUploading": "Image en cours d’envoi…",
     "sellerPoints": "Points vendeur",
     "sellerPointsHint": "+10 par commande livrée",
+    "leaderboard": "Classement",
+    "leaderboardTitle": "Classement des vendeurs",
+    "leaderboardEmpty": "Pas encore de classement à afficher.",
+    "leaderboardYou": "Toi",
+    "leaderboardYourRank": "Ta position : #{{rank}}",
     "productImagesHint": "Jusqu’à {{count}} photos",
     "addPhotos": "Ajouter des photos"
   },

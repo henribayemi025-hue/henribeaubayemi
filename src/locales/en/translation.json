@@ -425,6 +425,11 @@
     "imageStillUploading": "Image still uploading…",
     "sellerPoints": "Seller points",
     "sellerPointsHint": "+10 per delivered order",
+    "leaderboard": "Leaderboard",
+    "leaderboardTitle": "Vendor leaderboard",
+    "leaderboardEmpty": "No leaderboard to show yet.",
+    "leaderboardYou": "You",
+    "leaderboardYourRank": "Your rank: #{{rank}}",
     "productImagesHint": "Up to {{count}} photos",
     "addPhotos": "Add photos"
   },

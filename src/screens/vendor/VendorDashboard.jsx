@@ -1,6 +1,6 @@
 import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward, IconShare2, IconLink } from '@tabler/icons-react';
+import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward, IconShare2, IconLink, IconTrophy } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -50,6 +50,7 @@ export default function VendorDashboard() {
     <div className="pb-6">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-4">
         <h1 className="flex-1 text-section text-ink">{t('vendor.greeting', { name: shop.name })}</h1>
+        <Link to="/vendor/leaderboard" aria-label={t('vendor.leaderboard')} className="p-1 text-ink"><IconTrophy size={22} /></Link>
         <Link to="/vendor/stats" aria-label={t('nav.stats')} className="p-1 text-ink"><IconChartBar size={22} /></Link>
         <button onClick={() => navigate('/switch/to-buyer')} aria-label={t('vendor.switchToBuyer')} className="p-1 text-teal">
           <IconSwitchHorizontal size={22} />
@@ -76,7 +77,10 @@ export default function VendorDashboard() {
             <IconShare2 size={20} className="shrink-0 text-teal" />
           </button>
 
-          <div className="flex items-center gap-3 rounded-card border border-brass/30 bg-brass/5 p-4">
+          <Link
+            to="/vendor/leaderboard"
+            className="flex items-center gap-3 rounded-card border border-brass/30 bg-brass/5 p-4 transition active:scale-[0.99]"
+          >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass">
               <IconAward size={24} />
             </span>
@@ -85,7 +89,7 @@ export default function VendorDashboard() {
               <p className="text-title font-semibold text-ink">{data.points}</p>
             </div>
             <p className="max-w-[45%] text-right text-caption text-muted">{t('vendor.sellerPointsHint')}</p>
-          </div>
+          </Link>
 
           <div className="grid grid-cols-3 gap-3">
             <Stat value={data.today} label={t('vendor.todayOrders')} />
