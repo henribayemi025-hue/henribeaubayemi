@@ -1,8 +1,9 @@
 import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward } from '@tabler/icons-react';
+import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward, IconShare2, IconLink } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
+import { useToast } from '../../hooks/useToast';
 import { Price } from '../../components/Price';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -12,6 +13,25 @@ export default function VendorDashboard() {
   const { shop } = useOutletContext();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const toast = useToast();
+  const shopUrl = `${window.location.origin}/boutique/${shop.slug}`;
+
+  async function shareShopLink() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: shop.name, url: shopUrl });
+        return;
+      } catch {
+        /* user cancelled or unsupported — fall through to clipboard */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shopUrl);
+      toast.success(t('vendor.shopLinkCopied'));
+    } catch {
+      toast.error(t('errors.generic'));
+    }
+  }
 
   const { data, loading, error, retry } = useAsync(async () => {
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
@@ -42,6 +62,20 @@ export default function VendorDashboard() {
         <ErrorState onRetry={retry} />
       ) : (
         <div className="space-y-6 p-4">
+          <button
+            onClick={shareShopLink}
+            className="flex w-full items-center gap-3 rounded-card border border-teal/30 bg-teal-light p-4 text-left transition active:scale-[0.99]"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-teal">
+              <IconLink size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-body font-semibold text-ink">{t('vendor.shopLinkTitle')}</p>
+              <p className="truncate text-caption text-muted">{t('vendor.shopLinkHint')}</p>
+            </div>
+            <IconShare2 size={20} className="shrink-0 text-teal" />
+          </button>
+
           <div className="flex items-center gap-3 rounded-card border border-brass/30 bg-brass/5 p-4">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass">
               <IconAward size={24} />

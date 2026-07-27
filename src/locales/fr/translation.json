@@ -99,6 +99,7 @@
     "jardinage": "Jardinage",
     "demenagement": "Déménagement",
     "beaute_domicile": "Beauté à domicile",
+    "ongles": "Ongles & Manucure",
     "coursier": "Coursier & Livraison",
     "evenementiel_service": "Prestataire événementiel",
     "autre_service": "Autre service"
@@ -393,6 +394,9 @@
     "shopCategories": "Catégories",
     "previewShop": "Aperçu de la boutique publique",
     "shopSaved": "Boutique mise à jour",
+    "shopLinkTitle": "Lien de ma boutique",
+    "shopLinkHint": "Partage-le à tes clients",
+    "shopLinkCopied": "Lien copié !",
     "noShopYet": "Tu n'as pas encore de boutique active.",
     "locationSet": "Position enregistrée.",
     "locationSetBtn": "Définir la position de ma boutique",

@@ -51,6 +51,7 @@ export const SERVICE_CATEGORIES = [
   { id: 'jardinage' },
   { id: 'demenagement' },
   { id: 'beaute_domicile' },
+  { id: 'ongles' },
   { id: 'coursier' },
   { id: 'evenementiel_service' },
   { id: 'autre_service' },

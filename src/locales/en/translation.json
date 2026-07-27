@@ -99,6 +99,7 @@
     "jardinage": "Gardening",
     "demenagement": "Moving",
     "beaute_domicile": "At-home beauty",
+    "ongles": "Nails & Manicure",
     "coursier": "Courier & Delivery",
     "evenementiel_service": "Event services",
     "autre_service": "Other service"
@@ -393,6 +394,9 @@
     "shopCategories": "Categories",
     "previewShop": "Preview public shop",
     "shopSaved": "Shop updated",
+    "shopLinkTitle": "My shop link",
+    "shopLinkHint": "Share it with your customers",
+    "shopLinkCopied": "Link copied!",
     "noShopYet": "You don't have an active shop yet.",
     "locationSet": "Location saved.",
     "locationSetBtn": "Set my shop location",
