@@ -9,6 +9,7 @@ import { SmartImage } from '../../components/SmartImage';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { pushNotify } from '../../lib/notify';
+import { currencyForCountry, convertFromFcfa } from '../../lib/currency';
 import { FinouAction } from '../../components/FinouAction';
 
 // Mentioning @finouchou (or @finou) inside a buyer<->vendor chat pulls in the
@@ -57,7 +58,7 @@ export default function VendorChat({ vendor = false }) {
     try {
       const { data: conv, error: cErr } = await supabase
         .from('conversations')
-        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url)')
+        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country)')
         .eq('id', conversationId)
         .maybeSingle();
       if (cErr || !conv) throw cErr || new Error('not found');
@@ -117,12 +118,15 @@ export default function VendorChat({ vendor = false }) {
       let vendorStats;
       if (vendor && meta?.shop_id) {
         try {
+          const currency = currencyForCountry(meta.shops?.country);
           const now = new Date();
           const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
           const { data: weekOrders } = await supabase.from('orders').select('total_fcfa').eq('shop_id', meta.shop_id).gte('created_at', weekAgo);
+          const revenueFcfa = (weekOrders || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
           vendorStats = {
+            currency,
             ordersThisWeek: weekOrders?.length || 0,
-            revenueThisWeekFcfa: (weekOrders || []).reduce((s, o) => s + (o.total_fcfa || 0), 0),
+            revenueThisWeek: Math.round(convertFromFcfa(revenueFcfa, currency) * 100) / 100,
           };
         } catch {
           /* best-effort */

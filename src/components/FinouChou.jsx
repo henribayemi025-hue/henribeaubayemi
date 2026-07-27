@@ -13,24 +13,30 @@ import { MirrorModal } from './MirrorModal';
 import { FinouProductWizard } from './FinouProductWizard';
 import { MIRROR_CATEGORIES } from '../lib/categories';
 import { loadHome } from '../lib/homeCache';
+import { currencyForCountry, convertFromFcfa } from '../lib/currency';
 
 // Real numbers for the vendor's sales, so Finou can answer "combien j'ai
 // vendu cette semaine ?" instead of saying it has no access. Best-effort —
-// a failure here should never block the chat.
-async function fetchVendorSnapshot(shopId) {
+// a failure here should never block the chat. Converted to the VENDOR's own
+// currency (FCFA is only the canonical storage unit — a vendor in France
+// prices/sells in EUR and expects their numbers back in EUR, not FCFA).
+async function fetchVendorSnapshot(shop) {
+  const currency = currencyForCountry(shop.country);
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000).toISOString();
   const monthAgo = new Date(now.getTime() - 30 * 24 * 3600 * 1000).toISOString();
   const [{ data: weekOrders }, { data: monthOrders }] = await Promise.all([
-    supabase.from('orders').select('total_fcfa').eq('shop_id', shopId).gte('created_at', weekAgo),
-    supabase.from('orders').select('total_fcfa').eq('shop_id', shopId).gte('created_at', monthAgo),
+    supabase.from('orders').select('total_fcfa').eq('shop_id', shop.id).gte('created_at', weekAgo),
+    supabase.from('orders').select('total_fcfa').eq('shop_id', shop.id).gte('created_at', monthAgo),
   ]);
-  const sum = (rows) => (rows || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
+  const sumFcfa = (rows) => (rows || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
+  const round = (n) => Math.round(convertFromFcfa(n, currency) * 100) / 100;
   return {
+    currency,
     ordersThisWeek: weekOrders?.length || 0,
-    revenueThisWeekFcfa: sum(weekOrders),
+    revenueThisWeek: round(sumFcfa(weekOrders)),
     ordersThisMonth: monthOrders?.length || 0,
-    revenueThisMonthFcfa: sum(monthOrders),
+    revenueThisMonth: round(sumFcfa(monthOrders)),
   };
 }
 
@@ -94,7 +100,7 @@ export function FinouChou() {
       let vendorStats;
       if (vendorStatus === 'approved' && shop) {
         try {
-          vendorStats = await fetchVendorSnapshot(shop.id);
+          vendorStats = await fetchVendorSnapshot(shop);
         } catch {
           /* best-effort */
         }
