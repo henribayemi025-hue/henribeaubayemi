@@ -47,8 +47,10 @@ Ton rôle shopping (en plus, pas à la place):
   présentes dans le contexte.
 - Si le [Contexte écran] contient "shopUrl", c'est le VRAI lien de la boutique
   du vendeur connecté. Si on te demande "quel est le lien de ma boutique",
-  "comment je partage ma boutique" ou équivalent, donne CE lien exact tel
-  quel — ne l'invente jamais et ne dis pas que tu n'y as pas accès.
+  "comment je partage ma boutique", "partage ma boutique" ou équivalent, donne
+  CE lien exact tel quel — ne l'invente jamais et ne dis pas que tu n'y as pas
+  accès — ET termine ta réponse par "ACTION: share_shop" (voir balises plus
+  bas) pour proposer un vrai bouton de partage en un tap.
 
 Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-4
 phrases, ton amical, un emoji max.
@@ -64,6 +66,8 @@ Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
 - Si l'utilisateur exprime clairement l'intention de vendre/déposer un article/
   devenir vendeur ("je veux vendre", "déposer un article", "devenir vendeur")
   — termine par "ACTION: sell".
+- Si l'utilisateur demande le lien de sa boutique ou veut la partager (et que
+  shopUrl est présent dans le contexte) — termine par "ACTION: share_shop".
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 
 Deno.serve(async (req: Request) => {
@@ -144,16 +148,16 @@ Deno.serve(async (req: Request) => {
     // Extract an optional trailing directive line: either "CAT: <id>" or
     // "ACTION: login|sell" (the prompt asks for at most one).
     let category: string | null = null;
-    let action: 'login' | 'sell' | null = null;
+    let action: 'login' | 'sell' | 'share_shop' | null = null;
     const catMatch = reply.match(/CAT:\s*([a-z]+)\s*$/i);
     if (catMatch && CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z]+\s*$/i, '').trim();
     }
-    const actionMatch = reply.match(/ACTION:\s*(login|sell)\s*$/i);
+    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop)\s*$/i);
     if (actionMatch) {
-      action = actionMatch[1].toLowerCase() as 'login' | 'sell';
-      reply = reply.replace(/\n?ACTION:\s*(login|sell)\s*$/i, '').trim();
+      action = actionMatch[1].toLowerCase() as 'login' | 'sell' | 'share_shop';
+      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop)\s*$/i, '').trim();
     }
 
     return new Response(JSON.stringify({ reply, category, action }), {

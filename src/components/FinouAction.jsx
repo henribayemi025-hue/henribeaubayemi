@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLogin2, IconBuildingStore, IconPlus } from '@tabler/icons-react';
+import { IconLogin2, IconBuildingStore, IconPlus, IconShare2 } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useUI } from '../hooks/useUI';
+import { useToast } from '../hooks/useToast';
 
 // One-tap follow-through when Finou detects an intent ('login' | 'sell').
 // The destination is always decided from the REAL account state client-side
@@ -19,7 +20,26 @@ export function FinouAction({ action, onNavigate, onStartWizard }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { requireLogin } = useUI();
-  const { status } = useVendorStatus();
+  const { status, shop } = useVendorStatus();
+  const toast = useToast();
+
+  async function shareShop() {
+    const url = `${window.location.origin}/boutique/${shop.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: shop.name, url });
+        return;
+      } catch {
+        /* user cancelled or unsupported — fall through to clipboard */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t('vendor.shopLinkCopied'));
+    } catch {
+      toast.error(t('errors.generic'));
+    }
+  }
 
   if (action === 'login') {
     if (user) return null; // already signed in — nothing to offer
@@ -75,6 +95,18 @@ export function FinouAction({ action, onNavigate, onStartWizard }) {
         className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+      </button>
+    );
+  }
+
+  if (action === 'share_shop') {
+    if (status !== 'approved' || !shop) return null; // no shop to share
+    return (
+      <button
+        onClick={shareShop}
+        className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+      >
+        <IconShare2 size={14} /> {t('finou.actionShareShop')}
       </button>
     );
   }

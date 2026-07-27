@@ -258,7 +258,10 @@ export function FinouChou() {
               <button onClick={() => send(t('finou.suggestGift'))} className="chip text-ink">{t('finou.suggestGift')}</button>
               <button onClick={() => fileRef.current?.click()} className="chip text-ink">{t('finou.suggestPhoto')}</button>
               {vendorStatus === 'approved' ? (
-                <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
+                <>
+                  <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
+                  <button onClick={() => send(t('finou.actionShareShop'))} className="chip text-ink">{t('finou.actionShareShop')}</button>
+                </>
               ) : (
                 <button onClick={() => send(t('finou.suggestSell'))} className="chip text-ink">{t('finou.suggestSell')}</button>
               )}
