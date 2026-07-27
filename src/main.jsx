@@ -36,3 +36,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+
+// Clear the stale-chunk reload guard (see App.jsx lazyWithReload) once the app
+// has been up a few seconds — so if the tab is left open across a LATER
+// deploy, the auto-reload safety net is armed again instead of firing at most
+// once ever per tab.
+setTimeout(() => {
+  try {
+    sessionStorage.removeItem('finjaro-chunk-reload');
+  } catch {
+    /* sessionStorage unavailable (private mode) — safe to ignore */
+  }
+}, 15000);

@@ -212,7 +212,9 @@ export default function VendorChat({ vendor = false }) {
               }
               // WhatsApp rule: my messages (by user id) on the right, everyone
               // else on the left — unambiguous on both buyer and vendor sides.
-              const mine = m.sender_id === user.id;
+              // Guard against `user` being momentarily null (auth state can
+              // flip mid-render on token refresh) so a render never throws.
+              const mine = !!user && m.sender_id === user.id;
               return (
                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${mine ? 'bg-[#E6F0F0]' : 'border border-hairline bg-white'}`}>

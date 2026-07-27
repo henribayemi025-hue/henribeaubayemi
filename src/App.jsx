@@ -11,37 +11,63 @@ import { useViewportHeight } from './hooks/useViewportHeight';
 import { BuyerLayout } from './screens/buyer/BuyerLayout';
 import { VendorLayout } from './screens/vendor/VendorLayout';
 
-// Lazy-load every route for a small initial payload on 3G / low-end devices.
-const Home = lazy(() => import('./screens/buyer/Home'));
-const Search = lazy(() => import('./screens/buyer/Search'));
-const CategoryListing = lazy(() => import('./screens/buyer/CategoryListing'));
-const ProductDetail = lazy(() => import('./screens/buyer/ProductDetail'));
-const ShopProfile = lazy(() => import('./screens/buyer/ShopProfile'));
-const Cart = lazy(() => import('./screens/buyer/Cart'));
-const CheckoutCOD = lazy(() => import('./screens/buyer/CheckoutCOD'));
-const NearYou = lazy(() => import('./screens/buyer/NearYou'));
-const Fin = lazy(() => import('./screens/buyer/Fin'));
-const Inbox = lazy(() => import('./screens/buyer/Inbox'));
-const VendorChat = lazy(() => import('./screens/buyer/VendorChat'));
-const UserProfile = lazy(() => import('./screens/buyer/UserProfile'));
-const Settings = lazy(() => import('./screens/buyer/Settings'));
-const EditProfile = lazy(() => import('./screens/buyer/EditProfile'));
-const MyOrders = lazy(() => import('./screens/buyer/MyOrders'));
-const MyFavorites = lazy(() => import('./screens/buyer/MyFavorites'));
-const Help = lazy(() => import('./screens/buyer/Help'));
-const BecomeVendor = lazy(() => import('./screens/vendor/BecomeVendor'));
-const SwitchMode = lazy(() => import('./screens/buyer/SwitchMode'));
-const Auth = lazy(() => import('./screens/Auth'));
-const Landing = lazy(() => import('../landing/Landing'));
+// A lazy-loaded chunk's URL is content-hashed to the build that created it. If
+// the tab has been open across a newer deploy, the OLD chunk no longer exists
+// on the server (the deploy overwrote it) and the dynamic import() 404s —
+// React surfaces that as a render error on whichever screen the user opens
+// for the first time since the deploy (screens already loaded, like Home,
+// keep working from memory). Clicking "Retry" doesn't help: it re-renders the
+// SAME already-rejected lazy component, still pointing at the dead URL. The
+// only real fix is a fresh index.html with the current build's chunk hashes,
+// so: on an import failure, reload the page once (guarded so a genuinely
+// broken module doesn't reload-loop — it'll surface as a normal error after).
+function lazyWithReload(factory) {
+  return lazy(async () => {
+    try {
+      return await factory();
+    } catch (err) {
+      const key = 'finjaro-chunk-reload';
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+        return new Promise(() => {}); // hold rendering until the reload lands
+      }
+      throw err;
+    }
+  });
+}
 
-const VendorDashboard = lazy(() => import('./screens/vendor/VendorDashboard'));
-const VendorProducts = lazy(() => import('./screens/vendor/VendorProducts'));
-const VendorProductEdit = lazy(() => import('./screens/vendor/VendorProductEdit'));
-const VendorOrders = lazy(() => import('./screens/vendor/VendorOrders'));
-const VendorMessages = lazy(() => import('./screens/vendor/VendorMessages'));
-const VendorReels = lazy(() => import('./screens/vendor/VendorReels'));
-const VendorShop = lazy(() => import('./screens/vendor/VendorShop'));
-const VendorStats = lazy(() => import('./screens/vendor/VendorStats'));
+// Lazy-load every route for a small initial payload on 3G / low-end devices.
+const Home = lazyWithReload(() => import('./screens/buyer/Home'));
+const Search = lazyWithReload(() => import('./screens/buyer/Search'));
+const CategoryListing = lazyWithReload(() => import('./screens/buyer/CategoryListing'));
+const ProductDetail = lazyWithReload(() => import('./screens/buyer/ProductDetail'));
+const ShopProfile = lazyWithReload(() => import('./screens/buyer/ShopProfile'));
+const Cart = lazyWithReload(() => import('./screens/buyer/Cart'));
+const CheckoutCOD = lazyWithReload(() => import('./screens/buyer/CheckoutCOD'));
+const NearYou = lazyWithReload(() => import('./screens/buyer/NearYou'));
+const Fin = lazyWithReload(() => import('./screens/buyer/Fin'));
+const Inbox = lazyWithReload(() => import('./screens/buyer/Inbox'));
+const VendorChat = lazyWithReload(() => import('./screens/buyer/VendorChat'));
+const UserProfile = lazyWithReload(() => import('./screens/buyer/UserProfile'));
+const Settings = lazyWithReload(() => import('./screens/buyer/Settings'));
+const EditProfile = lazyWithReload(() => import('./screens/buyer/EditProfile'));
+const MyOrders = lazyWithReload(() => import('./screens/buyer/MyOrders'));
+const MyFavorites = lazyWithReload(() => import('./screens/buyer/MyFavorites'));
+const Help = lazyWithReload(() => import('./screens/buyer/Help'));
+const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
+const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
+const Auth = lazyWithReload(() => import('./screens/Auth'));
+const Landing = lazyWithReload(() => import('../landing/Landing'));
+
+const VendorDashboard = lazyWithReload(() => import('./screens/vendor/VendorDashboard'));
+const VendorProducts = lazyWithReload(() => import('./screens/vendor/VendorProducts'));
+const VendorProductEdit = lazyWithReload(() => import('./screens/vendor/VendorProductEdit'));
+const VendorOrders = lazyWithReload(() => import('./screens/vendor/VendorOrders'));
+const VendorMessages = lazyWithReload(() => import('./screens/vendor/VendorMessages'));
+const VendorReels = lazyWithReload(() => import('./screens/vendor/VendorReels'));
+const VendorShop = lazyWithReload(() => import('./screens/vendor/VendorShop'));
+const VendorStats = lazyWithReload(() => import('./screens/vendor/VendorStats'));
 
 function Loading() {
   return (
