@@ -2,7 +2,7 @@
 # `npx wrangler deploy` (the project's deploy command) uploads ./dist and
 # serves it as a single-page app: unknown routes fall back to index.html so
 # client-side routing works and deep links don't return a white screen.
-name = "fin"
+name = "henribeaubayemi"
 compatibility_date = "2026-07-23"
 
 [assets]
