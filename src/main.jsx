@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './lib/i18n';
 import './styles/global.css';
 import App from './App';
+import { prefetchHome } from './lib/homeCache';
+
+// Kick off Home's data request the instant the app boots — before routing,
+// before auth resolves, before Home's own (lazy-loaded) code has even
+// downloaded. Home is the index route and the most common landing screen, so
+// by the time the user actually sees it, the network round-trip is often
+// already done instead of only starting once Home's chunk mounts.
+prefetchHome();
 
 // Register the service worker (auto-update + Web Push). The user should never
 // have to delete/reinstall the app to get a new version. We check for updates

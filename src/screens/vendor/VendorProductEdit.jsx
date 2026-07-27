@@ -3,6 +3,7 @@ import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
+import { compressImage } from '../../lib/image';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -163,9 +164,11 @@ export default function VendorProductEdit() {
     try {
       const results = await Promise.allSettled(
         batch.map(async (file) => {
-          const ext = file.name.split('.').pop();
-          const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-          const { error } = await supabase.storage.from('products').upload(path, file, { upsert: false });
+          // Downscale + re-encode to JPEG — phone photos routinely arrive at
+          // several MB, which is what makes the catalog feel slow to load.
+          const compressed = await compressImage(file, { maxDim: 1600, quality: 0.82 });
+          const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+          const { error } = await supabase.storage.from('products').upload(path, compressed, { upsert: false, contentType: 'image/jpeg' });
           if (error) throw error;
           return path;
         })

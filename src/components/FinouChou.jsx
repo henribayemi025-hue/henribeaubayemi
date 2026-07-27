@@ -3,42 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../lib/supabase';
+import { fileToDataUrl } from '../lib/image';
 import { useUI } from '../hooks/useUI';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
 import { MirrorModal } from './MirrorModal';
 import { MIRROR_CATEGORIES } from '../lib/categories';
-
-// Downscale + JPEG-encode an image to a small data URL (keeps the payload light
-// on 3G and within Gemini's inline-image limits).
-function fileToDataUrl(file, maxDim = 1024, quality = 0.8) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = reject;
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > height && width > maxDim) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else if (height > maxDim) {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 // Floating AI assistant overlay (text + vision), wired to the finou-chat function.
 export function FinouChou() {

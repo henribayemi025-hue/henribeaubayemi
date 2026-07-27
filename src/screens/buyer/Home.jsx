@@ -2,46 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSearch, IconShoppingCart, IconMoodSmile } from '@tabler/icons-react';
-import { supabase } from '../../lib/supabase';
 import { useCart } from '../../hooks/useCart';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { ProductCard } from '../../components/ProductCard';
 import { ShopCard } from '../../components/ShopCard';
 import { ProductGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/states';
-
-// Stale-while-revalidate: Home is the most-visited screen (bottom nav tab),
-// so re-fetching from scratch every time you tap back to it means a real
-// network round-trip is felt as a ~1s wait for "nothing new". Keep the last
-// successful result in memory (module-level, survives remounts within the
-// same app session) and show it INSTANTLY on next visit while a fresh fetch
-// happens silently behind it — only the very first visit shows the skeleton.
-let homeCache = null;
-
-async function fetchHome() {
-  // allSettled so a transient hiccup on ONE section doesn't blank the whole
-  // home — we render whatever loaded. Only fail if both truly failed.
-  const [pRes, sRes] = await Promise.allSettled([
-    supabase
-      .from('products')
-      .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name, slug)')
-      .eq('is_active', true)
-      .order('views', { ascending: false })
-      .limit(12),
-    supabase
-      .from('shops')
-      .select('id, slug, name, avatar_url, rating, is_verified')
-      .eq('status', 'active')
-      .order('followers_count', { ascending: false })
-      .limit(12),
-  ]);
-  const products = pRes.status === 'fulfilled' && !pRes.value.error ? pRes.value.data : null;
-  const shops = sRes.status === 'fulfilled' && !sRes.value.error ? sRes.value.data : null;
-  if (products === null && shops === null) throw new Error('home_failed');
-  return {
-    products: (products || []).map((p) => ({ ...p, shop_name: p.shops?.name })),
-    shops: shops || [],
-  };
-}
+import { homeCache, loadHome } from '../../lib/homeCache';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -54,8 +20,7 @@ export default function Home() {
     if (!homeCache) setLoading(true);
     setError(false);
     try {
-      const result = await fetchHome();
-      homeCache = result;
+      const result = await loadHome();
       setData(result);
     } catch {
       if (!homeCache) setError(true); // no stale data to fall back to

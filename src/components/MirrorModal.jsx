@@ -2,39 +2,10 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconCamera, IconRefresh, IconDownload, IconSparkles } from '@tabler/icons-react';
 import { supabase } from '../lib/supabase';
+import { fileToBase64 } from '../lib/image';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Spinner } from './Spinner';
-
-// Downscale + JPEG-encode a photo to a small base64 payload (no data: prefix)
-// — keeps the request light and stays under Gemini's inline-image limits.
-function fileToBase64(file, maxDim = 1024, quality = 0.85) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = reject;
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > height && width > maxDim) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else if (height > maxDim) {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 // Virtual try-on: upload a selfie, see yourself wearing a specific product.
 // The photo is never stored (no Supabase Storage write) — it goes straight
