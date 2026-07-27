@@ -11,6 +11,7 @@ import { Price } from './Price';
 import { FinouAction } from './FinouAction';
 import { MirrorModal } from './MirrorModal';
 import { FinouProductWizard } from './FinouProductWizard';
+import { FinouDeleteProduct } from './FinouDeleteProduct';
 import { MIRROR_CATEGORIES } from '../lib/categories';
 import { loadHome } from '../lib/homeCache';
 import { currencyForCountry, convertFromFcfa } from '../lib/currency';
@@ -54,6 +55,7 @@ export function FinouChou() {
   const [error, setError] = useState(false);
   const [mirrorProduct, setMirrorProduct] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const scroller = useRef(null);
   const fileRef = useRef(null);
 
@@ -66,7 +68,7 @@ export function FinouChou() {
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, sending, wizardOpen]);
+  }, [messages, sending, wizardOpen, deleteOpen]);
 
   async function onPick(e) {
     const file = e.target.files?.[0];
@@ -209,6 +211,7 @@ export function FinouChou() {
                       action={m.action}
                       onNavigate={closeFinou}
                       onStartWizard={m.action === 'sell' ? () => setWizardOpen(true) : undefined}
+                      onStartDelete={m.action === 'delete_product' ? () => setDeleteOpen(true) : undefined}
                     />
                   )}
                 </div>
@@ -261,6 +264,7 @@ export function FinouChou() {
                 <>
                   <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
                   <button onClick={() => send(t('finou.actionShareShop'))} className="chip text-ink">{t('finou.actionShareShop')}</button>
+                  <button onClick={() => setDeleteOpen(true)} className="chip text-ink">{t('finouDelete.title')}</button>
                 </>
               ) : (
                 <button onClick={() => send(t('finou.suggestSell'))} className="chip text-ink">{t('finou.suggestSell')}</button>
@@ -276,6 +280,16 @@ export function FinouChou() {
                 // Refresh Home's cache right away so if the vendor checks
                 // Home next, the new product is already there instead of
                 // waiting for the natural stale-while-revalidate cycle.
+                loadHome().catch(() => {});
+              }}
+            />
+          )}
+          {deleteOpen && (
+            <FinouDeleteProduct
+              onClose={() => setDeleteOpen(false)}
+              onDeleted={() => {
+                setDeleteOpen(false);
+                setMessages((prev) => [...prev, { id: Date.now(), role: 'assistant', text: t('finouDelete.deletedMessage') }]);
                 loadHome().catch(() => {});
               }}
             />

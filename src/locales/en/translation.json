@@ -213,6 +213,16 @@
     "viewDashboard": "View my dashboard",
     "publishedMessage": "Your item is live! You can track your sales from your vendor dashboard."
   },
+  "finouDelete": {
+    "title": "Delete an item",
+    "pickProduct": "Which item do you want to delete?",
+    "empty": "You have no items to delete.",
+    "confirmTitle": "Delete \"{{name}}\"?",
+    "confirmBody": "This is permanent and cannot be undone.",
+    "confirmBtn": "Yes, delete",
+    "cancelBtn": "Cancel",
+    "deletedMessage": "Item deleted. 🗑️"
+  },
   "chat": {
     "placeholder": "Write a message…",
     "chattingWith": "You're chatting with {{name}}",

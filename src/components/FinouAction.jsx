@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLogin2, IconBuildingStore, IconPlus, IconShare2 } from '@tabler/icons-react';
+import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useUI } from '../hooks/useUI';
@@ -15,7 +15,7 @@ import { useToast } from '../hooks/useToast';
 // `onStartWizard` (only passed from FinouChou) offers the guided in-chat
 // product wizard as the primary path for an approved vendor, alongside the
 // classic full-form shortcut.
-export function FinouAction({ action, onNavigate, onStartWizard }) {
+export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -107,6 +107,18 @@ export function FinouAction({ action, onNavigate, onStartWizard }) {
         className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconShare2 size={14} /> {t('finou.actionShareShop')}
+      </button>
+    );
+  }
+
+  if (action === 'delete_product') {
+    if (status !== 'approved' || !onStartDelete) return null; // no shop / not in FinouChou
+    return (
+      <button
+        onClick={onStartDelete}
+        className="mt-2 inline-flex items-center gap-1 rounded-pill border border-danger px-3 py-1 text-caption font-semibold text-danger"
+      >
+        <IconTrash size={14} /> {t('finouDelete.title')}
       </button>
     );
   }

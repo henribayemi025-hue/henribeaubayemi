@@ -68,6 +68,11 @@ Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
   — termine par "ACTION: sell".
 - Si l'utilisateur demande le lien de sa boutique ou veut la partager (et que
   shopUrl est présent dans le contexte) — termine par "ACTION: share_shop".
+- Si l'utilisateur exprime clairement l'intention de supprimer/retirer un de
+  ses articles ("supprime un article", "retire ce produit", "je veux
+  supprimer une annonce") — termine par "ACTION: delete_product". Ne
+  demande JAMAIS toi-même quel article: le choix se fait ensuite dans une
+  liste réelle de ses produits, pas via toi.
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 
 Deno.serve(async (req: Request) => {
@@ -148,16 +153,16 @@ Deno.serve(async (req: Request) => {
     // Extract an optional trailing directive line: either "CAT: <id>" or
     // "ACTION: login|sell" (the prompt asks for at most one).
     let category: string | null = null;
-    let action: 'login' | 'sell' | 'share_shop' | null = null;
+    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | null = null;
     const catMatch = reply.match(/CAT:\s*([a-z]+)\s*$/i);
     if (catMatch && CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z]+\s*$/i, '').trim();
     }
-    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop)\s*$/i);
+    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i);
     if (actionMatch) {
-      action = actionMatch[1].toLowerCase() as 'login' | 'sell' | 'share_shop';
-      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop)\s*$/i, '').trim();
+      action = actionMatch[1].toLowerCase() as 'login' | 'sell' | 'share_shop' | 'delete_product';
+      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i, '').trim();
     }
 
     return new Response(JSON.stringify({ reply, category, action }), {

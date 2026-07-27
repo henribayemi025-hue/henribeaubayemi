@@ -213,6 +213,16 @@
     "viewDashboard": "Voir mon tableau de bord",
     "publishedMessage": "Ton article est publié ! Tu peux suivre tes ventes depuis ton tableau de bord vendeur."
   },
+  "finouDelete": {
+    "title": "Supprimer un article",
+    "pickProduct": "Quel article veux-tu supprimer ?",
+    "empty": "Tu n'as aucun article à supprimer.",
+    "confirmTitle": "Supprimer « {{name}} » ?",
+    "confirmBody": "Cette action est définitive et ne peut pas être annulée.",
+    "confirmBtn": "Oui, supprimer",
+    "cancelBtn": "Annuler",
+    "deletedMessage": "Article supprimé. 🗑️"
+  },
   "chat": {
     "placeholder": "Écris un message…",
     "chattingWith": "Vous discutez avec {{name}}",
