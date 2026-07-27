@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles } from '@tabler/icons-react';
+import { MirrorModal } from '../../components/MirrorModal';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useCart } from '../../hooks/useCart';
@@ -15,7 +16,7 @@ import { SmartImage } from '../../components/SmartImage';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Skeleton, ErrorState } from '../../components/states';
-import { isQuoteOnly } from '../../lib/categories';
+import { isQuoteOnly, MIRROR_CATEGORIES } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
@@ -31,6 +32,7 @@ export default function ProductDetail() {
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [starting, setStarting] = useState(false);
+  const [mirrorOpen, setMirrorOpen] = useState(false);
 
   const [similar, setSimilar] = useState([]);
 
@@ -162,6 +164,15 @@ export default function ProductDetail() {
           </span>
         )}
 
+        {!quote && MIRROR_CATEGORIES.includes(p.category) && (
+          <button
+            onClick={() => setMirrorOpen(true)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-pill border border-brass/50 bg-brass/5 px-3 py-1.5 text-caption font-semibold text-brass"
+          >
+            <IconSparkles size={15} /> {t('mirror.tryOnButton')}
+          </button>
+        )}
+
         {p.description && (
           <div className="mt-4">
             <h2 className="text-section text-ink">{t('product.description')}</h2>
@@ -245,6 +256,8 @@ export default function ProductDetail() {
           </Button>
         )}
       </div>
+
+      <MirrorModal open={mirrorOpen} onClose={() => setMirrorOpen(false)} product={p} />
     </div>
   );
 }

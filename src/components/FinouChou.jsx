@@ -7,6 +7,8 @@ import { useUI } from '../hooks/useUI';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
+import { MirrorModal } from './MirrorModal';
+import { MIRROR_CATEGORIES } from '../lib/categories';
 
 // Downscale + JPEG-encode an image to a small data URL (keeps the payload light
 // on 3G and within Gemini's inline-image limits).
@@ -49,6 +51,7 @@ export function FinouChou() {
   const [pendingImage, setPendingImage] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
+  const [mirrorProduct, setMirrorProduct] = useState(null);
   const scroller = useRef(null);
   const fileRef = useRef(null);
 
@@ -185,16 +188,26 @@ export function FinouChou() {
               {m.products?.length > 0 && (
                 <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
                   {m.products.map((p) => (
-                    <button key={p.id} onClick={() => openProduct(p.id)} className="w-28 shrink-0 text-left transition active:scale-95">
-                      <SmartImage
-                        src={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
-                        alt={p.name}
-                        className="aspect-square w-full"
-                        rounded="rounded-input"
-                      />
-                      <p className="mt-1 line-clamp-1 text-caption text-ink">{p.name}</p>
-                      <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
-                    </button>
+                    <div key={p.id} className="w-28 shrink-0">
+                      <button onClick={() => openProduct(p.id)} className="block w-full text-left transition active:scale-95">
+                        <SmartImage
+                          src={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
+                          alt={p.name}
+                          className="aspect-square w-full"
+                          rounded="rounded-input"
+                        />
+                        <p className="mt-1 line-clamp-1 text-caption text-ink">{p.name}</p>
+                        <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                      </button>
+                      {MIRROR_CATEGORIES.includes(p.category) && (
+                        <button
+                          onClick={() => setMirrorProduct(p)}
+                          className="mt-1 flex w-full items-center justify-center gap-1 rounded-pill border border-brass/50 bg-brass/5 py-1 text-[11px] font-semibold text-brass"
+                        >
+                          <IconSparkles size={11} /> {t('mirror.tryOnButton')}
+                        </button>
+                      )}
+                    </div>
                   ))}
                   {m.category && (
                     <button
@@ -272,6 +285,10 @@ export function FinouChou() {
           </button>
         </form>
       </div>
+
+      {mirrorProduct && (
+        <MirrorModal open={!!mirrorProduct} onClose={() => setMirrorProduct(null)} product={mirrorProduct} />
+      )}
     </div>
   );
 }

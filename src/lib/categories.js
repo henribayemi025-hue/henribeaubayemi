@@ -36,6 +36,9 @@ export const CATEGORIES = [
 // Contact/Devis-only categories: no price, no add-to-cart — "Demander un devis".
 export const QUOTE_ONLY_CATEGORIES = ['mariages', 'evenement', 'mannequinerie'];
 
+// Categories where "seeing yourself wearing it" (Mirror AI) actually makes sense.
+export const MIRROR_CATEGORIES = ['mode', 'chaussures', 'sacs', 'bijoux', 'montres', 'accessoires', 'cheveux'];
+
 export function isQuoteOnly(categoryId) {
   return QUOTE_ONLY_CATEGORIES.includes(categoryId);
 }

@@ -168,6 +168,20 @@
     "actionAddProduct": "Ajouter un produit",
     "actionBecomeVendor": "Devenir vendeur"
   },
+  "mirror": {
+    "title": "Essayage virtuel",
+    "tryOnButton": "Essayer",
+    "intro": "Vois à quoi ressemblerait « {{name}} » sur toi. Ajoute une photo de toi pour commencer.",
+    "pickPhoto": "Ajouter ma photo",
+    "changePhoto": "Changer de photo",
+    "generate": "Générer",
+    "generating": "Finou t'habille… ça prend quelques secondes.",
+    "privacyNote": "Ta photo n'est jamais enregistrée — elle sert juste à générer l'image, puis elle est supprimée.",
+    "limitReached": "Tu as atteint la limite d'essais gratuits pour aujourd'hui. Reviens demain !",
+    "error": "Impossible de générer l'image pour l'instant. Réessaie.",
+    "save": "Enregistrer",
+    "tryAgain": "Réessayer"
+  },
   "chat": {
     "placeholder": "Écris un message…",
     "chattingWith": "Vous discutez avec {{name}}",
