@@ -168,6 +168,7 @@
   "chat": {
     "placeholder": "Écris un message…",
     "chattingWith": "Vous discutez avec {{name}}",
+    "finouHint": "Astuce : écris @finouchou pour poser une question à l'IA",
     "sendFailed": "Message non envoyé. Touche pour réessayer.",
     "sent": "Envoyé",
     "delivered": "Distribué",

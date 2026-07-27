@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { AppHeader } from '../../components/AppHeader';
@@ -9,6 +9,15 @@ import { SmartImage } from '../../components/SmartImage';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { pushNotify } from '../../lib/notify';
+
+// Mentioning @finouchou (or @finou) inside a buyer<->vendor chat pulls in the
+// AI assistant. Its reply is shown inline, visually distinct, but is a LOCAL,
+// ephemeral entry — NOT written to chat_messages. That table's sender_role
+// check constraint only allows ('buyer','vendor') and RLS requires
+// sender_id = auth.uid(), so a real "Finou" sender would need a schema/RLS
+// change; showing it client-side only (same as the standalone Finou overlay,
+// which is also session-only) gets the feature live with zero schema risk.
+const FINOU_MENTION_RE = /@finou(chou)?\b/i;
 
 export default function VendorChat({ vendor = false }) {
   const { conversationId } = useParams();
@@ -22,6 +31,9 @@ export default function VendorChat({ vendor = false }) {
   const [error, setError] = useState(false);
   const [input, setInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [finouThinking, setFinouThinking] = useState(false);
+  const [finouError, setFinouError] = useState(false);
+  const [finouRetryQuery, setFinouRetryQuery] = useState('');
   const scroller = useRef(null);
   const endRef = useRef(null);
   const fileRef = useRef(null);
@@ -80,7 +92,27 @@ export default function VendorChat({ vendor = false }) {
     // Anchor-based scroll is more reliable than scrollTop math when the
     // keyboard resizes the viewport (WhatsApp behaviour).
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages]);
+  }, [messages, finouThinking]);
+
+  async function askFinou(query) {
+    setFinouError(false);
+    setFinouThinking(true);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke('finou-chat', {
+        body: { message: query, context: { screen: 'chat', shop: meta?.shops?.name } },
+      });
+      if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
+      setMessages((m) => [
+        ...m,
+        { id: `finou-${Date.now()}`, isFinou: true, body: data.reply, category: data.category, created_at: new Date().toISOString() },
+      ]);
+    } catch {
+      setFinouError(true);
+      setFinouRetryQuery(query);
+    } finally {
+      setFinouThinking(false);
+    }
+  }
 
   async function deliver(payload, tempId) {
     try {
@@ -152,9 +184,30 @@ export default function VendorChat({ vendor = false }) {
             <div className="mx-auto mb-3 max-w-xs rounded-card border border-hairline p-3 text-center">
               <SmartImage src={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null} alt={shop?.name} className="mx-auto h-12 w-12" rounded="rounded-full" />
               <p className="mt-2 text-caption text-muted">{t('chat.chattingWith', { name: shop?.name || '' })}</p>
+              <p className="mt-1 text-[11px] text-muted">{t('chat.finouHint')}</p>
             </div>
             {messages.length === 0 && <p className="py-4 text-center text-caption text-muted">{t('chat.empty')}</p>}
             {messages.map((m) => {
+              if (m.isFinou) {
+                return (
+                  <div key={m.id} className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl border border-teal/30 bg-teal/5 px-3 py-2">
+                      <p className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-teal">
+                        <IconSparkles size={12} /> Finou Chou
+                      </p>
+                      <p className="whitespace-pre-wrap text-body text-ink">{m.body}</p>
+                      {m.category && (
+                        <Link
+                          to={`/category/${m.category}`}
+                          className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+                        >
+                          {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
               // WhatsApp rule: my messages (by user id) on the right, everyone
               // else on the left — unambiguous on both buyer and vendor sides.
               const mine = m.sender_id === user.id;
@@ -176,11 +229,34 @@ export default function VendorChat({ vendor = false }) {
                 </div>
               );
             })}
+            {finouThinking && (
+              <div className="flex justify-start" aria-label={t('finou.typing')}>
+                <div className="flex items-center gap-1 rounded-2xl border border-teal/30 bg-teal/5 px-3 py-3">
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-teal" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-teal" style={{ animationDelay: '150ms' }} />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-teal" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            )}
+            {finouError && (
+              <div className="flex flex-col items-center gap-1 py-1 text-center">
+                <p className="text-caption text-danger">{t('finou.unavailable')}</p>
+                <button onClick={() => askFinou(finouRetryQuery)} className="btn-ghost text-caption">
+                  {t('common.retry')}
+                </button>
+              </div>
+            )}
             <div ref={endRef} />
           </div>
 
           <form
-            onSubmit={(e) => { e.preventDefault(); send(input); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              const text = input.trim();
+              const mentioned = FINOU_MENTION_RE.test(text);
+              send(text);
+              if (mentioned) askFinou(text.replace(FINOU_MENTION_RE, '').trim() || text);
+            }}
             className="flex shrink-0 items-center gap-2 border-t border-hairline bg-white p-3"
           >
             <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
