@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import mode from '../assets/categories/mode.webp';
-import beaute from '../assets/categories/beaute.webp';
-import evenement from '../assets/categories/evenement.webp';
-import deco from '../assets/categories/deco.webp';
+import mode from '../assets/categories/hero-mode.webp';
+import beaute from '../assets/categories/hero-beaute.webp';
+import evenement from '../assets/categories/hero-evenement.webp';
+import deco from '../assets/categories/hero-deco.webp';
 
 const SLIDES = [
   { cat: 'mode', image: mode },
@@ -27,7 +27,7 @@ export function HomeHeroCarousel() {
   }, []);
 
   return (
-    <div className="relative h-40 w-full overflow-hidden rounded-2xl">
+    <div className="relative aspect-[2/1] w-full max-w-2xl overflow-hidden rounded-2xl">
       {SLIDES.map((s, i) => (
         <button
           key={s.cat}
