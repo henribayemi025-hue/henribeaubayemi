@@ -1,5 +1,6 @@
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { VendorNav } from '../../components/VendorNav';
+import { VendorSidebarNav } from '../../components/VendorSidebarNav';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { LoginPrompt } from '../../components/LoginPrompt';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
@@ -36,9 +37,10 @@ export function VendorLayout() {
   if (!shop) return <Navigate to="/profile" replace />;
 
   return (
-    <div className="md:bg-[#F5F5F5]">
+    <div className="lg:flex lg:h-dvh lg:bg-[#FAF6F0]">
+      <VendorSidebarNav />
       <div
-        className="fixed inset-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white"
+        className="fixed inset-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:inset-auto lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
         style={{ paddingBottom: 'var(--kb, 0px)' }}
       >
         <main className="flex-1 overflow-y-auto overscroll-contain">
@@ -50,7 +52,7 @@ export function VendorLayout() {
           // Positions relative to the fixed shell above (not <main>'s scroll),
           // same pattern as the buyer side's BuyerNav FAB — viewport-pinned
           // regardless of scroll position, sitting just above the tab bar.
-          <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4">
+          <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4 lg:bottom-6 lg:px-6">
             <button
               onClick={openFinou}
               aria-label={t('finou.title')}
