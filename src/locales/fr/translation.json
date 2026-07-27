@@ -105,9 +105,7 @@
     "autre_service": "Autre service"
   },
   "home": {
-    "heroTag": "La marketplace d'Afrique & Diaspora",
-    "heroTitle": "Mode, Beauté & Événements d'exception",
-    "heroSubtitle": "Découvre des créations uniques, essaie-les virtuellement avec Miroir et parle à Finou Chou.",
+    "heroCta": "Découvre la sélection",
     "trending": "Tendances",
     "shopsNearYou": "Boutiques près de vous",
     "loadError": "Impossible de charger les produits.",

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconShoppingCart, IconMoodSmile, IconSparkles } from '@tabler/icons-react';
+import { IconSearch, IconShoppingCart, IconMoodSmile } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import { CategoryStrip } from '../../components/CategoryStrip';
+import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
 import { ProductCard } from '../../components/ProductCard';
 import { ShopCard } from '../../components/ShopCard';
 import { ProductGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/states';
@@ -56,13 +57,7 @@ export default function Home() {
       </header>
 
       <div className="p-4 pb-0">
-        <div className="rounded-2xl bg-ink p-5 text-white">
-          <span className="inline-flex items-center gap-1.5 rounded-pill bg-white/10 px-3 py-1 text-caption font-semibold text-brass">
-            <IconSparkles size={14} /> {t('home.heroTag')}
-          </span>
-          <h1 className="mt-3 text-title font-semibold leading-tight">{t('home.heroTitle')}</h1>
-          <p className="mt-1.5 text-caption text-white/70">{t('home.heroSubtitle')}</p>
-        </div>
+        <HomeHeroCarousel />
       </div>
 
       <div className="pt-3">
