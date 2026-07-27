@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto } from '@tabler/icons-react';
-import { supabase } from '../lib/supabase';
+import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight } from '@tabler/icons-react';
+import { supabase, storageUrl } from '../lib/supabase';
 import { useUI } from '../hooks/useUI';
+import { SmartImage } from './SmartImage';
+import { Price } from './Price';
 
 // Downscale + JPEG-encode an image to a small data URL (keeps the payload light
 // on 3G and within Gemini's inline-image limits).
@@ -85,7 +87,25 @@ export function FinouChou() {
         body: { message: content, image: img || undefined, context: { screen: location.pathname } },
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
-      setMessages((m) => [...m, { role: 'assistant', text: data.reply, category: data.category }]);
+      const mid = Date.now();
+      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category }]);
+      // Visual search: if Finou identified a category, surface real, buyable
+      // products from the marketplace as a carousel under the reply.
+      if (data.category) {
+        try {
+          const { data: prods } = await supabase
+            .from('products')
+            .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name)')
+            .eq('is_active', true)
+            .eq('category', data.category)
+            .order('views', { ascending: false })
+            .limit(10);
+          const products = (prods || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
+          if (products.length) setMessages((m) => m.map((x) => (x.id === mid ? { ...x, products } : x)));
+        } catch {
+          /* best-effort: the reply already stands on its own */
+        }
+      }
     } catch {
       setError(true);
     } finally {
@@ -101,6 +121,11 @@ export function FinouChou() {
   function goCategory(cat) {
     closeFinou();
     navigate(`/category/${cat}`);
+  }
+
+  function openProduct(id) {
+    closeFinou();
+    navigate(`/product/${id}`);
   }
 
   if (!finouOpen) return null;
@@ -133,23 +158,53 @@ export function FinouChou() {
 
         <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto p-4">
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-body ${
-                  m.role === 'user' ? 'bg-[#E6F0F0] text-ink' : 'border border-hairline bg-white text-ink'
-                }`}
-              >
-                {m.image && <img src={m.image} alt="" className="mb-1 max-h-40 rounded-input object-cover" />}
-                {m.text}
-                {m.category && (
-                  <button
-                    onClick={() => goCategory(m.category)}
-                    className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
-                  >
-                    {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
-                  </button>
-                )}
+            <div key={m.id || i}>
+              <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-body ${
+                    m.role === 'user' ? 'bg-[#E6F0F0] text-ink' : 'border border-hairline bg-white text-ink'
+                  }`}
+                >
+                  {m.image && <img src={m.image} alt="" className="mb-1 max-h-40 rounded-input object-cover" />}
+                  {m.text}
+                  {/* No products found → keep the category shortcut as a fallback. */}
+                  {m.category && !m.products?.length && (
+                    <button
+                      onClick={() => goCategory(m.category)}
+                      className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+                    >
+                      {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Visual-search results: a tappable product carousel. */}
+              {m.products?.length > 0 && (
+                <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                  {m.products.map((p) => (
+                    <button key={p.id} onClick={() => openProduct(p.id)} className="w-28 shrink-0 text-left transition active:scale-95">
+                      <SmartImage
+                        src={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
+                        alt={p.name}
+                        className="aspect-square w-full"
+                        rounded="rounded-input"
+                      />
+                      <p className="mt-1 line-clamp-1 text-caption text-ink">{p.name}</p>
+                      <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                    </button>
+                  ))}
+                  {m.category && (
+                    <button
+                      onClick={() => goCategory(m.category)}
+                      className="flex w-28 shrink-0 flex-col items-center justify-center gap-1 rounded-input border border-dashed border-hairline text-caption font-semibold text-teal"
+                    >
+                      <IconChevronRight size={20} />
+                      {t('finou.seeMore')}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
           {sending && (

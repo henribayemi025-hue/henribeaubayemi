@@ -162,7 +162,8 @@
     "typing": "Finou Chou is typing…",
     "attach": "Attach a photo",
     "imageReady": "Photo ready to send",
-    "seeCategory": "See {{cat}}"
+    "seeCategory": "See {{cat}}",
+    "seeMore": "See more"
   },
   "chat": {
     "placeholder": "Write a message…",

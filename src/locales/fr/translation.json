@@ -162,7 +162,8 @@
     "typing": "Finou Chou écrit…",
     "attach": "Joindre une photo",
     "imageReady": "Photo prête à envoyer",
-    "seeCategory": "Voir {{cat}}"
+    "seeCategory": "Voir {{cat}}",
+    "seeMore": "Voir plus"
   },
   "chat": {
     "placeholder": "Écris un message…",
