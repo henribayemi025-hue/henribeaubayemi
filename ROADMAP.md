@@ -28,8 +28,11 @@
   (Web Push), `finou-vision` (stub), `vendor-copilot` (Gemini → marketing
   product description for the vendor product form; reuses the project-level
   `GEMINI_API_KEY`, no new secret), `create-checkout` + `stripe-webhook`
-  (Stripe), `miroir-ia` (v6 — a Mirror-AI/try-on function already exists on the
-  project; inspect it before building the Mirror AI UI).
+  (Stripe), `miroir-ia` (v7 — Mirror AI / virtual try-on, Gemini
+  `gemini-2.5-flash-image`, UI wired into Finou + product pages; DORMANT —
+  Google's free tier has a hard `limit: 0` for this image model, Beau chose
+  not to enable billing for now. Server-side 5/day quota already in place.
+  See Cycle 8 below before touching this again).
 - **Auto-update:** `public/sw.js` is network-first for navigations + skipWaiting/
   claim; `main.jsx` calls `reg.update()` on focus and reloads once when a new
   worker takes control. Users never need to delete/reinstall to get a new build.
@@ -142,19 +145,67 @@
   fee (application_fee); mobile-money aggregator (Fapshi/Notch Pay) for
   Orange Money / MoMo in Cameroun.
 
-## Backlog — remaining
-1. **Gamification leaderboard + reward** — a vendor ranking screen; decide the
-   reward (Beau floated a paid tier ~200€ for top client-drivers). Points column
-   + trigger already live.
-2. **Elite design pass (Beau's 8-chantier brief)** — glassmorphism nav/headers,
-   iOS-style bottom sheets replacing modals, like-button bounce, pinned FAB on
-   product detail, skeletons matching card geometry, swipeable galleries,
-   optimistic UI everywhere, Error Boundaries. Do this WITHOUT destabilising the
-   locked "Lagune & Encre" tokens — it's a big, careful cycle on its own.
-3. **`@finou` inside buyer↔vendor chats** — detect `@finou` and insert an AI reply.
-4. **Search UX** — inline results as you type (Amazon-style).
-5. **Real IP geolocation edge function** (cf-ipcountry / x-forwarded-for) to
-   replace the timezone/locale heuristic in `detectCountry`.
+## Done — Cycle 8 (Cloudflare migration + Finou intelligence + Mirror AI + perf)
+- **Migrated Netlify → Cloudflare** (Workers static assets + wrangler.toml SPA
+  fallback). See `MIGRATION_NOTES.md` for every deploy trap hit (do not add
+  `public/_redirects` back; env vars must be baked as code defaults since CF
+  dashboard vars are runtime-only, not build-time).
+- **Finou is a real generalist assistant now** (system prompt rewrite, v3) —
+  answers any question, no longer deflects to a canned intro. `ACTION: login|
+  sell` tags drive one-tap buttons (`FinouAction`) routed from real account
+  state client-side, never the LLM.
+- **Finou visual search** — image upload → real product carousel (not just a
+  category link).
+- **`@finouchou` in buyer↔vendor chat** — done, with live `@` autocomplete.
+  (Superseded backlog item 3 above.)
+- **ErrorBoundary** + **stale-chunk auto-reload** (`lazyWithReload` in
+  App.jsx) — a render error or an old deploy's dead chunk no longer
+  white-screens the app.
+- **Real Search crash fixed** (not a stale-tab issue) — `data` was null during
+  the ~300ms pre-debounce window; render fell through to `data.cats` on null.
+  Reproduced + verified via a headless Playwright script (see git history for
+  the exact repro).
+- **Perf**: uploaded photos are compressed client-side before Storage
+  (`lib/image.js`, max 1600px JPEG q0.82 — also fixes HEIC display); Home
+  prefetches its data the instant the app boots (`lib/homeCache.js`) instead
+  of waiting for its lazy chunk to mount; `useAuth` dedupes profile refetches;
+  migration 0012 added DB indexes for the hot buyer queries.
+- **Mirror AI — built, deployed, currently DORMANT (Beau's call).** The
+  `miroir-ia` edge function (Gemini `gemini-2.5-flash-image`, native image
+  gen) already existed from an earlier session; wired to the UI this cycle —
+  a "✨ Essayer" button lives directly in Finou's product carousel (per
+  Beau's explicit request) and on the product detail page for wearable
+  categories. **Confirmed via live test (screenshot, 2026-07): Google's FREE
+  tier has a hard `limit: 0` quota for this image model — it needs billing
+  enabled on the Google account that owns `GEMINI_API_KEY`, no exceptions.**
+  Beau chose not to enable billing for now ("non pour l'instant ça va").
+  Everything is ready — server-side 5/day quota already enforced (migration
+  0013, `events.type='mirror_try'`) — the ONLY blocker is Beau enabling
+  billing at https://aistudio.google.com/ on that Google account. Do not
+  rebuild this; just point Beau to enable billing when he's ready.
+
+## Beau's stated plan (2026-07, verbatim order) — what's next
+1. ~~Test Mirror AI + Finou live~~ — done; Mirror AI dormant per above, Finou
+   confirmed working.
+2. **Vendor leaderboard** (`seller_points` + trigger already live since
+   Cycle 6 — needs the ranking screen + Beau to decide the reward, he floated
+   a ~200€/month paid tier for top client-drivers).
+3. **Elite design pass** (Beau's 8-chantier brief) — glassmorphism nav/
+   headers, iOS-style bottom sheets replacing modals, pinned FAB on product
+   detail, skeletons matching card geometry, swipeable galleries, optimistic
+   UI everywhere. Do this WITHOUT destabilising the locked "Lagune & Encre"
+   tokens — a big, careful cycle on its own.
+4. **Remaining bug fixes** — ask Beau what's still bugging him after 1-3.
+5. **Brainstorm/review session with Beau** — walk everything added, confirm
+   it's all good.
+6. **Launch Phase 1.**
+7. **Phase 2** (only after Phase 1 is validated) — recruit real early
+   vendors, Stripe LIVE mode (needs Beau's auto-entrepreneur registration),
+   Orange Money / mobile money (Fapshi/Notch Pay). Beau explicitly wants
+   these three bundled together at the end, not before.
+- Real IP geolocation edge function (cf-ipcountry / x-forwarded-for) to
+  replace the timezone/locale heuristic in `detectCountry` — low priority,
+  fold into item 4 if time allows.
 
 ## Open items to reproduce / re-test with Beau
 - Search UX: make it filter inline as you type (Amazon-style) + confirm the
