@@ -171,7 +171,8 @@
   "chat": {
     "placeholder": "Write a message…",
     "chattingWith": "You're chatting with {{name}}",
-    "finouHint": "Tip: type @finouchou to ask the AI a question",
+    "finouHint": "Tip: type @ to ask the AI",
+    "finouSuggestionHint": "Ask the AI",
     "sendFailed": "Message not sent. Tap to retry.",
     "sent": "Sent",
     "delivered": "Delivered",

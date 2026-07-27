@@ -38,6 +38,18 @@ export default function VendorChat({ vendor = false }) {
   const scroller = useRef(null);
   const endRef = useRef(null);
   const fileRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Live "@" mention suggestion (Twitter/Slack-style): while the trailing
+  // token being typed is a prefix of "finouchou", offer a one-tap completion
+  // instead of requiring the full word — also doubles as discoverability.
+  const mentionMatch = input.match(/(?:^|\s)@(\w*)$/i);
+  const showMentionSuggestion = !!mentionMatch && 'finouchou'.startsWith(mentionMatch[1].toLowerCase());
+
+  function applyMentionSuggestion() {
+    setInput((v) => v.replace(/@(\w*)$/i, '@finouchou '));
+    inputRef.current?.focus();
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -253,6 +265,17 @@ export default function VendorChat({ vendor = false }) {
             <div ref={endRef} />
           </div>
 
+          {showMentionSuggestion && (
+            <div className="border-t border-hairline bg-white px-3 pt-2">
+              <button
+                type="button"
+                onClick={applyMentionSuggestion}
+                className="inline-flex items-center gap-1.5 rounded-pill border border-teal/40 bg-teal/5 px-3 py-1.5 text-caption font-semibold text-teal"
+              >
+                <IconSparkles size={14} /> @finouchou — {t('chat.finouSuggestionHint')}
+              </button>
+            </div>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -261,13 +284,20 @@ export default function VendorChat({ vendor = false }) {
               send(text);
               if (mentioned) askFinou(text.replace(FINOU_MENTION_RE, '').trim() || text);
             }}
-            className="flex shrink-0 items-center gap-2 border-t border-hairline bg-white p-3"
+            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion ? '' : 'border-t border-hairline'}`}
           >
             <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
               <IconPhoto size={24} />
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-            <input className="input flex-1" placeholder={t('chat.placeholder')} value={input} onChange={(e) => setInput(e.target.value)} aria-label={t('chat.placeholder')} />
+            <input
+              ref={inputRef}
+              className="input flex-1"
+              placeholder={t('chat.placeholder')}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              aria-label={t('chat.placeholder')}
+            />
             <button type="submit" disabled={!input.trim() && !uploading} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]" aria-label={t('common.send')}>
               <IconSend2 size={20} />
             </button>
