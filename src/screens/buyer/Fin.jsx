@@ -24,7 +24,7 @@ export default function Fin() {
     try {
       let query = supabase
         .from('reels')
-        .select('*, shops(name, slug, avatar_url)')
+        .select('*, shops(name, slug, avatar_url), products(id, name, price_fcfa, images, stock, shop_id)')
         .order('created_at', { ascending: false })
         .limit(30);
       if (tab === 'following') {

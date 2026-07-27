@@ -309,6 +309,7 @@
     "like": "J'aime",
     "comment": "Commenter",
     "viewProduct": "Voir le produit",
+    "buyNow": "Acheter",
     "loadError": "Impossible de charger les reels."
   },
   "reel": {

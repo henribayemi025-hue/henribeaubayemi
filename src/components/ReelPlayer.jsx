@@ -1,12 +1,14 @@
 import { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconTag } from '@tabler/icons-react';
+import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconShoppingBagPlus } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
+import { useCart } from '../hooks/useCart';
 import { ReelCommentsSheet } from './ReelCommentsSheet';
+import { Price } from './Price';
 import { track } from '../lib/track';
 
 // One full-screen reel. Autoplays when >60% visible; muted by default.
@@ -15,6 +17,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
   const { user } = useAuth();
   const { requireLogin } = useUI();
   const toast = useToast();
+  const cart = useCart();
   const videoRef = useRef(null);
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(reel.likes || 0);
@@ -62,6 +65,12 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     track('comment', reel.id);
   }
 
+  function buyProduct() {
+    const p = reel.products;
+    if (!p) return;
+    cart.add({ ...p, shop_id: p.shop_id || reel.shop_id, shop_name: reel.shops?.name });
+  }
+
   return (
     <div className="relative h-full w-full snap-start bg-black">
       <video
@@ -92,8 +101,30 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         </button>
       </div>
 
-      <div className="absolute inset-x-0 bottom-20 z-10 px-4 pr-20 text-white">
-        <Link to={`/boutique/${reel.shops?.slug}`} className="flex items-center gap-2">
+      <div className="absolute inset-x-0 bottom-20 z-10 px-3 pr-20 text-white">
+        {reel.product_id && reel.products && (
+          <div className="mb-2 flex items-center gap-2 rounded-2xl bg-white/95 p-2 pr-3 shadow-lg">
+            <Link to={`/product/${reel.product_id}`} className="flex min-w-0 flex-1 items-center gap-2">
+              <img
+                src={reel.products.images?.[0] ? storageUrl('products', reel.products.images[0]) : '/favicon.svg'}
+                alt={reel.products.name}
+                className="h-11 w-11 shrink-0 rounded-input object-cover"
+              />
+              <div className="min-w-0">
+                <p className="line-clamp-1 text-caption font-semibold text-ink">{reel.products.name}</p>
+                <Price fcfa={reel.products.price_fcfa} className="text-caption font-semibold text-teal" />
+              </div>
+            </Link>
+            <button
+              onClick={buyProduct}
+              disabled={reel.products.stock <= 0}
+              className="flex shrink-0 items-center gap-1 rounded-pill bg-teal px-3 py-2 text-caption font-semibold text-white disabled:bg-hairline disabled:text-muted"
+            >
+              <IconShoppingBagPlus size={15} /> {t('fin.buyNow')}
+            </button>
+          </div>
+        )}
+        <Link to={`/boutique/${reel.shops?.slug}`} className="flex items-center gap-2 px-1">
           <img
             src={reel.shops?.avatar_url ? storageUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
             alt={reel.shops?.name}
@@ -101,12 +132,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
           />
           <span className="text-body font-semibold">{reel.shops?.name}</span>
         </Link>
-        {reel.caption && <p className="mt-2 line-clamp-2 text-caption">{reel.caption}</p>}
-        {reel.product_id && (
-          <Link to={`/product/${reel.product_id}`} className="mt-2 inline-flex items-center gap-1 rounded-pill bg-white/90 px-3 py-1 text-caption font-semibold text-ink">
-            <IconTag size={15} /> {t('fin.viewProduct')}
-          </Link>
-        )}
+        {reel.caption && <p className="mt-2 line-clamp-2 px-1 text-caption">{reel.caption}</p>}
       </div>
 
       <ReelCommentsSheet

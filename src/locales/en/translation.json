@@ -309,6 +309,7 @@
     "like": "Like",
     "comment": "Comment",
     "viewProduct": "View product",
+    "buyNow": "Buy",
     "loadError": "Couldn't load reels."
   },
   "reel": {
