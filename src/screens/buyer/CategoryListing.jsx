@@ -34,8 +34,8 @@ export default function CategoryListing() {
     <div>
       <AppHeader title={t(`categories.${categoryId}`)} back />
       {cat && (
-        <div className="h-28 w-full overflow-hidden">
-          <img src={cat.banner} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+        <div className="h-28 w-full overflow-hidden bg-ink">
+          <img src={cat.banner} alt="" aria-hidden="true" className="h-full w-full object-contain" />
         </div>
       )}
       <div className="p-4">
