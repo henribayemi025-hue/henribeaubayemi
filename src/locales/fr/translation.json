@@ -92,7 +92,16 @@
     "evenement": "Événement",
     "mannequinerie": "Mannequinerie",
     "art": "Art",
-    "accessoires": "Accessoires"
+    "accessoires": "Accessoires",
+    "reparation": "Réparation & Bricolage",
+    "menage": "Ménage",
+    "cours": "Cours & Tutorat",
+    "jardinage": "Jardinage",
+    "demenagement": "Déménagement",
+    "beaute_domicile": "Beauté à domicile",
+    "coursier": "Coursier & Livraison",
+    "evenementiel_service": "Prestataire événementiel",
+    "autre_service": "Autre service"
   },
   "home": {
     "trending": "Tendances",
@@ -234,6 +243,8 @@
     "broaden": "Élargir la recherche",
     "iLookFor": "Je cherche",
     "iOffer": "Je propose",
+    "listingKind": "Article ou service ?",
+    "kind": { "article": "Article", "service": "Service" },
     "listingType": "Type d'annonce",
     "listingCategory": "Catégorie",
     "listingDesc": "Description",

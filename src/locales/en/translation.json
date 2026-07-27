@@ -92,7 +92,16 @@
     "evenement": "Events",
     "mannequinerie": "Modeling",
     "art": "Art",
-    "accessoires": "Accessories"
+    "accessoires": "Accessories",
+    "reparation": "Repairs & Handywork",
+    "menage": "Cleaning",
+    "cours": "Tutoring & Lessons",
+    "jardinage": "Gardening",
+    "demenagement": "Moving",
+    "beaute_domicile": "At-home beauty",
+    "coursier": "Courier & Delivery",
+    "evenementiel_service": "Event services",
+    "autre_service": "Other service"
   },
   "home": {
     "trending": "Trending",
@@ -234,6 +243,8 @@
     "broaden": "Broaden search",
     "iLookFor": "I'm looking for",
     "iOffer": "I'm offering",
+    "listingKind": "Item or service?",
+    "kind": { "article": "Item", "service": "Service" },
     "listingType": "Listing type",
     "listingCategory": "Category",
     "listingDesc": "Description",

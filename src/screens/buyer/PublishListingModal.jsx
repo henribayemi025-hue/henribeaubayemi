@@ -8,7 +8,7 @@ import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { Field, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
-import { CATEGORIES } from '../../lib/categories';
+import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
 import { getPosition } from '../../lib/geo';
 
 export function PublishListingModal({ open, onClose, onDone }) {
@@ -17,7 +17,13 @@ export function PublishListingModal({ open, onClose, onDone }) {
   const { country } = useSettings();
   const toast = useToast();
   const [type, setType] = useState('cherche');
+  // Article vs Service reuses the SAME near_you_listings table/flow — just a
+  // second category list (category is a free-text column, no DB change
+  // needed). Lets a service request/offer ("réparer mon frigo", "cours de
+  // maths") live in the same "Autour de moi" annonces buyers already browse.
+  const [kind, setKind] = useState('article');
   const [category, setCategory] = useState('mode');
+  const categoryOptions = kind === 'service' ? SERVICE_CATEGORIES : CATEGORIES;
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -52,6 +58,21 @@ export function PublishListingModal({ open, onClose, onDone }) {
   return (
     <Modal open={open} onClose={onClose} title={t('nearYou.publishListing')}>
       <div className="space-y-3">
+        <Field label={t('nearYou.listingKind')}>
+          {(id) => (
+            <div id={id} className="flex gap-2">
+              {['article', 'service'].map((k) => (
+                <button
+                  key={k}
+                  onClick={() => { setKind(k); setCategory(k === 'service' ? SERVICE_CATEGORIES[0].id : CATEGORIES[0].id); }}
+                  className={`chip flex-1 justify-center ${kind === k ? 'chip-active' : 'text-ink'}`}
+                >
+                  {t(`nearYou.kind.${k}`)}
+                </button>
+              ))}
+            </div>
+          )}
+        </Field>
         <Field label={t('nearYou.listingType')}>
           {(id) => (
             <div id={id} className="flex gap-2">
@@ -66,7 +87,7 @@ export function PublishListingModal({ open, onClose, onDone }) {
         <Field label={t('nearYou.listingCategory')}>
           {(id) => (
             <Select id={id} value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
+              {categoryOptions.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
             </Select>
           )}
         </Field>

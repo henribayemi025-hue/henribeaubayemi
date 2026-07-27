@@ -39,6 +39,27 @@ export const QUOTE_ONLY_CATEGORIES = ['mariages', 'evenement', 'mannequinerie'];
 // Categories where "seeing yourself wearing it" (Mirror AI) actually makes sense.
 export const MIRROR_CATEGORIES = ['mode', 'chaussures', 'sacs', 'bijoux', 'montres', 'accessoires', 'cheveux'];
 
+// Service requests/offers live in the SAME near_you_listings table as
+// classified "annonces" (type 'cherche'/'propose' + free-text category, no
+// DB constraint on the value) — no new table needed, just a second category
+// list a listing's category can come from. No icon/banner (services aren't
+// shown as Home category tiles), only used in Near You's publish form + list.
+export const SERVICE_CATEGORIES = [
+  { id: 'reparation' },
+  { id: 'menage' },
+  { id: 'cours' },
+  { id: 'jardinage' },
+  { id: 'demenagement' },
+  { id: 'beaute_domicile' },
+  { id: 'coursier' },
+  { id: 'evenementiel_service' },
+  { id: 'autre_service' },
+];
+
+export function isServiceCategory(categoryId) {
+  return SERVICE_CATEGORIES.some((c) => c.id === categoryId);
+}
+
 export function isQuoteOnly(categoryId) {
   return QUOTE_ONLY_CATEGORIES.includes(categoryId);
 }

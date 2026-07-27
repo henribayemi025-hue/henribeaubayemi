@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation, IconList, IconMap2 } from '@tabler/icons-react';
+import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation, IconList, IconMap2, IconTool } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +18,7 @@ import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { getPosition, distanceKm } from '../../lib/geo';
+import { isServiceCategory } from '../../lib/categories';
 
 // Leaflet is heavy — only pull it in when the user opens the map view.
 const NearYouMap = lazy(() => import('../../components/NearYouMap'));
@@ -196,14 +197,22 @@ export default function NearYou() {
           {byDistance(data.listings).map((l) => (
             <li key={l.id} className="card">
               <div className="flex items-center justify-between">
-                <span className={`chip ${l.type === 'cherche' ? 'chip-active' : 'text-brass border-brass'}`}>
-                  {t(l.type === 'cherche' ? 'nearYou.iLookFor' : 'nearYou.iOffer')}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`chip ${l.type === 'cherche' ? 'chip-active' : 'text-brass border-brass'}`}>
+                    {t(l.type === 'cherche' ? 'nearYou.iLookFor' : 'nearYou.iOffer')}
+                  </span>
+                  {isServiceCategory(l.category) && (
+                    <span className="chip flex items-center gap-1 border-hairline text-muted">
+                      <IconTool size={12} /> {t('nearYou.kind.service')}
+                    </span>
+                  )}
+                </div>
                 <span className="text-caption text-muted">
                   {l._km != null && <span className="mr-1 font-semibold text-teal">{l._km} km ·</span>}
                   {timeAgo(l.created_at, i18n.language)}
                 </span>
               </div>
+              {l.category && <p className="mt-1.5 text-caption font-semibold text-muted">{t(`categories.${l.category}`)}</p>}
               {l.photo_url && <SmartImage src={storageUrl('listings', l.photo_url)} alt="" className="mt-2 h-40 w-full rounded-input" />}
               <p className="mt-2 text-body text-ink">{l.description}</p>
               <p className="mt-1 text-caption text-muted">{l.profiles?.name || t('profile.guest')} · {[l.city, countryLabel(l.country, i18n.language)].filter(Boolean).join(', ')}</p>

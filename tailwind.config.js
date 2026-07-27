@@ -5,11 +5,13 @@ export default {
     extend: {
       colors: {
         base: '#FFFFFF',
-        ink: '#1A1A1A', // text primary
+        ink: '#0B132B', // text primary ("encre")
+        'ink-soft': '#1C2541', // secondary ink shade, used in gradients
         muted: '#6B6B6B', // text secondary
         teal: {
-          DEFAULT: '#0F4C4C', // primary accent
-          hover: '#0C3D3D', // hover/active
+          DEFAULT: '#00A896', // primary accent ("lagune")
+          hover: '#028090', // hover/active
+          light: '#E6F7F5', // light tint background (badges, selected rows)
         },
         brass: '#B8935F', // secondary accent
         hairline: '#E5E5E5', // dividers

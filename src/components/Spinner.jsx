@@ -8,7 +8,7 @@ export function Spinner({ size = 24, light = false }) {
         width: size,
         height: size,
         borderColor: light ? 'rgba(255,255,255,0.4)' : '#E5E5E5',
-        borderTopColor: light ? '#FFFFFF' : '#0F4C4C',
+        borderTopColor: light ? '#FFFFFF' : '#00A896',
       }}
     />
   );

@@ -185,7 +185,7 @@ export default function BecomeVendor() {
               <Recap label={t('becomeVendor.phone')} value={form.phone} />
             </div>
             <label className="flex items-start gap-3">
-              <input type="checkbox" checked={agree} onChange={(e) => { setAgree(e.target.checked); setTermsErr(false); }} className="mt-0.5 h-5 w-5 accent-[#0F4C4C]" />
+              <input type="checkbox" checked={agree} onChange={(e) => { setAgree(e.target.checked); setTermsErr(false); }} className="mt-0.5 h-5 w-5 accent-[#00A896]" />
               <span className="text-body text-ink">{t('becomeVendor.acceptTerms')}</span>
             </label>
             {termsErr && <p className="text-caption text-danger">{t('becomeVendor.termsRequired')}</p>}

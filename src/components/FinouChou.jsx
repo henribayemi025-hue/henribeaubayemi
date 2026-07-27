@@ -189,7 +189,7 @@ export function FinouChou() {
               <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-body ${
-                    m.role === 'user' ? 'bg-[#E6F0F0] text-ink' : 'border border-hairline bg-white text-ink'
+                    m.role === 'user' ? 'bg-[#E6F7F5] text-ink' : 'border border-hairline bg-white text-ink'
                   }`}
                 >
                   {m.image && <img src={m.image} alt="" className="mb-1 max-h-40 rounded-input object-cover" />}
