@@ -21,6 +21,12 @@ export const supabase = createClient(url, anonKey, {
 export function storageUrl(bucket, path) {
   if (!path) return null;
   if (path.startsWith('http')) return path;
+  // Chemin absolu du site (ex: /demo-products/robe-01.jpg): fichier servi par
+  // l'hébergeur, pas par Supabase Storage. À laisser tel quel — le passer à
+  // getPublicUrl() fabriquerait une URL Supabase vers un objet inexistant.
+  // Les articles de démonstration référençaient l'ancien domaine Cloudflare en
+  // absolu; ils sont désormais en relatif pour suivre le site où qu'il soit.
+  if (path.startsWith('/')) return path;
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
@@ -34,6 +40,7 @@ export function storageUrl(bucket, path) {
 export function storageThumbUrl(bucket, path) {
   if (!path) return null;
   if (path.startsWith('http')) return path; // URL externe: pas de vignette dérivable
+  if (path.startsWith('/')) return path;    // fichier de l'hébergeur: idem
   const dot = path.lastIndexOf('.');
   const thumbPath = dot === -1 ? `${path}_thumb` : `${path.slice(0, dot)}_thumb${path.slice(dot)}`;
   return supabase.storage.from(bucket).getPublicUrl(thumbPath).data.publicUrl;

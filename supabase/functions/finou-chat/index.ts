@@ -86,6 +86,11 @@ TES OUTILS — utilise-les, ne devine jamais:
 - "Où en est ma commande", "mes achats", "j'ai commandé quoi" -> get_my_orders.
 - "Mes ventes", "mon chiffre d'affaires", "combien j'ai gagné" -> get_my_shop_stats.
 - "Quelles boutiques", "y a-t-il des vendeurs à/en…" -> find_shops.
+- "Ajoute ça au panier", "je le prends", "mets-en 2" à propos d'un article que
+  TOI (Finou) venez de montrer via search_products/get_trending_products dans
+  CETTE conversation -> add_to_cart avec son id exact. N'appelle JAMAIS cet
+  outil sans confirmation claire de l'utilisateur, et jamais pour un article
+  dont tu n'as pas déjà l'id réel (cherche-le d'abord si besoin).
 Tu peux enchaîner plusieurs outils avant de répondre. Si un outil ne renvoie rien,
 dis-le franchement et propose une alternative — n'invente aucun produit.
 
@@ -162,7 +167,25 @@ const TOOL_DECLARATIONS = [
       },
     },
   },
+  {
+    name: 'add_to_cart',
+    description:
+      "Ajoute au panier un article que l'utilisateur vient d'accepter explicitement. Ne l'appelle jamais de ta propre initiative ni sans l'id réel d'un article déjà trouvé.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        product_id: { type: 'STRING', description: "L'id exact renvoyé par search_products/get_trending_products" },
+        qty: { type: 'NUMBER', description: 'Quantité, 1 par défaut' },
+      },
+      required: ['product_id'],
+    },
+  },
 ];
+
+// Catégories vendues sur devis: pas de prix ferme, donc rien à mettre au
+// panier — l'acheteur doit contacter la boutique. Doit rester aligné avec
+// QUOTE_ONLY_CATEGORIES côté client (src/lib/categories.js).
+const QUOTE_ONLY = ['mariages', 'evenement', 'mannequinerie'];
 
 type Json = Record<string, unknown>;
 
