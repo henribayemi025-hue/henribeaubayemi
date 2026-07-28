@@ -85,6 +85,10 @@ export function MirrorModal({ open, onClose, product }) {
           setError('limit');
         } else if (body?.error === 'budget_paused') {
           setError('paused');
+        } else if (body?.error === 'rate_limited') {
+          setError('tooFast');
+        } else if (body?.error === 'photo_too_large') {
+          setError('photoTooLarge');
         } else {
           setError('generic');
           // body.detail is Gemini's own refusal text/finishReason when we
@@ -98,6 +102,10 @@ export function MirrorModal({ open, onClose, product }) {
           setError('limit');
         } else if (data.error === 'budget_paused') {
           setError('paused');
+        } else if (data.error === 'rate_limited') {
+          setError('tooFast');
+        } else if (data.error === 'photo_too_large') {
+          setError('photoTooLarge');
         } else {
           setError('generic');
           setErrorDetail(data.detail || data.error);
@@ -164,12 +172,20 @@ export function MirrorModal({ open, onClose, product }) {
       {error && !loading && (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <p className="text-body text-danger">
-            {error === 'limit' ? t('mirror.limitReached') : error === 'paused' ? t('mirror.paused') : t('mirror.error')}
+            {error === 'limit'
+              ? t('mirror.limitReached')
+              : error === 'paused'
+                ? t('mirror.paused')
+                : error === 'tooFast'
+                  ? t('mirror.tooFast')
+                  : error === 'photoTooLarge'
+                    ? t('mirror.photoTooLarge')
+                    : t('mirror.error')}
           </p>
           {/* Raw server/Gemini message — helps diagnose (e.g. billing/quota)
               instead of a dead-end generic error. */}
           {errorDetail && <p className="max-w-xs text-caption text-muted">{errorDetail}</p>}
-          {error !== 'limit' && error !== 'paused' && (
+          {error === 'generic' && (
             <button onClick={generate} className="btn-ghost text-caption">
               <IconRefresh size={16} /> {t('common.retry')}
             </button>

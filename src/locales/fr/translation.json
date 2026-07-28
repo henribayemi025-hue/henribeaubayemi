@@ -220,7 +220,9 @@
     "paused": "Miroir AI fait une pause ce mois-ci pour rester dans le budget. Reviens un peu plus tard 🙏",
     "error": "Impossible de générer l'image pour l'instant. Réessaie.",
     "save": "Enregistrer",
-    "tryAgain": "Réessayer"
+    "tryAgain": "Réessayer",
+    "tooFast": "Tu enchaînes un peu vite 😅 Réessaie dans quelques minutes.",
+    "photoTooLarge": "Cette photo est trop lourde. Prends-en une autre ou recadre-la."
   },
   "finouWizard": {
     "title": "Déposer un article",
@@ -284,7 +286,10 @@
     "iLookFor": "Je cherche",
     "iOffer": "Je propose",
     "listingKind": "Article ou service ?",
-    "kind": { "article": "Article", "service": "Service" },
+    "kind": {
+      "article": "Article",
+      "service": "Service"
+    },
     "filterAll": "Tout",
     "filterServices": "Services",
     "filterArticles": "Articles",
