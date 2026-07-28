@@ -35,11 +35,10 @@ export default function CategoryListing() {
       <AppHeader title={t(`categories.${categoryId}`)} back />
       <div className="lg:mx-auto lg:max-w-4xl">
         {cat && (
-          // On desktop the grid below stays wide (lg:max-w-4xl), but the
-          // banner itself gets its own, narrower + taller box — otherwise a
-          // roughly-square source photo, height-constrained to fit a very
-          // wide bar, renders tiny in a sea of blurred backdrop.
-          <div className="relative mx-auto h-36 w-full overflow-hidden bg-ink lg:h-72 lg:w-72 lg:rounded-2xl">
+          // Full width, same as the grid below — but taller on desktop so a
+          // roughly-square source photo still renders large inside it,
+          // instead of shrinking to fit a short bar full of blurred padding.
+          <div className="relative h-36 w-full overflow-hidden bg-ink lg:h-96">
             {/* Blurred backdrop fills the frame; the real banner stays fully
                 visible and never upscaled past its own resolution, so it's
                 never cropped and never blurry. */}
