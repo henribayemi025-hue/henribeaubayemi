@@ -15,7 +15,7 @@ export async function fetchHome() {
   const [pRes, sRes] = await Promise.allSettled([
     supabase
       .from('products')
-      .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name, slug)')
+      .select('id, name, price_fcfa, images, category, stock, shop_id, views, shops(name, slug)')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(24),

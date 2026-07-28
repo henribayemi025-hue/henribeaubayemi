@@ -106,6 +106,7 @@
   },
   "home": {
     "heroCta": "Explore the selection",
+    "topPick": "Top pick",
     "trending": "New arrivals",
     "shopsNearYou": "Shops near you",
     "loadError": "Couldn't load products.",

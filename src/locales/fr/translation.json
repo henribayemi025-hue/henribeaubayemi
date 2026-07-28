@@ -106,6 +106,7 @@
   },
   "home": {
     "heroCta": "Découvre la sélection",
+    "topPick": "Top article",
     "trending": "Nouveautés",
     "shopsNearYou": "Boutiques près de vous",
     "loadError": "Impossible de charger les produits.",

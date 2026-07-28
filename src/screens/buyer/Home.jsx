@@ -57,7 +57,7 @@ export default function Home() {
       </header>
 
       <div className="p-4 pb-0">
-        <HomeHeroCarousel />
+        <HomeHeroCarousel products={data?.products} />
       </div>
 
       <div className="pt-3">
