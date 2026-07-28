@@ -40,8 +40,8 @@ export function VendorLayout() {
     <div className="lg:flex lg:h-dvh lg:bg-[#FAF6F0]">
       <VendorSidebarNav />
       <div
-        className="fixed inset-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:inset-auto lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
-        style={{ paddingBottom: 'var(--kb, 0px)' }}
+        className="fixed left-0 right-0 top-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
+        style={{ height: 'var(--app-height, 100dvh)', paddingBottom: 'var(--kb, 0px)' }}
       >
         <main className="flex-1 overflow-y-auto overscroll-contain">
           <ErrorBoundary key={pathname}>
