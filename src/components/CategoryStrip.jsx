@@ -11,7 +11,7 @@ export function CategoryStrip() {
         <Link
           key={c.id}
           to={`/category/${c.id}`}
-          className="flex w-20 shrink-0 flex-col items-center"
+          className="flex w-20 shrink-0 flex-col items-center transition-transform duration-150 active:scale-95"
           aria-label={t(`categories.${c.id}`)}
         >
           <div className="h-20 w-20 overflow-hidden rounded-card border border-hairline">

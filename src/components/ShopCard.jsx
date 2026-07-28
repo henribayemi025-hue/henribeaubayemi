@@ -8,7 +8,7 @@ import { storageUrl } from '../lib/supabase';
 export function ShopCard({ shop, distanceKm }) {
   const avatar = shop.avatar_url ? storageUrl('shops', shop.avatar_url) : null;
   return (
-    <Link to={`/boutique/${shop.slug}`} className="flex w-24 shrink-0 flex-col items-center text-center">
+    <Link to={`/boutique/${shop.slug}`} className="flex w-24 shrink-0 flex-col items-center text-center transition-transform duration-150 active:scale-95">
       <SmartImage src={avatar} alt={shop.name} className="h-16 w-16" rounded="rounded-full" />
       <span className="mt-2 flex items-center gap-1 text-caption font-semibold text-ink">
         <span className="line-clamp-1">{shop.name}</span>
