@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Button } from '../components/Button';
@@ -15,6 +16,7 @@ export default function Auth() {
   const refCode = new URLSearchParams(location.search).get('ref');
   const [mode, setMode] = useState(refCode ? 'signup' : 'login');
   const [form, setForm] = useState({ email: '', password: '', name: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const from = location.state?.from || '/';
 
@@ -69,7 +71,28 @@ export default function Auth() {
         </Field>
         {mode !== 'forgot' && (
           <Field label={t('auth.password')}>
-            {(id) => <TextInput id={id} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />}
+            {(id) => (
+              <div className="relative">
+                <TextInput
+                  id={id}
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required
+                  minLength={6}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  className="pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-ink transition-colors"
+                  aria-label={showPassword ? t('common.hide') : t('common.show')}
+                >
+                  {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
+                </button>
+              </div>
+            )}
           </Field>
         )}
         {mode === 'login' && (

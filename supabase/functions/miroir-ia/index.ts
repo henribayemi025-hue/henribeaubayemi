@@ -21,11 +21,22 @@ const BUDGET_EUR = 20;
 const MIRROR_CALL_COST_EUR = 0.02; // conservative estimate — image generation costs more than a text turn
 const ADMIN_USER_ID = 'bffb724f-6652-4240-a6f7-6904369a1fd4';
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Restrict CORS to Finjaro only (security: prevent cross-origin abuse)
+const ALLOWED_ORIGINS = [
+  'https://finjaro.netlify.app',
+  'https://finjaro-main.netlify.app',
+  'http://localhost:5173', // dev
+  'http://localhost:4173', // preview
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowed = ALLOWED_ORIGINS.includes(origin || '') ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed || '',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 function admin() {
   return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
@@ -63,7 +74,8 @@ async function isOverBudget(sb: ReturnType<typeof admin>): Promise<boolean> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  const corsHeaders = getCorsHeaders(req.headers.get('Origin'));
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get('Authorization') || '';
@@ -73,7 +85,7 @@ Deno.serve(async (req) => {
     });
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: cors });
+      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: corsHeaders });
     }
 
     const sb = admin();
@@ -88,25 +100,25 @@ Deno.serve(async (req) => {
     if ((count || 0) >= DAILY_LIMIT) {
       return new Response(
         JSON.stringify({ error: 'daily_limit_reached', limit: DAILY_LIMIT }),
-        { status: 429, headers: cors }
+        { status: 429, headers: corsHeaders }
       );
     }
 
     if (await isOverBudget(sb)) {
       return new Response(
         JSON.stringify({ error: 'budget_paused' }),
-        { status: 503, headers: cors }
+        { status: 503, headers: corsHeaders }
       );
     }
 
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'GEMINI_API_KEY manquant dans les secrets' }), { status: 500, headers: cors });
+      return new Response(JSON.stringify({ error: 'GEMINI_API_KEY manquant dans les secrets' }), { status: 500, headers: corsHeaders });
     }
 
     const { selfieBase64, prompt, category, productImageUrl } = await req.json();
     if (!selfieBase64 || !prompt) {
-      return new Response(JSON.stringify({ error: 'selfieBase64 et prompt requis' }), { status: 400, headers: cors });
+      return new Response(JSON.stringify({ error: 'selfieBase64 et prompt requis' }), { status: 400, headers: corsHeaders });
     }
 
     // The product's own photo — without it Gemini only has the product NAME
@@ -171,7 +183,7 @@ Deno.serve(async (req) => {
     let attempts = 1;
     let { ok, status, json: data } = await callGemini();
     if (!ok) {
-      return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status, headers: cors });
+      return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status, headers: corsHeaders });
     }
     let imgPart = data.candidates?.[0]?.content?.parts?.find((p: { inline_data?: unknown }) => p.inline_data);
 
@@ -183,7 +195,7 @@ Deno.serve(async (req) => {
       attempts = 2;
       ({ ok, status, json: data } = await callGemini());
       if (!ok) {
-        return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status, headers: cors });
+        return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status, headers: corsHeaders });
       }
       imgPart = data.candidates?.[0]?.content?.parts?.find((p: { inline_data?: unknown }) => p.inline_data);
     }
@@ -202,7 +214,7 @@ Deno.serve(async (req) => {
           error: 'Aucune image générée — reformulez votre description',
           detail: textPart || finishReason || undefined,
         }),
-        { status: 502, headers: cors }
+        { status: 502, headers: corsHeaders }
       );
     }
 
@@ -214,9 +226,9 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ image: imgPart.inline_data.data, mimeType: imgPart.inline_data.mime_type || 'image/png' }),
-      { headers: { ...cors, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: cors });
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
   }
 });
