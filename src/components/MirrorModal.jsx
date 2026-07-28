@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconCamera, IconRefresh, IconDownload, IconSparkles } from '@tabler/icons-react';
+import { IconCamera, IconPhoto, IconRefresh, IconDownload, IconSparkles } from '@tabler/icons-react';
 import { supabase } from '../lib/supabase';
 import { fileToBase64 } from '../lib/image';
 import { Modal } from './Modal';
@@ -14,7 +14,12 @@ import { Spinner } from './Spinner';
 // bounded regardless of what the client does.
 export function MirrorModal({ open, onClose, product }) {
   const { t } = useTranslation();
-  const fileRef = useRef(null);
+  // Two separate inputs: one forces the camera open (capture="user"), the
+  // other opens the photo library — explicit buttons for each instead of
+  // relying on the browser's native action-sheet (which some devices don't
+  // even show both options in).
+  const cameraRef = useRef(null);
+  const libraryRef = useRef(null);
   const [selfie, setSelfie] = useState(null); // { base64, previewUrl }
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { image, mimeType }
@@ -36,7 +41,7 @@ export function MirrorModal({ open, onClose, product }) {
   async function onPick(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (fileRef.current) fileRef.current.value = '';
+    e.target.value = '';
     try {
       const base64 = await fileToBase64(file);
       setSelfie({ base64, previewUrl: URL.createObjectURL(file) });
@@ -103,15 +108,21 @@ export function MirrorModal({ open, onClose, product }) {
 
   return (
     <Modal open={open} onClose={handleClose} title={t('mirror.title')}>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="user" className="hidden" onChange={onPick} />
+      <input ref={libraryRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
 
       {!selfie && !result && (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <IconSparkles size={40} className="text-brass" />
           <p className="text-body text-ink">{t('mirror.intro', { name: product.name })}</p>
-          <Button onClick={() => fileRef.current?.click()}>
-            <IconCamera size={18} /> {t('mirror.pickPhoto')}
-          </Button>
+          <div className="flex w-full gap-2">
+            <Button className="flex-1" onClick={() => cameraRef.current?.click()}>
+              <IconCamera size={18} /> {t('mirror.takePhoto')}
+            </Button>
+            <Button className="flex-1" variant="secondary" onClick={() => libraryRef.current?.click()}>
+              <IconPhoto size={18} /> {t('mirror.choosePhoto')}
+            </Button>
+          </div>
           <p className="text-caption text-muted">{t('mirror.privacyNote')}</p>
         </div>
       )}
@@ -120,8 +131,11 @@ export function MirrorModal({ open, onClose, product }) {
         <div className="flex flex-col items-center gap-3 py-2">
           <img src={selfie.previewUrl} alt="" className="h-56 w-56 rounded-card object-cover" />
           <div className="flex gap-2">
-            <button onClick={() => fileRef.current?.click()} className="btn-ghost text-caption">
-              <IconRefresh size={16} /> {t('mirror.changePhoto')}
+            <button onClick={() => cameraRef.current?.click()} className="btn-ghost text-caption">
+              <IconCamera size={16} /> {t('mirror.takePhoto')}
+            </button>
+            <button onClick={() => libraryRef.current?.click()} className="btn-ghost text-caption">
+              <IconRefresh size={16} /> {t('mirror.choosePhoto')}
             </button>
           </div>
           <Button onClick={generate}>
