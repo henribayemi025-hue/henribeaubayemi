@@ -104,9 +104,29 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'GEMINI_API_KEY manquant dans les secrets' }), { status: 500, headers: cors });
     }
 
-    const { selfieBase64, prompt, category } = await req.json();
+    const { selfieBase64, prompt, category, productImageUrl } = await req.json();
     if (!selfieBase64 || !prompt) {
       return new Response(JSON.stringify({ error: 'selfieBase64 et prompt requis' }), { status: 400, headers: cors });
+    }
+
+    // The product's own photo — without it Gemini only has the product NAME
+    // in text and has nothing to actually render ("I can't visualize
+    // '<name>', describe it for me" was the exact refusal this fixes).
+    let productImagePart: { inline_data: { mime_type: string; data: string } } | null = null;
+    if (productImageUrl) {
+      try {
+        const imgResp = await fetch(productImageUrl);
+        if (imgResp.ok) {
+          const buf = await imgResp.arrayBuffer();
+          const mimeType = imgResp.headers.get('content-type') || 'image/jpeg';
+          let binary = '';
+          const bytes = new Uint8Array(buf);
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+          productImagePart = { inline_data: { mime_type: mimeType, data: btoa(binary) } };
+        }
+      } catch (e) {
+        console.error('miroir-ia: failed to fetch product image', e);
+      }
     }
 
     // A ring needs a hand in frame, a watch needs a wrist, etc. — telling
@@ -123,21 +143,23 @@ Deno.serve(async (req) => {
     };
     const bodyPartHint = BODY_PART_HINTS[category] || '';
 
-    const promptText = `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. ${bodyPartHint} Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit. Si la partie du corps nécessaire n'est pas visible sur la photo, fais de ton mieux avec ce qui est visible plutôt que de refuser. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`;
+    const promptText = productImagePart
+      ? `Essayage virtuel. Voici deux images : la PREMIÈRE est la photo de la personne, la SECONDE est la photo réelle de l'article "${prompt}" à lui faire porter. ${bodyPartHint} Édite la première photo pour que la personne porte exactement l'article montré dans la seconde image (même couleur, forme et matière). Garde le visage, la pose et la morphologie de la personne identiques. Si la partie du corps nécessaire n'est pas visible sur la photo, fais de ton mieux avec ce qui est visible plutôt que de refuser. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`
+      : `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. ${bodyPartHint} Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit. Si la partie du corps nécessaire n'est pas visible sur la photo, fais de ton mieux avec ce qui est visible plutôt que de refuser. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`;
 
     async function callGemini() {
+      const parts: Array<Record<string, unknown>> = [
+        { text: promptText },
+        { inline_data: { mime_type: 'image/jpeg', data: selfieBase64 } },
+      ];
+      if (productImagePart) parts.push(productImagePart);
       const resp = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
         {
           method: 'POST',
           headers: { 'x-goog-api-key': GEMINI_API_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: promptText },
-                { inline_data: { mime_type: 'image/jpeg', data: selfieBase64 } },
-              ],
-            }],
+            contents: [{ parts }],
             generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
           }),
         }

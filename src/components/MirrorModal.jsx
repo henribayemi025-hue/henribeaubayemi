@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconCamera, IconPhoto, IconRefresh, IconDownload, IconSparkles } from '@tabler/icons-react';
-import { supabase } from '../lib/supabase';
+import { supabase, storageUrl } from '../lib/supabase';
 import { fileToBase64 } from '../lib/image';
 import { Modal } from './Modal';
 import { Button } from './Button';
@@ -63,8 +63,11 @@ export function MirrorModal({ open, onClose, product }) {
     setErrorDetail(null);
     try {
       const prompt = product.name + (product.description ? ` (${product.description.slice(0, 120)})` : '');
+      // Gemini can't render an article it has never seen — the product's
+      // own photo has to go in the request too, not just its name in text.
+      const productImageUrl = product.images?.[0] ? storageUrl('products', product.images[0]) : null;
       const { data, error: fnErr } = await supabase.functions.invoke('miroir-ia', {
-        body: { selfieBase64: selfie.base64, prompt, category: product.category },
+        body: { selfieBase64: selfie.base64, prompt, category: product.category, productImageUrl },
       });
       if (fnErr) {
         // supabase-js only gives us the HTTP status by default on a non-2xx
