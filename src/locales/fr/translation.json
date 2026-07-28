@@ -584,5 +584,27 @@
     "crashTitle": "Oups, un souci est survenu",
     "crashHint": "Cette page a rencontré une erreur. Réessaie — le reste de l'app fonctionne toujours.",
     "notFound": "Introuvable."
+  },
+  "admin": {
+    "title": "Statistiques",
+    "visits": "Visites",
+    "users": "Utilisateurs",
+    "vendors": "Boutiques actives",
+    "orders": "Commandes",
+    "revenue": "Chiffre d'affaires payé",
+    "last7d": "{{n}} sur 7 jours",
+    "topProducts": "Produits les plus vus",
+    "views": "vues",
+    "activity": "Activité par type",
+    "eventTypes": {
+      "visit": "Visites",
+      "product_view": "Vues produit",
+      "shop_view": "Vues boutique",
+      "category_view": "Vues catégorie",
+      "search": "Recherches",
+      "follow": "Abonnements",
+      "comment": "Commentaires",
+      "mirror_try": "Essayages Miroir"
+    }
   }
 }

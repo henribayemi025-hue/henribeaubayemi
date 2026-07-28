@@ -4,6 +4,7 @@ import {
   IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout,
   IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal,
   IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift,
+  IconChartBar,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -56,6 +57,7 @@ export default function UserProfile() {
     { icon: IconGift, label: t('referral.navLabel'), to: '/profile/invite' },
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
     { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
+    ...(profile?.is_admin ? [{ icon: IconChartBar, label: t('admin.title'), to: '/admin' }] : []),
   ];
 
   return (

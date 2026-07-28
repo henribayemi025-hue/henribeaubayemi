@@ -4,6 +4,7 @@ import './lib/i18n';
 import './styles/global.css';
 import App from './App';
 import { prefetchHome } from './lib/homeCache';
+import { track } from './lib/track';
 
 // Kick off Home's data request the instant the app boots — before routing,
 // before auth resolves, before Home's own (lazy-loaded) code has even
@@ -11,6 +12,17 @@ import { prefetchHome } from './lib/homeCache';
 // by the time the user actually sees it, the network round-trip is often
 // already done instead of only starting once Home's chunk mounts.
 prefetchHome();
+
+// One "visit" per browser tab session (not every reload) — feeds the admin
+// dashboard's visits count. Fire-and-forget, never blocks boot.
+try {
+  if (!sessionStorage.getItem('finjaro-visit-logged')) {
+    sessionStorage.setItem('finjaro-visit-logged', '1');
+    track('visit');
+  }
+} catch {
+  /* sessionStorage unavailable (private mode) — skip, non-critical */
+}
 
 // Register the service worker (auto-update + Web Push). The user should never
 // have to delete/reinstall the app to get a new version. We check for updates
