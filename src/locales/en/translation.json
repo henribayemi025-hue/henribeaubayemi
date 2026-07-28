@@ -202,6 +202,15 @@
     "title": "Virtual try-on",
     "tryOnButton": "Try it on",
     "intro": "See what \"{{name}}\" would look like on you. Add a photo of yourself to start.",
+    "photoHints": {
+      "bijoux": "💍 Take a photo of your hand or neck depending on the piece — not a face selfie.",
+      "montres": "⌚ Take a photo of your wrist.",
+      "chaussures": "👟 Take a photo of your feet.",
+      "mode": "👕 Take a photo of yourself facing forward, full or half body.",
+      "sacs": "👜 Take a full-body photo of yourself holding or wearing the bag.",
+      "accessoires": "Take a photo showing where the accessory is worn.",
+      "cheveux": "💇 A normal face selfie works well here."
+    },
     "takePhoto": "Take a photo",
     "choosePhoto": "Choose a photo",
     "generate": "Generate",

@@ -100,12 +100,26 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'GEMINI_API_KEY manquant dans les secrets' }), { status: 500, headers: cors });
     }
 
-    const { selfieBase64, prompt } = await req.json();
+    const { selfieBase64, prompt, category } = await req.json();
     if (!selfieBase64 || !prompt) {
       return new Response(JSON.stringify({ error: 'selfieBase64 et prompt requis' }), { status: 400, headers: cors });
     }
 
-    const promptText = `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`;
+    // A ring needs a hand in frame, a watch needs a wrist, etc. — telling
+    // Gemini which body part to expect (and to work with whatever is
+    // actually in the photo) cuts down on it silently declining to edit.
+    const BODY_PART_HINTS: Record<string, string> = {
+      bijoux: "Le bijou se porte probablement sur la main, le cou ou les oreilles visibles sur la photo — édite la zone du corps pertinente qui apparaît dans l'image.",
+      montres: "La montre se porte au poignet — édite le poignet visible sur la photo.",
+      chaussures: "Les chaussures se portent aux pieds — édite les pieds visibles sur la photo.",
+      mode: "Édite les vêtements de la personne sur la photo.",
+      sacs: "Ajoute le sac porté ou tenu par la personne sur la photo.",
+      accessoires: "Édite la zone du corps où cet accessoire se porte habituellement, selon ce qui est visible sur la photo.",
+      cheveux: "Édite la coiffure/cheveux de la personne sur la photo.",
+    };
+    const bodyPartHint = BODY_PART_HINTS[category] || '';
+
+    const promptText = `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. ${bodyPartHint} Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit. Si la partie du corps nécessaire n'est pas visible sur la photo, fais de ton mieux avec ce qui est visible plutôt que de refuser. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`;
 
     async function callGemini() {
       const resp = await fetch(

@@ -202,6 +202,15 @@
     "title": "Essayage virtuel",
     "tryOnButton": "Essayer",
     "intro": "Vois à quoi ressemblerait « {{name}} » sur toi. Ajoute une photo de toi pour commencer.",
+    "photoHints": {
+      "bijoux": "💍 Prends une photo de ta main ou de ton cou selon le bijou — pas un selfie de visage.",
+      "montres": "⌚ Prends une photo de ton poignet.",
+      "chaussures": "👟 Prends une photo de tes pieds.",
+      "mode": "👕 Prends une photo de toi de face, en pied ou à mi-corps.",
+      "sacs": "👜 Prends une photo de toi en pied, tenant ou portant le sac.",
+      "accessoires": "Prends une photo qui montre où l'accessoire se porte.",
+      "cheveux": "💇 Un selfie de visage classique fonctionne bien ici."
+    },
     "takePhoto": "Prendre une photo",
     "choosePhoto": "Choisir une photo",
     "generate": "Générer",

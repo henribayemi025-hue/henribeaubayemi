@@ -25,6 +25,10 @@ export function MirrorModal({ open, onClose, product }) {
   const [result, setResult] = useState(null); // { image, mimeType }
   const [error, setError] = useState(null); // 'limit' | 'generic'
   const [errorDetail, setErrorDetail] = useState(null); // raw server/Gemini message, shown for diagnosis
+  // A ring needs a hand photo, a watch needs a wrist photo, etc. — a face
+  // selfie physically can't show most products "worn", so Gemini has
+  // nothing sensible to edit. Tell the user which photo actually works.
+  const photoHint = t(`mirror.photoHints.${product.category}`, { defaultValue: '' });
 
   function reset() {
     setSelfie(null);
@@ -60,7 +64,7 @@ export function MirrorModal({ open, onClose, product }) {
     try {
       const prompt = product.name + (product.description ? ` (${product.description.slice(0, 120)})` : '');
       const { data, error: fnErr } = await supabase.functions.invoke('miroir-ia', {
-        body: { selfieBase64: selfie.base64, prompt },
+        body: { selfieBase64: selfie.base64, prompt, category: product.category },
       });
       if (fnErr) {
         // supabase-js only gives us the HTTP status by default on a non-2xx
@@ -117,6 +121,7 @@ export function MirrorModal({ open, onClose, product }) {
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <IconSparkles size={40} className="text-brass" />
           <p className="text-body text-ink">{t('mirror.intro', { name: product.name })}</p>
+          {photoHint && <p className="text-caption font-semibold text-brass">{photoHint}</p>}
           <div className="flex w-full gap-2">
             <Button className="flex-1" onClick={() => cameraRef.current?.click()}>
               <IconCamera size={18} /> {t('mirror.takePhoto')}
