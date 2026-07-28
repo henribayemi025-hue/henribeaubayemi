@@ -196,7 +196,10 @@
     "suggestPhoto": "Search by photo",
     "suggestSell": "Become a vendor",
     "suggestSales": "My sales this week",
-    "actionShareShop": "Share my shop"
+    "actionShareShop": "Share my shop",
+    "voiceStart": "Speak to Finou",
+    "voiceStop": "Stop dictation",
+    "voiceListening": "I'm listening…"
   },
   "mirror": {
     "title": "Virtual try-on",

@@ -9,6 +9,7 @@ import { useUI } from '../../hooks/useUI';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
 import { SmartImage } from '../../components/SmartImage';
+import { ShopBanner } from '../../components/ShopBanner';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { StarRating } from '../../components/StarRating';
 import { ProductCard } from '../../components/ProductCard';
@@ -145,7 +146,7 @@ export default function ShopProfile() {
   return (
     <div className="pb-6">
       <div className="relative">
-        <SmartImage src={banner} alt="" className="h-44 w-full lg:h-64" />
+        <ShopBanner src={banner} name={shop.name} className="h-44 w-full lg:h-64" />
         <button onClick={() => navigate(-1)} className="absolute left-3 top-3 rounded-full bg-white/90 p-1.5 text-ink shadow" aria-label={t('common.back')}>
           <IconArrowBackUp size={20} />
         </button>

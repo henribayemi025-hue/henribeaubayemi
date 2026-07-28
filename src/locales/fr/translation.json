@@ -196,7 +196,10 @@
     "suggestPhoto": "Recherche par photo",
     "suggestSell": "Devenir vendeur",
     "suggestSales": "Mes ventes cette semaine",
-    "actionShareShop": "Partager ma boutique"
+    "actionShareShop": "Partager ma boutique",
+    "voiceStart": "Dicter à Finou",
+    "voiceStop": "Arrêter la dictée",
+    "voiceListening": "Je t'écoute…"
   },
   "mirror": {
     "title": "Essayage virtuel",

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight } from '@tabler/icons-react';
+import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
 import { useUI } from '../hooks/useUI';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
+import { useSpeechInput } from '../hooks/useSpeechInput';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
@@ -44,7 +45,7 @@ async function fetchVendorSnapshot(shop) {
 
 // Floating AI assistant overlay (text + vision), wired to the finou-chat function.
 export function FinouChou() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { finouOpen, closeFinou, requireLogin } = useUI();
   const { user } = useAuth();
@@ -60,6 +61,13 @@ export function FinouChou() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const scroller = useRef(null);
   const fileRef = useRef(null);
+
+  // Dictée vocale: le texte reconnu s'ajoute au champ (il ne l'écrase pas),
+  // pour qu'on puisse dicter puis corriger au clavier avant d'envoyer.
+  const speech = useSpeechInput({
+    lang: i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR',
+    onResult: (text) => setInput((prev) => (prev ? `${prev} ${text}` : text)),
+  });
 
   useEffect(() => {
     if (finouOpen && messages.length === 0) {
@@ -342,10 +350,25 @@ export function FinouChou() {
             <IconPhoto size={24} />
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
+          {/* Micro affiché uniquement si le navigateur sait vraiment dicter —
+              mieux vaut pas de bouton qu'un bouton sans effet (Firefox). */}
+          {speech.supported && (
+            <button
+              type="button"
+              onClick={speech.toggle}
+              aria-label={speech.listening ? t('finou.voiceStop') : t('finou.voiceStart')}
+              aria-pressed={speech.listening}
+              className={`shrink-0 transition-colors ${
+                speech.listening ? 'animate-pulse text-teal' : 'text-muted hover:text-teal'
+              }`}
+            >
+              <IconMicrophone size={24} />
+            </button>
+          )}
           <input
             className="input flex-1"
-            placeholder={t('finou.placeholder')}
-            value={input}
+            placeholder={speech.listening ? t('finou.voiceListening') : t('finou.placeholder')}
+            value={speech.interim ? `${input}${input ? ' ' : ''}${speech.interim}` : input}
             onChange={(e) => setInput(e.target.value)}
             aria-label={t('finou.placeholder')}
           />
