@@ -33,23 +33,25 @@ export default function CategoryListing() {
   return (
     <div>
       <AppHeader title={t(`categories.${categoryId}`)} back />
-      {cat && (
-        <img src={cat.banner} alt="" aria-hidden="true" className="block w-full" />
-      )}
-      <div className="p-4">
-        {loading ? (
-          <ProductGridSkeleton />
-        ) : error ? (
-          <ErrorState message={t('home.loadError')} onRetry={retry} />
-        ) : data.length === 0 ? (
-          <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {data.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+      <div className="lg:mx-auto lg:max-w-4xl">
+        {cat && (
+          <img src={cat.banner} alt="" aria-hidden="true" className="block w-full" />
         )}
+        <div className="p-4">
+          {loading ? (
+            <ProductGridSkeleton />
+          ) : error ? (
+            <ErrorState message={t('home.loadError')} onRetry={retry} />
+          ) : data.length === 0 ? (
+            <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {data.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
