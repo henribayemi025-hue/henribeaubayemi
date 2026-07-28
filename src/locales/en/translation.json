@@ -208,6 +208,7 @@
     "generating": "Finou is dressing you up… this takes a few seconds.",
     "privacyNote": "Your photo is never saved — it's only used to generate the image, then deleted.",
     "limitReached": "You've reached today's free try-on limit. Come back tomorrow!",
+    "paused": "Mirror AI is pausing this month to stay within budget. Check back a bit later 🙏",
     "error": "Can't generate the image right now. Try again.",
     "save": "Save",
     "tryAgain": "Try again"
@@ -607,6 +608,9 @@
     "topProducts": "Most viewed products",
     "views": "views",
     "activity": "Activity by type",
+    "aiSpend": "AI budget (Finou + Mirror)",
+    "aiSpendOk": "This month, estimate",
+    "aiSpendPaused": "Limit reached — paused this month",
     "recentVisitors": "Recent identified visitors",
     "noIdentifiedVisitors": "No logged-in visitors yet",
     "anonymousNote": "Only visits from logged-in people show a name — anonymous visitors can never be identified, same as on any website.",

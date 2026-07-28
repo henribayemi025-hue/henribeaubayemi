@@ -4,7 +4,16 @@
 // `history` is the last few turns [{ role: 'user'|'assistant', text }] so
 // Gemini actually has conversational memory within the session — previously
 // only the current message was sent, so Finou "forgot" everything instantly.
+//
+// Budget safety net: finou-chat and miroir-ia share one Gemini API key/
+// project. To guarantee the monthly bill can never run away (independent of
+// whatever alert Google's own billing console sends), every successful call
+// logs a conservative cost ESTIMATE to public.ai_usage, and this function
+// refuses to call Gemini at all once this month's estimated total reaches
+// BUDGET_EUR — replying in-character instead of erroring, so the UI stays
+// graceful. Beau gets a one-time push notification per month when it trips.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +25,10 @@ const CATEGORIES = [
   'mode', 'chaussures', 'sacs', 'bijoux', 'montres', 'parfums', 'beaute',
   'cheveux', 'deco', 'mariages', 'evenement', 'mannequinerie', 'art', 'accessoires',
 ];
+
+const BUDGET_EUR = 20;
+const FINOU_CALL_COST_EUR = 0.0008; // conservative estimate for one short Gemini 2.5 Flash text turn
+const ADMIN_USER_ID = 'bffb724f-6652-4240-a6f7-6904369a1fd4';
 
 const SYSTEM_PROMPT = `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace de
 beauté, mode, parfums et décoration d'événement pour l'Afrique et la diaspora.
@@ -75,6 +88,42 @@ Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
   liste réelle de ses produits, pas via toi.
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 
+function admin() {
+  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    auth: { persistSession: false },
+  });
+}
+
+function monthStartIso(): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+async function isOverBudget(sb: ReturnType<typeof admin>): Promise<boolean> {
+  const { data } = await sb.from('ai_usage').select('cost_eur').gte('created_at', monthStartIso());
+  const total = (data ?? []).reduce((s: number, r: { cost_eur: number }) => s + Number(r.cost_eur), 0);
+  if (total < BUDGET_EUR) return false;
+
+  // One-time push alert per calendar month, best-effort — never blocks the response.
+  const monthKey = monthStartIso().slice(0, 7);
+  const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'ai_budget_alert_sent').maybeSingle();
+  if (cfg?.value !== monthKey) {
+    sb.from('app_config').upsert({ key: 'ai_budget_alert_sent', value: monthKey, updated_at: new Date().toISOString() }).then(() => {}, () => {});
+    fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: JSON.stringify({
+        user_id: ADMIN_USER_ID,
+        title: 'Finjaro — budget IA atteint',
+        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+      }),
+    }).catch(() => {});
+  }
+  return true;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -93,6 +142,18 @@ Deno.serve(async (req: Request) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    const sb = admin();
+    if (await isOverBudget(sb)) {
+      return new Response(
+        JSON.stringify({
+          reply: "Je fais une petite pause ce mois-ci pour rester dans le budget de Finjaro 🙏 Reviens un peu plus tard, ou parcours les boutiques en attendant !",
+          category: null,
+          action: null,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const ctxLine = context && typeof context === 'object'
@@ -144,6 +205,9 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Best-effort usage log — never blocks the reply.
+    sb.from('ai_usage').insert({ fn: 'finou_chat', cost_eur: FINOU_CALL_COST_EUR }).then(() => {}, () => {});
 
     const data = await geminiRes.json();
     let reply =

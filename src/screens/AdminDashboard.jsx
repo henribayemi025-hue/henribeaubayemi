@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp } from '@tabler/icons-react';
+import { IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useAsync } from '../hooks/useAsync';
@@ -10,6 +10,7 @@ import { Skeleton, ErrorState } from '../components/states';
 import { timeAgo } from '../lib/format';
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
+const AI_BUDGET_EUR = 20;
 
 async function countSince(table, days, extra) {
   let q = supabase.from(table).select('id', { count: 'exact', head: true });
@@ -29,7 +30,7 @@ export default function AdminDashboard() {
   const { data, loading, error, retry } = useAsync(async () => {
     const [
       visitsTotal, visits7d, usersTotal, users7d, vendorsTotal,
-      ordersTotal, orders7d, revenueRes, topProducts, eventCounts, recentVisitorsRes,
+      ordersTotal, orders7d, revenueRes, topProducts, eventCounts, recentVisitorsRes, aiUsageRes,
     ] = await Promise.all([
       countSince('events', null, (q) => q.eq('type', 'visit')),
       countSince('events', 7, (q) => q.eq('type', 'visit')),
@@ -50,13 +51,19 @@ export default function AdminDashboard() {
         .not('user_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(20),
+      // Estimated Finou Chou + Miroir AI spend this calendar month — same
+      // budget guard the edge functions enforce, mirrored here so it's
+      // visible without waiting for the one-time push alert.
+      supabase.from('ai_usage').select('cost_eur').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     ]);
     const revenueFcfa = (revenueRes.data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
+    const aiSpendEur = (aiUsageRes.data || []).reduce((s, r) => s + Number(r.cost_eur), 0);
     return {
       visitsTotal, visits7d, usersTotal, users7d, vendorsTotal, ordersTotal, orders7d, revenueFcfa,
       topProducts: topProducts.data || [],
       events: EVENT_TYPES.map((type, i) => ({ type, count: eventCounts[i] })),
       recentVisitors: recentVisitorsRes.data || [],
+      aiSpendEur,
     };
   }, []);
 
@@ -81,6 +88,12 @@ export default function AdminDashboard() {
             <Stat icon={IconBuildingStore} label={t('admin.vendors')} value={data.vendorsTotal} />
             <Stat icon={IconShoppingBag} label={t('admin.orders')} value={data.ordersTotal} sub={t('admin.last7d', { n: data.orders7d })} />
             <Stat icon={IconTrendingUp} label={t('admin.revenue')} value={<Price fcfa={data.revenueFcfa} />} />
+            <Stat
+              icon={IconSparkles}
+              label={t('admin.aiSpend')}
+              value={`${data.aiSpendEur.toFixed(2)}€ / ${AI_BUDGET_EUR}€`}
+              sub={data.aiSpendEur >= AI_BUDGET_EUR ? t('admin.aiSpendPaused') : t('admin.aiSpendOk')}
+            />
           </div>
 
           <div>

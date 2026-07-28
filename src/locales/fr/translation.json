@@ -208,6 +208,7 @@
     "generating": "Finou t'habille… ça prend quelques secondes.",
     "privacyNote": "Ta photo n'est jamais enregistrée — elle sert juste à générer l'image, puis elle est supprimée.",
     "limitReached": "Tu as atteint la limite d'essais gratuits pour aujourd'hui. Reviens demain !",
+    "paused": "Miroir AI fait une pause ce mois-ci pour rester dans le budget. Reviens un peu plus tard 🙏",
     "error": "Impossible de générer l'image pour l'instant. Réessaie.",
     "save": "Enregistrer",
     "tryAgain": "Réessayer"
@@ -607,6 +608,9 @@
     "topProducts": "Produits les plus vus",
     "views": "vues",
     "activity": "Activité par type",
+    "aiSpend": "Budget IA (Finou + Miroir)",
+    "aiSpendOk": "Ce mois-ci, estimation",
+    "aiSpendPaused": "Limite atteinte — en pause ce mois-ci",
     "recentVisitors": "Visiteurs identifiés récents",
     "noIdentifiedVisitors": "Aucun visiteur connecté pour l'instant",
     "anonymousNote": "Seules les visites de personnes connectées affichent un nom — les visiteurs anonymes ne sont jamais identifiables, comme sur n'importe quel site.",

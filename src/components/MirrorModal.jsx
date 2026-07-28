@@ -71,6 +71,8 @@ export function MirrorModal({ open, onClose, product }) {
         }
         if (body?.error === 'daily_limit_reached') {
           setError('limit');
+        } else if (body?.error === 'budget_paused') {
+          setError('paused');
         } else {
           setError('generic');
           setErrorDetail(body?.error || fnErr.message);
@@ -80,6 +82,8 @@ export function MirrorModal({ open, onClose, product }) {
       if (data?.error) {
         if (data.error === 'daily_limit_reached') {
           setError('limit');
+        } else if (data.error === 'budget_paused') {
+          setError('paused');
         } else {
           setError('generic');
           setErrorDetail(data.error);
@@ -136,12 +140,12 @@ export function MirrorModal({ open, onClose, product }) {
       {error && !loading && (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           <p className="text-body text-danger">
-            {error === 'limit' ? t('mirror.limitReached') : t('mirror.error')}
+            {error === 'limit' ? t('mirror.limitReached') : error === 'paused' ? t('mirror.paused') : t('mirror.error')}
           </p>
           {/* Raw server/Gemini message — helps diagnose (e.g. billing/quota)
               instead of a dead-end generic error. */}
           {errorDetail && <p className="max-w-xs text-caption text-muted">{errorDetail}</p>}
-          {error !== 'limit' && (
+          {error !== 'limit' && error !== 'paused' && (
             <button onClick={generate} className="btn-ghost text-caption">
               <IconRefresh size={16} /> {t('common.retry')}
             </button>
