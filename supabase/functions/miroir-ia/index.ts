@@ -11,7 +11,11 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const MODEL = 'gemini-2.5-flash-image';
+// gemini-2.5-flash-image kept declining real-person edits (finishReason
+// STOP, no image, no safety block — just silently text-only) even on
+// well-matched photos. 3.1 is built specifically for character/face
+// resemblance across edits, which is exactly this feature's use case.
+const MODEL = 'gemini-3.1-flash-image';
 const DAILY_LIMIT = 5;
 const BUDGET_EUR = 20;
 const MIRROR_CALL_COST_EUR = 0.02; // conservative estimate — image generation costs more than a text turn
