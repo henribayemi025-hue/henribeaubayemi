@@ -127,7 +127,18 @@ Deno.serve(async (req) => {
     }
     const imgPart = data.candidates?.[0]?.content?.parts?.find((p: { inline_data?: unknown }) => p.inline_data);
     if (!imgPart) {
-      return new Response(JSON.stringify({ error: 'Aucune image générée — reformulez votre description' }), { status: 502, headers: cors });
+      // Log the full response so we can see the REAL reason next time (e.g.
+      // a safety-filter refusal or finishReason) instead of guessing blind.
+      console.error('miroir-ia: no image part', JSON.stringify(data).slice(0, 2000));
+      const textPart = data.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text;
+      const finishReason = data.candidates?.[0]?.finishReason;
+      return new Response(
+        JSON.stringify({
+          error: 'Aucune image générée — reformulez votre description',
+          detail: textPart || finishReason || undefined,
+        }),
+        { status: 502, headers: cors }
+      );
     }
 
     // Best-effort: count this successful generation toward the daily quota
