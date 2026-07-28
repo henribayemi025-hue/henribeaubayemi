@@ -56,52 +56,58 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="p-4 pb-0">
-        <HomeHeroCarousel products={data?.products} />
-      </div>
-
-      <div className="pt-3">
-        <CategoryStrip />
-      </div>
-
-      {loading ? (
-        <div className="space-y-4 p-4">
-          <div className="no-scrollbar flex gap-4 overflow-x-auto">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-16 shrink-0 rounded-full" />
-            ))}
-          </div>
-          <ProductGridSkeleton />
+      {/* On desktop the sidebar layout leaves this column very wide (no cap),
+          which made the category icons and cards look tiny against all the
+          empty space. Cap the body at a normal reading width on lg+ while
+          leaving the sticky header full-bleed. */}
+      <div className="lg:mx-auto lg:max-w-6xl">
+        <div className="p-4 pb-0">
+          <HomeHeroCarousel products={data?.products} />
         </div>
-      ) : error ? (
-        <ErrorState message={t('home.loadError')} onRetry={load} />
-      ) : (
-        <>
-          {data.shops.length > 0 && (
-            <section className="mt-4">
-              <h2 className="px-4 text-section text-ink">{t('home.shopsNearYou')}</h2>
-              <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4">
-                {data.shops.map((s) => (
-                  <ShopCard key={s.id} shop={s} />
-                ))}
-              </div>
-            </section>
-          )}
 
-          <section className="mt-6 px-4">
-            <h2 className="text-section text-ink">{t('home.trending')}</h2>
-            {data.products.length === 0 ? (
-              <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
-            ) : (
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {data.products.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
+        <div className="pt-3">
+          <CategoryStrip />
+        </div>
+
+        {loading ? (
+          <div className="space-y-4 p-4">
+            <div className="no-scrollbar flex gap-4 overflow-x-auto">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-16 shrink-0 rounded-full" />
+              ))}
+            </div>
+            <ProductGridSkeleton />
+          </div>
+        ) : error ? (
+          <ErrorState message={t('home.loadError')} onRetry={load} />
+        ) : (
+          <>
+            {data.shops.length > 0 && (
+              <section className="mt-4">
+                <h2 className="px-4 text-section text-ink">{t('home.shopsNearYou')}</h2>
+                <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4">
+                  {data.shops.map((s) => (
+                    <ShopCard key={s.id} shop={s} />
+                  ))}
+                </div>
+              </section>
             )}
-          </section>
-        </>
-      )}
+
+            <section className="mt-6 px-4">
+              <h2 className="text-section text-ink">{t('home.trending')}</h2>
+              {data.products.length === 0 ? (
+                <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
+              ) : (
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {data.products.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }

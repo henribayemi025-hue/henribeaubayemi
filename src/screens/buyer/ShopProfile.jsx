@@ -145,7 +145,7 @@ export default function ShopProfile() {
   return (
     <div className="pb-6">
       <div className="relative">
-        <SmartImage src={banner} alt="" className="h-32 w-full" />
+        <SmartImage src={banner} alt="" className="h-44 w-full lg:h-64" />
         <button onClick={() => navigate(-1)} className="absolute left-3 top-3 rounded-full bg-white/90 p-1.5 text-ink shadow" aria-label={t('common.back')}>
           <IconArrowBackUp size={20} />
         </button>
@@ -159,9 +159,9 @@ export default function ShopProfile() {
         </div>
       </div>
 
-      <div className="relative z-10 px-4">
-        <div className="-mt-8 flex items-end gap-3">
-          <SmartImage src={avatar} alt={shop.name} className="h-16 w-16 border-2 border-white" rounded="rounded-full" />
+      <div className="relative z-10 px-4 lg:mx-auto lg:max-w-6xl">
+        <div className="-mt-10 flex items-end gap-3">
+          <SmartImage src={avatar} alt={shop.name} className="h-20 w-20 border-2 border-white lg:h-24 lg:w-24" rounded="rounded-full" />
           <div className="flex-1 pb-1">
             <h1 className="flex items-center gap-1 text-title text-ink">
               {shop.name}
