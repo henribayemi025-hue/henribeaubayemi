@@ -105,31 +105,56 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'selfieBase64 et prompt requis' }), { status: 400, headers: cors });
     }
 
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'x-goog-api-key': GEMINI_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit.` },
-              { inline_data: { mime_type: 'image/jpeg', data: selfieBase64 } },
-            ],
-          }],
-          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
-        }),
-      }
-    );
-    const data = await resp.json();
-    if (!resp.ok) {
-      return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status: resp.status, headers: cors });
+    const promptText = `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`;
+
+    async function callGemini() {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'x-goog-api-key': GEMINI_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: promptText },
+                { inline_data: { mime_type: 'image/jpeg', data: selfieBase64 } },
+              ],
+            }],
+            generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+          }),
+        }
+      );
+      const json = await resp.json();
+      return { ok: resp.ok, status: resp.status, json };
     }
-    const imgPart = data.candidates?.[0]?.content?.parts?.find((p: { inline_data?: unknown }) => p.inline_data);
+
+    let attempts = 1;
+    let { ok, status, json: data } = await callGemini();
+    if (!ok) {
+      return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status, headers: cors });
+    }
+    let imgPart = data.candidates?.[0]?.content?.parts?.find((p: { inline_data?: unknown }) => p.inline_data);
+
+    // Nano Banana occasionally finishes normally (finishReason: STOP, no
+    // safety block) but replies text-only instead of an image — a known
+    // model quirk, not a real error. One silent retry recovers most of these.
+    if (!imgPart) {
+      console.error('miroir-ia: no image part on first try, retrying once', JSON.stringify(data).slice(0, 1000));
+      attempts = 2;
+      ({ ok, status, json: data } = await callGemini());
+      if (!ok) {
+        return new Response(JSON.stringify({ error: data.error?.message || 'Erreur Gemini' }), { status, headers: cors });
+      }
+      imgPart = data.candidates?.[0]?.content?.parts?.find((p: { inline_data?: unknown }) => p.inline_data);
+    }
+
     if (!imgPart) {
       // Log the full response so we can see the REAL reason next time (e.g.
       // a safety-filter refusal or finishReason) instead of guessing blind.
-      console.error('miroir-ia: no image part', JSON.stringify(data).slice(0, 2000));
+      console.error('miroir-ia: no image part after retry', JSON.stringify(data).slice(0, 2000));
+      // Google still billed for both attempts even though neither returned
+      // an image — count that against the budget estimate too.
+      sb.from('ai_usage').insert({ fn: 'miroir_ia', cost_eur: MIRROR_CALL_COST_EUR * attempts }).then(() => {}, () => {});
       const textPart = data.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text;
       const finishReason = data.candidates?.[0]?.finishReason;
       return new Response(
@@ -142,9 +167,10 @@ Deno.serve(async (req) => {
     }
 
     // Best-effort: count this successful generation toward the daily quota
-    // and the monthly budget estimate.
+    // and the monthly budget estimate (x2 if the retry above fired, since
+    // Google bills for that attempt too even though it returned no image).
     sb.from('events').insert({ user_id: user.id, type: 'mirror_try', meta: {} }).then(() => {}, () => {});
-    sb.from('ai_usage').insert({ fn: 'miroir_ia', cost_eur: MIRROR_CALL_COST_EUR }).then(() => {}, () => {});
+    sb.from('ai_usage').insert({ fn: 'miroir_ia', cost_eur: MIRROR_CALL_COST_EUR * attempts }).then(() => {}, () => {});
 
     return new Response(
       JSON.stringify({ image: imgPart.inline_data.data, mimeType: imgPart.inline_data.mime_type || 'image/png' }),
