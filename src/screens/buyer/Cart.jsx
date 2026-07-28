@@ -7,7 +7,7 @@ import { Button } from '../../components/Button';
 import { Price } from '../../components/Price';
 import { SmartImage } from '../../components/SmartImage';
 import { EmptyState } from '../../components/states';
-import { storageUrl } from '../../lib/supabase';
+import { storageUrl, storageThumbUrl} from '../../lib/supabase';
 
 export default function Cart() {
   const { t } = useTranslation();
@@ -44,7 +44,7 @@ export default function Cart() {
               {group.items.map((it) => (
                 <div key={it.id} className="flex gap-3">
                   <SmartImage
-                    src={it.image ? storageUrl('products', it.image) : null}
+                    src={it.image ? storageThumbUrl('products', it.image) : null} fallbackSrc={it.image ? storageUrl('products', it.image) : null}
                     alt={it.name}
                     className="h-16 w-16 rounded-input"
                   />

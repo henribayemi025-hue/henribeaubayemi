@@ -6,7 +6,7 @@ import {
   IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift,
   IconChartBar,
 } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
 import { useUI } from '../../hooks/useUI';
@@ -72,7 +72,8 @@ export default function UserProfile() {
         <div className="absolute -bottom-10 left-4 flex items-end gap-3">
           <div className="rounded-full ring-4 ring-base">
             <SmartImage
-              src={profile?.avatar_url ? storageUrl('shops', profile.avatar_url) : null}
+              src={profile?.avatar_url ? storageThumbUrl('shops', profile.avatar_url) : null}
+              fallbackSrc={profile?.avatar_url ? storageUrl('shops', profile.avatar_url) : null}
               alt={profile?.name}
               className="h-20 w-20"
               rounded="rounded-full"

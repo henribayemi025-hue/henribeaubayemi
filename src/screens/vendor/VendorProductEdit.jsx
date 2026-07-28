@@ -3,7 +3,7 @@ import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
-import { compressForUpload } from '../../lib/image';
+import { compressForUploadWithThumb } from '../../lib/image';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -166,11 +166,15 @@ export default function VendorProductEdit() {
         batch.map(async (file) => {
           // Downscale + re-encode — phone photos routinely arrive at several
           // MB, which is what makes the catalog feel slow to load. Réglages
-          // centralisés dans lib/image.js.
-          const { blob, contentType, ext } = await compressForUpload(file);
-          const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-          const { error } = await supabase.storage.from('products').upload(path, blob, { upsert: false, contentType });
+          // centralisés dans lib/image.js. Une vignette légère part en plus,
+          // sous le même nom + `_thumb` — c'est elle que les grilles affichent.
+          const { full, thumb } = await compressForUploadWithThumb(file);
+          const uuid = crypto.randomUUID();
+          const path = `${user.id}/${uuid}.${full.ext}`;
+          const thumbPath = `${user.id}/${uuid}_thumb.${full.ext}`;
+          const { error } = await supabase.storage.from('products').upload(path, full.blob, { upsert: false, contentType: full.contentType });
           if (error) throw error;
+          supabase.storage.from('products').upload(thumbPath, thumb.blob, { upsert: false, contentType: thumb.contentType }).catch(() => {});
           return path;
         })
       );

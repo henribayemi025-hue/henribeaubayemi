@@ -1,7 +1,7 @@
 import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconTrophy, IconStarFilled } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
 import { SmartImage } from '../../components/SmartImage';
@@ -58,7 +58,7 @@ export default function VendorLeaderboard() {
                   >
                     {i < 3 ? <IconTrophy size={20} /> : i + 1}
                   </span>
-                  <SmartImage src={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-11 w-11" rounded="rounded-full" />
+                  <SmartImage src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-11 w-11" rounded="rounded-full" />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1 text-body font-semibold text-ink">
                       <span className="line-clamp-1">{s.name}</span>

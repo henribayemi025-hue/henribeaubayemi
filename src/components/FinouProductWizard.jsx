@@ -5,7 +5,7 @@ import {
   IconX, IconPhotoPlus, IconTrash, IconSparkles, IconLoader2, IconCheck, IconArrowLeft,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../lib/supabase';
-import { compressImage } from '../lib/image';
+import { compressImage, compressForUpload, THUMB_OPTS } from '../lib/image';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { CATEGORIES } from '../lib/categories';
@@ -85,9 +85,16 @@ export function FinouProductWizard({ onClose, onPublished }) {
           // son type réel plutôt que de coder .jpg en dur.
           const contentType = img.blob.type || 'image/jpeg';
           const ext = contentType === 'image/webp' ? 'webp' : 'jpg';
-          const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+          const uuid = crypto.randomUUID();
+          const path = `${user.id}/${uuid}.${ext}`;
           const { error: upErr } = await supabase.storage.from('products').upload(path, img.blob, { upsert: false, contentType });
           if (upErr) throw upErr;
+          // Vignette légère dérivée du blob déjà compressé (pas besoin du
+          // fichier original) — même convention de nom que les autres points
+          // d'envoi, best-effort.
+          compressForUpload(img.blob, THUMB_OPTS)
+            .then((t) => supabase.storage.from('products').upload(`${user.id}/${uuid}_thumb.${ext}`, t.blob, { upsert: false, contentType: t.contentType }))
+            .catch(() => {});
           return path;
         })
       );

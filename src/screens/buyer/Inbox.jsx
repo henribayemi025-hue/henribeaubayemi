@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessageOff } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { AppHeader } from '../../components/AppHeader';
@@ -62,7 +62,7 @@ export function ConversationList({ vendor = false }) {
         return (
           <li key={c.id}>
             <Link to={`${base}/${c.id}`} className="flex items-center gap-3 border-b border-hairline px-4 py-3">
-              <SmartImage src={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null} alt={c.shops?.name} className="h-12 w-12" rounded="rounded-full" />
+              <SmartImage src={c.shops?.avatar_url ? storageThumbUrl('shops', c.shops.avatar_url) : null} fallbackSrc={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null} alt={c.shops?.name} className="h-12 w-12" rounded="rounded-full" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <p className="line-clamp-1 text-body font-semibold text-ink">{c.shops?.name}</p>

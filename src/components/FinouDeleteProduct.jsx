@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconX } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { useAsync } from '../hooks/useAsync';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useToast } from '../hooks/useToast';
@@ -65,7 +65,7 @@ export function FinouDeleteProduct({ onClose, onDeleted }) {
             {data.map((p) => (
               <button key={p.id} onClick={() => setTarget(p)} className="text-left transition active:scale-95">
                 <SmartImage
-                  src={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
+                  src={p.images?.[0] ? storageThumbUrl('products', p.images[0]) : null} fallbackSrc={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
                   alt={p.name}
                   className="aspect-square w-full"
                   rounded="rounded-input"
@@ -79,7 +79,7 @@ export function FinouDeleteProduct({ onClose, onDeleted }) {
       ) : (
         <div className="flex flex-col items-center gap-3 py-2 text-center">
           <SmartImage
-            src={target.images?.[0] ? storageUrl('products', target.images[0]) : null}
+            src={target.images?.[0] ? storageThumbUrl('products', target.images[0]) : null} fallbackSrc={target.images?.[0] ? storageUrl('products', target.images[0]) : null}
             alt={target.name}
             className="h-20 w-20"
             rounded="rounded-input"

@@ -23,3 +23,18 @@ export function storageUrl(bucket, path) {
   if (path.startsWith('http')) return path;
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
+
+// Vignette légère d'une image produit/boutique — voir compressForUploadWithThumb
+// (lib/image.js). Uploadée à côté de l'originale sous le même nom + `_thumb`,
+// donc dérivable sans toucher au schéma: `<uuid>.webp` -> `<uuid>_thumb.webp`.
+// Une photo envoyée AVANT ce changement n'a pas de vignette — l'URL retournée
+// pointera vers un fichier absent (404), et c'est volontaire: SmartImage
+// bascule automatiquement sur l'image pleine taille dans ce cas (voir
+// SmartImage.jsx), donc aucune photo existante ne disparaît.
+export function storageThumbUrl(bucket, path) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path; // URL externe: pas de vignette dérivable
+  const dot = path.lastIndexOf('.');
+  const thumbPath = dot === -1 ? `${path}_thumb` : `${path.slice(0, dot)}_thumb${path.slice(dot)}`;
+  return supabase.storage.from(bucket).getPublicUrl(thumbPath).data.publicUrl;
+}

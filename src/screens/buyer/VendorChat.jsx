@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { AppHeader } from '../../components/AppHeader';
 import { SmartImage } from '../../components/SmartImage';
@@ -216,7 +216,7 @@ export default function VendorChat({ vendor = false }) {
         <>
           <div ref={scroller} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-4 pb-2">
             <div className="mx-auto mb-3 max-w-xs rounded-card border border-hairline p-3 text-center">
-              <SmartImage src={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null} alt={shop?.name} className="mx-auto h-12 w-12" rounded="rounded-full" />
+              <SmartImage src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null} fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null} alt={shop?.name} className="mx-auto h-12 w-12" rounded="rounded-full" />
               <p className="mt-2 text-caption text-muted">{t('chat.chattingWith', { name: shop?.name || '' })}</p>
               <p className="mt-1 text-[11px] text-muted">{t('chat.finouHint')}</p>
             </div>

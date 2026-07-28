@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { IconUpload, IconX, IconLoader2 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { supabase, storageUrl } from '../lib/supabase';
-import { compressForUpload } from '../lib/image';
+import { compressForUploadWithThumb } from '../lib/image';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 
@@ -36,10 +36,21 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
       // several MB, which is what makes images feel slow to load later,
       // independent of how much data is in the app. Les réglages (1200 px,
       // WebP) vivent dans lib/image.js, pas ici.
-      const { blob, contentType, ext } = await compressForUpload(file);
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, blob, { upsert: false, contentType });
+      //
+      // Une vignette légère est envoyée EN PLUS de l'image normale, sous le
+      // même nom + `_thumb` (voir storageThumbUrl côté lecture) — c'est elle
+      // qui s'affiche dans les avatars/listes, la pleine taille ne sert qu'aux
+      // grandes bannières.
+      const { full, thumb } = await compressForUploadWithThumb(file);
+      const uuid = crypto.randomUUID();
+      const path = `${user.id}/${uuid}.${full.ext}`;
+      const thumbPath = `${user.id}/${uuid}_thumb.${full.ext}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, full.blob, { upsert: false, contentType: full.contentType });
       if (error) throw error;
+      // Meilleur effort: si la vignette échoue, SmartImage retombe sur la
+      // pleine taille (404 géré côté lecture) — ça ne doit jamais bloquer
+      // l'envoi de la photo elle-même.
+      supabase.storage.from(bucket).upload(thumbPath, thumb.blob, { upsert: false, contentType: thumb.contentType }).catch(() => {});
       onChange(path);
     } catch (err) {
       toast.error(err.message || t('errors.generic'));

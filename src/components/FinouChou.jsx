@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
 import { useUI } from '../hooks/useUI';
 import { useAuth } from '../hooks/useAuth';
@@ -226,7 +226,7 @@ export function FinouChou() {
                     <div key={p.id} className="w-28 shrink-0">
                       <button onClick={() => openProduct(p.id)} className="block w-full text-left transition active:scale-95">
                         <SmartImage
-                          src={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
+                          src={p.images?.[0] ? storageThumbUrl('products', p.images[0]) : null} fallbackSrc={p.images?.[0] ? storageUrl('products', p.images[0]) : null}
                           alt={p.name}
                           className="aspect-square w-full"
                           rounded="rounded-input"

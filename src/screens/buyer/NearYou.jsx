@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation, IconList, IconMap2, IconTool } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
@@ -197,7 +197,7 @@ export default function NearYou() {
             {byDistance(data.shops).map((s) => (
               <li key={s.id}>
                 <button onClick={() => navigate(`/boutique/${s.slug}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
-                  <SmartImage src={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-12 w-12" rounded="rounded-full" />
+                  <SmartImage src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-12 w-12" rounded="rounded-full" />
                   <div className="flex-1">
                     <p className="flex items-center gap-1 text-body font-semibold text-ink">{s.name} {s.is_verified && <VerifiedBadge size={14} />}</p>
                     <p className="flex items-center gap-1 text-caption text-muted"><IconStarFilled size={12} className="text-brass" />{Number(s.rating || 0).toFixed(1)} · {[s.city, countryLabel(s.country, i18n.language)].filter(Boolean).join(', ')}</p>

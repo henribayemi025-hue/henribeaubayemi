@@ -5,7 +5,7 @@ import { IconCircleCheckFilled, IconX } from '@tabler/icons-react';
 import { useCart } from '../hooks/useCart';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
-import { storageUrl } from '../lib/supabase';
+import { storageUrl, storageThumbUrl} from '../lib/supabase';
 
 // Confirmation mini-drawer shown after "Add to cart" — lets the buyer jump to
 // the cart or keep shopping without a full-page navigation. Auto-dismisses.
@@ -31,7 +31,7 @@ export default function CartDrawer() {
         <div className="flex items-center gap-3 p-3">
           <IconCircleCheckFilled size={22} className="shrink-0 text-success" />
           <SmartImage
-            src={item.image ? storageUrl('products', item.image) : null}
+            src={item.image ? storageThumbUrl('products', item.image) : null} fallbackSrc={item.image ? storageUrl('products', item.image) : null}
             alt={item.name}
             className="h-11 w-11 shrink-0"
             rounded="rounded-input"

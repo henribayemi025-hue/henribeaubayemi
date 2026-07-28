@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useAsync } from '../hooks/useAsync';
 import { SmartImage } from '../components/SmartImage';
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
             <ul className="divide-y divide-hairline rounded-card border border-hairline">
               {data.topProducts.map((p) => (
                 <li key={p.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <SmartImage src={p.images?.[0] ? storageUrl('products', p.images[0]) : null} alt={p.name} className="h-11 w-11" rounded="rounded-input" />
+                  <SmartImage src={p.images?.[0] ? storageThumbUrl('products', p.images[0]) : null} fallbackSrc={p.images?.[0] ? storageUrl('products', p.images[0]) : null} alt={p.name} className="h-11 w-11" rounded="rounded-input" />
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-1 text-body text-ink">{p.name}</p>
                     <Price fcfa={p.price_fcfa} className="text-caption text-muted" />

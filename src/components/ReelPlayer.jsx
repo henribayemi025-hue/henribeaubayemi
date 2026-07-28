@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconShoppingBagPlus } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
@@ -106,9 +106,13 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
           <div className="mb-2 flex items-center gap-2 rounded-2xl bg-white/95 p-2 pr-3 shadow-lg">
             <Link to={`/product/${reel.product_id}`} className="flex min-w-0 flex-1 items-center gap-2">
               <img
-                src={reel.products.images?.[0] ? storageUrl('products', reel.products.images[0]) : '/favicon.svg'}
+                src={reel.products.images?.[0] ? storageThumbUrl('products', reel.products.images[0]) : '/favicon.svg'}
                 alt={reel.products.name}
                 className="h-11 w-11 shrink-0 rounded-input object-cover"
+                onError={(e) => {
+                  const full = reel.products.images?.[0] ? storageUrl('products', reel.products.images[0]) : null;
+                  if (full && e.currentTarget.src !== full) e.currentTarget.src = full;
+                }}
               />
               <div className="min-w-0">
                 <p className="line-clamp-1 text-caption font-semibold text-ink">{reel.products.name}</p>
@@ -126,8 +130,12 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         )}
         <Link to={`/boutique/${reel.shops?.slug}`} className="flex items-center gap-2 px-1">
           <img
-            src={reel.shops?.avatar_url ? storageUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
+            src={reel.shops?.avatar_url ? storageThumbUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
             alt={reel.shops?.name}
+            onError={(e) => {
+              const full = reel.shops?.avatar_url ? storageUrl('shops', reel.shops.avatar_url) : null;
+              if (full && e.currentTarget.src !== full) e.currentTarget.src = full;
+            }}
             className="h-9 w-9 rounded-full border border-white/50 object-cover"
           />
           <span className="text-body font-semibold">{reel.shops?.name}</span>

@@ -1,7 +1,7 @@
 import { Link, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPlus, IconBox } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
 import { SmartImage } from '../../components/SmartImage';
@@ -39,7 +39,7 @@ export default function VendorProducts() {
         <div className="grid grid-cols-2 gap-3 p-4">
           {data.map((p) => (
             <Link key={p.id} to={`/vendor/products/${p.id}`} className="overflow-hidden rounded-card border border-hairline">
-              <SmartImage src={p.images?.[0] ? storageUrl('products', p.images[0]) : null} alt={p.name} className="aspect-square w-full" />
+              <SmartImage src={p.images?.[0] ? storageThumbUrl('products', p.images[0]) : null} fallbackSrc={p.images?.[0] ? storageUrl('products', p.images[0]) : null} alt={p.name} className="aspect-square w-full" />
               <div className="p-2">
                 <p className="line-clamp-1 text-body text-ink">{p.name}</p>
                 <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />

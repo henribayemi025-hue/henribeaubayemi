@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import { IconStarFilled } from '@tabler/icons-react';
 import { SmartImage } from './SmartImage';
-import { storageUrl } from '../lib/supabase';
+import { storageUrl, storageThumbUrl } from '../lib/supabase';
 
 // Branded teal map-pin as a divIcon — avoids Leaflet's broken default-icon
 // asset paths under Vite and keeps us on the "Lagune & Encre" palette.
@@ -79,7 +79,7 @@ export default function NearYouMap({ items, userPos, onSelect }) {
             <Popup>
               <button onClick={() => onSelect(x)} className="flex items-center gap-2 text-left">
                 {x.avatar_url && (
-                  <SmartImage src={storageUrl('shops', x.avatar_url)} alt={x.name} className="h-10 w-10" rounded="rounded-full" />
+                  <SmartImage src={storageThumbUrl('shops', x.avatar_url)} fallbackSrc={storageUrl('shops', x.avatar_url)} alt={x.name} className="h-10 w-10" rounded="rounded-full" />
                 )}
                 <span>
                   <span className="block text-body font-semibold text-ink">{x.name || x.description?.slice(0, 30)}</span>

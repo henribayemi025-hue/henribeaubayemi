@@ -68,6 +68,27 @@ export async function compressForUpload(file, opts) {
   return { blob, contentType, ext };
 }
 
+// 480 px suffit très largement à une vignette de grille affichée à 150-300 px,
+// même sur un écran 2x (Retina). Qualité un peu plus basse: à cette taille,
+// l'œil ne fait pas la différence, et le poids compte plus qu'ailleurs — c'est
+// ce fichier qui part des dizaines de fois par écran (grilles, carrousel de
+// boutiques, chat, panier…).
+export const THUMB_OPTS = { maxDim: 480, quality: 0.6 };
+
+// Génère les DEUX tailles à partir d'un seul fichier source, pour un envoi de
+// produit/boutique. `full` reste la taille normale (fiche détail, essayage
+// virtuel); `thumb` est la nouvelle vignette légère pour tout ce qui s'affiche
+// en petit. Les deux sont uploadées; seul le chemin de `full` est stocké en
+// base (voir storageThumbUrl côté lecture pour retrouver la vignette par
+// convention de nom — pas de migration de schéma nécessaire).
+export async function compressForUploadWithThumb(file, fullOpts) {
+  const [full, thumb] = await Promise.all([
+    compressForUpload(file, fullOpts),
+    compressForUpload(file, THUMB_OPTS),
+  ]);
+  return { full, thumb };
+}
+
 // For inline data: URLs (Finou / Mirror AI payloads to Gemini).
 export async function fileToDataUrl(file, maxDim = 1024, quality = 0.8) {
   const canvas = await resizeToCanvas(file, maxDim);

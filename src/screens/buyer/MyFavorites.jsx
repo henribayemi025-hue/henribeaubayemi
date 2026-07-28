@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { IconHeart, IconStarFilled } from '@tabler/icons-react';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { AppHeader } from '../../components/AppHeader';
@@ -36,7 +36,7 @@ export default function MyFavorites() {
           {data.map((s) => (
             <li key={s.id}>
               <Link to={`/boutique/${s.slug}`} className="flex items-center gap-3 px-4 py-3">
-                <SmartImage src={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-12 w-12" rounded="rounded-full" />
+                <SmartImage src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-12 w-12" rounded="rounded-full" />
                 <div className="flex-1">
                   <p className="flex items-center gap-1 text-body font-semibold text-ink">{s.name} {s.is_verified && <VerifiedBadge size={14} />}</p>
                   <p className="flex items-center gap-1 text-caption text-muted"><IconStarFilled size={12} className="text-brass" />{Number(s.rating || 0).toFixed(1)}</p>
