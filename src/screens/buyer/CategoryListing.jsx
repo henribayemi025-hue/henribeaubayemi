@@ -1,13 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMoodSmile } from '@tabler/icons-react';
-import { supabase } from '../../lib/supabase';
-import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
 import { ProductCard } from '../../components/ProductCard';
 import { ProductGridSkeleton, EmptyState, ErrorState } from '../../components/states';
 import { CATEGORIES } from '../../lib/categories';
+import { getCachedCategory, loadCategory } from '../../lib/categoryCache';
 import { track } from '../../lib/track';
 
 export default function CategoryListing() {
@@ -15,30 +14,42 @@ export default function CategoryListing() {
   const { t } = useTranslation();
   const cat = CATEGORIES.find((c) => c.id === categoryId);
 
-  useEffect(() => {
-    track('category_view', categoryId);
+  // Revenir sur une catégorie déjà vue doit être instantané: on repart du
+  // cache et on ne montre le squelette que s'il n'y a vraiment rien à afficher.
+  const cached = getCachedCategory(categoryId);
+  const [data, setData] = useState(cached);
+  const [loading, setLoading] = useState(!cached);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async () => {
+    const known = getCachedCategory(categoryId);
+    setData(known);
+    setLoading(!known);
+    setError(false);
+    try {
+      setData(await loadCategory(categoryId));
+    } catch {
+      if (!known) setError(true); // rien à montrer en repli
+    } finally {
+      setLoading(false);
+    }
   }, [categoryId]);
 
-  const { data, loading, error, retry } = useAsync(async () => {
-    const { data: products, error: err } = await supabase
-      .from('products')
-      .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name)')
-      .eq('category', categoryId)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    if (err) throw err;
-    return (products || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
-  }, [categoryId]);
+  useEffect(() => {
+    track('category_view', categoryId);
+    load();
+  }, [categoryId, load]);
 
   return (
     <div>
       <AppHeader title={t(`categories.${categoryId}`)} back />
       <div className="lg:mx-auto lg:max-w-4xl">
         {cat && (
-          // Full width, same as the grid below — but taller on desktop so a
-          // roughly-square source photo still renders large inside it,
-          // instead of shrinking to fit a short bar full of blurred padding.
-          <div className="relative h-36 w-full overflow-hidden bg-ink lg:h-96">
+          // Bandeau décoratif: il doit situer la catégorie, pas manger l'écran.
+          // Il était à h-96 (384 px) sur desktop et repoussait toute la grille
+          // sous la ligne de flottaison — on entrait dans une catégorie et on
+          // ne voyait aucun article sans faire défiler.
+          <div className="relative h-36 w-full overflow-hidden bg-ink sm:h-44 lg:h-52">
             {/* Blurred backdrop fills the frame; the real banner stays fully
                 visible and never upscaled past its own resolution, so it's
                 never cropped and never blurry. */}
@@ -47,10 +58,13 @@ export default function CategoryListing() {
           </div>
         )}
         <div className="p-4">
-          {loading ? (
+          {/* L'erreur passe AVANT le squelette: sinon un échec sans donnée en
+              cache (data null, loading false) afficherait un squelette éternel
+              au lieu du bouton Réessayer. */}
+          {error ? (
+            <ErrorState message={t('home.loadError')} onRetry={load} />
+          ) : loading || !data ? (
             <ProductGridSkeleton />
-          ) : error ? (
-            <ErrorState message={t('home.loadError')} onRetry={retry} />
           ) : data.length === 0 ? (
             <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
           ) : (

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { IconUpload, IconX, IconLoader2 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { supabase, storageUrl } from '../lib/supabase';
-import { compressImage } from '../lib/image';
+import { compressForUpload } from '../lib/image';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 
@@ -32,12 +32,13 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
     }
     setBusy(true);
     try {
-      // Downscale + re-encode to JPEG before upload — phone photos routinely
-      // arrive at several MB, which is what makes images feel slow to load
-      // later, independent of how much data is in the app.
-      const compressed = await compressImage(file, { maxDim: 1600, quality: 0.82 });
-      const path = `${user.id}/${crypto.randomUUID()}.jpg`;
-      const { error } = await supabase.storage.from(bucket).upload(path, compressed, { upsert: false, contentType: 'image/jpeg' });
+      // Downscale + re-encode before upload — phone photos routinely arrive at
+      // several MB, which is what makes images feel slow to load later,
+      // independent of how much data is in the app. Les réglages (1200 px,
+      // WebP) vivent dans lib/image.js, pas ici.
+      const { blob, contentType, ext } = await compressForUpload(file);
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, blob, { upsert: false, contentType });
       if (error) throw error;
       onChange(path);
     } catch (err) {

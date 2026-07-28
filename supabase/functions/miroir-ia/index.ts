@@ -25,17 +25,32 @@ const PRODUCT_IMG_TIMEOUT_MS = 8_000;
 const MAX_SELFIE_B64 = 8_000_000;   // ~6 Mo binaire
 const MAX_PRODUCT_IMG_BYTES = 5_000_000;
 
-const ALLOWED_ORIGINS = [
-  'https://finjaro.netlify.app',
-  'https://finjaro-main.netlify.app',
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
+// Origines autorisées. On teste le HÔTE, pas une liste figée d'URL: le
+// domaine de production est finjaro.net (et non le sous-domaine Netlify), et
+// une liste en dur avait déjà bloqué la fonction en production une fois.
+// Couvre donc: le domaine et ses sous-domaines, le site Netlify et ses
+// préversions de déploiement, et le dev local.
+const PROD_HOST = 'finjaro.net';
+const NETLIFY_HOST = 'finjaro.netlify.app';
+
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  let host: string;
+  try {
+    host = new URL(origin).hostname;
+  } catch {
+    return false;
+  }
+  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
+  // finjaro.netlify.app + préversions <hash>--finjaro.netlify.app
+  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
+  return false;
+}
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowed = ALLOWED_ORIGINS.includes(origin || '') ? origin : ALLOWED_ORIGINS[0];
   return {
-    'Access-Control-Allow-Origin': allowed || '',
+    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin! : `https://${PROD_HOST}`,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',

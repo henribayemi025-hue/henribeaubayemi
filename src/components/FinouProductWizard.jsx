@@ -46,7 +46,7 @@ export function FinouProductWizard({ onClose, onPublished }) {
     if (!files.length) return;
     setUploading(true);
     try {
-      const compressed = await Promise.all(files.map((f) => compressImage(f, { maxDim: 1600, quality: 0.82 })));
+      const compressed = await Promise.all(files.map((f) => compressImage(f)));
       const next = compressed.map((blob) => ({ blob, previewUrl: URL.createObjectURL(blob) }));
       setImages((prev) => [...prev, ...next].slice(0, MAX_IMAGES));
     } finally {
@@ -81,8 +81,12 @@ export function FinouProductWizard({ onClose, onPublished }) {
     try {
       const paths = await Promise.all(
         images.map(async (img) => {
-          const path = `${user.id}/${crypto.randomUUID()}.jpg`;
-          const { error: upErr } = await supabase.storage.from('products').upload(path, img.blob, { upsert: false, contentType: 'image/jpeg' });
+          // Le blob peut être du WebP ou du JPEG selon le navigateur: on suit
+          // son type réel plutôt que de coder .jpg en dur.
+          const contentType = img.blob.type || 'image/jpeg';
+          const ext = contentType === 'image/webp' ? 'webp' : 'jpg';
+          const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from('products').upload(path, img.blob, { upsert: false, contentType });
           if (upErr) throw upErr;
           return path;
         })

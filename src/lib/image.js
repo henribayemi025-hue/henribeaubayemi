@@ -35,10 +35,37 @@ async function resizeToCanvas(file, maxDim) {
   return canvas;
 }
 
-// For Supabase Storage uploads (product/shop photos) — returns a JPEG Blob.
-export async function compressImage(file, { maxDim = 1600, quality = 0.82 } = {}) {
+// For Supabase Storage uploads (product/shop photos) — returns a WebP (or JPEG)
+// Blob.
+//
+// 1600 px / qualité 0.82 produisait des fichiers de 100 à 300 Ko, parfois
+// 1,7 Mo. Une grille de catégorie faisait alors ~1 Mo à télécharger pour des
+// vignettes affichées à 150-300 px. Le plan Supabase gratuit n'offre pas de
+// redimensionnement à la volée, donc tout doit être réglé À L'ENVOI.
+//
+// 1200 px reste largement au-dessus de ce que la fiche produit affiche sur un
+// grand écran, et le WebP retire encore 25 à 35 % à qualité perçue égale.
+// Repli JPEG si le navigateur n'encode pas le WebP (vieux Safari).
+export async function compressImage(file, { maxDim = 1200, quality = 0.72 } = {}) {
   const canvas = await resizeToCanvas(file, maxDim);
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', quality));
+  const encode = (type) =>
+    new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), type, quality));
+
+  const webp = await encode('image/webp');
+  // toBlob renvoie du PNG quand le format demandé n'est pas supporté.
+  if (webp && webp.type === 'image/webp') return webp;
+  return (await encode('image/jpeg')) || file;
+}
+
+// Le format de sortie dépend maintenant du navigateur (WebP ou JPEG): les
+// appelants ne peuvent plus coder ".jpg" en dur, sinon on stocke des octets
+// WebP annoncés comme du JPEG. Ce helper renvoie le blob ET ce qu'il faut pour
+// l'uploader correctement.
+export async function compressForUpload(file, opts) {
+  const blob = await compressImage(file, opts);
+  const contentType = blob.type || 'image/jpeg';
+  const ext = contentType === 'image/webp' ? 'webp' : 'jpg';
+  return { blob, contentType, ext };
 }
 
 // For inline data: URLs (Finou / Mirror AI payloads to Gemini).

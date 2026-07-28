@@ -40,17 +40,28 @@ const CATEGORIES = [
   'cheveux', 'deco', 'mariages', 'evenement', 'mannequinerie', 'art', 'accessoires',
 ];
 
-const ALLOWED_ORIGINS = [
-  'https://finjaro.netlify.app',
-  'https://finjaro-main.netlify.app',
-  'http://localhost:5173',
-  'http://localhost:4173',
-];
+// Voir miroir-ia: on teste le HÔTE, pas une liste figée d'URL. Le domaine de
+// production est finjaro.net, pas le sous-domaine Netlify.
+const PROD_HOST = 'finjaro.net';
+const NETLIFY_HOST = 'finjaro.netlify.app';
+
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  let host: string;
+  try {
+    host = new URL(origin).hostname;
+  } catch {
+    return false;
+  }
+  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
+  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
+  return false;
+}
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowed = ALLOWED_ORIGINS.includes(origin || '') ? origin : ALLOWED_ORIGINS[0];
   return {
-    'Access-Control-Allow-Origin': allowed || '',
+    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin! : `https://${PROD_HOST}`,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
