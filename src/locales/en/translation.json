@@ -596,6 +596,9 @@
     "topProducts": "Most viewed products",
     "views": "views",
     "activity": "Activity by type",
+    "recentVisitors": "Recent identified visitors",
+    "noIdentifiedVisitors": "No logged-in visitors yet",
+    "anonymousNote": "Only visits from logged-in people show a name — anonymous visitors can never be identified, same as on any website.",
     "eventTypes": {
       "visit": "Visits",
       "product_view": "Product views",

@@ -7,6 +7,7 @@ import { useAsync } from '../hooks/useAsync';
 import { SmartImage } from '../components/SmartImage';
 import { Price } from '../components/Price';
 import { Skeleton, ErrorState } from '../components/states';
+import { timeAgo } from '../lib/format';
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
 
@@ -22,13 +23,13 @@ async function countSince(table, days, extra) {
 }
 
 export default function AdminDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { profile, loading: authLoading } = useAuth();
 
   const { data, loading, error, retry } = useAsync(async () => {
     const [
       visitsTotal, visits7d, usersTotal, users7d, vendorsTotal,
-      ordersTotal, orders7d, revenueRes, topProducts, eventCounts,
+      ordersTotal, orders7d, revenueRes, topProducts, eventCounts, recentVisitorsRes,
     ] = await Promise.all([
       countSince('events', null, (q) => q.eq('type', 'visit')),
       countSince('events', 7, (q) => q.eq('type', 'visit')),
@@ -40,12 +41,22 @@ export default function AdminDashboard() {
       supabase.from('orders').select('total_fcfa').not('paid_at', 'is', null),
       supabase.from('products').select('id, name, images, price_fcfa, views').eq('is_active', true).order('views', { ascending: false }).limit(8),
       Promise.all(EVENT_TYPES.map((type) => countSince('events', null, (q) => q.eq('type', type)))),
+      // Only visits from a logged-in session ever have a name attached — an
+      // anonymous browser has no identity to show, on any site.
+      supabase
+        .from('events')
+        .select('id, created_at, user_id, profiles(name)')
+        .eq('type', 'visit')
+        .not('user_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(20),
     ]);
     const revenueFcfa = (revenueRes.data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
     return {
       visitsTotal, visits7d, usersTotal, users7d, vendorsTotal, ordersTotal, orders7d, revenueFcfa,
       topProducts: topProducts.data || [],
       events: EVENT_TYPES.map((type, i) => ({ type, count: eventCounts[i] })),
+      recentVisitors: recentVisitorsRes.data || [],
     };
   }, []);
 
@@ -86,6 +97,23 @@ export default function AdminDashboard() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-section text-ink">{t('admin.recentVisitors')}</h2>
+            {data.recentVisitors.length === 0 ? (
+              <p className="rounded-card border border-hairline px-3 py-4 text-center text-caption text-muted">{t('admin.noIdentifiedVisitors')}</p>
+            ) : (
+              <ul className="divide-y divide-hairline rounded-card border border-hairline">
+                {data.recentVisitors.map((v) => (
+                  <li key={v.id} className="flex items-center justify-between px-3 py-2.5">
+                    <span className="text-body text-ink">{v.profiles?.name || '—'}</span>
+                    <span className="text-caption text-muted">{timeAgo(v.created_at, i18n.language)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-1.5 text-[11px] text-muted">{t('admin.anonymousNote')}</p>
           </div>
 
           <div>
