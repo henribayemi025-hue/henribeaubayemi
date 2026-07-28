@@ -1,6 +1,11 @@
 // The 14 Finjaro categories. `id` is the stable key used in DB + i18n.
-// Banner images are static bundled assets (see /src/assets/categories) —
-// optimized WebP photos, square, ~4KB each.
+// Banner images are static bundled assets (see /src/assets/categories) — square
+// WebP photos, 480x480, ~10-60KB each. Serves two very different display sizes
+// with the same file: the 80px CategoryStrip icon on Home, and the larger
+// (~150-200px effective, object-contain) banner on the category detail page —
+// 480px covers both crisply at 2x pixel density without shipping oversized
+// pixels to the small icon. Source photos originally arrived at 640x640,
+// 20-150KB each; resized down here (2026-07-28).
 import mode from '../assets/categories/mode.webp';
 import chaussures from '../assets/categories/chaussures.webp';
 import sacs from '../assets/categories/sacs.webp';

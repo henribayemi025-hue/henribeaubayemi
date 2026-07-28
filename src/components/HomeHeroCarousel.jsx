@@ -56,6 +56,17 @@ export function HomeHeroCarousel({ products }) {
   const [index, setIndex] = useState(0);
   const dragX = useRef(null);
   const dragged = useRef(false);
+  // Every slide is mounted at once (position:absolute, inset-0, opacity
+  // crossfade) so the transition animates smoothly — but that also means
+  // native `loading="lazy"` does nothing here: all 8 <img> geometrically
+  // overlap the viewport regardless of which one is opaque, so the browser
+  // doesn't defer any of them. Without this, a cold Home load downloaded all
+  // 8 hero images (up to ~570KB) immediately even though 7 were invisible.
+  // `warm` tracks which slide indices have actually had their `src` set —
+  // only the current slide + its immediate neighbors (for an instant swipe
+  // preview) — and only grows as the user/auto-advance actually reaches a
+  // slide, so the rest never get requested unless reached.
+  const [warm, setWarm] = useState(() => new Set([0, 1, SLIDE_COUNT - 1]));
 
   const productSlides = useMemo(() => {
     if (!products || products.length < 4) return null;
@@ -73,6 +84,17 @@ export function HomeHeroCarousel({ products }) {
   useEffect(() => {
     const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 4000);
     return () => clearInterval(id);
+  }, [index, slides.length]);
+
+  useEffect(() => {
+    const n = slides.length;
+    const nearby = [index, (index - 1 + n) % n, (index + 1) % n];
+    setWarm((prev) => {
+      if (nearby.every((i) => prev.has(i))) return prev; // no new fetch needed
+      const next = new Set(prev);
+      nearby.forEach((i) => next.add(i));
+      return next;
+    });
   }, [index, slides.length]);
 
   function goTo(i) {
@@ -105,7 +127,11 @@ export function HomeHeroCarousel({ products }) {
       {slides.map((s, i) => {
         const key = isProducts ? s.id : s.cat;
         const href = isProducts ? `/product/${s.id}` : `/category/${s.cat}`;
-        const image = isProducts ? (s.images?.[0] ? storageUrl('products', s.images[0]) : null) : s.image;
+        // undefined (not null) so React omits the src attribute entirely for
+        // a not-yet-warm slide — the browser never issues a request for it.
+        const image = warm.has(i)
+          ? (isProducts ? (s.images?.[0] ? storageUrl('products', s.images[0]) : null) : s.image)
+          : undefined;
         return (
           <Link
             key={key}
