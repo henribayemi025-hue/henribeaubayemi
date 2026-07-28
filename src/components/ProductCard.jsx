@@ -27,7 +27,7 @@ function ProductCardBase({ product }) {
         )}
       </div>
       <div className="p-3">
-        <p className="line-clamp-1 text-body text-ink">{product.name}</p>
+        <p className="line-clamp-2 text-body text-ink">{product.name}</p>
         {quote ? (
           <p className="mt-1 text-caption font-semibold text-brass">{t('product.requestQuote')}</p>
         ) : (
