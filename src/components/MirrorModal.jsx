@@ -103,7 +103,7 @@ export function MirrorModal({ open, onClose, product }) {
 
   return (
     <Modal open={open} onClose={handleClose} title={t('mirror.title')}>
-      <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden" onChange={onPick} />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
 
       {!selfie && !result && (
         <div className="flex flex-col items-center gap-3 py-6 text-center">
