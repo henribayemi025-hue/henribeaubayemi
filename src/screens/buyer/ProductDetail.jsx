@@ -172,7 +172,7 @@ export default function ProductDetail() {
 
         {!quote && MIRROR_CATEGORIES.includes(p.category) && (
           <button
-            onClick={() => setMirrorOpen(true)}
+            onClick={() => (user ? setMirrorOpen(true) : requireLogin())}
             className="mt-3 inline-flex items-center gap-1.5 rounded-pill border border-brass/50 bg-brass/5 px-3 py-1.5 text-caption font-semibold text-brass"
           >
             <IconSparkles size={15} /> {t('mirror.tryOnButton')}

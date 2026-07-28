@@ -5,6 +5,7 @@ import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRigh
 import { supabase, storageUrl } from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
 import { useUI } from '../hooks/useUI';
+import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
@@ -45,7 +46,8 @@ async function fetchVendorSnapshot(shop) {
 export function FinouChou() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { finouOpen, closeFinou } = useUI();
+  const { finouOpen, closeFinou, requireLogin } = useUI();
+  const { user } = useAuth();
   const { shop, status: vendorStatus } = useVendorStatus();
   const location = useLocation();
   const [messages, setMessages] = useState([]);
@@ -234,7 +236,7 @@ export function FinouChou() {
                       </button>
                       {MIRROR_CATEGORIES.includes(p.category) && (
                         <button
-                          onClick={() => setMirrorProduct(p)}
+                          onClick={() => (user ? setMirrorProduct(p) : requireLogin())}
                           className="mt-1 flex w-full items-center justify-center gap-1 rounded-pill border border-brass/50 bg-brass/5 py-1 text-[11px] font-semibold text-brass"
                         >
                           <IconSparkles size={11} /> {t('mirror.tryOnButton')}
