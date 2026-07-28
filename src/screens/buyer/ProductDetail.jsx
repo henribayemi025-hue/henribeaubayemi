@@ -131,7 +131,13 @@ export default function ProductDetail() {
       <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
         {images.length ? (
           images.map((src, i) => (
-            <SmartImage key={i} src={src} alt={`${p.name} ${i + 1}`} className="aspect-square w-full shrink-0 snap-center" />
+            <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink">
+              {/* Blurred same-photo backdrop fills the square; the real photo
+                  stays fully visible on top so nothing (like a face) is ever
+                  cropped off, regardless of how the source photo was framed. */}
+              <SmartImage src={src} alt="" className="absolute inset-0 h-full w-full scale-110 blur-lg" />
+              <SmartImage src={src} alt={`${p.name} ${i + 1}`} fit="contain" className="absolute inset-0 h-full w-full" />
+            </div>
           ))
         ) : (
           <SmartImage src={null} alt={p.name} className="aspect-square w-full" />

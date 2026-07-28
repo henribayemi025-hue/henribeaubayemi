@@ -35,7 +35,13 @@ export default function CategoryListing() {
       <AppHeader title={t(`categories.${categoryId}`)} back />
       <div className="lg:mx-auto lg:max-w-4xl">
         {cat && (
-          <img src={cat.banner} alt="" aria-hidden="true" className="block aspect-[2/1] w-full object-cover object-top" />
+          <div className="relative h-36 w-full overflow-hidden bg-ink">
+            {/* Blurred backdrop fills the width; the real banner stays fully
+                visible and never upscaled past its own resolution, so it's
+                never cropped and never blurry. */}
+            <img src={cat.banner} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
+            <img src={cat.banner} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-contain" />
+          </div>
         )}
         <div className="p-4">
           {loading ? (

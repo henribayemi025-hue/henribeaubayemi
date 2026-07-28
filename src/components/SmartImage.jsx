@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { IconPhoto } from '@tabler/icons-react';
 
 // Lazy, decoding-async image with a graceful placeholder for flaky connections.
-export function SmartImage({ src, alt, className = '', rounded = '' }) {
+export function SmartImage({ src, alt, className = '', rounded = '', fit = 'cover' }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) {
     return (
@@ -18,7 +18,7 @@ export function SmartImage({ src, alt, className = '', rounded = '' }) {
       loading="lazy"
       decoding="async"
       onError={() => setFailed(true)}
-      className={`${className} ${rounded} object-cover`}
+      className={`${className} ${rounded} ${fit === 'contain' ? 'object-contain' : 'object-cover'}`}
     />
   );
 }
