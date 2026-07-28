@@ -80,7 +80,9 @@ export function MirrorModal({ open, onClose, product }) {
           setError('paused');
         } else {
           setError('generic');
-          setErrorDetail(body?.error || fnErr.message);
+          // body.detail is Gemini's own refusal text/finishReason when we
+          // have it — much more useful than our generic wrapper message.
+          setErrorDetail(body?.detail || body?.error || fnErr.message);
         }
         return;
       }
@@ -91,7 +93,7 @@ export function MirrorModal({ open, onClose, product }) {
           setError('paused');
         } else {
           setError('generic');
-          setErrorDetail(data.error);
+          setErrorDetail(data.detail || data.error);
         }
         return;
       }
