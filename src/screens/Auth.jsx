@@ -10,7 +10,7 @@ export default function Auth() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
   const [mode, setMode] = useState(refCode ? 'signup' : 'login');
@@ -22,7 +22,12 @@ export default function Auth() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === 'login') {
+      if (mode === 'forgot') {
+        const { error } = await resetPassword(form.email.trim());
+        if (error) throw error;
+        toast.success(t('auth.resetLinkSent'));
+        setMode('login');
+      } else if (mode === 'login') {
         const { error } = await signIn(form.email.trim(), form.password);
         if (error) throw error;
         navigate(from, { replace: true });
@@ -49,7 +54,10 @@ export default function Auth() {
       </Link>
       <p className="mb-6 text-center text-caption text-muted">{t('common.tagline')}</p>
 
-      <h1 className="mb-4 text-title text-ink">{mode === 'login' ? t('auth.loginTitle') : t('auth.signupTitle')}</h1>
+      <h1 className="mb-4 text-title text-ink">
+        {mode === 'login' ? t('auth.loginTitle') : mode === 'signup' ? t('auth.signupTitle') : t('auth.forgotTitle')}
+      </h1>
+      {mode === 'forgot' && <p className="mb-4 text-caption text-muted">{t('auth.forgotHint')}</p>}
       <form onSubmit={submit} className="space-y-3">
         {mode === 'signup' && (
           <Field label={t('auth.name')}>
@@ -59,15 +67,28 @@ export default function Auth() {
         <Field label={t('auth.email')}>
           {(id) => <TextInput id={id} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required autoComplete="email" />}
         </Field>
-        <Field label={t('auth.password')}>
-          {(id) => <TextInput id={id} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />}
-        </Field>
-        <Button type="submit" loading={busy}>{mode === 'login' ? t('auth.login') : t('auth.signup')}</Button>
+        {mode !== 'forgot' && (
+          <Field label={t('auth.password')}>
+            {(id) => <TextInput id={id} type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />}
+          </Field>
+        )}
+        {mode === 'login' && (
+          <button type="button" onClick={() => setMode('forgot')} className="block text-caption font-semibold text-teal">
+            {t('auth.forgotPassword')}
+          </button>
+        )}
+        <Button type="submit" loading={busy}>
+          {mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.sendResetLink')}
+        </Button>
       </form>
 
-      <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="btn-ghost mx-auto mt-4">
-        {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
-      </button>
+      {mode === 'forgot' ? (
+        <button onClick={() => setMode('login')} className="btn-ghost mx-auto mt-4">{t('auth.backToLogin')}</button>
+      ) : (
+        <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="btn-ghost mx-auto mt-4">
+          {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
+        </button>
+      )}
       <Link to="/" className="mx-auto mt-2 text-caption text-muted">{t('auth.continueAsGuest')}</Link>
     </div>
   );

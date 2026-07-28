@@ -52,6 +52,9 @@ export function AuthProvider({ children }) {
     signUp: (email, password, name, ref) =>
       supabase.auth.signUp({ email, password, options: { data: { name, ...(ref ? { ref } : {}) } } }),
     signOut: () => supabase.auth.signOut(),
+    resetPassword: (email) =>
+      supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset` }),
+    updatePassword: (password) => supabase.auth.updateUser({ password }),
   };
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

@@ -113,7 +113,7 @@ export function HomeHeroCarousel({ products }) {
             onClick={(e) => { if (dragged.current) e.preventDefault(); }}
             className={`absolute inset-0 flex h-full w-full flex-col items-start justify-end p-4 text-left transition-opacity duration-700 ${i === index ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
-            {image && <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-cover" />}
+            {image && <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-cover object-top" />}
             <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
             {isProducts ? (
               <>

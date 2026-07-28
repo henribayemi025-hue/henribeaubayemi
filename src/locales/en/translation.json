@@ -62,7 +62,18 @@
     "checkEmail": "Check your inbox to confirm your account.",
     "invalidCredentials": "Wrong email or password.",
     "processing": "One moment…",
-    "continueAsGuest": "Continue without an account"
+    "continueAsGuest": "Continue without an account",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotHint": "Enter your email, we'll send you a link to pick a new password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "Link sent! Check your inbox.",
+    "backToLogin": "Back to login",
+    "resetTitle": "New password",
+    "newPassword": "New password",
+    "resetPassword": "Change password",
+    "resetSuccess": "Password changed successfully.",
+    "resetLinkInvalid": "This link is no longer valid, request a new one."
   },
   "nav": {
     "home": "Home",

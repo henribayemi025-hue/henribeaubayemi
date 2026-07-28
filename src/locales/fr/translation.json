@@ -62,7 +62,18 @@
     "checkEmail": "Vérifie ta boîte mail pour confirmer ton compte.",
     "invalidCredentials": "E-mail ou mot de passe incorrect.",
     "processing": "Un instant…",
-    "continueAsGuest": "Continuer sans compte"
+    "continueAsGuest": "Continuer sans compte",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotTitle": "Réinitialiser le mot de passe",
+    "forgotHint": "Entre ton e-mail, on t'envoie un lien pour choisir un nouveau mot de passe.",
+    "sendResetLink": "Envoyer le lien",
+    "resetLinkSent": "Lien envoyé ! Vérifie ta boîte mail.",
+    "backToLogin": "Retour à la connexion",
+    "resetTitle": "Nouveau mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "resetPassword": "Changer le mot de passe",
+    "resetSuccess": "Mot de passe changé avec succès.",
+    "resetLinkInvalid": "Ce lien n'est plus valide, redemande-en un nouveau."
   },
   "nav": {
     "home": "Accueil",

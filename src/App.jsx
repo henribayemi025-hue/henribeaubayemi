@@ -59,6 +59,7 @@ const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
 const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazyWithReload(() => import('./screens/Auth'));
+const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
 const AdminDashboard = lazyWithReload(() => import('./screens/AdminDashboard'));
 const Landing = lazyWithReload(() => import('../landing/Landing'));
 
@@ -92,6 +93,7 @@ export default function App() {
                 <Suspense fallback={<Loading />}>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/auth/reset" element={<ResetPassword />} />
                     <Route path="/admin" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
                     <Route path="/landing" element={<Landing />} />
 
