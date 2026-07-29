@@ -64,10 +64,14 @@ export default function ProductDetail() {
     if (!product) return null;
     // Increment view count (best-effort; ignore failures on flaky connections).
     await supabase.from('products').update({ views: (product.views || 0) + 1 }).eq('id', id);
+    // Les avis se laissent par commande, pas par article (voir ReviewModal):
+    // une commande peut contenir plusieurs produits d'une même boutique, donc
+    // rien ne les rattache à UN article précis. On affiche ici les avis de la
+    // boutique du produit, comme le fait déjà l'onglet Avis de sa fiche.
     const { data: reviews } = await supabase
       .from('reviews')
       .select('id, rating, body, created_at')
-      .eq('product_id', id)
+      .eq('shop_id', product.shop_id)
       .order('created_at', { ascending: false });
     return { product, reviews: reviews || [] };
   }, [id]);
@@ -119,7 +123,7 @@ export default function ProductDetail() {
   const images = (p.images || []).map((im) => storageUrl('products', im));
 
   return (
-    <div className="relative">
+    <div className="relative lg:mx-auto lg:max-w-3xl">
       <button
         onClick={() => navigate(-1)}
         aria-label={t('common.back')}
@@ -128,7 +132,7 @@ export default function ProductDetail() {
         <IconChevronLeft size={22} />
       </button>
 
-      <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
+      <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto lg:rounded-card">
         {images.length ? (
           images.map((src, i) => (
             <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink">
