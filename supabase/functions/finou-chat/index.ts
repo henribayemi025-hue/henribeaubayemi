@@ -94,6 +94,21 @@ TES OUTILS — utilise-les, ne devine jamais:
   "ajouté"/"c'est fait" sans avoir réellement appelé add_to_cart et reçu
   added:true — si le résultat dit added:false, explique la vraie raison
   (message du résultat) au lieu d'affirmer un succès.
+- "Demande-lui si...", "écris à la boutique", "est-ce dispo en taille M ?",
+  "demande un devis" -> message_shop. TOUJOURS en deux temps: d'abord tu
+  PROPOSES le texte exact ("Je lui écris : « ... » — je l'envoie ?") et tu
+  attends le OK; ensuite seulement tu appelles l'outil. Rédige le message à
+  la première personne, comme si l'utilisateur l'écrivait lui-même.
+- "Abonne-moi à cette boutique", "suis-la pour moi" -> follow_shop.
+- Vendeuse qui décrit un article à mettre en vente ("ajoute une robe wax à
+  25000, j'en ai 3") -> create_product. Récapitule d'abord nom, prix,
+  catégorie et stock, attends le OK, puis appelle l'outil. Précise ensuite
+  que l'article est en BROUILLON: il faut y ajouter des photos et le publier
+  depuis « Mes articles » pour qu'il apparaisse dans le catalogue.
+Ces trois outils écrivent VRAIMENT dans la base pour le compte de
+l'utilisateur: jamais sans son accord explicite dans le tour juste avant, et
+ne prétends jamais qu'ils ont réussi si le résultat dit sent/followed/created
+= false — donne la vraie raison.
 Tu peux enchaîner plusieurs outils avant de répondre. Si un outil ne renvoie rien,
 dis-le franchement et propose une alternative — n'invente aucun produit.
 
@@ -183,6 +198,45 @@ const TOOL_DECLARATIONS = [
       required: ['product_id'],
     },
   },
+  {
+    name: 'message_shop',
+    description:
+      "Écrit un message à une boutique de la part de l'utilisateur (disponibilité, taille, prix, devis pour mariage/événement...). N'appelle cet outil qu'après avoir montré à l'utilisateur le texte exact et obtenu son accord.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        shop_id: { type: 'STRING', description: "L'id exact de la boutique, renvoyé par find_shops ou search_products" },
+        body: { type: 'STRING', description: "Le message, rédigé à la première personne comme si l'utilisateur l'écrivait" },
+        product_id: { type: 'STRING', description: "Id de l'article concerné, si la question porte sur un article précis" },
+      },
+      required: ['shop_id', 'body'],
+    },
+  },
+  {
+    name: 'follow_shop',
+    description: "Abonne l'utilisateur à une boutique pour suivre ses nouveautés. Uniquement sur demande explicite.",
+    parameters: {
+      type: 'OBJECT',
+      properties: { shop_id: { type: 'STRING', description: "L'id exact de la boutique" } },
+      required: ['shop_id'],
+    },
+  },
+  {
+    name: 'create_product',
+    description:
+      "Crée une fiche article dans la boutique de l'utilisateur vendeur. L'article est créé HORS LIGNE (brouillon): la vendeuse doit ensuite y ajouter des photos et le publier. N'appelle cet outil qu'après avoir récapitulé nom, prix, catégorie et stock, et obtenu l'accord explicite.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        name: { type: 'STRING', description: "Nom de l'article" },
+        price_fcfa: { type: 'NUMBER', description: 'Prix en FCFA' },
+        category: { type: 'STRING', description: `Une de: ${CATEGORIES.join(', ')}` },
+        description: { type: 'STRING' },
+        stock: { type: 'NUMBER', description: 'Quantité disponible, 1 par défaut' },
+      },
+      required: ['name', 'price_fcfa', 'category'],
+    },
+  },
 ];
 
 // Catégories vendues sur devis: pas de prix ferme, donc rien à mettre au
@@ -207,14 +261,15 @@ async function runTool(
   cartActions: Json[],
 ): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
-  if (!userId && (name === 'get_my_orders' || name === 'get_my_shop_stats')) {
-    return { signed_in: false, message: "L'utilisateur n'est pas connecté: invite-le à se connecter pour voir ces informations." };
+  const NEEDS_AUTH = ['get_my_orders', 'get_my_shop_stats', 'message_shop', 'follow_shop', 'create_product'];
+  if (!userId && NEEDS_AUTH.includes(name)) {
+    return { signed_in: false, message: "L'utilisateur n'est pas connecté: invite-le à se connecter pour faire ça." };
   }
   switch (name) {
     case 'search_products': {
       let q = db
         .from('products')
-        .select('id,name,price_fcfa,category,stock,shops(name,slug)')
+        .select('id,name,price_fcfa,category,stock,shop_id,shops(name,slug)')
         .eq('is_active', true)
         .limit(6);
       if (typeof args.query === 'string' && args.query.trim()) {
@@ -237,6 +292,7 @@ async function runTool(
           categorie: p.category,
           en_stock: (p.stock as number) > 0,
           boutique: (p.shops as Json | null)?.name ?? null,
+          shop_id: p.shop_id,
         })),
       };
     }
@@ -317,7 +373,7 @@ async function runTool(
     case 'find_shops': {
       let q = db
         .from('shops')
-        .select('name,slug,city,country,rating,is_verified')
+        .select('id,name,slug,city,country,rating,is_verified')
         .eq('status', 'active')
         .limit(6);
       if (typeof args.query === 'string' && args.query.trim()) q = q.ilike('name', `%${args.query.trim()}%`);
@@ -328,7 +384,7 @@ async function runTool(
       return {
         count: data?.length ?? 0,
         boutiques: (data ?? []).map((s: Json) => ({
-          nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
+          id: s.id, nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
         })),
       };
     }
@@ -365,6 +421,122 @@ async function runTool(
         qty,
       });
       return { added: true, nom: p.name, prix_fcfa: p.price_fcfa, quantite: qty };
+    }
+
+    case 'message_shop': {
+      const shopId = typeof args.shop_id === 'string' ? args.shop_id : null;
+      const body = typeof args.body === 'string' ? args.body.trim() : '';
+      if (!shopId) return { sent: false, message: 'shop_id manquant' };
+      if (!body) return { sent: false, message: 'message vide' };
+      if (body.length > 1000) return { sent: false, message: 'message trop long (1000 caractères max)' };
+
+      const { data: shop } = await db.from('shops').select('id,name,owner_id').eq('id', shopId).maybeSingle();
+      if (!shop) return { sent: false, message: "Cette boutique n'existe pas." };
+      if (shop.owner_id === userId) {
+        return { sent: false, message: "C'est sa propre boutique — on ne s'écrit pas à soi-même." };
+      }
+
+      // Réutilise le fil existant s'il y en a un, sinon en ouvre un. Mêmes
+      // règles que src/lib/chat.js pour que le fil créé ici soit exactement
+      // celui que l'acheteur retrouvera dans sa boîte de réception.
+      let conversationId: string;
+      const { data: existing } = await db
+        .from('conversations')
+        .select('id')
+        .eq('buyer_id', userId)
+        .eq('shop_id', shopId)
+        .maybeSingle();
+      if (existing) {
+        conversationId = existing.id as string;
+      } else {
+        const productId = typeof args.product_id === 'string' ? args.product_id : null;
+        const { data: created, error: convErr } = await db
+          .from('conversations')
+          .insert({ buyer_id: userId, shop_id: shopId, product_id: productId })
+          .select('id')
+          .single();
+        if (convErr) return { sent: false, message: convErr.message };
+        conversationId = created.id as string;
+      }
+
+      const { error: msgErr } = await db.from('chat_messages').insert({
+        conversation_id: conversationId,
+        sender_id: userId,
+        sender_role: 'buyer',
+        body,
+      });
+      if (msgErr) return { sent: false, message: msgErr.message };
+
+      await db
+        .from('conversations')
+        .update({ last_message: body, last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+      return { sent: true, boutique: shop.name, conversation_id: conversationId, message_envoye: body };
+    }
+
+    case 'follow_shop': {
+      const shopId = typeof args.shop_id === 'string' ? args.shop_id : null;
+      if (!shopId) return { followed: false, message: 'shop_id manquant' };
+      const { data: shop } = await db.from('shops').select('id,name').eq('id', shopId).maybeSingle();
+      if (!shop) return { followed: false, message: "Cette boutique n'existe pas." };
+
+      const { data: already } = await db
+        .from('shop_follows')
+        .select('id')
+        .eq('follower_id', userId)
+        .eq('shop_id', shopId)
+        .maybeSingle();
+      if (already) return { followed: true, deja_abonne: true, boutique: shop.name };
+
+      const { error } = await db.from('shop_follows').insert({ follower_id: userId, shop_id: shopId });
+      if (error) return { followed: false, message: error.message };
+      return { followed: true, boutique: shop.name };
+    }
+
+    case 'create_product': {
+      const { data: shop } = await db.from('shops').select('id,name').eq('owner_id', userId).maybeSingle();
+      if (!shop) {
+        return { created: false, message: "Cet utilisateur n'a pas de boutique — invite-le à en ouvrir une." };
+      }
+      const nom = typeof args.name === 'string' ? args.name.trim() : '';
+      const prix = typeof args.price_fcfa === 'number' ? Math.round(args.price_fcfa) : NaN;
+      const cat = typeof args.category === 'string' ? args.category : '';
+      if (!nom) return { created: false, message: 'nom manquant' };
+      if (!Number.isFinite(prix) || prix < 0) return { created: false, message: 'prix invalide' };
+      if (!CATEGORIES.includes(cat)) {
+        return { created: false, message: `catégorie invalide — une de: ${CATEGORIES.join(', ')}` };
+      }
+      const stock = typeof args.stock === 'number' && args.stock >= 0 ? Math.floor(args.stock) : 1;
+
+      // Créé en brouillon (is_active false): une fiche sans photo publiée
+      // directement donnerait un article fantôme dans le catalogue. La
+      // vendeuse ajoute ses photos puis publie depuis "Mes articles".
+      const { data: created, error } = await db
+        .from('products')
+        .insert({
+          shop_id: shop.id,
+          name: nom,
+          description: typeof args.description === 'string' ? args.description.trim() : null,
+          price_fcfa: prix,
+          category: cat,
+          stock,
+          is_active: false,
+        })
+        .select('id,name,price_fcfa,category,stock')
+        .single();
+      if (error) return { created: false, message: error.message };
+
+      return {
+        created: true,
+        brouillon: true,
+        id: created.id,
+        nom: created.name,
+        prix_fcfa: created.price_fcfa,
+        categorie: created.category,
+        stock: created.stock,
+        message: "Créé en brouillon — il faut ajouter des photos puis le publier depuis « Mes articles ».",
+      };
     }
 
     default:
