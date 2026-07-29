@@ -8,6 +8,7 @@ import { useUI } from '../hooks/useUI';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useSpeechInput } from '../hooks/useSpeechInput';
+import { useCart } from '../hooks/useCart';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
@@ -50,6 +51,7 @@ export function FinouChou() {
   const { finouOpen, closeFinou, requireLogin } = useUI();
   const { user } = useAuth();
   const { shop, status: vendorStatus } = useVendorStatus();
+  const cart = useCart();
   const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -129,6 +131,14 @@ export function FinouChou() {
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       const mid = Date.now();
       setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action }]);
+      // Le panier vit côté client (localStorage) — Finou ne peut donc pas
+      // l'écrire elle-même côté serveur. cartActions contient les lignes déjà
+      // validées contre la vraie base (stock, prix, existence); cart.add()
+      // déclenche la même mini-confirmation que partout ailleurs dans l'app,
+      // aucune UI à dupliquer ici.
+      if (Array.isArray(data.cartActions)) {
+        for (const line of data.cartActions) cart.add(line, line.qty);
+      }
       // Visual search: if Finou identified a category, surface real, buyable
       // products from the marketplace as a carousel under the reply.
       if (data.category) {

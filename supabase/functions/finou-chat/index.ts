@@ -90,7 +90,10 @@ TES OUTILS — utilise-les, ne devine jamais:
   TOI (Finou) venez de montrer via search_products/get_trending_products dans
   CETTE conversation -> add_to_cart avec son id exact. N'appelle JAMAIS cet
   outil sans confirmation claire de l'utilisateur, et jamais pour un article
-  dont tu n'as pas déjà l'id réel (cherche-le d'abord si besoin).
+  dont tu n'as pas déjà l'id réel (cherche-le d'abord si besoin). NE DIS JAMAIS
+  "ajouté"/"c'est fait" sans avoir réellement appelé add_to_cart et reçu
+  added:true — si le résultat dit added:false, explique la vraie raison
+  (message du résultat) au lieu d'affirmer un succès.
 Tu peux enchaîner plusieurs outils avant de répondre. Si un outil ne renvoie rien,
 dis-le franchement et propose une alternative — n'invente aucun produit.
 
@@ -189,7 +192,20 @@ const QUOTE_ONLY = ['mariages', 'evenement', 'mannequinerie'];
 
 type Json = Record<string, unknown>;
 
-async function runTool(name: string, args: Json, db: SupabaseClient, userId: string | null): Promise<Json> {
+// Le panier vit côté client (localStorage, voir src/hooks/useCart.jsx) — pas
+// de table en base. add_to_cart ne peut donc pas "écrire" côté serveur:
+// il VALIDE l'article contre la vraie base (existe, actif, en stock, pas un
+// article sur devis) et pousse une ligne prête à l'emploi dans `cartActions`,
+// que la réponse finale renvoie au client. FinouChou.jsx applique chaque
+// ligne via cart.add(), qui déclenche déjà la mini-fenêtre de confirmation
+// globale du panier — aucune UI neuve nécessaire.
+async function runTool(
+  name: string,
+  args: Json,
+  db: SupabaseClient,
+  userId: string | null,
+  cartActions: Json[],
+): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
   if (!userId && (name === 'get_my_orders' || name === 'get_my_shop_stats')) {
     return { signed_in: false, message: "L'utilisateur n'est pas connecté: invite-le à se connecter pour voir ces informations." };
@@ -315,6 +331,40 @@ async function runTool(name: string, args: Json, db: SupabaseClient, userId: str
           nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
         })),
       };
+    }
+
+    case 'add_to_cart': {
+      const productId = typeof args.product_id === 'string' ? args.product_id : null;
+      if (!productId) return { added: false, message: 'product_id manquant' };
+      const qty = typeof args.qty === 'number' && args.qty > 0 ? Math.floor(args.qty) : 1;
+
+      // Revalidé contre la vraie base — jamais confiance dans ce que le
+      // modèle affirme sur l'article (nom, prix, disponibilité).
+      const { data: p, error } = await db
+        .from('products')
+        .select('id,name,price_fcfa,images,stock,is_active,category,shop_id,shops(name)')
+        .eq('id', productId)
+        .maybeSingle();
+      if (error) return { added: false, message: error.message };
+      if (!p) return { added: false, message: "Cet article n'existe pas (ou plus)." };
+      if (!p.is_active) return { added: false, message: "Cet article n'est plus en vente." };
+      if (QUOTE_ONLY.includes(p.category as string)) {
+        return { added: false, message: "Cet article est sur devis, pas d'ajout direct au panier — invite à contacter la boutique." };
+      }
+      if (((p.stock as number) ?? 0) < qty) {
+        return { added: false, message: `Stock insuffisant (${p.stock} disponible(s)).` };
+      }
+
+      cartActions.push({
+        id: p.id,
+        name: p.name,
+        price_fcfa: p.price_fcfa,
+        images: p.images ?? [],
+        shop_id: p.shop_id,
+        shop_name: (p.shops as Json | null)?.name ?? '',
+        qty,
+      });
+      return { added: true, nom: p.name, prix_fcfa: p.price_fcfa, quantite: qty };
     }
 
     default:
@@ -453,6 +503,7 @@ Deno.serve(async (req: Request) => {
     let data: Json | null = null;
     let calls = 0;
     let pinnedModel: string | null = null;
+    const cartActions: Json[] = [];
 
     outer:
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -482,7 +533,7 @@ Deno.serve(async (req: Request) => {
       const responseParts: Array<Json> = [];
       for (const p of fnCalls) {
         const fc = (p.functionCall ?? p.function_call) as { name: string; args?: Json };
-        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null);
+        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions);
         responseParts.push({ functionResponse: { name: fc.name, response: result } });
       }
       contents.push({ role: 'user', parts: responseParts });
@@ -509,7 +560,17 @@ Deno.serve(async (req: Request) => {
       reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i, '').trim();
     }
 
-    return json({ reply, category, action });
+    // Fusionne les doublons (même article ajouté deux fois dans le tour) en
+    // sommant les quantités, pour un seul appel cart.add() côté client.
+    const mergedCart = new Map<string, Json>();
+    for (const line of cartActions) {
+      const id = line.id as string;
+      const existing = mergedCart.get(id);
+      if (existing) existing.qty = (existing.qty as number) + (line.qty as number);
+      else mergedCart.set(id, { ...line });
+    }
+
+    return json({ reply, category, action, cartActions: [...mergedCart.values()] });
   } catch (err) {
     console.error('finou-chat exception', err);
     return json({ error: 'internal_error' }, 500);
