@@ -199,7 +199,8 @@
     "actionShareShop": "Partager ma boutique",
     "voiceStart": "Dicter à Finou",
     "voiceStop": "Arrêter la dictée",
-    "voiceListening": "Je t'écoute…"
+    "voiceListening": "Je t'écoute…",
+    "hint": "Discuter avec Finou"
   },
   "mirror": {
     "title": "Essayage virtuel",

@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { IconSparkles } from '@tabler/icons-react';
 import { SmartImage } from './SmartImage';
 import { Price } from './Price';
-import { isQuoteOnly } from '../lib/categories';
+import { isQuoteOnly, MIRROR_CATEGORIES } from '../lib/categories';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
 import { track } from '../lib/track';
 
@@ -13,6 +14,11 @@ function ProductCardBase({ product }) {
   const quote = isQuoteOnly(product.category);
   const img = product.images?.[0] ? storageThumbUrl('products', product.images[0]) : null;
   const imgFallback = product.images?.[0] ? storageUrl('products', product.images[0]) : null;
+  // Repère discret pour l'essayage virtuel — avant, il fallait déjà être entré
+  // dans la fiche produit pour découvrir que Miroir IA existe. Un badge minuscule
+  // (icône seule, coin de la photo) suffit à le signaler dès la grille, sans
+  // alourdir visuellement la carte.
+  const canMirror = !quote && MIRROR_CATEGORIES.includes(product.category);
   return (
     <Link
       to={`/product/${product.id}`}
@@ -24,6 +30,15 @@ function ProductCardBase({ product }) {
         {product.stock === 0 && !quote && (
           <span className="absolute left-2 top-2 rounded-pill bg-danger-bg px-2 py-0.5 text-caption font-semibold text-danger">
             {t('product.outOfStock')}
+          </span>
+        )}
+        {canMirror && (
+          <span
+            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-brass shadow-sm"
+            aria-label={t('mirror.tryOnButton')}
+            title={t('mirror.tryOnButton')}
+          >
+            <IconSparkles size={13} />
           </span>
         )}
       </div>

@@ -9,6 +9,9 @@ import {
   IconSparkles,
 } from '@tabler/icons-react';
 import { useUI } from '../hooks/useUI';
+import { useState } from 'react';
+
+const HINT_SEEN_KEY = 'finjaro_finou_hint_seen';
 
 const items = [
   { to: '/', key: 'home', end: true, out: IconHome, on: IconHomeFilled },
@@ -30,12 +33,33 @@ export function BuyerNav() {
   // bar so only the message input sits above the keyboard.
   const showNav = !isChat;
 
+  // Petit rappel discret pour découvrir Finou: la bulle sparkle seule ne dit
+  // jamais ce qu'elle fait. Un mini-libellé sur l'accueil, une seule fois par
+  // appareil (localStorage), suffit à signaler "on peut discuter ici" sans
+  // polluer les autres écrans à chaque visite.
+  const [hintSeen, setHintSeen] = useState(() => {
+    try { return localStorage.getItem(HINT_SEEN_KEY) === '1'; } catch { return true; }
+  });
+  const showHint = showFinou && pathname === '/' && !hintSeen;
+  const dismissHint = () => {
+    setHintSeen(true);
+    try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch { /* noop */ }
+  };
+
   return (
     <>
       {showFinou && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4 lg:bottom-6 lg:px-6">
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex items-center justify-end gap-2 px-4 lg:bottom-6 lg:px-6">
+          {showHint && (
+            <button
+              onClick={() => { dismissHint(); openFinou(); }}
+              className="pointer-events-auto rounded-pill bg-ink/85 px-3 py-1.5 text-caption font-medium text-white shadow-lg"
+            >
+              {t('finou.hint')}
+            </button>
+          )}
           <button
-            onClick={openFinou}
+            onClick={() => { dismissHint(); openFinou(); }}
             aria-label={t('finou.title')}
             className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal text-white shadow-lg transition-transform duration-150 hover:bg-teal-hover active:scale-95"
           >
