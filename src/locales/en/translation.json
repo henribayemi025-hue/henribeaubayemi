@@ -200,7 +200,14 @@
     "voiceStart": "Speak to Finou",
     "voiceStop": "Stop dictation",
     "voiceListening": "I'm listening…",
-    "hint": "Chat with Finou"
+    "hint": "Chat with Finou",
+    "hints": [
+      "Find me a wax dress",
+      "Need a gift idea?",
+      "What's trending?",
+      "Search by photo",
+      "Add this to my cart"
+    ]
   },
   "mirror": {
     "title": "Virtual try-on",

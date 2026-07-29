@@ -217,7 +217,7 @@ export default function VendorChat({ vendor = false }) {
         <>
           <div ref={scroller} className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-4 pb-2">
             <div className="mx-auto mb-3 max-w-xs rounded-card border border-hairline p-3 text-center">
-              <ShopAvatar src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null} fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null} name={shop?.name} className="mx-auto h-12 w-12" />
+              <ShopAvatar src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null} fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null} name={shop?.name} seed={shop?.id} className="mx-auto h-12 w-12" />
               <p className="mt-2 text-caption text-muted">{t('chat.chattingWith', { name: shop?.name || '' })}</p>
               <p className="mt-1 text-[11px] text-muted">{t('chat.finouHint')}</p>
             </div>

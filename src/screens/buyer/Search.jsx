@@ -161,7 +161,7 @@ function ShopRows({ shops }) {
       {shops.map((s) => (
         <li key={s.id}>
           <Link to={`/boutique/${s.slug}`} className="flex items-center gap-3 px-3 py-2.5">
-            <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} className="h-10 w-10" />
+            <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} seed={s.id} className="h-10 w-10" />
             <span className="flex flex-1 items-center gap-1 text-body font-semibold text-ink">
               {s.name}
               {s.is_verified && <VerifiedBadge size={14} />}

@@ -200,7 +200,14 @@
     "voiceStart": "Dicter à Finou",
     "voiceStop": "Arrêter la dictée",
     "voiceListening": "Je t'écoute…",
-    "hint": "Discuter avec Finou"
+    "hint": "Discuter avec Finou",
+    "hints": [
+      "Trouve-moi une robe wax",
+      "Une idée cadeau ?",
+      "C'est quoi les tendances ?",
+      "Cherche par photo",
+      "Ajoute ça à mon panier"
+    ]
   },
   "mirror": {
     "title": "Essayage virtuel",

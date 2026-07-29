@@ -62,7 +62,7 @@ export function ConversationList({ vendor = false }) {
         return (
           <li key={c.id}>
             <Link to={`${base}/${c.id}`} className="flex items-center gap-3 border-b border-hairline px-4 py-3">
-              <ShopAvatar src={c.shops?.avatar_url ? storageThumbUrl('shops', c.shops.avatar_url) : null} fallbackSrc={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null} name={c.shops?.name} className="h-12 w-12" />
+              <ShopAvatar src={c.shops?.avatar_url ? storageThumbUrl('shops', c.shops.avatar_url) : null} fallbackSrc={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null} name={c.shops?.name} seed={c.shop_id} className="h-12 w-12" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <p className="line-clamp-1 text-body font-semibold text-ink">{c.shops?.name}</p>

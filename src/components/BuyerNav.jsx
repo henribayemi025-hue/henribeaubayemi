@@ -9,9 +9,10 @@ import {
   IconSparkles, IconX,
 } from '@tabler/icons-react';
 import { useUI } from '../hooks/useUI';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const HINT_SEEN_KEY = 'finjaro_finou_hint_seen';
+const HINT_ROTATE_MS = 3200;
 
 const items = [
   { to: '/', key: 'home', end: true, out: IconHome, on: IconHomeFilled },
@@ -33,14 +34,25 @@ export function BuyerNav() {
   // bar so only the message input sits above the keyboard.
   const showNav = !isChat;
 
-  // Petit rappel discret pour découvrir Finou: la bulle sparkle seule ne dit
-  // jamais ce qu'elle fait. Un mini-libellé sur l'accueil, une seule fois par
-  // appareil (localStorage), suffit à signaler "on peut discuter ici" sans
-  // polluer les autres écrans à chaque visite.
+  // La bulle sparkle seule ne dit jamais ce qu'elle sait faire. Plutôt qu'un
+  // libellé figé ("Discuter avec Finou"), la bulle joue en boucle de vraies
+  // phrases qu'on peut lui dire — on comprend l'étendue de ses capacités sans
+  // avoir à l'ouvrir. Uniquement sur l'accueil, et une seule fois par appareil.
   const [hintSeen, setHintSeen] = useState(() => {
     try { return localStorage.getItem(HINT_SEEN_KEY) === '1'; } catch { return true; }
   });
   const showHint = showFinou && pathname === '/' && !hintSeen;
+
+  const phrases = t('finou.hints', { returnObjects: true });
+  const hints = Array.isArray(phrases) ? phrases : [t('finou.hint')];
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (!showHint || hints.length < 2) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % hints.length), HINT_ROTATE_MS);
+    return () => clearInterval(id);
+  }, [showHint, hints.length]);
+
   const dismissHint = () => {
     setHintSeen(true);
     try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch { /* noop */ }
@@ -51,14 +63,20 @@ export function BuyerNav() {
       {showFinou && (
         <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex flex-col items-end gap-2 px-4 lg:bottom-6 lg:px-6">
           {showHint && (
-            <div className="pointer-events-auto flex items-center gap-2 rounded-card bg-white py-2 pl-3.5 pr-2 text-caption font-semibold text-teal shadow-lg ring-1 ring-teal/15">
-              <button onClick={() => { dismissHint(); openFinou(); }} className="text-left">
-                {t('finou.hint')}
+            <div className="pointer-events-auto flex max-w-[75vw] items-center gap-1.5 rounded-card bg-white py-2 pl-3 pr-1.5 shadow-lg ring-1 ring-hairline">
+              <button
+                onClick={() => { dismissHint(); openFinou(); }}
+                className="flex min-w-0 items-center gap-2 text-left"
+              >
+                <IconSparkles size={15} className="shrink-0 text-teal" />
+                <span key={idx} className="animate-hint-in truncate text-caption font-medium text-ink">
+                  {hints[idx]}
+                </span>
               </button>
               <button
                 onClick={dismissHint}
                 aria-label={t('common.close')}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted hover:bg-[#F3F3F3]"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted"
               >
                 <IconX size={13} />
               </button>

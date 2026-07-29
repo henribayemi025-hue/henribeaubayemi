@@ -116,10 +116,18 @@
 }
 .animate-fade-in { animation: finjaro-fade-in 0.2s ease-out; }
 
+/* Rotation des suggestions dans la bulle Finou (remontage par clé). */
+@keyframes finjaro-hint-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-hint-in { animation: finjaro-hint-in 0.3s ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
   .animate-like-pop { animation: none; }
   .animate-slide-up { animation: none; }
   .animate-fade-in { animation: none; }
+  .animate-hint-in { animation: none; }
   * { transition: none !important; }
 }

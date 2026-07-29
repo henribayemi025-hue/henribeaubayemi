@@ -58,7 +58,7 @@ export default function VendorLeaderboard() {
                   >
                     {i < 3 ? <IconTrophy size={20} /> : i + 1}
                   </span>
-                  <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} className="h-11 w-11" />
+                  <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} seed={s.id} className="h-11 w-11" />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1 text-body font-semibold text-ink">
                       <span className="line-clamp-1">{s.name}</span>
