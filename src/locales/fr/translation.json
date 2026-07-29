@@ -492,7 +492,18 @@
     "rotationDays": "Durée d'un arrivage (jours)",
     "rotationDaysHint": "Entre 1 et 90 jours. 7 par défaut.",
     "productPermanent": "Article permanent",
-    "productPermanentHelp": "Ne sera jamais retiré par la rotation. Pour tes pièces toujours disponibles."
+    "productPermanentHelp": "Ne sera jamais retiré par la rotation. Pour tes pièces toujours disponibles.",
+    "tab_online": "En ligne",
+    "tab_drafts": "Brouillons",
+    "tab_archive": "Arrivages passés",
+    "empty_online": "Aucun article en ligne.",
+    "empty_drafts": "Aucun brouillon.",
+    "empty_archive": "Aucun arrivage passé.",
+    "archiveHelp": "Ces articles sont sortis du catalogue à la fin de leur arrivage. Ils ne sont pas supprimés : republie-les quand le modèle revient.",
+    "publish": "Publier",
+    "unpublish": "Retirer",
+    "published": "Article en ligne",
+    "unpublished": "Article retiré du catalogue"
   },
   "orderStatus": {
     "new": "Nouvelle",

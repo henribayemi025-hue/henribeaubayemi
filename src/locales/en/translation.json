@@ -492,7 +492,18 @@
     "rotationDays": "Arrival length (days)",
     "rotationDaysHint": "Between 1 and 90 days. 7 by default.",
     "productPermanent": "Permanent item",
-    "productPermanentHelp": "Never removed by rotation. For pieces you always have in stock."
+    "productPermanentHelp": "Never removed by rotation. For pieces you always have in stock.",
+    "tab_online": "Online",
+    "tab_drafts": "Drafts",
+    "tab_archive": "Past arrivals",
+    "empty_online": "No items online.",
+    "empty_drafts": "No drafts.",
+    "empty_archive": "No past arrivals.",
+    "archiveHelp": "These items left the catalogue at the end of their arrival. They are not deleted — republish them when the piece comes back.",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "published": "Item is online",
+    "unpublished": "Item removed from catalogue"
   },
   "orderStatus": {
     "new": "New",
