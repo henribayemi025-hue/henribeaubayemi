@@ -488,7 +488,7 @@
     "productImagesHint": "Up to {{count}} photos",
     "addPhotos": "Add photos",
     "rotationTitle": "Rotating arrivals",
-    "rotationHelp": "Your items automatically go back to draft after a few days. You then put your new arrival online. Nothing is deleted — you'll find them in “My items”.",
+    "rotationHelp": "At the end of each arrival, your items leave the catalogue automatically. All you have to do is put the new arrival online.",
     "rotationDays": "Arrival length (days)",
     "rotationDaysHint": "Between 1 and 90 days. 7 by default.",
     "productPermanent": "Permanent item",
@@ -499,11 +499,15 @@
     "empty_online": "No items online.",
     "empty_drafts": "No drafts.",
     "empty_archive": "No past arrivals.",
-    "archiveHelp": "These items left the catalogue at the end of their arrival. They are not deleted — republish them when the piece comes back.",
+    "archiveHelp": "These items left the catalogue at the end of their arrival. Republish them when the piece comes back.",
     "publish": "Publish",
     "unpublish": "Unpublish",
     "published": "Item is online",
-    "unpublished": "Item removed from catalogue"
+    "unpublished": "Item removed from catalogue",
+    "rotationEnd": "At the end of the arrival",
+    "rotationEndDelete": "Delete the items",
+    "rotationEndDraft": "Keep them as drafts",
+    "rotationDeleteWarn": "Permanent deletion: the items disappear from your space. Past orders keep their name and price."
   },
   "orderStatus": {
     "new": "New",

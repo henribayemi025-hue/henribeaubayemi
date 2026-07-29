@@ -107,10 +107,12 @@ TES OUTILS — utilise-les, ne devine jamais:
   depuis « Mes articles » pour qu'il apparaisse dans le catalogue.
 - Vendeuse qui travaille par arrivage ("mes habits changent chaque semaine",
   "je veux que ça s'efface tous les 7 jours et je remets du neuf") ->
-  set_rotation. Explique-lui bien: rien n'est SUPPRIMÉ, les articles
-  repassent en brouillon et restent dans « Mes articles », donc elle peut
-  les republier. Une case « article permanent » sur chaque fiche exempte
-  les pièces toujours disponibles. Appelle set_rotation sans argument pour
+  set_rotation. Par DÉFAUT les articles de l'arrivage passé sont SUPPRIMÉS
+  définitivement — dis-le clairement avant d'activer, et précise que les
+  commandes déjà passées gardent bien leur nom et leur prix. Si elle
+  préfère les retrouver, passe delete_items à false: ils repassent alors en
+  brouillon. Une case « article permanent » sur chaque fiche exempte les
+  pièces toujours disponibles. Appelle set_rotation sans argument pour
   juste lire son réglage actuel.
 Ces outils écrivent VRAIMENT dans la base pour le compte de
 l'utilisateur: jamais sans son accord explicite dans le tour juste avant, et
@@ -253,6 +255,11 @@ const TOOL_DECLARATIONS = [
       properties: {
         enabled: { type: 'BOOLEAN', description: 'true pour activer, false pour désactiver. Omets pour seulement lire.' },
         days: { type: 'NUMBER', description: "Durée d'un arrivage en jours, entre 1 et 90 (7 par défaut)" },
+        delete_items: {
+          type: 'BOOLEAN',
+          description:
+            "true (défaut): les articles de l'arrivage passé sont SUPPRIMÉS définitivement. false: ils sont gardés en brouillon et republiables.",
+        },
       },
     },
   },
@@ -561,25 +568,30 @@ async function runTool(
     case 'set_rotation': {
       const { data: shop } = await db
         .from('shops')
-        .select('id,name,rotation_enabled,rotation_days,rotation_last_at')
+        .select('id,name,rotation_enabled,rotation_days,rotation_delete,rotation_last_at')
         .eq('owner_id', userId)
         .maybeSingle();
       if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
 
       // Sans argument: simple lecture, aucune écriture.
-      const wantsWrite = typeof args.enabled === 'boolean' || typeof args.days === 'number';
+      const wantsWrite =
+        typeof args.enabled === 'boolean' ||
+        typeof args.days === 'number' ||
+        typeof args.delete_items === 'boolean';
       if (!wantsWrite) {
         return {
           ok: true,
           lecture_seule: true,
           rotation_active: shop.rotation_enabled,
           duree_jours: shop.rotation_days,
+          supprime_les_articles: shop.rotation_delete,
           dernier_passage: shop.rotation_last_at,
         };
       }
 
       const patch: Json = {};
       if (typeof args.enabled === 'boolean') patch.rotation_enabled = args.enabled;
+      if (typeof args.delete_items === 'boolean') patch.rotation_delete = args.delete_items;
       if (typeof args.days === 'number') {
         const d = Math.round(args.days);
         if (d < 1 || d > 90) return { ok: false, message: 'La durée doit être entre 1 et 90 jours.' };
@@ -590,16 +602,21 @@ async function runTool(
         .from('shops')
         .update(patch)
         .eq('id', shop.id)
-        .select('rotation_enabled,rotation_days')
+        .select('rotation_enabled,rotation_days,rotation_delete')
         .single();
       if (error) return { ok: false, message: error.message };
+
+      const fin = updated.rotation_delete
+        ? `les articles de l'arrivage passé sont SUPPRIMÉS définitivement (les commandes déjà passées gardent leur nom et leur prix)`
+        : `les articles de l'arrivage passé repassent en brouillon et restent republiables depuis « Mes articles »`;
 
       return {
         ok: true,
         rotation_active: updated.rotation_enabled,
         duree_jours: updated.rotation_days,
+        supprime_les_articles: updated.rotation_delete,
         message: updated.rotation_enabled
-          ? `Les articles repasseront en brouillon après ${updated.rotation_days} jours. Rien n'est supprimé: ils restent dans « Mes articles ». Une case « article permanent » existe sur chaque fiche pour en exempter les pièces toujours dispo.`
+          ? `Tous les ${updated.rotation_days} jours, ${fin}. Une case « article permanent » existe sur chaque fiche pour en exempter les pièces toujours dispo.`
           : 'Rotation désactivée: plus aucun article ne sera retiré automatiquement.',
       };
     }

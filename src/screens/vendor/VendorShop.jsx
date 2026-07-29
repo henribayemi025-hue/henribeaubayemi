@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
-import { Field, TextInput, TextArea } from '../../components/Field';
+import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { CATEGORIES } from '../../lib/categories';
 import { getPosition } from '../../lib/geo';
@@ -45,6 +45,8 @@ export default function VendorShop() {
     delivery_fee_fcfa: String(shop.delivery_fee_fcfa || 0),
     rotation_enabled: shop.rotation_enabled || false,
     rotation_days: String(shop.rotation_days || 7),
+    // true = l'arrivage passé est supprimé (défaut), false = gardé en brouillon.
+    rotation_delete: shop.rotation_delete !== false,
   });
   const [busy, setBusy] = useState(false);
 
@@ -82,6 +84,7 @@ export default function VendorShop() {
         // Borné comme la contrainte SQL (1-90) pour que la saisie ne parte
         // jamais en erreur base.
         rotation_days: Math.min(90, Math.max(1, Math.round(Number(form.rotation_days) || 7))),
+        rotation_delete: form.rotation_delete,
       })
       .eq('id', shop.id);
     setBusy(false);
@@ -145,19 +148,36 @@ export default function VendorShop() {
           </span>
         </label>
         {form.rotation_enabled && (
-          <Field label={t('vendor.rotationDays')} hint={t('vendor.rotationDaysHint')}>
-            {(id) => (
-              <TextInput
-                id={id}
-                type="number"
-                inputMode="numeric"
-                min="1"
-                max="90"
-                value={form.rotation_days}
-                onChange={(e) => setForm({ ...form, rotation_days: e.target.value })}
-              />
+          <>
+            <Field label={t('vendor.rotationDays')} hint={t('vendor.rotationDaysHint')}>
+              {(id) => (
+                <TextInput
+                  id={id}
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  max="90"
+                  value={form.rotation_days}
+                  onChange={(e) => setForm({ ...form, rotation_days: e.target.value })}
+                />
+              )}
+            </Field>
+            <Field label={t('vendor.rotationEnd')}>
+              {(id) => (
+                <Select
+                  id={id}
+                  value={form.rotation_delete ? 'delete' : 'draft'}
+                  onChange={(e) => setForm({ ...form, rotation_delete: e.target.value === 'delete' })}
+                >
+                  <option value="delete">{t('vendor.rotationEndDelete')}</option>
+                  <option value="draft">{t('vendor.rotationEndDraft')}</option>
+                </Select>
+              )}
+            </Field>
+            {form.rotation_delete && (
+              <p className="-mt-2 text-caption text-danger">{t('vendor.rotationDeleteWarn')}</p>
             )}
-          </Field>
+          </>
         )}
         <button type="button" onClick={useMyLocation} disabled={geoBusy} className="btn-secondary">
           <IconCurrentLocation size={18} className={geoBusy ? 'animate-spin' : ''} />

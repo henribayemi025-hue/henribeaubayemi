@@ -488,7 +488,7 @@
     "productImagesHint": "Jusqu’à {{count}} photos",
     "addPhotos": "Ajouter des photos",
     "rotationTitle": "Arrivages tournants",
-    "rotationHelp": "Tes articles repassent automatiquement en brouillon au bout de quelques jours. Tu mets ensuite ton nouvel arrivage en ligne. Rien n'est supprimé : tu les retrouves dans « Mes articles ».",
+    "rotationHelp": "À la fin de chaque arrivage, tes articles quittent le catalogue automatiquement. Tu n'as plus qu'à mettre le nouvel arrivage en ligne.",
     "rotationDays": "Durée d'un arrivage (jours)",
     "rotationDaysHint": "Entre 1 et 90 jours. 7 par défaut.",
     "productPermanent": "Article permanent",
@@ -499,11 +499,15 @@
     "empty_online": "Aucun article en ligne.",
     "empty_drafts": "Aucun brouillon.",
     "empty_archive": "Aucun arrivage passé.",
-    "archiveHelp": "Ces articles sont sortis du catalogue à la fin de leur arrivage. Ils ne sont pas supprimés : republie-les quand le modèle revient.",
+    "archiveHelp": "Ces articles sont sortis du catalogue à la fin de leur arrivage. Republie-les quand le modèle revient.",
     "publish": "Publier",
     "unpublish": "Retirer",
     "published": "Article en ligne",
-    "unpublished": "Article retiré du catalogue"
+    "unpublished": "Article retiré du catalogue",
+    "rotationEnd": "À la fin de l'arrivage",
+    "rotationEndDelete": "Supprimer les articles",
+    "rotationEndDraft": "Les garder en brouillon",
+    "rotationDeleteWarn": "Suppression définitive : les articles disparaissent de ton espace. Les commandes déjà passées gardent leur nom et leur prix."
   },
   "orderStatus": {
     "new": "Nouvelle",
