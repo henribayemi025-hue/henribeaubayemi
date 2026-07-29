@@ -105,9 +105,16 @@ TES OUTILS — utilise-les, ne devine jamais:
   catégorie et stock, attends le OK, puis appelle l'outil. Précise ensuite
   que l'article est en BROUILLON: il faut y ajouter des photos et le publier
   depuis « Mes articles » pour qu'il apparaisse dans le catalogue.
-Ces trois outils écrivent VRAIMENT dans la base pour le compte de
+- Vendeuse qui travaille par arrivage ("mes habits changent chaque semaine",
+  "je veux que ça s'efface tous les 7 jours et je remets du neuf") ->
+  set_rotation. Explique-lui bien: rien n'est SUPPRIMÉ, les articles
+  repassent en brouillon et restent dans « Mes articles », donc elle peut
+  les republier. Une case « article permanent » sur chaque fiche exempte
+  les pièces toujours disponibles. Appelle set_rotation sans argument pour
+  juste lire son réglage actuel.
+Ces outils écrivent VRAIMENT dans la base pour le compte de
 l'utilisateur: jamais sans son accord explicite dans le tour juste avant, et
-ne prétends jamais qu'ils ont réussi si le résultat dit sent/followed/created
+ne prétends jamais qu'ils ont réussi si le résultat dit sent/followed/created/ok
 = false — donne la vraie raison.
 Tu peux enchaîner plusieurs outils avant de répondre. Si un outil ne renvoie rien,
 dis-le franchement et propose une alternative — n'invente aucun produit.
@@ -237,6 +244,18 @@ const TOOL_DECLARATIONS = [
       required: ['name', 'price_fcfa', 'category'],
     },
   },
+  {
+    name: 'set_rotation',
+    description:
+      "Active, désactive ou règle les arrivages tournants de la boutique de l'utilisateur vendeur: ses articles repassent automatiquement en brouillon après N jours pour laisser place au nouvel arrivage. Appelle aussi cet outil SANS argument pour simplement lire le réglage actuel.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        enabled: { type: 'BOOLEAN', description: 'true pour activer, false pour désactiver. Omets pour seulement lire.' },
+        days: { type: 'NUMBER', description: "Durée d'un arrivage en jours, entre 1 et 90 (7 par défaut)" },
+      },
+    },
+  },
 ];
 
 // Catégories vendues sur devis: pas de prix ferme, donc rien à mettre au
@@ -261,7 +280,7 @@ async function runTool(
   cartActions: Json[],
 ): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
-  const NEEDS_AUTH = ['get_my_orders', 'get_my_shop_stats', 'message_shop', 'follow_shop', 'create_product'];
+  const NEEDS_AUTH = ['get_my_orders', 'get_my_shop_stats', 'message_shop', 'follow_shop', 'create_product', 'set_rotation'];
   if (!userId && NEEDS_AUTH.includes(name)) {
     return { signed_in: false, message: "L'utilisateur n'est pas connecté: invite-le à se connecter pour faire ça." };
   }
@@ -536,6 +555,52 @@ async function runTool(
         categorie: created.category,
         stock: created.stock,
         message: "Créé en brouillon — il faut ajouter des photos puis le publier depuis « Mes articles ».",
+      };
+    }
+
+    case 'set_rotation': {
+      const { data: shop } = await db
+        .from('shops')
+        .select('id,name,rotation_enabled,rotation_days,rotation_last_at')
+        .eq('owner_id', userId)
+        .maybeSingle();
+      if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+
+      // Sans argument: simple lecture, aucune écriture.
+      const wantsWrite = typeof args.enabled === 'boolean' || typeof args.days === 'number';
+      if (!wantsWrite) {
+        return {
+          ok: true,
+          lecture_seule: true,
+          rotation_active: shop.rotation_enabled,
+          duree_jours: shop.rotation_days,
+          dernier_passage: shop.rotation_last_at,
+        };
+      }
+
+      const patch: Json = {};
+      if (typeof args.enabled === 'boolean') patch.rotation_enabled = args.enabled;
+      if (typeof args.days === 'number') {
+        const d = Math.round(args.days);
+        if (d < 1 || d > 90) return { ok: false, message: 'La durée doit être entre 1 et 90 jours.' };
+        patch.rotation_days = d;
+      }
+
+      const { data: updated, error } = await db
+        .from('shops')
+        .update(patch)
+        .eq('id', shop.id)
+        .select('rotation_enabled,rotation_days')
+        .single();
+      if (error) return { ok: false, message: error.message };
+
+      return {
+        ok: true,
+        rotation_active: updated.rotation_enabled,
+        duree_jours: updated.rotation_days,
+        message: updated.rotation_enabled
+          ? `Les articles repasseront en brouillon après ${updated.rotation_days} jours. Rien n'est supprimé: ils restent dans « Mes articles ». Une case « article permanent » existe sur chaque fiche pour en exempter les pièces toujours dispo.`
+          : 'Rotation désactivée: plus aucun article ne sera retiré automatiquement.',
       };
     }
 

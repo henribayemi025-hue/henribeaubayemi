@@ -15,7 +15,7 @@ import { CATEGORIES } from '../../lib/categories';
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', description: '', category: 'mode', stock: '1', images: [] };
+const blank = { name: '', price_fcfa: '', description: '', category: 'mode', stock: '1', images: [], is_permanent: false };
 const MAX_IMAGES = 10;
 
 export default function VendorProductEdit() {
@@ -110,6 +110,7 @@ export default function VendorProductEdit() {
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
         images: form.images.filter(Boolean),
+        is_permanent: !!form.is_permanent,
       };
       const res = isNew
         ? await supabase.from('products').insert(payload).abortSignal(controller.signal)
@@ -242,6 +243,22 @@ export default function VendorProductEdit() {
         <Field label={t('vendor.productStock')}>
           {(fid) => <TextInput id={fid} type="number" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />}
         </Field>
+        {/* Uniquement utile quand la boutique tourne par arrivage — sinon la
+            case n'aurait aucun effet visible et ne ferait qu'encombrer. */}
+        {shop.rotation_enabled && (
+          <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
+            <input
+              type="checkbox"
+              checked={!!form.is_permanent}
+              onChange={(e) => setForm({ ...form, is_permanent: e.target.checked })}
+              className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+            />
+            <span className="flex-1">
+              <span className="block text-body text-ink">{t('vendor.productPermanent')}</span>
+              <span className="mt-0.5 block text-caption text-muted">{t('vendor.productPermanentHelp')}</span>
+            </span>
+          </label>
+        )}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="label mb-0">{t('vendor.productDescription')}</span>

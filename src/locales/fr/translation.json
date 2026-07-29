@@ -174,7 +174,8 @@
     "location": "Localisation",
     "notFound": "Boutique introuvable",
     "followers": "abonnés",
-    "products_count": "produits"
+    "products_count": "produits",
+    "rotationBadge": "Nouvel arrivage tous les {{count}} jours"
   },
   "finou": {
     "title": "Finou Chou",
@@ -485,7 +486,13 @@
     "leaderboardYou": "Toi",
     "leaderboardYourRank": "Ta position : #{{rank}}",
     "productImagesHint": "Jusqu’à {{count}} photos",
-    "addPhotos": "Ajouter des photos"
+    "addPhotos": "Ajouter des photos",
+    "rotationTitle": "Arrivages tournants",
+    "rotationHelp": "Tes articles repassent automatiquement en brouillon au bout de quelques jours. Tu mets ensuite ton nouvel arrivage en ligne. Rien n'est supprimé : tu les retrouves dans « Mes articles ».",
+    "rotationDays": "Durée d'un arrivage (jours)",
+    "rotationDaysHint": "Entre 1 et 90 jours. 7 par défaut.",
+    "productPermanent": "Article permanent",
+    "productPermanentHelp": "Ne sera jamais retiré par la rotation. Pour tes pièces toujours disponibles."
   },
   "orderStatus": {
     "new": "Nouvelle",

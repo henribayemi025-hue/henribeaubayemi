@@ -174,7 +174,8 @@
     "location": "Location",
     "notFound": "Shop not found",
     "followers": "followers",
-    "products_count": "products"
+    "products_count": "products",
+    "rotationBadge": "New arrival every {{count}} days"
   },
   "finou": {
     "title": "Finou Chou",
@@ -485,7 +486,13 @@
     "leaderboardYou": "You",
     "leaderboardYourRank": "Your rank: #{{rank}}",
     "productImagesHint": "Up to {{count}} photos",
-    "addPhotos": "Add photos"
+    "addPhotos": "Add photos",
+    "rotationTitle": "Rotating arrivals",
+    "rotationHelp": "Your items automatically go back to draft after a few days. You then put your new arrival online. Nothing is deleted — you'll find them in “My items”.",
+    "rotationDays": "Arrival length (days)",
+    "rotationDaysHint": "Between 1 and 90 days. 7 by default.",
+    "productPermanent": "Permanent item",
+    "productPermanentHelp": "Never removed by rotation. For pieces you always have in stock."
   },
   "orderStatus": {
     "new": "New",

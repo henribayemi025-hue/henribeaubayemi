@@ -43,6 +43,8 @@ export default function VendorShop() {
     categories: shop.categories || [],
     offers_delivery: shop.offers_delivery || false,
     delivery_fee_fcfa: String(shop.delivery_fee_fcfa || 0),
+    rotation_enabled: shop.rotation_enabled || false,
+    rotation_days: String(shop.rotation_days || 7),
   });
   const [busy, setBusy] = useState(false);
 
@@ -76,6 +78,10 @@ export default function VendorShop() {
         categories: form.categories,
         offers_delivery: form.offers_delivery,
         delivery_fee_fcfa: Math.max(0, Math.round(Number(form.delivery_fee_fcfa) || 0)),
+        rotation_enabled: form.rotation_enabled,
+        // Borné comme la contrainte SQL (1-90) pour que la saisie ne parte
+        // jamais en erreur base.
+        rotation_days: Math.min(90, Math.max(1, Math.round(Number(form.rotation_days) || 7))),
       })
       .eq('id', shop.id);
     setBusy(false);
@@ -124,6 +130,33 @@ export default function VendorShop() {
         {form.offers_delivery && (
           <Field label={t('checkout.deliveryFee')}>
             {(id) => <TextInput id={id} type="number" inputMode="numeric" value={form.delivery_fee_fcfa} onChange={(e) => setForm({ ...form, delivery_fee_fcfa: e.target.value })} />}
+          </Field>
+        )}
+        <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
+          <input
+            type="checkbox"
+            checked={form.rotation_enabled}
+            onChange={(e) => setForm({ ...form, rotation_enabled: e.target.checked })}
+            className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+          />
+          <span className="flex-1">
+            <span className="block text-body text-ink">{t('vendor.rotationTitle')}</span>
+            <span className="mt-0.5 block text-caption text-muted">{t('vendor.rotationHelp')}</span>
+          </span>
+        </label>
+        {form.rotation_enabled && (
+          <Field label={t('vendor.rotationDays')} hint={t('vendor.rotationDaysHint')}>
+            {(id) => (
+              <TextInput
+                id={id}
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="90"
+                value={form.rotation_days}
+                onChange={(e) => setForm({ ...form, rotation_days: e.target.value })}
+              />
+            )}
           </Field>
         )}
         <button type="button" onClick={useMyLocation} disabled={geoBusy} className="btn-secondary">

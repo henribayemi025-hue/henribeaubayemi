@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp } from '@tabler/icons-react';
+import { IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -172,6 +172,15 @@ export default function ShopProfile() {
               <span className="flex items-center gap-0.5"><IconStarFilled size={13} className="text-brass" />{Number(shop.rating || 0).toFixed(1)}</span>
               <span>· {shop.followers_count} {t('shop.followers')}</span>
             </p>
+            {/* Une boutique qui tourne par arrivage: le dire crée l'urgence
+                ("c'est là cette semaine seulement") et explique pourquoi le
+                catalogue change d'une visite à l'autre. */}
+            {shop.rotation_enabled && (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-pill bg-brass/10 px-2 py-0.5 text-caption font-semibold text-brass">
+                <IconRefresh size={12} />
+                {t('shop.rotationBadge', { count: shop.rotation_days || 7 })}
+              </span>
+            )}
           </div>
         </div>
 
