@@ -8,8 +8,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
-import { SmartImage } from '../../components/SmartImage';
 import { ShopBanner } from '../../components/ShopBanner';
+import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { StarRating } from '../../components/StarRating';
 import { ProductCard } from '../../components/ProductCard';
@@ -162,7 +162,7 @@ export default function ShopProfile() {
 
       <div className="relative z-10 px-4 lg:mx-auto lg:max-w-6xl">
         <div className="-mt-10 flex items-end gap-3">
-          <SmartImage src={avatar} alt={shop.name} className="h-20 w-20 border-2 border-white lg:h-24 lg:w-24" rounded="rounded-full" />
+          <ShopAvatar src={avatar} name={shop.name} className="h-20 w-20 border-2 border-white lg:h-24 lg:w-24" />
           <div className="flex-1 pb-1">
             <h1 className="flex items-center gap-1 text-title text-ink">
               {shop.name}

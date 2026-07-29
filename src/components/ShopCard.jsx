@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { IconStarFilled } from '@tabler/icons-react';
-import { SmartImage } from './SmartImage';
+import { ShopAvatar } from './ShopAvatar';
 import { VerifiedBadge } from './VerifiedBadge';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
 
@@ -10,7 +10,7 @@ export function ShopCard({ shop, distanceKm }) {
   const avatarFallback = shop.avatar_url ? storageUrl('shops', shop.avatar_url) : null;
   return (
     <Link to={`/boutique/${shop.slug}`} className="flex w-24 shrink-0 flex-col items-center text-center transition-transform duration-150 active:scale-95">
-      <SmartImage src={avatar} fallbackSrc={avatarFallback} alt={shop.name} className="h-16 w-16" rounded="rounded-full" />
+      <ShopAvatar src={avatar} fallbackSrc={avatarFallback} name={shop.name} className="h-16 w-16" />
       <span className="mt-2 flex items-center gap-1 text-caption font-semibold text-ink">
         <span className="line-clamp-1">{shop.name}</span>
         {shop.is_verified && <VerifiedBadge size={13} />}

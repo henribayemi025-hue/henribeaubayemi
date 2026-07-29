@@ -6,7 +6,7 @@ import {
   IconMapPin, IconMapPinFilled,
   IconMessage, IconMessageFilled,
   IconUser, IconUserFilled,
-  IconSparkles,
+  IconSparkles, IconX,
 } from '@tabler/icons-react';
 import { useUI } from '../hooks/useUI';
 import { useState } from 'react';
@@ -49,14 +49,20 @@ export function BuyerNav() {
   return (
     <>
       {showFinou && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex items-center justify-end gap-2 px-4 lg:bottom-6 lg:px-6">
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex flex-col items-end gap-2 px-4 lg:bottom-6 lg:px-6">
           {showHint && (
-            <button
-              onClick={() => { dismissHint(); openFinou(); }}
-              className="pointer-events-auto rounded-pill bg-ink/85 px-3 py-1.5 text-caption font-medium text-white shadow-lg"
-            >
-              {t('finou.hint')}
-            </button>
+            <div className="pointer-events-auto flex items-center gap-2 rounded-card bg-white py-2 pl-3.5 pr-2 text-caption font-semibold text-teal shadow-lg ring-1 ring-teal/15">
+              <button onClick={() => { dismissHint(); openFinou(); }} className="text-left">
+                {t('finou.hint')}
+              </button>
+              <button
+                onClick={dismissHint}
+                aria-label={t('common.close')}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted hover:bg-[#F3F3F3]"
+              >
+                <IconX size={13} />
+              </button>
+            </div>
           )}
           <button
             onClick={() => { dismissHint(); openFinou(); }}

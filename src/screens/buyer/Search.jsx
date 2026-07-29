@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconSearch, IconChevronLeft, IconStarFilled } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { SmartImage } from '../../components/SmartImage';
+import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { ProductCard } from '../../components/ProductCard';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -161,7 +161,7 @@ function ShopRows({ shops }) {
       {shops.map((s) => (
         <li key={s.id}>
           <Link to={`/boutique/${s.slug}`} className="flex items-center gap-3 px-3 py-2.5">
-            <SmartImage src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-10 w-10" rounded="rounded-full" />
+            <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} className="h-10 w-10" />
             <span className="flex flex-1 items-center gap-1 text-body font-semibold text-ink">
               {s.name}
               {s.is_verified && <VerifiedBadge size={14} />}

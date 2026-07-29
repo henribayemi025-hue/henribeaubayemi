@@ -4,7 +4,7 @@ import { IconTrophy, IconStarFilled } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
-import { SmartImage } from '../../components/SmartImage';
+import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 
@@ -58,7 +58,7 @@ export default function VendorLeaderboard() {
                   >
                     {i < 3 ? <IconTrophy size={20} /> : i + 1}
                   </span>
-                  <SmartImage src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} alt={s.name} className="h-11 w-11" rounded="rounded-full" />
+                  <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} className="h-11 w-11" />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1 text-body font-semibold text-ink">
                       <span className="line-clamp-1">{s.name}</span>
