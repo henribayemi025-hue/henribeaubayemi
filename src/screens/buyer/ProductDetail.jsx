@@ -135,7 +135,7 @@ export default function ProductDetail() {
       <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto lg:rounded-card">
         {images.length ? (
           images.map((src, i) => (
-            <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink">
+            <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink lg:aspect-[16/9]">
               {/* Blurred same-photo backdrop fills the square; the real photo
                   stays fully visible on top so nothing (like a face) is ever
                   cropped off, regardless of how the source photo was framed. */}
@@ -144,7 +144,7 @@ export default function ProductDetail() {
             </div>
           ))
         ) : (
-          <SmartImage src={null} alt={p.name} className="aspect-square w-full" />
+          <SmartImage src={null} alt={p.name} className="aspect-square w-full lg:aspect-[16/9]" />
         )}
       </div>
       {images.length > 1 && (
