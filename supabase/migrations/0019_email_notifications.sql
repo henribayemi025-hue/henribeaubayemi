@@ -53,8 +53,11 @@ revoke all on function public.emails_for_users(uuid[]) from public, anon, authen
 -- Forme attendue de la valeur:
 --   { "api_key": "re_...", "from": "Finjaro <...>", "domain_verified": bool }
 --
--- `from` doit rester sur onboarding@resend.dev tant que finjaro.net n'est pas
--- vérifié chez Resend: dans cet état, Resend n'accepte d'envoyer QU'À
--- l'adresse du titulaire du compte. Une fois le domaine validé, basculer sur
--- "Finjaro <notifications@finjaro.net>" et passer domain_verified à true,
--- sinon aucune cliente ne recevra jamais rien.
+-- État au 2026-07-30: le domaine finjaro.net est vérifié chez Resend, donc
+-- `from` vaut "Finjaro <notifications@finjaro.net>" et domain_verified est à
+-- true. Livraison vers une adresse tierce confirmée par les journaux Resend.
+--
+-- Si un jour l'expéditeur repasse sur onboarding@resend.dev (domaine retiré,
+-- nouveau compte...), attention: dans cet état Resend n'accepte d'envoyer
+-- QU'À l'adresse du titulaire du compte, et plus aucune cliente ne reçoit
+-- rien — sans la moindre erreur visible côté application.
