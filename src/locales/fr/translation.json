@@ -636,7 +636,10 @@
     "newReel": "Nouveau reel d'une boutique suivie",
     "reviewUnlocked": "Tu peux maintenant laisser un avis",
     "shopApproved": "Ta boutique a été validée !",
-    "newListing": "Nouvelle annonce près de chez toi"
+    "newListing": "Nouvelle annonce près de chez toi",
+    "title": "Notifications",
+    "email": "Recevoir les e-mails",
+    "emailHelp": "Nouvelle commande, nouveau message... Utile surtout sur iPhone, où les notifications du navigateur n'arrivent que si le site est ajouté à l'écran d'accueil."
   },
   "errors": {
     "network": "Problème de connexion. Vérifie ta connexion internet.",

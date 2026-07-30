@@ -636,7 +636,10 @@
     "newReel": "New reel from a shop you follow",
     "reviewUnlocked": "You can now leave a review",
     "shopApproved": "Your shop has been approved!",
-    "newListing": "New listing near you"
+    "newListing": "New listing near you",
+    "title": "Notifications",
+    "email": "Receive emails",
+    "emailHelp": "New order, new message… Especially useful on iPhone, where browser notifications only work if the site is added to the home screen."
   },
   "errors": {
     "network": "Connection problem. Check your internet connection.",
