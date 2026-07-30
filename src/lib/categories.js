@@ -1,4 +1,4 @@
-// The 14 Finjaro categories. `id` is the stable key used in DB + i18n.
+// The 15 Finjaro categories. `id` is the stable key used in DB + i18n.
 // Banner images are static bundled assets (see /src/assets/categories) — square
 // WebP photos, 480x480, ~10-60KB each. Serves two very different display sizes
 // with the same file: the 80px CategoryStrip icon on Home, and the larger
@@ -20,11 +20,13 @@ import evenement from '../assets/categories/evenement.webp';
 import mannequinerie from '../assets/categories/mannequinerie.webp';
 import art from '../assets/categories/art.webp';
 import accessoires from '../assets/categories/accessoires.webp';
+import maroquinerie from '../assets/categories/maroquinerie.webp';
 
 export const CATEGORIES = [
   { id: 'mode', banner: mode },
   { id: 'chaussures', banner: chaussures },
   { id: 'sacs', banner: sacs },
+  { id: 'maroquinerie', banner: maroquinerie },
   { id: 'bijoux', banner: bijoux },
   { id: 'montres', banner: montres },
   { id: 'parfums', banner: parfums },
@@ -42,7 +44,7 @@ export const CATEGORIES = [
 export const QUOTE_ONLY_CATEGORIES = ['mariages', 'evenement', 'mannequinerie'];
 
 // Categories where "seeing yourself wearing it" (Mirror AI) actually makes sense.
-export const MIRROR_CATEGORIES = ['mode', 'chaussures', 'sacs', 'bijoux', 'montres', 'accessoires', 'cheveux'];
+export const MIRROR_CATEGORIES = ['mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'accessoires', 'cheveux'];
 
 // Service requests/offers live in the SAME near_you_listings table as
 // classified "annonces" (type 'cherche'/'propose' + free-text category, no

@@ -93,6 +93,7 @@
     "mode": "Mode",
     "chaussures": "Chaussures",
     "sacs": "Sacs",
+    "maroquinerie": "Maroquinerie",
     "bijoux": "Bijoux",
     "montres": "Montres",
     "parfums": "Parfums",
@@ -342,7 +343,7 @@
     "noFavorites": "Tu n'as pas encore de favoris.",
     "noOrders": "Tu n'as pas encore de commande.",
     "orderNumber": "Commande n° {{n}}",
-    "helpText": "Besoin d'aide ? Écris-nous à support@finjaro.app et notre équipe te répondra sous 24 h.",
+    "helpText": "Besoin d'aide ? Écris-nous à fin.finjaro@gmail.com et notre équipe te répondra sous 24 h.",
     "helpTitle": "Aide",
     "displayName": "Nom affiché"
   },

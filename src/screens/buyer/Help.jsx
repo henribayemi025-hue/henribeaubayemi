@@ -17,7 +17,7 @@ export default function Help() {
       <div className="space-y-6 p-4">
         <p className="text-body text-muted">{t('profile.helpText')}</p>
 
-        <a href="mailto:support@finjaro.app" className="btn-primary">
+        <a href="mailto:fin.finjaro@gmail.com" className="btn-primary">
           <IconMail size={20} /> {t('help.contactCta')}
         </a>
 

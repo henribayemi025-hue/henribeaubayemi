@@ -35,8 +35,10 @@ const ADMIN_USER_ID = 'bffb724f-6652-4240-a6f7-6904369a1fd4';
 const GEMINI_TIMEOUT_MS = 30_000;
 const MAX_TOOL_ROUNDS = 4; // garde-fou: pas de boucle d'outils infinie
 
+// Doit rester aligné sur CATEGORIES de src/lib/categories.js: une catégorie
+// absente d'ici est invisible pour Finou (recherche ET création d'article).
 const CATEGORIES = [
-  'mode', 'chaussures', 'sacs', 'bijoux', 'montres', 'parfums', 'beaute',
+  'mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'parfums', 'beaute',
   'cheveux', 'deco', 'mariages', 'evenement', 'mannequinerie', 'art', 'accessoires',
 ];
 
@@ -135,9 +137,9 @@ Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-5 phra
 ton amical, un emoji max.
 
 Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
-- Catégorie Finjaro clairement identifiée parmi: mode, chaussures, sacs, bijoux,
-  montres, parfums, beaute, cheveux, deco, mariages, evenement, mannequinerie, art,
-  accessoires — termine par "CAT: <id>".
+- Catégorie Finjaro clairement identifiée parmi: mode, chaussures, sacs, maroquinerie,
+  bijoux, montres, parfums, beaute, cheveux, deco, mariages, evenement, mannequinerie,
+  art, accessoires — termine par "CAT: <id>".
 - Intention de se connecter/créer un compte — "ACTION: login".
 - Intention de vendre/devenir vendeur — "ACTION: sell".
 - Demande du lien de sa boutique (shopUrl présent) — "ACTION: share_shop".

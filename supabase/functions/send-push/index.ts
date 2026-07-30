@@ -28,6 +28,9 @@ const corsHeaders = {
 
 const SITE_URL = 'https://finjaro.net';
 const RESEND_BATCH_MAX = 100; // limite de l'API Resend
+// Boîte réellement relevée. Les e-mails partent de notifications@finjaro.net,
+// une adresse d'envoi uniquement: sans reply_to, une réponse se perdrait.
+const SUPPORT_EMAIL = 'fin.finjaro@gmail.com';
 
 type Admin = ReturnType<typeof admin>;
 
@@ -81,7 +84,7 @@ async function sendPush(
 
   const vapidKeys = await webpush.importVapidKeys(keysJson, { extractable: false });
   const appServer = await webpush.ApplicationServer.new({
-    contactInformation: Deno.env.get('VAPID_SUBJECT') ?? 'mailto:support@finjaro.app',
+    contactInformation: Deno.env.get('VAPID_SUBJECT') ?? `mailto:${SUPPORT_EMAIL}`,
     vapidKeys,
   });
 
@@ -183,7 +186,13 @@ async function sendEmails(
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(
-          chunk.map((r: { email: string }) => ({ from, to: [r.email], subject: title, html })),
+          chunk.map((r: { email: string }) => ({
+            from,
+            to: [r.email],
+            reply_to: [SUPPORT_EMAIL],
+            subject: title,
+            html,
+          })),
         ),
         signal: AbortSignal.timeout(15_000),
       });

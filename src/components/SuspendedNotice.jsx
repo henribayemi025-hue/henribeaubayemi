@@ -9,7 +9,7 @@ export function SuspendedNotice() {
       <IconAlertTriangle size={56} className="text-danger" stroke={1.5} />
       <h1 className="mt-4 text-title text-ink">{t('suspended.title')}</h1>
       <p className="mt-2 max-w-sm text-body text-muted">{t('suspended.body')}</p>
-      <a href="mailto:support@finjaro.app" className="btn-secondary mt-6 max-w-xs">
+      <a href="mailto:fin.finjaro@gmail.com" className="btn-secondary mt-6 max-w-xs">
         {t('suspended.contact')}
       </a>
     </div>
