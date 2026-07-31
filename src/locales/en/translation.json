@@ -307,13 +307,13 @@
     }
   },
   "finou": {
-    "title": "Finou Chou",
+    "title": "Finia",
     "subtitle": "Your shopping assistant",
     "voiceToggle": "Read replies aloud",
-    "placeholder": "Ask Finou Chou anything…",
-    "greeting": "Hi! I'm Finou Chou 💫 Tell me what you're looking for and I'll help you find the perfect piece.",
-    "unavailable": "Finou Chou is temporarily unavailable.",
-    "typing": "Finou Chou is typing…",
+    "placeholder": "Ask Finia anything…",
+    "greeting": "Hi! I'm Finia. Tell me what you're looking for and I'll help you find the perfect piece.",
+    "unavailable": "Finia is temporarily unavailable.",
+    "typing": "Finia is typing…",
     "attach": "Attach a photo",
     "imageReady": "Photo ready to send",
     "seeCategory": "See {{cat}}",
@@ -528,7 +528,9 @@
     "commentsTitle": "Comments",
     "commentPlaceholder": "Add a comment…",
     "noComments": "No comments yet. Be the first!",
-    "postComment": "Post"
+    "postComment": "Post",
+    "voiceStart": "Speak to Finia",
+    "hint": "Chat with Finia"
   },
   "inbox": {
     "title": "Messages",
@@ -585,7 +587,7 @@
     "productSubcategory": "Subcategory",
     "productDescription": "Description",
     "copilotGenerate": "Generate with AI",
-    "copilotSuggestion": "Finou's suggestion — edit it if needed",
+    "copilotSuggestion": "Finia's suggestion — edit it if needed",
     "copilotUse": "Use",
     "copilotRegenerate": "Regenerate",
     "copilotNeedName": "Enter the product name first.",
@@ -761,7 +763,9 @@
     "kindServices": "Services",
     "kindBoth": "Both",
     "titleProvider": "Become a provider",
-    "providerName": "Your business name"
+    "providerName": "Your business name",
+    "generating": "Finia is dressing you up… this takes a few seconds.",
+    "askDescription": "Add a description, or let Finia write it."
   },
   "switchMode": {
     "welcomeVendor": "Welcome to your seller space.",
@@ -838,7 +842,7 @@
     "topProducts": "Most viewed products",
     "views": "views",
     "activity": "Activity by type",
-    "aiSpend": "AI budget (Finou + Mirror)",
+    "aiSpend": "AI budget (Finia + Mirror)",
     "aiSpendOk": "This month, estimate",
     "aiSpendPaused": "Limit reached — paused this month",
     "recentVisitors": "Recent identified visitors",

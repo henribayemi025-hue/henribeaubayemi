@@ -228,7 +228,7 @@ export default function VendorChat({ vendor = false }) {
                   <div key={m.id} className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl border border-teal/30 bg-teal/5 px-3 py-2">
                       <p className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-teal">
-                        <IconSparkles size={12} /> Finou Chou
+                        <IconSparkles size={12} /> Finia
                       </p>
                       <p className="whitespace-pre-wrap text-body text-ink">{m.body}</p>
                       {m.category && (

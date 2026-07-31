@@ -307,13 +307,13 @@
     }
   },
   "finou": {
-    "title": "Finou Chou",
+    "title": "Finia",
     "subtitle": "Ton assistant shopping",
     "voiceToggle": "Lire les réponses à voix haute",
-    "placeholder": "Pose ta question à Finou Chou…",
-    "greeting": "Salut ! Je suis Finou Chou 💫 Dis-moi ce que tu cherches et je t'aide à trouver la perle rare.",
-    "unavailable": "Finou Chou est indisponible pour le moment.",
-    "typing": "Finou Chou écrit…",
+    "placeholder": "Pose ta question à Finia…",
+    "greeting": "Salut ! Je suis Finia. Dis-moi ce que tu cherches et je t'aide à trouver la perle rare.",
+    "unavailable": "Finia est indisponible pour le moment.",
+    "typing": "Finia écrit…",
     "attach": "Joindre une photo",
     "imageReady": "Photo prête à envoyer",
     "seeCategory": "Voir {{cat}}",
@@ -528,7 +528,9 @@
     "commentsTitle": "Commentaires",
     "commentPlaceholder": "Ajoute un commentaire…",
     "noComments": "Aucun commentaire. Sois le premier !",
-    "postComment": "Publier"
+    "postComment": "Publier",
+    "voiceStart": "Dicter à Finia",
+    "hint": "Discuter avec Finia"
   },
   "inbox": {
     "title": "Messages",
@@ -585,7 +587,7 @@
     "productSubcategory": "Sous-catégorie",
     "productDescription": "Description",
     "copilotGenerate": "Générer avec l'IA",
-    "copilotSuggestion": "Suggestion de Finou — modifie-la si besoin",
+    "copilotSuggestion": "Suggestion de Finia — modifie-la si besoin",
     "copilotUse": "Utiliser",
     "copilotRegenerate": "Régénérer",
     "copilotNeedName": "Saisis d'abord le nom du produit.",
@@ -761,7 +763,9 @@
     "kindServices": "Des services",
     "kindBoth": "Les deux",
     "titleProvider": "Devenir prestataire",
-    "providerName": "Nom de ton activité"
+    "providerName": "Nom de ton activité",
+    "generating": "Finia t'habille… ça prend quelques secondes.",
+    "askDescription": "Ajoute une description, ou laisse Finia la rédiger."
   },
   "switchMode": {
     "welcomeVendor": "Bienvenue dans ton espace vendeur.",
@@ -838,7 +842,7 @@
     "topProducts": "Produits les plus vus",
     "views": "vues",
     "activity": "Activité par type",
-    "aiSpend": "Budget IA (Finou + Miroir)",
+    "aiSpend": "Budget IA (Finia + Miroir)",
     "aiSpendOk": "Ce mois-ci, estimation",
     "aiSpendPaused": "Limite atteinte — en pause ce mois-ci",
     "recentVisitors": "Visiteurs identifiés récents",

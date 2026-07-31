@@ -99,7 +99,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 }
 
 function systemPrompt(): string {
-  return `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
+  return `Tu es Finia, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
 (produits ET services) pour l'Afrique et sa diaspora, ouverte à l'international:
 mode, high-tech, alimentaire, véhicules, immobilier, et des prestataires à domicile
 (ménage, BTP, coiffure, traiteur…). Slogan: "Au-delà des rêves". Tu es chaleureuse,
@@ -785,7 +785,7 @@ async function isOverBudget(sb: SupabaseClient): Promise<boolean> {
       body: JSON.stringify({
         user_id: ADMIN_USER_ID,
         title: 'Finjaro — budget IA atteint',
-        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+        body: `Finia et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
       }),
     }).catch(() => {});
   }
