@@ -5,14 +5,15 @@ import { IconMoodSmile } from '@tabler/icons-react';
 import { AppHeader } from '../../components/AppHeader';
 import { ProductCard } from '../../components/ProductCard';
 import { ProductGridSkeleton, EmptyState, ErrorState } from '../../components/states';
-import { CATEGORIES } from '../../lib/categories';
+import { categoryBanner } from '../../lib/categories';
 import { getCachedCategory, loadCategory } from '../../lib/categoryCache';
 import { track } from '../../lib/track';
 
 export default function CategoryListing() {
   const { categoryId } = useParams();
   const { t } = useTranslation();
-  const cat = CATEGORIES.find((c) => c.id === categoryId);
+  // Bannière: têtes du pivot ET anciens ids (liens profonds hérités).
+  const banner = categoryBanner(categoryId);
 
   // Revenir sur une catégorie déjà vue doit être instantané: on repart du
   // cache et on ne montre le squelette que s'il n'y a vraiment rien à afficher.
@@ -44,7 +45,7 @@ export default function CategoryListing() {
     <div>
       <AppHeader title={t(`categories.${categoryId}`)} back />
       <div className="lg:mx-auto lg:max-w-4xl">
-        {cat && (
+        {banner && (
           // Bandeau décoratif: il doit situer la catégorie, pas manger l'écran.
           // Il était à h-96 (384 px) sur desktop et repoussait toute la grille
           // sous la ligne de flottaison — on entrait dans une catégorie et on
@@ -53,8 +54,8 @@ export default function CategoryListing() {
             {/* Blurred backdrop fills the frame; the real banner stays fully
                 visible and never upscaled past its own resolution, so it's
                 never cropped and never blurry. */}
-            <img src={cat.banner} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
-            <img src={cat.banner} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-contain" />
+            <img src={banner} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
+            <img src={banner} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-contain" />
           </div>
         )}
         <div className="p-4">

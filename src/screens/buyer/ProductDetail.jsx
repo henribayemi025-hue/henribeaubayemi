@@ -190,6 +190,19 @@ export default function ProductDetail() {
           </div>
         )}
 
+        {/* Champs spécifiques du pivot (surface, année, kilométrage…) —
+            affichés seulement si la fiche en a. */}
+        {p.attributes && Object.keys(p.attributes).length > 0 && (
+          <div className="mt-4 space-y-1 rounded-card border border-hairline p-3">
+            {Object.entries(p.attributes).map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-3 text-body">
+                <span className="text-muted">{t(`productAttrs.${k}`, { defaultValue: k })}</span>
+                <span className="text-right font-medium text-ink">{String(v)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {p.sizes?.length > 0 && (
           <Variant label={t('product.size')} options={p.sizes} value={size} onChange={setSize} />
         )}

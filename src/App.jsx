@@ -104,6 +104,9 @@ export default function App() {
                       <Route path="product/:id" element={<ProductDetail />} />
                       <Route path="boutique/:slug" element={<ShopProfile />} />
                       <Route path="fin" element={<Fin />} />
+                      {/* Pivot: l'onglet s'appelle désormais "Services" — /near-you
+                          reste servi pour les anciens liens/PWA épinglées. */}
+                      <Route path="services" element={<NearYou />} />
                       <Route path="near-you" element={<NearYou />} />
                       <Route path="cart" element={<Cart />} />
                       <Route path="checkout/:shopId" element={<RequireAuth><CheckoutCOD /></RequireAuth>} />

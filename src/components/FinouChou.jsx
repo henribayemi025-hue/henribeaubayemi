@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone } from '@tabler/icons-react';
+import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone, IconVolume, IconVolumeOff } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
 import { useUI } from '../hooks/useUI';
@@ -63,6 +63,29 @@ export function FinouChou() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const scroller = useRef(null);
   const fileRef = useRef(null);
+
+  // Voix bidirectionnelle (Finou 2.0): la dictée existait déjà; ceci ajoute
+  // la LECTURE des réponses via speechSynthesis — 100 % navigateur, aucune
+  // clé ni appel serveur. Off par défaut (une IA qui parle sans y être
+  // invitée surprend plus qu'elle n'aide), mémorisé par appareil.
+  const [voiceOn, setVoiceOn] = useState(() => {
+    try { return localStorage.getItem('finjaro_finou_voice') === '1'; } catch { return false; }
+  });
+  function toggleVoice() {
+    setVoiceOn((v) => {
+      const next = !v;
+      try { localStorage.setItem('finjaro_finou_voice', next ? '1' : '0'); } catch { /* noop */ }
+      if (!next) window.speechSynthesis?.cancel();
+      return next;
+    });
+  }
+  function speak(text) {
+    if (!voiceOn || !window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel(); // une seule réponse à la fois
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR';
+    window.speechSynthesis.speak(u);
+  }
 
   // Dictée vocale: le texte reconnu s'ajoute au champ (il ne l'écrase pas),
   // pour qu'on puisse dicter puis corriger au clavier avant d'envoyer.
@@ -131,6 +154,7 @@ export function FinouChou() {
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       const mid = Date.now();
       setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action }]);
+      speak(data.reply);
       // Le panier vit côté client (localStorage) — Finou ne peut donc pas
       // l'écrire elle-même côté serveur. cartActions contient les lignes déjà
       // validées contre la vraie base (stock, prix, existence); cart.add()
@@ -201,6 +225,16 @@ export function FinouChou() {
             <p className="text-body font-semibold text-ink">{t('finou.title')}</p>
             <p className="text-caption text-muted">{t('finou.subtitle')}</p>
           </div>
+          {typeof window !== 'undefined' && 'speechSynthesis' in window && (
+            <button
+              onClick={toggleVoice}
+              aria-label={t('finou.voiceToggle')}
+              aria-pressed={voiceOn}
+              className={`rounded-full p-1 ${voiceOn ? 'text-teal' : 'text-muted'} hover:bg-hairline`}
+            >
+              {voiceOn ? <IconVolume size={20} /> : <IconVolumeOff size={20} />}
+            </button>
+          )}
           <button onClick={closeFinou} aria-label={t('common.close')} className="rounded-full p-1 text-muted hover:bg-hairline">
             <IconX size={22} />
           </button>

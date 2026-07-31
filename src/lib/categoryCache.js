@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { categoryQueryIds } from './categories';
 
 // Même idée que homeCache, mais par catégorie. Sans cela, chaque aller-retour
 // vers une catégorie relançait la requête ET revidait la grille en squelette —
@@ -16,10 +17,13 @@ export function getCachedCategory(categoryId) {
 }
 
 async function fetchCategory(categoryId) {
+  // Une tête de catégorie du pivot inclut ses enfants hérités (ex:
+  // beaute_cosmetiques couvre aussi parfums/beaute/cheveux) — c'est ce qui
+  // garantit qu'aucun produit existant ne disparaît avec le pivot.
   const { data, error } = await supabase
     .from('products')
     .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name)')
-    .eq('category', categoryId)
+    .in('category', categoryQueryIds(categoryId))
     .eq('is_active', true)
     .order('created_at', { ascending: false });
   if (error) throw error;

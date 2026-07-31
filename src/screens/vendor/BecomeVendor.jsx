@@ -10,7 +10,7 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
-import { CATEGORIES } from '../../lib/categories';
+import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
 import { getPosition } from '../../lib/geo';
 
@@ -140,6 +140,12 @@ export default function BecomeVendor() {
               <span className="label">{t('becomeVendor.mainCategories')}</span>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((c) => <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
+              </div>
+              {/* Pivot: une prestataire (ménage, BTP, traiteur…) s'inscrit par
+                  le même flux — les métiers services sont ici, pas ailleurs. */}
+              <span className="label mt-3 block">{t('vendor.shopServiceCategories')}</span>
+              <div className="flex flex-wrap gap-2">
+                {SERVICE_CATEGORIES.map((c) => <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
               </div>
               {form.categories.length === 0 && <p className="mt-1 text-caption text-muted">{t('becomeVendor.selectCategories')}</p>}
             </div>

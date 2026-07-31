@@ -35,12 +35,40 @@ const ADMIN_USER_ID = 'bffb724f-6652-4240-a6f7-6904369a1fd4';
 const GEMINI_TIMEOUT_MS = 30_000;
 const MAX_TOOL_ROUNDS = 4; // garde-fou: pas de boucle d'outils infinie
 
-// Doit rester aligné sur CATEGORIES de src/lib/categories.js: une catégorie
-// absente d'ici est invisible pour Finou (recherche ET création d'article).
-const CATEGORIES = [
-  'mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'parfums', 'beaute',
-  'cheveux', 'deco', 'mariages', 'evenement', 'mannequinerie', 'art', 'accessoires',
+// FINOU 2.0 — les catégories viennent de la TABLE `categories` (source de
+// vérité du pivot, migrations 0022/0023), rechargées au premier appel de
+// chaque instance. Les listes ci-dessous ne sont qu'un repli statique si la
+// lecture échoue (miroir de src/lib/categories.js au moment du déploiement).
+let PRODUCT_CATEGORIES = [
+  'mode_femme', 'mode_homme', 'enfants_bebe', 'hightech', 'beaute_cosmetiques',
+  'bijoux_montres', 'maison_deco', 'evenementiel_mariages', 'alimentaire',
+  'jus_naturels', 'seconde_main', 'vehicules', 'vehicules_voiture',
+  'vehicules_moto', 'vehicules_pieces', 'immobilier_vente',
+  // héritées (toujours valides en base):
+  'mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'parfums',
+  'beaute', 'cheveux', 'deco', 'mariages', 'evenement', 'mannequinerie', 'art', 'accessoires',
 ];
+let SERVICE_CATEGORY_IDS = [
+  'beaute_domicile', 'menage', 'btp_bricolage', 'informatique_digital',
+  'electricite_plomberie', 'livraison_demenagement', 'traiteur_chef',
+  'location_immobiliere', 'location_vehicules',
+  'cours', 'evenementiel_service', 'autre_service',
+  'reparation', 'jardinage', 'demenagement', 'coursier', 'ongles',
+];
+let categoriesLoaded = false;
+async function ensureCategories(sb: SupabaseClient) {
+  if (categoriesLoaded) return;
+  try {
+    const { data } = await sb.from('categories').select('id,kind');
+    if (data && data.length > 0) {
+      PRODUCT_CATEGORIES = data.filter((c: { kind: string }) => c.kind === 'PRODUCT').map((c: { id: string }) => c.id);
+      SERVICE_CATEGORY_IDS = data.filter((c: { kind: string }) => c.kind === 'SERVICE').map((c: { id: string }) => c.id);
+      categoriesLoaded = true;
+    }
+  } catch {
+    /* repli statique */
+  }
+}
 
 // Voir miroir-ia: on teste le HÔTE, pas une liste figée d'URL. Le domaine de
 // production est finjaro.net, pas le sous-domaine Netlify.
@@ -71,19 +99,47 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-const SYSTEM_PROMPT = `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace de
-beauté, mode, parfums et décoration d'événement pour l'Afrique et sa diaspora, ouverte
-à l'international. Slogan: "Au-delà des rêves". Tu es chaleureuse, concise et utile.
+function systemPrompt(): string {
+  return `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
+(produits ET services) pour l'Afrique et sa diaspora, ouverte à l'international:
+mode, high-tech, alimentaire, véhicules, immobilier, et des prestataires à domicile
+(ménage, BTP, coiffure, traiteur…). Slogan: "Au-delà des rêves". Tu es chaleureuse,
+concise et utile.
 
 RÈGLE LA PLUS IMPORTANTE: tu es une assistante généraliste, pas un robot limité au
 shopping. Réponds VRAIMENT à toute question (calcul, culture générale, conseil,
 question personnelle, blague...), même sans rapport avec Finjaro. Ne te contente
 JAMAIS de te re-présenter en guise de réponse: tu t'es déjà présentée au début.
 
+LANGUE & REGISTRE (caméléon): réponds dans la langue ET le registre de la personne.
+Si elle écrit en anglais, réponds en anglais; en français soutenu, reste soutenue;
+si elle utilise le camfranglais, le nouchi ou un ton très familier, adapte-toi
+naturellement sans forcer ni caricaturer. Ne corrige jamais sa façon de parler.
+
+PHOTO REÇUE = RECHERCHE VISUELLE: quand l'utilisateur envoie la photo d'un objet
+(vêtement, meuble, téléphone…), identifie ce que c'est, déduis des mots-clés et la
+catégorie, puis appelle search_products pour retrouver des articles similaires
+réellement en vente — c'est le réflexe "Snap & Buy". Si la photo montre plutôt un
+problème technique (fuite, panne, mur abîmé), décris le problème et appelle
+search_services pour proposer le bon corps de métier. URGENCE: si le message ou la
+photo décrit une urgence réelle (fuite d'eau, panne électrique dangereuse...),
+saute le bavardage — appelle search_services immédiatement et donne le prestataire
+le plus pertinent en premier.
+
+BESOIN MIXTE (orchestrateur): pour un événement complet ("mariage: robe + traiteur
++ déco"), enchaîne plusieurs outils (search_products puis search_services) et
+présente un mini-plan groupé, jamais un seul résultat isolé.`;
+}
+
+function systemPromptTools(): string {
+  return `
+
 TES OUTILS — utilise-les, ne devine jamais:
 - Question sur des articles, des prix, "trouve-moi…", "combien coûte…", "qu'est-ce
   que vous avez en…" -> appelle search_products. Ne cite JAMAIS un prix ou un stock
   de mémoire: ils viennent de l'outil ou tu n'en parles pas.
+- Besoin d'un PRESTATAIRE ou d'un service ("trouve-moi un plombier", "qui fait le
+  ménage à Douala", "traiteur pour samedi") -> search_services.
 - "Qu'est-ce qui marche en ce moment", "les tendances", "le plus populaire" ->
   get_trending_products.
 - "Où en est ma commande", "mes achats", "j'ai commandé quoi" -> get_my_orders.
@@ -138,21 +194,22 @@ Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-5 phra
 ton amical, un emoji max.
 
 Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
-- Catégorie Finjaro clairement identifiée parmi: mode, chaussures, sacs, maroquinerie,
-  bijoux, montres, parfums, beaute, cheveux, deco, mariages, evenement, mannequinerie,
-  art, accessoires — termine par "CAT: <id>".
+- Catégorie Finjaro clairement identifiée parmi: ${PRODUCT_CATEGORIES.join(', ')}
+  — termine par "CAT: <id>".
 - Intention de se connecter/créer un compte — "ACTION: login".
 - Intention de vendre/devenir vendeur — "ACTION: sell".
 - Demande du lien de sa boutique (shopUrl présent) — "ACTION: share_shop".
 - Intention de supprimer un de ses articles — "ACTION: delete_product". Ne demande
   jamais toi-même lequel: le choix se fait ensuite dans une liste réelle.
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
+}
 
 // ---------------------------------------------------------------------------
 // Outils exposés à Gemini. Déclarations + implémentations.
 // Toutes les requêtes passent par le client de l'UTILISATEUR (RLS actives).
 // ---------------------------------------------------------------------------
-const TOOL_DECLARATIONS = [
+function toolDeclarations() {
+  return [
   {
     name: 'search_products',
     description:
@@ -161,7 +218,7 @@ const TOOL_DECLARATIONS = [
       type: 'OBJECT',
       properties: {
         query: { type: 'STRING', description: "Mots-clés, ex: 'robe rouge', 'parfum homme'" },
-        category: { type: 'STRING', description: `Une de: ${CATEGORIES.join(', ')}` },
+        category: { type: 'STRING', description: `Une de: ${PRODUCT_CATEGORIES.join(', ')}` },
         max_price_fcfa: { type: 'NUMBER', description: 'Prix maximum en FCFA' },
       },
     },
@@ -242,7 +299,7 @@ const TOOL_DECLARATIONS = [
       properties: {
         name: { type: 'STRING', description: "Nom de l'article" },
         price_fcfa: { type: 'NUMBER', description: 'Prix en FCFA' },
-        category: { type: 'STRING', description: `Une de: ${CATEGORIES.join(', ')}` },
+        category: { type: 'STRING', description: `Une de: ${PRODUCT_CATEGORIES.join(', ')}` },
         description: { type: 'STRING' },
         stock: { type: 'NUMBER', description: 'Quantité disponible, 1 par défaut' },
       },
@@ -266,12 +323,31 @@ const TOOL_DECLARATIONS = [
       },
     },
   },
-];
+  {
+    name: 'search_services',
+    description:
+      "Cherche des PRESTATAIRES de services (ménage, BTP, plomberie, coiffure à domicile, traiteur, location...) : annonces 'Je propose' et boutiques prestataires, par métier et/ou ville.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        category: { type: 'STRING', description: `Un métier parmi: ${SERVICE_CATEGORY_IDS.join(', ')}` },
+        city: { type: 'STRING', description: 'Ville, ex: Douala, Paris' },
+        query: { type: 'STRING', description: 'Mots-clés libres' },
+      },
+    },
+  },
+  ];
+}
 
 // Catégories vendues sur devis: pas de prix ferme, donc rien à mettre au
 // panier — l'acheteur doit contacter la boutique. Doit rester aligné avec
-// QUOTE_ONLY_CATEGORIES côté client (src/lib/categories.js).
-const QUOTE_ONLY = ['mariages', 'evenement', 'mannequinerie'];
+// QUOTE_ONLY_CATEGORIES côté client (src/lib/categories.js). Étendu au pivot:
+// immobilier, véhicules et locations ne s'achètent pas via le panier COD.
+const QUOTE_ONLY = [
+  'mariages', 'evenement', 'mannequinerie',
+  'evenementiel_mariages', 'immobilier_vente', 'location_immobiliere',
+  'vehicules', 'vehicules_voiture', 'vehicules_moto', 'location_vehicules',
+];
 
 type Json = Record<string, unknown>;
 
@@ -304,7 +380,7 @@ async function runTool(
       if (typeof args.query === 'string' && args.query.trim()) {
         q = q.ilike('name', `%${args.query.trim()}%`);
       }
-      if (typeof args.category === 'string' && CATEGORIES.includes(args.category)) {
+      if (typeof args.category === 'string' && PRODUCT_CATEGORIES.includes(args.category)) {
         q = q.eq('category', args.category);
       }
       if (typeof args.max_price_fcfa === 'number') {
@@ -333,7 +409,7 @@ async function runTool(
         .eq('is_active', true)
         .order('views', { ascending: false })
         .limit(5);
-      if (typeof args.category === 'string' && CATEGORIES.includes(args.category)) {
+      if (typeof args.category === 'string' && PRODUCT_CATEGORIES.includes(args.category)) {
         q = q.eq('category', args.category);
       }
       const { data, error } = await q;
@@ -413,6 +489,51 @@ async function runTool(
       return {
         count: data?.length ?? 0,
         boutiques: (data ?? []).map((s: Json) => ({
+          id: s.id, nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
+        })),
+      };
+    }
+
+    case 'search_services': {
+      // Recherche croisée côté services (pivot): annonces "Je propose" ET
+      // boutiques prestataires, en un seul outil. Une tête de métier couvre
+      // aussi ses enfants hérités (ex: btp_bricolage inclut reparation) —
+      // résolus depuis la table categories, la même source que le client.
+      const cat = typeof args.category === 'string' && SERVICE_CATEGORY_IDS.includes(args.category) ? args.category : null;
+      let catIds: string[] = [];
+      if (cat) {
+        const { data: kids } = await db.from('categories').select('id').or(`id.eq.${cat},parent_id.eq.${cat}`);
+        catIds = (kids ?? []).map((k: { id: string }) => k.id);
+        if (catIds.length === 0) catIds = [cat];
+      }
+
+      let lq = db
+        .from('near_you_listings')
+        .select('id,category,description,city,country,user_id')
+        .eq('type', 'propose')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (catIds.length > 0) lq = lq.in('category', catIds);
+      else lq = lq.in('category', SERVICE_CATEGORY_IDS);
+      if (typeof args.city === 'string' && args.city.trim()) lq = lq.ilike('city', `%${args.city.trim()}%`);
+      if (typeof args.query === 'string' && args.query.trim()) lq = lq.ilike('description', `%${args.query.trim()}%`);
+
+      let sq = db
+        .from('shops')
+        .select('id,name,slug,city,country,rating,is_verified,categories')
+        .eq('status', 'active')
+        .limit(6);
+      if (catIds.length > 0) sq = sq.overlaps('categories', catIds);
+      else sq = sq.overlaps('categories', SERVICE_CATEGORY_IDS);
+      if (typeof args.city === 'string' && args.city.trim()) sq = sq.ilike('city', `%${args.city.trim()}%`);
+
+      const [listingsRes, shopsRes] = await Promise.all([lq, sq]);
+      if (listingsRes.error && shopsRes.error) return { error: listingsRes.error.message };
+      return {
+        annonces: (listingsRes.data ?? []).map((l: Json) => ({
+          id: l.id, metier: l.category, description: l.description, ville: l.city, pays: l.country,
+        })),
+        prestataires: (shopsRes.data ?? []).map((s: Json) => ({
           id: s.id, nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
         })),
       };
@@ -533,8 +654,8 @@ async function runTool(
       const cat = typeof args.category === 'string' ? args.category : '';
       if (!nom) return { created: false, message: 'nom manquant' };
       if (!Number.isFinite(prix) || prix < 0) return { created: false, message: 'prix invalide' };
-      if (!CATEGORIES.includes(cat)) {
-        return { created: false, message: `catégorie invalide — une de: ${CATEGORIES.join(', ')}` };
+      if (!PRODUCT_CATEGORIES.includes(cat)) {
+        return { created: false, message: `catégorie invalide — une de: ${PRODUCT_CATEGORIES.join(', ')}` };
       }
       const stock = typeof args.stock === 'number' && args.stock >= 0 ? Math.floor(args.stock) : 1;
 
@@ -689,6 +810,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const sb = admin();
+    await ensureCategories(sb);
 
     // Anti-abus: 20 messages / 5 min par compte, 6 / 5 min par IP anonyme.
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
@@ -738,9 +860,9 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey!, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            systemInstruction: { parts: [{ text: systemPrompt() + systemPromptTools() }] },
             contents,
-            tools: [{ functionDeclarations: TOOL_DECLARATIONS }],
+            tools: [{ functionDeclarations: toolDeclarations() }],
             generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
           }),
           signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
@@ -806,10 +928,11 @@ Deno.serve(async (req: Request) => {
 
     let category: string | null = null;
     let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | null = null;
-    const catMatch = reply.match(/CAT:\s*([a-z]+)\s*$/i);
-    if (catMatch && CATEGORIES.includes(catMatch[1].toLowerCase())) {
+    // [a-z_]: les ids du pivot contiennent des underscores (mode_femme…).
+    const catMatch = reply.match(/CAT:\s*([a-z_]+)\s*$/i);
+    if (catMatch && PRODUCT_CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
-      reply = reply.replace(/\n?CAT:\s*[a-z]+\s*$/i, '').trim();
+      reply = reply.replace(/\n?CAT:\s*[a-z_]+\s*$/i, '').trim();
     }
     const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i);
     if (actionMatch) {

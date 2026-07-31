@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh } from '@tabler/icons-react';
+import { IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh, IconBrandWhatsapp, IconPhone, IconBrandInstagram } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -192,6 +192,41 @@ export default function ShopProfile() {
             <IconMessage size={20} />
           </button>
         </div>
+
+        {/* Contact rapide (pivot services): chaque canal n'apparaît QUE si la
+            boutique a réellement renseigné la donnée — jamais de lien mort. */}
+        {(shop.whatsapp || shop.phone || shop.instagram) && (
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {shop.whatsapp && (
+              <a
+                href={`https://wa.me/${shop.whatsapp.replace(/[^\d]/g, '')}?text=${encodeURIComponent(t('shop.waGreeting', { name: shop.name }))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] bg-success-bg text-caption font-semibold text-success"
+              >
+                <IconBrandWhatsapp size={17} /> WhatsApp
+              </a>
+            )}
+            {shop.phone && (
+              <a
+                href={`tel:${shop.phone.replace(/[^+\d]/g, '')}`}
+                className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
+              >
+                <IconPhone size={17} /> {t('shop.call')}
+              </a>
+            )}
+            {shop.instagram && (
+              <a
+                href={`https://instagram.com/${shop.instagram.replace(/^@/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
+              >
+                <IconBrandInstagram size={17} /> Instagram
+              </a>
+            )}
+          </div>
+        )}
 
         <div className="mt-4 flex border-b border-hairline">
           {['products', 'reviews', 'about'].map((tb) => (

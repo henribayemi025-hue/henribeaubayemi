@@ -17,7 +17,7 @@ const HINT_ROTATE_MS = 3200;
 const items = [
   { to: '/', key: 'home', end: true, out: IconHome, on: IconHomeFilled },
   { to: '/fin', key: 'fin', out: IconPlayerPlay, on: IconPlayerPlayFilled },
-  { to: '/near-you', key: 'nearYou', out: IconMapPin, on: IconMapPinFilled },
+  { to: '/services', key: 'services', out: IconMapPin, on: IconMapPinFilled },
   { to: '/inbox', key: 'messages', out: IconMessage, on: IconMessageFilled },
   { to: '/profile', key: 'profile', out: IconUser, on: IconUserFilled },
 ];
@@ -29,7 +29,7 @@ export function BuyerNav() {
   const isChat = pathname.startsWith('/chat');
   // Hide Finou where it would overlap another control: Near You (+ Publier),
   // the reels feed (right-side actions), and chat threads (send button).
-  const showFinou = pathname !== '/near-you' && pathname !== '/fin' && !isChat;
+  const showFinou = pathname !== '/near-you' && pathname !== '/services' && pathname !== '/fin' && !isChat;
   // A chat thread is a focused screen (like WhatsApp/TikTok DMs): hide the tab
   // bar so only the message input sits above the keyboard.
   const showNav = !isChat;
@@ -85,7 +85,7 @@ export function BuyerNav() {
           <button
             onClick={() => { dismissHint(); openFinou(); }}
             aria-label={t('finou.title')}
-            className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal text-white shadow-lg transition-transform duration-150 hover:bg-teal-hover active:scale-95"
+            className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#C25E38] text-white shadow-lg transition-transform duration-150 hover:bg-[#A84E2D] active:scale-95"
           >
             <IconSparkles size={26} />
           </button>

@@ -19,7 +19,7 @@ import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { getPosition, distanceKm } from '../../lib/geo';
-import { isServiceCategory } from '../../lib/categories';
+import { isServiceCategory, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
 
 // Leaflet is heavy — only pull it in when the user opens the map view.
 const NearYouMap = lazy(() => import('../../components/NearYouMap'));
@@ -33,6 +33,9 @@ export default function NearYou() {
   const toast = useToast();
   const [tab, setTab] = useState('shops');
   const [kindFilter, setKindFilter] = useState('all'); // 'all' | 'service' | 'article' — listings tab only
+  // Annuaire des métiers: filtre par catégorie de service (têtes du pivot,
+  // enfants hérités inclus via categoryQueryIds). null = tout.
+  const [serviceCat, setServiceCat] = useState(null);
   const [view, setView] = useState('list'); // 'list' | 'map'
   const [publishOpen, setPublishOpen] = useState(false);
   const [radius, setRadius] = useState('country');
@@ -106,13 +109,41 @@ export default function NearYou() {
   }
 
   const filteredListings = (data?.listings || []).filter((l) => {
+    if (serviceCat && !categoryQueryIds(serviceCat).includes(l.category)) return false;
     if (kindFilter === 'all') return true;
     return kindFilter === 'service' ? isServiceCategory(l.category) : !isServiceCategory(l.category);
   });
 
+  // Annuaire des métiers: tape sur un métier -> onglet annonces, filtré
+  // service + catégorie. Re-taper la catégorie active la désélectionne.
+  function pickTrade(id) {
+    if (serviceCat === id) {
+      setServiceCat(null);
+      return;
+    }
+    setServiceCat(id);
+    setKindFilter('service');
+    setTab('listings');
+  }
+
   return (
     <div className="pb-20">
-      <AppHeader title={t('nav.nearYou')} />
+      <AppHeader title={t('nav.services')} />
+
+      {/* Annuaire des métiers (pivot): les catégories de services en accès
+          direct, au-dessus de la carte/liste géolocalisée existante. */}
+      <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-3">
+        {SERVICE_CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => pickTrade(c.id)}
+            className={`chip shrink-0 ${serviceCat === c.id ? 'chip-active' : 'text-ink'}`}
+          >
+            {t(`categories.${c.id}`)}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center gap-2 px-4 pt-3">
         <button
           onClick={locateMe}

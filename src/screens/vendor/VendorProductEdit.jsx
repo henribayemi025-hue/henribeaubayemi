@@ -11,11 +11,11 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
-import { CATEGORIES } from '../../lib/categories';
+import { CATEGORIES, attributeFieldsFor } from '../../lib/categories';
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', description: '', category: 'mode', stock: '1', images: [], is_permanent: false };
+const blank = { name: '', price_fcfa: '', description: '', category: 'mode_femme', stock: '1', images: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 export default function VendorProductEdit() {
@@ -76,6 +76,7 @@ export default function VendorProductEdit() {
           price_fcfa: String(shopCurrency === 'FCFA' ? Math.round(shown) : Number(shown.toFixed(2))),
           stock: String(data.stock ?? 0),
           images: data.images || [],
+          attributes: data.attributes || {},
         });
       }
       setLoading(false);
@@ -111,6 +112,14 @@ export default function VendorProductEdit() {
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
         images: form.images.filter(Boolean),
         is_permanent: !!form.is_permanent,
+        // Seuls les champs de la catégorie choisie partent en base — changer
+        // de catégorie ne laisse pas traîner la surface d'un ancien brouillon
+        // immobilier sur une paire de chaussures.
+        attributes: Object.fromEntries(
+          attributeFieldsFor(form.category)
+            .map(({ key }) => [key, String(form.attributes?.[key] ?? '').trim()])
+            .filter(([, v]) => v !== '')
+        ),
       };
       const res = isNew
         ? await supabase.from('products').insert(payload).abortSignal(controller.signal)
@@ -240,6 +249,26 @@ export default function VendorProductEdit() {
             </Select>
           )}
         </Field>
+        {/* Champs spécifiques à la catégorie (pivot): une annonce immobilière
+            demande une surface, un véhicule une année/kilométrage… La config
+            vit dans ATTRIBUTE_FIELDS (lib/categories.js). */}
+        {attributeFieldsFor(form.category).length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {attributeFieldsFor(form.category).map(({ key, type }) => (
+              <Field key={key} label={t(`productAttrs.${key}`)}>
+                {(fid) => (
+                  <TextInput
+                    id={fid}
+                    type={type === 'number' ? 'number' : 'text'}
+                    inputMode={type === 'number' ? 'numeric' : undefined}
+                    value={form.attributes?.[key] ?? ''}
+                    onChange={(e) => setForm({ ...form, attributes: { ...form.attributes, [key]: e.target.value } })}
+                  />
+                )}
+              </Field>
+            ))}
+          </div>
+        )}
         <Field label={t('vendor.productStock')}>
           {(fid) => <TextInput id={fid} type="number" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />}
         </Field>

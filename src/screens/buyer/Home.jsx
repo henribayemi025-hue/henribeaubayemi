@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconShoppingCart, IconMoodSmile } from '@tabler/icons-react';
+import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight } from '@tabler/icons-react';
+import { SERVICE_CATEGORIES } from '../../lib/categories';
 import { useCart } from '../../hooks/useCart';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
@@ -68,6 +69,27 @@ export default function Home() {
         <div className="pt-3">
           <CategoryStrip />
         </div>
+
+        {/* Pivot: séparation lisible acheter un PRODUIT (bandeau catégories
+            ci-dessus) vs réserver un SERVICE (cette carte -> onglet Services).
+            La carte nomme les premiers métiers pour rendre l'offre concrète. */}
+        <section className="mt-4 px-4">
+          <Link
+            to="/services"
+            className="flex items-center gap-3 rounded-card border border-hairline bg-[#FAF6F0] p-4 transition-transform duration-150 active:scale-[0.99]"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white">
+              <IconTool size={22} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-body font-semibold text-ink">{t('home.servicesTitle')}</span>
+              <span className="mt-0.5 line-clamp-1 block text-caption text-muted">
+                {SERVICE_CATEGORIES.slice(0, 4).map((c) => t(`categories.${c.id}`)).join(' · ')}…
+              </span>
+            </span>
+            <IconChevronRight size={20} className="shrink-0 text-muted" />
+          </Link>
+        </section>
 
         {loading ? (
           <div className="space-y-4 p-4">

@@ -8,7 +8,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
-import { CATEGORIES } from '../../lib/categories';
+import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
 import { getPosition } from '../../lib/geo';
 
 export default function VendorShop() {
@@ -38,6 +38,8 @@ export default function VendorShop() {
     name: shop.name || '',
     bio: shop.bio || '',
     whatsapp: shop.whatsapp || '',
+    phone: shop.phone || '',
+    instagram: shop.instagram || '',
     city: shop.city || '',
     neighborhood: shop.neighborhood || '',
     banner_url: shop.banner_url || null,
@@ -77,6 +79,8 @@ export default function VendorShop() {
         name: form.name.trim(),
         bio: form.bio.trim() || null,
         whatsapp: form.whatsapp.trim() || null,
+        phone: form.phone.trim() || null,
+        instagram: form.instagram.trim().replace(/^@/, '') || null,
         city: form.city.trim() || null,
         neighborhood: form.neighborhood.trim() || null,
         banner_url: form.banner_url,
@@ -120,10 +124,28 @@ export default function VendorShop() {
         <Field label={t('vendor.shopWhatsapp')}>
           {(id) => <TextInput id={id} type="tel" value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} />}
         </Field>
+        {/* Canaux de contact rapides de la fiche publique — chacun n'apparaît
+            côté acheteuse que s'il est rempli ici. */}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t('vendor.shopPhone')}>
+            {(id) => <TextInput id={id} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
+          </Field>
+          <Field label={t('vendor.shopInstagram')}>
+            {(id) => <TextInput id={id} value={form.instagram} onChange={(e) => setForm({ ...form, instagram: e.target.value })} placeholder="@maboutique" />}
+          </Field>
+        </div>
         <div>
           <span className="label">{t('vendor.shopCategories')}</span>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => (
+              <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>
+                {t(`categories.${c.id}`)}
+              </button>
+            ))}
+          </div>
+          <span className="label mt-3 block">{t('vendor.shopServiceCategories')}</span>
+          <div className="flex flex-wrap gap-2">
+            {SERVICE_CATEGORIES.map((c) => (
               <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>
                 {t(`categories.${c.id}`)}
               </button>

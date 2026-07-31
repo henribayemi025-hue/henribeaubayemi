@@ -11,7 +11,7 @@ import {
 const items = [
   { to: '/', key: 'home', end: true, out: IconHome, on: IconHomeFilled },
   { to: '/fin', key: 'fin', out: IconPlayerPlay, on: IconPlayerPlayFilled },
-  { to: '/near-you', key: 'nearYou', out: IconMapPin, on: IconMapPinFilled },
+  { to: '/services', key: 'services', out: IconMapPin, on: IconMapPinFilled },
   { to: '/inbox', key: 'messages', out: IconMessage, on: IconMessageFilled },
   { to: '/profile', key: 'profile', out: IconUser, on: IconUserFilled },
 ];
