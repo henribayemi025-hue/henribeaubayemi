@@ -19,7 +19,7 @@ import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { getPosition, distanceKm } from '../../lib/geo';
-import { isServiceCategory, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
+import { isServiceCategory, isServiceShop, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
 
 // Leaflet is heavy — only pull it in when the user opens the map view.
 const NearYouMap = lazy(() => import('../../components/NearYouMap'));
@@ -139,21 +139,28 @@ export default function NearYou() {
     return kindFilter === 'service' ? isServiceCategory(l.category) : !isServiceCategory(l.category);
   });
 
+  // L'onglet Services ne liste que les PRESTATAIRES. Avant, il affichait
+  // toutes les boutiques actives — une boutique de vêtements se retrouvait
+  // dans l'annuaire des services, et le filtre par métier ne l'affectait
+  // même pas. Une boutique est prestataire dès qu'elle a un métier de
+  // service dans ses catégories.
+  const filteredShops = (data?.shops || []).filter((s) => {
+    if (!isServiceShop(s)) return false;
+    if (!serviceCat) return true;
+    const wanted = categoryQueryIds(serviceCat);
+    return (s.categories ?? []).some((c) => wanted.includes(c));
+  });
+
   // Métiers affichés = ceux qui correspondent à la recherche.
   const visibleTrades = SERVICE_CATEGORIES.filter(
     (c) => !tradeQuery.trim() || normalize(t(`categories.${c.id}`)).includes(normalize(tradeQuery))
   );
 
-  // Annuaire des métiers: tape sur un métier -> onglet annonces, filtré
-  // service + catégorie. Re-taper la catégorie active la désélectionne.
+  // Choisir un métier filtre l'onglet où on se trouve (prestataires OU
+  // annonces) — il ne bascule plus d'office sur "Annonces", ce qui donnait
+  // l'impression que le filtre ignorait les boutiques.
   function pickTrade(id) {
-    if (serviceCat === id) {
-      setServiceCat(null);
-      return;
-    }
-    setServiceCat(id);
-    setKindFilter('service');
-    setTab('listings');
+    setServiceCat((cur) => (cur === id ? null : id));
   }
 
   return (
@@ -293,18 +300,31 @@ export default function NearYou() {
         <div className="mt-3">
           <Suspense fallback={<div className="space-y-3 p-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>}>
             <NearYouMap
-              items={byDistance(tab === 'shops' ? data.shops : filteredListings)}
+              items={byDistance(tab === 'shops' ? filteredShops : filteredListings)}
               userPos={userPos}
               onSelect={(x) => (tab === 'shops' ? navigate(`/boutique/${x.slug}`) : openListingChat(x))}
             />
           </Suspense>
         </div>
       ) : tab === 'shops' ? (
-        data.shops.length === 0 ? (
-          <EmptyState icon={IconMapPinOff} title={t('nearYou.noShops')} action={<Button variant="secondary" onClick={() => setRadius('all')}>{t('nearYou.broaden')}</Button>} />
+        filteredShops.length === 0 ? (
+          // L'annuaire est jeune: dire POURQUOI c'est vide et proposer de
+          // s'inscrire vaut mieux qu'un "aucun résultat" sec.
+          <EmptyState
+            icon={IconTool}
+            title={serviceCat ? t('nearYou.noProviderInTrade', { trade: t(`categories.${serviceCat}`) }) : t('nearYou.noProviders')}
+            action={
+              <div className="flex flex-col items-center gap-2">
+                {serviceCat && (
+                  <Button variant="secondary" onClick={() => setServiceCat(null)}>{t('nearYou.allTrades')}</Button>
+                )}
+                <Button onClick={() => navigate('/become-vendor')}>{t('nearYou.becomeProvider')}</Button>
+              </div>
+            }
+          />
         ) : (
           <ul className="divide-y divide-hairline">
-            {byDistance(data.shops).map((s) => (
+            {byDistance(filteredShops).map((s) => (
               <li key={s.id}>
                 <button onClick={() => navigate(`/boutique/${s.slug}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
                   <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} seed={s.id} className="h-12 w-12" />

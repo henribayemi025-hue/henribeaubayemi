@@ -31,30 +31,25 @@ import mannequinerie from '../assets/categories/mannequinerie.webp';
 import art from '../assets/categories/art.webp';
 import accessoires from '../assets/categories/accessoires.webp';
 import maroquinerie from '../assets/categories/maroquinerie.webp';
+import { PRODUCT_HEADS, SERVICE_HEADS, CATEGORY_CHILDREN } from './categoryTree';
+
+export { CATEGORY_CHILDREN };
 
 // Les 13 têtes PRODUIT du pivot — c'est CETTE liste que montrent l'accueil et
 // les formulaires vendeur. Bannière réutilisée quand une photo héritée colle
 // sémantiquement; null sinon (tuile initiale en attendant de vraies photos).
-export const CATEGORIES = [
-  { id: 'mode_femme', banner: mode },
-  { id: 'mode_homme', banner: null },
-  { id: 'enfants_bebe', banner: null },
-  { id: 'hightech', banner: null },
-  { id: 'beaute_cosmetiques', banner: beaute },
-  { id: 'bijoux_montres', banner: bijoux },
-  { id: 'maison_deco', banner: deco },
-  { id: 'evenementiel_mariages', banner: mariages },
-  { id: 'alimentaire', banner: null },
-  { id: 'jus_naturels', banner: null },
-  { id: 'seconde_main', banner: null },
-  { id: 'vehicules', banner: null },
-  { id: 'immobilier_vente', banner: null },
-  // Tête transitoire (0024): anciens articles jamais taggés par genre.
-  // Visible, cherchable — pas une corbeille cachée. Pas de photo: elle
-  // partagerait celle de Mode Femme et les deux tuiles deviendraient
-  // indistinguables.
-  { id: 'mode_a_trier', banner: null },
-];
+// Photo de rayon quand il en existe une; sinon CategoryStrip pose une icône.
+const HEAD_BANNER = {
+  mode_femme: mode,
+  beaute_cosmetiques: beaute,
+  bijoux_montres: bijoux,
+  maison_deco: deco,
+  evenementiel_mariages: mariages,
+};
+
+// Les rayons produits viennent de la BASE (categoryTree, généré) — plus de
+// liste tenue à la main qui divergeait de la table `categories`.
+export const CATEGORIES = PRODUCT_HEADS.map((id) => ({ id, banner: HEAD_BANNER[id] ?? null }));
 
 // Anciennes catégories (bannières conservées pour les liens profonds
 // /category/<id> hérités, qui doivent continuer d'afficher leur bandeau).
@@ -84,48 +79,13 @@ export function categoryBanner(id) {
   );
 }
 
-// Miroir du parent/enfant en base. Une page catégorie interroge la tête ET
-// ses enfants (voir lib/categoryCache.js) — c'est ce qui garantit que le
-// pivot ne fait disparaître aucun produit existant. Sert aussi de source aux
-// sous-catégories proposées à la création d'une fiche (VendorProductEdit).
-export const CATEGORY_CHILDREN = {
-  mode_femme: [
-    'femme_robes', 'femme_hauts', 'femme_pantalons', 'femme_jupes',
-    'femme_vestes_manteaux', 'femme_lingerie', 'femme_chaussures',
-    'femme_sacs', 'femme_maroquinerie', 'femme_accessoires',
-  ],
-  mode_homme: [
-    'homme_chemises', 'homme_tshirts_polos', 'homme_pantalons',
-    'homme_vestes_costumes', 'homme_chaussures', 'homme_accessoires',
-  ],
-  enfants_bebe: [
-    'enfant_bebe', 'enfant_fille', 'enfant_garcon',
-    'enfant_chaussures', 'enfant_jouets', 'enfant_puericulture',
-  ],
-  // Anciens articles non genrés (0024) — head transitoire, pas une gamme
-  // Femme/Homme comme les autres.
-  mode_a_trier: ['mode', 'chaussures', 'sacs', 'maroquinerie', 'accessoires'],
-  bijoux_montres: ['bijoux', 'montres'],
-  beaute_cosmetiques: ['parfums', 'beaute', 'cheveux'],
-  maison_deco: ['deco', 'art'],
-  evenementiel_mariages: ['mariages', 'evenement', 'mannequinerie'],
-  vehicules: ['vehicules_voiture', 'vehicules_moto', 'vehicules_pieces'],
-  btp_bricolage: ['reparation', 'jardinage'],
-  livraison_demenagement: ['demenagement', 'coursier'],
-  beaute_domicile: ['ongles'],
-};
-
-// Sous-catégories PROPOSÉES à la création d'une fiche (choix explicite du
-// vendeur, cascading select) — un sous-ensemble de CATEGORY_CHILDREN: on
-// exclut mode_a_trier (transitoire, jamais un choix pour du neuf) et les
-// entrées qui ne sont que des alias hérités (bijoux_montres, beaute_cosmetiques…
-// où l'ancien id EST déjà la bonne catégorie, pas besoin d'un niveau de plus).
-export const SELECTABLE_SUBCATEGORIES = {
-  mode_femme: CATEGORY_CHILDREN.mode_femme,
-  mode_homme: CATEGORY_CHILDREN.mode_homme,
-  enfants_bebe: CATEGORY_CHILDREN.enfants_bebe,
-  vehicules: CATEGORY_CHILDREN.vehicules,
-};
+// Sous-catégories PROPOSÉES à la création d'une fiche (sélecteur en cascade).
+// Toutes les têtes qui ont des enfants, SAUF `mode_a_trier`: cette tête ne
+// contient que d'anciens articles jamais classés, ce n'est jamais un choix
+// valable pour une fiche neuve.
+export const SELECTABLE_SUBCATEGORIES = Object.fromEntries(
+  Object.entries(CATEGORY_CHILDREN).filter(([head]) => head !== 'mode_a_trier')
+);
 
 // Tous les id à interroger pour une page catégorie: la tête + ses enfants.
 export function categoryQueryIds(id) {
@@ -140,33 +100,25 @@ export function categoryHeadFor(id) {
   return parent ?? id;
 }
 
-// Catégories SERVICE (annuaire de l'onglet Services + annonces near_you).
-// Les 9 têtes du pivot + 3 héritées sans équivalent dans la nouvelle liste,
-// conservées pour ne pas orpheliner les annonces existantes (à arbitrer).
-export const SERVICE_CATEGORIES = [
-  { id: 'beaute_domicile' },
-  { id: 'menage' },
-  { id: 'btp_bricolage' },
-  { id: 'informatique_digital' },
-  { id: 'electricite_plomberie' },
-  { id: 'livraison_demenagement' },
-  { id: 'traiteur_chef' },
-  { id: 'location_immobiliere' },
-  { id: 'location_vehicules' },
-  // Héritées:
-  { id: 'cours' },
-  { id: 'evenementiel_service' },
-  { id: 'autre_service' },
-];
+// Métiers de services (annuaire de l'onglet Services + annonces near_you),
+// eux aussi issus de la base.
+export const SERVICE_CATEGORIES = SERVICE_HEADS.map((id) => ({ id }));
 
-// Anciennes catégories service devenues enfants (annonces existantes).
-const LEGACY_SERVICE_IDS = ['reparation', 'jardinage', 'demenagement', 'coursier', 'ongles'];
+// Tous les ids de service: les têtes ET leurs sous-catégories (une annonce
+// peut porter "reparation", enfant de "btp_bricolage").
+const SERVICE_IDS = new Set(
+  SERVICE_HEADS.flatMap((id) => [id, ...(CATEGORY_CHILDREN[id] ?? [])])
+);
 
 export function isServiceCategory(categoryId) {
-  return (
-    SERVICE_CATEGORIES.some((c) => c.id === categoryId) ||
-    LEGACY_SERVICE_IDS.includes(categoryId)
-  );
+  return SERVICE_IDS.has(categoryId);
+}
+
+// Une boutique est PRESTATAIRE dès qu'elle affiche au moins un métier de
+// service. C'est ce qui décide de sa présence dans l'onglet Services: une
+// boutique purement produit n'y a rien à faire (elle y apparaissait avant).
+export function isServiceShop(shop) {
+  return (shop?.categories ?? []).some(isServiceCategory);
 }
 
 // Vendues sur devis/contact: pas de prix ferme ajoutable au panier COD.

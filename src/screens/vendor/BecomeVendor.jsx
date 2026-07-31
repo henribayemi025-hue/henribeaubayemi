@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShieldLock, IconCircleCheck, IconChevronLeft } from '@tabler/icons-react';
+import { IconShieldLock, IconCircleCheck, IconChevronLeft, IconPackage, IconTool, IconPackages } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
@@ -48,6 +48,18 @@ export default function BecomeVendor() {
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const toggleCat = (id) => set({ categories: form.categories.includes(id) ? form.categories.filter((c) => c !== id) : [...form.categories, id] });
+
+  // 'products' | 'services' | 'both' — pilote quelles listes de catégories
+  // sont proposées. Changer de type vide la sélection: garder des rayons
+  // produits sur une boutique passée en "services" est précisément ce qui
+  // la rendait invisible dans l'annuaire.
+  const [kind, setKindState] = useState('products');
+  const setKind = (k) => {
+    setKindState(k);
+    set({ categories: [] });
+  };
+  const showProductCats = kind === 'products' || kind === 'both';
+  const showServiceCats = kind === 'services' || kind === 'both';
 
   const step1Valid = form.shop_name.trim() && form.country && form.categories.length > 0;
 
@@ -136,19 +148,56 @@ export default function BecomeVendor() {
             <Field label={t('becomeVendor.shopName')} required>{(id) => <TextInput id={id} value={form.shop_name} onChange={(e) => set({ shop_name: e.target.value })} />}</Field>
             <Field label={t('becomeVendor.country')} required>{(id) => <Select id={id} value={form.country} onChange={(e) => set({ country: e.target.value })}>{COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}</Select>}</Field>
             <Field label={t('becomeVendor.city')}>{(id) => <TextInput id={id} value={form.city} onChange={(e) => set({ city: e.target.value })} />}</Field>
+            {/* Question posée AVANT les catégories: "est-ce que je vends des
+                articles, je propose des services, ou les deux ?". Sans elle,
+                une prestataire tombait sur une liste de rayons produits et
+                se rangeait dans "accessoires" faute de mieux — c'est
+                exactement ce qui est arrivé à une vraie boutique
+                (informatique classée en accessoires, donc absente de
+                l'annuaire des services). */}
             <div>
-              <span className="label">{t('becomeVendor.mainCategories')}</span>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((c) => <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
+              <span className="label">{t('becomeVendor.activityKind')}</span>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ['products', IconPackage, t('becomeVendor.kindProducts')],
+                  ['services', IconTool, t('becomeVendor.kindServices')],
+                  ['both', IconPackages, t('becomeVendor.kindBoth')],
+                ].map(([k, Icon, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setKind(k)}
+                    aria-pressed={kind === k}
+                    className={`flex flex-col items-center gap-1 rounded-card border p-3 text-center transition ${
+                      kind === k ? 'border-teal bg-teal/5 text-teal' : 'border-hairline text-muted'
+                    }`}
+                  >
+                    <Icon size={22} />
+                    <span className="text-caption font-semibold leading-tight">{label}</span>
+                  </button>
+                ))}
               </div>
-              {/* Pivot: une prestataire (ménage, BTP, traiteur…) s'inscrit par
-                  le même flux — les métiers services sont ici, pas ailleurs. */}
-              <span className="label mt-3 block">{t('vendor.shopServiceCategories')}</span>
-              <div className="flex flex-wrap gap-2">
-                {SERVICE_CATEGORIES.map((c) => <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
-              </div>
-              {form.categories.length === 0 && <p className="mt-1 text-caption text-muted">{t('becomeVendor.selectCategories')}</p>}
             </div>
+
+            {showProductCats && (
+              <div>
+                <span className="label">{t('becomeVendor.mainCategories')}</span>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map((c) => <button key={c.id} type="button" onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
+                </div>
+              </div>
+            )}
+
+            {showServiceCats && (
+              <div>
+                <span className="label">{t('vendor.shopServiceCategories')}</span>
+                <div className="flex flex-wrap gap-2">
+                  {SERVICE_CATEGORIES.map((c) => <button key={c.id} type="button" onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
+                </div>
+              </div>
+            )}
+
+            {form.categories.length === 0 && <p className="text-caption text-muted">{t('becomeVendor.selectCategories')}</p>}
           </>
         )}
 
