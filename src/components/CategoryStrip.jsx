@@ -6,6 +6,8 @@ import {
   IconShirt, IconHanger, IconBabyCarriage, IconDeviceMobile, IconSparkles,
   IconDiamond, IconHome2, IconConfetti, IconToolsKitchen2, IconGlassFull,
   IconRefresh, IconCar, IconBuildingSkyscraper, IconArchive,
+  IconMusic, IconBallFootball, IconWashMachine, IconBook, IconHeartbeat,
+  IconPaw, IconPlant2,
 } from '@tabler/icons-react';
 import { CATEGORIES } from '../lib/categories';
 import { featuredCategoryOrder } from '../lib/region';
@@ -29,6 +31,15 @@ const CATEGORY_ICON = {
   vehicules: IconCar,
   immobilier_vente: IconBuildingSkyscraper,
   mode_a_trier: IconArchive,
+  // Rayons ajoutés par la migration 0025 — sans entrée ici ils repassaient à
+  // l'initiale ("SSport", "MMusique"), justement ce que l'icône remplace.
+  musique: IconMusic,
+  sport_loisirs: IconBallFootball,
+  electromenager: IconWashMachine,
+  livres_papeterie: IconBook,
+  sante_bienetre: IconHeartbeat,
+  animaux: IconPaw,
+  jardin_exterieur: IconPlant2,
 };
 
 // Dégradés stables par id (même recette que ShopAvatar): une nouvelle

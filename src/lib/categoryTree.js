@@ -9,6 +9,7 @@
 export const PRODUCT_HEADS = [
   "mode_femme",
   "mode_homme",
+  "mode_a_trier",
   "enfants_bebe",
   "hightech",
   "beaute_cosmetiques",
@@ -20,7 +21,6 @@ export const PRODUCT_HEADS = [
   "seconde_main",
   "vehicules",
   "immobilier_vente",
-  "mode_a_trier",
   "musique",
   "sport_loisirs",
   "electromenager",

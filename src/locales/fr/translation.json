@@ -140,7 +140,7 @@
     "traiteur_chef": "Traiteur & Chef à domicile",
     "location_immobiliere": "Location immobilière",
     "location_vehicules": "Location de véhicules",
-    "mode_a_trier": "Mode (à trier)",
+    "mode_a_trier": "Mode",
     "femme_robes": "Robes",
     "femme_hauts": "Hauts & T-shirts",
     "femme_pantalons": "Pantalons & Jeans",
@@ -229,7 +229,7 @@
     "seconde_main": "Seconde main",
     "vehicules": "Véhicules",
     "immobilier_vente": "Immobilier",
-    "mode_a_trier": "Mode (à trier)"
+    "mode_a_trier": "Mode"
   },
   "home": {
     "heroCta": "Découvre la sélection",
@@ -447,7 +447,8 @@
     "noTradeMatch": "Aucun métier ne correspond.",
     "noProviders": "Aucun prestataire inscrit pour l'instant dans cette zone.",
     "noProviderInTrade": "Aucun prestataire en « {{trade}} » pour l'instant.",
-    "becomeProvider": "Proposer mes services"
+    "becomeProvider": "Proposer mes services",
+    "demandAll": "Tout"
   },
   "profile": {
     "title": "Profil",

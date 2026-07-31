@@ -57,6 +57,8 @@ export default function NearYou() {
   const toast = useToast();
   const [tab, setTab] = useState('shops');
   const [kindFilter, setKindFilter] = useState('all'); // 'all' | 'service' | 'article' — listings tab only
+  // 'all' | 'propose' | 'cherche' — sépare l'offre de la demande.
+  const [typeFilter, setTypeFilter] = useState('all');
   // Annuaire des métiers: filtre par catégorie de service (têtes du pivot,
   // enfants hérités inclus via categoryQueryIds). null = tout.
   const [serviceCat, setServiceCat] = useState(null);
@@ -135,6 +137,7 @@ export default function NearYou() {
 
   const filteredListings = (data?.listings || []).filter((l) => {
     if (serviceCat && !categoryQueryIds(serviceCat).includes(l.category)) return false;
+    if (typeFilter !== 'all' && l.type !== typeFilter) return false;
     if (kindFilter === 'all') return true;
     return kindFilter === 'service' ? isServiceCategory(l.category) : !isServiceCategory(l.category);
   });
@@ -279,16 +282,40 @@ export default function NearYou() {
       </div>
 
       {tab === 'listings' && (
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-3">
-          {[['all', t('nearYou.filterAll')], ['service', t('nearYou.filterServices')], ['article', t('nearYou.filterArticles')]].map(([k, label]) => (
-            <button
-              key={k}
-              onClick={() => setKindFilter(k)}
-              className={`chip shrink-0 ${kindFilter === k ? 'chip-active' : 'text-ink'}`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="space-y-2 px-4 pt-3">
+          {/* Qui DEMANDE vs qui PROPOSE. L'info existait sur chaque annonce
+              (pastille "Je cherche"/"Je propose") mais rien ne permettait de
+              n'afficher que l'un ou que l'autre — impossible de répondre à
+              "qui cherche un plombier ?" ou "qui en propose un ?". */}
+          <div className="inline-flex w-full rounded-pill border border-hairline p-0.5">
+            {[
+              ['all', t('nearYou.demandAll')],
+              ['propose', t('nearYou.iOffer')],
+              ['cherche', t('nearYou.iLookFor')],
+            ].map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setTypeFilter(k)}
+                aria-pressed={typeFilter === k}
+                className={`flex-1 rounded-pill px-3 py-1.5 text-caption font-semibold transition ${
+                  typeFilter === k ? 'bg-teal text-white' : 'text-muted'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="no-scrollbar flex gap-2 overflow-x-auto">
+            {[['all', t('nearYou.filterAll')], ['service', t('nearYou.filterServices')], ['article', t('nearYou.filterArticles')]].map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setKindFilter(k)}
+                className={`chip shrink-0 ${kindFilter === k ? 'chip-active' : 'text-ink'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

@@ -140,7 +140,7 @@
     "traiteur_chef": "Catering & Private Chef",
     "location_immobiliere": "Property rental",
     "location_vehicules": "Vehicle rental",
-    "mode_a_trier": "Fashion (unsorted)",
+    "mode_a_trier": "Fashion",
     "femme_robes": "Dresses",
     "femme_hauts": "Tops & T-shirts",
     "femme_pantalons": "Pants & Jeans",
@@ -229,7 +229,7 @@
     "seconde_main": "Second-hand",
     "vehicules": "Vehicles",
     "immobilier_vente": "Real estate",
-    "mode_a_trier": "Unsorted"
+    "mode_a_trier": "Fashion"
   },
   "home": {
     "heroCta": "Explore the selection",
@@ -447,7 +447,8 @@
     "noTradeMatch": "No trade matches.",
     "noProviders": "No providers registered in this area yet.",
     "noProviderInTrade": "No provider in « {{trade}} » yet.",
-    "becomeProvider": "Offer my services"
+    "becomeProvider": "Offer my services",
+    "demandAll": "All"
   },
   "profile": {
     "title": "Profile",
