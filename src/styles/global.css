@@ -64,6 +64,18 @@
   .input {
     @apply block w-full rounded-input border border-hairline bg-white px-3 py-3 text-[16px] text-ink placeholder:text-muted focus:border-teal focus:outline-none;
   }
+  /* Un <select> ne se dimensionne pas comme un <input>: iOS Safari ignore la
+     hauteur de ligne et centre le libellé dans la boîte, donc dès que la
+     boîte est plus courte que le texte + le padding, le mot est rogné en haut
+     ou en bas ("France" coupé à mi-hauteur sur iPhone). Hauteur explicite et
+     padding vertical nul: le libellé est centré et entier partout, et plus
+     aucune classe de hauteur posée ailleurs ne peut le rogner. */
+  select.input {
+    height: 3rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: normal;
+  }
   .label {
     @apply mb-1 block text-caption font-semibold text-ink;
   }

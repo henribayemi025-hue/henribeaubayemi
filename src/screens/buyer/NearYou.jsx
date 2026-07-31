@@ -166,6 +166,20 @@ export default function NearYou() {
     setServiceCat((cur) => (cur === id ? null : id));
   }
 
+  function publish() {
+    if (user) setPublishOpen(true);
+    else requireLogin();
+  }
+
+  // Vrai quand l'onglet courant n'a rien à lister: pilote l'affichage du
+  // bouton flottant, qui se posait sinon par-dessus les boutons de l'écran
+  // vide. La carte a son propre rendu, elle n'est jamais concernée.
+  const listEmpty =
+    !loading &&
+    !error &&
+    view !== 'map' &&
+    (tab === 'shops' ? filteredShops.length === 0 : filteredListings.length === 0);
+
   return (
     <div className="pb-20">
       <AppHeader title={t('nav.services')} />
@@ -232,7 +246,7 @@ export default function NearYou() {
           value={country || ''}
           onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
           disabled={!!userPos}
-          className="input h-10 w-full text-[16px] disabled:opacity-50"
+          className="input w-full disabled:opacity-50"
           aria-label={t('nearYou.overrideLocation')}
         >
           {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
@@ -350,6 +364,7 @@ export default function NearYou() {
                     sinon on atterrit sur "Devenir vendeur" et on croit
                     s'être trompé de bouton. */}
                 <Button onClick={() => navigate('/become-vendor?kind=services')}>{t('nearYou.becomeProvider')}</Button>
+                <Button variant="secondary" onClick={publish}>{t('nearYou.publishListing')}</Button>
               </div>
             }
           />
@@ -372,7 +387,11 @@ export default function NearYou() {
       ) : data.listingsError ? (
         <ErrorState onRetry={retry} />
       ) : filteredListings.length === 0 ? (
-        <EmptyState icon={IconBuildingStore} title={t('nearYou.noListings')} />
+        <EmptyState
+          icon={IconBuildingStore}
+          title={t('nearYou.noListings')}
+          action={<Button onClick={publish}>{t('nearYou.publishListing')}</Button>}
+        />
       ) : (
         <ul className="space-y-3 p-4">
           {byDistance(filteredListings).map((l) => (
@@ -403,14 +422,20 @@ export default function NearYou() {
         </ul>
       )}
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 mx-auto flex max-w-app justify-end px-4">
-        <button
-          onClick={() => (user ? setPublishOpen(true) : requireLogin())}
-          className="pointer-events-auto flex h-12 items-center gap-1 rounded-pill bg-teal px-4 text-white shadow-lg"
-        >
-          <IconPlus size={20} /> <span className="text-caption font-semibold">{t('nearYou.publishListing')}</span>
-        </button>
-      </div>
+      {/* Le bouton flottant disparaît quand la liste est vide: l'écran vide
+          affiche déjà ses propres boutons, et le flottant se posait PAR-DESSUS
+          "Proposer mes services" — sur iPhone les deux se chevauchaient et on
+          ne pouvait plus lire ni cliquer celui du dessous. */}
+      {!listEmpty && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 mx-auto flex max-w-app justify-end px-4">
+          <button
+            onClick={publish}
+            className="pointer-events-auto flex h-12 items-center gap-1 rounded-pill bg-teal px-4 text-white shadow-lg"
+          >
+            <IconPlus size={20} /> <span className="text-caption font-semibold">{t('nearYou.publishListing')}</span>
+          </button>
+        </div>
+      )}
 
       <PublishListingModal open={publishOpen} onClose={() => setPublishOpen(false)} onDone={retry} />
     </div>
