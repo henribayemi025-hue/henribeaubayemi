@@ -18,6 +18,7 @@ import { PublishListingModal } from './PublishListingModal';
 import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
+import { formatPrice } from '../../lib/currency';
 import { getPosition, distanceKm } from '../../lib/geo';
 import { isServiceCategory, isServiceShop, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
 
@@ -52,7 +53,7 @@ export default function NearYou() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { country, setCountry } = useSettings();
+  const { country, setCountry, currency } = useSettings();
   const { requireLogin } = useUI();
   const toast = useToast();
   const [tab, setTab] = useState('shops');
@@ -369,7 +370,7 @@ export default function NearYou() {
             }
           />
         ) : (
-          <ul className="divide-y divide-hairline">
+          <ul className="divide-y divide-hairline pb-24">
             {byDistance(filteredShops).map((s) => (
               <li key={s.id}>
                 <button onClick={() => navigate(`/boutique/${s.slug}`)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
@@ -393,7 +394,7 @@ export default function NearYou() {
           action={<Button onClick={publish}>{t('nearYou.publishListing')}</Button>}
         />
       ) : (
-        <ul className="space-y-3 p-4">
+        <ul className="space-y-3 p-4 pb-24">
           {byDistance(filteredListings).map((l) => (
             <li key={l.id} className="card">
               <div className="flex items-center justify-between">
@@ -413,6 +414,15 @@ export default function NearYou() {
                 </span>
               </div>
               {l.category && <p className="mt-1.5 text-caption font-semibold text-muted">{t(`categories.${l.category}`)}</p>}
+              {/* Le tarif se lit AVANT la description: c'est la première chose
+                  qu'on cherche sur une annonce de service. Sans prix saisi on
+                  écrit "Prix sur demande" — jamais "0", qui laisserait croire
+                  que la prestation est gratuite. */}
+              <p className="mt-1 text-body font-semibold text-ink">
+                {l.price_fcfa != null
+                  ? `${formatPrice(l.price_fcfa, currency, i18n.language)}${l.price_unit ? ` / ${t(`nearYou.priceUnit.${l.price_unit}`)}` : ''}`
+                  : <span className="text-caption font-normal text-muted">{t('nearYou.priceOnRequest')}</span>}
+              </p>
               {l.photo_url && <SmartImage src={storageUrl('listings', l.photo_url)} alt="" className="mt-2 h-40 w-full rounded-input" />}
               <p className="mt-2 text-body text-ink">{l.description}</p>
               <p className="mt-1 text-caption text-muted">{l.profiles?.name || t('profile.guest')} · {[l.city, countryLabel(l.country, i18n.language)].filter(Boolean).join(', ')}</p>

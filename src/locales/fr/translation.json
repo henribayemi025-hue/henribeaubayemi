@@ -457,7 +457,19 @@
     "noProviders": "Aucun prestataire inscrit pour l'instant dans cette zone.",
     "noProviderInTrade": "Aucun prestataire en « {{trade}} » pour l'instant.",
     "becomeProvider": "Proposer mes services",
-    "demandAll": "Tout"
+    "demandAll": "Tout",
+    "listingPrice": "Ton tarif",
+    "listingBudget": "Ton budget",
+    "priceOnRequest": "Prix sur demande",
+    "priceUnitLabel": "Unité de tarification",
+    "priceUnit": {
+      "forfait": "forfait",
+      "heure": "heure",
+      "jour": "jour",
+      "mois": "mois",
+      "m2": "m²",
+      "piece": "pièce"
+    }
   },
   "profile": {
     "title": "Profil",

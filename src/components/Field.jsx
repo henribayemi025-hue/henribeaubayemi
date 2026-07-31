@@ -19,17 +19,22 @@ export function Field({ label, error, hint, children, id: providedId, required }
   );
 }
 
-export function TextInput({ error, ...props }) {
-  return <input className={`input ${error ? 'border-danger' : ''}`} {...props} />;
+// `className` est FUSIONNÉ, pas écrasé: avec `{...props}` posé après un
+// className calculé, un appelant qui passait className="flex-1" effaçait
+// silencieusement `input` (et donc toute la mise en forme du champ). Ajouter
+// une classe utilitaire à un champ est un besoin banal — il ne doit pas
+// casser le champ.
+export function TextInput({ error, className = '', ...props }) {
+  return <input className={`input ${error ? 'border-danger' : ''} ${className}`} {...props} />;
 }
 
-export function TextArea({ error, ...props }) {
-  return <textarea className={`input min-h-[96px] resize-y ${error ? 'border-danger' : ''}`} {...props} />;
+export function TextArea({ error, className = '', ...props }) {
+  return <textarea className={`input min-h-[96px] resize-y ${error ? 'border-danger' : ''} ${className}`} {...props} />;
 }
 
-export function Select({ error, children, ...props }) {
+export function Select({ error, className = '', children, ...props }) {
   return (
-    <select className={`input appearance-none ${error ? 'border-danger' : ''}`} {...props}>
+    <select className={`input appearance-none ${error ? 'border-danger' : ''} ${className}`} {...props}>
       {children}
     </select>
   );

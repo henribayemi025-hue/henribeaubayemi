@@ -6,15 +6,21 @@ import { useSettings } from '../../hooks/useSettings';
 import { useToast } from '../../hooks/useToast';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
-import { Field, TextArea, Select } from '../../components/Field';
+import { Field, TextArea, TextInput, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
+import { toFcfa } from '../../lib/currency';
 import { getPosition } from '../../lib/geo';
+
+// Unités de tarification (contrainte `near_you_listings_price_unit_valid`,
+// migration 0027). Un ménage se facture à l'heure, un site web au forfait,
+// une location au mois — un seul "prix" sec ne veut rien dire.
+const PRICE_UNITS = ['forfait', 'heure', 'jour', 'mois', 'm2', 'piece'];
 
 export function PublishListingModal({ open, onClose, onDone }) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { country } = useSettings();
+  const { country, currency } = useSettings();
   const toast = useToast();
   const [type, setType] = useState('cherche');
   // Article vs Service reuses the SAME near_you_listings table/flow — just a
@@ -27,6 +33,12 @@ export function PublishListingModal({ open, onClose, onDone }) {
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Prix saisi dans la devise d'affichage de la personne, converti en FCFA au
+  // moment de l'enregistrement — même règle que les fiches article, pour
+  // qu'une annonce publiée en euros reste juste vue depuis le Cameroun.
+  // Vide = "Prix sur demande": on n'affiche jamais "0" à la place d'un devis.
+  const [price, setPrice] = useState('');
+  const [priceUnit, setPriceUnit] = useState('forfait');
 
   async function submit() {
     if (!description.trim()) return;
@@ -39,6 +51,8 @@ export function PublishListingModal({ open, onClose, onDone }) {
       category,
       description: description.trim(),
       photo_url: photo,
+      price_fcfa: price.trim() === '' ? null : toFcfa(Number(price), currency),
+      price_unit: price.trim() === '' ? null : priceUnit,
       country,
       lat: pos?.lat ?? null,
       lng: pos?.lng ?? null,
@@ -51,6 +65,7 @@ export function PublishListingModal({ open, onClose, onDone }) {
     toast.success(t('nearYou.published'));
     setDescription('');
     setPhoto(null);
+    setPrice('');
     onClose();
     onDone?.();
   }
@@ -93,6 +108,35 @@ export function PublishListingModal({ open, onClose, onDone }) {
         </Field>
         <Field label={t('nearYou.listingDesc')}>
           {(id) => <TextArea id={id} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('nearYou.listingDescPlaceholder')} />}
+        </Field>
+
+        {/* Tarif (annonce "je propose") ou budget (annonce "je cherche"):
+            même colonne, la personne dit combien elle demande ou combien elle
+            met. Facultatif: laisser vide affiche "Prix sur demande", ce qui
+            reste honnête pour une prestation qui se chiffre sur devis. */}
+        <Field label={`${type === 'cherche' ? t('nearYou.listingBudget') : t('nearYou.listingPrice')} (${currency}) ${t('common.optional')}`}>
+          {(id) => (
+            <div className="flex gap-2">
+              <TextInput
+                id={id}
+                type="number"
+                inputMode="decimal"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder={t('nearYou.priceOnRequest')}
+                className="flex-1"
+              />
+              <Select
+                value={priceUnit}
+                onChange={(e) => setPriceUnit(e.target.value)}
+                aria-label={t('nearYou.priceUnitLabel')}
+                className="w-32 shrink-0"
+              >
+                {PRICE_UNITS.map((u) => <option key={u} value={u}>{t(`nearYou.priceUnit.${u}`)}</option>)}
+              </Select>
+            </div>
+          )}
         </Field>
         <ImageUpload bucket="listings" value={photo} onChange={setPhoto} label={`${t('nearYou.addPhoto')} ${t('common.optional')}`} shape="wide" />
         <Button onClick={submit} loading={busy} disabled={!description.trim()}>{t('nearYou.publish')}</Button>

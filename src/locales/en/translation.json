@@ -457,7 +457,19 @@
     "noProviders": "No providers registered in this area yet.",
     "noProviderInTrade": "No provider in « {{trade}} » yet.",
     "becomeProvider": "Offer my services",
-    "demandAll": "All"
+    "demandAll": "All",
+    "listingPrice": "Your rate",
+    "listingBudget": "Your budget",
+    "priceOnRequest": "Price on request",
+    "priceUnitLabel": "Pricing unit",
+    "priceUnit": {
+      "forfait": "flat rate",
+      "heure": "hour",
+      "jour": "day",
+      "mois": "month",
+      "m2": "m²",
+      "piece": "item"
+    }
   },
   "profile": {
     "title": "Profile",
