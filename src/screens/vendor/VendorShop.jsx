@@ -38,6 +38,8 @@ export default function VendorShop() {
     name: shop.name || '',
     bio: shop.bio || '',
     whatsapp: shop.whatsapp || '',
+    city: shop.city || '',
+    neighborhood: shop.neighborhood || '',
     banner_url: shop.banner_url || null,
     avatar_url: shop.avatar_url || null,
     categories: shop.categories || [],
@@ -75,6 +77,8 @@ export default function VendorShop() {
         name: form.name.trim(),
         bio: form.bio.trim() || null,
         whatsapp: form.whatsapp.trim() || null,
+        city: form.city.trim() || null,
+        neighborhood: form.neighborhood.trim() || null,
         banner_url: form.banner_url,
         avatar_url: form.avatar_url,
         categories: form.categories,
@@ -179,10 +183,23 @@ export default function VendorShop() {
             )}
           </>
         )}
-        <button type="button" onClick={useMyLocation} disabled={geoBusy} className="btn-secondary">
-          <IconCurrentLocation size={18} className={geoBusy ? 'animate-spin' : ''} />
-          {hasGeo ? t('vendor.locationUpdate') : t('vendor.locationSetBtn')}
-        </button>
+        <div className="space-y-2 rounded-card border border-hairline p-3">
+          <span className="label">{t('vendor.locationTitle')}</span>
+          <button type="button" onClick={useMyLocation} disabled={geoBusy} className="btn-secondary w-full">
+            <IconCurrentLocation size={18} className={geoBusy ? 'animate-spin' : ''} />
+            {hasGeo ? t('vendor.locationUpdate') : t('vendor.locationSetBtn')}
+          </button>
+          <p className="text-caption text-muted">{t('vendor.locationGpsHint')}</p>
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <Field label={t('becomeVendor.city')}>
+              {(id) => <TextInput id={id} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />}
+            </Field>
+            <Field label={t('vendor.neighborhood')}>
+              {(id) => <TextInput id={id} value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} />}
+            </Field>
+          </div>
+          <p className="text-caption text-muted">{t('vendor.locationManualHint')}</p>
+        </div>
         <Link to={`/boutique/${shop.slug}`} className="btn-ghost inline-flex"><IconExternalLink size={18} /> {t('vendor.previewShop')}</Link>
       </div>
       <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">

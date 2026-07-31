@@ -45,6 +45,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
   // finjaro.netlify.app + préversions <hash>--finjaro.netlify.app
   if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
+  if (host.endsWith('.pages.dev')) return true;
   return false;
 }
 

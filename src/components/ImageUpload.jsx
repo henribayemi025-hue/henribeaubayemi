@@ -1,10 +1,20 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconUpload, IconX, IconLoader2 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { supabase, storageUrl } from '../lib/supabase';
 import { compressForUploadWithThumb } from '../lib/image';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
+
+// Le seul bucket privé de l'app (pièces d'identité) — getPublicUrl() y renvoie
+// une URL qui répond 403 (elle n'est pas signée), donc son aperçu doit passer
+// par une URL signée à durée limitée plutôt que par storageUrl().
+const PRIVATE_BUCKETS = new Set(['ids']);
+
+// Fichiers photo au-delà de cette taille (HEIC/ProRAW plein format, Live Photo…)
+// donnent un message clair au lieu de laisser l'envoi échouer silencieusement
+// contre la limite du serveur.
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 // Uploads a single image to a Supabase Storage bucket and returns its path
 // via onChange. `shape` = 'wide' | 'square' | 'round'.
@@ -14,6 +24,7 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
   const toast = useToast();
   const inputRef = useRef(null);
   const [busy, setBusyState] = useState(false);
+  const [signedPreview, setSignedPreview] = useState(null);
   const setBusy = (v) => {
     setBusyState(v);
     onBusyChange?.(v);
@@ -21,13 +32,33 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
 
   const aspect = shape === 'wide' ? 'aspect-[16/7]' : 'aspect-square';
   const rounded = shape === 'round' ? 'rounded-full' : 'rounded-card';
-  const preview = value ? (value.startsWith('http') ? value : storageUrl(bucket, value)) : null;
+  const isPrivate = PRIVATE_BUCKETS.has(bucket);
+  const preview = value ? (value.startsWith('http') ? value : isPrivate ? signedPreview : storageUrl(bucket, value)) : null;
+
+  // Bucket privé: pas d'URL publique valide, il faut la signer côté client.
+  useEffect(() => {
+    if (!isPrivate || !value || value.startsWith('http')) {
+      setSignedPreview(null);
+      return;
+    }
+    let cancelled = false;
+    supabase.storage.from(bucket).createSignedUrl(value, 3600).then(({ data }) => {
+      if (!cancelled) setSignedPreview(data?.signedUrl || null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [bucket, isPrivate, value]);
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!user) {
       toast.error(t('auth.loginNeeded'));
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      toast.error(t('becomeVendor.imageTooLarge'));
       return;
     }
     setBusy(true);
@@ -40,17 +71,21 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
       // Une vignette légère est envoyée EN PLUS de l'image normale, sous le
       // même nom + `_thumb` (voir storageThumbUrl côté lecture) — c'est elle
       // qui s'affiche dans les avatars/listes, la pleine taille ne sert qu'aux
-      // grandes bannières.
+      // grandes bannières. Si le fichier ne se décode pas en canvas (HEIC…),
+      // compressForUploadWithThumb renvoie le fichier original et thumb=null
+      // plutôt que d'échouer — voir lib/image.js.
       const { full, thumb } = await compressForUploadWithThumb(file);
       const uuid = crypto.randomUUID();
       const path = `${user.id}/${uuid}.${full.ext}`;
-      const thumbPath = `${user.id}/${uuid}_thumb.${full.ext}`;
       const { error } = await supabase.storage.from(bucket).upload(path, full.blob, { upsert: false, contentType: full.contentType });
       if (error) throw error;
-      // Meilleur effort: si la vignette échoue, SmartImage retombe sur la
-      // pleine taille (404 géré côté lecture) — ça ne doit jamais bloquer
-      // l'envoi de la photo elle-même.
-      supabase.storage.from(bucket).upload(thumbPath, thumb.blob, { upsert: false, contentType: thumb.contentType }).catch(() => {});
+      // Meilleur effort: si la vignette échoue (ou n'existe pas), SmartImage
+      // retombe sur la pleine taille (404 géré côté lecture) — ça ne doit
+      // jamais bloquer l'envoi de la photo elle-même.
+      if (thumb) {
+        const thumbPath = `${user.id}/${uuid}_thumb.${full.ext}`;
+        supabase.storage.from(bucket).upload(thumbPath, thumb.blob, { upsert: false, contentType: thumb.contentType }).catch(() => {});
+      }
       onChange(path);
     } catch (err) {
       toast.error(err.message || t('errors.generic'));

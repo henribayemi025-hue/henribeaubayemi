@@ -20,11 +20,39 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import * as webpush from 'jsr:@negrel/webpush@0.3';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// Même règle que finou-chat/miroir-ia: finjaro.net + sous-domaines (dont un
+// futur "staging.finjaro.net"), previews Cloudflare Pages (*.pages.dev),
+// ancien Netlify, dev local. Cette fonction est aussi appelée serveur-à-serveur
+// (par finou-chat, par les triggers SQL via pg_net) — ces appels n'envoient pas
+// d'en-tête Origin, donc `isAllowedOrigin(null)` reste false et retombe sur
+// PROD_HOST par défaut, ce qui ne bloque pas l'appel lui-même (CORS ne
+// s'applique qu'aux requêtes navigateur).
+const PROD_HOST = 'finjaro.net';
+const NETLIFY_HOST = 'finjaro.netlify.app';
+
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  let host: string;
+  try {
+    host = new URL(origin).hostname;
+  } catch {
+    return false;
+  }
+  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
+  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
+  if (host.endsWith('.pages.dev')) return true;
+  return false;
+}
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin! : `https://${PROD_HOST}`,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 const SITE_URL = 'https://finjaro.net';
 const RESEND_BATCH_MAX = 100; // limite de l'API Resend
@@ -212,6 +240,7 @@ async function sendEmails(
 // --- Point d'entrée --------------------------------------------------------
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('Origin'));
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const json = (b: unknown, status = 200) =>

@@ -1,0 +1,17 @@
+-- Finjaro — repli manuel de localisation boutique (Ville / Quartier).
+--
+-- POURQUOI
+-- useMyLocation() (VendorShop.jsx) ne fait que lire navigator.geolocation:
+-- refus de permission, navigateur intégré WhatsApp/Facebook qui bloque l'API,
+-- HTTP non sécurisé, timeout GPS... tout échec renvoie le même message
+-- générique et la boutique reste sans position. Les clientes ont signalé
+-- exactement ça: "l'enregistrement de la localisation ne fonctionne pas".
+--
+-- `city` existe déjà sur `shops` (rempli une seule fois à l'inscription,
+-- jamais modifiable ensuite). On ajoute `neighborhood` pour un repli complet
+-- Ville/Quartier, éditable à tout moment depuis "Ma boutique". Sans lat/lng,
+-- la boutique reste listée normalement dans "Près de vous" (déjà le cas pour
+-- toute boutique sans position — voir NearYou.jsx: tri par distance seulement
+-- si connue, ville+pays affichés sinon) ; elle n'apparaît juste pas comme
+-- épingle sur la carte tant que le GPS n'a pas été utilisé une fois.
+alter table public.shops add column if not exists neighborhood text;

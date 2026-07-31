@@ -75,18 +75,41 @@ export async function compressForUpload(file, opts) {
 // boutiques, chat, panier…).
 export const THUMB_OPTS = { maxDim: 480, quality: 0.6 };
 
+function extFromFile(file) {
+  if (file.type === 'image/png') return 'png';
+  if (file.type === 'image/jpeg') return 'jpg';
+  if (file.type === 'image/webp') return 'webp';
+  const m = /\.([a-z0-9]+)$/i.exec(file.name || '');
+  return m ? m[1].toLowerCase() : 'jpg';
+}
+
 // Génère les DEUX tailles à partir d'un seul fichier source, pour un envoi de
 // produit/boutique. `full` reste la taille normale (fiche détail, essayage
 // virtuel); `thumb` est la nouvelle vignette légère pour tout ce qui s'affiche
 // en petit. Les deux sont uploadées; seul le chemin de `full` est stocké en
 // base (voir storageThumbUrl côté lecture pour retrouver la vignette par
 // convention de nom — pas de migration de schéma nécessaire).
+//
+// Certains fichiers ne se décodent pas en <canvas> (HEIC pris par l'appareil
+// photo iPhone, notamment: Safari sait parfois l'afficher dans une balise
+// <img> mais canvas.drawImage() échoue quand même). Sans repli, ça bloquait
+// TOUT l'envoi avec une erreur générique — c'était visiblement le cas pour la
+// pièce d'identité: aucun document n'a jamais été envoyé avec succès en
+// production. On envoie alors le fichier original tel quel plutôt que de
+// bloquer — pas de vignette dans ce cas, mais l'envoi aboutit.
 export async function compressForUploadWithThumb(file, fullOpts) {
-  const [full, thumb] = await Promise.all([
-    compressForUpload(file, fullOpts),
-    compressForUpload(file, THUMB_OPTS),
-  ]);
-  return { full, thumb };
+  try {
+    const [full, thumb] = await Promise.all([
+      compressForUpload(file, fullOpts),
+      compressForUpload(file, THUMB_OPTS),
+    ]);
+    return { full, thumb };
+  } catch {
+    return {
+      full: { blob: file, contentType: file.type || 'application/octet-stream', ext: extFromFile(file) },
+      thumb: null,
+    };
+  }
 }
 
 // For inline data: URLs (Finou / Mirror AI payloads to Gemini).
