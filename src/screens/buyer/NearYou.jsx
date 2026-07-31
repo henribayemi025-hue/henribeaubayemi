@@ -15,6 +15,7 @@ import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { Button } from '../../components/Button';
 import { PublishListingModal } from './PublishListingModal';
+import { TrocEvalModal } from '../../components/TrocEvalModal';
 import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
@@ -66,6 +67,7 @@ export default function NearYou() {
   const [tradeQuery, setTradeQuery] = useState('');
   const [view, setView] = useState('list'); // 'list' | 'map'
   const [publishOpen, setPublishOpen] = useState(false);
+  const [trocOpen, setTrocOpen] = useState(false);
   const [radius, setRadius] = useState('country');
   const [userPos, setUserPos] = useState(null);
   const [locating, setLocating] = useState(false);
@@ -330,6 +332,14 @@ export default function NearYou() {
                 {label}
               </button>
             ))}
+            {/* Évaluateur de troc — vit dans les annonces, là où les gens
+                échangent déjà. Compte requis (l'appel IA coûte). */}
+            <button
+              onClick={() => (user ? setTrocOpen(true) : requireLogin())}
+              className="chip shrink-0 border-brass text-brass"
+            >
+              ⚖️ {t('troc.title')}
+            </button>
           </div>
         </div>
       )}
@@ -448,6 +458,7 @@ export default function NearYou() {
       )}
 
       <PublishListingModal open={publishOpen} onClose={() => setPublishOpen(false)} onDone={retry} />
+      <TrocEvalModal open={trocOpen} onClose={() => setTrocOpen(false)} />
     </div>
   );
 }

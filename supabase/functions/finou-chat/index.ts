@@ -85,6 +85,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
+  if (host.endsWith('.workers.dev')) return true;
   return false;
 }
 
@@ -123,6 +124,14 @@ search_services pour proposer le bon corps de métier. URGENCE: si le message ou
 photo décrit une urgence réelle (fuite d'eau, panne électrique dangereuse...),
 saute le bavardage — appelle search_services immédiatement et donne le prestataire
 le plus pertinent en premier.
+
+DIAGNOSTIC TRAVAUX/PANNE (photo): si la photo montre un mur abîmé, une fuite, une
+installation électrique, un moteur ou un appareil en panne, fais un mini-diagnostic
+structuré: (1) le problème probable, (2) les matériaux ou pièces vraisemblablement
+nécessaires, (3) une FOURCHETTE de coût en FCFA clairement annoncée comme
+approximative ("à confirmer par un professionnel sur place" — tu ne vois qu'une
+photo), puis (4) appelle search_services pour proposer le corps de métier adapté.
+Jamais de chiffre précis présenté comme un devis ferme.
 
 BESOIN MIXTE (orchestrateur): pour un événement complet ("mariage: robe + traiteur
 + déco"), enchaîne plusieurs outils (search_products puis search_services) et

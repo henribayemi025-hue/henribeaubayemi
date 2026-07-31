@@ -664,7 +664,12 @@
     "rotationEnd": "À la fin de l'arrivage",
     "rotationEndDelete": "Supprimer les articles",
     "rotationEndDraft": "Les garder en brouillon",
-    "rotationDeleteWarn": "Suppression définitive : les articles disparaissent de ton espace. Les commandes déjà passées gardent leur nom et leur prix."
+    "rotationDeleteWarn": "Suppression définitive : les articles disparaissent de ton espace. Les commandes déjà passées gardent leur nom et leur prix.",
+    "fillFromPhoto": "Remplir la fiche depuis la photo",
+    "listingFilled": "Fiche pré-remplie — relis et ajuste avant d’enregistrer.",
+    "priceHint": "Repère : articles comparables du catalogue autour de {{price}} {{currency}} ({{count}} articles). À toi de décider.",
+    "reelScript": "Générer un script vidéo (Reel/TikTok)",
+    "copyScript": "Copier le script"
   },
   "orderStatus": {
     "new": "Nouvelle",
@@ -848,6 +853,39 @@
       "follow": "Abonnements",
       "comment": "Commentaires",
       "mirror_try": "Essayages Miroir"
+    },
+    "applications": "Candidatures vendeur",
+    "noApplications": "Aucune candidature pour l’instant.",
+    "kycAnalyzeFront": "Analyser la pièce (recto)",
+    "kycAnalyzeBack": "Analyser la pièce (verso)",
+    "kycError": "Analyse impossible. Réessaie, ou vérifie la pièce manuellement.",
+    "kycType": "Type",
+    "kycReadable": "Lisible",
+    "kycName": "Nom lu sur la pièce",
+    "kycMatch": "(correspond au nom déclaré)",
+    "kycMismatch": "(différent du nom déclaré : {{declared}})",
+    "kycBirth": "Naissance",
+    "kycExpiry": "Expiration",
+    "kycDisclaimer": "Lecture automatique indicative — c’est toi qui valides ou refuses, jamais l’IA."
+  },
+  "troc": {
+    "title": "Évaluer un troc",
+    "intro": "Prends en photo les deux objets à échanger : Finjaro estime leur état, leur valeur, et le complément en argent pour un échange équitable.",
+    "photoA": "Objet A",
+    "photoB": "Objet B",
+    "itemA": "Objet A",
+    "itemB": "Objet B",
+    "fair": "Échange équilibré — pas de soulte nécessaire.",
+    "soulte": "Le détenteur de « {{item}} » devrait ajouter environ {{amount}}.",
+    "disclaimer": "Estimation indicative basée sur le catalogue Finjaro — l’accord final appartient aux deux personnes.",
+    "error": "Évaluation impossible. Réessaie avec des photos plus nettes.",
+    "evaluate": "Évaluer l’échange",
+    "etat": {
+      "neuf": "neuf",
+      "tres_bon": "très bon état",
+      "bon": "bon état",
+      "use": "usé",
+      "abime": "abîmé"
     }
   }
 }

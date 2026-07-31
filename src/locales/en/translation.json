@@ -664,7 +664,12 @@
     "rotationEnd": "At the end of the arrival",
     "rotationEndDelete": "Delete the items",
     "rotationEndDraft": "Keep them as drafts",
-    "rotationDeleteWarn": "Permanent deletion: the items disappear from your space. Past orders keep their name and price."
+    "rotationDeleteWarn": "Permanent deletion: the items disappear from your space. Past orders keep their name and price.",
+    "fillFromPhoto": "Fill the listing from the photo",
+    "listingFilled": "Listing pre-filled — review and adjust before saving.",
+    "priceHint": "Benchmark: comparable catalog items around {{price}} {{currency}} ({{count}} items). Your call.",
+    "reelScript": "Generate a video script (Reel/TikTok)",
+    "copyScript": "Copy the script"
   },
   "orderStatus": {
     "new": "New",
@@ -848,6 +853,39 @@
       "follow": "Follows",
       "comment": "Comments",
       "mirror_try": "Mirror try-ons"
+    },
+    "applications": "Vendor applications",
+    "noApplications": "No applications yet.",
+    "kycAnalyzeFront": "Analyze ID (front)",
+    "kycAnalyzeBack": "Analyze ID (back)",
+    "kycError": "Analysis failed. Retry, or check the document manually.",
+    "kycType": "Type",
+    "kycReadable": "Readable",
+    "kycName": "Name read on the ID",
+    "kycMatch": "(matches the declared name)",
+    "kycMismatch": "(differs from declared name: {{declared}})",
+    "kycBirth": "Birth date",
+    "kycExpiry": "Expiry",
+    "kycDisclaimer": "Automatic reading is indicative — you approve or reject, never the AI."
+  },
+  "troc": {
+    "title": "Evaluate a trade",
+    "intro": "Photograph the two items to swap: Finjaro estimates their condition, value, and the cash top-up for a fair trade.",
+    "photoA": "Item A",
+    "photoB": "Item B",
+    "itemA": "Item A",
+    "itemB": "Item B",
+    "fair": "Balanced trade — no top-up needed.",
+    "soulte": "The owner of “{{item}}” should add about {{amount}}.",
+    "disclaimer": "Indicative estimate based on the Finjaro catalog — the final deal is up to both people.",
+    "error": "Could not evaluate. Try again with sharper photos.",
+    "evaluate": "Evaluate the trade",
+    "etat": {
+      "neuf": "new",
+      "tres_bon": "very good condition",
+      "bon": "good condition",
+      "use": "worn",
+      "abime": "damaged"
     }
   }
 }

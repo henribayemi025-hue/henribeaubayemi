@@ -37,6 +37,59 @@ export default function VendorProductEdit() {
   const [errors, setErrors] = useState({});
   const [genLoading, setGenLoading] = useState(false);
   const [suggestion, setSuggestion] = useState(null); // AI draft, editable before use
+  const [listingLoading, setListingLoading] = useState(false);
+  const [priceHint, setPriceHint] = useState(null); // { fcfa, samples } — médiane catalogue
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [reelScript, setReelScript] = useState(null);
+
+  // Auto-Listing (Finou 2.0 #12, partie texte): la première photo déjà
+  // uploadée → titre + description + catégorie proposés d'un coup. Tout
+  // atterrit dans les champs ÉDITABLES, rien n'est enregistré sans que la
+  // vendeuse relise et sauve elle-même. Le repère de prix est la médiane du
+  // catalogue (calculée serveur), jamais un chiffre inventé par l'IA.
+  async function fillFromPhoto() {
+    if (!form.images[0]) return;
+    setListingLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'listing', image_path: form.images[0], lang: i18n.language },
+      });
+      if (error || !data?.title) throw error || new Error('empty');
+      setForm((f) => ({
+        ...f,
+        // On ne piétine jamais ce que la vendeuse a déjà tapé.
+        name: f.name.trim() ? f.name : data.title,
+        description: f.description.trim() ? f.description : data.description,
+        category: data.category || f.category,
+      }));
+      setPriceHint(data.price_hint_fcfa ? { fcfa: data.price_hint_fcfa, samples: data.price_samples } : null);
+      toast.success(t('vendor.listingFilled'));
+    } catch {
+      toast.error(t('vendor.copilotError'));
+    } finally {
+      setListingLoading(false);
+    }
+  }
+
+  // Script Reel/TikTok (Finou 2.0 #15, partie texte) pour promouvoir la fiche.
+  async function generateReelScript() {
+    if (!form.name.trim()) {
+      toast.info(t('vendor.copilotNeedName'));
+      return;
+    }
+    setScriptLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'reel_script', name: form.name.trim(), description: form.description, lang: i18n.language },
+      });
+      if (error || !data?.scenes) throw error || new Error('empty');
+      setReelScript(data);
+    } catch {
+      toast.error(t('vendor.copilotError'));
+    } finally {
+      setScriptLoading(false);
+    }
+  }
 
   // Vendor Copilot: ask Gemini (via the vendor-copilot edge fn) for a marketing
   // description. Never auto-fills — the draft lands in an editable preview the
@@ -235,6 +288,20 @@ export default function VendorProductEdit() {
             ))}
           </div>
           <p className="mt-1 text-caption text-muted">{t('vendor.productImagesHint', { count: MAX_IMAGES })}</p>
+          {/* Auto-Listing: visible dès qu'une photo est là. Remplit titre/
+              description/catégorie (sans écraser ce qui est déjà tapé) —
+              la vendeuse relit et corrige avant d'enregistrer. */}
+          {form.images.length > 0 && (
+            <button
+              type="button"
+              onClick={fillFromPhoto}
+              disabled={listingLoading}
+              className="mt-2 flex items-center gap-1.5 text-caption font-semibold text-teal disabled:opacity-50"
+            >
+              {listingLoading ? <IconLoader2 size={15} className="animate-spin" /> : <IconSparkles size={15} />}
+              {t('vendor.fillFromPhoto')}
+            </button>
+          )}
         </div>
         <Field label={t('vendor.productName')} required error={errors.name}>
           {(fid) => <TextInput id={fid} value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
@@ -242,6 +309,17 @@ export default function VendorProductEdit() {
         <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
           {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
         </Field>
+        {/* Repère HONNÊTE issu du catalogue (médiane d'articles comparables),
+            jamais un prix "optimal" sorti du chapeau — la vendeuse décide. */}
+        {priceHint && (
+          <p className="-mt-2 text-caption text-muted">
+            {t('vendor.priceHint', {
+              price: Math.round(convertFromFcfa(priceHint.fcfa, shopCurrency)),
+              currency: shopCurrency,
+              count: priceHint.samples,
+            })}
+          </p>
+        )}
         {/* Sélecteur en cascade (façon Amazon): rayon puis sous-catégorie
             précise quand elle existe (Mode Femme > Robes...). form.category
             stocke toujours l'id final (la sous-catégorie si choisie, sinon
@@ -360,6 +438,60 @@ export default function VendorProductEdit() {
                   onClick={() => setSuggestion(null)}
                   className="rounded-input px-3 py-1.5 text-caption text-muted"
                 >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Script Reel/TikTok généré pour promouvoir la fiche — la vendeuse le
+            copie et filme elle-même, rien n'est publié automatiquement. */}
+        <div>
+          <button
+            type="button"
+            onClick={generateReelScript}
+            disabled={scriptLoading}
+            className="flex items-center gap-1.5 text-caption font-semibold text-teal disabled:opacity-50"
+          >
+            {scriptLoading ? <IconLoader2 size={15} className="animate-spin" /> : <IconSparkles size={15} />}
+            {t('vendor.reelScript')}
+          </button>
+          {reelScript && (
+            <div className="mt-2 space-y-2 rounded-card border border-brass/40 bg-brass/5 p-3">
+              <p className="text-body font-semibold text-ink">🎬 {reelScript.hook}</p>
+              <ol className="list-decimal space-y-1.5 pl-5">
+                {reelScript.scenes.map((s, i) => (
+                  <li key={i} className="text-caption text-ink">
+                    <span className="font-semibold">{s.shot}</span>
+                    <br />« {s.text} »
+                  </li>
+                ))}
+              </ol>
+              <p className="text-caption font-semibold text-ink">{reelScript.cta}</p>
+              <p className="text-caption text-muted">{(reelScript.hashtags || []).map((h) => `#${h}`).join(' ')}</p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  className="rounded-input bg-teal px-3 py-1.5 text-caption font-semibold text-white"
+                  onClick={async () => {
+                    const text = [
+                      reelScript.hook,
+                      ...reelScript.scenes.map((s, i) => `${i + 1}. ${s.shot} — « ${s.text} »`),
+                      reelScript.cta,
+                      (reelScript.hashtags || []).map((h) => `#${h}`).join(' '),
+                    ].join('\n');
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      toast.success(t('common.shareCopied'));
+                    } catch {
+                      toast.error(t('errors.generic'));
+                    }
+                  }}
+                >
+                  {t('vendor.copyScript')}
+                </button>
+                <button type="button" onClick={() => setReelScript(null)} className="rounded-input px-3 py-1.5 text-caption text-muted">
                   {t('common.cancel')}
                 </button>
               </div>

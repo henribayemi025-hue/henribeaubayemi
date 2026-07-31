@@ -34,6 +34,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
+  if (host.endsWith('.workers.dev')) return true;
   return false;
 }
 
