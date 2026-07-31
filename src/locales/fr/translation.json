@@ -44,7 +44,8 @@
     "somethingWrong": "Une erreur est survenue.",
     "comingSoon": "Bientôt disponible.",
     "optional": "(optionnel)",
-    "of": "sur"
+    "of": "sur",
+    "seeLess": "Réduire"
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -163,15 +164,32 @@
     "enfant_jouets": "Jouets",
     "enfant_puericulture": "Puériculture"
   },
+  "categoriesShort": {
+    "mode_femme": "Femme",
+    "mode_homme": "Homme",
+    "enfants_bebe": "Enfants",
+    "hightech": "High-Tech",
+    "beaute_cosmetiques": "Beauté",
+    "bijoux_montres": "Bijoux",
+    "maison_deco": "Maison",
+    "evenementiel_mariages": "Événementiel",
+    "alimentaire": "Alimentaire",
+    "jus_naturels": "Jus naturels",
+    "seconde_main": "Seconde main",
+    "vehicules": "Véhicules",
+    "immobilier_vente": "Immobilier",
+    "mode_a_trier": "Mode (à trier)"
+  },
   "home": {
     "heroCta": "Découvre la sélection",
     "topPick": "Top article",
     "trending": "Nouveautés",
     "shopsNearYou": "Boutiques près de vous",
-    "servicesTitle": "Réserver un service près de chez toi",
+    "servicesTitle": "Services à domicile",
     "loadError": "Impossible de charger les produits.",
     "noProducts": "Aucun produit pour le moment. Reviens bientôt !",
-    "noShops": "Aucune boutique à afficher pour l'instant."
+    "noShops": "Aucune boutique à afficher pour l'instant.",
+    "servicesSubtitle": "Ménage, coiffure, plomberie, BTP…"
   },
   "search": {
     "placeholder": "Rechercher catégories, boutiques, articles…",
@@ -372,7 +390,10 @@
     "viewMap": "Carte",
     "viewOnMap": "Voir",
     "noGeoPoints": "Aucun point géolocalisé pour l'instant. Les boutiques et annonces apparaîtront ici dès qu'elles auront une position.",
-    "locationDenied": "Localisation indisponible ou refusée."
+    "locationDenied": "Localisation indisponible ou refusée.",
+    "searchTrade": "Chercher un métier…",
+    "allTrades": "Tous les métiers",
+    "noTradeMatch": "Aucun métier ne correspond."
   },
   "profile": {
     "title": "Profil",

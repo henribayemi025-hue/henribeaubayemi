@@ -50,8 +50,10 @@ export const CATEGORIES = [
   { id: 'vehicules', banner: null },
   { id: 'immobilier_vente', banner: null },
   // Tête transitoire (0024): anciens articles jamais taggés par genre.
-  // Visible, cherchable — pas une corbeille cachée.
-  { id: 'mode_a_trier', banner: mode },
+  // Visible, cherchable — pas une corbeille cachée. Pas de photo: elle
+  // partagerait celle de Mode Femme et les deux tuiles deviendraient
+  // indistinguables.
+  { id: 'mode_a_trier', banner: null },
 ];
 
 // Anciennes catégories (bannières conservées pour les liens profonds

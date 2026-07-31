@@ -44,7 +44,8 @@
     "somethingWrong": "Something went wrong.",
     "comingSoon": "Coming soon.",
     "optional": "(optional)",
-    "of": "of"
+    "of": "of",
+    "seeLess": "See less"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -163,15 +164,32 @@
     "enfant_jouets": "Toys",
     "enfant_puericulture": "Baby gear"
   },
+  "categoriesShort": {
+    "mode_femme": "Women",
+    "mode_homme": "Men",
+    "enfants_bebe": "Kids",
+    "hightech": "Tech",
+    "beaute_cosmetiques": "Beauty",
+    "bijoux_montres": "Jewelry",
+    "maison_deco": "Home",
+    "evenementiel_mariages": "Events",
+    "alimentaire": "Food",
+    "jus_naturels": "Juices",
+    "seconde_main": "Second-hand",
+    "vehicules": "Vehicles",
+    "immobilier_vente": "Real estate",
+    "mode_a_trier": "Unsorted"
+  },
   "home": {
     "heroCta": "Explore the selection",
     "topPick": "Top pick",
     "trending": "New arrivals",
     "shopsNearYou": "Shops near you",
-    "servicesTitle": "Book a service near you",
+    "servicesTitle": "Home services",
     "loadError": "Couldn't load products.",
     "noProducts": "No products yet. Check back soon!",
-    "noShops": "No shops to show yet."
+    "noShops": "No shops to show yet.",
+    "servicesSubtitle": "Cleaning, hair, plumbing, construction…"
   },
   "search": {
     "placeholder": "Search categories, shops, items…",
@@ -372,7 +390,10 @@
     "viewMap": "Map",
     "viewOnMap": "View",
     "noGeoPoints": "No mapped points yet. Shops and listings will appear here once they have a location.",
-    "locationDenied": "Location unavailable or denied."
+    "locationDenied": "Location unavailable or denied.",
+    "searchTrade": "Search a trade…",
+    "allTrades": "All trades",
+    "noTradeMatch": "No trade matches."
   },
   "profile": {
     "title": "Profile",

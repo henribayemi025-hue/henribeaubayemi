@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight } from '@tabler/icons-react';
-import { SERVICE_CATEGORIES } from '../../lib/categories';
 import { useCart } from '../../hooks/useCart';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
@@ -71,23 +70,22 @@ export default function Home() {
         </div>
 
         {/* Pivot: séparation lisible acheter un PRODUIT (bandeau catégories
-            ci-dessus) vs réserver un SERVICE (cette carte -> onglet Services).
-            La carte nomme les premiers métiers pour rendre l'offre concrète. */}
+            ci-dessus) vs réserver un SERVICE (cette bande -> onglet Services).
+            Volontairement fine et sur UNE ligne de texte: la version en gros
+            pavé de trois lignes écrasait le reste de l'accueil. */}
         <section className="mt-4 px-4">
           <Link
             to="/services"
-            className="flex items-center gap-3 rounded-card border border-hairline bg-[#FAF6F0] p-4 transition-transform duration-150 active:scale-[0.99]"
+            className="flex items-center gap-3 rounded-card border border-hairline bg-white px-3 py-2.5 transition-transform duration-150 active:scale-[0.99]"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white">
-              <IconTool size={22} />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal">
+              <IconTool size={19} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-body font-semibold text-ink">{t('home.servicesTitle')}</span>
-              <span className="mt-0.5 line-clamp-1 block text-caption text-muted">
-                {SERVICE_CATEGORIES.slice(0, 4).map((c) => t(`categories.${c.id}`)).join(' · ')}…
-              </span>
+              <span className="block truncate text-body font-semibold text-ink">{t('home.servicesTitle')}</span>
+              <span className="block truncate text-caption text-muted">{t('home.servicesSubtitle')}</span>
             </span>
-            <IconChevronRight size={20} className="shrink-0 text-muted" />
+            <IconChevronRight size={18} className="shrink-0 text-muted" />
           </Link>
         </section>
 

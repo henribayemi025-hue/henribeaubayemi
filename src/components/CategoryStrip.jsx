@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { CATEGORIES } from '../lib/categories';
 import { featuredCategoryOrder } from '../lib/region';
 import { useSettings } from '../hooks/useSettings';
@@ -20,12 +22,50 @@ function gradientFor(id) {
   return GRADIENTS[h % GRADIENTS.length];
 }
 
-// Bandeau horizontal des têtes de catégories du pivot, ordonnées selon la
-// zone (Afrique / diaspora) via la détection de pays déjà utilisée pour les
+function CategoryTile({ id, banner, label }) {
+  return (
+    <Link
+      to={`/category/${id}`}
+      className="flex w-[4.75rem] shrink-0 flex-col items-center transition-transform duration-150 active:scale-95"
+    >
+      <div className="h-[4.75rem] w-[4.75rem] overflow-hidden rounded-card border border-hairline">
+        {banner ? (
+          <img
+            src={banner}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradientFor(id)} text-title font-semibold text-white`}
+          >
+            {label.charAt(0)}
+          </div>
+        )}
+      </div>
+      {/* Deux lignes autorisées + libellé court: "Immobilier…" et "Seconde…"
+          étaient coupés au milieu d'un mot sur une seule ligne de 80 px. */}
+      <span className="mt-1 line-clamp-2 text-center text-[11px] leading-tight text-ink">{label}</span>
+    </Link>
+  );
+}
+
+// Bandeau des têtes de catégories du pivot, ordonnées selon la zone
+// (Afrique / diaspora) via la détection de pays déjà utilisée pour les
 // devises — même liste partout, seule la priorité d'affichage change.
+// Le bouton "Tout voir" déplie une grille: le défilement horizontal seul ne
+// laissait pas deviner qu'il restait des catégories à droite.
 export function CategoryStrip() {
   const { t } = useTranslation();
   const { country } = useSettings();
+  const [expanded, setExpanded] = useState(false);
+
+  // Libellé court pour la tuile (fallback sur le nom complet).
+  const label = (id) => t(`categoriesShort.${id}`, { defaultValue: t(`categories.${id}`) });
 
   const order = featuredCategoryOrder(country);
   const sorted = [...CATEGORIES].sort((a, b) => {
@@ -35,36 +75,32 @@ export function CategoryStrip() {
   });
 
   return (
-    <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
-      {sorted.map((c) => (
-        <Link
-          key={c.id}
-          to={`/category/${c.id}`}
-          className="flex w-20 shrink-0 flex-col items-center transition-transform duration-150 active:scale-95"
-          aria-label={t(`categories.${c.id}`)}
+    <div>
+      <div className="flex items-center justify-between px-4 pb-1">
+        <h2 className="text-section text-ink">{t('categories.title')}</h2>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-0.5 text-caption font-semibold text-teal"
+          aria-expanded={expanded}
         >
-          <div className="h-20 w-20 overflow-hidden rounded-card border border-hairline">
-            {c.banner ? (
-              <img
-                src={c.banner}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div
-                aria-hidden="true"
-                className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradientFor(c.id)} text-title font-semibold text-white`}
-              >
-                {t(`categories.${c.id}`).charAt(0)}
-              </div>
-            )}
-          </div>
-          <span className="mt-1 line-clamp-1 text-caption text-ink">{t(`categories.${c.id}`)}</span>
-        </Link>
-      ))}
+          {expanded ? t('common.seeLess') : t('common.seeAll')}
+          {expanded ? <IconChevronUp size={15} /> : <IconChevronDown size={15} />}
+        </button>
+      </div>
+
+      {expanded ? (
+        <div className="grid grid-cols-4 justify-items-center gap-y-3 px-4 pb-1 sm:grid-cols-6 lg:grid-cols-8">
+          {sorted.map((c) => (
+            <CategoryTile key={c.id} id={c.id} banner={c.banner} label={label(c.id)} />
+          ))}
+        </div>
+      ) : (
+        <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
+          {sorted.map((c) => (
+            <CategoryTile key={c.id} id={c.id} banner={c.banner} label={label(c.id)} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation, IconList, IconMap2, IconTool } from '@tabler/icons-react';
+import { IconPlus, IconBuildingStore, IconMapPinOff, IconStarFilled, IconCurrentLocation, IconList, IconMap2, IconTool, IconSearch, IconX } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,6 +24,30 @@ import { isServiceCategory, SERVICE_CATEGORIES, categoryQueryIds } from '../../l
 // Leaflet is heavy — only pull it in when the user opens the map view.
 const NearYouMap = lazy(() => import('../../components/NearYouMap'));
 
+// Un pictogramme par métier rend la liste lisible d'un coup d'œil (le
+// prototype le faisait). Purement décoratif: un métier sans emoji s'affiche
+// simplement sans, jamais de case vide.
+const TRADE_EMOJI = {
+  beaute_domicile: '💇',
+  menage: '🧹',
+  btp_bricolage: '🧱',
+  informatique_digital: '💻',
+  electricite_plomberie: '⚡',
+  livraison_demenagement: '🚚',
+  traiteur_chef: '🍳',
+  location_immobiliere: '🏠',
+  location_vehicules: '🚗',
+  cours: '📚',
+  evenementiel_service: '🎉',
+  autre_service: '🛠️',
+};
+
+// Accents/casse ignorés pour la recherche de métier ("electricite" trouve
+// "Électricité"): sinon taper sans accent ne renvoie rien.
+function normalize(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
 export default function NearYou() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -36,6 +60,7 @@ export default function NearYou() {
   // Annuaire des métiers: filtre par catégorie de service (têtes du pivot,
   // enfants hérités inclus via categoryQueryIds). null = tout.
   const [serviceCat, setServiceCat] = useState(null);
+  const [tradeQuery, setTradeQuery] = useState('');
   const [view, setView] = useState('list'); // 'list' | 'map'
   const [publishOpen, setPublishOpen] = useState(false);
   const [radius, setRadius] = useState('country');
@@ -114,6 +139,11 @@ export default function NearYou() {
     return kindFilter === 'service' ? isServiceCategory(l.category) : !isServiceCategory(l.category);
   });
 
+  // Métiers affichés = ceux qui correspondent à la recherche.
+  const visibleTrades = SERVICE_CATEGORIES.filter(
+    (c) => !tradeQuery.trim() || normalize(t(`categories.${c.id}`)).includes(normalize(tradeQuery))
+  );
+
   // Annuaire des métiers: tape sur un métier -> onglet annonces, filtré
   // service + catégorie. Re-taper la catégorie active la désélectionne.
   function pickTrade(id) {
@@ -130,43 +160,86 @@ export default function NearYou() {
     <div className="pb-20">
       <AppHeader title={t('nav.services')} />
 
-      {/* Annuaire des métiers (pivot): les catégories de services en accès
-          direct, au-dessus de la carte/liste géolocalisée existante. */}
-      <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-3">
-        {SERVICE_CATEGORIES.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => pickTrade(c.id)}
-            className={`chip shrink-0 ${serviceCat === c.id ? 'chip-active' : 'text-ink'}`}
-          >
-            {t(`categories.${c.id}`)}
-          </button>
-        ))}
-      </div>
+      {/* Bloc de filtres unifié (repris de la structure du prototype): tout ce
+          qui filtre vit DANS un même encadré, au lieu d'être éparpillé sur
+          trois rangées où "Élargir la recherche" débordait de l'écran. */}
+      <div className="mx-4 mt-3 space-y-3 rounded-card border border-hairline bg-[#FAF6F0] p-3">
+        {/* Recherche par métier — c'est ce qui manquait: avec 12 métiers, les
+            faire défiler à l'aveugle n'est pas utilisable. */}
+        <div className="relative">
+          <IconSearch size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={tradeQuery}
+            onChange={(e) => setTradeQuery(e.target.value)}
+            placeholder={t('nearYou.searchTrade')}
+            className="input h-10 w-full pl-9 pr-9 text-[16px]"
+            aria-label={t('nearYou.searchTrade')}
+          />
+          {tradeQuery && (
+            <button
+              onClick={() => setTradeQuery('')}
+              aria-label={t('common.close')}
+              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted"
+            >
+              <IconX size={15} />
+            </button>
+          )}
+        </div>
 
-      <div className="flex items-center gap-2 px-4 pt-3">
-        <button
-          onClick={locateMe}
-          className={`chip shrink-0 ${userPos ? 'chip-active' : 'border-teal text-teal'}`}
-          aria-pressed={!!userPos}
-        >
-          <IconCurrentLocation size={14} className={locating ? 'animate-spin' : ''} />
-          {t('nearYou.aroundMe')}
-        </button>
-        <select
-          value={country || ''}
-          onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
-          disabled={!!userPos}
-          className="input h-9 w-auto flex-1 py-1 text-caption disabled:opacity-50"
-          aria-label={t('nearYou.overrideLocation')}
-        >
-          {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
-        </select>
-        {tab === 'shops' && !userPos && (
-          <button onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))} className="chip text-teal">
-            {radius === 'country' ? t('nearYou.broaden') : countryLabel(country, i18n.language)}
+        {/* Métiers: une seule ligne qui défile, libellés JAMAIS coupés
+            (whitespace-nowrap + shrink-0) — c'était le "BTP, Architecture &
+            Bri…" tronqué en plein milieu. */}
+        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+          <button
+            onClick={() => setServiceCat(null)}
+            className={`chip shrink-0 whitespace-nowrap ${!serviceCat ? 'chip-active' : 'bg-white text-ink'}`}
+          >
+            {t('nearYou.allTrades')}
           </button>
-        )}
+          {visibleTrades.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => pickTrade(c.id)}
+              className={`chip shrink-0 whitespace-nowrap ${serviceCat === c.id ? 'chip-active' : 'bg-white text-ink'}`}
+            >
+              {TRADE_EMOJI[c.id] ? `${TRADE_EMOJI[c.id]} ` : ''}{t(`categories.${c.id}`)}
+            </button>
+          ))}
+          {visibleTrades.length === 0 && (
+            <span className="py-1.5 text-caption text-muted">{t('nearYou.noTradeMatch')}</span>
+          )}
+        </div>
+
+        {/* Zone: "Autour de moi" + pays + élargir, sur une grille qui ne
+            déborde jamais (le bouton élargir passe à la ligne au lieu de
+            sortir de l'écran). */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={locateMe}
+            className={`chip shrink-0 whitespace-nowrap ${userPos ? 'chip-active' : 'border-teal bg-white text-teal'}`}
+            aria-pressed={!!userPos}
+          >
+            <IconCurrentLocation size={14} className={locating ? 'animate-spin' : ''} />
+            {t('nearYou.aroundMe')}
+          </button>
+          <select
+            value={country || ''}
+            onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
+            disabled={!!userPos}
+            className="input h-9 min-w-0 flex-1 py-1 text-caption disabled:opacity-50"
+            aria-label={t('nearYou.overrideLocation')}
+          >
+            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
+          </select>
+          {tab === 'shops' && !userPos && (
+            <button
+              onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))}
+              className="chip shrink-0 whitespace-nowrap bg-white text-teal"
+            >
+              {radius === 'country' ? t('nearYou.broaden') : countryLabel(country, i18n.language)}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 flex border-b border-hairline">
