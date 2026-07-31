@@ -1,10 +1,35 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import {
+  IconChevronDown, IconChevronUp,
+  IconShirt, IconHanger, IconBabyCarriage, IconDeviceMobile, IconSparkles,
+  IconDiamond, IconHome2, IconConfetti, IconToolsKitchen2, IconGlassFull,
+  IconRefresh, IconCar, IconBuildingSkyscraper, IconArchive,
+} from '@tabler/icons-react';
 import { CATEGORIES } from '../lib/categories';
 import { featuredCategoryOrder } from '../lib/region';
 import { useSettings } from '../hooks/useSettings';
+
+// Une icône par catégorie sans photo. Une simple initiale ("S", "V", "I")
+// ne dit rien de la catégorie et donnait un accueil qui faisait pauvre
+// (signalé par Beau) — une icône se lit d'un coup d'œil.
+const CATEGORY_ICON = {
+  mode_femme: IconHanger,
+  mode_homme: IconShirt,
+  enfants_bebe: IconBabyCarriage,
+  hightech: IconDeviceMobile,
+  beaute_cosmetiques: IconSparkles,
+  bijoux_montres: IconDiamond,
+  maison_deco: IconHome2,
+  evenementiel_mariages: IconConfetti,
+  alimentaire: IconToolsKitchen2,
+  jus_naturels: IconGlassFull,
+  seconde_main: IconRefresh,
+  vehicules: IconCar,
+  immobilier_vente: IconBuildingSkyscraper,
+  mode_a_trier: IconArchive,
+};
 
 // Dégradés stables par id (même recette que ShopAvatar): une nouvelle
 // catégorie sans photo affiche une tuile colorée avec son initiale plutôt
@@ -23,6 +48,7 @@ function gradientFor(id) {
 }
 
 function CategoryTile({ id, banner, label }) {
+  const Icon = CATEGORY_ICON[id];
   return (
     <Link
       to={`/category/${id}`}
@@ -41,9 +67,9 @@ function CategoryTile({ id, banner, label }) {
         ) : (
           <div
             aria-hidden="true"
-            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradientFor(id)} text-title font-semibold text-white`}
+            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradientFor(id)} text-white`}
           >
-            {label.charAt(0)}
+            {Icon ? <Icon size={30} stroke={1.6} /> : <span className="text-title font-semibold">{label.charAt(0)}</span>}
           </div>
         )}
       </div>

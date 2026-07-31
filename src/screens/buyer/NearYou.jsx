@@ -188,31 +188,45 @@ export default function NearYou() {
 
         {/* Métiers: une seule ligne qui défile, libellés JAMAIS coupés
             (whitespace-nowrap + shrink-0) — c'était le "BTP, Architecture &
-            Bri…" tronqué en plein milieu. */}
-        <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
-          <button
-            onClick={() => setServiceCat(null)}
-            className={`chip shrink-0 whitespace-nowrap ${!serviceCat ? 'chip-active' : 'bg-white text-ink'}`}
-          >
-            {t('nearYou.allTrades')}
-          </button>
-          {visibleTrades.map((c) => (
+            Bri…" tronqué en plein milieu. Un fondu à droite signale qu'il
+            reste des métiers à faire défiler, au lieu de donner
+            l'impression que la dernière pastille est cassée. */}
+        <div className="relative">
+          <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
             <button
-              key={c.id}
-              onClick={() => pickTrade(c.id)}
-              className={`chip shrink-0 whitespace-nowrap ${serviceCat === c.id ? 'chip-active' : 'bg-white text-ink'}`}
+              onClick={() => setServiceCat(null)}
+              className={`chip shrink-0 whitespace-nowrap ${!serviceCat ? 'chip-active' : 'bg-white text-ink'}`}
             >
-              {TRADE_EMOJI[c.id] ? `${TRADE_EMOJI[c.id]} ` : ''}{t(`categories.${c.id}`)}
+              {t('nearYou.allTrades')}
             </button>
-          ))}
-          {visibleTrades.length === 0 && (
-            <span className="py-1.5 text-caption text-muted">{t('nearYou.noTradeMatch')}</span>
-          )}
+            {visibleTrades.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => pickTrade(c.id)}
+                className={`chip shrink-0 whitespace-nowrap ${serviceCat === c.id ? 'chip-active' : 'bg-white text-ink'}`}
+              >
+                {TRADE_EMOJI[c.id] ? `${TRADE_EMOJI[c.id]} ` : ''}{t(`categories.${c.id}`)}
+              </button>
+            ))}
+            {visibleTrades.length === 0 && (
+              <span className="py-1.5 text-caption text-muted">{t('nearYou.noTradeMatch')}</span>
+            )}
+          </div>
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#FAF6F0] to-transparent" />
         </div>
 
-        {/* Zone: "Autour de moi" + pays + élargir, sur une grille qui ne
-            déborde jamais (le bouton élargir passe à la ligne au lieu de
-            sortir de l'écran). */}
+        {/* Zone. Le sélecteur de pays occupe SA PROPRE ligne: coincé entre
+            "Autour de moi" et "Élargir la recherche", il était écrasé à un
+            seul caractère ("F ⌄" au lieu de "France") — illisible. */}
+        <select
+          value={country || ''}
+          onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
+          disabled={!!userPos}
+          className="input h-10 w-full text-[16px] disabled:opacity-50"
+          aria-label={t('nearYou.overrideLocation')}
+        >
+          {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
+        </select>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={locateMe}
@@ -222,15 +236,6 @@ export default function NearYou() {
             <IconCurrentLocation size={14} className={locating ? 'animate-spin' : ''} />
             {t('nearYou.aroundMe')}
           </button>
-          <select
-            value={country || ''}
-            onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
-            disabled={!!userPos}
-            className="input h-9 min-w-0 flex-1 py-1 text-caption disabled:opacity-50"
-            aria-label={t('nearYou.overrideLocation')}
-          >
-            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
-          </select>
           {tab === 'shops' && !userPos && (
             <button
               onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))}

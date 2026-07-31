@@ -56,16 +56,16 @@ export function HomeHeroCarousel({ products }) {
   const [index, setIndex] = useState(0);
   const dragX = useRef(null);
   const dragged = useRef(false);
-  // Every slide is mounted at once (position:absolute, inset-0, opacity
-  // crossfade) so the transition animates smoothly — but that also means
-  // native `loading="lazy"` does nothing here: all 8 <img> geometrically
-  // overlap the viewport regardless of which one is opaque, so the browser
-  // doesn't defer any of them. Without this, a cold Home load downloaded all
-  // 8 hero images (up to ~570KB) immediately even though 7 were invisible.
-  // `warm` tracks which slide indices have actually had their `src` set —
-  // only the current slide + its immediate neighbors (for an instant swipe
-  // preview) — and only grows as the user/auto-advance actually reaches a
-  // slide, so the rest never get requested unless reached.
+  // Les diapositives DÉFILENT (translateX) au lieu de se fondre l'une dans
+  // l'autre. Le fondu croisé superposait les deux titres pendant les 700 ms
+  // de transition — on lisait "Kit de pinceaux" par-dessus "…de fleurs…",
+  // illisible sur un vrai téléphone (signalé par Beau, capture à l'appui).
+  // Un défilement ne peut pas produire ça: une seule diapo occupe le cadre.
+  //
+  // `loading="lazy"` ne servirait à rien ici (toutes les diapos sont montées
+  // côte à côte), donc on garde le préchargement manuel: seule la diapo
+  // courante et ses voisines immédiates reçoivent un `src`. Sans ça, un
+  // chargement à froid téléchargeait les 8 images (~570 Ko) d'un coup.
   const [warm, setWarm] = useState(() => new Set([0, 1, SLIDE_COUNT - 1]));
 
   const productSlides = useMemo(() => {
@@ -124,48 +124,56 @@ export function HomeHeroCarousel({ products }) {
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      {slides.map((s, i) => {
-        const key = isProducts ? s.id : s.cat;
-        const href = isProducts ? `/product/${s.id}` : `/category/${s.cat}`;
-        // undefined (not null) so React omits the src attribute entirely for
-        // a not-yet-warm slide — the browser never issues a request for it.
-        const image = warm.has(i)
-          ? (isProducts ? (s.images?.[0] ? storageUrl('products', s.images[0]) : null) : s.image)
-          : undefined;
-        return (
-          <Link
-            key={key}
-            to={href}
-            onClick={(e) => { if (dragged.current) e.preventDefault(); }}
-            className={`absolute inset-0 flex h-full w-full flex-col items-start justify-end p-4 text-left transition-opacity duration-700 ${i === index ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-          >
-            {image && (
-              <>
-                {/* Blurred same-image backdrop fills the frame; the real photo
-                    on top is never cropped, so a face can never get cut off
-                    no matter how the source photo was originally framed. */}
-                <img src={image} alt="" draggable="false" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
-                <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-contain" />
-              </>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
-            {isProducts ? (
-              <>
-                <span className="relative mb-1 inline-flex w-fit items-center rounded-pill bg-brass px-2 py-0.5 text-[11px] font-bold uppercase text-white">
-                  {t('home.topPick')}
-                </span>
-                <p className="relative line-clamp-1 text-title font-semibold text-white">{s.name}</p>
-                <Price fcfa={s.price_fcfa} className="relative text-body font-semibold text-white" />
-              </>
-            ) : (
-              <>
-                <p className="relative text-title font-semibold text-white">{t(`categories.${s.cat}`)}</p>
-                <p className="relative text-caption text-white/80">{t('home.heroCta')}</p>
-              </>
-            )}
-          </Link>
-        );
-      })}
+      {/* Rail horizontal: une seule diapo est dans le cadre à tout instant. */}
+      <div
+        className="flex h-full w-full transition-transform duration-500 ease-out"
+        style={{ transform: `translateX(-${index * 100}%)` }}
+      >
+        {slides.map((s, i) => {
+          const key = isProducts ? s.id : s.cat;
+          const href = isProducts ? `/product/${s.id}` : `/category/${s.cat}`;
+          // undefined (not null) so React omits the src attribute entirely for
+          // a not-yet-warm slide — the browser never issues a request for it.
+          const image = warm.has(i)
+            ? (isProducts ? (s.images?.[0] ? storageUrl('products', s.images[0]) : null) : s.image)
+            : undefined;
+          return (
+            <Link
+              key={key}
+              to={href}
+              onClick={(e) => { if (dragged.current) e.preventDefault(); }}
+              tabIndex={i === index ? 0 : -1}
+              aria-hidden={i !== index}
+              className="relative flex h-full w-full shrink-0 flex-col items-start justify-end p-4 text-left"
+            >
+              {image && (
+                <>
+                  {/* Blurred same-image backdrop fills the frame; the real photo
+                      on top is never cropped, so a face can never get cut off
+                      no matter how the source photo was originally framed. */}
+                  <img src={image} alt="" draggable="false" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
+                  <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-contain" />
+                </>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
+              {isProducts ? (
+                <>
+                  <span className="relative mb-1 inline-flex w-fit items-center rounded-pill bg-brass px-2 py-0.5 text-[11px] font-bold uppercase text-white">
+                    {t('home.topPick')}
+                  </span>
+                  <p className="relative line-clamp-1 text-title font-semibold text-white">{s.name}</p>
+                  <Price fcfa={s.price_fcfa} className="relative text-body font-semibold text-white" />
+                </>
+              ) : (
+                <>
+                  <p className="relative text-title font-semibold text-white">{t(`categories.${s.cat}`)}</p>
+                  <p className="relative text-caption text-white/80">{t('home.heroCta')}</p>
+                </>
+              )}
+            </Link>
+          );
+        })}
+      </div>
       <div className="absolute bottom-2 right-3 flex gap-1.5">
         {slides.map((s, i) => (
           <button
