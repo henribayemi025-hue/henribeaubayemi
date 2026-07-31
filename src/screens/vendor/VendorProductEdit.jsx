@@ -11,11 +11,11 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
-import { CATEGORIES, attributeFieldsFor } from '../../lib/categories';
+import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadFor } from '../../lib/categories';
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', description: '', category: 'mode_femme', stock: '1', images: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 export default function VendorProductEdit() {
@@ -242,13 +242,43 @@ export default function VendorProductEdit() {
         <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
           {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
         </Field>
-        <Field label={t('vendor.productCategory')}>
-          {(fid) => (
-            <Select id={fid} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
-            </Select>
-          )}
-        </Field>
+        {/* Sélecteur en cascade (façon Amazon): rayon puis sous-catégorie
+            précise quand elle existe (Mode Femme > Robes...). form.category
+            stocke toujours l'id final (la sous-catégorie si choisie, sinon
+            le rayon) — c'est cette valeur qui part en base, inchangée pour
+            le reste de l'app. */}
+        {(() => {
+          const head = categoryHeadFor(form.category);
+          const subcats = SELECTABLE_SUBCATEGORIES[head];
+          return (
+            <>
+              <Field label={t('vendor.productCategory')}>
+                {(fid) => (
+                  <Select
+                    id={fid}
+                    value={head}
+                    onChange={(e) => {
+                      const newHead = e.target.value;
+                      const newSubcats = SELECTABLE_SUBCATEGORIES[newHead];
+                      setForm({ ...form, category: newSubcats ? newSubcats[0] : newHead, attributes: {} });
+                    }}
+                  >
+                    {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
+                  </Select>
+                )}
+              </Field>
+              {subcats && (
+                <Field label={t('vendor.productSubcategory')}>
+                  {(fid) => (
+                    <Select id={fid} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                      {subcats.map((id) => <option key={id} value={id}>{t(`categories.${id}`)}</option>)}
+                    </Select>
+                  )}
+                </Field>
+              )}
+            </>
+          );
+        })()}
         {/* Champs spécifiques à la catégorie (pivot): une annonce immobilière
             demande une surface, un véhicule une année/kilométrage… La config
             vit dans ATTRIBUTE_FIELDS (lib/categories.js). */}

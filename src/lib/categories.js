@@ -1,10 +1,17 @@
 // Arborescence de catégories du PIVOT (marketplace généraliste produits +
-// services) — miroir client de la table `categories` (migrations 0022/0023).
-// `id` reste la clé stable utilisée en base, dans les URL (/category/<id>) et
-// en i18n. Les 25 anciennes catégories GARDENT leur id et vivent désormais en
-// ENFANTS des nouvelles têtes (voir CATEGORY_CHILDREN): un produit "beaute"
-// existant apparaît dans "Beauté & Cosmétiques" sans qu'aucune donnée n'ait
-// bougé, et les anciens liens profonds restent valides.
+// services) — miroir client de la table `categories` (migrations 0022/0023/
+// 0024). `id` reste la clé stable utilisée en base, dans les URL
+// (/category/<id>) et en i18n. Les 25 anciennes catégories GARDENT leur id et
+// vivent désormais en ENFANTS des nouvelles têtes (voir CATEGORY_CHILDREN):
+// un produit "beaute" existant apparaît dans "Beauté & Cosmétiques" sans
+// qu'aucune donnée n'ait bougé, et les anciens liens profonds restent valides.
+//
+// GENRE (0024): mode/chaussures/sacs/maroquinerie/accessoires n'ont jamais
+// été taggées par genre en base — les ranger sous Mode Femme par défaut (fait
+// dans 0023) affirmait un genre inconnu. Elles vivent maintenant sous "Mode
+// (à trier)", une tête neutre et VISIBLE (pas cachée). Mode Femme/Homme/
+// Enfants & Bébé ont chacune de vraies sous-catégories (Robes, Chemises,
+// Vêtements bébé…) — c'est ce que choisissent les NOUVELLES fiches.
 //
 // Bannières: photos statiques 480x480 WebP (src/assets/categories). Les
 // nouvelles catégories n'ont pas encore de photo — CategoryStrip affiche
@@ -42,6 +49,9 @@ export const CATEGORIES = [
   { id: 'seconde_main', banner: null },
   { id: 'vehicules', banner: null },
   { id: 'immobilier_vente', banner: null },
+  // Tête transitoire (0024): anciens articles jamais taggés par genre.
+  // Visible, cherchable — pas une corbeille cachée.
+  { id: 'mode_a_trier', banner: mode },
 ];
 
 // Anciennes catégories (bannières conservées pour les liens profonds
@@ -74,9 +84,25 @@ export function categoryBanner(id) {
 
 // Miroir du parent/enfant en base. Une page catégorie interroge la tête ET
 // ses enfants (voir lib/categoryCache.js) — c'est ce qui garantit que le
-// pivot ne fait disparaître aucun produit existant.
+// pivot ne fait disparaître aucun produit existant. Sert aussi de source aux
+// sous-catégories proposées à la création d'une fiche (VendorProductEdit).
 export const CATEGORY_CHILDREN = {
-  mode_femme: ['mode', 'chaussures', 'sacs', 'maroquinerie', 'accessoires'],
+  mode_femme: [
+    'femme_robes', 'femme_hauts', 'femme_pantalons', 'femme_jupes',
+    'femme_vestes_manteaux', 'femme_lingerie', 'femme_chaussures',
+    'femme_sacs', 'femme_maroquinerie', 'femme_accessoires',
+  ],
+  mode_homme: [
+    'homme_chemises', 'homme_tshirts_polos', 'homme_pantalons',
+    'homme_vestes_costumes', 'homme_chaussures', 'homme_accessoires',
+  ],
+  enfants_bebe: [
+    'enfant_bebe', 'enfant_fille', 'enfant_garcon',
+    'enfant_chaussures', 'enfant_jouets', 'enfant_puericulture',
+  ],
+  // Anciens articles non genrés (0024) — head transitoire, pas une gamme
+  // Femme/Homme comme les autres.
+  mode_a_trier: ['mode', 'chaussures', 'sacs', 'maroquinerie', 'accessoires'],
   bijoux_montres: ['bijoux', 'montres'],
   beaute_cosmetiques: ['parfums', 'beaute', 'cheveux'],
   maison_deco: ['deco', 'art'],
@@ -87,9 +113,29 @@ export const CATEGORY_CHILDREN = {
   beaute_domicile: ['ongles'],
 };
 
+// Sous-catégories PROPOSÉES à la création d'une fiche (choix explicite du
+// vendeur, cascading select) — un sous-ensemble de CATEGORY_CHILDREN: on
+// exclut mode_a_trier (transitoire, jamais un choix pour du neuf) et les
+// entrées qui ne sont que des alias hérités (bijoux_montres, beaute_cosmetiques…
+// où l'ancien id EST déjà la bonne catégorie, pas besoin d'un niveau de plus).
+export const SELECTABLE_SUBCATEGORIES = {
+  mode_femme: CATEGORY_CHILDREN.mode_femme,
+  mode_homme: CATEGORY_CHILDREN.mode_homme,
+  enfants_bebe: CATEGORY_CHILDREN.enfants_bebe,
+  vehicules: CATEGORY_CHILDREN.vehicules,
+};
+
 // Tous les id à interroger pour une page catégorie: la tête + ses enfants.
 export function categoryQueryIds(id) {
   return [id, ...(CATEGORY_CHILDREN[id] ?? [])];
+}
+
+// Tête d'une sous-catégorie (ex: 'femme_robes' -> 'mode_femme'). Renvoie l'id
+// lui-même s'il est déjà une tête (ou inconnu) — sert au sélecteur en cascade
+// de la fiche article (VendorProductEdit) pour préremplir le bon niveau 1.
+export function categoryHeadFor(id) {
+  const parent = Object.keys(CATEGORY_CHILDREN).find((p) => CATEGORY_CHILDREN[p].includes(id));
+  return parent ?? id;
 }
 
 // Catégories SERVICE (annuaire de l'onglet Services + annonces near_you).
