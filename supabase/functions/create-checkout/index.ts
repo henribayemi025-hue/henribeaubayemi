@@ -10,7 +10,6 @@ import Stripe from 'npm:stripe@17';
 // futur "staging.finjaro.net"), previews Cloudflare Pages (*.pages.dev),
 // ancien Netlify, dev local.
 const PROD_HOST = 'finjaro.net';
-const NETLIFY_HOST = 'finjaro.netlify.app';
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -22,7 +21,6 @@ function isAllowedOrigin(origin: string | null): boolean {
   }
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
-  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
   return false;
 }
@@ -89,7 +87,7 @@ Deno.serve(async (req: Request) => {
     });
 
     const amount = Math.max(50, Math.round(order.total_fcfa * FCFA_TO_EUR * 100)); // cents, min 0.50€
-    const origin = req.headers.get('origin') || 'https://finjaro.netlify.app';
+    const origin = req.headers.get('origin') || `https://${PROD_HOST}`;
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

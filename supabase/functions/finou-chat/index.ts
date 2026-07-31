@@ -73,7 +73,6 @@ async function ensureCategories(sb: SupabaseClient) {
 // Voir miroir-ia: on teste le HÔTE, pas une liste figée d'URL. Le domaine de
 // production est finjaro.net, pas le sous-domaine Netlify.
 const PROD_HOST = 'finjaro.net';
-const NETLIFY_HOST = 'finjaro.netlify.app';
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -85,7 +84,6 @@ function isAllowedOrigin(origin: string | null): boolean {
   }
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
-  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
   return false;
 }

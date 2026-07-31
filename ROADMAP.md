@@ -73,7 +73,7 @@
 - **Delivery:** options **by country** — Cameroun = shop pickup + a short
   warning; Europe = delivery/shipping (Leboncoin-style). (todo — Lot 2)
 - **Notifications:** make push **real** — generate VAPID keys, set `VAPID_KEYS`
-  (Supabase secret) + `VITE_VAPID_PUBLIC_KEY` (Netlify). On iPhone the user must
+  (Supabase secret) + `VITE_VAPID_PUBLIC_KEY` (Cloudflare). On iPhone the user must
   "Add to Home Screen" first (Apple limitation). (todo — Lot 2)
 
 ## Done — Cycle 5

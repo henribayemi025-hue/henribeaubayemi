@@ -26,12 +26,13 @@ const MAX_SELFIE_B64 = 8_000_000;   // ~6 Mo binaire
 const MAX_PRODUCT_IMG_BYTES = 5_000_000;
 
 // Origines autorisées. On teste le HÔTE, pas une liste figée d'URL: le
-// domaine de production est finjaro.net (et non le sous-domaine Netlify), et
-// une liste en dur avait déjà bloqué la fonction en production une fois.
-// Couvre donc: le domaine et ses sous-domaines, le site Netlify et ses
-// préversions de déploiement, et le dev local.
+// domaine de production est finjaro.net, et une liste d'URL figée avait déjà
+// bloqué la fonction en production une fois.
+// Couvre donc: le domaine et ses sous-domaines, les préversions Cloudflare
+// (*.pages.dev / *.workers.dev) et le dev local. Netlify a été retiré: le
+// site n'y est plus hébergé, garder son domaine autorisé élargissait la
+// surface CORS pour rien.
 const PROD_HOST = 'finjaro.net';
-const NETLIFY_HOST = 'finjaro.netlify.app';
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -43,8 +44,6 @@ function isAllowedOrigin(origin: string | null): boolean {
   }
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
-  // finjaro.netlify.app + préversions <hash>--finjaro.netlify.app
-  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
   return false;
 }

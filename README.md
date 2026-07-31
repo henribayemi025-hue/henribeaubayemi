@@ -16,7 +16,7 @@ multi-currency (**FCFA / EUR / USD / GBP**).
 - **react-i18next** — every string routes through i18n (`src/locales/{fr,en}`)
 - **@tabler/icons-react** — line icons
 - **Gemini 2.5 Flash** — the _Finou Chou_ assistant, via the `finou-chat` Edge Function
-- Deployed on **Netlify** (build `npm run build`, publish `dist`)
+- Deployed on **Cloudflare Workers** (static assets, `wrangler.toml`; build `npm run build`, upload `dist`)
 
 ## Project structure
 
@@ -38,7 +38,7 @@ supabase/
   functions/    finou-chat, send-push, finou-vision (stub)
 ```
 
-## Environment variables (set in Netlify)
+## Environment variables (set in Cloudflare)
 
 | Key | Scope | Purpose |
 | --- | --- | --- |

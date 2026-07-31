@@ -20,7 +20,6 @@ const COPILOT_CALL_COST_EUR = 0.0005;
 
 // Même règle que finou-chat/miroir-ia.
 const PROD_HOST = 'finjaro.net';
-const NETLIFY_HOST = 'finjaro.netlify.app';
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -32,7 +31,6 @@ function isAllowedOrigin(origin: string | null): boolean {
   }
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
-  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
   return false;
 }

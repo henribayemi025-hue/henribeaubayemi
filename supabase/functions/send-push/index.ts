@@ -28,7 +28,6 @@ import * as webpush from 'jsr:@negrel/webpush@0.3';
 // PROD_HOST par défaut, ce qui ne bloque pas l'appel lui-même (CORS ne
 // s'applique qu'aux requêtes navigateur).
 const PROD_HOST = 'finjaro.net';
-const NETLIFY_HOST = 'finjaro.netlify.app';
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -40,7 +39,6 @@ function isAllowedOrigin(origin: string | null): boolean {
   }
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
-  if (host === NETLIFY_HOST || host.endsWith(`--${NETLIFY_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
   return false;
 }
