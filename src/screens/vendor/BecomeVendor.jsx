@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconShieldLock, IconCircleCheck, IconChevronLeft, IconPackage, IconTool, IconPackages } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
@@ -53,7 +53,19 @@ export default function BecomeVendor() {
   // sont proposées. Changer de type vide la sélection: garder des rayons
   // produits sur une boutique passée en "services" est précisément ce qui
   // la rendait invisible dans l'annuaire.
-  const [kind, setKindState] = useState('products');
+  //
+  // Valeur initiale lue dans l'URL (?kind=services): un prestataire qui clique
+  // "Proposer mes services" depuis l'annuaire arrivait sur un écran intitulé
+  // "Devenir vendeur" pré-réglé sur "Produits" — il croyait s'être trompé de
+  // bouton. Il arrive maintenant sur le bon type déjà coché.
+  const [params] = useSearchParams();
+  const askedKind = params.get('kind');
+  const [kind, setKindState] = useState(
+    ['products', 'services', 'both'].includes(askedKind) ? askedKind : 'products'
+  );
+  // Le formulaire est le même (identité, KYC, contacts) — seuls les MOTS
+  // changent, pour qu'un plombier ne lise jamais "ma boutique".
+  const providerWording = kind === 'services';
   const setKind = (k) => {
     setKindState(k);
     set({ categories: [] });
@@ -129,7 +141,9 @@ export default function BecomeVendor() {
     <div>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-4">
         <button onClick={() => (step > 1 ? setStep(step - 1) : navigate(-1))} aria-label={t('common.back')} className="-ml-2 p-1"><IconChevronLeft size={24} /></button>
-        <h1 className="text-section text-ink">{t('becomeVendor.title')}</h1>
+        <h1 className="text-section text-ink">
+          {providerWording ? t('becomeVendor.titleProvider') : t('becomeVendor.title')}
+        </h1>
       </header>
 
       <div className="px-4 pt-4">
@@ -145,7 +159,7 @@ export default function BecomeVendor() {
         {step === 1 && (
           <>
             <h2 className="text-section text-ink">{t('becomeVendor.step1Title')}</h2>
-            <Field label={t('becomeVendor.shopName')} required>{(id) => <TextInput id={id} value={form.shop_name} onChange={(e) => set({ shop_name: e.target.value })} />}</Field>
+            <Field label={providerWording ? t('becomeVendor.providerName') : t('becomeVendor.shopName')} required>{(id) => <TextInput id={id} value={form.shop_name} onChange={(e) => set({ shop_name: e.target.value })} />}</Field>
             <Field label={t('becomeVendor.country')} required>{(id) => <Select id={id} value={form.country} onChange={(e) => set({ country: e.target.value })}>{COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}</Select>}</Field>
             <Field label={t('becomeVendor.city')}>{(id) => <TextInput id={id} value={form.city} onChange={(e) => set({ city: e.target.value })} />}</Field>
             {/* Question posée AVANT les catégories: "est-ce que je vends des

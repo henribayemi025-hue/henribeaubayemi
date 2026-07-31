@@ -295,7 +295,16 @@
     "notFound": "Boutique introuvable",
     "followers": "abonnés",
     "products_count": "produits",
-    "rotationBadge": "Nouvel arrivage tous les {{count}} jours"
+    "rotationBadge": "Nouvel arrivage tous les {{count}} jours",
+    "provider": {
+      "badge": "Prestataire",
+      "products": "Prestations",
+      "emptyProducts": "Ce prestataire n'a pas encore détaillé ses prestations. Contacte-le directement pour un devis.",
+      "noReviews": "Pas encore d'avis sur ce prestataire.",
+      "noAbout": "Ce prestataire n'a pas encore ajouté de description.",
+      "contactPrompt": "Contacter le prestataire",
+      "waGreeting": "Bonjour {{name}}, je vous contacte depuis Finjaro pour une prestation."
+    }
   },
   "finou": {
     "title": "Finou Chou",
@@ -410,7 +419,7 @@
     "itemsCount_other": "{{count}} articles"
   },
   "nearYou": {
-    "shops": "Boutiques",
+    "shops": "Prestataires",
     "listings": "Annonces",
     "publishListing": "Publier une annonce",
     "distance": "{{km}} km",
@@ -461,7 +470,7 @@
     "myFavorites": "Mes favoris",
     "settings": "Paramètres",
     "help": "Aide",
-    "becomeVendor": "Devenir vendeur",
+    "becomeVendor": "Vendre ou proposer mes services",
     "vendorPending": "Vendeur en cours de validation",
     "switchToVendor": "Passer en mode vendeur",
     "logout": "Déconnexion",
@@ -733,7 +742,9 @@
     "activityKind": "Tu vends quoi ?",
     "kindProducts": "Des articles",
     "kindServices": "Des services",
-    "kindBoth": "Les deux"
+    "kindBoth": "Les deux",
+    "titleProvider": "Devenir prestataire",
+    "providerName": "Nom de ton activité"
   },
   "switchMode": {
     "welcomeVendor": "Bienvenue dans ton espace vendeur.",

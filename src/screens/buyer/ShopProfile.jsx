@@ -15,6 +15,7 @@ import { StarRating } from '../../components/StarRating';
 import { ProductCard } from '../../components/ProductCard';
 import { ReportModal } from '../../components/ReportModal';
 import { Skeleton, EmptyState, ErrorState } from '../../components/states';
+import { isServiceShop, isServiceCategory } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
@@ -143,6 +144,19 @@ export default function ShopProfile() {
   const banner = shop.banner_url ? storageUrl('shops', shop.banner_url) : null;
   const avatar = shop.avatar_url ? storageUrl('shops', shop.avatar_url) : null;
 
+  // Un plombier n'est pas une "boutique" qui "prépare sa collection". La page
+  // et les données sont les mêmes (profil, contacts, avis, abonnés) — seul le
+  // VOCABULAIRE s'adapte quand la fiche affiche au moins un métier de service.
+  // Repli automatique sur les libellés boutique si une variante manque.
+  const provider = isServiceShop(shop);
+  const sk = (key, opts) =>
+    provider
+      ? t(`shop.provider.${key}`, { ...opts, defaultValue: t(`shop.${key}`, opts) })
+      : t(`shop.${key}`, opts);
+  // Métier principal, affiché en clair sous le nom: dit d'un coup d'œil qu'on
+  // est sur un prestataire et lequel.
+  const mainTrade = (shop.categories ?? []).find(isServiceCategory);
+
   return (
     <div className="pb-6">
       <div className="relative">
@@ -161,14 +175,29 @@ export default function ShopProfile() {
       </div>
 
       <div className="relative z-10 px-4 lg:mx-auto lg:max-w-6xl">
-        <div className="-mt-10 flex items-end gap-3">
+        {/* L'avatar seul déborde sur le bandeau; le nom passe EN DESSOUS, sur
+            toute la largeur. Avant, nom et avatar partageaient la même ligne
+            remontée de 40 px: un nom long ("TidalEx - Data Solution and
+            Business Shop") repassait sur le bandeau, en texte sombre sur fond
+            sombre et à cheval sur le bord. Là, n'importe quelle longueur de
+            nom retombe proprement. */}
+        <div className="-mt-10">
           <ShopAvatar src={avatar} name={shop.name} seed={shop.id} className="h-20 w-20 border-2 border-white lg:h-24 lg:w-24" />
-          <div className="flex-1 pb-1">
-            <h1 className="flex items-center gap-1 text-title text-ink">
-              {shop.name}
+        </div>
+        <div className="mt-2">
+          <div>
+            <h1 className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 break-words text-title text-ink">
+              <span className="min-w-0">{shop.name}</span>
               {shop.is_verified && <VerifiedBadge size={18} />}
             </h1>
-            <p className="flex items-center gap-2 text-caption text-muted">
+            {/* Dit explicitement qu'on est chez un prestataire, et lequel. */}
+            {provider && (
+              <p className="mt-0.5 text-caption font-semibold text-teal">
+                {t('shop.provider.badge')}
+                {mainTrade ? ` · ${t(`categories.${mainTrade}`)}` : ''}
+              </p>
+            )}
+            <p className="mt-0.5 flex items-center gap-2 text-caption text-muted">
               <span className="flex items-center gap-0.5"><IconStarFilled size={13} className="text-brass" />{Number(shop.rating || 0).toFixed(1)}</span>
               <span>· {shop.followers_count} {t('shop.followers')}</span>
             </p>
@@ -184,25 +213,33 @@ export default function ShopProfile() {
           </div>
         </div>
 
-        <div className="mt-3 flex gap-2">
+        {/* Largeur bornée sur grand écran: sans ça, "S'abonner" s'étirait sur
+            près de 1000 px, ce qui fait bouton cassé plutôt que bouton
+            principal. Sur mobile, rien ne change (le conteneur fait déjà
+            moins que la borne). */}
+        <div className="mt-3 flex gap-2 sm:max-w-md">
           <Button variant={following ? 'secondary' : 'primary'} loading={busy} onClick={toggleFollow} className="flex-1">
             {following ? t('common.following') : t('common.follow')}
           </Button>
-          <button onClick={contact} className="flex h-12 items-center gap-1 rounded-[10px] border-[1.5px] border-teal px-4 text-teal" aria-label={t('shop.contactPrompt')}>
+          <button onClick={contact} className="flex h-12 items-center gap-1 rounded-[10px] border-[1.5px] border-teal px-4 text-teal" aria-label={sk('contactPrompt')}>
             <IconMessage size={20} />
           </button>
         </div>
 
         {/* Contact rapide (pivot services): chaque canal n'apparaît QUE si la
-            boutique a réellement renseigné la donnée — jamais de lien mort. */}
+            boutique a réellement renseigné la donnée — jamais de lien mort.
+            flex + flex-1 plutôt qu'une grille à 3 colonnes fixes: une fiche
+            qui n'a QUE WhatsApp affichait un bouton au tiers de la largeur,
+            perdu dans le vide. Là, 1 canal = pleine largeur, 2 = moitié,
+            3 = tiers. */}
         {(shop.whatsapp || shop.phone || shop.instagram) && (
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="mt-2 flex gap-2 sm:max-w-md">
             {shop.whatsapp && (
               <a
-                href={`https://wa.me/${shop.whatsapp.replace(/[^\d]/g, '')}?text=${encodeURIComponent(t('shop.waGreeting', { name: shop.name }))}`}
+                href={`https://wa.me/${shop.whatsapp.replace(/[^\d]/g, '')}?text=${encodeURIComponent(sk('waGreeting', { name: shop.name }))}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] bg-success-bg text-caption font-semibold text-success"
+                className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-success-bg text-caption font-semibold text-success"
               >
                 <IconBrandWhatsapp size={17} /> WhatsApp
               </a>
@@ -210,7 +247,7 @@ export default function ShopProfile() {
             {shop.phone && (
               <a
                 href={`tel:${shop.phone.replace(/[^+\d]/g, '')}`}
-                className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
+                className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
               >
                 <IconPhone size={17} /> {t('shop.call')}
               </a>
@@ -220,7 +257,7 @@ export default function ShopProfile() {
                 href={`https://instagram.com/${shop.instagram.replace(/^@/, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-10 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
+                className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
               >
                 <IconBrandInstagram size={17} /> Instagram
               </a>
@@ -235,7 +272,7 @@ export default function ShopProfile() {
               onClick={() => setTab(tb)}
               className={`flex-1 border-b-2 py-2 text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}
             >
-              {t(`shop.${tb}`)}
+              {sk(tb)}
             </button>
           ))}
         </div>
@@ -243,7 +280,7 @@ export default function ShopProfile() {
         <div className="mt-4">
           {tab === 'products' &&
             (data.products.length === 0 ? (
-              <EmptyState title={t('shop.emptyProducts')} />
+              <EmptyState title={sk('emptyProducts')} />
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {data.products.map((p) => (
@@ -254,7 +291,7 @@ export default function ShopProfile() {
 
           {tab === 'reviews' &&
             (data.reviews.length === 0 ? (
-              <p className="py-6 text-center text-caption text-muted">{t('shop.noReviews')}</p>
+              <p className="py-6 text-center text-caption text-muted">{sk('noReviews')}</p>
             ) : (
               <ul className="space-y-3">
                 {data.reviews.map((r) => (
@@ -271,7 +308,7 @@ export default function ShopProfile() {
 
           {tab === 'about' && (
             <div className="space-y-3">
-              {shop.bio ? <p className="whitespace-pre-wrap text-body text-ink">{shop.bio}</p> : <p className="text-caption text-muted">{t('shop.noAbout')}</p>}
+              {shop.bio ? <p className="whitespace-pre-wrap text-body text-ink">{shop.bio}</p> : <p className="text-caption text-muted">{sk('noAbout')}</p>}
               {(shop.city || shop.country) && (
                 <p className="text-caption text-muted">{t('shop.location')}: {[shop.city, shop.country].filter(Boolean).join(', ')}</p>
               )}

@@ -295,7 +295,16 @@
     "notFound": "Shop not found",
     "followers": "followers",
     "products_count": "products",
-    "rotationBadge": "New arrival every {{count}} days"
+    "rotationBadge": "New arrival every {{count}} days",
+    "provider": {
+      "badge": "Service provider",
+      "products": "Services",
+      "emptyProducts": "This provider hasn't listed their services yet. Contact them directly for a quote.",
+      "noReviews": "No reviews for this provider yet.",
+      "noAbout": "This provider hasn't added a description yet.",
+      "contactPrompt": "Contact the provider",
+      "waGreeting": "Hello {{name}}, I'm contacting you from Finjaro about a service."
+    }
   },
   "finou": {
     "title": "Finou Chou",
@@ -410,7 +419,7 @@
     "itemsCount_other": "{{count}} items"
   },
   "nearYou": {
-    "shops": "Shops",
+    "shops": "Providers",
     "listings": "Listings",
     "publishListing": "Post a listing",
     "distance": "{{km}} km",
@@ -461,7 +470,7 @@
     "myFavorites": "My favorites",
     "settings": "Settings",
     "help": "Help",
-    "becomeVendor": "Become a vendor",
+    "becomeVendor": "Sell or offer my services",
     "vendorPending": "Vendor under review",
     "switchToVendor": "Switch to seller mode",
     "logout": "Log out",
@@ -733,7 +742,9 @@
     "activityKind": "What do you offer?",
     "kindProducts": "Products",
     "kindServices": "Services",
-    "kindBoth": "Both"
+    "kindBoth": "Both",
+    "titleProvider": "Become a provider",
+    "providerName": "Your business name"
   },
   "switchMode": {
     "welcomeVendor": "Welcome to your seller space.",

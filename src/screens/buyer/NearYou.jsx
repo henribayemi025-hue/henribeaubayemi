@@ -345,7 +345,11 @@ export default function NearYou() {
                 {serviceCat && (
                   <Button variant="secondary" onClick={() => setServiceCat(null)}>{t('nearYou.allTrades')}</Button>
                 )}
-                <Button onClick={() => navigate('/become-vendor')}>{t('nearYou.becomeProvider')}</Button>
+                {/* ?kind=services: le formulaire s'ouvre déjà réglé sur
+                    "Services" et parle de prestataire, pas de boutique —
+                    sinon on atterrit sur "Devenir vendeur" et on croit
+                    s'être trompé de bouton. */}
+                <Button onClick={() => navigate('/become-vendor?kind=services')}>{t('nearYou.becomeProvider')}</Button>
               </div>
             }
           />
