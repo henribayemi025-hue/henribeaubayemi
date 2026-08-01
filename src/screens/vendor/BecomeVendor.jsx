@@ -14,6 +14,12 @@ import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
 import { getPosition } from '../../lib/geo';
 
+// Upload de la pièce d'identité (CNI) MASQUÉ à la demande de Beau (01/08):
+// exiger — ou même montrer — la CNI freine les inscriptions de boutiques.
+// Le code, le stockage (bucket `ids`) et la lecture OCR côté admin restent
+// intacts: repasser ce drapeau à `true` réaffiche l'étape telle quelle.
+const SHOW_ID_UPLOAD = false;
+
 const empty = {
   shop_name: '', country: 'CM', city: '', categories: [],
   first_name: '', last_name: '', id_front_url: null, id_back_url: null, phone: '',
@@ -222,13 +228,19 @@ export default function BecomeVendor() {
               <Field label={t('becomeVendor.firstName')}>{(id) => <TextInput id={id} value={form.first_name} onChange={(e) => set({ first_name: e.target.value })} />}</Field>
               <Field label={t('becomeVendor.lastName')}>{(id) => <TextInput id={id} value={form.last_name} onChange={(e) => set({ last_name: e.target.value })} />}</Field>
             </div>
-            <p className="text-caption text-muted">{t('becomeVendor.idOptional')}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <ImageUpload bucket="ids" value={form.id_front_url} onChange={(p) => set({ id_front_url: p })} label={t('becomeVendor.idFront')} shape="wide" />
-              <ImageUpload bucket="ids" value={form.id_back_url} onChange={(p) => set({ id_back_url: p })} label={t('becomeVendor.idBack')} shape="wide" />
-            </div>
+            {SHOW_ID_UPLOAD && (
+              <>
+                <p className="text-caption text-muted">{t('becomeVendor.idOptional')}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <ImageUpload bucket="ids" value={form.id_front_url} onChange={(p) => set({ id_front_url: p })} label={t('becomeVendor.idFront')} shape="wide" />
+                  <ImageUpload bucket="ids" value={form.id_back_url} onChange={(p) => set({ id_back_url: p })} label={t('becomeVendor.idBack')} shape="wide" />
+                </div>
+              </>
+            )}
             <Field label={t('becomeVendor.phone')}>{(id) => <TextInput id={id} type="tel" value={form.phone} onChange={(e) => set({ phone: e.target.value })} />}</Field>
-            <p className="flex items-start gap-2 rounded-card bg-success-bg p-3 text-caption text-success"><IconShieldLock size={18} className="mt-0.5 shrink-0" />{t('becomeVendor.dataReassurance')}</p>
+            {SHOW_ID_UPLOAD && (
+              <p className="flex items-start gap-2 rounded-card bg-success-bg p-3 text-caption text-success"><IconShieldLock size={18} className="mt-0.5 shrink-0" />{t('becomeVendor.dataReassurance')}</p>
+            )}
           </>
         )}
 
