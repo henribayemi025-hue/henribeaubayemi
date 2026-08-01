@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
-  IconLayoutDashboard, IconFlag, IconSpeakerphone,
+  IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -88,13 +88,13 @@ export default function AdminDashboard() {
           <Active />
         </Suspense>
       ) : (
-        <Overview />
+        <Overview goTo={(key) => setParams({ s: key })} />
       )}
     </div>
   );
 }
 
-function Overview() {
+function Overview({ goTo }) {
   const { t, i18n } = useTranslation();
 
   const { data, loading, error, retry } = useAsync(async () => {
@@ -146,20 +146,32 @@ function Overview() {
   return (
     <div className="space-y-6 p-4">
       {/* Ce qui attend une décision passe en tête: sans ça, un signalement
-          peut dormir des jours sans que personne ne le voie. */}
+          peut dormir des jours sans que personne ne le voie. Ce sont des
+          BOUTONS qui changent d'onglet, pas des liens vers une adresse — la
+          console n'a qu'une seule page. */}
       {(data.pendingReports > 0 || data.pendingApps > 0) && (
         <div className="space-y-2">
           {data.pendingReports > 0 && (
-            <a href="/admin?s=moderation" className="flex items-center gap-2 rounded-card border border-danger/30 bg-danger-bg p-3 text-body font-semibold text-danger">
+            <button
+              type="button"
+              onClick={() => goTo('moderation')}
+              className="flex w-full items-center gap-2 rounded-card border border-danger/30 bg-danger-bg p-3 text-left text-body font-semibold text-danger transition active:scale-[0.99]"
+            >
               <IconFlag size={18} className="shrink-0" />
-              {t('admin.pendingReportsBanner', { count: data.pendingReports })}
-            </a>
+              <span className="flex-1">{t('admin.pendingReportsBanner', { count: data.pendingReports })}</span>
+              <IconChevronRight size={18} className="shrink-0" />
+            </button>
           )}
           {data.pendingApps > 0 && (
-            <a href="/admin?s=content" className="flex items-center gap-2 rounded-card border border-brass/30 bg-brass/5 p-3 text-body font-semibold text-brass">
+            <button
+              type="button"
+              onClick={() => goTo('content')}
+              className="flex w-full items-center gap-2 rounded-card border border-brass/30 bg-brass/5 p-3 text-left text-body font-semibold text-brass transition active:scale-[0.99]"
+            >
               <IconUsers size={18} className="shrink-0" />
-              {t('admin.pendingAppsBanner', { count: data.pendingApps })}
-            </a>
+              <span className="flex-1">{t('admin.pendingAppsBanner', { count: data.pendingApps })}</span>
+              <IconChevronRight size={18} className="shrink-0" />
+            </button>
           )}
         </div>
       )}

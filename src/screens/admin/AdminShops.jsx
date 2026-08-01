@@ -35,7 +35,10 @@ export default function AdminShops() {
     const [shopsRes, statsRes] = await Promise.all([
       supabase
         .from('shops')
-        .select('id, slug, name, avatar_url, city, country, status, is_verified, followers_count, rating, reviews_count, created_at, owner_id, categories, phone, whatsapp, profiles:owner_id(name, phone, is_suspended)')
+        // Jointure sur la clé étrangère NOMMÉE: `shops.owner_id` en a deux
+        // (vers auth.users et vers profiles), et sans précision PostgREST
+        // refuse la relation comme ambiguë — même motif que NearYou.
+        .select('id, slug, name, avatar_url, city, country, status, is_verified, followers_count, rating, reviews_count, created_at, owner_id, categories, phone, whatsapp, profiles!shops_owner_profile_fk(name, phone, is_suspended)')
         .order('created_at', { ascending: false }),
       supabase.rpc('admin_shop_stats'),
     ]);

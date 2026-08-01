@@ -25,7 +25,7 @@ export default function AdminModeration() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: rows, error: err } = await supabase
       .from('reports')
-      .select('id, target_type, target_id, reason, status, created_at, resolved_at, reporter:reporter_id(name)')
+      .select('id, target_type, target_id, reason, status, created_at, resolved_at, reporter:profiles!reports_reporter_profile_fk(name)')
       .order('created_at', { ascending: false });
     if (err) throw err;
 

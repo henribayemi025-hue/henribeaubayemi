@@ -39,16 +39,25 @@ export default function AdminApp() {
         <SettingsProvider>
           <ToastProvider>
             <UIProvider>
-              <Suspense fallback={<Loading />}>
-                <Routes>
-                  <Route path="/auth" element={<Auth consoleMode />} />
-                  <Route path="/auth/reset" element={<ResetPassword />} />
-                  <Route path="/" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
-                  {/* Toute autre adresse ramène à la console: il n'y a rien
-                      d'autre à servir sur ce domaine. */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
+              {/* Le document lui-même ne défile JAMAIS (`overflow: hidden`
+                  sur html/body dans global.css — c'est ce qui empêche le
+                  clavier iOS de pousser toute l'app vers le haut). Chaque
+                  écran défile donc dans son propre cadre; la console avait
+                  été livrée sans, et ne défilait pas du tout. */}
+              <div className="flex flex-col overflow-hidden" style={{ height: 'var(--app-height, 100dvh)' }}>
+                <main className="flex-1 overflow-y-auto overscroll-contain">
+                  <Suspense fallback={<Loading />}>
+                    <Routes>
+                      <Route path="/auth" element={<Auth consoleMode />} />
+                      <Route path="/auth/reset" element={<ResetPassword />} />
+                      <Route path="/" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
+                      {/* Toute autre adresse ramène à la console: il n'y a
+                          rien d'autre à servir sur ce domaine. */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                </main>
+              </div>
             </UIProvider>
           </ToastProvider>
         </SettingsProvider>
