@@ -15,8 +15,69 @@ import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadF
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], sizes: [], colors: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
+
+// Tailles proposées en un clic selon le rayon: lettres pour les vêtements,
+// pointures pour les chaussures. La vendeuse peut toujours taper la sienne
+// (ex: « 38-40 », « Unique ») — les presets accélèrent, ils n'enferment pas.
+const LETTER_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'];
+const SHOE_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
+const SIZED_HEADS = ['mode_femme', 'mode_homme', 'mode_a_trier', 'enfants_bebe', 'sport_loisirs'];
+
+function sizePresetsFor(categoryId) {
+  if (String(categoryId).includes('chaussures')) return SHOE_SIZES;
+  if (SIZED_HEADS.includes(categoryHeadFor(categoryId))) return LETTER_SIZES;
+  return null;
+}
+
+// Éditeur de liste courte (tailles, couleurs): presets en un tap + saisie
+// libre. Les valeurs choisies restent visibles en chips actives, un tap
+// les retire — même geste que les catégories de la boutique.
+function TagPicker({ label, hint, values, presets, onChange, addLabel }) {
+  const [draft, setDraft] = useState('');
+  const list = values || [];
+
+  function toggle(v) {
+    onChange(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  }
+  function addDraft() {
+    const v = draft.trim();
+    if (!v) return;
+    if (!list.includes(v)) onChange([...list, v]);
+    setDraft('');
+  }
+
+  const extras = list.filter((v) => !(presets || []).includes(v));
+  return (
+    <div>
+      <span className="label">{label}</span>
+      <div className="flex flex-wrap gap-2">
+        {(presets || []).map((v) => (
+          <button key={v} type="button" onClick={() => toggle(v)} className={`chip ${list.includes(v) ? 'chip-active' : 'text-ink'}`}>
+            {v}
+          </button>
+        ))}
+        {extras.map((v) => (
+          <button key={v} type="button" onClick={() => toggle(v)} className="chip chip-active">
+            {v} ×
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <TextInput
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addDraft(); } }}
+          placeholder={addLabel}
+          className="flex-1"
+        />
+        <button type="button" onClick={addDraft} className="btn-ghost shrink-0 text-caption">{addLabel}</button>
+      </div>
+      {hint && <p className="mt-1 text-caption text-muted">{hint}</p>}
+    </div>
+  );
+}
 
 export default function VendorProductEdit() {
   const { id } = useParams();
@@ -131,6 +192,8 @@ export default function VendorProductEdit() {
           compare_at_price_fcfa: shownCompare == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(shownCompare) : Number(shownCompare.toFixed(2))),
           stock: String(data.stock ?? 0),
           images: data.images || [],
+          sizes: data.sizes || [],
+          colors: data.colors || [],
           attributes: data.attributes || {},
         });
       }
@@ -172,6 +235,8 @@ export default function VendorProductEdit() {
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
         images: form.images.filter(Boolean),
+        sizes: (form.sizes || []).filter(Boolean),
+        colors: (form.colors || []).filter(Boolean),
         is_permanent: !!form.is_permanent,
         // Seuls les champs de la catégorie choisie partent en base — changer
         // de catégorie ne laisse pas traîner la surface d'un ancien brouillon
@@ -403,6 +468,25 @@ export default function VendorProductEdit() {
         <Field label={t('vendor.productStock')}>
           {(fid) => <TextInput id={fid} type="number" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />}
         </Field>
+        {/* Tailles/couleurs — c'était LE manque signalé par Beau: pas de XL/
+            XXL sur les robes. L'acheteuse devra choisir sa taille avant
+            l'ajout au panier, et la commande arrive avec la variante. */}
+        <TagPicker
+          label={t('vendor.productSizes')}
+          hint={t('vendor.productSizesHint')}
+          values={form.sizes}
+          presets={sizePresetsFor(form.category)}
+          onChange={(sizes) => setForm({ ...form, sizes })}
+          addLabel={t('vendor.addSize')}
+        />
+        <TagPicker
+          label={t('vendor.productColors')}
+          hint={t('vendor.productColorsHint')}
+          values={form.colors}
+          presets={null}
+          onChange={(colors) => setForm({ ...form, colors })}
+          addLabel={t('vendor.addColor')}
+        />
         {/* Uniquement utile quand la boutique tourne par arrivage — sinon la
             case n'aurait aucun effet visible et ne ferait qu'encombrer. */}
         {shop.rotation_enabled && (

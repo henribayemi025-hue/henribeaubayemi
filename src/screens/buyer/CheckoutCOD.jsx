@@ -14,7 +14,6 @@ import { Price } from '../../components/Price';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
-import { currencyForCountry } from '../../lib/currency';
 import { pushNotify } from '../../lib/notify';
 
 export default function CheckoutCOD() {
@@ -44,32 +43,41 @@ export default function CheckoutCOD() {
   const [payingCard, setPayingCard] = useState(false);
   const [placed, setPlaced] = useState(null);
 
-  // Card payment appears only once a Stripe (publishable, public) key is set.
-  // Hardcoded test-key default so the button works even when the host doesn't
-  // inject VITE_* at build time; swap to pk_live_… to go live.
-  const stripeEnabled = !!(
-    import.meta.env.VITE_STRIPE_PK ||
-    'pk_test_51TwH38PWe7shhIOrU0Yq13F8jLxvWF97JVsRi1u8FbuU1iF0o08h2cnqgg1xp5LhzqysUmouLTdtzcvgZ2FhdKGv00cUxChcFx'
-  );
+  // Paiement par carte MASQUÉ (décision Beau 01/08): le flux Stripe n'est pas
+  // opérationnel pour de vrai, donc on ne montre pas un bouton qui déçoit.
+  // Tout le code (payByCard, create-checkout) reste en place — repasser ce
+  // drapeau à true suffira le jour où le paiement en ligne est prêt.
+  const CARD_PAYMENTS_ENABLED = false;
+  const stripeEnabled =
+    CARD_PAYMENTS_ENABLED &&
+    !!(
+      import.meta.env.VITE_STRIPE_PK ||
+      'pk_test_51TwH38PWe7shhIOrU0Yq13F8jLxvWF97JVsRi1u8FbuU1iF0o08h2cnqgg1xp5LhzqysUmouLTdtzcvgZ2FhdKGv00cUxChcFx'
+    );
+
+  const [zoneIdx, setZoneIdx] = useState(0); // zone de livraison choisie (si la boutique en a)
 
   const { data: shop, loading, error, retry } = useAsync(async () => {
     const { data, error: err } = await supabase
       .from('shops')
-      .select('id, name, offers_delivery, delivery_fee_fcfa, country')
+      .select('id, name, offers_delivery, delivery_fee_fcfa, delivery_zones, country')
       .eq('id', shopId)
       .maybeSingle();
     if (err) throw err;
     return data;
   }, [shopId]);
 
-  // Pickup-first zones (FCFA countries, e.g. Cameroun): home delivery isn't
-  // widespread yet, so we nudge toward shop pickup with a short warning.
-  const pickupFirst = shop ? currencyForCountry(shop.country) === 'FCFA' : false;
-
-  const deliveryFee = method === 'delivery' ? shop?.delivery_fee_fcfa || 0 : 0;
+  // Zones de livraison définies par la boutique (nom + frais + délai). Quand
+  // elles existent, le frais vient de la ZONE choisie — sinon repli sur le
+  // frais unique historique. Livraison gratuite (0) affichée « Gratuit ».
+  const zones = Array.isArray(shop?.delivery_zones) ? shop.delivery_zones.filter((z) => z && z.name) : [];
+  const zone = zones.length > 0 ? zones[Math.min(zoneIdx, zones.length - 1)] : null;
+  const deliveryFee = method === 'delivery' ? (zone ? Number(zone.fee_fcfa) || 0 : shop?.delivery_fee_fcfa || 0) : 0;
   const total = subtotal + deliveryFee;
 
-  const required = method === 'delivery' ? ['name', 'phone', 'address', 'city', 'country'] : [];
+  // Quand la boutique définit des zones, la « ville » est la zone choisie —
+  // pas de champ en double à retaper.
+  const required = method === 'delivery' ? (zone ? ['name', 'phone', 'address', 'country'] : ['name', 'phone', 'address', 'city', 'country']) : [];
   const phoneOk = /^[+()\d][\d\s()-]{6,}$/.test(form.phone);
   function fieldError(k) {
     if (!touched[k]) return null;
@@ -96,7 +104,7 @@ export default function CheckoutCOD() {
         buyer_name: form.name || null,
         buyer_phone: form.phone || null,
         address: method === 'delivery' ? form.address : null,
-        city: method === 'delivery' ? form.city : null,
+        city: method === 'delivery' ? (zone ? zone.name : form.city) : null,
         country: method === 'delivery' ? form.country : null,
       })
       .select('id, order_no, shop_id')
@@ -104,7 +112,15 @@ export default function CheckoutCOD() {
     if (oErr) throw oErr;
 
     await supabase.from('order_items').insert(
-      shopItems.map((it) => ({ order_id: order.id, product_id: it.id, name: it.name, price_fcfa: it.price_fcfa, qty: it.qty }))
+      shopItems.map((it) => ({
+        order_id: order.id,
+        product_id: it.id,
+        // La variante voyage dans le nom — la boutique voit direct
+        // « Robe (XL · Rouge) » et sait quoi préparer.
+        name: it.size || it.color ? `${it.name} (${[it.size, it.color].filter(Boolean).join(' · ')})` : it.name,
+        price_fcfa: it.price_fcfa,
+        qty: it.qty,
+      }))
     );
     return order;
   }
@@ -187,13 +203,28 @@ export default function CheckoutCOD() {
             )}
           </div>
           <p className="mt-2 text-caption text-muted">{method === 'pickup' ? t('checkout.pickupNote') : ''}</p>
-          {pickupFirst && (
-            <p className="mt-2 rounded-card bg-warning-bg p-3 text-caption text-warning">{t('checkout.pickupZoneWarning')}</p>
-          )}
         </section>
 
         {method === 'delivery' && (
           <section className="space-y-3">
+            {/* Zones définies par la boutique: on choisit OÙ se faire livrer,
+                le frais et le délai s'affichent direct — plus honnête qu'un
+                frais unique mystère. */}
+            {zones.length > 0 && (
+              <Field label={t('checkout.deliveryZone')}>
+                {(id) => (
+                  <Select id={id} value={String(zoneIdx)} onChange={(e) => setZoneIdx(Number(e.target.value))}>
+                    {zones.map((z, i) => (
+                      <option key={i} value={String(i)}>
+                        {z.name}
+                        {Number(z.fee_fcfa) > 0 ? ` — ${Number(z.fee_fcfa)} FCFA` : ` — ${t('common.free')}`}
+                        {z.days ? ` (${t('checkout.zoneDays', { count: Number(z.days) })})` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            )}
             <Field label={t('checkout.fullName')} required error={fieldError('name')}>
               {(id) => <TextInput id={id} value={form.name} error={fieldError('name')} onChange={(e) => setForm({ ...form, name: e.target.value })} onBlur={() => setTouched({ ...touched, name: true })} />}
             </Field>
@@ -203,9 +234,11 @@ export default function CheckoutCOD() {
             <Field label={t('checkout.address')} required error={fieldError('address')}>
               {(id) => <TextInput id={id} value={form.address} error={fieldError('address')} onChange={(e) => setForm({ ...form, address: e.target.value })} onBlur={() => setTouched({ ...touched, address: true })} />}
             </Field>
-            <Field label={t('checkout.city')} required error={fieldError('city')}>
-              {(id) => <TextInput id={id} value={form.city} error={fieldError('city')} onChange={(e) => setForm({ ...form, city: e.target.value })} onBlur={() => setTouched({ ...touched, city: true })} />}
-            </Field>
+            {!zone && (
+              <Field label={t('checkout.city')} required error={fieldError('city')}>
+                {(id) => <TextInput id={id} value={form.city} error={fieldError('city')} onChange={(e) => setForm({ ...form, city: e.target.value })} onBlur={() => setTouched({ ...touched, city: true })} />}
+              </Field>
+            )}
             <Field label={t('checkout.country')} required>
               {(id) => (
                 <Select id={id} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
@@ -219,8 +252,11 @@ export default function CheckoutCOD() {
         <section className="card">
           <h2 className="mb-2 text-section text-ink">{t('checkout.orderSummary')}</h2>
           {shopItems.map((it) => (
-            <div key={it.id} className="flex justify-between py-1 text-body">
-              <span className="line-clamp-1">{it.name} × {it.qty}</span>
+            <div key={it.key || it.id} className="flex justify-between py-1 text-body">
+              <span className="line-clamp-1">
+                {it.name}
+                {(it.size || it.color) && <span className="text-muted"> ({[it.size, it.color].filter(Boolean).join(' · ')})</span>} × {it.qty}
+              </span>
               <Price fcfa={it.price_fcfa * it.qty} />
             </div>
           ))}

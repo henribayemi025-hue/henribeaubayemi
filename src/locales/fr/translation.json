@@ -280,7 +280,8 @@
     "soldBy": "Vendu par",
     "similarTitle": "Vous aimerez aussi",
     "wasPrice": "Prix avant promo",
-    "secondHandBadge": "Seconde main"
+    "secondHandBadge": "Seconde main",
+    "chooseSizeFirst": "Choisis d'abord une taille."
   },
   "shop": {
     "products": "Produits",
@@ -307,7 +308,29 @@
       "noAbout": "Ce prestataire n'a pas encore ajouté de description.",
       "contactPrompt": "Contacter le prestataire",
       "waGreeting": "Bonjour {{name}}, je vous contacte depuis Finjaro pour une prestation."
-    }
+    },
+    "tabHome": "Accueil",
+    "tabPromos": "Promos",
+    "reelsButton": "Nos Reels",
+    "statNote": "Note",
+    "statFollowers": "Abonnés",
+    "statProducts": "Produits",
+    "statCertified": "Certifiée",
+    "trustTitle": "Garanties de confiance",
+    "trustCertified": "Boutique certifiée Finjaro",
+    "trustDelivery": "Livraison proposée par la boutique",
+    "trustContact": "Contact direct avec la boutique",
+    "hoursTitle": "Horaires d'ouverture",
+    "openNow": "Ouvert",
+    "closedNow": "Fermé",
+    "hoursToday": "Aujourd'hui",
+    "zonesTitle": "Zones de livraison",
+    "zonesCount_one": "{{count}} zone",
+    "zonesCount_other": "{{count}} zones",
+    "seeAllZones": "Voir toutes les zones ({{count}})",
+    "bestProducts": "Nos produits",
+    "seeAllProducts": "Voir tous les produits",
+    "promoEmpty": "Pas de promo en ce moment."
   },
   "finou": {
     "title": "Finia",
@@ -368,7 +391,8 @@
     "save": "Enregistrer",
     "tryAgain": "Réessayer",
     "tooFast": "Tu enchaînes un peu vite 😅 Réessaie dans quelques minutes.",
-    "photoTooLarge": "Cette photo est trop lourde. Prends-en une autre ou recadre-la."
+    "photoTooLarge": "Cette photo est trop lourde. Prends-en une autre ou recadre-la.",
+    "sizeNote": "L'aperçu montre le style sur toi — pas l'ajustement d'une taille précise. Vérifie bien la taille (M, XL…) sur la fiche avant de commander."
   },
   "finouWizard": {
     "title": "Déposer un article",
@@ -419,7 +443,8 @@
     "addedToCart": "Ajouté au panier",
     "viewCart": "Voir le panier",
     "itemsCount_one": "{{count}} article",
-    "itemsCount_other": "{{count}} articles"
+    "itemsCount_other": "{{count}} articles",
+    "removeAll": "Tout retirer"
   },
   "nearYou": {
     "shops": "Prestataires",
@@ -528,7 +553,9 @@
     "comment": "Commenter",
     "viewProduct": "Voir le produit",
     "buyNow": "Acheter",
-    "loadError": "Impossible de charger les reels."
+    "loadError": "Impossible de charger les reels.",
+    "shopFilter": "Reels de {{name}}",
+    "backToAll": "Tout voir"
   },
   "reel": {
     "commentsTitle": "Commentaires",
@@ -570,13 +597,16 @@
     "empty": "Ton panier est vide, impossible de commander.",
     "payByCard": "Payer par carte",
     "payOnDelivery": "Payer à la livraison",
-    "paymentSuccess": "Paiement réussi ! Merci pour ta commande."
+    "paymentSuccess": "Paiement réussi ! Merci pour ta commande.",
+    "deliveryZone": "Zone de livraison",
+    "zoneDays_one": "sous {{count}} jour",
+    "zoneDays_other": "sous {{count}} jours"
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",
     "todayOrders": "Commandes du jour",
     "unreadMessages": "Messages non lus",
-    "pendingShipments": "Expéditions en attente",
+    "pendingShipments": "À valider",
     "recentOrders": "Commandes récentes",
     "recentMessages": "Messages récents",
     "noRecentOrders": "Aucune commande récente.",
@@ -687,14 +717,46 @@
       "timeout": "Ça a pris trop de temps. Réessaie, ou renseigne ville/quartier ci-dessous.",
       "unavailable": "Position indisponible pour l'instant. Réessaie, ou renseigne ville/quartier ci-dessous.",
       "unsupported": "Ton navigateur ne permet pas la localisation. Renseigne ville/quartier ci-dessous."
-    }
+    },
+    "acceptOrder": "Valider la commande",
+    "declineOrder": "Refuser",
+    "markReady": "Commande prête (retrait)",
+    "markShipping": "Passer en livraison",
+    "markDelivered": "Marquer livrée",
+    "declineTitle": "Refuser la commande",
+    "declineHint": "Explique pourquoi (optionnel mais recommandé) — la cliente recevra ta raison.",
+    "declinePlaceholder": "Ex : article épuisé, zone non desservie…",
+    "declineConfirm": "Refuser la commande",
+    "pendingBanner_one": "{{count}} commande à valider",
+    "pendingBanner_other": "{{count}} commandes à valider",
+    "pendingBannerHint": "Valide ou refuse vite — les clientes attendent une réponse.",
+    "productSizes": "Tailles disponibles",
+    "productSizesHint": "Si tu en choisis, l'acheteuse devra sélectionner sa taille avant d'ajouter au panier.",
+    "productColors": "Couleurs disponibles",
+    "productColorsHint": "Optionnel — propose uniquement les couleurs réellement en stock.",
+    "addSize": "Ajouter",
+    "addColor": "Ajouter",
+    "hoursTitle": "Horaires d'ouverture",
+    "hoursOpen": "Ouverture",
+    "hoursClose": "Fermeture",
+    "hoursClosedDays": "Jours de fermeture",
+    "hoursHint": "Affiché sur ta fiche avec un badge Ouvert/Fermé en direct. Laisse vide si tu ne veux rien afficher.",
+    "zonesTitle": "Zones de livraison",
+    "zoneName": "Zone (ville, quartier…)",
+    "zoneFee": "Frais (FCFA)",
+    "zoneDaysLabel": "Délai (jours)",
+    "addZone": "Ajouter une zone",
+    "zonesHint": "Dis où tu livres, à quel prix et sous combien de jours — affiché sur ta fiche et utilisé au moment de la commande. 0 FCFA = livraison gratuite dans cette zone.",
+    "legacyCatsTitle": "Anciennes catégories",
+    "legacyCatsHint": "Ta boutique utilise encore d'anciennes catégories. Coche les nouveaux rayons ci-dessus, puis retire les anciennes en tapant dessus.",
+    "categoriesAutoSaved": "Catégories enregistrées."
   },
   "orderStatus": {
-    "new": "Nouvelle",
-    "confirmed": "Confirmée",
-    "shipped": "Envoyée",
+    "new": "En attente de validation",
+    "confirmed": "Validée — en préparation",
+    "shipped": "En livraison",
     "delivered": "Livrée",
-    "cancelled": "Annulée",
+    "cancelled": "Refusée / Annulée",
     "markReceived": "J'ai bien reçu",
     "leaveReview": "Laisser un avis",
     "reviewLocked": "L'avis se débloque après réception.",
@@ -704,7 +766,10 @@
     "rebuy": "Racheter",
     "rebuyAdded": "Articles ajoutés au panier.",
     "rebuyPartial": "Certains articles ne sont plus disponibles — les autres ont été ajoutés au panier.",
-    "rebuyNoneAvailable": "Ces articles ne sont plus disponibles."
+    "rebuyNoneAvailable": "Ces articles ne sont plus disponibles.",
+    "readyPickup": "Prête — à retirer",
+    "declineReasonShown": "Refusée par la boutique : {{reason}}",
+    "cancelledNoReason": "Commande refusée par la boutique."
   },
   "stats": {
     "period7d": "7j",
@@ -825,14 +890,17 @@
     "orderReceived": "Nouvelle commande reçue",
     "orderConfirmed": "Commande confirmée",
     "orderShipped": "Commande envoyée",
-    "orderDelivered": "Commande livrée",
+    "orderDelivered": "Commande livrée 🎉",
     "newReel": "Nouveau reel d'une boutique suivie",
     "reviewUnlocked": "Tu peux maintenant laisser un avis",
     "shopApproved": "Ta boutique a été validée !",
     "newListing": "Nouvelle annonce près de chez toi",
     "title": "Notifications",
     "email": "Recevoir les e-mails",
-    "emailHelp": "Nouvelle commande, nouveau message... Utile surtout sur iPhone, où les notifications du navigateur n'arrivent que si le site est ajouté à l'écran d'accueil."
+    "emailHelp": "Nouvelle commande, nouveau message... Utile surtout sur iPhone, où les notifications du navigateur n'arrivent que si le site est ajouté à l'écran d'accueil.",
+    "orderValidated": "Commande validée ✅",
+    "orderReady": "Ta commande est prête — tu peux venir la retirer",
+    "orderDeclined": "Commande refusée"
   },
   "productAttrs": {
     "marque": "Marque",
@@ -911,5 +979,12 @@
       "use": "usé",
       "abime": "abîmé"
     }
+  },
+  "orderTrack": {
+    "placed": "Commandée",
+    "validated": "Validée",
+    "shipping": "En livraison",
+    "ready": "Prête en boutique",
+    "delivered": "Livrée"
   }
 }

@@ -1,6 +1,6 @@
 import { Link, useOutletContext, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward, IconShare2, IconLink, IconTrophy } from '@tabler/icons-react';
+import { IconSwitchHorizontal, IconChartBar, IconMovie, IconAward, IconShare2, IconLink, IconTrophy, IconAlertCircle, IconChevronRight } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -38,7 +38,7 @@ export default function VendorDashboard() {
     const [{ data: orders }, { data: convs }, { count: pending }, { count: todayCount }, { data: shopRow }] = await Promise.all([
       supabase.from('orders').select('id, order_no, status, total_fcfa, created_at, buyer_name').eq('shop_id', shop.id).order('created_at', { ascending: false }).limit(5),
       supabase.from('conversations').select('id, last_message, last_message_at, vendor_unread, buyer_id, profiles:buyer_id(name)').eq('shop_id', shop.id).order('last_message_at', { ascending: false }).limit(5),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).in('status', ['new', 'confirmed']),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).eq('status', 'new'),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).gte('created_at', startOfDay.toISOString()),
       supabase.from('shops').select('seller_points').eq('id', shop.id).maybeSingle(),
     ]);
@@ -63,6 +63,25 @@ export default function VendorDashboard() {
         <ErrorState onRetry={retry} />
       ) : (
         <div className="space-y-6 p-4">
+          {/* L'action nº1 d'une boutique: répondre aux commandes en attente.
+              Impossible à rater — tout en haut, en alerte, avec le compte.
+              (Le rappel Finia toutes les 6 h double ce signal par push+mail.) */}
+          {data.pending > 0 && (
+            <Link
+              to="/vendor/orders"
+              className="flex items-center gap-3 rounded-card border border-warning/40 bg-warning-bg p-4 transition active:scale-[0.99]"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-warning">
+                <IconAlertCircle size={24} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-body font-semibold text-ink">{t('vendor.pendingBanner', { count: data.pending })}</p>
+                <p className="text-caption text-muted">{t('vendor.pendingBannerHint')}</p>
+              </div>
+              <IconChevronRight size={20} className="shrink-0 text-warning" />
+            </Link>
+          )}
+
           <button
             onClick={shareShopLink}
             className="flex w-full items-center gap-3 rounded-card border border-teal/30 bg-teal-light p-4 text-left transition active:scale-[0.99]"

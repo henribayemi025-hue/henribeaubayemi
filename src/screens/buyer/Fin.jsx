@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMovie } from '@tabler/icons-react';
+import { IconMovie, IconX } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ReelPlayer } from '../../components/ReelPlayer';
@@ -10,6 +11,10 @@ import { Button } from '../../components/Button';
 export default function Fin() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // « Nos Reels » depuis une fiche boutique arrive ici avec ?shop=<id>: le
+  // flux ne montre alors QUE ses vidéos, avec un bandeau pour tout rouvrir.
+  const [params, setParams] = useSearchParams();
+  const shopFilter = params.get('shop');
   const [tab, setTab] = useState('forYou');
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +32,7 @@ export default function Fin() {
         .select('*, shops(name, slug, avatar_url), products(id, name, price_fcfa, images, stock, shop_id)')
         .order('created_at', { ascending: false })
         .limit(30);
+      if (shopFilter) query = query.eq('shop_id', shopFilter);
       if (tab === 'following') {
         if (!user) {
           setReels([]);
@@ -50,7 +56,7 @@ export default function Fin() {
     } finally {
       setLoading(false);
     }
-  }, [tab, user]);
+  }, [tab, user, shopFilter]);
 
   useEffect(() => {
     load();
@@ -67,15 +73,25 @@ export default function Fin() {
   return (
     <div className="relative h-full bg-black">
       <div className="absolute inset-x-0 top-0 z-20 flex justify-center gap-6 pt-3">
-        {['forYou', 'following'].map((tb) => (
+        {shopFilter ? (
           <button
-            key={tb}
-            onClick={() => setTab(tb)}
-            className={`text-body ${tab === tb ? 'font-semibold text-white' : 'text-white/60'}`}
+            onClick={() => setParams({}, { replace: true })}
+            className="flex items-center gap-1.5 rounded-pill bg-white/15 px-3 py-1 text-caption font-semibold text-white backdrop-blur"
           >
-            {t(tb === 'forYou' ? 'fin.forYou' : 'fin.followingTab')}
+            {t('fin.shopFilter', { name: reels[0]?.shops?.name || '…' })}
+            <IconX size={14} /> {t('fin.backToAll')}
           </button>
-        ))}
+        ) : (
+          ['forYou', 'following'].map((tb) => (
+            <button
+              key={tb}
+              onClick={() => setTab(tb)}
+              className={`text-body ${tab === tb ? 'font-semibold text-white' : 'text-white/60'}`}
+            >
+              {t(tb === 'forYou' ? 'fin.forYou' : 'fin.followingTab')}
+            </button>
+          ))
+        )}
       </div>
 
       {loading ? (

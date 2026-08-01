@@ -120,8 +120,24 @@ export default function ProductDetail() {
   const quote = isQuoteOnly(p.category);
   const pct = quote ? null : discountPercent(p.price_fcfa, p.compare_at_price_fcfa);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
-  const cartLine = items.find((i) => i.id === p.id);
+  // La ligne de panier correspond à la VARIANTE sélectionnée: la même robe en
+  // M et en XL sont deux lignes distinctes (la boutique doit savoir quelles
+  // tailles préparer).
+  const cartLine = items.find(
+    (i) => i.id === p.id && (i.size || '') === (size || '') && (i.color || '') === (color || '')
+  );
+  const needsSize = p.sizes?.length > 0 && !size;
   const images = (p.images || []).map((im) => storageUrl('products', im));
+
+  function addToCart() {
+    // Taille définie par la boutique = choix obligatoire avant l'ajout,
+    // sinon la commande arrive sans taille et tout le monde perd du temps.
+    if (needsSize) {
+      toast.info(t('product.chooseSizeFirst'));
+      return;
+    }
+    add({ ...p, shop_name: shop.name }, 1, { size: size || null, color: color || null });
+  }
 
   return (
     <div className="relative lg:mx-auto lg:max-w-3xl">
@@ -208,7 +224,7 @@ export default function ProductDetail() {
         )}
 
         {p.sizes?.length > 0 && (
-          <Variant label={t('product.size')} options={p.sizes} value={size} onChange={setSize} />
+          <Variant label={`${t('product.size')} *`} options={p.sizes} value={size} onChange={setSize} />
         )}
         {p.colors?.length > 0 && (
           <Variant label={t('product.color')} options={p.colors} value={color} onChange={setColor} />
@@ -261,7 +277,7 @@ export default function ProductDetail() {
           // capped at available stock. No confusing transient "added" label.
           <div className="flex flex-1 items-center justify-between rounded-[10px] border-[1.5px] border-teal px-2">
             <button
-              onClick={() => (cartLine.qty <= 1 ? remove(p.id) : setQty(p.id, cartLine.qty - 1))}
+              onClick={() => (cartLine.qty <= 1 ? remove(cartLine.key) : setQty(cartLine.key, cartLine.qty - 1))}
               className="flex h-11 w-11 items-center justify-center rounded-full text-teal transition active:scale-90 active:bg-teal/10"
               aria-label={cartLine.qty <= 1 ? t('cart.remove') : t('common.decrease')}
             >
@@ -269,7 +285,7 @@ export default function ProductDetail() {
             </button>
             <span className="text-body font-semibold text-ink">{t('product.inCart', { count: cartLine.qty })}</span>
             <button
-              onClick={() => setQty(p.id, cartLine.qty + 1)}
+              onClick={() => setQty(cartLine.key, cartLine.qty + 1)}
               disabled={cartLine.qty >= (p.stock ?? Infinity)}
               className="flex h-11 w-11 items-center justify-center rounded-full text-teal transition active:scale-90 active:bg-teal/10 disabled:opacity-30"
               aria-label={t('common.increase')}
@@ -278,7 +294,7 @@ export default function ProductDetail() {
             </button>
           </div>
         ) : (
-          <Button disabled={outOfStock} onClick={() => add({ ...p, shop_name: shop.name })}>
+          <Button disabled={outOfStock} onClick={addToCart}>
             {outOfStock ? t('product.outOfStock') : t('product.addToCart')}
           </Button>
         )}

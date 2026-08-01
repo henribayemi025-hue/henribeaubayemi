@@ -280,7 +280,8 @@
     "soldBy": "Sold by",
     "similarTitle": "You may also like",
     "wasPrice": "Price before discount",
-    "secondHandBadge": "Second-hand"
+    "secondHandBadge": "Second-hand",
+    "chooseSizeFirst": "Please pick a size first."
   },
   "shop": {
     "products": "Products",
@@ -307,7 +308,29 @@
       "noAbout": "This provider hasn't added a description yet.",
       "contactPrompt": "Contact the provider",
       "waGreeting": "Hello {{name}}, I'm contacting you from Finjaro about a service."
-    }
+    },
+    "tabHome": "Home",
+    "tabPromos": "Deals",
+    "reelsButton": "Our Reels",
+    "statNote": "Rating",
+    "statFollowers": "Followers",
+    "statProducts": "Products",
+    "statCertified": "Certified",
+    "trustTitle": "Trust guarantees",
+    "trustCertified": "Finjaro-certified shop",
+    "trustDelivery": "Delivery offered by the shop",
+    "trustContact": "Direct contact with the shop",
+    "hoursTitle": "Opening hours",
+    "openNow": "Open",
+    "closedNow": "Closed",
+    "hoursToday": "Today",
+    "zonesTitle": "Delivery zones",
+    "zonesCount_one": "{{count}} zone",
+    "zonesCount_other": "{{count}} zones",
+    "seeAllZones": "See all zones ({{count}})",
+    "bestProducts": "Our products",
+    "seeAllProducts": "See all products",
+    "promoEmpty": "No deals right now."
   },
   "finou": {
     "title": "Finia",
@@ -368,7 +391,8 @@
     "save": "Save",
     "tryAgain": "Try again",
     "tooFast": "That's a bit fast 😅 Try again in a few minutes.",
-    "photoTooLarge": "This photo is too heavy. Pick another one or crop it."
+    "photoTooLarge": "This photo is too heavy. Pick another one or crop it.",
+    "sizeNote": "The preview shows the style on you — not how a specific size will fit. Double-check the size (M, XL…) on the product page before ordering."
   },
   "finouWizard": {
     "title": "List an item",
@@ -419,7 +443,8 @@
     "addedToCart": "Added to cart",
     "viewCart": "View cart",
     "itemsCount_one": "{{count}} item",
-    "itemsCount_other": "{{count}} items"
+    "itemsCount_other": "{{count}} items",
+    "removeAll": "Remove all"
   },
   "nearYou": {
     "shops": "Providers",
@@ -528,7 +553,9 @@
     "comment": "Comment",
     "viewProduct": "View product",
     "buyNow": "Buy",
-    "loadError": "Couldn't load reels."
+    "loadError": "Couldn't load reels.",
+    "shopFilter": "{{name}}'s Reels",
+    "backToAll": "See all"
   },
   "reel": {
     "commentsTitle": "Comments",
@@ -570,13 +597,16 @@
     "empty": "Your cart is empty, nothing to order.",
     "payByCard": "Pay by card",
     "payOnDelivery": "Pay on delivery",
-    "paymentSuccess": "Payment successful! Thanks for your order."
+    "paymentSuccess": "Payment successful! Thanks for your order.",
+    "deliveryZone": "Delivery zone",
+    "zoneDays_one": "within {{count}} day",
+    "zoneDays_other": "within {{count}} days"
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
     "todayOrders": "Today's orders",
     "unreadMessages": "Unread messages",
-    "pendingShipments": "Pending shipments",
+    "pendingShipments": "To validate",
     "recentOrders": "Recent orders",
     "recentMessages": "Recent messages",
     "noRecentOrders": "No recent orders.",
@@ -687,14 +717,46 @@
       "timeout": "That took too long. Try again, or fill in city/neighborhood below.",
       "unavailable": "Location unavailable right now. Try again, or fill in city/neighborhood below.",
       "unsupported": "Your browser doesn't support location. Fill in city/neighborhood below."
-    }
+    },
+    "acceptOrder": "Validate order",
+    "declineOrder": "Decline",
+    "markReady": "Order ready (pickup)",
+    "markShipping": "Start delivery",
+    "markDelivered": "Mark delivered",
+    "declineTitle": "Decline order",
+    "declineHint": "Explain why (optional but recommended) — the buyer will see your reason.",
+    "declinePlaceholder": "E.g. item sold out, area not served…",
+    "declineConfirm": "Decline order",
+    "pendingBanner_one": "{{count}} order awaiting validation",
+    "pendingBanner_other": "{{count}} orders awaiting validation",
+    "pendingBannerHint": "Validate or decline quickly — buyers are waiting for an answer.",
+    "productSizes": "Available sizes",
+    "productSizesHint": "If you set some, buyers must pick a size before adding to cart.",
+    "productColors": "Available colors",
+    "productColorsHint": "Optional — only list colors you actually have in stock.",
+    "addSize": "Add",
+    "addColor": "Add",
+    "hoursTitle": "Opening hours",
+    "hoursOpen": "Opens",
+    "hoursClose": "Closes",
+    "hoursClosedDays": "Closed days",
+    "hoursHint": "Shown on your shop page with a live Open/Closed badge. Leave empty to show nothing.",
+    "zonesTitle": "Delivery zones",
+    "zoneName": "Zone (city, district…)",
+    "zoneFee": "Fee (FCFA)",
+    "zoneDaysLabel": "Delay (days)",
+    "addZone": "Add a zone",
+    "zonesHint": "Say where you deliver, for how much and within how many days — shown on your page and used at checkout. 0 FCFA = free delivery in that zone.",
+    "legacyCatsTitle": "Legacy categories",
+    "legacyCatsHint": "Your shop still uses old categories. Tick the new sections above, then tap the old ones to remove them.",
+    "categoriesAutoSaved": "Categories saved."
   },
   "orderStatus": {
-    "new": "New",
-    "confirmed": "Confirmed",
-    "shipped": "Shipped",
+    "new": "Awaiting validation",
+    "confirmed": "Validated — preparing",
+    "shipped": "Out for delivery",
     "delivered": "Delivered",
-    "cancelled": "Cancelled",
+    "cancelled": "Declined / Cancelled",
     "markReceived": "I received it",
     "leaveReview": "Leave a review",
     "reviewLocked": "Review unlocks after you confirm receipt.",
@@ -704,7 +766,10 @@
     "rebuy": "Buy again",
     "rebuyAdded": "Items added to cart.",
     "rebuyPartial": "Some items are no longer available — the rest were added to your cart.",
-    "rebuyNoneAvailable": "These items are no longer available."
+    "rebuyNoneAvailable": "These items are no longer available.",
+    "readyPickup": "Ready for pickup",
+    "declineReasonShown": "Declined by the shop: {{reason}}",
+    "cancelledNoReason": "Order declined by the shop."
   },
   "stats": {
     "period7d": "7d",
@@ -825,14 +890,17 @@
     "orderReceived": "New order received",
     "orderConfirmed": "Order confirmed",
     "orderShipped": "Order shipped",
-    "orderDelivered": "Order delivered",
+    "orderDelivered": "Order delivered 🎉",
     "newReel": "New reel from a shop you follow",
     "reviewUnlocked": "You can now leave a review",
     "shopApproved": "Your shop has been approved!",
     "newListing": "New listing near you",
     "title": "Notifications",
     "email": "Receive emails",
-    "emailHelp": "New order, new message… Especially useful on iPhone, where browser notifications only work if the site is added to the home screen."
+    "emailHelp": "New order, new message… Especially useful on iPhone, where browser notifications only work if the site is added to the home screen.",
+    "orderValidated": "Order validated ✅",
+    "orderReady": "Your order is ready for pickup",
+    "orderDeclined": "Order declined"
   },
   "productAttrs": {
     "marque": "Brand",
@@ -911,5 +979,12 @@
       "use": "worn",
       "abime": "damaged"
     }
+  },
+  "orderTrack": {
+    "placed": "Placed",
+    "validated": "Validated",
+    "shipping": "Out for delivery",
+    "ready": "Ready in store",
+    "delivered": "Delivered"
   }
 }

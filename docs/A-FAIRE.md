@@ -87,6 +87,49 @@ vendeur). Confirmé visible sur staging. Noms techniques internes
   un métier — TidalEx reclassée le 31/07, les autres vendeurs doivent le faire
   dans « Ma boutique ».
 
+## 4bis. Cycle « marketplace propre » (screenshots Nevo Market, 01/08) ✅ fait
+
+Beau a envoyé 5 captures de Nevo Market comme référence + une liste vocale
+d'anomalies. Tout le lot ci-dessous est implémenté le 01/08 :
+
+- ✅ **Tailles/couleurs produit** : éditeur côté vendeur (presets XS–4XL ou
+  pointures 36–45 selon le rayon + saisie libre), taille OBLIGATOIRE à
+  l'ajout panier quand la fiche en définit, panier par variante (la même robe
+  en M et XL = deux lignes), variante transmise à la boutique dans la
+  commande (« Robe (XL · Rouge) »).
+- ✅ **Miroir IA et taille** (question de la collègue) : le miroir montre le
+  STYLE porté, pas l'ajustement d'une taille précise — note honnête ajoutée
+  dans la modale. Pas de simulation morphologique par taille (irréaliste avec
+  Gemini aujourd'hui, on ne promet pas ce qu'on ne tient pas).
+- ✅ **Cycle de commande complet** (le vrai flux supply-chain) :
+  nouvelle → [Valider | Refuser (raison optionnelle, transmise)] → validée/en
+  préparation → [En livraison / Prête (retrait)] → livrée. Chaque étape
+  horodatée (0030) + notification acheteuse. AVANT: un seul bouton sautait de
+  « nouvelle » à « envoyée » — le bug exact signalé par Beau.
+- ✅ **Suivi acheteuse** : timeline 4 étapes avec dates sur Mes commandes,
+  raison de refus affichée, « J'ai bien reçu » clôt vraiment la commande.
+- ✅ **Rappel Finia automatique** : pg_cron toutes les 6 h → push+e-mail aux
+  boutiques qui laissent des commandes « new » > 6 h (arrêt après 14 j).
+  Bannière « X commandes à valider » en haut du tableau de bord vendeur.
+- ✅ **Fiche boutique façon Nevo** (aux couleurs Finjaro) : onglets Accueil /
+  Produits / Promos (seulement si promos) / Avis / À propos · bouton « Nos
+  Reels » près de l'avatar (→ flux filtré sur la boutique) · stats Note/
+  Abonnés/Produits/Certifiée · **Garanties de confiance RÉELLES uniquement**
+  (certifiée = is_verified, livraison = si proposée, contact direct = si
+  WhatsApp/tél renseigné — jamais la même liste automatique partout) ·
+  horaires avec badge Ouvert/Fermé en direct · zones de livraison.
+- ✅ **Horaires + zones côté vendeur** (Ma boutique) : ouverture/fermeture +
+  jours fermés ; zones {nom, frais, délai} affichées sur la fiche ET
+  utilisées au checkout (frais par zone, 0 = gratuit).
+- ✅ **Checkout nettoyé** : message « dans ce pays, la livraison… » supprimé ;
+  paiement par carte MASQUÉ (code conservé, drapeau `CARD_PAYMENTS_ENABLED`
+  dans CheckoutCOD.jsx) ; sélecteur de zone quand la boutique en a.
+- ✅ **Panier** : « Tout retirer » par boutique + variantes affichées.
+- ✅ **Bug catégories « Ma boutique »** : les boutiques portaient des ids
+  HÉRITÉS (beaute, mode, bijoux…) invisibles dans les chips — affichés
+  maintenant dans un bloc « Anciennes catégories » (tap pour retirer), et les
+  catégories s'enregistrent À CHAQUE TAP (plus besoin du bouton Enregistrer).
+
 ## 5. Finia/Finou 2.0 — état des 23 points (47 capacités), texte d'origine retrouvé
 
 ### En cours dans CE cycle (« fait en partie » + « faisable maintenant ») — GO de Beau le 31/07

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle } from '@tabler/icons-react';
+import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle, IconClock, IconTruckDelivery, IconPlus, IconTrash } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -13,7 +13,7 @@ import { getPositionWithReason } from '../../lib/geo';
 
 export default function VendorShop() {
   const { shop } = useOutletContext();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [hasGeo, setHasGeo] = useState(shop.lat != null);
   const [geoBusy, setGeoBusy] = useState(false);
@@ -60,8 +60,41 @@ export default function VendorShop() {
     rotation_days: String(shop.rotation_days || 7),
     // true = l'arrivage passé est supprimé (défaut), false = gardé en brouillon.
     rotation_delete: shop.rotation_delete !== false,
+    // Horaires: { open, close, closed_days[] } — badge Ouvert/Fermé en direct
+    // sur la fiche publique. Vide = rien d'affiché.
+    hours_open: shop.opening_hours?.open || '',
+    hours_close: shop.opening_hours?.close || '',
+    closed_days: shop.opening_hours?.closed_days || [],
+    // Zones de livraison: où, combien, sous combien de jours — affichées sur
+    // la fiche ET utilisées au checkout (frais par zone, façon Nevo).
+    delivery_zones: Array.isArray(shop.delivery_zones) ? shop.delivery_zones : [],
   });
   const [busy, setBusy] = useState(false);
+
+  // Noms de jours localisés (le 1er janvier 2023 est un dimanche → index 0).
+  const DAY_LABELS = Array.from({ length: 7 }, (_, d) =>
+    new Date(2023, 0, 1 + d).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'short' })
+  );
+
+  function toggleClosedDay(d) {
+    setForm((f) => ({
+      ...f,
+      closed_days: f.closed_days.includes(d) ? f.closed_days.filter((x) => x !== d) : [...f.closed_days, d],
+    }));
+  }
+
+  function setZone(i, patch) {
+    setForm((f) => {
+      const delivery_zones = f.delivery_zones.map((z, j) => (j === i ? { ...z, ...patch } : z));
+      return { ...f, delivery_zones };
+    });
+  }
+  function addZone() {
+    setForm((f) => ({ ...f, delivery_zones: [...f.delivery_zones, { name: '', fee_fcfa: '', days: '' }] }));
+  }
+  function removeZone(i) {
+    setForm((f) => ({ ...f, delivery_zones: f.delivery_zones.filter((_, j) => j !== i) }));
+  }
 
   // Photos save the instant they're picked (not gated behind the bottom
   // "Enregistrer" button) — otherwise an upload-then-navigate-away silently
@@ -73,12 +106,27 @@ export default function VendorShop() {
     else toast.success(t('vendor.shopSaved'));
   }
 
+  // Les catégories s'enregistrent À CHAQUE TAP, comme les photos — Beau avait
+  // coché ses rayons sans presser « Enregistrer » tout en bas, et rien n'était
+  // sauvé. Un choix de rayon ne doit pas dépendre d'un bouton hors écran.
   function toggleCat(id) {
-    setForm((f) => ({
-      ...f,
-      categories: f.categories.includes(id) ? f.categories.filter((c) => c !== id) : [...f.categories, id],
-    }));
+    const next = form.categories.includes(id) ? form.categories.filter((c) => c !== id) : [...form.categories, id];
+    setForm((f) => ({ ...f, categories: next }));
+    supabase
+      .from('shops')
+      .update({ categories: next })
+      .eq('id', shop.id)
+      .then(({ error }) => {
+        if (error) toast.error(error.message);
+      });
   }
+
+  // Ids hérités de l'ancienne arborescence (« beaute », « mode »…) encore
+  // stockés sur la boutique: ils n'apparaissaient NULLE PART dans les chips,
+  // d'où le « j'ai déjà choisi mes catégories et il y en a encore » de Beau.
+  // On les montre à part, actifs, avec un tap pour les retirer.
+  const knownIds = new Set([...CATEGORIES, ...SERVICE_CATEGORIES].map((c) => c.id));
+  const legacyCats = form.categories.filter((id) => !knownIds.has(id));
 
   async function save() {
     setBusy(true);
@@ -102,6 +150,17 @@ export default function VendorShop() {
         // jamais en erreur base.
         rotation_days: Math.min(90, Math.max(1, Math.round(Number(form.rotation_days) || 7))),
         rotation_delete: form.rotation_delete,
+        opening_hours:
+          form.hours_open && form.hours_close
+            ? { open: form.hours_open, close: form.hours_close, closed_days: form.closed_days }
+            : null,
+        delivery_zones: form.delivery_zones
+          .filter((z) => z.name && String(z.name).trim())
+          .map((z) => ({
+            name: String(z.name).trim(),
+            fee_fcfa: Math.max(0, Math.round(Number(z.fee_fcfa) || 0)),
+            days: Math.max(0, Math.round(Number(z.days) || 0)) || null,
+          })),
       })
       .eq('id', shop.id);
     setBusy(false);
@@ -160,6 +219,76 @@ export default function VendorShop() {
               </button>
             ))}
           </div>
+          {legacyCats.length > 0 && (
+            <div className="mt-3 rounded-card border border-warning/40 bg-warning-bg p-3">
+              <span className="label">{t('vendor.legacyCatsTitle')}</span>
+              <div className="flex flex-wrap gap-2">
+                {legacyCats.map((id) => (
+                  <button key={id} onClick={() => toggleCat(id)} className="chip chip-active">
+                    {t(`categories.${id}`, { defaultValue: id })} ×
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-caption text-warning">{t('vendor.legacyCatsHint')}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Horaires d'ouverture — badge Ouvert/Fermé en direct sur la fiche. */}
+        <div className="space-y-2 rounded-card border border-hairline p-3">
+          <span className="flex items-center gap-2 text-body font-semibold text-ink">
+            <IconClock size={18} className="text-teal" /> {t('vendor.hoursTitle')}
+          </span>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t('vendor.hoursOpen')}>
+              {(id) => <TextInput id={id} type="time" value={form.hours_open} onChange={(e) => setForm({ ...form, hours_open: e.target.value })} />}
+            </Field>
+            <Field label={t('vendor.hoursClose')}>
+              {(id) => <TextInput id={id} type="time" value={form.hours_close} onChange={(e) => setForm({ ...form, hours_close: e.target.value })} />}
+            </Field>
+          </div>
+          <span className="label">{t('vendor.hoursClosedDays')}</span>
+          <div className="flex flex-wrap gap-2">
+            {DAY_LABELS.map((label, d) => (
+              <button key={d} type="button" onClick={() => toggleClosedDay(d)} className={`chip ${form.closed_days.includes(d) ? 'chip-active' : 'text-ink'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-caption text-muted">{t('vendor.hoursHint')}</p>
+        </div>
+
+        {/* Zones de livraison — affichées sur la fiche, utilisées au checkout. */}
+        <div className="space-y-2 rounded-card border border-hairline p-3">
+          <span className="flex items-center gap-2 text-body font-semibold text-ink">
+            <IconTruckDelivery size={18} className="text-teal" /> {t('vendor.zonesTitle')}
+          </span>
+          {form.delivery_zones.map((z, i) => (
+            <div key={i} className="flex items-end gap-2">
+              <div className="flex-1">
+                <Field label={i === 0 ? t('vendor.zoneName') : undefined}>
+                  {(id) => <TextInput id={id} value={z.name || ''} onChange={(e) => setZone(i, { name: e.target.value })} />}
+                </Field>
+              </div>
+              <div className="w-24">
+                <Field label={i === 0 ? t('vendor.zoneFee') : undefined}>
+                  {(id) => <TextInput id={id} type="number" inputMode="numeric" value={z.fee_fcfa ?? ''} onChange={(e) => setZone(i, { fee_fcfa: e.target.value })} />}
+                </Field>
+              </div>
+              <div className="w-20">
+                <Field label={i === 0 ? t('vendor.zoneDaysLabel') : undefined}>
+                  {(id) => <TextInput id={id} type="number" inputMode="numeric" value={z.days ?? ''} onChange={(e) => setZone(i, { days: e.target.value })} />}
+                </Field>
+              </div>
+              <button type="button" onClick={() => removeZone(i)} aria-label={t('common.delete')} className="mb-2.5 p-1.5 text-danger">
+                <IconTrash size={18} />
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={addZone} className="btn-ghost text-caption">
+            <IconPlus size={16} /> {t('vendor.addZone')}
+          </button>
+          <p className="text-caption text-muted">{t('vendor.zonesHint')}</p>
         </div>
         <label className="flex items-center gap-3 rounded-card border border-hairline p-3">
           <input type="checkbox" checked={form.offers_delivery} onChange={(e) => setForm({ ...form, offers_delivery: e.target.checked })} className="h-5 w-5 accent-[#C25E38]" />

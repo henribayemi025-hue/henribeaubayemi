@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShoppingBag, IconRotateClockwise2 } from '@tabler/icons-react';
+import { IconShoppingBag, IconRotateClockwise2, IconCheck } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -45,7 +45,12 @@ export default function MyOrders() {
   }, [user]);
 
   async function markReceived(order) {
-    await supabase.from('orders').update({ buyer_received: true }).eq('id', order.id);
+    // « J'ai bien reçu » clôt VRAIMENT la commande: statut livré + horodatage,
+    // pas juste un drapeau interne — la timeline se remplit des deux côtés.
+    await supabase
+      .from('orders')
+      .update({ buyer_received: true, status: 'delivered', delivered_at: new Date().toISOString() })
+      .eq('id', order.id);
     retry();
   }
 
@@ -98,7 +103,7 @@ export default function MyOrders() {
               <li key={o.id} className="card">
                 <div className="flex items-center justify-between">
                   <p className="text-caption font-semibold text-muted">#{o.order_no}</p>
-                  <OrderStatusBadge status={o.status} />
+                  <OrderStatusBadge status={o.status} method={o.delivery_method} />
                 </div>
                 <p className="mt-1 text-body font-semibold text-ink">{o.shops?.name}</p>
                 <div className="mt-1 text-caption text-muted">
@@ -107,6 +112,20 @@ export default function MyOrders() {
                 <div className="mt-2 flex items-center justify-between">
                   <Price fcfa={o.total_fcfa} className="text-body font-semibold text-teal" />
                 </div>
+
+                {/* Suivi visuel: on voit OÙ en est la commande, avec l'heure de
+                    chaque étape — fini le mystère entre « commandé » et
+                    « reçu ». Une commande refusée montre la raison. */}
+                {o.status === 'cancelled' ? (
+                  <p className="mt-3 rounded-card bg-danger-bg p-3 text-caption text-danger">
+                    {o.cancel_reason
+                      ? t('orderStatus.declineReasonShown', { reason: o.cancel_reason })
+                      : t('orderStatus.cancelledNoReason')}
+                  </p>
+                ) : (
+                  <OrderTimeline order={o} />
+                )}
+
                 <div className="mt-3 space-y-2">
                   {o.status === 'shipped' && !o.buyer_received && (
                     <Button variant="secondary" onClick={() => markReceived(o)}>{t('orderStatus.markReceived')}</Button>
@@ -135,6 +154,54 @@ export default function MyOrders() {
         </ul>
       )}
       <ReviewModal open={!!reviewOrder} onClose={() => setReviewOrder(null)} order={reviewOrder || {}} onDone={retry} />
+    </div>
+  );
+}
+
+// Timeline horizontale à 4 étapes: Commandée → Validée → En livraison (ou
+// Prête en boutique) → Livrée. Chaque étape franchie est pleine + horodatée;
+// l'étape en cours pulse doucement pour dire « c'est ici que ça se passe ».
+function OrderTimeline({ order }) {
+  const { t, i18n } = useTranslation();
+  const pickup = order.delivery_method === 'pickup';
+  const steps = [
+    { key: 'placed', label: t('orderTrack.placed'), at: order.created_at },
+    { key: 'validated', label: t('orderTrack.validated'), at: order.confirmed_at },
+    { key: 'shipping', label: pickup ? t('orderTrack.ready') : t('orderTrack.shipping'), at: order.shipped_at },
+    { key: 'delivered', label: t('orderTrack.delivered'), at: order.delivered_at },
+  ];
+  // L'étape courante = la première non atteinte.
+  const currentIdx = steps.findIndex((s) => !s.at);
+  const fmt = (iso) =>
+    new Date(iso).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' });
+
+  return (
+    <div className="mt-3 rounded-card border border-hairline p-3">
+      <div className="flex items-start">
+        {steps.map((s, i) => {
+          const done = !!s.at;
+          const active = i === currentIdx;
+          return (
+            <div key={s.key} className="flex flex-1 flex-col items-center">
+              <div className="flex w-full items-center">
+                <div className={`h-0.5 flex-1 ${i === 0 ? 'bg-transparent' : done || active ? 'bg-teal' : 'bg-hairline'}`} />
+                <div
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                    done ? 'bg-teal text-white' : active ? 'animate-pulse border-2 border-teal bg-white' : 'border-2 border-hairline bg-white'
+                  }`}
+                >
+                  {done && <IconCheck size={12} />}
+                </div>
+                <div className={`h-0.5 flex-1 ${i === steps.length - 1 ? 'bg-transparent' : done ? 'bg-teal' : 'bg-hairline'}`} />
+              </div>
+              <span className={`mt-1 text-center text-[11px] leading-tight ${done || active ? 'font-semibold text-ink' : 'text-muted'}`}>
+                {s.label}
+              </span>
+              {s.at && <span className="text-[10px] text-muted">{fmt(s.at)}</span>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
