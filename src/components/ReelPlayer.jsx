@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconShoppingBagPlus } from '@tabler/icons-react';
+import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconShoppingBagPlus, IconPlus, IconCheck } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
@@ -10,6 +10,12 @@ import { useCart } from '../hooks/useCart';
 import { ReelCommentsSheet } from './ReelCommentsSheet';
 import { Price } from './Price';
 import { track } from '../lib/track';
+
+// Ombre systématique derrière icônes/texte blancs: une vidéo claire (fond
+// blanc, robe blanche…) faisait disparaître les icônes blanches et le texte
+// devenait illisible sans un fond sombre dédié. Un drop-shadow marche quel
+// que soit le contenu de la vidéo, contrairement à un dégradé fixe seul.
+const ICON_SHADOW = { filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.6))' };
 
 // One full-screen reel. Autoplays when >60% visible; muted by default.
 export function ReelPlayer({ reel, muted, onToggleMute, active }) {
@@ -21,8 +27,10 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
   const videoRef = useRef(null);
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(reel.likes || 0);
+  const [following, setFollowing] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentCount, setCommentCount] = useState(reel.comments || 0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -32,6 +40,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     } else {
       v.pause();
       v.currentTime = 0;
+      setProgress(0);
     }
   }, [active]);
 
@@ -39,7 +48,11 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     if (!user) return;
     supabase.from('reel_likes').select('id').eq('reel_id', reel.id).eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setLiked(!!data));
-  }, [user, reel.id]);
+    if (reel.shop_id) {
+      supabase.from('shop_follows').select('id').eq('follower_id', user.id).eq('shop_id', reel.shop_id).maybeSingle()
+        .then(({ data }) => setFollowing(!!data));
+    }
+  }, [user, reel.id, reel.shop_id]);
 
   async function toggleLike() {
     if (!user) return requireLogin();
@@ -51,6 +64,22 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
       setLiked(true); setLikes((n) => n + 1);
       await supabase.from('reel_likes').insert({ reel_id: reel.id, user_id: user.id });
       await supabase.from('reels').update({ likes: likes + 1 }).eq('id', reel.id);
+    }
+  }
+
+  // Suivre la boutique sans quitter le reel — jusqu'ici, il fallait ouvrir la
+  // fiche boutique juste pour ça. Le "+" façon TikTok à côté de l'avatar.
+  async function toggleFollow(e) {
+    e.preventDefault();
+    if (!user) return requireLogin();
+    if (!reel.shop_id) return;
+    if (following) {
+      setFollowing(false);
+      await supabase.from('shop_follows').delete().eq('follower_id', user.id).eq('shop_id', reel.shop_id);
+    } else {
+      setFollowing(true);
+      await supabase.from('shop_follows').insert({ follower_id: user.id, shop_id: reel.shop_id });
+      track('follow', reel.shop_id);
     }
   }
 
@@ -73,6 +102,12 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
 
   return (
     <div className="relative h-full w-full snap-start bg-black">
+      {/* Barre de progression façon Reels/TikTok: repère de "combien il reste"
+          qui manquait totalement — la vidéo bouclait sans aucun indice. */}
+      <div className="absolute inset-x-0 top-0 z-30 h-0.5 bg-white/20">
+        <div className="h-full bg-white transition-[width] duration-150 ease-linear" style={{ width: `${progress}%` }} />
+      </div>
+
       <video
         ref={videoRef}
         src={storageUrl('reels', reel.video_url)}
@@ -80,21 +115,54 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         loop
         playsInline
         preload={active ? 'auto' : 'metadata'}
+        onTimeUpdate={(e) => {
+          const { currentTime, duration } = e.currentTarget;
+          if (duration) setProgress((currentTime / duration) * 100);
+        }}
         className="h-full w-full object-contain"
         onClick={onToggleMute}
       />
-      <button onClick={onToggleMute} className="absolute right-3 top-3 rounded-full bg-black/40 p-2 text-white" aria-label={muted ? t('fin.unmute') : t('fin.mute')}>
+
+      {/* Dégradés de lisibilité, haut ET bas: avant, le texte/les icônes ne
+          comptaient que sur leur couleur blanche — invisibles sur une vidéo
+          claire. Un scrim sombre fixe fonctionne quel que soit le contenu. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/45 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-72 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
+      <button onClick={onToggleMute} style={ICON_SHADOW} className="absolute right-3 top-3 z-20 rounded-full bg-black/30 p-2 text-white backdrop-blur-sm" aria-label={muted ? t('fin.unmute') : t('fin.mute')}>
         {muted ? <IconVolumeOff size={20} /> : <IconVolume size={20} />}
       </button>
 
-      <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-5 text-white">
+      <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-5 text-white" style={ICON_SHADOW}>
+        {/* Avatar boutique + bouton suivre rapide, au-dessus de la pile
+            like/commentaire/partager — même emplacement que TikTok. */}
+        {reel.shops && (
+          <div className="relative">
+            <Link to={`/boutique/${reel.shops.slug}`} className="block">
+              <img
+                src={reel.shops.avatar_url ? storageThumbUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
+                alt={reel.shops.name}
+                className="h-11 w-11 rounded-full border-2 border-white object-cover"
+              />
+            </Link>
+            {user?.id !== reel.shops.owner_id && (
+              <button
+                onClick={toggleFollow}
+                aria-label={following ? t('common.following') : t('common.follow')}
+                className={`absolute -bottom-1.5 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full border-2 border-black text-white transition-colors ${following ? 'bg-success' : 'bg-teal'}`}
+              >
+                {following ? <IconCheck size={11} /> : <IconPlus size={11} />}
+              </button>
+            )}
+          </div>
+        )}
         <button onClick={toggleLike} className="flex flex-col items-center transition-transform active:scale-90" aria-label={t('fin.like')}>
           {liked ? <IconHeartFilled key={likes} size={30} className="text-danger animate-like-pop" /> : <IconHeart size={30} />}
-          <span className="text-[11px]">{likes}</span>
+          <span className="text-[11px] font-medium">{likes}</span>
         </button>
         <button onClick={openComments} className="flex flex-col items-center" aria-label={t('fin.comment')}>
           <IconMessageCircle size={30} />
-          <span className="text-[11px]">{commentCount}</span>
+          <span className="text-[11px] font-medium">{commentCount}</span>
         </button>
         <button onClick={share} className="flex flex-col items-center" aria-label={t('common.share')}>
           <IconShare3 size={30} />
@@ -128,7 +196,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
             </button>
           </div>
         )}
-        <Link to={`/boutique/${reel.shops?.slug}`} className="flex items-center gap-2 px-1">
+        <Link to={`/boutique/${reel.shops?.slug}`} className="flex items-center gap-2 px-1" style={ICON_SHADOW}>
           <img
             src={reel.shops?.avatar_url ? storageThumbUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
             alt={reel.shops?.name}
@@ -140,7 +208,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
           />
           <span className="text-body font-semibold">{reel.shops?.name}</span>
         </Link>
-        {reel.caption && <p className="mt-2 line-clamp-2 px-1 text-caption">{reel.caption}</p>}
+        {reel.caption && <p className="mt-2 line-clamp-2 px-1 text-caption" style={ICON_SHADOW}>{reel.caption}</p>}
       </div>
 
       <ReelCommentsSheet

@@ -29,7 +29,7 @@ export default function Fin() {
     try {
       let query = supabase
         .from('reels')
-        .select('*, shops(name, slug, avatar_url), products(id, name, price_fcfa, images, stock, shop_id)')
+        .select('*, shops(name, slug, avatar_url, owner_id), products(id, name, price_fcfa, images, stock, shop_id)')
         .order('created_at', { ascending: false })
         .limit(30);
       if (shopFilter) query = query.eq('shop_id', shopFilter);
@@ -72,25 +72,33 @@ export default function Fin() {
 
   return (
     <div className="relative h-full bg-black">
-      <div className="absolute inset-x-0 top-0 z-20 flex justify-center gap-6 pt-3">
+      {/* Capsule translucide derrière les onglets: contraste garanti quel que
+          soit ce qu'il y a en dessous (vidéo claire, squelette de
+          chargement, écran vide blanc) — avant, le texte blanc pouvait
+          devenir invisible sur n'importe lequel des trois. */}
+      <div className="absolute inset-x-0 top-3 z-20 flex justify-center">
         {shopFilter ? (
           <button
             onClick={() => setParams({}, { replace: true })}
-            className="flex items-center gap-1.5 rounded-pill bg-white/15 px-3 py-1 text-caption font-semibold text-white backdrop-blur"
+            className="flex items-center gap-1.5 rounded-pill bg-black/30 px-3 py-1.5 text-caption font-semibold text-white backdrop-blur-sm"
           >
             {t('fin.shopFilter', { name: reels[0]?.shops?.name || '…' })}
             <IconX size={14} /> {t('fin.backToAll')}
           </button>
         ) : (
-          ['forYou', 'following'].map((tb) => (
-            <button
-              key={tb}
-              onClick={() => setTab(tb)}
-              className={`text-body ${tab === tb ? 'font-semibold text-white' : 'text-white/60'}`}
-            >
-              {t(tb === 'forYou' ? 'fin.forYou' : 'fin.followingTab')}
-            </button>
-          ))
+          <div className="flex items-center gap-1 rounded-pill bg-black/25 p-1 backdrop-blur-sm">
+            {['forYou', 'following'].map((tb) => (
+              <button
+                key={tb}
+                onClick={() => setTab(tb)}
+                className={`rounded-pill px-3.5 py-1.5 text-caption font-semibold transition-colors duration-200 ${
+                  tab === tb ? 'bg-white text-ink' : 'text-white/85'
+                }`}
+              >
+                {t(tb === 'forYou' ? 'fin.forYou' : 'fin.followingTab')}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
