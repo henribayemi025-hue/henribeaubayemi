@@ -671,7 +671,14 @@
     "listingFilled": "Fiche pré-remplie — relis et ajuste avant d’enregistrer.",
     "priceHint": "Repère : articles comparables du catalogue autour de {{price}} {{currency}} ({{count}} articles). À toi de décider.",
     "reelScript": "Générer un script vidéo (Reel/TikTok)",
-    "copyScript": "Copier le script"
+    "copyScript": "Copier le script",
+    "geoReason": {
+      "ok": "Position enregistrée.",
+      "denied": "Localisation refusée — autorise-la dans les réglages de ton navigateur, ou renseigne ville/quartier ci-dessous.",
+      "timeout": "Ça a pris trop de temps. Réessaie, ou renseigne ville/quartier ci-dessous.",
+      "unavailable": "Position indisponible pour l'instant. Réessaie, ou renseigne ville/quartier ci-dessous.",
+      "unsupported": "Ton navigateur ne permet pas la localisation. Renseigne ville/quartier ci-dessous."
+    }
   },
   "orderStatus": {
     "new": "Nouvelle",

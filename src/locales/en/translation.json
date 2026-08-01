@@ -671,7 +671,14 @@
     "listingFilled": "Listing pre-filled — review and adjust before saving.",
     "priceHint": "Benchmark: comparable catalog items around {{price}} {{currency}} ({{count}} items). Your call.",
     "reelScript": "Generate a video script (Reel/TikTok)",
-    "copyScript": "Copy the script"
+    "copyScript": "Copy the script",
+    "geoReason": {
+      "ok": "Location saved.",
+      "denied": "Location denied — allow it in your browser settings, or fill in city/neighborhood below.",
+      "timeout": "That took too long. Try again, or fill in city/neighborhood below.",
+      "unavailable": "Location unavailable right now. Try again, or fill in city/neighborhood below.",
+      "unsupported": "Your browser doesn't support location. Fill in city/neighborhood below."
+    }
   },
   "orderStatus": {
     "new": "New",

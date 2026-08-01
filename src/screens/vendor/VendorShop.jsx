@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconExternalLink, IconCurrentLocation } from '@tabler/icons-react';
+import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -9,7 +9,7 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
-import { getPosition } from '../../lib/geo';
+import { getPositionWithReason } from '../../lib/geo';
 
 export default function VendorShop() {
   const { shop } = useOutletContext();
@@ -17,20 +17,29 @@ export default function VendorShop() {
   const toast = useToast();
   const [hasGeo, setHasGeo] = useState(shop.lat != null);
   const [geoBusy, setGeoBusy] = useState(false);
+  // Un toast disparaît en 3 secondes — Beau: "j'ai appuyé, ça dit un truc,
+  // le bouton est resté normal" (aucune trace après). L'état du dernier essai
+  // reste affiché SOUS le bouton, en plus du toast, tant qu'on ne retente pas.
+  const [geoResult, setGeoResult] = useState(null); // 'ok' | 'denied' | 'timeout' | 'unavailable' | 'unsupported' | null
 
   async function useMyLocation() {
     setGeoBusy(true);
-    const pos = await getPosition();
+    setGeoResult(null);
+    const { pos, reason } = await getPositionWithReason();
     if (!pos) {
       setGeoBusy(false);
-      toast.error(t('nearYou.locationDenied'));
+      setGeoResult(reason);
+      toast.error(t(`vendor.geoReason.${reason}`));
       return;
     }
     const { error } = await supabase.from('shops').update({ lat: pos.lat, lng: pos.lng }).eq('id', shop.id);
     setGeoBusy(false);
-    if (error) toast.error(error.message);
-    else {
+    if (error) {
+      setGeoResult('unavailable');
+      toast.error(error.message);
+    } else {
       setHasGeo(true);
+      setGeoResult('ok');
       toast.success(t('vendor.locationSet'));
     }
   }
@@ -211,6 +220,19 @@ export default function VendorShop() {
             <IconCurrentLocation size={18} className={geoBusy ? 'animate-spin' : ''} />
             {hasGeo ? t('vendor.locationUpdate') : t('vendor.locationSetBtn')}
           </button>
+          {/* Reste affiché après le clic, contrairement au toast qui
+              s'efface — c'est ça qui manquait pour que "appuyer sur le
+              bouton" se sente comme si ça avait fait quelque chose. */}
+          {geoResult === 'ok' && (
+            <p className="flex items-center gap-1.5 text-caption font-semibold text-success">
+              <IconCircleCheck size={15} /> {t('vendor.geoReason.ok')}
+            </p>
+          )}
+          {geoResult && geoResult !== 'ok' && (
+            <p className="flex items-center gap-1.5 text-caption font-semibold text-danger">
+              <IconAlertCircle size={15} /> {t(`vendor.geoReason.${geoResult}`)}
+            </p>
+          )}
           <p className="text-caption text-muted">{t('vendor.locationGpsHint')}</p>
           <div className="grid grid-cols-2 gap-3 pt-1">
             <Field label={t('becomeVendor.city')}>

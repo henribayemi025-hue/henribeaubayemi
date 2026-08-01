@@ -30,12 +30,12 @@ rien n'est supprimé, pour garder l'historique des décisions de Beau._
 
 | # | Problème | Diagnostic |
 |---|---|---|
-| B1 | Profil → « Sign in » affiche « you need to be signed in to do that » au lieu d'ouvrir l'écran de connexion | TROUVÉ : le bouton appelle `requireLogin()` (la popup de garde) au lieu de naviguer vers `/auth`. Une ligne à corriger dans `UserProfile.jsx`. |
-| B2 | « you need to sign in to continue » ailleurs | À préciser par Beau : quel écran exactement ? |
+| B1 | Profil → « Sign in » affiche « you need to be signed in to do that » au lieu d'ouvrir l'écran de connexion | ✅ Corrigé le 01/08 : c'était B1=B2 (même bug, juste redit deux fois). Le bouton naviguait vers `requireLogin()` au lieu de `/auth` — corrigé dans `UserProfile.jsx`. |
+| B2 | (doublon de B1, confirmé par Beau le 01/08) | ✅ Voir B1. |
 | B3 | Catégorie Musique absente | ✅ Corrigé et confirmé visible sur staging le 31/07. |
-| B4 | « Les pièces enregistrées partent où ? » | Pas un bug : bucket privé `ids` + table `vendor_applications`. Manque peut-être une CONFIRMATION visible après envoi — à montrer à Beau. |
-| B5 | Bouton localisation boutique : « ça fait quoi ? » | Le code marche (GPS → base → toast). Le retour visuel est peut-être trop discret. À revoir avec Beau. |
-| B6 | Photos des nouvelles catégories | EN ATTENTE DES PHOTOS DE BEAU (Musique, Sport, Électroménager, Livres, Santé, Animaux, Jardin + les têtes sans photo héritée). |
+| B4 | « Les pièces enregistrées partent où ? » | Pas un bug : bucket privé `ids` + table `vendor_applications`, lisible uniquement par l'admin via `kyc-ocr`. Confirmé par Beau le 01/08 que B4 n'était qu'une question posée en retour, pas un vrai bug signalé. |
+| B5 | Bouton localisation boutique : « ça fait quoi ? » | ✅ Corrigé le 01/08 : le bouton marchait déjà (GPS → base) mais avalait toute raison d'échec dans un `null`, et le seul retour (un toast) disparaissait en 3s sans laisser de trace — d'où « le bouton est resté normal ». Ajout de `getPositionWithReason()` (distingue refusé/délai/indisponible/non supporté) + un message persistant sous le bouton (`VendorShop.jsx`) qui reste affiché tant qu'on ne retente pas. |
+| B6 | Photos des nouvelles catégories | ✅ 16 photos reçues, curées et intégrées le 31/07 (voir `src/assets/categories/CREDITS-nouvelles-photos.md`). |
 
 ## 2. Renommer « Finou Chou » ✅ fait le 31/07
 
@@ -61,7 +61,6 @@ vendeur). Confirmé visible sur staging. Noms techniques internes
 
 ## 4. Backlog fonctionnel (hors IA) — à faire
 
-- [ ] **B1** — corriger le bouton Sign in du profil (voir §1).
 - [ ] **Prix barré / promo (%)** sur les fiches produit — la colonne existe
   déjà en base, reste le champ vendeur + l'affichage. (tâche #14, in progress)
 - [ ] **Badges Ventes flash / 2nde main** sur les cartes produit (décision §3).
@@ -70,7 +69,6 @@ vendeur). Confirmé visible sur staging. Noms techniques internes
 - [ ] **Adresse de livraison enregistrée** sur le profil (tâche #13).
 - [ ] **Notifications** : vérifier qu'elles marchent vraiment sur finjaro.net
   (tâche #11).
-- [ ] **Photos de catégories** dès réception (B6).
 - [ ] L'annuaire Prestataires reste vide tant que les boutiques n'ont pas coché
   un métier — TidalEx reclassée le 31/07, les autres vendeurs doivent le faire
   dans « Ma boutique ».
@@ -96,12 +94,10 @@ vendeur). Confirmé visible sur staging. Noms techniques internes
   search_services. (Déploiement de finou-chat encore à faire, voir ci-dessous.)
 - [x] **20 (V1) Questions sur photo immobilière** : couvert par le chat photo.
 
-**Déploiements de fonctions restants** (le code est dans le dépôt, prêt) :
-- [ ] `finou-chat` (prompt diagnostic BTP + CORS workers.dev)
-- [ ] `finou-vision`, `miroir-ia`, `send-push`, `create-checkout` (CORS
-  workers.dev uniquement — sans ça, ces IA ne répondent pas depuis l'URL de
-  test finjaro-staging.workers.dev; déjà OK pour vendor-copilot/kyc-ocr/
-  troc-eval, déployés le 31/07).
+**Déploiements de fonctions** : les 6 fonctions (finou-chat, finou-vision,
+miroir-ia, send-push, create-checkout, + vendor-copilot/kyc-ocr/troc-eval du
+31/07) sont toutes redéployées sur Supabase avec le CORS `*.workers.dev` —
+✅ terminé le 01/08.
 
 ### Fait (cycles précédents)
 1 Caméléon langue/registre ✅ · 2 Voix (navigateur) ✅ partiel · 3 Urgence
