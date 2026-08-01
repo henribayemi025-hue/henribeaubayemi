@@ -130,6 +130,27 @@ d'anomalies. Tout le lot ci-dessous est implémenté le 01/08 :
   maintenant dans un bloc « Anciennes catégories » (tap pour retirer), et les
   catégories s'enregistrent À CHAQUE TAP (plus besoin du bouton Enregistrer).
 
+**Retours de test du 01/08 (2e passe) — tous corrigés :**
+- ✅ **Annulation d'une commande EN COURS** (validée ou en livraison), pas
+  seulement refus d'une commande « nouvelle » — bouton dédié (icône, à côté
+  du bouton principal) sur les étapes Validée et En livraison.
+- ✅ **Raison de refus/annulation clairement « (optionnel) »** — le mot est
+  maintenant dans le LABEL du champ, plus seulement noyé dans une phrase
+  d'aide.
+- ✅ **Numéros de commande peu distinguables** (ex. `3F8A2C1B` vs `3F9A2C1D`,
+  hex ambigu) → nouveau format `FJ-XXXXXX` sur un alphabet SANS caractères
+  ambigus (pas de 0/O, 1/I/L) — lisible sans confusion à l'oral pour le
+  suivi/vérification de paiement (migration 0031, appliquée aux deux
+  projets).
+- ✅ **Présentation des cartes commande** (vendeur ET acheteuse) refaite :
+  accent de couleur par statut, pastille d'initiale acheteuse, articles dans
+  un encart, bouton « Marquer livrée » en primaire (plus de lien texte
+  "grossier" flottant sous le bouton).
+- Confirmé déjà en place : l'écran de confirmation après commande dit bien
+  « Ta commande a bien été transmise à la boutique » (gros ✓ + numéro) — à
+  revérifier sur le lien de test, le test de Beau a pu tomber sur le build
+  d'avant le déploiement du cycle de commande.
+
 ## 5. Finia/Finou 2.0 — état des 23 points (47 capacités), texte d'origine retrouvé
 
 ### En cours dans CE cycle (« fait en partie » + « faisable maintenant ») — GO de Beau le 31/07

@@ -724,7 +724,7 @@
     "markShipping": "Start delivery",
     "markDelivered": "Mark delivered",
     "declineTitle": "Decline order",
-    "declineHint": "Explain why (optional but recommended) — the buyer will see your reason.",
+    "declineHint": "The buyer will see your reason if you give one.",
     "declinePlaceholder": "E.g. item sold out, area not served…",
     "declineConfirm": "Decline order",
     "pendingBanner_one": "{{count}} order awaiting validation",
@@ -749,7 +749,14 @@
     "zonesHint": "Say where you deliver, for how much and within how many days — shown on your page and used at checkout. 0 FCFA = free delivery in that zone.",
     "legacyCatsTitle": "Legacy categories",
     "legacyCatsHint": "Your shop still uses old categories. Tick the new sections above, then tap the old ones to remove them.",
-    "categoriesAutoSaved": "Categories saved."
+    "categoriesAutoSaved": "Categories saved.",
+    "cancelOrder": "Cancel order",
+    "cancelTitle": "Cancel order",
+    "cancelHint": "The order was already validated — the buyer will see your reason if you give one.",
+    "cancelConfirm": "Cancel order",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "declineReasonLabel": "Reason"
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -769,7 +776,8 @@
     "rebuyNoneAvailable": "These items are no longer available.",
     "readyPickup": "Ready for pickup",
     "declineReasonShown": "Declined by the shop: {{reason}}",
-    "cancelledNoReason": "Order declined by the shop."
+    "cancelledNoReason": "Order declined by the shop.",
+    "cancelReasonShown": "Cancelled by the shop: {{reason}}"
   },
   "stats": {
     "period7d": "7d",
@@ -900,7 +908,8 @@
     "emailHelp": "New order, new message… Especially useful on iPhone, where browser notifications only work if the site is added to the home screen.",
     "orderValidated": "Order validated ✅",
     "orderReady": "Your order is ready for pickup",
-    "orderDeclined": "Order declined"
+    "orderDeclined": "Order declined",
+    "orderCancelledAfterConfirm": "Order cancelled"
   },
   "productAttrs": {
     "marque": "Brand",

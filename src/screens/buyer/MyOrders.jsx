@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShoppingBag, IconRotateClockwise2, IconCheck } from '@tabler/icons-react';
+import { IconShoppingBag, IconRotateClockwise2, IconCheck, IconPackage } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,12 +10,13 @@ import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Price } from '../../components/Price';
-import { OrderStatusBadge } from '../../components/OrderStatusBadge';
+import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatusBadge';
 import { ReviewModal } from '../../components/ReviewModal';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
+import { timeAgo } from '../../lib/format';
 
 export default function MyOrders() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { add } = useCart();
@@ -99,42 +100,48 @@ export default function MyOrders() {
         <ul className="space-y-3 p-4">
           {data.map((o) => {
             const reviewed = o.reviews?.length > 0;
+            const itemCount = (o.order_items || []).reduce((n, it) => n + it.qty, 0);
             return (
-              <li key={o.id} className="card">
-                <div className="flex items-center justify-between">
-                  <p className="text-caption font-semibold text-muted">#{o.order_no}</p>
+              <li key={o.id} className={`card overflow-hidden !rounded-l-none border-l-4 ${orderAccentColor(o.status, o.delivery_method)}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-body font-semibold text-ink">{o.shops?.name}</p>
+                    <p className="text-caption text-muted">#{o.order_no} · {timeAgo(o.created_at, i18n.language)}</p>
+                  </div>
                   <OrderStatusBadge status={o.status} method={o.delivery_method} />
                 </div>
-                <p className="mt-1 text-body font-semibold text-ink">{o.shops?.name}</p>
-                <div className="mt-1 text-caption text-muted">
-                  {o.order_items?.map((it, i) => <span key={i}>{it.name} × {it.qty}{i < o.order_items.length - 1 ? ', ' : ''}</span>)}
+
+                <div className="mt-2.5 flex items-center gap-1.5 text-caption text-muted">
+                  <IconPackage size={13} className="shrink-0" />
+                  <span className="truncate">
+                    {o.order_items?.map((it, i) => `${it.name} × ${it.qty}${i < o.order_items.length - 1 ? ', ' : ''}`)}
+                  </span>
                 </div>
+
                 <div className="mt-2 flex items-center justify-between">
-                  <Price fcfa={o.total_fcfa} className="text-body font-semibold text-teal" />
+                  <span className="text-caption text-muted">{t('vendor.itemCount', { count: itemCount })}</span>
+                  <Price fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
                 </div>
 
                 {/* Suivi visuel: on voit OÙ en est la commande, avec l'heure de
                     chaque étape — fini le mystère entre « commandé » et
-                    « reçu ». Une commande refusée montre la raison. */}
+                    « reçu ». Une commande refusée/annulée montre la raison. */}
                 {o.status === 'cancelled' ? (
                   <p className="mt-3 rounded-card bg-danger-bg p-3 text-caption text-danger">
                     {o.cancel_reason
-                      ? t('orderStatus.declineReasonShown', { reason: o.cancel_reason })
+                      ? t(o.confirmed_at ? 'orderStatus.cancelReasonShown' : 'orderStatus.declineReasonShown', { reason: o.cancel_reason })
                       : t('orderStatus.cancelledNoReason')}
                   </p>
                 ) : (
                   <OrderTimeline order={o} />
                 )}
 
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
                   {o.status === 'shipped' && !o.buyer_received && (
-                    <Button variant="secondary" onClick={() => markReceived(o)}>{t('orderStatus.markReceived')}</Button>
+                    <Button variant="secondary" onClick={() => markReceived(o)} className="flex-1">{t('orderStatus.markReceived')}</Button>
                   )}
                   {o.buyer_received && !reviewed && (
-                    <Button onClick={() => setReviewOrder(o)}>{t('orderStatus.leaveReview')}</Button>
-                  )}
-                  {['new', 'confirmed'].includes(o.status) && (
-                    <p className="text-caption text-muted">{t('orderStatus.reviewLocked')}</p>
+                    <Button onClick={() => setReviewOrder(o)} className="flex-1">{t('orderStatus.leaveReview')}</Button>
                   )}
                   {/* Disponible dès qu'une commande est passée — pas besoin
                       d'attendre la livraison pour vouloir recommander la
@@ -144,10 +151,14 @@ export default function MyOrders() {
                     loading={rebuyingId === o.id}
                     disabled={rebuyingId != null && rebuyingId !== o.id}
                     onClick={() => rebuy(o)}
+                    className="flex-1"
                   >
                     <IconRotateClockwise2 size={18} /> {t('orderStatus.rebuy')}
                   </Button>
                 </div>
+                {['new', 'confirmed'].includes(o.status) && (
+                  <p className="mt-2 text-center text-caption text-muted">{t('orderStatus.reviewLocked')}</p>
+                )}
               </li>
             );
           })}
@@ -176,7 +187,7 @@ function OrderTimeline({ order }) {
     new Date(iso).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' });
 
   return (
-    <div className="mt-3 rounded-card border border-hairline p-3">
+    <div className="mt-3 rounded-card bg-base p-3">
       <div className="flex items-start">
         {steps.map((s, i) => {
           const done = !!s.at;
@@ -186,15 +197,15 @@ function OrderTimeline({ order }) {
               <div className="flex w-full items-center">
                 <div className={`h-0.5 flex-1 ${i === 0 ? 'bg-transparent' : done || active ? 'bg-teal' : 'bg-hairline'}`} />
                 <div
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-sm ${
                     done ? 'bg-teal text-white' : active ? 'animate-pulse border-2 border-teal bg-white' : 'border-2 border-hairline bg-white'
                   }`}
                 >
-                  {done && <IconCheck size={12} />}
+                  {done && <IconCheck size={13} />}
                 </div>
                 <div className={`h-0.5 flex-1 ${i === steps.length - 1 ? 'bg-transparent' : done ? 'bg-teal' : 'bg-hairline'}`} />
               </div>
-              <span className={`mt-1 text-center text-[11px] leading-tight ${done || active ? 'font-semibold text-ink' : 'text-muted'}`}>
+              <span className={`mt-1.5 text-center text-[11px] leading-tight ${done || active ? 'font-semibold text-ink' : 'text-muted'}`}>
                 {s.label}
               </span>
               {s.at && <span className="text-[10px] text-muted">{fmt(s.at)}</span>}

@@ -724,7 +724,7 @@
     "markShipping": "Passer en livraison",
     "markDelivered": "Marquer livrée",
     "declineTitle": "Refuser la commande",
-    "declineHint": "Explique pourquoi (optionnel mais recommandé) — la cliente recevra ta raison.",
+    "declineHint": "La cliente recevra ta raison si tu en donnes une.",
     "declinePlaceholder": "Ex : article épuisé, zone non desservie…",
     "declineConfirm": "Refuser la commande",
     "pendingBanner_one": "{{count}} commande à valider",
@@ -749,7 +749,14 @@
     "zonesHint": "Dis où tu livres, à quel prix et sous combien de jours — affiché sur ta fiche et utilisé au moment de la commande. 0 FCFA = livraison gratuite dans cette zone.",
     "legacyCatsTitle": "Anciennes catégories",
     "legacyCatsHint": "Ta boutique utilise encore d'anciennes catégories. Coche les nouveaux rayons ci-dessus, puis retire les anciennes en tapant dessus.",
-    "categoriesAutoSaved": "Catégories enregistrées."
+    "categoriesAutoSaved": "Catégories enregistrées.",
+    "cancelOrder": "Annuler la commande",
+    "cancelTitle": "Annuler la commande",
+    "cancelHint": "La commande a déjà été validée — la cliente recevra ta raison si tu en donnes une.",
+    "cancelConfirm": "Annuler la commande",
+    "itemCount_one": "{{count}} article",
+    "itemCount_other": "{{count}} articles",
+    "declineReasonLabel": "Raison"
   },
   "orderStatus": {
     "new": "En attente de validation",
@@ -769,7 +776,8 @@
     "rebuyNoneAvailable": "Ces articles ne sont plus disponibles.",
     "readyPickup": "Prête — à retirer",
     "declineReasonShown": "Refusée par la boutique : {{reason}}",
-    "cancelledNoReason": "Commande refusée par la boutique."
+    "cancelledNoReason": "Commande refusée par la boutique.",
+    "cancelReasonShown": "Annulée par la boutique : {{reason}}"
   },
   "stats": {
     "period7d": "7j",
@@ -900,7 +908,8 @@
     "emailHelp": "Nouvelle commande, nouveau message... Utile surtout sur iPhone, où les notifications du navigateur n'arrivent que si le site est ajouté à l'écran d'accueil.",
     "orderValidated": "Commande validée ✅",
     "orderReady": "Ta commande est prête — tu peux venir la retirer",
-    "orderDeclined": "Commande refusée"
+    "orderDeclined": "Commande refusée",
+    "orderCancelledAfterConfirm": "Commande annulée"
   },
   "productAttrs": {
     "marque": "Marque",
