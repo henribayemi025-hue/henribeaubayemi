@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh, IconBrandWhatsapp, IconPhone, IconBrandInstagram } from '@tabler/icons-react';
+import { IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh, IconBrandWhatsapp, IconPhone, IconBrandInstagram, IconSearch } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,6 +28,9 @@ export default function ShopProfile() {
   const { requireLogin } = useUI();
   const toast = useToast();
   const [tab, setTab] = useState('products');
+  // Recherche LOCALE au catalogue déjà chargé — pas de nouvel aller-retour
+  // serveur, la boutique n'a jamais plus de quelques dizaines d'articles.
+  const [q, setQ] = useState('');
   const [following, setFollowing] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -40,7 +43,7 @@ export default function ShopProfile() {
       supabase.from('shops').select('*').eq('slug', slug).maybeSingle(),
       supabase
         .from('products')
-        .select('id, name, price_fcfa, images, category, stock, shop_id, shops!inner(slug)')
+        .select('id, name, price_fcfa, compare_at_price_fcfa, images, category, stock, shop_id, shops!inner(slug)')
         .eq('shops.slug', slug)
         .eq('is_active', true)
         .order('created_at', { ascending: false }),
@@ -156,6 +159,9 @@ export default function ShopProfile() {
   // Métier principal, affiché en clair sous le nom: dit d'un coup d'œil qu'on
   // est sur un prestataire et lequel.
   const mainTrade = (shop.categories ?? []).find(isServiceCategory);
+
+  const term = q.trim().toLowerCase();
+  const shownProducts = term ? data.products.filter((p) => p.name.toLowerCase().includes(term)) : data.products;
 
   return (
     <div className="pb-6">
@@ -282,11 +288,30 @@ export default function ShopProfile() {
             (data.products.length === 0 ? (
               <EmptyState title={sk('emptyProducts')} />
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {data.products.map((p) => (
-                  <ProductCard key={p.id} product={{ ...p, shop_name: shop.name }} />
-                ))}
-              </div>
+              <>
+                {/* Utile dès qu'un catalogue dépasse une dizaine d'articles —
+                    en dessous, ça ne gêne pas non plus, donc toujours affiché
+                    plutôt que caché derrière un seuil arbitraire. */}
+                <div className="mb-3 flex items-center gap-2 rounded-input border border-hairline px-3">
+                  <IconSearch size={16} className="text-muted" />
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder={sk('searchPlaceholder')}
+                    aria-label={sk('searchPlaceholder')}
+                    className="w-full bg-transparent py-2.5 text-[16px] text-ink placeholder:text-muted focus:outline-none"
+                  />
+                </div>
+                {shownProducts.length === 0 ? (
+                  <p className="py-10 text-center text-body text-muted">{t('search.noResults', { q: q.trim() })}</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {shownProducts.map((p) => (
+                      <ProductCard key={p.id} product={{ ...p, shop_name: shop.name }} />
+                    ))}
+                  </div>
+                )}
+              </>
             ))}
 
           {tab === 'reviews' &&

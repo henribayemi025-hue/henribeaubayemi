@@ -22,7 +22,7 @@ export default function CheckoutCOD() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { items, clearShop } = useCart();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { country: geoCountry } = useSettings();
   const toast = useToast();
 
@@ -30,7 +30,15 @@ export default function CheckoutCOD() {
   const subtotal = shopItems.reduce((n, i) => n + i.price_fcfa * i.qty, 0);
 
   const [method, setMethod] = useState('pickup');
-  const [form, setForm] = useState({ name: '', phone: '', address: '', city: '', country: geoCountry || 'CM' });
+  // Pré-rempli depuis l'adresse enregistrée du profil — rien n'empêche de la
+  // corriger ici, ça ne touche jamais la valeur sauvegardée sur le profil.
+  const [form, setForm] = useState({
+    name: profile?.name || '',
+    phone: profile?.phone || '',
+    address: profile?.address || '',
+    city: profile?.city || '',
+    country: profile?.country || geoCountry || 'CM',
+  });
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [payingCard, setPayingCard] = useState(false);

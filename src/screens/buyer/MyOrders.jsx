@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShoppingBag } from '@tabler/icons-react';
+import { IconShoppingBag, IconRotateClockwise2 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
@@ -15,9 +16,12 @@ import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 
 export default function MyOrders() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { add } = useCart();
   const toast = useToast();
   const [reviewOrder, setReviewOrder] = useState(null);
+  const [rebuyingId, setRebuyingId] = useState(null);
   const [params, setParams] = useSearchParams();
 
   // Coming back from Stripe checkout: confirm success once and clean the URL.
@@ -33,7 +37,7 @@ export default function MyOrders() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: orders, error: err } = await supabase
       .from('orders')
-      .select('*, shops(name), order_items(name, qty, price_fcfa), reviews(id)')
+      .select('*, shops(name), order_items(product_id, name, qty, price_fcfa), reviews(id)')
       .eq('buyer_id', user.id)
       .order('created_at', { ascending: false });
     if (err) throw err;
@@ -43,6 +47,39 @@ export default function MyOrders() {
   async function markReceived(order) {
     await supabase.from('orders').update({ buyer_received: true }).eq('id', order.id);
     retry();
+  }
+
+  // Racheter: repart des mêmes articles, mais avec le PRIX ET LE STOCK
+  // ACTUELS — jamais l'ancien prix payé, qui peut avoir changé depuis. Un
+  // article retiré du catalogue depuis (product_id perdu ou plus actif) est
+  // silencieusement sauté; on prévient seulement s'il n'en reste aucun.
+  async function rebuy(order) {
+    const ids = (order.order_items || []).map((it) => it.product_id).filter(Boolean);
+    if (ids.length === 0) {
+      toast.error(t('orderStatus.rebuyNoneAvailable'));
+      return;
+    }
+    setRebuyingId(order.id);
+    try {
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, name, price_fcfa, images, shop_id, stock, is_active')
+        .in('id', ids);
+      if (error) throw error;
+      const available = (products || []).filter((p) => p.is_active && p.stock > 0);
+      if (available.length === 0) {
+        toast.error(t('orderStatus.rebuyNoneAvailable'));
+        return;
+      }
+      available.forEach((p) => add({ ...p, shop_name: order.shops?.name }));
+      if (available.length < ids.length) toast.info(t('orderStatus.rebuyPartial'));
+      else toast.success(t('orderStatus.rebuyAdded'));
+      navigate('/cart');
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+    } finally {
+      setRebuyingId(null);
+    }
   }
 
   if (loading) return <div className="space-y-3 p-4"><AppHeader title={t('profile.myOrders')} back />{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>;
@@ -80,6 +117,17 @@ export default function MyOrders() {
                   {['new', 'confirmed'].includes(o.status) && (
                     <p className="text-caption text-muted">{t('orderStatus.reviewLocked')}</p>
                   )}
+                  {/* Disponible dès qu'une commande est passée — pas besoin
+                      d'attendre la livraison pour vouloir recommander la
+                      même chose. */}
+                  <Button
+                    variant="secondary"
+                    loading={rebuyingId === o.id}
+                    disabled={rebuyingId != null && rebuyingId !== o.id}
+                    onClick={() => rebuy(o)}
+                  >
+                    <IconRotateClockwise2 size={18} /> {t('orderStatus.rebuy')}
+                  </Button>
                 </div>
               </li>
             );

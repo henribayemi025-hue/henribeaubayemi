@@ -61,14 +61,28 @@ vendeur). Confirmé visible sur staging. Noms techniques internes
 
 ## 4. Backlog fonctionnel (hors IA) — à faire
 
-- [ ] **Prix barré / promo (%)** sur les fiches produit — la colonne existe
-  déjà en base, reste le champ vendeur + l'affichage. (tâche #14, in progress)
-- [ ] **Badges Ventes flash / 2nde main** sur les cartes produit (décision §3).
-- [ ] **Recherche dans le catalogue d'une boutique** (tâche #16).
-- [ ] **Raccourci « Racheter »** sur les articles déjà commandés (tâche #19).
-- [ ] **Adresse de livraison enregistrée** sur le profil (tâche #13).
-- [ ] **Notifications** : vérifier qu'elles marchent vraiment sur finjaro.net
-  (tâche #11).
+- [x] **Prix barré / promo (%)** ✅ 01/08 : champ vendeur optionnel (refusé si
+  ≤ prix demandé), badge "−X %" sur la carte produit ET la fiche article, prix
+  barré affiché en `line-through`. `compare_at_price_fcfa` existait déjà en
+  base, ajouté aux requêtes catalogue/recherche/boutique qui en avaient besoin.
+- [x] **Badges Ventes flash / 2nde main** ✅ 01/08 : pas de page dédiée
+  (décision §3) — la remise EST le repère "vente flash", + badge dédié sur les
+  fiches du rayon Seconde main.
+- [x] **Recherche dans le catalogue d'une boutique** ✅ 01/08 : champ de
+  recherche (filtre local, sans aller-retour serveur) dans l'onglet Produits
+  de la fiche boutique.
+- [x] **Raccourci « Racheter »** ✅ 01/08 : bouton sur chaque commande dans Mes
+  commandes — rajoute au panier au PRIX ET STOCK ACTUELS (jamais l'ancien prix
+  payé), prévient si un article a disparu du catalogue depuis.
+- [x] **Adresse de livraison enregistrée** ✅ 01/08 : `profiles.address` +
+  `profiles.city` (migration 0029, additive), champs dans Modifier le profil,
+  pré-remplissage du tunnel de commande (toujours modifiable là aussi).
+- [x] **Notifications** ✅ Vérifié 01/08 via les logs Supabase : `send-push`
+  répond 200 sur de vrais appels en production (commande reçue, message
+  vendeur...), clé Resend et clés VAPID bien configurées en base. Table
+  `push_subscriptions` à 0 ligne — normal, personne n'a encore ajouté le site
+  à l'écran d'accueil sur iPhone (seule condition pour le push web Apple); le
+  canal e-mail, lui, tourne déjà et complète.
 - [ ] L'annuaire Prestataires reste vide tant que les boutiques n'ont pas coché
   un métier — TidalEx reclassée le 31/07, les autres vendeurs doivent le faire
   dans « Ma boutique ».

@@ -10,7 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
-import { Price } from '../../components/Price';
+import { PriceBlock, PromoBadge, discountPercent } from '../../components/Price';
 import { ProductCard } from '../../components/ProductCard';
 import { SmartImage } from '../../components/SmartImage';
 import { StarRating } from '../../components/StarRating';
@@ -118,6 +118,7 @@ export default function ProductDetail() {
   const p = data.product;
   const shop = p.shops;
   const quote = isQuoteOnly(p.category);
+  const pct = quote ? null : discountPercent(p.price_fcfa, p.compare_at_price_fcfa);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
   const cartLine = items.find((i) => i.id === p.id);
   const images = (p.images || []).map((im) => storageUrl('products', im));
@@ -160,7 +161,10 @@ export default function ProductDetail() {
         {quote ? (
           <p className="mt-1 text-section font-semibold text-brass">{t('product.requestQuote')}</p>
         ) : (
-          <Price fcfa={p.price_fcfa} className="mt-1 block text-title font-semibold text-teal" />
+          <div className="mt-1 flex items-center gap-2">
+            <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
+            {pct && <PromoBadge percent={pct} />}
+          </div>
         )}
 
         <Link to={`/boutique/${shop.slug}`} className="mt-3 flex items-center gap-2 text-body text-muted">

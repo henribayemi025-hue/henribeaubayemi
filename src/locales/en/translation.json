@@ -278,12 +278,15 @@
     "quantity": "Quantity",
     "inStock": "In stock",
     "soldBy": "Sold by",
-    "similarTitle": "You may also like"
+    "similarTitle": "You may also like",
+    "wasPrice": "Price before discount",
+    "secondHandBadge": "Second-hand"
   },
   "shop": {
     "products": "Products",
     "reviews": "Reviews",
     "about": "About",
+    "searchPlaceholder": "Search this shop",
     "emptyProducts": "This shop is preparing its first collection.",
     "noReviews": "No reviews for this shop yet.",
     "noAbout": "This shop hasn't added a description yet.",
@@ -493,7 +496,10 @@
     "orderNumber": "Order #{{n}}",
     "helpText": "Need help? Email us at fin.finjaro@gmail.com and our team will reply within 24h.",
     "helpTitle": "Help",
-    "displayName": "Display name"
+    "displayName": "Display name",
+    "savedAddress": "Saved delivery address",
+    "savedAddressHint": "Pre-fills your next orders — you can always change it at checkout.",
+    "savedCity": "City"
   },
   "referral": {
     "navLabel": "Invite friends",
@@ -582,6 +588,9 @@
     "newProduct": "New product",
     "productName": "Product name",
     "productPrice": "Price",
+    "compareAtPrice": "Original price (optional)",
+    "compareAtPriceHint": "Shows the old price struck through and the % off. Leave empty for no promo.",
+    "compareAtPriceError": "The original price must be higher than the selling price.",
     "productStock": "Stock quantity",
     "productCategory": "Department",
     "productSubcategory": "Subcategory",
@@ -691,7 +700,11 @@
     "reviewLocked": "Review unlocks after you confirm receipt.",
     "writeReview": "Write your review…",
     "submitReview": "Post review",
-    "reviewSubmitted": "Thanks for your review!"
+    "reviewSubmitted": "Thanks for your review!",
+    "rebuy": "Buy again",
+    "rebuyAdded": "Items added to cart.",
+    "rebuyPartial": "Some items are no longer available — the rest were added to your cart.",
+    "rebuyNoneAvailable": "These items are no longer available."
   },
   "stats": {
     "period7d": "7d",

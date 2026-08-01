@@ -15,7 +15,7 @@ import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadF
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 export default function VendorProductEdit() {
@@ -124,9 +124,11 @@ export default function VendorProductEdit() {
     supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data }) => {
       if (data) {
         const shown = convertFromFcfa(data.price_fcfa, shopCurrency);
+        const shownCompare = data.compare_at_price_fcfa != null ? convertFromFcfa(data.compare_at_price_fcfa, shopCurrency) : null;
         setForm({
           ...data,
           price_fcfa: String(shopCurrency === 'FCFA' ? Math.round(shown) : Number(shown.toFixed(2))),
+          compare_at_price_fcfa: shownCompare == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(shownCompare) : Number(shownCompare.toFixed(2))),
           stock: String(data.stock ?? 0),
           images: data.images || [],
           attributes: data.attributes || {},
@@ -140,6 +142,11 @@ export default function VendorProductEdit() {
     const e = {};
     if (!form.name.trim()) e.name = t('common.required');
     if (form.price_fcfa === '' || Number(form.price_fcfa) < 0) e.price = t('common.required');
+    // Un prix barré ne veut rien dire s'il n'est pas STRICTEMENT au-dessus du
+    // prix demandé — sinon on afficherait une "promo" à l'envers ou à 0 %.
+    if (form.compare_at_price_fcfa !== '' && Number(form.compare_at_price_fcfa) <= Number(form.price_fcfa || 0)) {
+      e.compareAtPrice = t('vendor.compareAtPriceError');
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -160,6 +167,7 @@ export default function VendorProductEdit() {
         shop_id: shop.id,
         name: form.name.trim(),
         price_fcfa: toFcfa(Number(form.price_fcfa), shopCurrency),
+        compare_at_price_fcfa: form.compare_at_price_fcfa === '' ? null : toFcfa(Number(form.compare_at_price_fcfa), shopCurrency),
         description: form.description.trim() || null,
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
@@ -308,6 +316,21 @@ export default function VendorProductEdit() {
         </Field>
         <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
           {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
+        </Field>
+        {/* Optionnel — vide = pas de promo affichée. Le % s'affiche seul,
+            calculé côté client ET revérifié partout où le prix s'affiche
+            (jamais de "-30%" que le calcul ne confirme pas). */}
+        <Field label={`${t('vendor.compareAtPrice')} (${shopCurrency})`} hint={t('vendor.compareAtPriceHint')} error={errors.compareAtPrice}>
+          {(fid) => (
+            <TextInput
+              id={fid}
+              type="number"
+              inputMode="decimal"
+              value={form.compare_at_price_fcfa}
+              error={errors.compareAtPrice}
+              onChange={(e) => setForm({ ...form, compare_at_price_fcfa: e.target.value })}
+            />
+          )}
         </Field>
         {/* Repère HONNÊTE issu du catalogue (médiane d'articles comparables),
             jamais un prix "optimal" sorti du chapeau — la vendeuse décide. */}

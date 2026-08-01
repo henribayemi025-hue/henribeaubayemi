@@ -278,12 +278,15 @@
     "quantity": "Quantité",
     "inStock": "En stock",
     "soldBy": "Vendu par",
-    "similarTitle": "Vous aimerez aussi"
+    "similarTitle": "Vous aimerez aussi",
+    "wasPrice": "Prix avant promo",
+    "secondHandBadge": "Seconde main"
   },
   "shop": {
     "products": "Produits",
     "reviews": "Avis",
     "about": "À propos",
+    "searchPlaceholder": "Chercher dans cette boutique",
     "emptyProducts": "Cette boutique prépare sa première collection.",
     "noReviews": "Pas encore d'avis pour cette boutique.",
     "noAbout": "Cette boutique n'a pas encore ajouté de description.",
@@ -493,7 +496,10 @@
     "orderNumber": "Commande n° {{n}}",
     "helpText": "Besoin d'aide ? Écris-nous à fin.finjaro@gmail.com et notre équipe te répondra sous 24 h.",
     "helpTitle": "Aide",
-    "displayName": "Nom affiché"
+    "displayName": "Nom affiché",
+    "savedAddress": "Adresse de livraison enregistrée",
+    "savedAddressHint": "Pré-remplit tes prochaines commandes — tu peux toujours la changer au moment de commander.",
+    "savedCity": "Ville"
   },
   "referral": {
     "navLabel": "Inviter des amis",
@@ -582,6 +588,9 @@
     "newProduct": "Nouveau produit",
     "productName": "Nom du produit",
     "productPrice": "Prix",
+    "compareAtPrice": "Prix barré (optionnel)",
+    "compareAtPriceHint": "Affiche l'ancien prix rayé et le % de remise. Laisser vide = pas de promo.",
+    "compareAtPriceError": "Le prix barré doit être plus élevé que le prix demandé.",
     "productStock": "Quantité en stock",
     "productCategory": "Rayon",
     "productSubcategory": "Sous-catégorie",
@@ -691,7 +700,11 @@
     "reviewLocked": "L'avis se débloque après réception.",
     "writeReview": "Écris ton avis…",
     "submitReview": "Publier l'avis",
-    "reviewSubmitted": "Merci pour ton avis !"
+    "reviewSubmitted": "Merci pour ton avis !",
+    "rebuy": "Racheter",
+    "rebuyAdded": "Articles ajoutés au panier.",
+    "rebuyPartial": "Certains articles ne sont plus disponibles — les autres ont été ajoutés au panier.",
+    "rebuyNoneAvailable": "Ces articles ne sont plus disponibles."
   },
   "stats": {
     "period7d": "7j",
