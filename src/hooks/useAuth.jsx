@@ -60,6 +60,11 @@ export function AuthProvider({ children }) {
     signInWithPhone: (phone, { name, ref } = {}) =>
       supabase.auth.signInWithOtp({ phone, options: { channel: 'sms', data: { name, ...(ref ? { ref } : {}) } } } ),
     verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
+    // OAuth redirige vers Google puis revient sur cette même URL — pas de
+    // deuxième étape à gérer côté client, `onAuthStateChange` (ci-dessus)
+    // s'occupe de charger la session au retour.
+    signInWithGoogle: () =>
+      supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
     signOut: () => supabase.auth.signOut(),
     resetPassword: (email) =>
       supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset` }),

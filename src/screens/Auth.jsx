@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft } from '@tabler/icons-react';
+import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogleFilled } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Button } from '../components/Button';
@@ -17,7 +17,7 @@ export default function Auth() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp } = useAuth();
+  const { signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp, signInWithGoogle } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
   const [mode, setMode] = useState(refCode ? 'signup' : 'login');
@@ -88,6 +88,18 @@ export default function Auth() {
     } catch (err) {
       toast.error(err.message === 'Token has expired or is invalid' ? t('auth.otpInvalid') : err.message);
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setBusy(true);
+    const { error } = await signInWithGoogle();
+    // En cas de succès la page redirige vers Google — rien à faire ici.
+    // On ne repasse busy à false qu'en cas d'échec (erreur réseau, provider
+    // désactivé), sinon on verrait un clignotement juste avant la redirection.
+    if (error) {
+      toast.error(error.message);
       setBusy(false);
     }
   }
@@ -227,6 +239,25 @@ export default function Auth() {
             {mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.sendResetLink')}
           </Button>
         </form>
+      )}
+
+      {mode !== 'forgot' && (
+        <>
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-hairline" />
+            <span className="text-caption text-muted">{t('auth.or')}</span>
+            <div className="h-px flex-1 bg-hairline" />
+          </div>
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={busy}
+            className="flex items-center justify-center gap-2 rounded-input border border-hairline py-3 text-body font-semibold text-ink transition active:scale-[0.98] disabled:opacity-50"
+          >
+            <IconBrandGoogleFilled size={18} />
+            {t('auth.continueWithGoogle')}
+          </button>
+        </>
       )}
 
       {mode === 'forgot' ? (

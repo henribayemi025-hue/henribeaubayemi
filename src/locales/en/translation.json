@@ -86,7 +86,9 @@
     "otpHint": "6 digits, valid for a few minutes.",
     "verifyCode": "Verify",
     "otpInvalid": "Wrong or expired code — request a new one.",
-    "resendCode": "Resend code"
+    "resendCode": "Resend code",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google"
   },
   "nav": {
     "home": "Home",

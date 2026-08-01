@@ -86,7 +86,9 @@
     "otpHint": "6 chiffres, valable quelques minutes.",
     "verifyCode": "Vérifier",
     "otpInvalid": "Code incorrect ou expiré — redemande-en un nouveau.",
-    "resendCode": "Renvoyer le code"
+    "resendCode": "Renvoyer le code",
+    "or": "ou",
+    "continueWithGoogle": "Continuer avec Google"
   },
   "nav": {
     "home": "Accueil",
