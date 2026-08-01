@@ -245,9 +245,13 @@ export default function NearYou() {
             de prestataires + carte), et porte le sélecteur Annuaire/Carte —
             avant, ce choix était une petite bascule perdue au milieu des
             filtres. */}
-        <section className="mx-4 mt-3 overflow-hidden rounded-card border border-hairline bg-white shadow-sm">
-          <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
+        <section className="mx-4 mt-2 overflow-hidden rounded-card border border-hairline bg-white shadow-sm lg:mt-3">
+          <div className="flex flex-col gap-3 p-2 lg:flex-row lg:items-center lg:justify-between lg:p-4">
+            {/* Titre + accroche réservés au GRAND écran: sur téléphone, ce
+                bloc poussait les prestataires hors de l'écran (Beau: « ça
+                prend un peu trop de place »), alors que l'en-tête dit déjà
+                « Services ». Seul le sélecteur Annuaire/Carte reste. */}
+            <div className="hidden min-w-0 lg:block">
               <span className="inline-block rounded-pill bg-teal px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
                 {t('nearYou.nearYouBadge')}
               </span>
@@ -273,9 +277,13 @@ export default function NearYou() {
 
         {/* Bloc de filtres unifié: tout ce qui filtre vit DANS un même
             encadré, au lieu d'être éparpillé sur trois rangées. */}
-        <div className="mx-4 mt-3 space-y-3 rounded-card border border-hairline bg-base p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-caption font-semibold text-ink">
+        <div className="mx-4 mt-2 space-y-2.5 rounded-card border border-hairline bg-base p-3 lg:mt-3 lg:space-y-3">
+          {/* En-tête « Filtrer par métier » masqué sur téléphone: le champ de
+              recherche dit déjà « Chercher un métier… », la ligne ne faisait
+              que consommer de la hauteur. La rangée reste affichée dès qu'il
+              y a un rayon à régler. */}
+          <div className={`${userPos ? 'flex' : 'hidden lg:flex'} flex-wrap items-center justify-between gap-2`}>
+            <span className="hidden items-center gap-1.5 text-caption font-semibold text-ink lg:flex">
               <IconFilter size={15} className="text-teal" /> {t('nearYou.filterByTrade')}
             </span>
             {/* Rayon en km: seulement quand une position réelle est connue. */}
@@ -348,19 +356,22 @@ export default function NearYou() {
           {/* Zone. Le sélecteur de pays occupe SA PROPRE ligne: coincé entre
               deux boutons, il était écrasé à un seul caractère ("F ⌄" au lieu
               de "France") — illisible. */}
-          <select
-            value={country || ''}
-            onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
-            disabled={!!userPos}
-            className="input w-full bg-white disabled:opacity-50"
-            aria-label={t('nearYou.overrideLocation')}
-          >
-            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
-          </select>
+          {/* Pays + « Autour de moi » + « Élargir » sur UNE seule rangée: en
+              trois rangées empilées, la zone de filtres à elle seule
+              repoussait le premier prestataire hors de l'écran. */}
           <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={country || ''}
+              onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
+              disabled={!!userPos}
+              className="input h-10 min-w-[9rem] flex-1 bg-white disabled:opacity-50"
+              aria-label={t('nearYou.overrideLocation')}
+            >
+              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
+            </select>
             <button
               onClick={locateMe}
-              className={`chip shrink-0 whitespace-nowrap ${userPos ? 'chip-active' : 'border-teal bg-white text-teal'}`}
+              className={`chip h-10 shrink-0 whitespace-nowrap ${userPos ? 'chip-active' : 'border-teal bg-white text-teal'}`}
               aria-pressed={!!userPos}
             >
               <IconCurrentLocation size={14} className={locating ? 'animate-spin' : ''} />
@@ -369,7 +380,7 @@ export default function NearYou() {
             {tab === 'shops' && !userPos && (
               <button
                 onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))}
-                className="chip shrink-0 whitespace-nowrap bg-white text-teal"
+                className="chip h-10 shrink-0 whitespace-nowrap bg-white text-teal"
               >
                 {radius === 'country' ? t('nearYou.broaden') : countryLabel(country, i18n.language)}
               </button>
@@ -529,9 +540,11 @@ export default function NearYou() {
 
       {/* Le bouton flottant disparaît quand la liste est vide: l'écran vide
           affiche déjà ses propres boutons, et le flottant se posait PAR-DESSUS
-          "Proposer mes services". */}
+          "Proposer mes services". Remonté au-dessus de la barre d'onglets
+          flottante: à bottom-20 il se posait dessus et chevauchait la
+          première fiche prestataire. */}
       {!listEmpty && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 mx-auto flex max-w-app justify-end px-4 lg:max-w-6xl">
+        <div className="pointer-events-none fixed inset-x-0 bottom-[104px] z-40 mx-auto flex max-w-app justify-end px-4 lg:bottom-6 lg:max-w-6xl">
           <button
             onClick={publish}
             className="pointer-events-auto flex h-12 items-center gap-1 rounded-pill bg-teal px-4 text-white shadow-lg"
