@@ -702,6 +702,8 @@
     "imageStillUploading": "Image en cours d’envoi…",
     "sellerPoints": "Points vendeur",
     "sellerPointsHint": "+10 par commande livrée",
+    "actionAddProduct": "Ajouter",
+    "actionShare": "Partager",
     "leaderboard": "Classement",
     "leaderboardTitle": "Classement des vendeurs",
     "leaderboardEmpty": "Pas encore de classement à afficher.",
@@ -1039,5 +1041,19 @@
     "reviewCount_one": "{{count}} avis",
     "reviewCount_other": "{{count}} avis",
     "isNew": "Nouveau"
+  },
+  "finances": {
+    "title": "Finances",
+    "earned": "Revenus encaissés",
+    "weekRevenue": "Revenus — 7 derniers jours",
+    "seeAll": "Détails",
+    "pending": "En attente",
+    "salesCount": "Ventes",
+    "avgBasket": "Panier moyen",
+    "ledger": "Livre de comptes",
+    "noEntries": "Aucune commande sur cette période.",
+    "rowPaid": "Encaissé",
+    "rowPending": "En attente",
+    "rowCancelled": "Annulée"
   }
 }

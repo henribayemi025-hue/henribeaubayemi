@@ -71,6 +71,7 @@ const VendorMessages = lazyWithReload(() => import('./screens/vendor/VendorMessa
 const VendorReels = lazyWithReload(() => import('./screens/vendor/VendorReels'));
 const VendorShop = lazyWithReload(() => import('./screens/vendor/VendorShop'));
 const VendorStats = lazyWithReload(() => import('./screens/vendor/VendorStats'));
+const VendorFinances = lazyWithReload(() => import('./screens/vendor/VendorFinances'));
 const VendorLeaderboard = lazyWithReload(() => import('./screens/vendor/VendorLeaderboard'));
 
 function Loading() {
@@ -133,6 +134,7 @@ export default function App() {
                       <Route path="reels" element={<VendorReels />} />
                       <Route path="shop" element={<VendorShop />} />
                       <Route path="stats" element={<VendorStats />} />
+                      <Route path="finances" element={<VendorFinances />} />
                       <Route path="leaderboard" element={<VendorLeaderboard />} />
                     </Route>
 

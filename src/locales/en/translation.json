@@ -783,7 +783,9 @@
     "declineReasonLabel": "Reason",
     "markShippingHint": "The buyer will be notified.",
     "markReadyHint": "The buyer will be notified they can come pick up their order.",
-    "markDeliveredHint": "Closes the order — the buyer can then leave a review."
+    "markDeliveredHint": "Closes the order — the buyer can then leave a review.",
+    "actionAddProduct": "Add",
+    "actionShare": "Share"
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -1039,5 +1041,19 @@
     "reviewCount_one": "{{count}} review",
     "reviewCount_other": "{{count}} reviews",
     "isNew": "New"
+  },
+  "finances": {
+    "title": "Finances",
+    "earned": "Money earned",
+    "weekRevenue": "Earnings — last 7 days",
+    "seeAll": "Details",
+    "pending": "Pending",
+    "salesCount": "Sales",
+    "avgBasket": "Avg. basket",
+    "ledger": "Ledger",
+    "noEntries": "No orders in this period.",
+    "rowPaid": "Received",
+    "rowPending": "Pending",
+    "rowCancelled": "Cancelled"
   }
 }

@@ -123,12 +123,16 @@ export default function VendorStats() {
 
           <section>
             <h2 className="mb-2 text-section text-ink">{t('stats.salesByDay')}</h2>
+            {/* Barres et libellés séparés: une hauteur en % ne se résout que
+                contre un parent à hauteur définie (h-32). */}
             <div className="flex h-32 items-end gap-2">
               {data.week.map((v, i) => (
-                <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                  <div className="w-full rounded-t bg-teal" style={{ height: `${(v / maxDay) * 100}%`, minHeight: v > 0 ? 4 : 0 }} />
-                  <span className="text-[10px] text-muted">{dayNames[i]}</span>
-                </div>
+                <div key={i} className="flex-1 rounded-t bg-teal" style={{ height: `${(v / maxDay) * 100}%`, minHeight: v > 0 ? 4 : 0 }} />
+              ))}
+            </div>
+            <div className="mt-1 flex gap-2">
+              {dayNames.map((d) => (
+                <span key={d} className="flex-1 text-center text-[10px] text-muted">{d}</span>
               ))}
             </div>
           </section>
