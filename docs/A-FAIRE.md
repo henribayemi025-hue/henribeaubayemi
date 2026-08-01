@@ -6,14 +6,23 @@ rien n'est supprimé, pour garder l'historique des décisions de Beau._
 
 ## Circuit de travail (rappel)
 
-- Tout se code sur la branche **`staging`** → déployé automatiquement sur le
-  Worker **finjaro-staging** (URL de test, invisible du public).
+- Tout se code sur la branche **`staging`** → déployé automatiquement sur
+  **https://staging-finjaro.finjaro.workers.dev** (URL de test, invisible du
+  public — confirmé en marche le 31/07 après correction de la config
+  Cloudflare, voir ci-dessous).
 - **finjaro.net** ne change QUE quand Beau valide et qu'on fusionne `staging`
   dans `claude/finjaro-marketplace-build-xsripr` (branche de production
   surveillée par Cloudflare).
 - Base de données : les deux frontends pointent sur le projet Supabase de
   production (`bokwivwizghdlaedczbw`) — toute migration doit donc rester
   additive. Projet de test : `qiyvoaljqmbfldephobp`.
+- **Config Cloudflare (Settings > Build)**, pour référence si jamais elle se
+  dérègle à nouveau :
+  - Deploy command (branche de prod) : `npx wrangler deploy`
+  - Non-production branch deploy command (branche staging) :
+    `npx wrangler versions upload` — PAS `wrangler deploy --env staging`,
+    qui promeut toujours en production quel que soit `--env` et a fait
+    fuiter du contenu de test sur finjaro.net le 31/07 avant d'être corrigé.
 
 ---
 
