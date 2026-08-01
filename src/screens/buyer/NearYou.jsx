@@ -388,17 +388,24 @@ export default function NearYou() {
           </div>
         </div>
 
-        <div className="mt-3 flex border-b border-hairline">
-          {['shops', 'listings'].map((tb) => (
-            <button key={tb} onClick={() => setTab(tb)} className={`flex-1 border-b-2 py-2 text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}>
-              {t(`nearYou.${tb}`)}
-              {tb === 'shops' && shownShops.length > 0 && <span className="ml-1 text-caption">({shownShops.length})</span>}
-            </button>
-          ))}
-        </div>
+        {/* Onglets + filtres d'annonces COLLÉS sous l'en-tête pendant le
+            défilement: sans ça, changer « Je propose / Je cherche » ou de
+            catégorie obligeait à remonter toute la liste (demande de Beau).
+            `top-14` = la hauteur de l'AppHeader, lui aussi collant — sinon
+            les deux se superposeraient. z-20 pour passer SOUS l'en-tête
+            (z-30) et au-dessus du contenu. */}
+        <div className="sticky top-14 z-20 mt-2 bg-white">
+          <div className="flex border-b border-hairline">
+            {['shops', 'listings'].map((tb) => (
+              <button key={tb} onClick={() => setTab(tb)} className={`flex-1 border-b-2 py-2 text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}>
+                {t(`nearYou.${tb}`)}
+                {tb === 'shops' && shownShops.length > 0 && <span className="ml-1 text-caption">({shownShops.length})</span>}
+              </button>
+            ))}
+          </div>
 
         {tab === 'listings' && (
-          <div className="space-y-2 px-4 pt-3">
+          <div className="space-y-2 border-b border-hairline px-4 py-2.5">
             {/* Qui DEMANDE vs qui PROPOSE. */}
             <div className="inline-flex w-full rounded-pill border border-hairline p-0.5">
               {[
@@ -439,6 +446,7 @@ export default function NearYou() {
             </div>
           </div>
         )}
+        </div>
 
         {loading ? (
           <div className="grid gap-4 p-4 sm:grid-cols-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-64 w-full" />)}</div>
