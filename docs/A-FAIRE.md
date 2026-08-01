@@ -151,6 +151,53 @@ d'anomalies. Tout le lot ci-dessous est implémenté le 01/08 :
   revérifier sur le lien de test, le test de Beau a pu tomber sur le build
   d'avant le déploiement du cycle de commande.
 
+## 4ter. Redesign global écran par écran (01/08) ✅ validé par Beau
+
+Beau a envoyé des maquettes de référence (style Nevo/prototype) et demandé
+un vrai travail visuel, onglet par onglet. Tout est validé (« c'est bon ») :
+
+- ✅ **Accueil** : barre de recherche pleine largeur tappable (au lieu d'une
+  icône loupe dans un coin), carrousel héros avec ombre, tuiles catégories
+  en relief, bande « Services » en accent doré pour se distinguer du reste,
+  icônes devant les titres de section.
+- ✅ **Fin (reels)** : sélecteur « Pour toi / Abonnements » en capsule
+  translucide — au passage, **vrai bug corrigé** : le texte blanc devenait
+  invisible sur une vidéo claire, sur l'écran de chargement ET sur l'écran
+  vide. Barre de progression en haut de la vidéo, avatar boutique + bouton
+  suivre rapide (+/✓), dégradés de lisibilité haut/bas.
+- ✅ **Services** : nouveau `ProviderCard` (couverture, badge métier, avatar
+  débordant, portfolio de 3 photos, note + nb d'avis, prix d'appel, boutons
+  Détails/Réserver), bandeau « Annuaire & Carte », curseur de rayon en km
+  (affiché seulement si une position réelle est connue), grille 1/2/3
+  colonnes. **Données toutes réelles** : « Nouveau » si aucun avis, prix
+  d'appel = le plus bas du vrai catalogue, portfolio = vraies photos
+  produit. Rien d'inventé contrairement aux chiffres de la maquette.
+- ✅ **Messages** : deux panneaux sur ordinateur (liste + fil), en-tête de
+  conversation avec accès direct WhatsApp/téléphone (affichés seulement si
+  le numéro existe), bulles terracotta pleines pour ses propres messages,
+  aperçu en gras tant que non lu, conversation active surlignée.
+  → Pas d'indicateur « en ligne » : l'app ne suit aucune présence temps
+  réel, un point vert serait décoratif et mensonger. Faisable pour de vrai
+  (Supabase Realtime Presence) si Beau le demande — chantier à part.
+- ✅ **Bandeau d'annonce** (la bande orange du prototype) : table dédiée
+  `announcements` (migration 0032) + éditeur dans l'espace admin avec
+  aperçu. Le texte est une DONNÉE, jamais codé en dur — une promo figée
+  dans le build continuerait de promettre une opération terminée.
+  Table à part exprès, surtout pas `app_config` qui contient les clés
+  Stripe/VAPID.
+- ✅ **BUG LANGUE corrigé** (signalé par Beau : « j'ai choisi français,
+  j'ai des champs en anglais ») — deux causes réelles :
+  1. `i18n.language` pouvait valoir `fr-FR`, et les **9 endroits** qui
+     testent `locale === 'fr'` (dates, heures, noms de pays, format des
+     prix) basculaient alors silencieusement en anglais. Réglé par
+     `load: 'languageOnly'`.
+  2. L'app suivait la langue du TÉLÉPHONE : un appareil en anglais
+     affichait tout en anglais sans que personne l'ait demandé. Le
+     français est désormais la langue par défaut du produit ; l'anglais
+     reste dans Profil > Paramètres et le choix est mémorisé.
+
+**Reste du redesign :** l'onglet **Profil** n'a pas encore été repris.
+
 ## 5. Finia/Finou 2.0 — état des 23 points (47 capacités), texte d'origine retrouvé
 
 ### En cours dans CE cycle (« fait en partie » + « faisable maintenant ») — GO de Beau le 31/07
