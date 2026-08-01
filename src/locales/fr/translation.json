@@ -428,7 +428,8 @@
     "attachImage": "Joindre une image",
     "empty": "Démarre la conversation avec un premier message.",
     "quoteIntro": "Bonjour, je souhaite demander un devis.",
-    "ownShop": "C'est ta propre boutique."
+    "ownShop": "C'est ta propre boutique.",
+    "viewShop": "Voir la boutique"
   },
   "cart": {
     "title": "Panier",
@@ -576,7 +577,8 @@
   "inbox": {
     "title": "Messages",
     "empty": "Aucun message.",
-    "emptyHint": "Contacte une boutique pour démarrer une conversation."
+    "emptyHint": "Contacte une boutique pour démarrer une conversation.",
+    "pickConversation": "Choisis une conversation à gauche pour l'ouvrir."
   },
   "checkout": {
     "title": "Commande",

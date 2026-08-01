@@ -428,7 +428,8 @@
     "attachImage": "Attach an image",
     "empty": "Start the conversation with a first message.",
     "quoteIntro": "Hello, I'd like to request a quote.",
-    "ownShop": "This is your own shop."
+    "ownShop": "This is your own shop.",
+    "viewShop": "View shop"
   },
   "cart": {
     "title": "Cart",
@@ -576,7 +577,8 @@
   "inbox": {
     "title": "Messages",
     "empty": "No messages yet.",
-    "emptyHint": "Contact a shop to start a conversation."
+    "emptyHint": "Contact a shop to start a conversation.",
+    "pickConversation": "Pick a conversation on the left to open it."
   },
   "checkout": {
     "title": "Checkout",

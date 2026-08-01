@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { AppHeader } from '../../components/AppHeader';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { SmartImage } from '../../components/SmartImage';
 import { ShopAvatar } from '../../components/ShopAvatar';
+import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { MessagesShell } from './Inbox';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { pushNotify } from '../../lib/notify';
@@ -26,6 +28,8 @@ export default function VendorChat({ vendor = false }) {
   const { conversationId } = useParams();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const role = vendor ? 'vendor' : 'buyer';
 
   const [meta, setMeta] = useState(null);
@@ -59,7 +63,7 @@ export default function VendorChat({ vendor = false }) {
     try {
       const { data: conv, error: cErr } = await supabase
         .from('conversations')
-        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country)')
+        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country, is_verified, whatsapp, phone)')
         .eq('id', conversationId)
         .maybeSingle();
       if (cErr || !conv) throw cErr || new Error('not found');
@@ -201,10 +205,60 @@ export default function VendorChat({ vendor = false }) {
   }
 
   const shop = meta?.shops;
+  // Numéros nettoyés une seule fois: un WhatsApp saisi « +237 6 12 34 56 78 »
+  // doit devenir un lien wa.me valide, pas une URL avec des espaces.
+  const waNumber = shop?.whatsapp?.replace(/[^\d]/g, '');
+  const telNumber = shop?.phone?.replace(/[^+\d]/g, '');
 
-  return (
-    <div className="flex h-full flex-col">
-      <AppHeader title={shop?.name || t('nav.messages')} back />
+  const thread = (
+    <div className="flex h-full min-h-0 flex-col">
+      {/* En-tête de conversation: identité + contacts rapides. Les boutons
+          WhatsApp/Téléphone n'apparaissent QUE si la boutique a réellement
+          renseigné le canal — jamais un bouton qui ne mène nulle part. */}
+      <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-hairline bg-white px-3">
+        {/* Sur ordinateur la liste est juste à gauche: pas besoin de retour. */}
+        {!isDesktop && (
+          <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="-ml-1 shrink-0 p-1 text-ink">
+            <IconChevronLeft size={22} />
+          </button>
+        )}
+        <Link to={shop?.slug ? `/boutique/${shop.slug}` : '#'} className="flex min-w-0 flex-1 items-center gap-2.5">
+          <ShopAvatar
+            src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
+            fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null}
+            name={shop?.name}
+            seed={meta?.shop_id}
+            className="h-9 w-9 shrink-0"
+          />
+          <span className="min-w-0">
+            <span className="flex items-center gap-1">
+              <span className="line-clamp-1 text-body font-semibold text-ink">{shop?.name || t('nav.messages')}</span>
+              {shop?.is_verified && <VerifiedBadge size={14} />}
+            </span>
+            <span className="block text-[11px] text-muted">{t('chat.viewShop')}</span>
+          </span>
+        </Link>
+        {waNumber && (
+          <a
+            href={`https://wa.me/${waNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg text-success"
+          >
+            <IconBrandWhatsapp size={19} />
+          </a>
+        )}
+        {telNumber && (
+          <a
+            href={`tel:${telNumber}`}
+            aria-label={t('shop.call')}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal"
+          >
+            <IconPhone size={18} />
+          </a>
+        )}
+      </header>
       {loading ? (
         <div className="flex-1 space-y-3 p-4">
           <Skeleton className="ml-auto h-10 w-1/2" />
@@ -251,14 +305,23 @@ export default function VendorChat({ vendor = false }) {
               const mine = !!user && m.sender_id === user.id;
               return (
                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${mine ? 'bg-[#F4EFE6]' : 'border border-hairline bg-white'}`}>
+                  {/* Mes messages en terracotta plein (texte blanc), ceux d'en
+                      face en carte blanche: la conversation se lit d'un coup
+                      d'œil sans avoir à repérer de quel côté est la bulle. */}
+                  <div
+                    className={`max-w-[80%] px-3.5 py-2.5 shadow-sm ${
+                      mine
+                        ? 'rounded-2xl rounded-br-md bg-teal text-white'
+                        : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
+                    }`}
+                  >
                     {m.image_url && <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />}
-                    {m.body && <p className="whitespace-pre-wrap text-body text-ink">{m.body}</p>}
-                    <div className="mt-0.5 flex items-center justify-end gap-1 text-[11px] text-muted">
+                    {m.body && <p className="whitespace-pre-wrap text-body">{m.body}</p>}
+                    <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
                       <span>{clockTime(m.created_at, i18n.language)}</span>
-                      {mine && !m.failed && (m.id.toString().startsWith('temp') ? <IconCheck size={13} /> : <IconChecks size={13} className="text-teal" />)}
+                      {mine && !m.failed && (m.id.toString().startsWith('temp') ? <IconCheck size={13} /> : <IconChecks size={13} />)}
                       {m.failed && (
-                        <button onClick={() => retryMessage(m)} className="flex items-center gap-0.5 text-danger" aria-label={t('chat.sendFailed')}>
+                        <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
                           <IconAlertCircle size={14} /> {t('common.retry')}
                         </button>
                       )}
@@ -328,4 +391,15 @@ export default function VendorChat({ vendor = false }) {
       )}
     </div>
   );
+
+  // Sur ordinateur, le fil s'affiche à côté de la liste des conversations
+  // (deux panneaux). Sur mobile, une page à la fois, comme avant.
+  if (isDesktop) {
+    return (
+      <MessagesShell vendor={vendor} activeId={conversationId}>
+        {thread}
+      </MessagesShell>
+    );
+  }
+  return thread;
 }
