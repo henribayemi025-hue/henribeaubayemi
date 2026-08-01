@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { BuyerNav } from '../../components/BuyerNav';
 import { BuyerSidebarNav } from '../../components/BuyerSidebarNav';
+import { TAB_BAR_SPACE } from '../../components/TabBar';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
@@ -34,7 +35,16 @@ export function BuyerLayout() {
             annonce active — pas de bande vide. Masqué sur le plein écran
             vidéo, où toute barre casse l'immersion. */}
         {!pathname.startsWith('/fin') && <AnnouncementBanner />}
-        <main className="flex-1 overflow-y-auto overscroll-contain">
+        {/* La barre d'onglets flotte AU-DESSUS du contenu (voir TabBar): sans
+            cette marge basse, le dernier élément de chaque écran finirait
+            caché derrière elle. Même règle que BuyerNav pour savoir si la
+            barre est là — masquée dans un fil de discussion, qui gère sa
+            propre hauteur. `/fin` est plein écran par nature. */}
+        <main
+          className={`flex-1 overflow-y-auto overscroll-contain ${
+            pathname.startsWith('/chat') || pathname.startsWith('/fin') ? '' : TAB_BAR_SPACE
+          }`}
+        >
           <ErrorBoundary key={pathname}>
             <Outlet />
           </ErrorBoundary>

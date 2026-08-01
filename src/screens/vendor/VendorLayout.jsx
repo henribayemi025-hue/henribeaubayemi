@@ -1,6 +1,7 @@
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { VendorNav } from '../../components/VendorNav';
 import { VendorSidebarNav } from '../../components/VendorSidebarNav';
+import { TAB_BAR_SPACE } from '../../components/TabBar';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { LoginPrompt } from '../../components/LoginPrompt';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
@@ -43,7 +44,14 @@ export function VendorLayout() {
         className="fixed left-0 right-0 top-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
         style={{ height: 'var(--app-height, 100dvh)', paddingBottom: 'var(--kb, 0px)' }}
       >
-        <main className="flex-1 overflow-y-auto overscroll-contain">
+        {/* Marge basse tant que la barre d'onglets flottante est là (elle
+            survole le contenu) — masquée dans un fil de discussion, qui gère
+            sa propre hauteur. Même règle que VendorNav. */}
+        <main
+          className={`flex-1 overflow-y-auto overscroll-contain ${
+            pathname.startsWith('/vendor/messages/') ? '' : TAB_BAR_SPACE
+          }`}
+        >
           <ErrorBoundary key={pathname}>
             <Outlet context={{ shop }} />
           </ErrorBoundary>
@@ -52,7 +60,7 @@ export function VendorLayout() {
           // Positions relative to the fixed shell above (not <main>'s scroll),
           // same pattern as the buyer side's BuyerNav FAB — viewport-pinned
           // regardless of scroll position, sitting just above the tab bar.
-          <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex justify-end px-4 lg:bottom-6 lg:px-6">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[104px] z-40 flex justify-end px-4 lg:bottom-6 lg:px-6">
             <button
               onClick={openFinou}
               aria-label={t('finou.title')}

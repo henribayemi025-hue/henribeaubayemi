@@ -1,11 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  IconHome, IconHomeFilled,
-  IconPlayerPlay, IconPlayerPlayFilled,
-  IconMapPin, IconMapPinFilled,
-  IconMessage, IconMessageFilled,
-  IconUser, IconUserFilled,
+  IconHome2, IconHome2Filled,
+  IconVideo, IconVideoFilled,
+  IconTools,
+  IconMessage2, IconMessage2Filled,
+  IconUserCircle, IconUserFilled,
   IconSparkles, IconX,
 } from '@tabler/icons-react';
 import { useUI } from '../hooks/useUI';
@@ -15,12 +15,16 @@ import { useEffect, useState } from 'react';
 const HINT_SEEN_KEY = 'finjaro_finou_hint_seen';
 const HINT_ROTATE_MS = 3200;
 
+// Icônes choisies pour DIRE ce que fait l'onglet: une caméra vidéo pour les
+// reels (le triangle « lecture » d'avant disait juste « bouton play »), des
+// outils pour les services (le reste de l'app les représente déjà comme ça,
+// la punaise de carte était incohérente).
 const items = [
-  { to: '/', key: 'home', end: true, out: IconHome, on: IconHomeFilled },
-  { to: '/fin', key: 'fin', out: IconPlayerPlay, on: IconPlayerPlayFilled },
-  { to: '/services', key: 'services', out: IconMapPin, on: IconMapPinFilled },
-  { to: '/inbox', key: 'messages', out: IconMessage, on: IconMessageFilled },
-  { to: '/profile', key: 'profile', out: IconUser, on: IconUserFilled },
+  { to: '/', key: 'home', end: true, out: IconHome2, on: IconHome2Filled },
+  { to: '/fin', key: 'fin', out: IconVideo, on: IconVideoFilled },
+  { to: '/services', key: 'services', out: IconTools, on: IconTools },
+  { to: '/inbox', key: 'messages', out: IconMessage2, on: IconMessage2Filled },
+  { to: '/profile', key: 'profile', out: IconUserCircle, on: IconUserFilled },
 ];
 
 export function BuyerNav() {
@@ -61,8 +65,11 @@ export function BuyerNav() {
 
   return (
     <>
+      {/* La barre d'onglets flotte désormais au-dessus du contenu et occupe
+          ~86 px: la bulle Finia doit passer AU-DESSUS d'elle, sinon elle se
+          retrouve à cheval sur les onglets. */}
       {showFinou && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-40 flex flex-col items-end gap-2 px-4 lg:bottom-6 lg:px-6">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[104px] z-40 flex flex-col items-end gap-2 px-4 lg:bottom-6 lg:px-6">
           {showHint && (
             <div className="pointer-events-auto flex max-w-[75vw] items-center gap-1.5 rounded-card bg-white py-2 pl-3 pr-1.5 shadow-lg ring-1 ring-hairline">
               <button
