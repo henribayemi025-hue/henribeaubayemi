@@ -9,3 +9,4 @@ dist-ssr
 .netlify
 supabase/.temp
 npm-debug.log*
+dist-admin
