@@ -787,7 +787,8 @@
     "markReadyHint": "The buyer will be notified they can come pick up their order.",
     "markDeliveredHint": "Closes the order — the buyer can then leave a review.",
     "actionAddProduct": "Add",
-    "actionShare": "Share"
+    "actionShare": "Share",
+    "countryCurrencyHint": "Sets the currency of your prices — currently {{currency}}."
   },
   "orderStatus": {
     "new": "Awaiting validation",

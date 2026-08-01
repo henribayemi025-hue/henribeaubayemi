@@ -787,7 +787,8 @@
     "declineReasonLabel": "Raison",
     "markShippingHint": "La cliente sera prévenue par notification.",
     "markReadyHint": "La cliente sera prévenue qu'elle peut venir chercher sa commande.",
-    "markDeliveredHint": "Clôture la commande — la cliente pourra laisser un avis."
+    "markDeliveredHint": "Clôture la commande — la cliente pourra laisser un avis.",
+    "countryCurrencyHint": "Fixe la devise de tes prix — actuellement {{currency}}."
   },
   "orderStatus": {
     "new": "En attente de validation",
