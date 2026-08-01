@@ -198,6 +198,57 @@ un vrai travail visuel, onglet par onglet. Tout est validé (« c'est bon ») :
 
 **Reste du redesign :** l'onglet **Profil** n'a pas encore été repris.
 
+## 4quater. Espace vendeur, audit global, connexions, admin (01/08)
+
+- [x] **Espace vendeur refondu** : tableau de bord « cockpit » + espace
+  **Finances** (comptabilité simple : encaissé, à venir, par mois).
+- [x] **Connexion par téléphone (SMS)** ✅ : Twilio branché sur Supabase
+  (Account SID + Auth Token + Messaging Service). Testé par Beau, ça marche.
+  L'inscription/connexion par SMS ne demande ni e-mail ni mot de passe.
+- [x] **Connexion Google** ✅ : client OAuth créé sur Google Cloud (appli
+  « Finjaro », publiée « En production » donc ouverte à tous), identifiants
+  posés dans Supabase. Bouton « Continuer avec Google » sur l'écran de
+  connexion. **Apple non fait** : Apple exige 99 $/an de compte développeur.
+- [x] **Audit complet de l'app** ✅ : parcours acheteuse ET vendeuse rejoués
+  écran par écran, bouton par bouton (Playwright + captures). Résultat : aucun
+  lien mort, zéro erreur console, cycle de commande cohérent des deux côtés
+  (valider → en livraison → livrée, avec annulation possible à chaque étape et
+  la timeline acheteuse qui suit). Corrigés au passage : le choix
+  taille/couleur était enterré sous la description (il conditionne pourtant
+  l'ajout au panier) — remonté et la page défile jusqu'à lui si on l'oublie ;
+  2 libellés de traduction manquants ; le graphique « ventes par jour » des
+  stats vendeur était plat.
+- [x] **CNI masquée de l'inscription vendeur** ✅ (demande de Beau, 01/08) :
+  exiger — ou même montrer — une pièce d'identité freine les inscriptions.
+  Masquée derrière `SHOW_ID_UPLOAD` dans `BecomeVendor.jsx` ; le code, le
+  bucket `ids` et la lecture OCR côté admin restent intacts, un seul drapeau à
+  rebasculer. **Point légal** : la CNI reste facultative et non collectée —
+  c'est le choix le plus sûr au regard du RGPD (on ne collecte pas ce dont on
+  n'a pas besoin). Le jour des paiements en ligne, ce sont CinetPay/Stripe qui
+  exigeront et stockeront l'identité, pas nous.
+- [x] **Console d'administration complète** ✅ : six sections — Résumé (KPI +
+  bandeaux d'alerte), Boutiques (annuaire cherchable, chiffres réels par
+  boutique, certifier / suspendre), Comptes (suspendre, donner les droits
+  admin), Commandes (toute la plateforme, en lecture seule), Modération (file
+  des signalements), Contenu (bandeau d'annonce + candidatures vendeur avec
+  OCR). Migration `0034_admin_full_rights.sql`.
+  **Deux bugs sérieux corrigés au passage** : les signalements n'étaient
+  lisibles que par leur auteur (la modération était donc impossible), et les
+  statistiques ne comptaient que la navigation de l'admin lui-même — les
+  chiffres affichés étaient faux.
+  **Volontairement non ouvert** : les conversations privées entre clientes et
+  boutiques. Lire les messages privés n'est pas un pouvoir d'administration
+  ordinaire ; à décider explicitement si le besoin se présente.
+- [x] **Admin séparé de la boutique** ✅ (demande de Beau, 01/08) : la console
+  n'est plus une page de l'app. Deux constructions, deux Workers Cloudflare,
+  deux domaines — `npm run build` → `finjaro` → finjaro.net ; `npm run
+  build:admin` → `finjaro-admin` → admin.finjaro.net. La boutique ne contient
+  plus une ligne d'admin et ne laisse plus deviner qu'une console existe (le
+  raccourci du menu Profil est retiré).
+  **Même dépôt, volontairement** : composants, traductions, charte et base
+  Supabase restent partagés — un correctif appliqué une fois vaut des deux
+  côtés. Deux dépôts auraient garanti la divergence.
+
 ## 5. Finia/Finou 2.0 — état des 23 points (47 capacités), texte d'origine retrouvé
 
 ### En cours dans CE cycle (« fait en partie » + « faisable maintenant ») — GO de Beau le 31/07
