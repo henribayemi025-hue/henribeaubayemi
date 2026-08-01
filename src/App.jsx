@@ -60,7 +60,6 @@ const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'
 const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazyWithReload(() => import('./screens/Auth'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
-const AdminDashboard = lazyWithReload(() => import('./screens/AdminDashboard'));
 const Landing = lazyWithReload(() => import('../landing/Landing'));
 
 const VendorDashboard = lazyWithReload(() => import('./screens/vendor/VendorDashboard'));
@@ -95,7 +94,9 @@ export default function App() {
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/auth/reset" element={<ResetPassword />} />
-                    <Route path="/admin" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
+                    {/* Pas de route /admin ici: la console d'administration
+                        est une application à part (src/AdminApp.jsx), livrée
+                        sur son propre domaine. Voir wrangler.admin.toml. */}
                     <Route path="/landing" element={<Landing />} />
 
                     <Route element={<BuyerLayout />}>

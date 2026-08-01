@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconShieldLock, IconCircleCheck, IconChevronLeft, IconPackage, IconTool, IconPackages } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
+import { useSettings } from '../../hooks/useSettings';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
@@ -21,7 +22,7 @@ import { getPosition } from '../../lib/geo';
 const SHOW_ID_UPLOAD = false;
 
 const empty = {
-  shop_name: '', country: 'CM', city: '', categories: [],
+  shop_name: '', country: '', city: '', categories: [],
   first_name: '', last_name: '', id_front_url: null, id_back_url: null, phone: '',
   banner_url: null, avatar_url: null, description: '', whatsapp: '',
 };
@@ -46,7 +47,19 @@ export default function BecomeVendor() {
   const { loading, status, reload } = useVendorStatus();
   const toast = useToast();
   const [step, setStep] = useState(1);
+  // Le pays part du pays DÉTECTÉ (ou choisi dans Paramètres), pas d'un
+  // « Cameroun » codé en dur. C'est lui qui fixe la devise de saisie des
+  // prix: un vendeur en France qui ne remarquait pas la liste se retrouvait
+  // à taper ses prix en FCFA — et n'avait ensuite aucun moyen de corriger,
+  // le pays n'étant pas modifiable une fois la boutique créée (il l'est
+  // désormais, voir VendorShop).
+  const { country: detectedCountry } = useSettings();
   const [form, setForm] = useState(empty);
+
+  useEffect(() => {
+    // Ne jamais écraser un choix déjà fait à la main.
+    setForm((f) => (f.country ? f : { ...f, country: detectedCountry || 'CM' }));
+  }, [detectedCountry]);
   const [agree, setAgree] = useState(false);
   const [termsErr, setTermsErr] = useState(false);
   const [busy, setBusy] = useState(false);

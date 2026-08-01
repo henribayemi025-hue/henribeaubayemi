@@ -1,0 +1,17 @@
+# Worker de la console d'ADMINISTRATION — distinct du Worker `finjaro` qui
+# sert la boutique (wrangler.toml). Deux Workers, deux domaines, deux
+# déploiements: rien de l'administration n'est livré sur finjaro.net.
+#
+# Côté Cloudflare, ce Worker est bâti avec:
+#   Deploy command (branche de production) : npx wrangler deploy --config wrangler.admin.toml
+#   Non-production branch deploy command   : npx wrangler versions upload --config wrangler.admin.toml
+#   Build command                          : npm run build:admin
+name = "finjaro-admin"
+compatibility_date = "2026-07-23"
+
+[assets]
+directory = "./dist-admin"
+# Application monopage: une adresse inconnue retombe sur index.html pour que
+# le routage côté client fonctionne (et qu'un lien profond ne renvoie pas une
+# page blanche).
+not_found_handling = "single-page-application"

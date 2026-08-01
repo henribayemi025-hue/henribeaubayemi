@@ -13,14 +13,19 @@ import { Field, TextInput } from '../components/Field';
 // numéro invalide, et on relaie alors SON message d'erreur.
 const E164_RE = /^\+[1-9]\d{6,14}$/;
 
-export default function Auth() {
+// `consoleMode`: écran de connexion de la console d'administration. On n'y
+// crée pas de compte (les droits admin s'accordent depuis la console
+// elle-même) et « continuer sans compte » n'a aucun sens là où tout est
+// derrière une authentification. Seule la connexion — et l'oubli de mot de
+// passe — reste offerte.
+export default function Auth({ consoleMode = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp, signInWithGoogle } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
-  const [mode, setMode] = useState(refCode ? 'signup' : 'login');
+  const [mode, setMode] = useState(refCode && !consoleMode ? 'signup' : 'login');
   // 'email' | 'phone' — indépendant de `mode` (connexion/inscription/oubli),
   // exactement comme le prototype le proposait pour qui n'a pas d'e-mail.
   const [channel, setChannel] = useState('email');
@@ -263,11 +268,15 @@ export default function Auth() {
       {mode === 'forgot' ? (
         <button onClick={() => setMode('login')} className="btn-ghost mx-auto mt-4">{t('auth.backToLogin')}</button>
       ) : (
-        <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setOtpSent(false); }} className="btn-ghost mx-auto mt-4">
-          {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
-        </button>
+        !consoleMode && (
+          <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setOtpSent(false); }} className="btn-ghost mx-auto mt-4">
+            {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
+          </button>
+        )
       )}
-      <Link to="/" className="mx-auto mt-2 text-caption text-muted">{t('auth.continueAsGuest')}</Link>
+      {!consoleMode && (
+        <Link to="/" className="mx-auto mt-2 text-caption text-muted">{t('auth.continueAsGuest')}</Link>
+      )}
     </div>
   );
 }

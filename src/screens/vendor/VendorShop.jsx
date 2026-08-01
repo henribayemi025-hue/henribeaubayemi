@@ -9,6 +9,8 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
+import { COUNTRIES, countryLabel } from '../../lib/countries';
+import { currencyForCountry } from '../../lib/currency';
 import { getPositionWithReason } from '../../lib/geo';
 
 export default function VendorShop() {
@@ -49,6 +51,7 @@ export default function VendorShop() {
     whatsapp: shop.whatsapp || '',
     phone: shop.phone || '',
     instagram: shop.instagram || '',
+    country: shop.country || 'CM',
     city: shop.city || '',
     neighborhood: shop.neighborhood || '',
     banner_url: shop.banner_url || null,
@@ -138,6 +141,7 @@ export default function VendorShop() {
         whatsapp: form.whatsapp.trim() || null,
         phone: form.phone.trim() || null,
         instagram: form.instagram.trim().replace(/^@/, '') || null,
+        country: form.country,
         city: form.city.trim() || null,
         neighborhood: form.neighborhood.trim() || null,
         banner_url: form.banner_url,
@@ -363,6 +367,19 @@ export default function VendorShop() {
             </p>
           )}
           <p className="text-caption text-muted">{t('vendor.locationGpsHint')}</p>
+          {/* Le pays fixe la DEVISE dans laquelle la boutique saisit ses
+              prix. Il n'était pas modifiable: un vendeur de la diaspora
+              resté sur le pays par défaut tapait ses prix en FCFA sans
+              pouvoir en sortir. */}
+          <Field label={t('becomeVendor.country')} hint={t('vendor.countryCurrencyHint', { currency: currencyForCountry(form.country) })}>
+            {(id) => (
+              <Select id={id} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>
+                ))}
+              </Select>
+            )}
+          </Field>
           <div className="grid grid-cols-2 gap-3 pt-1">
             <Field label={t('becomeVendor.city')}>
               {(id) => <TextInput id={id} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />}
