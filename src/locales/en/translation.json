@@ -756,7 +756,10 @@
     "cancelConfirm": "Cancel order",
     "itemCount_one": "{{count}} item",
     "itemCount_other": "{{count}} items",
-    "declineReasonLabel": "Reason"
+    "declineReasonLabel": "Reason",
+    "markShippingHint": "The buyer will be notified.",
+    "markReadyHint": "The buyer will be notified they can come pick up their order.",
+    "markDeliveredHint": "Closes the order — the buyer can then leave a review."
   },
   "orderStatus": {
     "new": "Awaiting validation",

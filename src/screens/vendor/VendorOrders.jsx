@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconCheck, IconX, IconTruckDelivery, IconBuildingStore,
-  IconPackage, IconPhone, IconMapPin, IconBan,
+  IconPackage, IconPhone, IconMapPin, IconBan, IconChevronRight, IconLoader2,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -208,38 +208,29 @@ export default function VendorOrders() {
                   </div>
                 )}
                 {o.status === 'confirmed' && (
-                  <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
-                    <Button loading={busyId === o.id} onClick={() => ship(o)} className="flex-1">
-                      {o.delivery_method === 'pickup' ? <IconBuildingStore size={18} /> : <IconTruckDelivery size={18} />}
-                      {o.delivery_method === 'pickup' ? t('vendor.markReady') : t('vendor.markShipping')}
-                    </Button>
-                    <button
-                      type="button"
-                      aria-label={t('vendor.cancelOrder')}
-                      title={t('vendor.cancelOrder')}
-                      disabled={busyId === o.id}
-                      onClick={() => setCancelling(o)}
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border-[1.5px] border-danger/40 text-danger transition-colors duration-150 hover:bg-danger-bg disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      <IconBan size={19} />
-                    </button>
+                  <div className="mt-3 flex items-center gap-2 border-t border-hairline pt-3">
+                    <StepAction
+                      tone="teal"
+                      icon={o.delivery_method === 'pickup' ? IconBuildingStore : IconTruckDelivery}
+                      label={o.delivery_method === 'pickup' ? t('vendor.markReady') : t('vendor.markShipping')}
+                      hint={o.delivery_method === 'pickup' ? t('vendor.markReadyHint') : t('vendor.markShippingHint')}
+                      loading={busyId === o.id}
+                      onClick={() => ship(o)}
+                    />
+                    <CancelIconButton disabled={busyId === o.id} onClick={() => setCancelling(o)} label={t('vendor.cancelOrder')} />
                   </div>
                 )}
                 {o.status === 'shipped' && (
-                  <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
-                    <Button loading={busyId === o.id} onClick={() => deliver(o)} className="flex-1">
-                      <IconCheck size={18} /> {t('vendor.markDelivered')}
-                    </Button>
-                    <button
-                      type="button"
-                      aria-label={t('vendor.cancelOrder')}
-                      title={t('vendor.cancelOrder')}
-                      disabled={busyId === o.id}
-                      onClick={() => setCancelling(o)}
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border-[1.5px] border-danger/40 text-danger transition-colors duration-150 hover:bg-danger-bg disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      <IconBan size={19} />
-                    </button>
+                  <div className="mt-3 flex items-center gap-2 border-t border-hairline pt-3">
+                    <StepAction
+                      tone="success"
+                      icon={IconCheck}
+                      label={t('vendor.markDelivered')}
+                      hint={t('vendor.markDeliveredHint')}
+                      loading={busyId === o.id}
+                      onClick={() => deliver(o)}
+                    />
+                    <CancelIconButton disabled={busyId === o.id} onClick={() => setCancelling(o)} label={t('vendor.cancelOrder')} />
                   </div>
                 )}
               </li>
@@ -271,5 +262,54 @@ export default function VendorOrders() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+// L'action « faire avancer la commande » en ligne riche (icône dans une
+// bulle + titre + sous-texte + chevron) — le même langage visuel qu'un
+// bouton "Partager le lien de la boutique" déjà présent sur le tableau de
+// bord vendeur, plutôt qu'un bouton plat générique. Beau, à 3 reprises:
+// « marquer livrée c'est trop grossier, très laid » — un bouton plein sans
+// relief n'y suffisait pas, il fallait une VRAIE carte d'action.
+const STEP_TONES = {
+  teal: { border: 'border-teal/30', bg: 'bg-teal-light', text: 'text-teal', hint: 'text-muted' },
+  success: { border: 'border-success/30', bg: 'bg-success-bg', text: 'text-success', hint: 'text-success/70' },
+};
+function StepAction({ tone, icon: Icon, label, hint, loading, onClick }) {
+  const c = STEP_TONES[tone];
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      className={`flex flex-1 items-center gap-3 rounded-card border ${c.border} ${c.bg} p-3.5 text-left transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70`}
+    >
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ${c.text}`}>
+        {loading ? <IconLoader2 size={19} className="animate-spin" /> : <Icon size={19} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-body font-semibold text-ink">{label}</span>
+        <span className={`block truncate text-caption ${c.hint}`}>{hint}</span>
+      </span>
+      <IconChevronRight size={18} className={`shrink-0 ${c.text}`} />
+    </button>
+  );
+}
+
+// Bouton d'annulation: volontairement discret (carré, contour) à côté de
+// l'action principale — présent sans jamais rivaliser visuellement avec
+// l'action qu'on veut que la vendeuse prenne 99 % du temps.
+function CancelIconButton({ onClick, disabled, label }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-[60px] w-12 shrink-0 items-center justify-center rounded-card border-[1.5px] border-danger/40 text-danger transition-colors duration-150 hover:bg-danger-bg disabled:pointer-events-none disabled:opacity-50"
+    >
+      <IconBan size={19} />
+    </button>
   );
 }

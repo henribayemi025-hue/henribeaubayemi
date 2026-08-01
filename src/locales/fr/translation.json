@@ -756,7 +756,10 @@
     "cancelConfirm": "Annuler la commande",
     "itemCount_one": "{{count}} article",
     "itemCount_other": "{{count}} articles",
-    "declineReasonLabel": "Raison"
+    "declineReasonLabel": "Raison",
+    "markShippingHint": "La cliente sera prévenue par notification.",
+    "markReadyHint": "La cliente sera prévenue qu'elle peut venir chercher sa commande.",
+    "markDeliveredHint": "Clôture la commande — la cliente pourra laisser un avis."
   },
   "orderStatus": {
     "new": "En attente de validation",
