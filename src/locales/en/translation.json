@@ -941,7 +941,9 @@
     "orderValidated": "Order validated ✅",
     "orderReady": "Your order is ready for pickup",
     "orderDeclined": "Order declined",
-    "orderCancelledAfterConfirm": "Order cancelled"
+    "orderCancelledAfterConfirm": "Order cancelled",
+    "empty": "No notifications yet.",
+    "markAllRead": "Mark all as read"
   },
   "productAttrs": {
     "marque": "Brand",

@@ -941,7 +941,9 @@
     "orderValidated": "Commande validée ✅",
     "orderReady": "Ta commande est prête — tu peux venir la retirer",
     "orderDeclined": "Commande refusée",
-    "orderCancelledAfterConfirm": "Commande annulée"
+    "orderCancelledAfterConfirm": "Commande annulée",
+    "empty": "Aucune notification pour le moment.",
+    "markAllRead": "Tout marquer comme lu"
   },
   "productAttrs": {
     "marque": "Marque",

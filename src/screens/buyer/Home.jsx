@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
 import { CategoryStrip } from '../../components/CategoryStrip';
+import { NotificationBell } from '../../components/NotificationBell';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
 import { ProductCard } from '../../components/ProductCard';
 import { ShopCard } from '../../components/ShopCard';
@@ -13,6 +15,7 @@ import { homeCache, loadHome } from '../../lib/homeCache';
 export default function Home() {
   const { t } = useTranslation();
   const { count } = useCart();
+  const { user } = useAuth();
   const [data, setData] = useState(homeCache);
   const [loading, setLoading] = useState(!homeCache);
   const [error, setError] = useState(false);
@@ -48,6 +51,11 @@ export default function Home() {
             <span className="text-title font-semibold text-teal">Finjaro</span>
           </Link>
           <div className="ml-auto flex items-center gap-4">
+            {/* Le SEUL canal de notification qui atteint tous les comptes:
+                un push exige une permission, un e-mail suppose d'en avoir un
+                — faux pour un compte créé par téléphone. Invisible pour les
+                invités, qui n'ont rien à y voir. */}
+            {user && <NotificationBell />}
             <Link to="/cart" aria-label={t('cart.title')} className="relative text-ink">
               <IconShoppingCart size={23} />
               {count > 0 && (
