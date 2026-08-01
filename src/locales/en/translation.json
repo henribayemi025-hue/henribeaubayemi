@@ -74,7 +74,19 @@
     "newPassword": "New password",
     "resetPassword": "Change password",
     "resetSuccess": "Password changed successfully.",
-    "resetLinkInvalid": "This link is no longer valid, request a new one."
+    "resetLinkInvalid": "This link is no longer valid, request a new one.",
+    "byEmail": "Email",
+    "byPhone": "Phone",
+    "phone": "Phone number",
+    "phoneHint": "Include the country code, e.g. +237 6XX XXX XXX.",
+    "phoneInvalid": "Invalid number — don't forget the country code (e.g. +237).",
+    "sendCode": "Send code",
+    "codeSent": "Code sent by SMS.",
+    "otpCode": "Code received by SMS",
+    "otpHint": "6 digits, valid for a few minutes.",
+    "verifyCode": "Verify",
+    "otpInvalid": "Wrong or expired code — request a new one.",
+    "resendCode": "Resend code"
   },
   "nav": {
     "home": "Home",

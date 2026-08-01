@@ -51,6 +51,15 @@ export function AuthProvider({ children }) {
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password, name, ref) =>
       supabase.auth.signUp({ email, password, options: { data: { name, ...(ref ? { ref } : {}) } } }),
+    // Connexion/inscription par téléphone (SMS OTP) — sans e-mail ni mot de
+    // passe, pour les personnes qui n'ont qu'un numéro WhatsApp/SMS. Un seul
+    // appel gère les deux cas: Supabase crée le compte au premier passage et
+    // se contente de vérifier le code aux suivants. `name`/`ref` ne servent
+    // que pour un compte NOUVEAU — sur un compte existant, Supabase les
+    // ignore silencieusement (le profil garde son nom déjà enregistré).
+    signInWithPhone: (phone, { name, ref } = {}) =>
+      supabase.auth.signInWithOtp({ phone, options: { channel: 'sms', data: { name, ...(ref ? { ref } : {}) } } } ),
+    verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
     signOut: () => supabase.auth.signOut(),
     resetPassword: (email) =>
       supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset` }),
