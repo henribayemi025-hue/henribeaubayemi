@@ -119,7 +119,7 @@ export function HomeHeroCarousel({ products }) {
 
   return (
     <div
-      className="relative aspect-[2/1] w-full max-h-96 touch-pan-y select-none overflow-hidden rounded-2xl lg:aspect-[3/1]"
+      className="relative aspect-[2/1] w-full max-h-96 touch-pan-y select-none overflow-hidden rounded-[20px] shadow-md lg:aspect-[3/1]"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
