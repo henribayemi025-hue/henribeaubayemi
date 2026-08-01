@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight } from '@tabler/icons-react';
+import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
@@ -37,23 +37,34 @@ export default function Home() {
 
   return (
     <div>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-hairline bg-white px-4">
-        <Link to="/" className="flex items-center gap-1">
-          <span className="text-title font-semibold text-teal">Finjaro</span>
-        </Link>
-        <div className="ml-auto flex items-center gap-3">
-          <Link to="/search" aria-label={t('common.search')} className="text-ink">
-            <IconSearch size={24} />
+      {/* En-tête à deux niveaux (façon Amazon/Jumia): la ligne du bas est une
+          VRAIE barre de recherche tappable, pas juste une icône loupe — c'est
+          la première chose que quelqu'un cherche à faire à l'ouverture de
+          l'app, autant lui donner toute la largeur plutôt qu'une cible de
+          24 px dans un coin. */}
+      <header className="sticky top-0 z-30 border-b border-hairline bg-white">
+        <div className="flex h-12 items-center gap-3 px-4">
+          <Link to="/" className="flex items-center gap-1">
+            <span className="text-title font-semibold text-teal">Finjaro</span>
           </Link>
-          <Link to="/cart" aria-label={t('cart.title')} className="relative text-ink">
-            <IconShoppingCart size={24} />
-            {count > 0 && (
-              <span key={count} className="animate-like-pop absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
-                {count}
-              </span>
-            )}
-          </Link>
+          <div className="ml-auto flex items-center gap-4">
+            <Link to="/cart" aria-label={t('cart.title')} className="relative text-ink">
+              <IconShoppingCart size={23} />
+              {count > 0 && (
+                <span key={count} className="animate-like-pop absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
+                  {count}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
+        <Link
+          to="/search"
+          className="mx-4 mb-3 flex h-10 items-center gap-2 rounded-pill border border-hairline bg-base px-3.5 text-muted transition-colors active:bg-hairline/40"
+        >
+          <IconSearch size={17} className="shrink-0" />
+          <span className="truncate text-body">{t('common.searchPlaceholder')}</span>
+        </Link>
       </header>
 
       {/* On desktop the sidebar layout leaves this column very wide (no cap),
@@ -74,18 +85,22 @@ export default function Home() {
             Volontairement fine et sur UNE ligne de texte: la version en gros
             pavé de trois lignes écrasait le reste de l'accueil. */}
         <section className="mt-4 px-4">
+          {/* Teinte brass (accent secondaire) plutôt que teal: la bande se
+              distingue d'un coup d'œil du reste de l'accueil (tout en teal
+              jusqu'ici), et signale "c'est une autre sorte de contenu" —
+              réserver un service, pas acheter un produit. */}
           <Link
             to="/services"
-            className="flex items-center gap-3 rounded-card border border-hairline bg-white px-3 py-2.5 transition-transform duration-150 active:scale-[0.99]"
+            className="flex items-center gap-3 rounded-card border border-brass/25 bg-brass/8 px-3.5 py-3 shadow-sm transition-transform duration-150 active:scale-[0.99]"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-brass shadow-sm">
               <IconTool size={19} />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-body font-semibold text-ink">{t('home.servicesTitle')}</span>
               <span className="block truncate text-caption text-muted">{t('home.servicesSubtitle')}</span>
             </span>
-            <IconChevronRight size={18} className="shrink-0 text-muted" />
+            <IconChevronRight size={18} className="shrink-0 text-brass" />
           </Link>
         </section>
 
@@ -103,8 +118,10 @@ export default function Home() {
         ) : (
           <>
             {data.shops.length > 0 && (
-              <section className="mt-4">
-                <h2 className="px-4 text-section text-ink">{t('home.shopsNearYou')}</h2>
+              <section className="mt-5">
+                <h2 className="flex items-center gap-1.5 px-4 text-section text-ink">
+                  <IconBuildingStore size={18} className="text-teal" /> {t('home.shopsNearYou')}
+                </h2>
                 <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4">
                   {data.shops.map((s) => (
                     <ShopCard key={s.id} shop={s} />
@@ -114,7 +131,9 @@ export default function Home() {
             )}
 
             <section className="mt-6 px-4">
-              <h2 className="text-section text-ink">{t('home.trending')}</h2>
+              <h2 className="flex items-center gap-1.5 text-section text-ink">
+                <IconFlame size={18} className="text-brass" /> {t('home.trending')}
+              </h2>
               {data.products.length === 0 ? (
                 <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
               ) : (

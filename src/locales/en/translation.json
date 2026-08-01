@@ -45,7 +45,9 @@
     "comingSoon": "Coming soon.",
     "optional": "(optional)",
     "of": "of",
-    "seeLess": "See less"
+    "seeLess": "See less",
+    "show": "Show",
+    "hide": "Hide"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -74,7 +76,21 @@
     "newPassword": "New password",
     "resetPassword": "Change password",
     "resetSuccess": "Password changed successfully.",
-    "resetLinkInvalid": "This link is no longer valid, request a new one."
+    "resetLinkInvalid": "This link is no longer valid, request a new one.",
+    "byEmail": "Email",
+    "byPhone": "Phone",
+    "phone": "Phone number",
+    "phoneHint": "Include the country code, e.g. +237 6XX XXX XXX.",
+    "phoneInvalid": "Invalid number — don't forget the country code (e.g. +237).",
+    "sendCode": "Send code",
+    "codeSent": "Code sent by SMS.",
+    "otpCode": "Code received by SMS",
+    "otpHint": "6 digits, valid for a few minutes.",
+    "verifyCode": "Verify",
+    "otpInvalid": "Wrong or expired code — request a new one.",
+    "resendCode": "Resend code",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google"
   },
   "nav": {
     "home": "Home",
@@ -278,12 +294,16 @@
     "quantity": "Quantity",
     "inStock": "In stock",
     "soldBy": "Sold by",
-    "similarTitle": "You may also like"
+    "similarTitle": "You may also like",
+    "wasPrice": "Price before discount",
+    "secondHandBadge": "Second-hand",
+    "chooseSizeFirst": "Please pick a size first."
   },
   "shop": {
     "products": "Products",
     "reviews": "Reviews",
     "about": "About",
+    "searchPlaceholder": "Search this shop",
     "emptyProducts": "This shop is preparing its first collection.",
     "noReviews": "No reviews for this shop yet.",
     "noAbout": "This shop hasn't added a description yet.",
@@ -304,16 +324,38 @@
       "noAbout": "This provider hasn't added a description yet.",
       "contactPrompt": "Contact the provider",
       "waGreeting": "Hello {{name}}, I'm contacting you from Finjaro about a service."
-    }
+    },
+    "tabHome": "Home",
+    "tabPromos": "Deals",
+    "reelsButton": "Our Reels",
+    "statNote": "Rating",
+    "statFollowers": "Followers",
+    "statProducts": "Products",
+    "statCertified": "Certified",
+    "trustTitle": "Trust guarantees",
+    "trustCertified": "Finjaro-certified shop",
+    "trustDelivery": "Delivery offered by the shop",
+    "trustContact": "Direct contact with the shop",
+    "hoursTitle": "Opening hours",
+    "openNow": "Open",
+    "closedNow": "Closed",
+    "hoursToday": "Today",
+    "zonesTitle": "Delivery zones",
+    "zonesCount_one": "{{count}} zone",
+    "zonesCount_other": "{{count}} zones",
+    "seeAllZones": "See all zones ({{count}})",
+    "bestProducts": "Our products",
+    "seeAllProducts": "See all products",
+    "promoEmpty": "No deals right now."
   },
   "finou": {
-    "title": "Finou Chou",
+    "title": "Finia",
     "subtitle": "Your shopping assistant",
     "voiceToggle": "Read replies aloud",
-    "placeholder": "Ask Finou Chou anything…",
-    "greeting": "Hi! I'm Finou Chou 💫 Tell me what you're looking for and I'll help you find the perfect piece.",
-    "unavailable": "Finou Chou is temporarily unavailable.",
-    "typing": "Finou Chou is typing…",
+    "placeholder": "Ask Finia anything…",
+    "greeting": "Hi! I'm Finia. Tell me what you're looking for and I'll help you find the perfect piece.",
+    "unavailable": "Finia is temporarily unavailable.",
+    "typing": "Finia is typing…",
     "attach": "Attach a photo",
     "imageReady": "Photo ready to send",
     "seeCategory": "See {{cat}}",
@@ -365,7 +407,8 @@
     "save": "Save",
     "tryAgain": "Try again",
     "tooFast": "That's a bit fast 😅 Try again in a few minutes.",
-    "photoTooLarge": "This photo is too heavy. Pick another one or crop it."
+    "photoTooLarge": "This photo is too heavy. Pick another one or crop it.",
+    "sizeNote": "The preview shows the style on you — not how a specific size will fit. Double-check the size (M, XL…) on the product page before ordering."
   },
   "finouWizard": {
     "title": "List an item",
@@ -401,7 +444,8 @@
     "attachImage": "Attach an image",
     "empty": "Start the conversation with a first message.",
     "quoteIntro": "Hello, I'd like to request a quote.",
-    "ownShop": "This is your own shop."
+    "ownShop": "This is your own shop.",
+    "viewShop": "View shop"
   },
   "cart": {
     "title": "Cart",
@@ -416,7 +460,8 @@
     "addedToCart": "Added to cart",
     "viewCart": "View cart",
     "itemsCount_one": "{{count}} item",
-    "itemsCount_other": "{{count}} items"
+    "itemsCount_other": "{{count}} items",
+    "removeAll": "Remove all"
   },
   "nearYou": {
     "shops": "Providers",
@@ -469,7 +514,15 @@
       "mois": "month",
       "m2": "m²",
       "piece": "item"
-    }
+    },
+    "nearYouBadge": "Near you",
+    "directoryTitle": "Directory & Map",
+    "directorySubtitle": "Find and contact the best providers around you.",
+    "directoryTab": "Trade directory",
+    "mapTab": "Map view",
+    "filterByTrade": "Filter by trade",
+    "allTradesCount": "All trades ({{count}})",
+    "radiusLabel": "Radius:"
   },
   "profile": {
     "title": "Profile",
@@ -493,7 +546,10 @@
     "orderNumber": "Order #{{n}}",
     "helpText": "Need help? Email us at fin.finjaro@gmail.com and our team will reply within 24h.",
     "helpTitle": "Help",
-    "displayName": "Display name"
+    "displayName": "Display name",
+    "savedAddress": "Saved delivery address",
+    "savedAddressHint": "Pre-fills your next orders — you can always change it at checkout.",
+    "savedCity": "City"
   },
   "referral": {
     "navLabel": "Invite friends",
@@ -522,18 +578,23 @@
     "comment": "Comment",
     "viewProduct": "View product",
     "buyNow": "Buy",
-    "loadError": "Couldn't load reels."
+    "loadError": "Couldn't load reels.",
+    "shopFilter": "{{name}}'s Reels",
+    "backToAll": "See all"
   },
   "reel": {
     "commentsTitle": "Comments",
     "commentPlaceholder": "Add a comment…",
     "noComments": "No comments yet. Be the first!",
-    "postComment": "Post"
+    "postComment": "Post",
+    "voiceStart": "Speak to Finia",
+    "hint": "Chat with Finia"
   },
   "inbox": {
     "title": "Messages",
     "empty": "No messages yet.",
-    "emptyHint": "Contact a shop to start a conversation."
+    "emptyHint": "Contact a shop to start a conversation.",
+    "pickConversation": "Pick a conversation on the left to open it."
   },
   "checkout": {
     "title": "Checkout",
@@ -562,13 +623,16 @@
     "empty": "Your cart is empty, nothing to order.",
     "payByCard": "Pay by card",
     "payOnDelivery": "Pay on delivery",
-    "paymentSuccess": "Payment successful! Thanks for your order."
+    "paymentSuccess": "Payment successful! Thanks for your order.",
+    "deliveryZone": "Delivery zone",
+    "zoneDays_one": "within {{count}} day",
+    "zoneDays_other": "within {{count}} days"
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
     "todayOrders": "Today's orders",
     "unreadMessages": "Unread messages",
-    "pendingShipments": "Pending shipments",
+    "pendingShipments": "To validate",
     "recentOrders": "Recent orders",
     "recentMessages": "Recent messages",
     "noRecentOrders": "No recent orders.",
@@ -580,12 +644,15 @@
     "newProduct": "New product",
     "productName": "Product name",
     "productPrice": "Price",
+    "compareAtPrice": "Original price (optional)",
+    "compareAtPriceHint": "Shows the old price struck through and the % off. Leave empty for no promo.",
+    "compareAtPriceError": "The original price must be higher than the selling price.",
     "productStock": "Stock quantity",
     "productCategory": "Department",
     "productSubcategory": "Subcategory",
     "productDescription": "Description",
     "copilotGenerate": "Generate with AI",
-    "copilotSuggestion": "Finou's suggestion — edit it if needed",
+    "copilotSuggestion": "Finia's suggestion — edit it if needed",
     "copilotUse": "Use",
     "copilotRegenerate": "Regenerate",
     "copilotNeedName": "Enter the product name first.",
@@ -664,20 +731,84 @@
     "rotationEnd": "At the end of the arrival",
     "rotationEndDelete": "Delete the items",
     "rotationEndDraft": "Keep them as drafts",
-    "rotationDeleteWarn": "Permanent deletion: the items disappear from your space. Past orders keep their name and price."
+    "rotationDeleteWarn": "Permanent deletion: the items disappear from your space. Past orders keep their name and price.",
+    "fillFromPhoto": "Fill the listing from the photo",
+    "listingFilled": "Listing pre-filled — review and adjust before saving.",
+    "priceHint": "Benchmark: comparable catalog items around {{price}} {{currency}} ({{count}} items). Your call.",
+    "reelScript": "Generate a video script (Reel/TikTok)",
+    "copyScript": "Copy the script",
+    "geoReason": {
+      "ok": "Location saved.",
+      "denied": "Location denied — allow it in your browser settings, or fill in city/neighborhood below.",
+      "timeout": "That took too long. Try again, or fill in city/neighborhood below.",
+      "unavailable": "Location unavailable right now. Try again, or fill in city/neighborhood below.",
+      "unsupported": "Your browser doesn't support location. Fill in city/neighborhood below."
+    },
+    "acceptOrder": "Validate order",
+    "declineOrder": "Decline",
+    "markReady": "Order ready (pickup)",
+    "markShipping": "Start delivery",
+    "markDelivered": "Mark delivered",
+    "declineTitle": "Decline order",
+    "declineHint": "The buyer will see your reason if you give one.",
+    "declinePlaceholder": "E.g. item sold out, area not served…",
+    "declineConfirm": "Decline order",
+    "pendingBanner_one": "{{count}} order awaiting validation",
+    "pendingBanner_other": "{{count}} orders awaiting validation",
+    "pendingBannerHint": "Validate or decline quickly — buyers are waiting for an answer.",
+    "productSizes": "Available sizes",
+    "productSizesHint": "If you set some, buyers must pick a size before adding to cart.",
+    "productColors": "Available colors",
+    "productColorsHint": "Optional — only list colors you actually have in stock.",
+    "addSize": "Add",
+    "addColor": "Add",
+    "hoursTitle": "Opening hours",
+    "hoursOpen": "Opens",
+    "hoursClose": "Closes",
+    "hoursClosedDays": "Closed days",
+    "hoursHint": "Shown on your shop page with a live Open/Closed badge. Leave empty to show nothing.",
+    "zonesTitle": "Delivery zones",
+    "zoneName": "Zone (city, district…)",
+    "zoneFee": "Fee (FCFA)",
+    "zoneDaysLabel": "Delay (days)",
+    "addZone": "Add a zone",
+    "zonesHint": "Say where you deliver, for how much and within how many days — shown on your page and used at checkout. 0 FCFA = free delivery in that zone.",
+    "legacyCatsTitle": "Legacy categories",
+    "legacyCatsHint": "Your shop still uses old categories. Tick the new sections above, then tap the old ones to remove them.",
+    "categoriesAutoSaved": "Categories saved.",
+    "cancelOrder": "Cancel order",
+    "cancelTitle": "Cancel order",
+    "cancelHint": "The order was already validated — the buyer will see your reason if you give one.",
+    "cancelConfirm": "Cancel order",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "declineReasonLabel": "Reason",
+    "markShippingHint": "The buyer will be notified.",
+    "markReadyHint": "The buyer will be notified they can come pick up their order.",
+    "markDeliveredHint": "Closes the order — the buyer can then leave a review.",
+    "actionAddProduct": "Add",
+    "actionShare": "Share"
   },
   "orderStatus": {
-    "new": "New",
-    "confirmed": "Confirmed",
-    "shipped": "Shipped",
+    "new": "Awaiting validation",
+    "confirmed": "Validated — preparing",
+    "shipped": "Out for delivery",
     "delivered": "Delivered",
-    "cancelled": "Cancelled",
+    "cancelled": "Declined / Cancelled",
     "markReceived": "I received it",
     "leaveReview": "Leave a review",
     "reviewLocked": "Review unlocks after you confirm receipt.",
     "writeReview": "Write your review…",
     "submitReview": "Post review",
-    "reviewSubmitted": "Thanks for your review!"
+    "reviewSubmitted": "Thanks for your review!",
+    "rebuy": "Buy again",
+    "rebuyAdded": "Items added to cart.",
+    "rebuyPartial": "Some items are no longer available — the rest were added to your cart.",
+    "rebuyNoneAvailable": "These items are no longer available.",
+    "readyPickup": "Ready for pickup",
+    "declineReasonShown": "Declined by the shop: {{reason}}",
+    "cancelledNoReason": "Order declined by the shop.",
+    "cancelReasonShown": "Cancelled by the shop: {{reason}}"
   },
   "stats": {
     "period7d": "7d",
@@ -756,7 +887,9 @@
     "kindServices": "Services",
     "kindBoth": "Both",
     "titleProvider": "Become a provider",
-    "providerName": "Your business name"
+    "providerName": "Your business name",
+    "generating": "Finia is dressing you up… this takes a few seconds.",
+    "askDescription": "Add a description, or let Finia write it."
   },
   "switchMode": {
     "welcomeVendor": "Welcome to your seller space.",
@@ -796,14 +929,18 @@
     "orderReceived": "New order received",
     "orderConfirmed": "Order confirmed",
     "orderShipped": "Order shipped",
-    "orderDelivered": "Order delivered",
+    "orderDelivered": "Order delivered 🎉",
     "newReel": "New reel from a shop you follow",
     "reviewUnlocked": "You can now leave a review",
     "shopApproved": "Your shop has been approved!",
     "newListing": "New listing near you",
     "title": "Notifications",
     "email": "Receive emails",
-    "emailHelp": "New order, new message… Especially useful on iPhone, where browser notifications only work if the site is added to the home screen."
+    "emailHelp": "New order, new message… Especially useful on iPhone, where browser notifications only work if the site is added to the home screen.",
+    "orderValidated": "Order validated ✅",
+    "orderReady": "Your order is ready for pickup",
+    "orderDeclined": "Order declined",
+    "orderCancelledAfterConfirm": "Order cancelled"
   },
   "productAttrs": {
     "marque": "Brand",
@@ -833,7 +970,7 @@
     "topProducts": "Most viewed products",
     "views": "views",
     "activity": "Activity by type",
-    "aiSpend": "AI budget (Finou + Mirror)",
+    "aiSpend": "AI budget (Finia + Mirror)",
     "aiSpendOk": "This month, estimate",
     "aiSpendPaused": "Limit reached — paused this month",
     "recentVisitors": "Recent identified visitors",
@@ -848,6 +985,77 @@
       "follow": "Follows",
       "comment": "Comments",
       "mirror_try": "Mirror try-ons"
+    },
+    "applications": "Vendor applications",
+    "noApplications": "No applications yet.",
+    "kycAnalyzeFront": "Analyze ID (front)",
+    "kycAnalyzeBack": "Analyze ID (back)",
+    "kycError": "Analysis failed. Retry, or check the document manually.",
+    "kycType": "Type",
+    "kycReadable": "Readable",
+    "kycName": "Name read on the ID",
+    "kycMatch": "(matches the declared name)",
+    "kycMismatch": "(differs from declared name: {{declared}})",
+    "kycBirth": "Birth date",
+    "kycExpiry": "Expiry",
+    "kycDisclaimer": "Automatic reading is indicative — you approve or reject, never the AI.",
+    "annTitle": "Announcement banner",
+    "annHint": "Shown at the top of the app for everyone. Untick “Show” to remove it.",
+    "annLabel": "Short label",
+    "annTextFr": "Text (French)",
+    "annTextEn": "Text (English)",
+    "annHref": "Link",
+    "annHrefHint": "Optional — makes the banner clickable (e.g. /category/seconde_main).",
+    "annActive": "Show the banner",
+    "annNeedText": "French text is required."
+  },
+  "troc": {
+    "title": "Evaluate a trade",
+    "intro": "Photograph the two items to swap: Finjaro estimates their condition, value, and the cash top-up for a fair trade.",
+    "photoA": "Item A",
+    "photoB": "Item B",
+    "itemA": "Item A",
+    "itemB": "Item B",
+    "fair": "Balanced trade — no top-up needed.",
+    "soulte": "The owner of “{{item}}” should add about {{amount}}.",
+    "disclaimer": "Indicative estimate based on the Finjaro catalog — the final deal is up to both people.",
+    "error": "Could not evaluate. Try again with sharper photos.",
+    "evaluate": "Evaluate the trade",
+    "etat": {
+      "neuf": "new",
+      "tres_bon": "very good condition",
+      "bon": "good condition",
+      "use": "worn",
+      "abime": "damaged"
     }
+  },
+  "orderTrack": {
+    "placed": "Placed",
+    "validated": "Validated",
+    "shipping": "Out for delivery",
+    "ready": "Ready in store",
+    "delivered": "Delivered"
+  },
+  "provider": {
+    "details": "Details",
+    "book": "Book",
+    "fromPrice": "From",
+    "reviewCount_one": "{{count}} review",
+    "reviewCount_other": "{{count}} reviews",
+    "isNew": "New"
+  },
+  "finances": {
+    "title": "Finances",
+    "earned": "Money earned",
+    "weekRevenue": "Earnings — last 7 days",
+    "seeAll": "Details",
+    "pending": "Pending",
+    "salesCount": "Sales",
+    "avgBasket": "Avg. basket",
+    "ledger": "Ledger",
+    "noEntries": "No orders in this period.",
+    "rowPaid": "Received",
+    "rowPending": "Pending",
+    "rowCancelled": "Cancelled"
   }
 }

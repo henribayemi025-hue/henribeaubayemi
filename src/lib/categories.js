@@ -31,6 +31,25 @@ import mannequinerie from '../assets/categories/mannequinerie.webp';
 import art from '../assets/categories/art.webp';
 import accessoires from '../assets/categories/accessoires.webp';
 import maroquinerie from '../assets/categories/maroquinerie.webp';
+// Photos envoyées par Beau (31/07) pour les rayons qui n'en avaient pas
+// encore — CC0/domaine public (Wikimedia Commons, Openverse), aucune
+// attribution requise.
+import modeHomme from '../assets/categories/mode_homme.webp';
+import modeATrier from '../assets/categories/mode_a_trier.webp';
+import enfantsBebe from '../assets/categories/enfants_bebe.webp';
+import hightech from '../assets/categories/hightech.webp';
+import alimentaire from '../assets/categories/alimentaire.webp';
+import electromenager from '../assets/categories/electromenager.webp';
+import sportLoisirs from '../assets/categories/sport_loisirs.webp';
+import jusNaturels from '../assets/categories/jus_naturels.webp';
+import musique from '../assets/categories/musique.webp';
+import secondeMain from '../assets/categories/seconde_main.webp';
+import vehicules from '../assets/categories/vehicules.webp';
+import santeBienetre from '../assets/categories/sante_bienetre.webp';
+import livresPapeterie from '../assets/categories/livres_papeterie.webp';
+import jardinExterieur from '../assets/categories/jardin_exterieur.webp';
+import animaux from '../assets/categories/animaux.webp';
+import immobilierVente from '../assets/categories/immobilier_vente.webp';
 import { PRODUCT_HEADS, SERVICE_HEADS, CATEGORY_CHILDREN } from './categoryTree';
 
 export { CATEGORY_CHILDREN };
@@ -45,6 +64,22 @@ const HEAD_BANNER = {
   bijoux_montres: bijoux,
   maison_deco: deco,
   evenementiel_mariages: mariages,
+  mode_homme: modeHomme,
+  mode_a_trier: modeATrier,
+  enfants_bebe: enfantsBebe,
+  hightech,
+  alimentaire,
+  electromenager,
+  sport_loisirs: sportLoisirs,
+  jus_naturels: jusNaturels,
+  musique,
+  seconde_main: secondeMain,
+  vehicules,
+  sante_bienetre: santeBienetre,
+  livres_papeterie: livresPapeterie,
+  jardin_exterieur: jardinExterieur,
+  animaux,
+  immobilier_vente: immobilierVente,
 };
 
 // Les rayons produits viennent de la BASE (categoryTree, généré) — plus de

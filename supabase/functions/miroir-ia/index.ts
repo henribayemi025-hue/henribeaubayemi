@@ -45,6 +45,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
+  if (host.endsWith('.workers.dev')) return true;
   return false;
 }
 
@@ -113,7 +114,7 @@ async function isOverBudget(sb: ReturnType<typeof admin>): Promise<boolean> {
       body: JSON.stringify({
         user_id: ADMIN_USER_ID,
         title: 'Finjaro — budget IA atteint',
-        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+        body: `Finia et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
       }),
     }).catch(() => {});
   }

@@ -12,7 +12,7 @@ import { storageUrl, storageThumbUrl} from '../../lib/supabase';
 export default function Cart() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { items, setQty, remove, subtotal } = useCart();
+  const { items, setQty, remove, subtotal, clearShop } = useCart();
 
   // Group by shop so each order/checkout targets a single vendor.
   const byShop = items.reduce((acc, it) => {
@@ -39,10 +39,17 @@ export default function Cart() {
       <div className="space-y-4 p-4">
         {Object.entries(byShop).map(([shopId, group]) => (
           <div key={shopId} className="card">
-            <p className="mb-3 text-caption font-semibold text-muted">{group.name}</p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-caption font-semibold text-muted">{group.name}</p>
+              {/* Vider d'un coup tout ce qui vient de cette boutique — sans
+                  ça, il fallait supprimer article par article. */}
+              <button onClick={() => clearShop(shopId)} className="text-caption font-semibold text-danger">
+                {t('cart.removeAll')}
+              </button>
+            </div>
             <div className="space-y-3">
               {group.items.map((it) => (
-                <div key={it.id} className="flex gap-3">
+                <div key={it.key} className="flex gap-3">
                   <SmartImage
                     src={it.image ? storageThumbUrl('products', it.image) : null} fallbackSrc={it.image ? storageUrl('products', it.image) : null}
                     alt={it.name}
@@ -50,14 +57,19 @@ export default function Cart() {
                   />
                   <div className="flex-1">
                     <p className="line-clamp-1 text-body text-ink">{it.name}</p>
+                    {(it.size || it.color) && (
+                      <p className="text-caption text-muted">
+                        {[it.size, it.color].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                     <Price fcfa={it.price_fcfa} className="text-body font-semibold text-teal" />
                     <div className="mt-1 flex items-center gap-3">
                       <div className="flex items-center rounded-input border border-hairline">
-                        <button onClick={() => setQty(it.id, it.qty - 1)} className="p-1.5 text-ink" aria-label="-"><IconMinus size={16} /></button>
+                        <button onClick={() => setQty(it.key, it.qty - 1)} className="p-1.5 text-ink" aria-label="-"><IconMinus size={16} /></button>
                         <span className="min-w-6 text-center text-body">{it.qty}</span>
-                        <button onClick={() => setQty(it.id, it.qty + 1)} className="p-1.5 text-ink" aria-label="+"><IconPlus size={16} /></button>
+                        <button onClick={() => setQty(it.key, it.qty + 1)} className="p-1.5 text-ink" aria-label="+"><IconPlus size={16} /></button>
                       </div>
-                      <button onClick={() => remove(it.id)} className="text-muted" aria-label={t('cart.remove')}>
+                      <button onClick={() => remove(it.key)} className="text-muted" aria-label={t('cart.remove')}>
                         <IconTrash size={18} />
                       </button>
                     </div>

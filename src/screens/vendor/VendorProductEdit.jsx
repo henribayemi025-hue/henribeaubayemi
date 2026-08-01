@@ -15,8 +15,69 @@ import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadF
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], sizes: [], colors: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
+
+// Tailles proposées en un clic selon le rayon: lettres pour les vêtements,
+// pointures pour les chaussures. La vendeuse peut toujours taper la sienne
+// (ex: « 38-40 », « Unique ») — les presets accélèrent, ils n'enferment pas.
+const LETTER_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'];
+const SHOE_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45'];
+const SIZED_HEADS = ['mode_femme', 'mode_homme', 'mode_a_trier', 'enfants_bebe', 'sport_loisirs'];
+
+function sizePresetsFor(categoryId) {
+  if (String(categoryId).includes('chaussures')) return SHOE_SIZES;
+  if (SIZED_HEADS.includes(categoryHeadFor(categoryId))) return LETTER_SIZES;
+  return null;
+}
+
+// Éditeur de liste courte (tailles, couleurs): presets en un tap + saisie
+// libre. Les valeurs choisies restent visibles en chips actives, un tap
+// les retire — même geste que les catégories de la boutique.
+function TagPicker({ label, hint, values, presets, onChange, addLabel }) {
+  const [draft, setDraft] = useState('');
+  const list = values || [];
+
+  function toggle(v) {
+    onChange(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  }
+  function addDraft() {
+    const v = draft.trim();
+    if (!v) return;
+    if (!list.includes(v)) onChange([...list, v]);
+    setDraft('');
+  }
+
+  const extras = list.filter((v) => !(presets || []).includes(v));
+  return (
+    <div>
+      <span className="label">{label}</span>
+      <div className="flex flex-wrap gap-2">
+        {(presets || []).map((v) => (
+          <button key={v} type="button" onClick={() => toggle(v)} className={`chip ${list.includes(v) ? 'chip-active' : 'text-ink'}`}>
+            {v}
+          </button>
+        ))}
+        {extras.map((v) => (
+          <button key={v} type="button" onClick={() => toggle(v)} className="chip chip-active">
+            {v} ×
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <TextInput
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addDraft(); } }}
+          placeholder={addLabel}
+          className="flex-1"
+        />
+        <button type="button" onClick={addDraft} className="btn-ghost shrink-0 text-caption">{addLabel}</button>
+      </div>
+      {hint && <p className="mt-1 text-caption text-muted">{hint}</p>}
+    </div>
+  );
+}
 
 export default function VendorProductEdit() {
   const { id } = useParams();
@@ -37,6 +98,59 @@ export default function VendorProductEdit() {
   const [errors, setErrors] = useState({});
   const [genLoading, setGenLoading] = useState(false);
   const [suggestion, setSuggestion] = useState(null); // AI draft, editable before use
+  const [listingLoading, setListingLoading] = useState(false);
+  const [priceHint, setPriceHint] = useState(null); // { fcfa, samples } — médiane catalogue
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [reelScript, setReelScript] = useState(null);
+
+  // Auto-Listing (Finou 2.0 #12, partie texte): la première photo déjà
+  // uploadée → titre + description + catégorie proposés d'un coup. Tout
+  // atterrit dans les champs ÉDITABLES, rien n'est enregistré sans que la
+  // vendeuse relise et sauve elle-même. Le repère de prix est la médiane du
+  // catalogue (calculée serveur), jamais un chiffre inventé par l'IA.
+  async function fillFromPhoto() {
+    if (!form.images[0]) return;
+    setListingLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'listing', image_path: form.images[0], lang: i18n.language },
+      });
+      if (error || !data?.title) throw error || new Error('empty');
+      setForm((f) => ({
+        ...f,
+        // On ne piétine jamais ce que la vendeuse a déjà tapé.
+        name: f.name.trim() ? f.name : data.title,
+        description: f.description.trim() ? f.description : data.description,
+        category: data.category || f.category,
+      }));
+      setPriceHint(data.price_hint_fcfa ? { fcfa: data.price_hint_fcfa, samples: data.price_samples } : null);
+      toast.success(t('vendor.listingFilled'));
+    } catch {
+      toast.error(t('vendor.copilotError'));
+    } finally {
+      setListingLoading(false);
+    }
+  }
+
+  // Script Reel/TikTok (Finou 2.0 #15, partie texte) pour promouvoir la fiche.
+  async function generateReelScript() {
+    if (!form.name.trim()) {
+      toast.info(t('vendor.copilotNeedName'));
+      return;
+    }
+    setScriptLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'reel_script', name: form.name.trim(), description: form.description, lang: i18n.language },
+      });
+      if (error || !data?.scenes) throw error || new Error('empty');
+      setReelScript(data);
+    } catch {
+      toast.error(t('vendor.copilotError'));
+    } finally {
+      setScriptLoading(false);
+    }
+  }
 
   // Vendor Copilot: ask Gemini (via the vendor-copilot edge fn) for a marketing
   // description. Never auto-fills — the draft lands in an editable preview the
@@ -71,11 +185,15 @@ export default function VendorProductEdit() {
     supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data }) => {
       if (data) {
         const shown = convertFromFcfa(data.price_fcfa, shopCurrency);
+        const shownCompare = data.compare_at_price_fcfa != null ? convertFromFcfa(data.compare_at_price_fcfa, shopCurrency) : null;
         setForm({
           ...data,
           price_fcfa: String(shopCurrency === 'FCFA' ? Math.round(shown) : Number(shown.toFixed(2))),
+          compare_at_price_fcfa: shownCompare == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(shownCompare) : Number(shownCompare.toFixed(2))),
           stock: String(data.stock ?? 0),
           images: data.images || [],
+          sizes: data.sizes || [],
+          colors: data.colors || [],
           attributes: data.attributes || {},
         });
       }
@@ -87,6 +205,11 @@ export default function VendorProductEdit() {
     const e = {};
     if (!form.name.trim()) e.name = t('common.required');
     if (form.price_fcfa === '' || Number(form.price_fcfa) < 0) e.price = t('common.required');
+    // Un prix barré ne veut rien dire s'il n'est pas STRICTEMENT au-dessus du
+    // prix demandé — sinon on afficherait une "promo" à l'envers ou à 0 %.
+    if (form.compare_at_price_fcfa !== '' && Number(form.compare_at_price_fcfa) <= Number(form.price_fcfa || 0)) {
+      e.compareAtPrice = t('vendor.compareAtPriceError');
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -107,10 +230,13 @@ export default function VendorProductEdit() {
         shop_id: shop.id,
         name: form.name.trim(),
         price_fcfa: toFcfa(Number(form.price_fcfa), shopCurrency),
+        compare_at_price_fcfa: form.compare_at_price_fcfa === '' ? null : toFcfa(Number(form.compare_at_price_fcfa), shopCurrency),
         description: form.description.trim() || null,
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
         images: form.images.filter(Boolean),
+        sizes: (form.sizes || []).filter(Boolean),
+        colors: (form.colors || []).filter(Boolean),
         is_permanent: !!form.is_permanent,
         // Seuls les champs de la catégorie choisie partent en base — changer
         // de catégorie ne laisse pas traîner la surface d'un ancien brouillon
@@ -235,6 +361,20 @@ export default function VendorProductEdit() {
             ))}
           </div>
           <p className="mt-1 text-caption text-muted">{t('vendor.productImagesHint', { count: MAX_IMAGES })}</p>
+          {/* Auto-Listing: visible dès qu'une photo est là. Remplit titre/
+              description/catégorie (sans écraser ce qui est déjà tapé) —
+              la vendeuse relit et corrige avant d'enregistrer. */}
+          {form.images.length > 0 && (
+            <button
+              type="button"
+              onClick={fillFromPhoto}
+              disabled={listingLoading}
+              className="mt-2 flex items-center gap-1.5 text-caption font-semibold text-teal disabled:opacity-50"
+            >
+              {listingLoading ? <IconLoader2 size={15} className="animate-spin" /> : <IconSparkles size={15} />}
+              {t('vendor.fillFromPhoto')}
+            </button>
+          )}
         </div>
         <Field label={t('vendor.productName')} required error={errors.name}>
           {(fid) => <TextInput id={fid} value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
@@ -242,6 +382,32 @@ export default function VendorProductEdit() {
         <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
           {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
         </Field>
+        {/* Optionnel — vide = pas de promo affichée. Le % s'affiche seul,
+            calculé côté client ET revérifié partout où le prix s'affiche
+            (jamais de "-30%" que le calcul ne confirme pas). */}
+        <Field label={`${t('vendor.compareAtPrice')} (${shopCurrency})`} hint={t('vendor.compareAtPriceHint')} error={errors.compareAtPrice}>
+          {(fid) => (
+            <TextInput
+              id={fid}
+              type="number"
+              inputMode="decimal"
+              value={form.compare_at_price_fcfa}
+              error={errors.compareAtPrice}
+              onChange={(e) => setForm({ ...form, compare_at_price_fcfa: e.target.value })}
+            />
+          )}
+        </Field>
+        {/* Repère HONNÊTE issu du catalogue (médiane d'articles comparables),
+            jamais un prix "optimal" sorti du chapeau — la vendeuse décide. */}
+        {priceHint && (
+          <p className="-mt-2 text-caption text-muted">
+            {t('vendor.priceHint', {
+              price: Math.round(convertFromFcfa(priceHint.fcfa, shopCurrency)),
+              currency: shopCurrency,
+              count: priceHint.samples,
+            })}
+          </p>
+        )}
         {/* Sélecteur en cascade (façon Amazon): rayon puis sous-catégorie
             précise quand elle existe (Mode Femme > Robes...). form.category
             stocke toujours l'id final (la sous-catégorie si choisie, sinon
@@ -302,6 +468,25 @@ export default function VendorProductEdit() {
         <Field label={t('vendor.productStock')}>
           {(fid) => <TextInput id={fid} type="number" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />}
         </Field>
+        {/* Tailles/couleurs — c'était LE manque signalé par Beau: pas de XL/
+            XXL sur les robes. L'acheteuse devra choisir sa taille avant
+            l'ajout au panier, et la commande arrive avec la variante. */}
+        <TagPicker
+          label={t('vendor.productSizes')}
+          hint={t('vendor.productSizesHint')}
+          values={form.sizes}
+          presets={sizePresetsFor(form.category)}
+          onChange={(sizes) => setForm({ ...form, sizes })}
+          addLabel={t('vendor.addSize')}
+        />
+        <TagPicker
+          label={t('vendor.productColors')}
+          hint={t('vendor.productColorsHint')}
+          values={form.colors}
+          presets={null}
+          onChange={(colors) => setForm({ ...form, colors })}
+          addLabel={t('vendor.addColor')}
+        />
         {/* Uniquement utile quand la boutique tourne par arrivage — sinon la
             case n'aurait aucun effet visible et ne ferait qu'encombrer. */}
         {shop.rotation_enabled && (
@@ -360,6 +545,60 @@ export default function VendorProductEdit() {
                   onClick={() => setSuggestion(null)}
                   className="rounded-input px-3 py-1.5 text-caption text-muted"
                 >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Script Reel/TikTok généré pour promouvoir la fiche — la vendeuse le
+            copie et filme elle-même, rien n'est publié automatiquement. */}
+        <div>
+          <button
+            type="button"
+            onClick={generateReelScript}
+            disabled={scriptLoading}
+            className="flex items-center gap-1.5 text-caption font-semibold text-teal disabled:opacity-50"
+          >
+            {scriptLoading ? <IconLoader2 size={15} className="animate-spin" /> : <IconSparkles size={15} />}
+            {t('vendor.reelScript')}
+          </button>
+          {reelScript && (
+            <div className="mt-2 space-y-2 rounded-card border border-brass/40 bg-brass/5 p-3">
+              <p className="text-body font-semibold text-ink">🎬 {reelScript.hook}</p>
+              <ol className="list-decimal space-y-1.5 pl-5">
+                {reelScript.scenes.map((s, i) => (
+                  <li key={i} className="text-caption text-ink">
+                    <span className="font-semibold">{s.shot}</span>
+                    <br />« {s.text} »
+                  </li>
+                ))}
+              </ol>
+              <p className="text-caption font-semibold text-ink">{reelScript.cta}</p>
+              <p className="text-caption text-muted">{(reelScript.hashtags || []).map((h) => `#${h}`).join(' ')}</p>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  className="rounded-input bg-teal px-3 py-1.5 text-caption font-semibold text-white"
+                  onClick={async () => {
+                    const text = [
+                      reelScript.hook,
+                      ...reelScript.scenes.map((s, i) => `${i + 1}. ${s.shot} — « ${s.text} »`),
+                      reelScript.cta,
+                      (reelScript.hashtags || []).map((h) => `#${h}`).join(' '),
+                    ].join('\n');
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      toast.success(t('common.shareCopied'));
+                    } catch {
+                      toast.error(t('errors.generic'));
+                    }
+                  }}
+                >
+                  {t('vendor.copyScript')}
+                </button>
+                <button type="button" onClick={() => setReelScript(null)} className="rounded-input px-3 py-1.5 text-caption text-muted">
                   {t('common.cancel')}
                 </button>
               </div>

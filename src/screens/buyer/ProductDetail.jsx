@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles } from '@tabler/icons-react';
@@ -10,7 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
-import { Price } from '../../components/Price';
+import { PriceBlock, PromoBadge, discountPercent } from '../../components/Price';
 import { ProductCard } from '../../components/ProductCard';
 import { SmartImage } from '../../components/SmartImage';
 import { StarRating } from '../../components/StarRating';
@@ -31,6 +31,7 @@ export default function ProductDetail() {
   const toast = useToast();
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
+  const sizeRef = useRef(null);
   const [starting, setStarting] = useState(false);
   const [mirrorOpen, setMirrorOpen] = useState(false);
 
@@ -118,9 +119,29 @@ export default function ProductDetail() {
   const p = data.product;
   const shop = p.shops;
   const quote = isQuoteOnly(p.category);
+  const pct = quote ? null : discountPercent(p.price_fcfa, p.compare_at_price_fcfa);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
-  const cartLine = items.find((i) => i.id === p.id);
+  // La ligne de panier correspond à la VARIANTE sélectionnée: la même robe en
+  // M et en XL sont deux lignes distinctes (la boutique doit savoir quelles
+  // tailles préparer).
+  const cartLine = items.find(
+    (i) => i.id === p.id && (i.size || '') === (size || '') && (i.color || '') === (color || '')
+  );
+  const needsSize = p.sizes?.length > 0 && !size;
   const images = (p.images || []).map((im) => storageUrl('products', im));
+
+  function addToCart() {
+    // Taille définie par la boutique = choix obligatoire avant l'ajout,
+    // sinon la commande arrive sans taille et tout le monde perd du temps.
+    if (needsSize) {
+      toast.info(t('product.chooseSizeFirst'));
+      // Amener la cliente DEVANT le choix de taille au lieu de la laisser
+      // chercher où il se trouve — le toast seul ne dit pas où aller.
+      sizeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    add({ ...p, shop_name: shop.name }, 1, { size: size || null, color: color || null });
+  }
 
   return (
     <div className="relative lg:mx-auto lg:max-w-3xl">
@@ -160,7 +181,10 @@ export default function ProductDetail() {
         {quote ? (
           <p className="mt-1 text-section font-semibold text-brass">{t('product.requestQuote')}</p>
         ) : (
-          <Price fcfa={p.price_fcfa} className="mt-1 block text-title font-semibold text-teal" />
+          <div className="mt-1 flex items-center gap-2">
+            <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
+            {pct && <PromoBadge percent={pct} />}
+          </div>
         )}
 
         <Link to={`/boutique/${shop.slug}`} className="mt-3 flex items-center gap-2 text-body text-muted">
@@ -183,6 +207,18 @@ export default function ProductDetail() {
           </button>
         )}
 
+        {/* Taille/couleur AVANT la description: c'est le choix qui conditionne
+            l'ajout au panier — enterré sous un long descriptif, la cliente
+            tapait le bouton, recevait l'erreur et ne voyait pas où choisir. */}
+        {p.sizes?.length > 0 && (
+          <div ref={sizeRef}>
+            <Variant label={`${t('product.size')} *`} options={p.sizes} value={size} onChange={setSize} />
+          </div>
+        )}
+        {p.colors?.length > 0 && (
+          <Variant label={t('product.color')} options={p.colors} value={color} onChange={setColor} />
+        )}
+
         {p.description && (
           <div className="mt-4">
             <h2 className="text-section text-ink">{t('product.description')}</h2>
@@ -201,13 +237,6 @@ export default function ProductDetail() {
               </div>
             ))}
           </div>
-        )}
-
-        {p.sizes?.length > 0 && (
-          <Variant label={t('product.size')} options={p.sizes} value={size} onChange={setSize} />
-        )}
-        {p.colors?.length > 0 && (
-          <Variant label={t('product.color')} options={p.colors} value={color} onChange={setColor} />
         )}
 
         <section className="mt-6">
@@ -257,7 +286,7 @@ export default function ProductDetail() {
           // capped at available stock. No confusing transient "added" label.
           <div className="flex flex-1 items-center justify-between rounded-[10px] border-[1.5px] border-teal px-2">
             <button
-              onClick={() => (cartLine.qty <= 1 ? remove(p.id) : setQty(p.id, cartLine.qty - 1))}
+              onClick={() => (cartLine.qty <= 1 ? remove(cartLine.key) : setQty(cartLine.key, cartLine.qty - 1))}
               className="flex h-11 w-11 items-center justify-center rounded-full text-teal transition active:scale-90 active:bg-teal/10"
               aria-label={cartLine.qty <= 1 ? t('cart.remove') : t('common.decrease')}
             >
@@ -265,7 +294,7 @@ export default function ProductDetail() {
             </button>
             <span className="text-body font-semibold text-ink">{t('product.inCart', { count: cartLine.qty })}</span>
             <button
-              onClick={() => setQty(p.id, cartLine.qty + 1)}
+              onClick={() => setQty(cartLine.key, cartLine.qty + 1)}
               disabled={cartLine.qty >= (p.stock ?? Infinity)}
               className="flex h-11 w-11 items-center justify-center rounded-full text-teal transition active:scale-90 active:bg-teal/10 disabled:opacity-30"
               aria-label={t('common.increase')}
@@ -274,7 +303,7 @@ export default function ProductDetail() {
             </button>
           </div>
         ) : (
-          <Button disabled={outOfStock} onClick={() => add({ ...p, shop_name: shop.name })}>
+          <Button disabled={outOfStock} onClick={addToCart}>
             {outOfStock ? t('product.outOfStock') : t('product.addToCart')}
           </Button>
         )}

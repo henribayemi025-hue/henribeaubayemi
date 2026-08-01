@@ -16,11 +16,16 @@ export default function EditProfile() {
   const toast = useToast();
   const [name, setName] = useState(profile?.name || '');
   const [avatar, setAvatar] = useState(profile?.avatar_url || null);
+  const [address, setAddress] = useState(profile?.address || '');
+  const [city, setCity] = useState(profile?.city || '');
   const [busy, setBusy] = useState(false);
 
   async function save() {
     setBusy(true);
-    const { error } = await supabase.from('profiles').update({ name: name.trim(), avatar_url: avatar }).eq('id', user.id);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ name: name.trim(), avatar_url: avatar, address: address.trim() || null, city: city.trim() || null })
+      .eq('id', user.id);
     setBusy(false);
     if (error) {
       toast.error(error.message);
@@ -38,6 +43,15 @@ export default function EditProfile() {
         <ImageUpload bucket="shops" value={avatar} onChange={setAvatar} label={t('profile.title')} shape="round" />
         <Field label={t('profile.displayName')}>
           {(id) => <TextInput id={id} value={name} onChange={(e) => setName(e.target.value)} />}
+        </Field>
+        {/* Pré-remplit le tunnel de commande — évite de retaper la même
+            adresse à chaque achat. Optionnel: rien n'oblige à la renseigner
+            ici, la commande garde son propre champ modifiable. */}
+        <Field label={t('profile.savedAddress')} hint={t('profile.savedAddressHint')}>
+          {(id) => <TextInput id={id} value={address} onChange={(e) => setAddress(e.target.value)} />}
+        </Field>
+        <Field label={t('profile.savedCity')}>
+          {(id) => <TextInput id={id} value={city} onChange={(e) => setCity(e.target.value)} />}
         </Field>
         <Button onClick={save} loading={busy}>{t('common.save')}</Button>
       </div>

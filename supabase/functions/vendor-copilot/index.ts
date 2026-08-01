@@ -1,22 +1,29 @@
-// Finjaro — Vendor Copilot. Generates a short marketing product description
-// from the fields the vendor already typed. Body:
-// { name, category?, price?, currency?, lang? } -> { description }.
-// Reuses the project-level GEMINI_API_KEY (same as finou-chat) so the vendor
-// needs no extra key. The result is a *suggestion* the vendor edits/validates
-// client-side — never auto-saved.
+// Finjaro — Vendor Copilot. Trois modes, même sécurité pour les trois :
+//   (défaut) 'description'  { name, category?, price?, currency?, lang? } -> { description }
+//   'listing'               { image_path, lang? } -> fiche complète depuis la photo
+//                           { title, description, keywords[], category, price_hint_fcfa?, price_samples }
+//   'reel_script'           { name, description?, lang? } -> script vidéo
+//                           { hook, scenes[{shot,text}], cta, hashtags[] }
 //
-// SÉCURITÉ (corrigé) — cette fonction n'avait NI authentification NI quota:
-// n'importe qui, connecté ou non, pouvait l'appeler directement (hors de
-// l'app) en boucle et brûler la clé Gemini partagée avec Finou/Miroir IA,
-// sans jamais apparaître dans le plafond de budget mensuel (ai_usage) qui
-// protège les deux autres fonctions IA. Corrigé en réutilisant exactement le
-// même mécanisme que finou-chat: JWT obligatoire, quota par compte, et
-// journalisation dans ai_usage (donc comptabilisé dans le même budget global).
+// 'listing' est l'Auto-Listing du pilier 3 (capacité 12, partie texte) : la
+// photo est lue DEPUIS le bucket public `products` (le vendeur l'a déjà
+// uploadée pour sa fiche) — pas de base64 géant dans la requête. La catégorie
+// renvoyée est contrainte par enum aux ids RÉELS de la table categories
+// (Structured Outputs), jamais du texte libre. Le repère de prix n'est PAS
+// inventé par Gemini : c'est la médiane des articles actifs de la même
+// catégorie dans le catalogue — s'il y a moins de 3 échantillons on ne
+// renvoie rien plutôt qu'un chiffre au doigt mouillé.
+//
+// SÉCURITÉ — JWT obligatoire, quota par compte (check_rate_limit),
+// journalisation ai_usage dans le budget global partagé. La clé Gemini ne
+// quitte jamais le serveur.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const BUDGET_EUR = 20;
 const COPILOT_CALL_COST_EUR = 0.0005;
+const LISTING_CALL_COST_EUR = 0.002; // vision = plus cher qu'un appel texte
+const MAX_IMG_BYTES = 5_000_000;
 
 // Même règle que finou-chat/miroir-ia.
 const PROD_HOST = 'finjaro.net';
@@ -32,6 +39,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
+  if (host.endsWith('.workers.dev')) return true;
   return false;
 }
 
@@ -57,6 +65,44 @@ function monthStartIso(): string {
   return d.toISOString();
 }
 
+const GEMINI_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=';
+
+// deno-lint-ignore no-explicit-any
+async function gemini(apiKey: string, body: unknown): Promise<any | null> {
+  const res = await fetch(GEMINI_URL + apiKey, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    console.error('Gemini error', res.status, await res.text());
+    return null;
+  }
+  return res.json();
+}
+
+// deno-lint-ignore no-explicit-any
+function textOf(data: any): string {
+  return (data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join('') || '').trim();
+}
+
+function b64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+function median(nums: number[]): number {
+  const s = [...nums].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req.headers.get('Origin'));
   const json = (body: unknown, status = 200) =>
@@ -67,8 +113,7 @@ Deno.serve(async (req: Request) => {
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     if (!apiKey) return json({ error: 'missing_api_key' }, 503);
 
-    // Cette fonction ne sert qu'aux vendeuses en train de créer/éditer un
-    // article — un compte est donc requis (pas d'accès invité comme Finou).
+    // Réservé aux vendeuses en train d'éditer — compte requis.
     const authHeader = req.headers.get('Authorization') || '';
     const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
@@ -90,10 +135,145 @@ Deno.serve(async (req: Request) => {
     const totalEur = (usage ?? []).reduce((s: number, r: { cost_eur: number }) => s + Number(r.cost_eur), 0);
     if (totalEur >= BUDGET_EUR) return json({ error: 'budget_exceeded' }, 503);
 
-    const { name, category, price, currency, lang } = await req.json();
+    const body = await req.json();
+    const mode = body.mode || 'description';
+    const isFr = (body.lang || 'fr').toString().startsWith('fr');
+
+    // ----------------------------------------------------------------- listing
+    if (mode === 'listing') {
+      const imagePath = body.image_path;
+      if (!imagePath || typeof imagePath !== 'string' || imagePath.includes('..')) {
+        return json({ error: 'missing_image' }, 400);
+      }
+      // La photo vient du bucket public `products`, déjà uploadée par la
+      // vendeuse pour sa fiche — on la relit côté serveur.
+      const imgUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/products/${imagePath}`;
+      const imgRes = await fetch(imgUrl);
+      if (!imgRes.ok) return json({ error: 'image_not_found' }, 400);
+      const buf = await imgRes.arrayBuffer();
+      if (buf.byteLength > MAX_IMG_BYTES) return json({ error: 'image_too_large' }, 400);
+      const mime = imgRes.headers.get('content-type') || 'image/jpeg';
+
+      // Enum des catégories PRODUIT réelles (têtes + enfants) — la réponse ne
+      // peut pas inventer une catégorie qui n'existe pas en base.
+      const { data: cats } = await sb.from('categories').select('id, parent_id').eq('kind', 'PRODUCT');
+      const catIds = (cats ?? []).map((c: { id: string }) => c.id);
+      if (catIds.length === 0) return json({ error: 'no_categories' }, 503);
+
+      const prompt = isFr
+        ? `Tu prépares une fiche article pour une marketplace africaine (Finjaro) à partir de cette photo. ` +
+          `Titre: court et vendeur (max 60 caractères), sans marque inventée. ` +
+          `Description: 2-3 phrases chaleureuses et concrètes (max 60 mots), sans prix ni disponibilité inventés. ` +
+          `Keywords: 3 à 6 mots de recherche. Category: l'id qui correspond le mieux à l'objet.`
+        : `You are drafting a product listing for an African marketplace (Finjaro) from this photo. ` +
+          `Title: short and appealing (max 60 chars), no invented brand. ` +
+          `Description: 2-3 warm, concrete sentences (max 60 words), no invented price or availability. ` +
+          `Keywords: 3-6 search words. Category: the best-matching id.`;
+
+      const data = await gemini(apiKey, {
+        contents: [{
+          role: 'user',
+          parts: [{ inlineData: { mimeType: mime, data: b64(buf) } }, { text: prompt }],
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 400,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            required: ['title', 'description', 'keywords', 'category'],
+            properties: {
+              title: { type: 'STRING' },
+              description: { type: 'STRING' },
+              keywords: { type: 'ARRAY', items: { type: 'STRING' } },
+              category: { type: 'STRING', enum: catIds },
+            },
+          },
+        },
+      });
+      if (!data) return json({ error: 'gemini_error' }, 502);
+      let parsed: { title: string; description: string; keywords: string[]; category: string };
+      try {
+        parsed = JSON.parse(textOf(data));
+      } catch {
+        return json({ error: 'bad_ai_response' }, 502);
+      }
+
+      // Repère de prix HONNÊTE : médiane du catalogue dans la même famille de
+      // catégories (la catégorie + ses sœurs sous la même tête). Jamais un
+      // chiffre inventé par le modèle.
+      const cat = (cats ?? []).find((c: { id: string }) => c.id === parsed.category);
+      const head = cat?.parent_id ?? parsed.category;
+      const family = (cats ?? [])
+        .filter((c: { id: string; parent_id: string | null }) => c.id === head || c.parent_id === head)
+        .map((c: { id: string }) => c.id);
+      const { data: prices } = await sb
+        .from('products').select('price_fcfa')
+        .in('category', family).eq('is_active', true).gt('price_fcfa', 0).limit(200);
+      const nums = (prices ?? []).map((p: { price_fcfa: number }) => Number(p.price_fcfa)).filter((n: number) => n > 0);
+
+      sb.from('ai_usage').insert({ fn: 'vendor_copilot', cost_eur: LISTING_CALL_COST_EUR }).then(() => {}, () => {});
+      return json({
+        ...parsed,
+        price_hint_fcfa: nums.length >= 3 ? median(nums) : null,
+        price_samples: nums.length,
+      });
+    }
+
+    // ------------------------------------------------------------- reel_script
+    if (mode === 'reel_script') {
+      const { name, description } = body;
+      if (!name || typeof name !== 'string') return json({ error: 'missing_name' }, 400);
+      const prompt = isFr
+        ? `Écris un script de vidéo courte (Reel/TikTok, 20-30 s) pour vendre cet article sur Finjaro, ` +
+          `marketplace africaine. Article: "${name}"${description ? ` — ${description}` : ''}. ` +
+          `hook: phrase d'accroche parlée (1 phrase). scenes: 3 à 4 plans, chacun avec "shot" ` +
+          `(ce qu'on filme, concret et faisable au téléphone) et "text" (ce qu'on dit ou affiche). ` +
+          `cta: appel à l'action final. hashtags: 4 à 6, sans le #. Ton naturel, pas d'anglicismes forcés.`
+        : `Write a short-video script (Reel/TikTok, 20-30s) to sell this item on Finjaro, an African ` +
+          `marketplace. Item: "${name}"${description ? ` — ${description}` : ''}. ` +
+          `hook: spoken opening line. scenes: 3-4 shots, each with "shot" (what to film, phone-doable) ` +
+          `and "text" (what is said or shown). cta: final call to action. hashtags: 4-6, without #.`;
+
+      const data = await gemini(apiKey, {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 500,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            required: ['hook', 'scenes', 'cta', 'hashtags'],
+            properties: {
+              hook: { type: 'STRING' },
+              scenes: {
+                type: 'ARRAY',
+                items: {
+                  type: 'OBJECT',
+                  required: ['shot', 'text'],
+                  properties: { shot: { type: 'STRING' }, text: { type: 'STRING' } },
+                },
+              },
+              cta: { type: 'STRING' },
+              hashtags: { type: 'ARRAY', items: { type: 'STRING' } },
+            },
+          },
+        },
+      });
+      if (!data) return json({ error: 'gemini_error' }, 502);
+      try {
+        const parsed = JSON.parse(textOf(data));
+        sb.from('ai_usage').insert({ fn: 'vendor_copilot', cost_eur: COPILOT_CALL_COST_EUR }).then(() => {}, () => {});
+        return json(parsed);
+      } catch {
+        return json({ error: 'bad_ai_response' }, 502);
+      }
+    }
+
+    // ----------------------------------------------- description (mode défaut)
+    const { name, category, price, currency } = body;
     if (!name || typeof name !== 'string') return json({ error: 'missing_name' }, 400);
 
-    const isFr = (lang || 'fr').toString().startsWith('fr');
     const priceLine = price ? ` Prix indicatif: ${price} ${currency || ''}.` : '';
     const prompt = isFr
       ? `Rédige une description produit courte et vendeuse (2 à 3 phrases, 60 mots max) ` +
@@ -107,26 +287,12 @@ Deno.serve(async (req: Request) => {
         `Warm, concrete tone highlighting quality and style. ` +
         `Do not invent price or availability. Reply ONLY with the text, no quotes or title.`;
 
-    const endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 200 },
-      }),
+    const data = await gemini(apiKey, {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.8, maxOutputTokens: 200 },
     });
-
-    if (!res.ok) {
-      console.error('Gemini error', res.status, await res.text());
-      return json({ error: 'gemini_error' }, 502);
-    }
-    const data = await res.json();
-    const description =
-      (data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join('') || '')
-        .trim()
-        .replace(/^["']|["']$/g, '');
+    if (!data) return json({ error: 'gemini_error' }, 502);
+    const description = textOf(data).replace(/^["']|["']$/g, '');
     if (!description) return json({ error: 'empty' }, 502);
     sb.from('ai_usage').insert({ fn: 'vendor_copilot', cost_eur: COPILOT_CALL_COST_EUR }).then(() => {}, () => {});
     return json({ description });

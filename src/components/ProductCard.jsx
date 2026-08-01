@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSparkles } from '@tabler/icons-react';
+import { IconSparkles, IconRefresh } from '@tabler/icons-react';
 import { SmartImage } from './SmartImage';
-import { Price } from './Price';
-import { isQuoteOnly, MIRROR_CATEGORIES } from '../lib/categories';
+import { PriceBlock, PromoBadge, discountPercent } from './Price';
+import { isQuoteOnly, MIRROR_CATEGORIES, categoryHeadFor } from '../lib/categories';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
 import { track } from '../lib/track';
 
@@ -19,6 +19,12 @@ function ProductCardBase({ product }) {
   // (icône seule, coin de la photo) suffit à le signaler dès la grille, sans
   // alourdir visuellement la carte.
   const canMirror = !quote && MIRROR_CATEGORIES.includes(product.category);
+  const outOfStock = product.stock === 0 && !quote;
+  // Décision produit du 31/07: pas de page dédiée "Ventes flash / 2nde main",
+  // juste un repère sur les fiches concernées. La remise EST le repère de
+  // vente flash; la seconde main se lit sur la catégorie du rayon.
+  const pct = quote ? null : discountPercent(product.price_fcfa, product.compare_at_price_fcfa);
+  const secondHand = categoryHeadFor(product.category) === 'seconde_main';
   return (
     <Link
       to={`/product/${product.id}`}
@@ -27,11 +33,15 @@ function ProductCardBase({ product }) {
     >
       <div className="relative">
         <SmartImage src={img} fallbackSrc={imgFallback} alt={product.name} className="aspect-square w-full" />
-        {product.stock === 0 && !quote && (
+        {/* Un article épuisé n'est pas une bonne affaire: la rupture prime sur
+            la promo, jamais les deux pastilles au même endroit. */}
+        {outOfStock ? (
           <span className="absolute left-2 top-2 rounded-pill bg-danger-bg px-2 py-0.5 text-caption font-semibold text-danger">
             {t('product.outOfStock')}
           </span>
-        )}
+        ) : pct ? (
+          <PromoBadge percent={pct} className="absolute left-2 top-2" />
+        ) : null}
         {canMirror && (
           <span
             className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-brass shadow-sm"
@@ -41,13 +51,22 @@ function ProductCardBase({ product }) {
             <IconSparkles size={13} />
           </span>
         )}
+        {secondHand && (
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-pill bg-white/90 px-2 py-0.5 text-caption font-semibold text-brass shadow-sm">
+            <IconRefresh size={12} /> {t('product.secondHandBadge')}
+          </span>
+        )}
       </div>
       <div className="p-3">
         <p className="line-clamp-2 text-body text-ink">{product.name}</p>
         {quote ? (
           <p className="mt-1 text-caption font-semibold text-brass">{t('product.requestQuote')}</p>
         ) : (
-          <Price fcfa={product.price_fcfa} className="mt-1 block text-body font-semibold text-teal" />
+          <PriceBlock
+            fcfa={product.price_fcfa}
+            compareAtFcfa={product.compare_at_price_fcfa}
+            className="mt-1 block text-body font-semibold text-teal"
+          />
         )}
         {product.shop_name && <p className="mt-0.5 line-clamp-1 text-caption text-muted">{product.shop_name}</p>}
       </div>

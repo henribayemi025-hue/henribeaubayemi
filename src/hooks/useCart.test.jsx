@@ -31,21 +31,35 @@ describe('useCart', () => {
   it('setQty updates the quantity and never goes below 1', () => {
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
     act(() => result.current.add(product, 1));
-    act(() => result.current.setQty('p1', 5));
+    // Depuis les variantes, les lignes s'identifient par `key` (id+taille+
+    // couleur), plus par id produit seul.
+    const key = result.current.items[0].key;
+    act(() => result.current.setQty(key, 5));
     expect(result.current.items[0].qty).toBe(5);
-    act(() => result.current.setQty('p1', 0));
+    act(() => result.current.setQty(key, 0));
     expect(result.current.items[0].qty).toBe(1); // clamped, not removed — remove() is for deletion
   });
 
   it('remove and clear empty the cart', () => {
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
     act(() => result.current.add(product, 1));
-    act(() => result.current.remove('p1'));
+    act(() => result.current.remove(result.current.items[0].key));
     expect(result.current.items).toHaveLength(0);
 
     act(() => result.current.add(product, 1));
     act(() => result.current.clear());
     expect(result.current.items).toHaveLength(0);
+  });
+
+  it('keeps two sizes of the same product as separate lines', () => {
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => result.current.add(product, 1, { size: 'M' }));
+    act(() => result.current.add(product, 1, { size: 'XL' }));
+    act(() => result.current.add(product, 1, { size: 'XL' }));
+    expect(result.current.items).toHaveLength(2);
+    const xl = result.current.items.find((i) => i.size === 'XL');
+    expect(xl.qty).toBe(2);
+    expect(result.current.count).toBe(3);
   });
 
   it('persists to localStorage so a guest keeps their cart on reload', () => {

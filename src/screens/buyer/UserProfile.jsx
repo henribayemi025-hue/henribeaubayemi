@@ -9,7 +9,6 @@ import {
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
-import { useUI } from '../../hooks/useUI';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
@@ -20,7 +19,6 @@ export default function UserProfile() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
-  const { requireLogin } = useUI();
   const { status } = useVendorStatus();
 
   // Real counts for the stats grid — best-effort, never blocks the page.
@@ -37,11 +35,17 @@ export default function UserProfile() {
     return (
       <div>
         <AppHeader title={t('profile.title')} />
+        {/* Direct vers /auth — PAS requireLogin(). requireLogin() ouvre la
+            popup "il faut être connecté pour faire ça", pensée pour une
+            action protégée tentée par surprise (suivre, écrire...). Ici la
+            personne a déjà cliqué "Se connecter" en toutes lettres: lui
+            répondre "il faut te connecter" est absurde — Beau: "je clique
+            sur Sign in, ça me dit qu'il faut se connecter". */}
         <EmptyState
           icon={IconUserCircle}
           title={t('profile.guest')}
           hint={t('profile.guestPrompt')}
-          action={<Button onClick={requireLogin}>{t('auth.login')}</Button>}
+          action={<Button onClick={() => navigate('/auth', { state: { from: '/profile' } })}>{t('auth.login')}</Button>}
         />
       </div>
     );

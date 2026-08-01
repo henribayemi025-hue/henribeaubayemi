@@ -1,6 +1,8 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { BuyerNav } from '../../components/BuyerNav';
 import { BuyerSidebarNav } from '../../components/BuyerSidebarNav';
+import { TAB_BAR_SPACE } from '../../components/TabBar';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
@@ -27,7 +29,22 @@ export function BuyerLayout() {
         className="fixed left-0 right-0 top-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
         style={{ height: 'var(--app-height, 100dvh)', paddingBottom: 'var(--kb, 0px)' }}
       >
-        <main className="flex-1 overflow-y-auto overscroll-contain">
+        {/* Hors du <main> qui défile: le bandeau reste en haut de la coque,
+            visible sur tous les onglets (Accueil, Fin, Services…) comme la
+            bande orange du prototype. Il ne rend rien s'il n'y a aucune
+            annonce active — pas de bande vide. Masqué sur le plein écran
+            vidéo, où toute barre casse l'immersion. */}
+        {!pathname.startsWith('/fin') && <AnnouncementBanner />}
+        {/* La barre d'onglets flotte AU-DESSUS du contenu (voir TabBar): sans
+            cette marge basse, le dernier élément de chaque écran finirait
+            caché derrière elle. Même règle que BuyerNav pour savoir si la
+            barre est là — masquée dans un fil de discussion, qui gère sa
+            propre hauteur. `/fin` est plein écran par nature. */}
+        <main
+          className={`flex-1 overflow-y-auto overscroll-contain ${
+            pathname.startsWith('/chat') || pathname.startsWith('/fin') ? '' : TAB_BAR_SPACE
+          }`}
+        >
           <ErrorBoundary key={pathname}>
             <Outlet />
           </ErrorBoundary>

@@ -65,7 +65,7 @@ function CategoryTile({ id, banner, label }) {
       to={`/category/${id}`}
       className="flex w-[4.75rem] shrink-0 flex-col items-center transition-transform duration-150 active:scale-95"
     >
-      <div className="h-[4.75rem] w-[4.75rem] overflow-hidden rounded-card border border-hairline">
+      <div className="h-[4.75rem] w-[4.75rem] overflow-hidden rounded-card border border-hairline shadow-sm">
         {banner ? (
           <img
             src={banner}

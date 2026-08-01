@@ -85,6 +85,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (host === 'localhost' || host === '127.0.0.1') return true;
   if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
   if (host.endsWith('.pages.dev')) return true;
+  if (host.endsWith('.workers.dev')) return true;
   return false;
 }
 
@@ -98,7 +99,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
 }
 
 function systemPrompt(): string {
-  return `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
+  return `Tu es Finia, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
 (produits ET services) pour l'Afrique et sa diaspora, ouverte à l'international:
 mode, high-tech, alimentaire, véhicules, immobilier, et des prestataires à domicile
 (ménage, BTP, coiffure, traiteur…). Slogan: "Au-delà des rêves". Tu es chaleureuse,
@@ -123,6 +124,14 @@ search_services pour proposer le bon corps de métier. URGENCE: si le message ou
 photo décrit une urgence réelle (fuite d'eau, panne électrique dangereuse...),
 saute le bavardage — appelle search_services immédiatement et donne le prestataire
 le plus pertinent en premier.
+
+DIAGNOSTIC TRAVAUX/PANNE (photo): si la photo montre un mur abîmé, une fuite, une
+installation électrique, un moteur ou un appareil en panne, fais un mini-diagnostic
+structuré: (1) le problème probable, (2) les matériaux ou pièces vraisemblablement
+nécessaires, (3) une FOURCHETTE de coût en FCFA clairement annoncée comme
+approximative ("à confirmer par un professionnel sur place" — tu ne vois qu'une
+photo), puis (4) appelle search_services pour proposer le corps de métier adapté.
+Jamais de chiffre précis présenté comme un devis ferme.
 
 BESOIN MIXTE (orchestrateur): pour un événement complet ("mariage: robe + traiteur
 + déco"), enchaîne plusieurs outils (search_products puis search_services) et
@@ -776,7 +785,7 @@ async function isOverBudget(sb: SupabaseClient): Promise<boolean> {
       body: JSON.stringify({
         user_id: ADMIN_USER_ID,
         title: 'Finjaro — budget IA atteint',
-        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+        body: `Finia et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
       }),
     }).catch(() => {});
   }

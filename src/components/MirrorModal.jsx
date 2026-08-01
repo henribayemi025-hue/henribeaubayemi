@@ -133,6 +133,10 @@ export function MirrorModal({ open, onClose, product }) {
           <IconSparkles size={40} className="text-brass" />
           <p className="text-body text-ink">{t('mirror.intro', { name: product.name })}</p>
           {photoHint && <p className="text-caption font-semibold text-brass">{photoHint}</p>}
+          {/* Question de la collègue de Beau: « si je choisis une robe XL, le
+              miroir s'adapte ? » — non, et on le dit franchement plutôt que
+              de laisser croire à un essayage à la bonne taille. */}
+          <p className="text-caption text-muted">{t('mirror.sizeNote')}</p>
           <div className="flex w-full gap-2">
             <Button className="flex-1" onClick={() => cameraRef.current?.click()}>
               <IconCamera size={18} /> {t('mirror.takePhoto')}

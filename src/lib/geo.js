@@ -13,6 +13,27 @@ export function getPosition() {
   });
 }
 
+// Variante qui distingue POURQUOI ça a échoué (permission refusée, position
+// indisponible, délai dépassé, navigateur sans géoloc) — getPosition() avale
+// tout en un simple null. Beau: "j'ai appuyé, ça dit un truc sur la
+// localisation, le bouton est resté normal" — sans savoir laquelle de ces
+// causes, impossible de dire à la vendeuse quoi faire ensuite (réessayer ?
+// changer un réglage ? saisir la position à la main ?).
+export function getPositionWithReason() {
+  return new Promise((resolve) => {
+    if (!('geolocation' in navigator)) return resolve({ pos: null, reason: 'unsupported' });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ pos: { lat: pos.coords.latitude, lng: pos.coords.longitude }, reason: null }),
+      (err) => {
+        const reason =
+          err.code === err.PERMISSION_DENIED ? 'denied' : err.code === err.TIMEOUT ? 'timeout' : 'unavailable';
+        resolve({ pos: null, reason });
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+    );
+  });
+}
+
 // Great-circle distance in km between two {lat,lng} points (haversine).
 export function distanceKm(a, b) {
   if (!a || !b || a.lat == null || b.lat == null) return null;

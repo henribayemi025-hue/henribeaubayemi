@@ -10,16 +10,12 @@ directory = "./dist"
 not_found_handling = "single-page-application"
 
 # --- Test/staging -----------------------------------------------------------
-# Worker SÉPARÉ, avec sa propre URL (finjaro-staging.<compte>.workers.dev) —
-# jamais le même que finjaro.net. Déployé avec
-# `npx wrangler deploy --env staging`. Il FAUT que ce soit la commande
-# configurée côté Cloudflare pour les branches non-production (Settings >
-# Build > "Non-production branch deploy command") — sinon Cloudflare republie
-# tout droit sur finjaro.net avec la commande de prod, quelle que soit la
-# branche poussée.
-[env.staging]
-name = "finjaro-staging"
-
-[env.staging.assets]
-directory = "./dist"
-not_found_handling = "single-page-application"
+# PAS un environnement wrangler séparé — testé et abandonné (`--env staging`
+# ignoré par `wrangler deploy`, qui promeut TOUJOURS en production quel que
+# soit --env). Le vrai mécanisme Cloudflare pour un aperçu isolé: sur
+# Settings > Build, la commande "Non-production branch deploy command" doit
+# être `npx wrangler versions upload` — elle crée une version à part, jamais
+# promue, avec une adresse d'aperçu stable générée depuis le nom de branche
+# (confirmé: la branche `staging` donne staging-finjaro.finjaro.workers.dev).
+# La commande "Deploy command" (branche de production) reste `npx wrangler
+# deploy` tout court.

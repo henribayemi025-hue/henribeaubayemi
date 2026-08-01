@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMovie } from '@tabler/icons-react';
+import { IconMovie, IconX } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ReelPlayer } from '../../components/ReelPlayer';
@@ -10,6 +11,10 @@ import { Button } from '../../components/Button';
 export default function Fin() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // « Nos Reels » depuis une fiche boutique arrive ici avec ?shop=<id>: le
+  // flux ne montre alors QUE ses vidéos, avec un bandeau pour tout rouvrir.
+  const [params, setParams] = useSearchParams();
+  const shopFilter = params.get('shop');
   const [tab, setTab] = useState('forYou');
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,9 +29,10 @@ export default function Fin() {
     try {
       let query = supabase
         .from('reels')
-        .select('*, shops(name, slug, avatar_url), products(id, name, price_fcfa, images, stock, shop_id)')
+        .select('*, shops(name, slug, avatar_url, owner_id), products(id, name, price_fcfa, images, stock, shop_id)')
         .order('created_at', { ascending: false })
         .limit(30);
+      if (shopFilter) query = query.eq('shop_id', shopFilter);
       if (tab === 'following') {
         if (!user) {
           setReels([]);
@@ -50,7 +56,7 @@ export default function Fin() {
     } finally {
       setLoading(false);
     }
-  }, [tab, user]);
+  }, [tab, user, shopFilter]);
 
   useEffect(() => {
     load();
@@ -66,16 +72,34 @@ export default function Fin() {
 
   return (
     <div className="relative h-full bg-black">
-      <div className="absolute inset-x-0 top-0 z-20 flex justify-center gap-6 pt-3">
-        {['forYou', 'following'].map((tb) => (
+      {/* Capsule translucide derrière les onglets: contraste garanti quel que
+          soit ce qu'il y a en dessous (vidéo claire, squelette de
+          chargement, écran vide blanc) — avant, le texte blanc pouvait
+          devenir invisible sur n'importe lequel des trois. */}
+      <div className="absolute inset-x-0 top-3 z-20 flex justify-center">
+        {shopFilter ? (
           <button
-            key={tb}
-            onClick={() => setTab(tb)}
-            className={`text-body ${tab === tb ? 'font-semibold text-white' : 'text-white/60'}`}
+            onClick={() => setParams({}, { replace: true })}
+            className="flex items-center gap-1.5 rounded-pill bg-black/30 px-3 py-1.5 text-caption font-semibold text-white backdrop-blur-sm"
           >
-            {t(tb === 'forYou' ? 'fin.forYou' : 'fin.followingTab')}
+            {t('fin.shopFilter', { name: reels[0]?.shops?.name || '…' })}
+            <IconX size={14} /> {t('fin.backToAll')}
           </button>
-        ))}
+        ) : (
+          <div className="flex items-center gap-1 rounded-pill bg-black/25 p-1 backdrop-blur-sm">
+            {['forYou', 'following'].map((tb) => (
+              <button
+                key={tb}
+                onClick={() => setTab(tb)}
+                className={`rounded-pill px-3.5 py-1.5 text-caption font-semibold transition-colors duration-200 ${
+                  tab === tb ? 'bg-white text-ink' : 'text-white/85'
+                }`}
+              >
+                {t(tb === 'forYou' ? 'fin.forYou' : 'fin.followingTab')}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {loading ? (
