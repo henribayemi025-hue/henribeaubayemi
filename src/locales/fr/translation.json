@@ -497,7 +497,15 @@
       "mois": "mois",
       "m2": "m²",
       "piece": "pièce"
-    }
+    },
+    "nearYouBadge": "Près de vous",
+    "directoryTitle": "Annuaire & Carte géolocalisée",
+    "directorySubtitle": "Trouvez et contactez les meilleurs prestataires autour de vous.",
+    "directoryTab": "Annuaire des métiers",
+    "mapTab": "Carte géolocalisée",
+    "filterByTrade": "Filtrer par métier",
+    "allTradesCount": "Tous les métiers ({{count}})",
+    "radiusLabel": "Rayon :"
   },
   "profile": {
     "title": "Profil",
@@ -998,5 +1006,13 @@
     "shipping": "En livraison",
     "ready": "Prête en boutique",
     "delivered": "Livrée"
+  },
+  "provider": {
+    "details": "Détails",
+    "book": "Réserver",
+    "fromPrice": "À partir de",
+    "reviewCount_one": "{{count}} avis",
+    "reviewCount_other": "{{count}} avis",
+    "isNew": "Nouveau"
   }
 }

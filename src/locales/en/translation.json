@@ -497,7 +497,15 @@
       "mois": "month",
       "m2": "m²",
       "piece": "item"
-    }
+    },
+    "nearYouBadge": "Near you",
+    "directoryTitle": "Directory & Map",
+    "directorySubtitle": "Find and contact the best providers around you.",
+    "directoryTab": "Trade directory",
+    "mapTab": "Map view",
+    "filterByTrade": "Filter by trade",
+    "allTradesCount": "All trades ({{count}})",
+    "radiusLabel": "Radius:"
   },
   "profile": {
     "title": "Profile",
@@ -998,5 +1006,13 @@
     "shipping": "Out for delivery",
     "ready": "Ready in store",
     "delivered": "Delivered"
+  },
+  "provider": {
+    "details": "Details",
+    "book": "Book",
+    "fromPrice": "From",
+    "reviewCount_one": "{{count}} review",
+    "reviewCount_other": "{{count}} reviews",
+    "isNew": "New"
   }
 }
