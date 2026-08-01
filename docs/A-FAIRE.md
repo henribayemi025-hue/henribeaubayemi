@@ -32,18 +32,16 @@ rien n'est supprimé, pour garder l'historique des décisions de Beau._
 |---|---|---|
 | B1 | Profil → « Sign in » affiche « you need to be signed in to do that » au lieu d'ouvrir l'écran de connexion | TROUVÉ : le bouton appelle `requireLogin()` (la popup de garde) au lieu de naviguer vers `/auth`. Une ligne à corriger dans `UserProfile.jsx`. |
 | B2 | « you need to sign in to continue » ailleurs | À préciser par Beau : quel écran exactement ? |
-| B3 | Catégorie Musique absente | Corrigé le 31/07 (bug d'ordre dans region.js) — Beau doit reconfirmer sur finjaro.net. |
+| B3 | Catégorie Musique absente | ✅ Corrigé et confirmé visible sur staging le 31/07. |
 | B4 | « Les pièces enregistrées partent où ? » | Pas un bug : bucket privé `ids` + table `vendor_applications`. Manque peut-être une CONFIRMATION visible après envoi — à montrer à Beau. |
 | B5 | Bouton localisation boutique : « ça fait quoi ? » | Le code marche (GPS → base → toast). Le retour visuel est peut-être trop discret. À revoir avec Beau. |
 | B6 | Photos des nouvelles catégories | EN ATTENTE DES PHOTOS DE BEAU (Musique, Sport, Électroménager, Livres, Santé, Animaux, Jardin + les têtes sans photo héritée). |
 
-## 2. Renommer « Finou Chou »
+## 2. Renommer « Finou Chou » ✅ fait le 31/07
 
-Beau veut un nom plus sérieux (retour d'un ami : « fait trop comme quelqu'un
-qui veut faire rire mais n'y arrive pas »). Proposés : **Fino, Jaro, Finia,
-Nio**. Réponse de Beau « fin ai ca me vas bien » → probablement **Finia**, à
-confirmer explicitement avant le renommage global (UI + i18n + docs ; les noms
-de fonctions edge `finou-*` peuvent rester, c'est interne).
+Renommé en **Finia** partout côté utilisatrice (bulle, messages, écrans
+vendeur). Confirmé visible sur staging. Noms techniques internes
+(`finou-chat`, `finou-vision`…) inchangés, c'est invisible pour tout le monde.
 
 ## 3. Décisions produit prises (ne plus reposer la question)
 
