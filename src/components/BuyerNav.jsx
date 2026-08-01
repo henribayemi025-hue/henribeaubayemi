@@ -9,6 +9,7 @@ import {
   IconSparkles, IconX,
 } from '@tabler/icons-react';
 import { useUI } from '../hooks/useUI';
+import { TabBar } from './TabBar';
 import { useEffect, useState } from 'react';
 
 const HINT_SEEN_KEY = 'finjaro_finou_hint_seen';
@@ -91,25 +92,7 @@ export function BuyerNav() {
           </button>
         </div>
       )}
-      {showNav && (
-      <nav className="flex items-stretch border-t border-hairline bg-white lg:hidden">
-        {items.map((it) => (
-          <NavLink key={it.key} to={it.to} end={it.end} className="flex flex-1 flex-col items-center gap-0.5 py-2 transition-transform duration-150 active:scale-90">
-            {({ isActive }) => {
-              const Icon = isActive ? it.on : it.out;
-              return (
-                <>
-                  <Icon size={23} className={`transition-colors duration-150 ${isActive ? 'text-teal' : 'text-muted'}`} />
-                  <span className={`text-[11px] transition-colors duration-150 ${isActive ? 'font-semibold text-teal' : 'text-muted'}`}>
-                    {t(`nav.${it.key}`)}
-                  </span>
-                </>
-              );
-            }}
-          </NavLink>
-        ))}
-      </nav>
-      )}
+      {showNav && <TabBar items={items} />}
     </>
   );
 }
