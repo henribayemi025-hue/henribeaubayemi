@@ -102,12 +102,54 @@ const TZ_COUNTRY = {
   'Africa/Cotonou': 'BJ', 'Africa/Lome': 'TG', 'Africa/Ouagadougou': 'BF',
   'Africa/Bamako': 'ML', 'Africa/Casablanca': 'MA', 'Africa/Tunis': 'TN',
   'Africa/Algiers': 'DZ', 'America/New_York': 'US', 'America/Toronto': 'CA',
+  // Les autres fuseaux des marchés visés — sans eux, un utilisateur de
+  // Marseille (Europe/Paris passe, mais pas Europe/Dublin, Europe/Vienna…)
+  // ou de Chicago retombait sur « pays inconnu », donc sur le marché
+  // camerounais par défaut.
+  'Europe/Dublin': 'IE', 'Europe/Vienna': 'AT', 'Europe/Athens': 'GR',
+  'Europe/Helsinki': 'FI', 'Europe/Copenhagen': 'DK', 'Europe/Stockholm': 'SE',
+  'Europe/Oslo': 'NO', 'Europe/Luxembourg': 'LU', 'Europe/Monaco': 'FR',
+  'America/Chicago': 'US', 'America/Denver': 'US', 'America/Los_Angeles': 'US',
+  'America/Phoenix': 'US', 'America/Detroit': 'US', 'America/Vancouver': 'CA',
+  'America/Montreal': 'CA', 'America/Edmonton': 'CA', 'America/Winnipeg': 'CA',
+  'Africa/Yaounde': 'CM', 'Africa/Niamey': 'NE', 'Africa/Ndjamena': 'TD',
+  'Africa/Malabo': 'GQ', 'Africa/Nouakchott': 'MR', 'Africa/Conakry': 'GN',
+  'Africa/Bissau': 'GW', 'Africa/Monrovia': 'LR', 'Africa/Freetown': 'SL',
+  'Africa/Johannesburg': 'ZA', 'Africa/Nairobi': 'KE', 'Africa/Kampala': 'UG',
+  'Africa/Cairo': 'EG', 'Africa/Kigali': 'RW', 'Africa/Bujumbura': 'BI',
+  'Africa/Luanda': 'AO', 'Africa/Maputo': 'MZ', 'Africa/Dar_es_Salaam': 'TZ',
+  'Indian/Antananarivo': 'MG', 'Indian/Mauritius': 'MU',
+  'Asia/Dubai': 'AE', 'Asia/Beirut': 'LB',
 };
+
+// Devise à afficher quand on ne connaît pas le pays exact. Le fuseau donne
+// toujours au moins une RÉGION: quelqu'un sur « Europe/Ljubljana » doit voir
+// des euros, pas des FCFA — même si on n'a pas de quoi affirmer qu'il est
+// slovène. On déduit donc la devise sans mentir sur le pays.
+const REGION_CURRENCY = { Europe: 'EUR', America: 'USD', Africa: 'FCFA' };
+
+export function detectCurrencyRegionSync() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const region = tz?.split('/')[0];
+    if (region && REGION_CURRENCY[region]) return REGION_CURRENCY[region];
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
 
 // Best-effort geolocation without any network call. Order: device time zone
 // (most reliable), then the locale region tag. Returns null rather than forcing
 // a market default, so we never mislabel a diaspora user as being in Cameroun.
-export async function detectCountry() {
+//
+// SYNCHRONE volontairement: fuseau horaire et langue sont lisibles
+// instantanément. C'est ce qui permet d'afficher la BONNE devise dès le tout
+// premier rendu — avant, la détection était enveloppée dans une promesse et
+// l'app affichait donc des prix en FCFA le temps qu'elle réponde, puis
+// basculait. Sur une visite suivante la valeur fautive était déjà mémorisée
+// et ne se corrigeait plus jamais.
+export function detectCountrySync() {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (tz && TZ_COUNTRY[tz] && COUNTRIES.some((c) => c.code === TZ_COUNTRY[tz])) {
@@ -128,4 +170,9 @@ export async function detectCountry() {
     /* ignore */
   }
   return null;
+}
+
+// Conservé pour les appelants existants qui l'attendent asynchrone.
+export async function detectCountry() {
+  return detectCountrySync();
 }

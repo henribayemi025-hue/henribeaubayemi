@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
+import { useSettings } from '../../hooks/useSettings';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { NotificationBell } from '../../components/NotificationBell';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
@@ -16,6 +17,7 @@ export default function Home() {
   const { t } = useTranslation();
   const { count } = useCart();
   const { user } = useAuth();
+  const { country } = useSettings();
   const [data, setData] = useState(homeCache);
   const [loading, setLoading] = useState(!homeCache);
   const [error, setError] = useState(false);
@@ -24,7 +26,7 @@ export default function Home() {
     if (!homeCache) setLoading(true);
     setError(false);
     try {
-      const result = await loadHome();
+      const result = await loadHome(country);
       setData(result);
     } catch {
       if (!homeCache) setError(true); // no stale data to fall back to
@@ -33,10 +35,12 @@ export default function Home() {
     }
   }
 
+  // Rechargé quand le pays change: à la connexion, le profil peut annoncer un
+  // autre pays que celui deviné avant qu'on sache qui était là.
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [country]);
 
   return (
     <div>
