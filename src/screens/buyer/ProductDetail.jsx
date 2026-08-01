@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles } from '@tabler/icons-react';
@@ -31,6 +31,7 @@ export default function ProductDetail() {
   const toast = useToast();
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
+  const sizeRef = useRef(null);
   const [starting, setStarting] = useState(false);
   const [mirrorOpen, setMirrorOpen] = useState(false);
 
@@ -134,6 +135,9 @@ export default function ProductDetail() {
     // sinon la commande arrive sans taille et tout le monde perd du temps.
     if (needsSize) {
       toast.info(t('product.chooseSizeFirst'));
+      // Amener la cliente DEVANT le choix de taille au lieu de la laisser
+      // chercher où il se trouve — le toast seul ne dit pas où aller.
+      sizeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     add({ ...p, shop_name: shop.name }, 1, { size: size || null, color: color || null });
@@ -203,6 +207,18 @@ export default function ProductDetail() {
           </button>
         )}
 
+        {/* Taille/couleur AVANT la description: c'est le choix qui conditionne
+            l'ajout au panier — enterré sous un long descriptif, la cliente
+            tapait le bouton, recevait l'erreur et ne voyait pas où choisir. */}
+        {p.sizes?.length > 0 && (
+          <div ref={sizeRef}>
+            <Variant label={`${t('product.size')} *`} options={p.sizes} value={size} onChange={setSize} />
+          </div>
+        )}
+        {p.colors?.length > 0 && (
+          <Variant label={t('product.color')} options={p.colors} value={color} onChange={setColor} />
+        )}
+
         {p.description && (
           <div className="mt-4">
             <h2 className="text-section text-ink">{t('product.description')}</h2>
@@ -221,13 +237,6 @@ export default function ProductDetail() {
               </div>
             ))}
           </div>
-        )}
-
-        {p.sizes?.length > 0 && (
-          <Variant label={`${t('product.size')} *`} options={p.sizes} value={size} onChange={setSize} />
-        )}
-        {p.colors?.length > 0 && (
-          <Variant label={t('product.color')} options={p.colors} value={color} onChange={setColor} />
         )}
 
         <section className="mt-6">

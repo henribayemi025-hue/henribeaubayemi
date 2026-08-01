@@ -45,7 +45,9 @@
     "comingSoon": "Coming soon.",
     "optional": "(optional)",
     "of": "of",
-    "seeLess": "See less"
+    "seeLess": "See less",
+    "show": "Show",
+    "hide": "Hide"
   },
   "auth": {
     "loginTitle": "Sign in",

@@ -45,7 +45,9 @@
     "comingSoon": "Bientôt disponible.",
     "optional": "(optionnel)",
     "of": "sur",
-    "seeLess": "Réduire"
+    "seeLess": "Réduire",
+    "show": "Afficher",
+    "hide": "Masquer"
   },
   "auth": {
     "loginTitle": "Connexion",
