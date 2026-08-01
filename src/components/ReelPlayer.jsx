@@ -8,6 +8,7 @@ import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
 import { useCart } from '../hooks/useCart';
 import { ReelCommentsSheet } from './ReelCommentsSheet';
+import { ShopAvatar } from './ShopAvatar';
 import { Price } from './Price';
 import { track } from '../lib/track';
 
@@ -139,10 +140,16 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         {reel.shops && (
           <div className="relative">
             <Link to={`/boutique/${reel.shops.slug}`} className="block">
-              <img
-                src={reel.shops.avatar_url ? storageThumbUrl('shops', reel.shops.avatar_url) : '/favicon.svg'}
-                alt={reel.shops.name}
-                className="h-11 w-11 rounded-full border-2 border-white object-cover"
+              {/* ShopAvatar (pas un <img> brut): un dégradé + l'initiale de
+                  la boutique en repli, jamais l'icône "image cassée" avec le
+                  nom tronqué par-dessus — c'est exactement ce que Beau a vu
+                  sur une boutique dont la miniature ne chargeait pas. */}
+              <ShopAvatar
+                src={reel.shops.avatar_url ? storageThumbUrl('shops', reel.shops.avatar_url) : null}
+                fallbackSrc={reel.shops.avatar_url ? storageUrl('shops', reel.shops.avatar_url) : null}
+                name={reel.shops.name}
+                seed={reel.shop_id}
+                className="h-11 w-11 border-2 border-white"
               />
             </Link>
             {user?.id !== reel.shops.owner_id && (
