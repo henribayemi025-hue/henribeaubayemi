@@ -14,9 +14,21 @@ i18n
     },
     fallbackLng: 'fr',
     supportedLngs: ['fr', 'en'],
+    // Ramène TOUJOURS 'fr-FR'/'en-US' à 'fr'/'en'. Sans ça, i18n.language
+    // pouvait valoir 'fr-FR', et la douzaine d'endroits qui testent
+    // `locale === 'fr'` (dates, heures, noms de pays, format des prix)
+    // basculaient silencieusement en anglais pour une utilisatrice
+    // française — exactement le "j'ai choisi français, j'ai des champs en
+    // anglais" signalé par Beau.
+    load: 'languageOnly',
     interpolation: { escapeValue: false },
     detection: {
-      order: ['localStorage', 'navigator'],
+      // Le français est la langue du produit (marché francophone). On ne
+      // suit PLUS la langue du navigateur: un téléphone réglé en anglais
+      // affichait l'app en anglais alors que personne ne l'avait demandé.
+      // L'anglais reste à un tap dans Profil > Paramètres, et ce choix est
+      // mémorisé ici.
+      order: ['localStorage'],
       lookupLocalStorage: 'finjaro_lang',
       caches: ['localStorage'],
     },

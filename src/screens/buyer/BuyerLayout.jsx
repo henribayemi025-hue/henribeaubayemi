@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { BuyerNav } from '../../components/BuyerNav';
 import { BuyerSidebarNav } from '../../components/BuyerSidebarNav';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
@@ -27,6 +28,12 @@ export function BuyerLayout() {
         className="fixed left-0 right-0 top-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
         style={{ height: 'var(--app-height, 100dvh)', paddingBottom: 'var(--kb, 0px)' }}
       >
+        {/* Hors du <main> qui défile: le bandeau reste en haut de la coque,
+            visible sur tous les onglets (Accueil, Fin, Services…) comme la
+            bande orange du prototype. Il ne rend rien s'il n'y a aucune
+            annonce active — pas de bande vide. Masqué sur le plein écran
+            vidéo, où toute barre casse l'immersion. */}
+        {!pathname.startsWith('/fin') && <AnnouncementBanner />}
         <main className="flex-1 overflow-y-auto overscroll-contain">
           <ErrorBoundary key={pathname}>
             <Outlet />

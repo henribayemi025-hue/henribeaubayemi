@@ -978,7 +978,16 @@
     "kycMismatch": "(différent du nom déclaré : {{declared}})",
     "kycBirth": "Naissance",
     "kycExpiry": "Expiration",
-    "kycDisclaimer": "Lecture automatique indicative — c’est toi qui valides ou refuses, jamais l’IA."
+    "kycDisclaimer": "Lecture automatique indicative — c’est toi qui valides ou refuses, jamais l’IA.",
+    "annTitle": "Bandeau d'annonce",
+    "annHint": "Affiché en haut de l'app pour tout le monde. Décoche « Afficher » pour le retirer.",
+    "annLabel": "Étiquette courte",
+    "annTextFr": "Texte (français)",
+    "annTextEn": "Texte (anglais)",
+    "annHref": "Lien",
+    "annHrefHint": "Optionnel — rend le bandeau cliquable (ex : /category/seconde_main).",
+    "annActive": "Afficher le bandeau",
+    "annNeedText": "Le texte en français est obligatoire."
   },
   "troc": {
     "title": "Évaluer un troc",

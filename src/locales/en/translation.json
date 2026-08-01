@@ -978,7 +978,16 @@
     "kycMismatch": "(differs from declared name: {{declared}})",
     "kycBirth": "Birth date",
     "kycExpiry": "Expiry",
-    "kycDisclaimer": "Automatic reading is indicative — you approve or reject, never the AI."
+    "kycDisclaimer": "Automatic reading is indicative — you approve or reject, never the AI.",
+    "annTitle": "Announcement banner",
+    "annHint": "Shown at the top of the app for everyone. Untick “Show” to remove it.",
+    "annLabel": "Short label",
+    "annTextFr": "Text (French)",
+    "annTextEn": "Text (English)",
+    "annHref": "Link",
+    "annHrefHint": "Optional — makes the banner clickable (e.g. /category/seconde_main).",
+    "annActive": "Show the banner",
+    "annNeedText": "French text is required."
   },
   "troc": {
     "title": "Evaluate a trade",
