@@ -249,6 +249,144 @@ un vrai travail visuel, onglet par onglet. Tout est validé (« c'est bon ») :
   Supabase restent partagés — un correctif appliqué une fois vaut des deux
   côtés. Deux dépôts auraient garanti la divergence.
 
+## 4quinquies. Suite du 02/08 — bugs terrain, notifications, géo/devise
+
+**Contexte pour la reprise** : Beau a testé la console admin et l'app en
+conditions réelles ce jour-là (finjaro.net en prod, admin sur staging) et a
+remonté plusieurs bugs concrets, réglés dans l'ordre ci-dessous. Tout ce qui
+suit est sur **staging**, poussé au fil de l'eau ; **rien n'a encore été
+fusionné dans la branche de production depuis le déploiement du 01/08 tard**
+(commit `9728094` sur `staging`, pas encore mergé). C'est la toute première
+chose à faire en reprenant : vérifier avec Beau s'il a fini ses tests, puis
+fusionner `staging` → `claude/finjaro-marketplace-build-xsripr` comme les fois
+précédentes (`git fetch` les deux branches, `checkout -B` la branche de prod,
+`git merge origin/staging`, push).
+
+- [x] **Lien `localhost:3000` sur Google/e-mail** ✅ — Supabase **Site URL**
+  était resté sur `http://localhost:3000` (jamais configuré) et **Redirect
+  URLs** était vide. Toute connexion Google (et tout lien envoyé par e-mail)
+  renvoyait donc vers une adresse qui n'existe que sur un poste de développeur.
+  Corrigé **par Beau lui-même** dans le tableau de bord Supabase (Authentication
+  → URL Configuration) : Site URL = `https://finjaro.net`, 4 Redirect URLs
+  ajoutées (finjaro.net, www., staging-finjaro.workers.dev,
+  finjaro-admin.workers.dev). Rien à faire côté code.
+- [x] **CNI absente du prix Cameroun→France** — sans rapport avec les prix, mais
+  découvert le même jour : `BecomeVendor.jsx` masquait déjà la pièce d'identité
+  (`SHOW_ID_UPLOAD = false`, fait le 01/08) — confirmé toujours en place, rien
+  à refaire.
+- [x] **Console admin séparée : réglage Cloudflare en attente côté Beau** — le
+  Worker `finjaro-admin` a été créé (Build command `npm run build:admin`,
+  Deploy command `npx wrangler deploy --config wrangler.admin.toml`, Version
+  command idem `--config wrangler.admin.toml`). **Sa Production branch est
+  restée sur `claude/finjaro-marketplace-build-xsripr` au lieu de `staging`** —
+  tant que Beau ne l'a pas changée dans Settings → Build → Branch control, les
+  correctifs de l'admin ci-dessous ne s'affichent PAS sur
+  `finjaro-admin.finjaro.workers.dev`. **Ce réglage n'est toujours pas confirmé
+  fait à la fin de cette session** — c'est la 2e chose à vérifier en reprenant.
+  Le domaine `admin.finjaro.net` n'est lui non plus pas encore ajouté (le
+  Worker répond pour l'instant seulement sur son adresse `.workers.dev`).
+- [x] **Admin : ne défilait pas, Boutiques/Modération en erreur, bandeaux
+  morts** ✅ — trois bugs distincts trouvés en testant avec Beau en direct :
+  1. Le document ne défile jamais dans cette app (`overflow:hidden` sur
+     html/body pour empêcher le clavier iOS de pousser tout l'écran) — chaque
+     écran défile dans son propre cadre, et la console livrée le 01/08 n'en
+     avait pas. Ajouté dans `AdminApp.jsx`.
+  2. `shops.owner_id` et `reports.reporter_id` pointaient vers `auth.users`
+     (illisible côté client) et pas vers `profiles` — impossible d'afficher
+     "propriétaire" ou "signalé par". Migration `0035` : seconde clé étrangère
+     vers `profiles` (même patron que `near_you_listings` déjà en place),
+     jointures nommées côté client (`profiles!shops_owner_profile_fk` etc.).
+  3. Les bandeaux "signalements/candidatures en attente" du Résumé pointaient
+     vers `/admin?s=...`, une adresse qui n'existe plus depuis la séparation —
+     devenus de vrais boutons qui changent d'onglet.
+- [x] **Icônes d'app réelles (PWA + prérequis Play Store)** ✅ — il n'existait
+  qu'un favicon SVG ; iOS l'ignore pour l'écran d'accueil (capture de la page
+  au lieu du logo) et Play Store exige du PNG 192/512. `scripts/make-icons.mjs`
+  rend le logo via Chromium (aucune lib d'image à installer) en
+  192/512/maskable-512/apple-touch-icon. Le logo est redessiné en formes (plus
+  de `<text>`, qui dépendait des polices de l'appareil et rendait un F
+  mal centré). Manifeste + `index.html` mis à jour. **Piste Play Store** :
+  https://www.pwabuilder.com → `finjaro.net` → Package → Android → `.aab`
+  déjà signé, 25 $ une fois, pas de Mac requis. **Mis en pause par Beau** —
+  il veut d'abord finir de tester le reste. Ne pas relancer sans qu'il le
+  redemande.
+- [x] **Vendeur en France voyait ses prix en FCFA, non modifiable** ✅ — deux
+  causes : (1) le pays de la boutique était figé sur `'CM'` à l'inscription
+  (`BecomeVendor.jsx`), (2) **et n'était pas modifiable après coup** — un
+  vendeur hors Cameroun restait bloqué en FCFA pour toujours. Corrigé : le
+  pays part désormais du pays détecté (`useSettings().country`), et
+  `VendorShop.jsx` porte maintenant un champ pays modifiable avec la devise
+  résultante affichée en clair.
+- [x] **Clochette de notifications in-app** ✅ — Beau a demandé ce que voient
+  les comptes créés par téléphone, côté web, sans installation. Réponse
+  trouvée en lisant le code : **rien**. Un compte SMS n'a pas d'e-mail
+  (`emails_for_users()` exclut `email is null`), le push navigateur exige une
+  permission qui, sur iPhone, ne marche même pas sans ajout à l'écran
+  d'accueil (restriction Apple) — et surtout, la table `public.notifications`
+  était déjà entièrement alimentée par des triggers SQL (nouveau message,
+  commande, statut, boutique validée…) et même branchée sur Supabase Realtime,
+  **mais aucun écran ne l'affichait**. Construit : `useNotifications()` +
+  `NotificationBell` (badge rouge, panneau, marque lu au clic, navigue vers le
+  bon endroit), posée sur l'accueil acheteuse et le tableau de bord vendeur.
+  Migration `0036` : ajoute `for_role` aux notifications de message pour que
+  le clic route vers `/chat/:id` ou `/vendor/messages/:id` sans requête
+  supplémentaire.
+  **Découverte utile pour plus tard** : `on_vendor_app_status()` (trigger SQL
+  existant) implémente déjà tout le mécanisme "candidature en attente → shop
+  créé seulement si `status='approved'` → notification à la décision" — mais
+  `BecomeVendor.jsx` côté client **contourne ce mécanisme** et crée la
+  boutique directement à l'inscription, sans jamais passer par
+  `vendor_applications.status`. Si Beau active un jour la vraie validation
+  vendeur (mentionné plusieurs fois, jamais tranché), la moitié du travail
+  serveur est déjà faite.
+- [x] **Prix par défaut en FCFA pour tout le monde, catalogue non régionalisé**
+  ✅ — Beau, physiquement en France, ouvrait finjaro.net (déconnecté) et
+  voyait des prix FCFA + un catalogue sans lien avec sa région. Deux causes
+  vérifiées en base :
+  1. `profiles.currency` avait `'FCFA'` en valeur par défaut SQL → tout
+     compte naissait estampillé FCFA (24 profils sur 27). Le client adoptait
+     ensuite cette valeur à la connexion, écrasant la détection du pays.
+     Migration `0037` : le défaut est retiré, les profils qui n'avaient
+     jamais rien choisi (aucun pays + FCFA intact) sont remis à `null`.
+  2. La détection pays/devise était asynchrone → l'app peignait du FCFA le
+     temps de répondre, puis la valeur fautive se figeait en `localStorage`
+     et ne se corrigeait plus. `detectCountrySync()` (nouveau, dans
+     `countries.js`) est maintenant synchrone — fuseau horaire + langue se
+     lisent instantanément, donc le tout premier rendu est déjà juste. Table
+     de fuseaux élargie (reste Europe/Amérique du Nord/Afrique).
+  3. **Aucun filtrage régional n'existait dans le catalogue** — `homeCache.js`
+     réécrit : priorise le pays du visiteur pour produits ET boutiques, puis
+     complète avec le reste (jamais un filtre strict — avec 4 boutiques FR et
+     6 CM aujourd'hui, ça afficherait une place de marché vide au premier
+     visiteur d'un pays non couvert). Vérifié dans 3 fuseaux réels : Paris →
+     EUR + boutiques FR en tête ; Douala → FCFA + boutiques CM en tête ;
+     Chicago → USD.
+- [ ] **Articles « sur commande » — discuté, PAS codé, à reprendre en premier.**
+  Beau veut remplir ses 3 boutiques (Beauty Hairs, Camerounian Chanel,
+  Décoration) avec « des milliers d'articles » sourcés à la demande auprès de
+  vrais fournisseurs — pas de faux stock, pas de fausses boutiques (point
+  discuté et validé : une seule boutique réelle, marge prise sur le
+  fournisseur, panier/commande normal inchangé — les deux boutons "message" et
+  "commander" restent tous les deux, comme aujourd'hui).
+  **Ce qui existe déjà en base, prêt à l'emploi** : migration `0038` (fichier
+  ajouté le 02/08 pour consigner un `apply_migration` fait plus tôt dans la
+  journée) — `products.is_sourced boolean`, `products.sourcing_days
+  smallint` (1-60), `order_items.is_sourced boolean` (copie figée au moment
+  de l'achat). **Rien côté écran** : le formulaire vendeur, la fiche produit,
+  la carte produit, le panier et le suivi de commande n'affichent encore
+  aucun badge "sur commande" — une première tentative d'ajouter la case à
+  cocher dans `VendorProductEdit.jsx` a été commencée puis abandonnée avant
+  d'être commitée (Beau a demandé de rediscuter d'abord) ; le fichier est
+  revenu à son état d'avant, RIEN à en récupérer, repartir de zéro sur l'UI.
+  **Bloqué en attente de Beau** : il doit envoyer les photos + infos
+  (nom, boutique, prix) des articles **ce soir** (message du 02/08) — tâche
+  #45 dans le suivi de tâches. Une fois reçues : (1) finir le badge "sur
+  commande" + délai sur les 4 écrans listés, (2) créer les fiches produit en
+  masse à partir de ce que Beau envoie (pas de recherche web pour trouver des
+  photos/produits à sa place — refusé explicitement, voir échange du 02/08 :
+  utiliser une photo/fiche dont on ne sait pas si Beau peut réellement la
+  livrer recrée exactement le problème des fausses boutiques).
+
 ## 5. Finia/Finou 2.0 — état des 23 points (47 capacités), texte d'origine retrouvé
 
 ### En cours dans CE cycle (« fait en partie » + « faisable maintenant ») — GO de Beau le 31/07
