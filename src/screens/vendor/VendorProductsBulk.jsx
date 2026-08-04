@@ -9,7 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Field, TextInput, Select } from '../../components/Field';
-import { CATEGORIES } from '../../lib/categories';
+import { CATEGORIES, categoryHeadFor } from '../../lib/categories';
 import { currencyForCountry, toFcfa } from '../../lib/currency';
 
 // Ajout en masse. Beau (04/08): il avait 72 photos d'articles DIFFÉRENTS et
@@ -53,7 +53,7 @@ export default function VendorProductsBulk() {
   const [uploading, setUploading] = useState(0);
   const [aiDone, setAiDone] = useState(null); // {done, total} pendant l'analyse
   const [saving, setSaving] = useState(false);
-  const [bulkCategory, setBulkCategory] = useState('femme_robes');
+  const [bulkCategory, setBulkCategory] = useState('mode_femme');
   const [bulkPrice, setBulkPrice] = useState('');
 
   async function onPick(e) {
@@ -141,7 +141,13 @@ export default function VendorProductsBulk() {
         price: bulkPrice === '' ? r.price : bulkPrice,
       }))
     );
-    toast.success(t('vendor.bulkApplied'));
+    // Dire CE QUI a été appliqué: le rayon seul ne se voyait nulle part sur
+    // les lignes, alors le bouton passait pour cassé.
+    toast.success(
+      bulkPrice === ''
+        ? t('vendor.bulkAppliedCategory', { count: rows.length })
+        : t('vendor.bulkAppliedBoth', { count: rows.length })
+    );
   }
 
   const ready = rows.filter((r) => r.name.trim() && r.price !== '' && Number(r.price) >= 0);
@@ -234,6 +240,22 @@ export default function VendorProductsBulk() {
                       placeholder={`${t('vendor.productPrice')} (${shopCurrency})`}
                       onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)))}
                     />
+                    {/* Le rayon DOIT être visible ici: sans lui, « Appliquer à
+                        tous » ne produit aucun changement à l'écran et passe
+                        pour cassé. Et Finia se trompe parfois de rayon — il
+                        faut pouvoir corriger une ligne sans tout reprendre. */}
+                    <Select
+                      // Finia renvoie une sous-catégorie précise (« Robes »),
+                      // la liste ne propose que les rayons: on affiche le
+                      // rayon PARENT, et changer ce choix retombe dessus.
+                      value={categoryHeadFor(r.category) || r.category}
+                      onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, category: e.target.value } : x)))}
+                      className="text-caption"
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>
+                      ))}
+                    </Select>
                   </div>
                   <button
                     type="button"

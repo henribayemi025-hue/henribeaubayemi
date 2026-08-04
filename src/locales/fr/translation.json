@@ -659,7 +659,6 @@
     "bulkSomeFailed": "{{count}} photo(s) n’ont pas pu être envoyées.",
     "bulkCommon": "Appliquer à tous",
     "bulkApplyToAll": "Appliquer à tous les articles",
-    "bulkApplied": "Appliqué à tous.",
     "bulkFillWithAi": "Faire écrire les noms par Finia",
     "bulkFilling": "Finia écrit… {{done}}/{{total}}",
     "bulkFilled": "Finia a rempli ce qu’elle a pu.",
@@ -823,7 +822,9 @@
     "countryCurrencyHint": "Fixe la devise de tes prix — actuellement {{currency}}.",
     "bulkFromSingle": "Tu as plusieurs articles différents ? Ajoute-les tous d’un coup",
     "bulkFillFailed": "Finia n’a rien pu écrire — réessaie dans un instant, ou tape les noms toi-même.",
-    "bulkFilledPartial": "Finia a rempli {{ok}} article(s) sur {{total}}. Relance pour les autres."
+    "bulkFilledPartial": "Finia a rempli {{ok}} article(s) sur {{total}}. Relance pour les autres.",
+    "bulkAppliedCategory": "Rayon appliqué à {{count}} article(s).",
+    "bulkAppliedBoth": "Rayon et prix appliqués à {{count}} article(s)."
   },
   "orderStatus": {
     "new": "En attente de validation",

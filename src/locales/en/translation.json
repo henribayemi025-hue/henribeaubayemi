@@ -659,7 +659,6 @@
     "bulkSomeFailed": "{{count}} photo(s) could not be uploaded.",
     "bulkCommon": "Apply to all",
     "bulkApplyToAll": "Apply to every item",
-    "bulkApplied": "Applied to all.",
     "bulkFillWithAi": "Let Finia write the names",
     "bulkFilling": "Finia is writing… {{done}}/{{total}}",
     "bulkFilled": "Finia filled in what she could.",
@@ -823,7 +822,9 @@
     "countryCurrencyHint": "Sets the currency of your prices — currently {{currency}}.",
     "bulkFromSingle": "Several different items? Add them all at once",
     "bulkFillFailed": "Finia couldn't write anything — try again shortly, or type the names yourself.",
-    "bulkFilledPartial": "Finia filled {{ok}} of {{total}} items. Run it again for the rest."
+    "bulkFilledPartial": "Finia filled {{ok}} of {{total}} items. Run it again for the rest.",
+    "bulkAppliedCategory": "Category applied to {{count}} item(s).",
+    "bulkAppliedBoth": "Category and price applied to {{count}} item(s)."
   },
   "orderStatus": {
     "new": "Awaiting validation",
