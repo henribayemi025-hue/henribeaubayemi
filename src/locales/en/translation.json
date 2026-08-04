@@ -90,7 +90,16 @@
     "otpInvalid": "Wrong or expired code — request a new one.",
     "resendCode": "Resend code",
     "or": "or",
-    "continueWithGoogle": "Continue with Google"
+    "continueWithGoogle": "Continue with Google",
+    "smsLateTitle": "Code not arriving?",
+    "smsLateBody": "Some carriers block automated SMS, sometimes for several minutes. No need to wait — you can get in right now another way.",
+    "useEmailInstead": "Use my e-mail instead",
+    "phonePasswordHint": "6 characters minimum. Keep it safe — without an e-mail, it can only be recovered by SMS.",
+    "usePasswordInstead": "Use a password (no SMS)",
+    "useSmsCodeInstead": "I'd rather get a code by SMS",
+    "forgotPasswordPhone": "Forgot your password? Get a code by SMS",
+    "phoneAlreadyRegistered": "This number already has an account — use “Log in” instead.",
+    "invalidPhoneCredentials": "Wrong number or password."
   },
   "nav": {
     "home": "Home",
@@ -941,7 +950,9 @@
     "orderValidated": "Order validated ✅",
     "orderReady": "Your order is ready for pickup",
     "orderDeclined": "Order declined",
-    "orderCancelledAfterConfirm": "Order cancelled"
+    "orderCancelledAfterConfirm": "Order cancelled",
+    "empty": "No notifications yet.",
+    "markAllRead": "Mark all as read"
   },
   "productAttrs": {
     "marque": "Brand",

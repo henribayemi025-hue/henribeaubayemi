@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { detectCountrySync } from './countries';
 
 // Shared with Home.jsx, but kept in its own tiny module (not part of the
 // lazy-loaded Home chunk) so main.jsx can kick off the fetch the INSTANT the
@@ -8,30 +9,65 @@ import { supabase } from './supabase';
 // of waiting for Home's chunk to load AND then start its own fetch.
 export let homeCache = null;
 let inFlight = null;
+let cachedFor; // pays ayant servi à construire `homeCache`
 
-export async function fetchHome() {
-  // allSettled so a transient hiccup on ONE section doesn't blank the whole
-  // home — we render whatever loaded. Only fail if both truly failed.
-  const [pRes, sRes] = await Promise.allSettled([
+const PRODUCT_COLS =
+  'id, name, price_fcfa, compare_at_price_fcfa, images, category, stock, shop_id, views, shops!inner(name, slug, country)';
+const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
+const LIMIT_PRODUCTS = 24;
+const LIMIT_SHOPS = 12;
+
+// Fusionne « chez moi » puis « ailleurs », sans doublon et sans dépasser la
+// limite. On PRIORISE le pays du visiteur sans jamais MASQUER le reste: avec
+// une poignée de boutiques par pays, un filtre strict afficherait une place de
+// marché vide à la première personne d'un pays non encore couvert — le plus
+// sûr moyen de la perdre.
+function mergeLocalFirst(local, rest, limit) {
+  const seen = new Set();
+  const out = [];
+  for (const row of [...(local || []), ...(rest || [])]) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    out.push(row);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+export async function fetchHome(country) {
+  const products = () =>
     supabase
       .from('products')
-      .select('id, name, price_fcfa, compare_at_price_fcfa, images, category, stock, shop_id, views, shops(name, slug)')
+      .select(PRODUCT_COLS)
       .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(24),
+      .order('created_at', { ascending: false });
+  const shops = () =>
     supabase
       .from('shops')
-      .select('id, slug, name, avatar_url, rating, is_verified, followers_count')
+      .select(SHOP_COLS)
       .eq('status', 'active')
-      .order('followers_count', { ascending: false })
-      .limit(12),
+      .order('followers_count', { ascending: false });
+
+  // allSettled so a transient hiccup on ONE section doesn't blank the whole
+  // home — we render whatever loaded. Only fail if both truly failed.
+  const [pLocal, pAll, sLocal, sAll] = await Promise.allSettled([
+    country ? products().eq('shops.country', country).limit(LIMIT_PRODUCTS) : Promise.resolve({ data: [] }),
+    products().limit(LIMIT_PRODUCTS),
+    country ? shops().eq('country', country).limit(LIMIT_SHOPS) : Promise.resolve({ data: [] }),
+    shops().limit(LIMIT_SHOPS),
   ]);
-  const products = pRes.status === 'fulfilled' && !pRes.value.error ? pRes.value.data : null;
-  const shops = sRes.status === 'fulfilled' && !sRes.value.error ? sRes.value.data : null;
-  if (products === null && shops === null) throw new Error('home_failed');
+
+  const ok = (res) => (res.status === 'fulfilled' && !res.value.error ? res.value.data : null);
+  const allProducts = ok(pAll);
+  const allShops = ok(sAll);
+  if (allProducts === null && allShops === null) throw new Error('home_failed');
+
   return {
-    products: (products || []).map((p) => ({ ...p, shop_name: p.shops?.name })),
-    shops: shops || [],
+    products: mergeLocalFirst(ok(pLocal), allProducts, LIMIT_PRODUCTS).map((p) => ({
+      ...p,
+      shop_name: p.shops?.name,
+    })),
+    shops: mergeLocalFirst(ok(sLocal), allShops, LIMIT_SHOPS),
   };
 }
 
@@ -40,7 +76,8 @@ export async function fetchHome() {
 // promise) so we never issue the same query twice on a cold boot.
 export function prefetchHome() {
   if (homeCache || inFlight) return;
-  inFlight = fetchHome()
+  cachedFor = detectCountrySync();
+  inFlight = fetchHome(cachedFor)
     .then((result) => {
       homeCache = result;
       return result;
@@ -50,10 +87,20 @@ export function prefetchHome() {
     });
 }
 
-export function loadHome() {
-  if (inFlight) return inFlight;
-  return fetchHome().then((result) => {
+// `country` vient des réglages: pays détecté, ou celui du profil connecté.
+// S'il diffère de celui ayant servi au préchargement — typiquement une
+// personne connectée dont le profil dit « France » alors que le préchargement
+// anonyme avait deviné autre chose — on relance la requête pour le bon pays.
+export function loadHome(country) {
+  if (inFlight && country === cachedFor) return inFlight;
+  cachedFor = country;
+  const p = fetchHome(country).then((result) => {
     homeCache = result;
     return result;
   });
+  inFlight = p;
+  p.catch(() => {}).finally(() => {
+    if (inFlight === p) inFlight = null;
+  });
+  return p;
 }

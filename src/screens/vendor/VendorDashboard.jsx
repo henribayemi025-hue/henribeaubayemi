@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { Price } from '../../components/Price';
+import { NotificationBell } from '../../components/NotificationBell';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
 import { timeAgo } from '../../lib/format';
@@ -83,6 +84,7 @@ export default function VendorDashboard() {
     <div className="pb-6">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-4">
         <h1 className="flex-1 truncate text-section text-ink">{t('vendor.greeting', { name: shop.name })}</h1>
+        <NotificationBell />
         <Link to="/vendor/stats" aria-label={t('nav.stats')} className="p-1 text-ink"><IconChartBar size={22} /></Link>
         <button onClick={() => navigate('/switch/to-buyer')} aria-label={t('vendor.switchToBuyer')} className="p-1 text-teal">
           <IconSwitchHorizontal size={22} />
