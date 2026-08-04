@@ -290,6 +290,7 @@
     "inCart_one": "{{count}} au panier",
     "inCart_other": "{{count}} au panier",
     "requestQuote": "Demander un devis",
+    "priceOnRequest": "Prix sur demande",
     "contactSeller": "Contacter le vendeur",
     "addedToCart": "Ajouté au panier",
     "reviews": "Avis sur la boutique",
@@ -663,7 +664,7 @@
     "bulkFilling": "Finia écrit… {{done}}/{{total}} (compte ~4 s par photo)",
     "bulkFilled": "Finia a rempli ce qu’elle a pu.",
     "bulkNothingToFill": "Tous les articles ont déjà un nom.",
-    "bulkReadyCount": "{{ready}} prêt(s) sur {{total}} — il faut un nom et un prix.",
+    "bulkReadyCount": "{{ready}} prêt(s) sur {{total}}.",
     "bulkNeedNamePrice": "Aucun article n’a encore un nom ET un prix.",
     "bulkCreate": "Créer {{count}} article(s)",
     "bulkCreated": "{{count}} article(s) créé(s) en brouillon.",
@@ -829,7 +830,9 @@
     "bulkNamePlaceholder": "ex. Pyjama fille",
     "publishAll": "Tout publier ({{count}})",
     "publishAllConfirm": "Publier {{count}} article(s) d’un coup ? Ils deviennent visibles par tout le monde. Tu pourras en retirer un à tout moment.",
-    "publishedAll": "{{count}} article(s) publié(s)."
+    "publishedAll": "{{count}} article(s) publié(s).",
+    "priceOnRequest": "Prix sur demande",
+    "priceOnRequestHelp": "L’article s’affiche sans prix. La cliente t’écrit pour le demander au lieu de commander directement. Utile quand tu n’as pas encore fixé ton prix."
   },
   "orderStatus": {
     "new": "En attente de validation",

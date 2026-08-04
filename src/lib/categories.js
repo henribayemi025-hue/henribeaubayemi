@@ -171,6 +171,14 @@ export function isQuoteOnly(categoryId) {
   return QUOTE_ONLY_CATEGORIES.includes(categoryId);
 }
 
+// Un article se vend « sur demande » soit parce que sa CATÉGORIE l'impose
+// (on n'achète pas un appartement au panier), soit parce que la vendeuse
+// l'a décidé pour CET article — typiquement quand elle n'a pas encore fixé
+// son prix. Un seul point de vérité: tout l'affichage acheteur passe par là.
+export function isPriceOnRequest(product) {
+  return !!product?.price_on_request || isQuoteOnly(product?.category);
+}
+
 // Essayage virtuel (Miroir IA): là où "se voir le porter" a du sens.
 export const MIRROR_CATEGORIES = [
   'mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'accessoires', 'cheveux',

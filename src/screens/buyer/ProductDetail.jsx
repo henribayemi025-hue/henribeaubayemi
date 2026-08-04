@@ -17,7 +17,7 @@ import { ProductVideo } from '../../components/ProductVideo';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Skeleton, ErrorState } from '../../components/states';
-import { isQuoteOnly, MIRROR_CATEGORIES } from '../../lib/categories';
+import { isPriceOnRequest, MIRROR_CATEGORIES } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
@@ -119,7 +119,7 @@ export default function ProductDetail() {
 
   const p = data.product;
   const shop = p.shops;
-  const quote = isQuoteOnly(p.category);
+  const quote = isPriceOnRequest(p);
   const pct = quote ? null : discountPercent(p.price_fcfa, p.compare_at_price_fcfa);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
   // La ligne de panier correspond à la VARIANTE sélectionnée: la même robe en
@@ -187,7 +187,7 @@ export default function ProductDetail() {
       <div className="p-4">
         <h1 className="text-title text-ink">{p.name}</h1>
         {quote ? (
-          <p className="mt-1 text-section font-semibold text-brass">{t('product.requestQuote')}</p>
+          <p className="mt-1 text-section font-semibold text-brass">{t('product.priceOnRequest')}</p>
         ) : (
           <div className="mt-1 flex items-center gap-2">
             <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
