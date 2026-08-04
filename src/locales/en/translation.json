@@ -90,7 +90,10 @@
     "otpInvalid": "Wrong or expired code — request a new one.",
     "resendCode": "Resend code",
     "or": "or",
-    "continueWithGoogle": "Continue with Google"
+    "continueWithGoogle": "Continue with Google",
+    "smsLateTitle": "Code not arriving?",
+    "smsLateBody": "Some carriers block automated SMS, sometimes for several minutes. No need to wait — you can get in right now another way.",
+    "useEmailInstead": "Use my e-mail instead"
   },
   "nav": {
     "home": "Home",

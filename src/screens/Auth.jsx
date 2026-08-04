@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogleFilled } from '@tabler/icons-react';
@@ -40,7 +40,21 @@ export default function Auth({ consoleMode = false }) {
   // Le flux téléphone se déroule en 2 temps: on envoie le code, PUIS on le
   // vérifie — deux écrans, pas un formulaire à choix multiples.
   const [otpSent, setOtpSent] = useState(false);
+  // Certains opérateurs (constaté au Cameroun: MTN/Orange) filtrent les SMS
+  // automatiques venus de l'étranger — le serveur SMS dit « envoyé » et rien
+  // n'arrive jamais. Sans porte de sortie, la personne attend indéfiniment
+  // devant un champ vide: on lui propose une autre voie au bout de 20 s.
+  const [smsLate, setSmsLate] = useState(false);
   const from = location.state?.from || '/';
+
+  useEffect(() => {
+    if (!otpSent) {
+      setSmsLate(false);
+      return undefined;
+    }
+    const id = setTimeout(() => setSmsLate(true), 20000);
+    return () => clearTimeout(id);
+  }, [otpSent]);
 
   async function submit(e) {
     e.preventDefault();
@@ -179,6 +193,27 @@ export default function Auth({ consoleMode = false }) {
             <button type="button" onClick={sendPhoneCode} className="btn-ghost mx-auto block text-caption">
               {t('auth.resendCode')}
             </button>
+
+            {/* Porte de sortie quand le SMS ne vient pas. On ne fait PAS de
+                promesse qu'on ne tient pas (« vérifie ton réseau »): on dit ce
+                qui se passe vraiment et on propose deux voies qui marchent
+                tout de suite. */}
+            {smsLate && (
+              <div className="rounded-card border border-warning/25 bg-warning-bg p-4">
+                <p className="text-caption font-semibold text-ink">{t('auth.smsLateTitle')}</p>
+                <p className="mt-1 text-caption text-muted">{t('auth.smsLateBody')}</p>
+                <Button variant="secondary" className="mt-3" onClick={handleGoogle} loading={busy}>
+                  <IconBrandGoogleFilled size={18} /> {t('auth.continueWithGoogle')}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => { setOtpSent(false); setChannel('email'); }}
+                  className="btn-ghost mx-auto mt-1 block text-caption"
+                >
+                  {t('auth.useEmailInstead')}
+                </button>
+              </div>
+            )}
           </form>
         ) : (
           <form onSubmit={sendPhoneCode} className="space-y-3">
