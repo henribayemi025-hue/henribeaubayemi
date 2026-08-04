@@ -31,7 +31,11 @@ const UPLOAD_POOL = 4;
 // C'est plus lent — environ 5 minutes pour 77 photos — mais ça aboutit,
 // et la progression est affichée pendant ce temps.
 const AI_POOL = 1;
-const AI_SPACING_MS = 4000;
+// Ramené de 4 s à 1,5 s: la réflexion du modèle étant désormais coupée, les
+// réponses reviennent en 2-3 s au lieu de 10-15, donc la cadence reste sous le
+// plafond de Google tout en divisant l'attente par deux (Beau, 04/08: une
+// minute pour 3 photos).
+const AI_SPACING_MS = 1500;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function runPool(items, size, worker) {
