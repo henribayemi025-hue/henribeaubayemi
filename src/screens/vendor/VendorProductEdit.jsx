@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2, IconX } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
@@ -430,6 +430,20 @@ export default function VendorProductEdit() {
           <p className="mt-1 text-caption text-muted">
             {t('vendor.productImagesHint', { count: MAX_IMAGES })} {t('vendor.productVideoHint', { seconds: MAX_VIDEO_SECONDS })}
           </p>
+          {/* Cet écran sert à UN article: les 10 photos sont 10 vues du même
+              produit. Qui arrive ici avec 70 photos d'articles différents
+              doit trouver la sortie ICI, pas repartir chercher un bouton
+              dans l'écran précédent. */}
+          {isNew && (
+            <Link
+              to="/vendor/products/bulk"
+              replace
+              className="mt-2 flex items-center gap-2 rounded-card border border-teal/25 bg-teal/8 p-3 text-caption font-semibold text-teal"
+            >
+              <IconPhotoPlus size={18} className="shrink-0" />
+              {t('vendor.bulkFromSingle')}
+            </Link>
+          )}
           {/* Auto-Listing: visible dès qu'une photo est là. Remplit titre/
               description/catégorie (sans écraser ce qui est déjà tapé) —
               la vendeuse relit et corrige avant d'enregistrer. */}
