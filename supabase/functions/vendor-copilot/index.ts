@@ -94,7 +94,16 @@ async function gemini(apiKey: string, body: unknown): Promise<any | null> {
             signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
           },
         );
-        if (res.ok) return await res.json();
+        if (res.ok) {
+          const parsed = await res.json();
+          // Un 200 ne garantit PAS une réponse: quand le modèle bute sur sa
+          // limite de jetons il renvoie un succès au contenu vide. Le traiter
+          // comme un succès faisait échouer tout le lot sans une seule reprise.
+          if (textOf(parsed)) return parsed;
+          console.error('vendor-copilot: gemini empty', model, JSON.stringify(parsed?.candidates?.[0]?.finishReason));
+          if (attempt < RETRY_WAITS_MS.length) await sleep(RETRY_WAITS_MS[attempt]);
+          continue;
+        }
         const detail = (await res.text()).slice(0, 200);
         console.error('vendor-copilot: gemini error', model, res.status, detail);
         const temporary = res.status === 429 || res.status >= 500;
@@ -220,7 +229,15 @@ Deno.serve(async (req: Request) => {
         }],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 400,
+          maxOutputTokens: 2048,
+          // Depuis Gemini 2.5, le modèle RÉFLÉCHIT avant de répondre et cette
+          // réflexion consomme le budget de jetons. Avec 400 jetons il épuisait
+          // tout en réflexion et renvoyait une réponse VIDE — avec un code 200,
+          // donc sans déclencher la moindre reprise. C'est ce qui faisait
+          // échouer l'ajout en masse en 3 à 5 secondes (journaux du 04/08).
+          // On coupe la réflexion (inutile pour décrire une photo) et on laisse
+          // de la marge.
+          thinkingConfig: { thinkingBudget: 0 },
           responseMimeType: 'application/json',
           ...(withSchema
             ? {
@@ -296,7 +313,8 @@ Deno.serve(async (req: Request) => {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: 500,
+          maxOutputTokens: 2048,
+          thinkingConfig: { thinkingBudget: 0 },
           responseMimeType: 'application/json',
           responseSchema: {
             type: 'OBJECT',
@@ -346,7 +364,7 @@ Deno.serve(async (req: Request) => {
 
     const data = await gemini(apiKey, {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.8, maxOutputTokens: 200 },
+      generationConfig: { temperature: 0.8, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } },
     });
     if (!data) return json({ error: 'gemini_error' }, 502);
     const description = textOf(data).replace(/^["']|["']$/g, '');
