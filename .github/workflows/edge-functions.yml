@@ -1,0 +1,62 @@
+# Déploie les fonctions Supabase (Finia, Finou Chou, notifications…) depuis le
+# dépôt, à l'octet près. Avant ça, chaque correctif devait être recopié à la
+# main dans la console — la source du dépôt et le code réellement en ligne
+# pouvaient diverger sans qu'on le voie.
+#
+# Secret requis (une seule fois, Settings → Secrets → Actions):
+#   SUPABASE_ACCESS_TOKEN — jeton personnel créé sur
+#   supabase.com/dashboard/account/tokens
+#
+# Les fonctions sont partagées entre staging et production (même projet
+# Supabase), donc un déploiement vaut pour les deux: on ne déclenche que
+# manuellement ou depuis staging, jamais par surprise.
+name: Supabase Edge Functions
+
+on:
+  workflow_dispatch:
+    inputs:
+      function:
+        description: 'Nom de la fonction (vide = toutes)'
+        required: false
+        default: 'vendor-copilot'
+  push:
+    branches: [staging]
+    paths:
+      - 'supabase/functions/**'
+
+concurrency:
+  group: edge-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier le jeton
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Secret SUPABASE_ACCESS_TOKEN manquant. Crée un jeton sur supabase.com/dashboard/account/tokens puis ajoute-le dans Settings → Secrets → Actions."
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Déployer
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: bokwivwizghdlaedczbw
+        run: |
+          FN="${{ github.event.inputs.function }}"
+          if [ -n "$FN" ]; then
+            echo "Déploiement de $FN"
+            supabase functions deploy "$FN" --project-ref "$PROJECT_REF"
+          else
+            echo "Déploiement de toutes les fonctions"
+            supabase functions deploy --project-ref "$PROJECT_REF"
+          fi

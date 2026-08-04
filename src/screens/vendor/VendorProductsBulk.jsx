@@ -326,10 +326,18 @@ export default function VendorProductsBulk() {
           flottante (z-40, voir TabBar) — sinon le bouton est bien visible
           mais les taps atterrissent sur la navigation. */}
       {rows.length > 0 && (
-        <div className="sticky bottom-[96px] z-50 mx-4 rounded-card border border-hairline bg-white p-3 shadow-[0_10px_30px_rgba(23,27,38,0.18)] lg:bottom-0">
+        /* `fixed` et non `sticky`: en sticky, la barre dépend du conteneur de
+           défilement, et sur une page de 24 lignes elle finissait tout en bas,
+           hors de vue — le bouton « Créer » semblait absent. Ancrée à l'écran,
+           elle est visible en permanence, quel que soit le nombre de photos. */
+        <div className="fixed inset-x-0 bottom-[96px] z-50 mx-4 rounded-card border border-hairline bg-white p-3 shadow-[0_10px_30px_rgba(23,27,38,0.18)] lg:sticky lg:bottom-0 lg:mx-0">
           <Button onClick={createAll} loading={saving} disabled={!ready.length}>
             {t('vendor.bulkCreate', { count: ready.length })}
           </Button>
+          {/* Un bouton grisé sans explication laisse croire à une panne. */}
+          {!ready.length && (
+            <p className="mt-2 text-center text-caption text-muted">{t('vendor.bulkNeedNamePrice')}</p>
+          )}
         </div>
       )}
     </div>

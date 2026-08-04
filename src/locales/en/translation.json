@@ -666,7 +666,7 @@
     "bulkFilled": "Finia filled in what she could.",
     "bulkNothingToFill": "Every item already has a name.",
     "bulkReadyCount": "{{ready}} of {{total}} ready.",
-    "bulkNeedNamePrice": "No item has both a name AND a price yet.",
+    "bulkNeedNamePrice": "Add a name and a price to create.",
     "bulkCreate": "Create {{count}} item(s)",
     "bulkCreated": "{{count}} item(s) created as drafts.",
     "productName": "Product name",
