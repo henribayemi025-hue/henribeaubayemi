@@ -12,7 +12,7 @@ let inFlight = null;
 let cachedFor; // pays ayant servi à construire `homeCache`
 
 const PRODUCT_COLS =
-  'id, name, price_fcfa, compare_at_price_fcfa, images, category, stock, shop_id, views, shops!inner(name, slug, country)';
+  'id, name, price_fcfa, compare_at_price_fcfa, images, video_url, category, stock, shop_id, views, shops!inner(name, slug, country)';
 const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
 const LIMIT_PRODUCTS = 24;
 const LIMIT_SHOPS = 12;

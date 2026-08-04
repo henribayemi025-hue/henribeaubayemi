@@ -13,6 +13,7 @@ import { Button } from '../../components/Button';
 import { PriceBlock, PromoBadge, discountPercent } from '../../components/Price';
 import { ProductCard } from '../../components/ProductCard';
 import { SmartImage } from '../../components/SmartImage';
+import { ProductVideo } from '../../components/ProductVideo';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -154,6 +155,13 @@ export default function ProductDetail() {
       </button>
 
       <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto lg:rounded-card">
+        {/* La vidéo passe en PREMIER: c'est elle qui montre le tombé, la vraie
+            couleur, le mouvement — les photos viennent en complément. */}
+        {p.video_url && (
+          <div className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink lg:aspect-[16/9]">
+            <ProductVideo videoUrl={p.video_url} alt={p.name} className="absolute inset-0 h-full w-full" />
+          </div>
+        )}
         {images.length ? (
           images.map((src, i) => (
             <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink lg:aspect-[16/9]">
@@ -164,13 +172,13 @@ export default function ProductDetail() {
               <SmartImage src={src} alt={`${p.name} ${i + 1}`} fit="contain" className="absolute inset-0 h-full w-full" />
             </div>
           ))
-        ) : (
+        ) : p.video_url ? null : (
           <SmartImage src={null} alt={p.name} className="aspect-square w-full lg:aspect-[16/9]" />
         )}
       </div>
-      {images.length > 1 && (
+      {images.length + (p.video_url ? 1 : 0) > 1 && (
         <div className="mt-2 flex justify-center gap-1">
-          {images.map((_, i) => (
+          {Array.from({ length: images.length + (p.video_url ? 1 : 0) }).map((_, i) => (
             <span key={i} className="h-1.5 w-1.5 rounded-full bg-hairline" />
           ))}
         </div>
