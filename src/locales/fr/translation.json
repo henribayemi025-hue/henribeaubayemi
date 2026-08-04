@@ -826,7 +826,10 @@
     "bulkAppliedCategory": "Rayon appliqué à {{count}} article(s).",
     "bulkAppliedBoth": "Rayon et prix appliqués à {{count}} article(s).",
     "bulkNameHint": "Rempli seulement là où il n’y a pas encore de nom, et numéroté : « Pyjama fille 1, 2, 3… ». Ce que Finia a écrit n’est jamais écrasé.",
-    "bulkNamePlaceholder": "ex. Pyjama fille"
+    "bulkNamePlaceholder": "ex. Pyjama fille",
+    "publishAll": "Tout publier ({{count}})",
+    "publishAllConfirm": "Publier {{count}} article(s) d’un coup ? Ils deviennent visibles par tout le monde. Tu pourras en retirer un à tout moment.",
+    "publishedAll": "{{count}} article(s) publié(s)."
   },
   "orderStatus": {
     "new": "En attente de validation",

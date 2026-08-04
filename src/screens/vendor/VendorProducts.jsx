@@ -22,6 +22,7 @@ export default function VendorProducts() {
   const toast = useToast();
   const [tab, setTab] = useState('online');
   const [busyId, setBusyId] = useState(null);
+  const [publishingAll, setPublishingAll] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
     const { data: products, error: err } = await supabase
@@ -60,6 +61,26 @@ export default function VendorProducts() {
     archive: rows.filter((p) => !p.is_active && p.rotated_at),
   };
   const shown = buckets[tab];
+
+  // Après un ajout en masse, la pile « Brouillons » compte des dizaines
+  // d'articles: les publier un par un est absurde. Une seule requête les
+  // bascule tous, avec les mêmes règles que la publication à l'unité.
+  async function publishAll() {
+    const ids = shown.map((p) => p.id);
+    if (!ids.length) return;
+    if (!window.confirm(t('vendor.publishAllConfirm', { count: ids.length }))) return;
+    setPublishingAll(true);
+    const patch = { is_active: true, rotated_at: null, published_at: new Date().toISOString() };
+    const { error: err } = await supabase.from('products').update(patch).in('id', ids);
+    setPublishingAll(false);
+    if (err) {
+      toast.error(err.message);
+      return;
+    }
+    setData((all) => all.map((r) => (ids.includes(r.id) ? { ...r, ...patch } : r)));
+    toast.success(t('vendor.publishedAll', { count: ids.length }));
+    setTab('online');
+  }
 
   return (
     <div className="pb-6">
@@ -106,6 +127,14 @@ export default function VendorProducts() {
         <>
           {tab === 'archive' && (
             <p className="px-4 pt-3 text-caption text-muted">{t('vendor.archiveHelp')}</p>
+          )}
+          {/* Tout publier d'un coup — la sortie normale d'un ajout en masse. */}
+          {tab === 'drafts' && (
+            <div className="px-4 pt-3">
+              <Button onClick={publishAll} loading={publishingAll}>
+                <IconEye size={18} /> {t('vendor.publishAll', { count: shown.length })}
+              </Button>
+            </div>
           )}
           <div className="grid grid-cols-2 gap-3 p-4">
             {shown.map((p) => (
