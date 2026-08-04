@@ -10,3 +10,4 @@ dist-ssr
 supabase/.temp
 npm-debug.log*
 dist-admin
+video-work/
