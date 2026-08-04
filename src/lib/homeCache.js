@@ -16,10 +16,19 @@ const PRODUCT_COLS =
 const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
 export const HOME_PAGE_SIZE = 24;
 const LIMIT_SHOPS = 12;
-// En dessous de ces seuils, le pays du visiteur n'a pas de quoi remplir son
-// accueil: on complète alors avec l'étranger. Au-dessus, le fil reste
-// strictement local — montrer une robe vendue à Paris à une acheteuse de
-// Douala n'a aucun sens, elle ne pourra jamais la commander.
+// Finjaro est une place de marché CAMEROUNAISE avec une clientèle en diaspora.
+// La règle n'est donc pas symétrique, et c'est voulu:
+//
+//   • au Cameroun, on ne montre que le Cameroun — une robe vendue à Paris est
+//     inutile à une acheteuse de Douala, elle ne pourra jamais la commander;
+//   • à l'étranger, on montre les boutiques locales D'ABORD, puis TOUJOURS le
+//     Cameroun en dessous — la diaspora ouvre Finjaro précisément pour acheter
+//     au pays. Le masquer viderait l'app de sa raison d'être (constaté le
+//     04/08: depuis la France, aucune des 8 boutiques camerounaises n'était
+//     visible).
+const HOME_COUNTRY = 'CM';
+// Seuils utilisés uniquement pour un visiteur AU Cameroun: en dessous, son
+// pays n'a pas de quoi remplir l'accueil et on complète avec l'étranger.
 const MIN_LOCAL_PRODUCTS = HOME_PAGE_SIZE;
 const MIN_LOCAL_SHOPS = 3;
 
@@ -68,7 +77,11 @@ export async function fetchProductPage(country, cursor) {
 
     const { data, error, count } = await q.range(offset, offset + need - 1);
     if (error) throw error;
-    if (needsCount) allowRest = (count ?? 0) < MIN_LOCAL_PRODUCTS;
+    // Hors du Cameroun, la suite du fil est acquise: on la donne sans même
+    // regarder le compte local.
+    if (needsCount) {
+      allowRest = country !== HOME_COUNTRY || (count ?? 0) < MIN_LOCAL_PRODUCTS;
+    }
     const rows = data || [];
     items.push(...rows);
     if (isLocal) local += rows.length;
@@ -89,9 +102,13 @@ export async function fetchProductPage(country, cursor) {
 // pagination. Même règle que le fil: la bande s'intitule « près de chez toi »,
 // on n'y met des boutiques étrangères que si le pays du visiteur n'en compte
 // pas assez pour remplir la bande.
-function localShopsFirst(localRows, restRows, limit) {
+function localShopsFirst(localRows, restRows, limit, country) {
   const localList = localRows || [];
-  if (localList.length >= MIN_LOCAL_SHOPS) return localList.slice(0, limit);
+  // Même asymétrie que le fil: seul un visiteur AU Cameroun voit sa bande se
+  // limiter à son pays.
+  if (country === HOME_COUNTRY && localList.length >= MIN_LOCAL_SHOPS) {
+    return localList.slice(0, limit);
+  }
   const seen = new Set(localList.map((r) => r.id));
   const out = [...localList];
   for (const row of restRows || []) {
@@ -128,7 +145,7 @@ export async function fetchHome(country) {
     products: page?.items || [],
     cursor: page?.cursor || initialCursor(country),
     done: page ? page.done : true,
-    shops: localShopsFirst(ok(sLocal), allShops, LIMIT_SHOPS),
+    shops: localShopsFirst(ok(sLocal), allShops, LIMIT_SHOPS, country),
   };
 }
 
