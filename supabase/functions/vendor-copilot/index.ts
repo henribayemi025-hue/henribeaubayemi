@@ -72,27 +72,38 @@ function monthStartIso(): string {
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const GEMINI_TIMEOUT_MS = 30_000;
 
+// Google limite le nombre d'appels PAR MINUTE. L'ajout en masse en envoie un
+// par photo: sur 77 photos on dépasse largement, et Google refuse la plupart
+// (429/503). Constaté le 04/08 dans les journaux — un appel passait, les
+// suivants tombaient. On attend et on réessaie au lieu d'abandonner: c'est un
+// refus TEMPORAIRE, pas une erreur.
+const RETRY_WAITS_MS = [1500, 4000, 9000];
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 // deno-lint-ignore no-explicit-any
 async function gemini(apiKey: string, body: unknown): Promise<any | null> {
   for (const model of MODELS) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-        },
-      );
-      if (res.ok) return await res.json();
-      const detail = (await res.text()).slice(0, 300);
-      console.error('vendor-copilot: gemini error', model, res.status, detail);
-      // 4xx (hors quota) = refus définitif: réessayer un autre modèle avec la
-      // même requête ne changerait rien.
-      if (res.status < 500 && res.status !== 429) return null;
-    } catch (e) {
-      console.error('vendor-copilot: gemini call failed', model, String(e));
+    for (let attempt = 0; attempt <= RETRY_WAITS_MS.length; attempt++) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+          },
+        );
+        if (res.ok) return await res.json();
+        const detail = (await res.text()).slice(0, 200);
+        console.error('vendor-copilot: gemini error', model, res.status, detail);
+        const temporary = res.status === 429 || res.status >= 500;
+        if (!temporary) break; // refus définitif: passer au modèle suivant
+        if (attempt < RETRY_WAITS_MS.length) await sleep(RETRY_WAITS_MS[attempt]);
+      } catch (e) {
+        console.error('vendor-copilot: gemini call failed', model, String(e));
+        if (attempt < RETRY_WAITS_MS.length) await sleep(RETRY_WAITS_MS[attempt]);
+      }
     }
   }
   return null;

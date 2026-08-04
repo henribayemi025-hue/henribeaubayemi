@@ -24,9 +24,15 @@ import { currencyForCountry, toFcfa } from '../../lib/currency';
 // sature le navigateur. Quatre à la fois, c'est le compromis: assez pour que
 // ce soit rapide, assez peu pour que ça n'échoue pas.
 const UPLOAD_POOL = 4;
-// L'analyse d'image passe par une fonction distante facturée à l'appel: on y
-// va deux par deux, pas 72 d'un coup.
-const AI_POOL = 2;
+// Google plafonne son IA à une quinzaine d'appels PAR MINUTE sur l'offre
+// gratuite. En envoyant deux à la fois sans pause on tournait à ~30/min:
+// Google refusait la majorité et l'écran ne remplissait rien (constaté le
+// 04/08). Une seule photo à la fois, espacée de ~4 s, tient la cadence.
+// C'est plus lent — environ 5 minutes pour 77 photos — mais ça aboutit,
+// et la progression est affichée pendant ce temps.
+const AI_POOL = 1;
+const AI_SPACING_MS = 4000;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function runPool(items, size, worker) {
   const queue = [...items.entries()];
@@ -127,6 +133,8 @@ export default function VendorProductsBulk() {
         /* meilleur effort: cette ligne restera à remplir à la main */
       } finally {
         setAiDone((p) => (p ? { ...p, done: p.done + 1 } : p));
+        // Espacer les appels, sinon Google refuse tout le reste du lot.
+        await sleep(AI_SPACING_MS);
       }
     });
     setAiDone(null);

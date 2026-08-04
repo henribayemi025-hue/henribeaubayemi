@@ -660,7 +660,7 @@
     "bulkCommon": "Apply to all",
     "bulkApplyToAll": "Apply to every item",
     "bulkFillWithAi": "Let Finia write the names",
-    "bulkFilling": "Finia is writing… {{done}}/{{total}}",
+    "bulkFilling": "Finia is writing… {{done}}/{{total}} (about 4s per photo)",
     "bulkFilled": "Finia filled in what she could.",
     "bulkNothingToFill": "Every item already has a name.",
     "bulkReadyCount": "{{ready}} of {{total}} ready — a name and a price are required.",
