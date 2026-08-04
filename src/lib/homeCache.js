@@ -11,8 +11,6 @@ export let homeCache = null;
 let inFlight = null;
 let cachedFor; // pays ayant servi à construire `homeCache`
 
-const PRODUCT_COLS =
-  'id, name, price_fcfa, compare_at_price_fcfa, images, video_url, price_on_request, category, stock, shop_id, views, shops!inner(name, slug, country)';
 const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
 export const HOME_PAGE_SIZE = 24;
 const LIMIT_SHOPS = 12;
@@ -49,11 +47,15 @@ export function initialCursor(country) {
   return { phase: country ? 'local' : 'rest', local: 0, rest: 0, allowRest: country ? null : true };
 }
 
-const withShopName = (rows) => (rows || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
-
 // Renvoie une page pleine (sauf en fin de catalogue) en enchaînant au besoin la
 // fin du flux local et le début du flux « ailleurs », pour ne jamais afficher
 // une demi-page à la charnière entre les deux.
+//
+// La lecture passe par la fonction `home_feed_page` (migration 0041) plutôt
+// que par une requête directe sur `products`: c'est elle qui diversifie le
+// fil par boutique (voir la migration pour le détail) — un tri chronologique
+// simple laissait une seule boutique ayant versé un gros lot occuper tout le
+// haut du fil.
 export async function fetchProductPage(country, cursor) {
   let { phase, local, rest, allowRest } = cursor || initialCursor(country);
   const items = [];
@@ -62,26 +64,25 @@ export async function fetchProductPage(country, cursor) {
     const need = HOME_PAGE_SIZE - items.length;
     const isLocal = phase === 'local';
     const offset = isLocal ? local : rest;
+
     // Le compte exact n'est demandé qu'une fois, sur la toute première requête
     // locale: il sert uniquement à décider si l'étranger a le droit de
     // compléter le fil.
-    const needsCount = isLocal && allowRest === null;
-    let q = supabase
-      .from('products')
-      .select(PRODUCT_COLS, needsCount ? { count: 'exact' } : undefined)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false });
-    if (isLocal) q = q.eq('shops.country', country);
-    else if (country) q = q.not('shops.country', 'eq', country);
-
-    const { data, error, count } = await q.range(offset, offset + need - 1);
-    if (error) throw error;
-    // Hors du Cameroun, la suite du fil est acquise: on la donne sans même
-    // regarder le compte local.
-    if (needsCount) {
-      allowRest = country !== HOME_COUNTRY || (count ?? 0) < MIN_LOCAL_PRODUCTS;
+    if (isLocal && allowRest === null) {
+      const { data: total, error: countErr } = await supabase.rpc('home_feed_count', { p_country: country });
+      if (countErr) throw countErr;
+      // Hors du Cameroun, la suite du fil est acquise: on la donne sans même
+      // regarder le compte local.
+      allowRest = country !== HOME_COUNTRY || (total ?? 0) < MIN_LOCAL_PRODUCTS;
     }
+
+    const { data, error } = await supabase.rpc('home_feed_page', {
+      p_local_country: isLocal ? country : null,
+      p_exclude_country: isLocal ? null : country,
+      p_limit: need,
+      p_offset: offset,
+    });
+    if (error) throw error;
     const rows = data || [];
     items.push(...rows);
     if (isLocal) local += rows.length;
@@ -92,7 +93,7 @@ export async function fetchProductPage(country, cursor) {
   }
 
   return {
-    items: withShopName(items),
+    items,
     cursor: { phase, local, rest, allowRest },
     done: phase === 'done',
   };
