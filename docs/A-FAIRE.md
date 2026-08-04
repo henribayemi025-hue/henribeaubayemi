@@ -1,8 +1,13 @@
 # Finjaro — LA liste de tout ce qui reste à faire
 
-_Fichier maître, tenu à jour à chaque cycle. Dernière mise à jour : 31 juillet
-2026 (session staging). Si un point est traité, il passe en ✅ avec la date —
-rien n'est supprimé, pour garder l'historique des décisions de Beau._
+_Fichier maître, tenu à jour à chaque cycle. Dernière mise à jour : 4 août
+2026. Si un point est traité, il passe en ✅ avec la date — rien n'est
+supprimé, pour garder l'historique des décisions de Beau._
+
+> **REPRISE : lire d'abord `docs/SESSION-2026-08-04.md`** — état des lieux
+> complet de la session du 04/08 (prix sur demande, CGU, fil infini + règle
+> diaspora, Finia enfin corrigée, déconnexion 1 h, app Android prête, secrets
+> GitHub en place) et l'ordre des prochains chantiers.
 
 ## Circuit de travail (rappel)
 
