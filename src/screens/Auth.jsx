@@ -12,6 +12,11 @@ import { Field, TextInput } from '../components/Field';
 // chaque pays, Supabase/le fournisseur SMS refusera de toute façon un
 // numéro invalide, et on relaie alors SON message d'erreur.
 const E164_RE = /^\+[1-9]\d{6,14}$/;
+// Tout le monde tape son numéro avec des espaces, points ou tirets
+// (« +237 651 23 45 67 ») — on les retire avant de valider, plutôt que de
+// rejeter un numéro correct pour une question de mise en forme. Un « 00 »
+// initial (l'autre écriture de l'international) devient « + ».
+const normalizePhone = (raw) => raw.trim().replace(/^00/, '+').replace(/[\s.\-()]/g, '');
 
 // `consoleMode`: écran de connexion de la console d'administration. On n'y
 // crée pas de compte (les droits admin s'accordent depuis la console
@@ -65,7 +70,7 @@ export default function Auth({ consoleMode = false }) {
 
   async function sendPhoneCode(e) {
     e.preventDefault();
-    const phone = form.phone.trim();
+    const phone = normalizePhone(form.phone);
     if (!E164_RE.test(phone)) {
       toast.error(t('auth.phoneInvalid'));
       return;
@@ -87,7 +92,7 @@ export default function Auth({ consoleMode = false }) {
     e.preventDefault();
     setBusy(true);
     try {
-      const { error } = await verifyPhoneOtp(form.phone.trim(), form.otp.trim());
+      const { error } = await verifyPhoneOtp(normalizePhone(form.phone), form.otp.trim());
       if (error) throw error;
       navigate(from, { replace: true });
     } catch (err) {
