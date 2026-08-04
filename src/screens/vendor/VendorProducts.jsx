@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBox, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconPlus, IconBox, IconEye, IconEyeOff, IconPhotoPlus } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -65,7 +65,16 @@ export default function VendorProducts() {
     <div className="pb-6">
       <AppHeader
         title={t('nav.products')}
-        right={<Link to="/vendor/products/new" aria-label={t('vendor.addProduct')} className="rounded-full bg-teal p-1.5 text-white"><IconPlus size={20} /></Link>}
+        right={
+          <div className="flex items-center gap-2">
+            {/* Remplir une boutique se fait par lots, pas article par
+                article — le raccourci doit être aussi visible que le « + ». */}
+            <Link to="/vendor/products/bulk" className="btn-ghost gap-1 px-2 py-1 text-caption">
+              <IconPhotoPlus size={17} /> {t('vendor.bulkShort')}
+            </Link>
+            <Link to="/vendor/products/new" aria-label={t('vendor.addProduct')} className="rounded-full bg-teal p-1.5 text-white"><IconPlus size={20} /></Link>
+          </div>
+        }
       />
       {!loading && !error && rows.length > 0 && (
         <div className="flex border-b border-hairline">
