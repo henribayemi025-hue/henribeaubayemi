@@ -55,6 +55,11 @@ export default function VendorProductsBulk() {
   const [saving, setSaving] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('mode_femme');
   const [bulkPrice, setBulkPrice] = useState('');
+  // Nom commun: à 500 articles, personne ne tape 500 noms, et Finia peut
+  // échouer ou se tromper. « Pyjama fille » donne « Pyjama fille 1, 2, 3… »
+  // — numéroté, parce que 500 articles au nom identique sont illisibles
+  // autant pour la cliente que pour la vendeuse qui cherche le sien.
+  const [bulkName, setBulkName] = useState('');
 
   async function onPick(e) {
     const files = Array.from(e.target.files || []).filter((f) => (f.type || '').startsWith('image/'));
@@ -134,12 +139,20 @@ export default function VendorProductsBulk() {
   }
 
   function applyToAll() {
+    const base = bulkName.trim();
+    let n = 0;
     setRows((rs) =>
-      rs.map((r) => ({
-        ...r,
-        category: bulkCategory,
-        price: bulkPrice === '' ? r.price : bulkPrice,
-      }))
+      rs.map((r) => {
+        // Le nom commun ne remplace JAMAIS un nom déjà là (tapé à la main ou
+        // écrit par Finia) — sinon un seul tap effacerait tout le travail.
+        const named = r.name.trim() ? r.name : base ? `${base} ${(n += 1)}` : r.name;
+        return {
+          ...r,
+          name: named,
+          category: bulkCategory,
+          price: bulkPrice === '' ? r.price : bulkPrice,
+        };
+      })
     );
     // Dire CE QUI a été appliqué: le rayon seul ne se voyait nulle part sur
     // les lignes, alors le bouton passait pour cassé.
@@ -200,6 +213,11 @@ export default function VendorProductsBulk() {
                 catégorie serait absurde. */}
             <section className="card space-y-3">
               <p className="text-caption font-semibold text-ink">{t('vendor.bulkCommon')}</p>
+              <Field label={`${t('vendor.productName')} ${t('common.optional')}`} hint={t('vendor.bulkNameHint')}>
+                {(id) => (
+                  <TextInput id={id} value={bulkName} placeholder={t('vendor.bulkNamePlaceholder')} onChange={(e) => setBulkName(e.target.value)} />
+                )}
+              </Field>
               <Field label={t('vendor.productCategory')}>
                 {(id) => (
                   <Select id={id} value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}>
