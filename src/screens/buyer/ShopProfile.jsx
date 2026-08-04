@@ -66,7 +66,7 @@ export default function ShopProfile() {
       supabase.from('shops').select('*').eq('slug', slug).maybeSingle(),
       supabase
         .from('products')
-        .select('id, name, price_fcfa, compare_at_price_fcfa, images, category, stock, views, shop_id, shops!inner(slug)')
+        .select('id, name, price_fcfa, compare_at_price_fcfa, images, video_url, category, stock, views, shop_id, shops!inner(slug)')
         .eq('shops.slug', slug)
         .eq('is_active', true)
         .order('created_at', { ascending: false }),

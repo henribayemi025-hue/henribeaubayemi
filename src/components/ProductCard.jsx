@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSparkles, IconRefresh } from '@tabler/icons-react';
 import { SmartImage } from './SmartImage';
+import { ProductVideo } from './ProductVideo';
 import { PriceBlock, PromoBadge, discountPercent } from './Price';
 import { isQuoteOnly, MIRROR_CATEGORIES, categoryHeadFor } from '../lib/categories';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
@@ -32,7 +33,14 @@ function ProductCardBase({ product }) {
       className="block overflow-hidden rounded-card border border-hairline bg-white transition-transform duration-150 active:scale-[0.99]"
     >
       <div className="relative">
-        <SmartImage src={img} fallbackSrc={imgFallback} alt={product.name} className="aspect-square w-full" />
+        {/* La vidéo remplace la photo de couverture quand il y en a une —
+            c'est elle qui fait vivre le fil. La photo reste le repli pour
+            tout le catalogue existant. */}
+        {product.video_url ? (
+          <ProductVideo videoUrl={product.video_url} poster={img} alt={product.name} className="aspect-square w-full" />
+        ) : (
+          <SmartImage src={img} fallbackSrc={imgFallback} alt={product.name} className="aspect-square w-full" />
+        )}
         {/* Un article épuisé n'est pas une bonne affaire: la rupture prime sur
             la promo, jamais les deux pastilles au même endroit. */}
         {outOfStock ? (

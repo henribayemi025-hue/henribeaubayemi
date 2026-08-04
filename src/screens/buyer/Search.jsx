@@ -39,7 +39,7 @@ export default function Search() {
         const cats = CATEGORIES.filter((c) => t(`categories.${c.id}`).toLowerCase().includes(lower));
         const [shopsRes, prodRes, followsRes] = await Promise.all([
           supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').ilike('name', `%${term}%`).limit(10).abortSignal(signal),
-          supabase.from('products').select('id,name,price_fcfa,compare_at_price_fcfa,images,category,stock,shop_id,shops(name)').eq('is_active', true).ilike('name', `%${term}%`).limit(12).abortSignal(signal),
+          supabase.from('products').select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,category,stock,shop_id,shops(name)').eq('is_active', true).ilike('name', `%${term}%`).limit(12).abortSignal(signal),
           user
             ? supabase.from('shop_follows').select('shops(id,slug,name,avatar_url,is_verified,rating)').eq('follower_id', user.id).abortSignal(signal)
             : Promise.resolve({ data: [] }),

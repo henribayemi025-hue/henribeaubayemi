@@ -22,7 +22,7 @@ async function fetchCategory(categoryId) {
   // garantit qu'aucun produit existant ne disparaît avec le pivot.
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, price_fcfa, compare_at_price_fcfa, images, category, stock, shop_id, shops(name)')
+    .select('id, name, price_fcfa, compare_at_price_fcfa, images, video_url, category, stock, shop_id, shops(name)')
     .in('category', categoryQueryIds(categoryId))
     .eq('is_active', true)
     .order('created_at', { ascending: false });

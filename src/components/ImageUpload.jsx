@@ -18,7 +18,12 @@ const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 // Uploads a single image to a Supabase Storage bucket and returns its path
 // via onChange. `shape` = 'wide' | 'square' | 'round'.
-export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shape = 'square', accept = 'image/*' }) {
+//
+// `onAddMany`: dans une galerie (fiche article), la case VIDE doit ouvrir le
+// sélecteur multiple — c'est la case sur laquelle on tape naturellement, et
+// personne ne devrait rouvrir la galerie photo par photo. La case déjà
+// remplie garde le remplacement à l'unité.
+export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shape = 'square', accept = 'image/*', onAddMany }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
@@ -102,16 +107,16 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
         {preview && <img src={preview} alt="" className={`h-full w-full object-cover ${rounded}`} />}
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => (!value && onAddMany ? onAddMany() : inputRef.current?.click())}
           className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-caption text-muted"
-          aria-label={t('becomeVendor.uploadImage')}
+          aria-label={!value && onAddMany ? t('vendor.addPhotos') : t('becomeVendor.uploadImage')}
         >
           {busy ? (
             <IconLoader2 size={22} className="animate-spin text-teal" />
           ) : !preview ? (
             <>
               <IconUpload size={22} className="text-teal" />
-              <span>{t('becomeVendor.uploadImage')}</span>
+              <span>{onAddMany ? t('vendor.addPhotos') : t('becomeVendor.uploadImage')}</span>
             </>
           ) : null}
         </button>

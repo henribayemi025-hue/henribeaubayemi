@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2 } from '@tabler/icons-react';
-import { supabase } from '../../lib/supabase';
+import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2, IconX } from '@tabler/icons-react';
+import { supabase, storageUrl } from '../../lib/supabase';
 import { compressForUploadWithThumb } from '../../lib/image';
+import { isVideoFile, videoDuration, videoPoster, posterPathFor, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from '../../lib/video';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -15,7 +16,7 @@ import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadF
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], sizes: [], colors: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], video_url: null, sizes: [], colors: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 // Tailles proposées en un clic selon le rayon: lettres pour les vêtements,
@@ -235,6 +236,7 @@ export default function VendorProductEdit() {
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
         images: form.images.filter(Boolean),
+        video_url: form.video_url || null,
         sizes: (form.sizes || []).filter(Boolean),
         colors: (form.colors || []).filter(Boolean),
         is_permanent: !!form.is_permanent,
@@ -286,9 +288,53 @@ export default function VendorProductEdit() {
   // Pick many photos at once from the gallery and upload them in parallel.
   // Uses allSettled so one bad file never blocks the others, and unique UUID
   // names so two uploads can't collide.
+  // Une vidéo par article (voir migration 0039). Refusée si trop lourde ou
+  // trop longue: le navigateur ne sait pas la ré-encoder, donc le seul
+  // garde-fou est à l'envoi. Une image de couverture est extraite au passage —
+  // c'est elle qui s'affiche tant que la vidéo n'est pas chargée.
+  async function uploadVideo(file) {
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error(t('vendor.videoTooLarge', { mb: Math.round(MAX_VIDEO_BYTES / 1024 / 1024) }));
+      return;
+    }
+    setUploads((n) => n + 1);
+    try {
+      const seconds = await videoDuration(file).catch(() => 0);
+      if (seconds > MAX_VIDEO_SECONDS) {
+        toast.error(t('vendor.videoTooLong', { seconds: MAX_VIDEO_SECONDS }));
+        return;
+      }
+      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from('products').upload(path, file, { upsert: false, contentType: file.type || 'video/mp4' });
+      if (error) throw error;
+      // Meilleur effort: sans couverture la vidéo s'affiche quand même, elle
+      // met juste un instant à apparaître.
+      videoPoster(file)
+        .then((blob) => supabase.storage.from('products').upload(posterPathFor(path), blob, { upsert: false, contentType: 'image/jpeg' }))
+        .catch(() => {});
+      setForm((f) => ({ ...f, video_url: path }));
+      toast.success(t('vendor.videoAdded'));
+    } catch (err) {
+      toast.error(err.message || t('errors.generic'));
+    } finally {
+      setUploads((n) => Math.max(0, n - 1));
+    }
+  }
+
   async function onMultiFiles(e) {
-    const files = Array.from(e.target.files || []);
+    const picked = Array.from(e.target.files || []);
     if (multiRef.current) multiRef.current.value = '';
+    if (!picked.length) return;
+    // Une même sélection peut mélanger photos et vidéos — on trie ici plutôt
+    // que d'imposer deux boutons séparés.
+    const videos = picked.filter(isVideoFile);
+    const files = picked.filter((f) => !isVideoFile(f));
+    if (videos.length) {
+      if (form.video_url) toast.info(t('vendor.videoReplaced'));
+      uploadVideo(videos[0]);
+      if (videos.length > 1) toast.info(t('vendor.videoOnlyOne'));
+    }
     if (!files.length) return;
     const room = MAX_IMAGES - form.images.length;
     if (room <= 0) {
@@ -346,7 +392,7 @@ export default function VendorProductEdit() {
               </button>
             )}
           </div>
-          <input ref={multiRef} type="file" accept="image/*" multiple className="hidden" onChange={onMultiFiles} />
+          <input ref={multiRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={onMultiFiles} />
           {/* Existing photos + one empty slot to add another, up to MAX_IMAGES. */}
           <div className="grid grid-cols-3 gap-2">
             {Array.from({ length: Math.min(form.images.length + 1, MAX_IMAGES) }).map((_, i) => (
@@ -357,10 +403,33 @@ export default function VendorProductEdit() {
                 onChange={(p) => setImage(i, p)}
                 onBusyChange={(b) => setUploads((n) => Math.max(0, n + (b ? 1 : -1)))}
                 shape="square"
+                onAddMany={() => multiRef.current?.click()}
               />
             ))}
           </div>
-          <p className="mt-1 text-caption text-muted">{t('vendor.productImagesHint', { count: MAX_IMAGES })}</p>
+          {form.video_url && (
+            <div className="relative mt-2 w-1/3 overflow-hidden rounded-card border border-hairline bg-black">
+              <video
+                src={storageUrl('products', form.video_url)}
+                muted
+                loop
+                autoPlay
+                playsInline
+                className="aspect-square w-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, video_url: null }))}
+                className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white"
+                aria-label={t('common.delete')}
+              >
+                <IconX size={16} />
+              </button>
+            </div>
+          )}
+          <p className="mt-1 text-caption text-muted">
+            {t('vendor.productImagesHint', { count: MAX_IMAGES })} {t('vendor.productVideoHint', { seconds: MAX_VIDEO_SECONDS })}
+          </p>
           {/* Auto-Listing: visible dès qu'une photo est là. Remplit titre/
               description/catégorie (sans écraser ce qui est déjà tapé) —
               la vendeuse relit et corrige avant d'enregistrer. */}
