@@ -265,7 +265,8 @@
     "loadError": "Couldn't load products.",
     "noProducts": "No products yet. Check back soon!",
     "noShops": "No shops to show yet.",
-    "servicesSubtitle": "Cleaning, hair, plumbing, construction…"
+    "servicesSubtitle": "Cleaning, hair, plumbing, construction…",
+    "endOfFeed": "That's everything for now"
   },
   "search": {
     "placeholder": "Search categories, shops, items…",

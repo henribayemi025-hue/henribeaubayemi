@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore } from '@tabler/icons-react';
@@ -11,7 +11,8 @@ import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
 import { ProductCard } from '../../components/ProductCard';
 import { ShopCard } from '../../components/ShopCard';
 import { ProductGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/states';
-import { homeCache, loadHome } from '../../lib/homeCache';
+import { Spinner } from '../../components/Spinner';
+import { homeCache, loadHome, fetchProductPage } from '../../lib/homeCache';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -22,12 +23,25 @@ export default function Home() {
   const [loading, setLoading] = useState(!homeCache);
   const [error, setError] = useState(false);
 
+  // Pages suivantes du fil. `cursor` vit dans une ref: le lecteur
+  // d'intersection ne doit pas être recréé à chaque page chargée, sinon il se
+  // redéclenche tout seul et enchaîne les requêtes.
+  const [extra, setExtra] = useState([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const cursorRef = useRef(null);
+  const doneRef = useRef(false);
+  const busyRef = useRef(false);
+  const sentinelRef = useRef(null);
+
   async function load() {
     if (!homeCache) setLoading(true);
     setError(false);
     try {
       const result = await loadHome(country);
       setData(result);
+      setExtra([]);
+      cursorRef.current = result.cursor;
+      doneRef.current = !!result.done;
     } catch {
       if (!homeCache) setError(true); // no stale data to fall back to
     } finally {
@@ -41,6 +55,41 @@ export default function Home() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [country]);
+
+  const loadMore = useCallback(async () => {
+    if (busyRef.current || doneRef.current || !cursorRef.current) return;
+    busyRef.current = true;
+    setLoadingMore(true);
+    try {
+      const page = await fetchProductPage(country, cursorRef.current);
+      cursorRef.current = page.cursor;
+      doneRef.current = page.done;
+      // Garde-fou: un article publié pendant le défilement décale les pages et
+      // pourrait renvoyer une ligne déjà affichée.
+      setExtra((prev) => {
+        const seen = new Set([...(data?.products || []), ...prev].map((p) => p.id));
+        return [...prev, ...page.items.filter((p) => !seen.has(p.id))];
+      });
+    } catch {
+      doneRef.current = true; // on arrête d'insister plutôt que de boucler
+    } finally {
+      busyRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [country, data]);
+
+  // On charge la page suivante AVANT d'arriver en bas (marge d'un écran), pour
+  // que le fil paraisse continu au lieu de s'arrêter puis repartir.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || loading || error) return undefined;
+    const io = new IntersectionObserver(
+      (entries) => entries[0]?.isIntersecting && loadMore(),
+      { rootMargin: '800px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore, loading, error]);
 
   return (
     <div>
@@ -150,10 +199,21 @@ export default function Home() {
                 <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {data.products.map((p) => (
+                  {[...data.products, ...extra].map((p) => (
                     <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
+              )}
+
+              {/* Sentinelle du défilement infini + fin de catalogue. */}
+              <div ref={sentinelRef} className="h-4" />
+              {loadingMore && (
+                <div className="flex justify-center py-6">
+                  <Spinner />
+                </div>
+              )}
+              {!loadingMore && doneRef.current && data.products.length > 0 && (
+                <p className="py-6 text-center text-caption text-muted">{t('home.endOfFeed')}</p>
               )}
             </section>
           </>

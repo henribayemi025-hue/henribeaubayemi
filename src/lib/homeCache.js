@@ -14,18 +14,68 @@ let cachedFor; // pays ayant servi à construire `homeCache`
 const PRODUCT_COLS =
   'id, name, price_fcfa, compare_at_price_fcfa, images, video_url, price_on_request, category, stock, shop_id, views, shops!inner(name, slug, country)';
 const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
-const LIMIT_PRODUCTS = 24;
+export const HOME_PAGE_SIZE = 24;
 const LIMIT_SHOPS = 12;
 
-// Fusionne « chez moi » puis « ailleurs », sans doublon et sans dépasser la
-// limite. On PRIORISE le pays du visiteur sans jamais MASQUER le reste: avec
-// une poignée de boutiques par pays, un filtre strict afficherait une place de
-// marché vide à la première personne d'un pays non encore couvert — le plus
-// sûr moyen de la perdre.
-function mergeLocalFirst(local, rest, limit) {
+// Le fil défile à l'infini: on PRIORISE le pays du visiteur sans jamais MASQUER
+// le reste. Plutôt que de fusionner deux requêtes qui se recouvrent (le même
+// article pouvait sortir des deux, ce qui rendait toute pagination bancale), on
+// lit DEUX FLUX DISJOINTS l'un après l'autre — d'abord « chez moi », puis
+// « ailleurs ». Aucun doublon possible, et le curseur reste un simple décalage
+// par flux.
+//
+// Le tri secondaire sur `id` n'est pas cosmétique: les ajouts en masse créent
+// des dizaines d'articles à la même milliseconde, et sans départage un
+// `created_at` ex aequo fait réapparaître ou sauter des lignes d'une page à
+// l'autre.
+function productsQuery() {
+  return supabase
+    .from('products')
+    .select(PRODUCT_COLS)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
+}
+
+export function initialCursor(country) {
+  return { phase: country ? 'local' : 'rest', local: 0, rest: 0 };
+}
+
+const withShopName = (rows) => (rows || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
+
+// Renvoie une page pleine (sauf en fin de catalogue) en enchaînant au besoin la
+// fin du flux local et le début du flux « ailleurs », pour ne jamais afficher
+// une demi-page à la charnière entre les deux.
+export async function fetchProductPage(country, cursor) {
+  let { phase, local, rest } = cursor || initialCursor(country);
+  const items = [];
+
+  while (items.length < HOME_PAGE_SIZE && phase !== 'done') {
+    const need = HOME_PAGE_SIZE - items.length;
+    const isLocal = phase === 'local';
+    const offset = isLocal ? local : rest;
+    let q = productsQuery();
+    if (isLocal) q = q.eq('shops.country', country);
+    else if (country) q = q.not('shops.country', 'eq', country);
+
+    const { data, error } = await q.range(offset, offset + need - 1);
+    if (error) throw error;
+    const rows = data || [];
+    items.push(...rows);
+    if (isLocal) local += rows.length;
+    else rest += rows.length;
+    if (rows.length < need) phase = isLocal ? 'rest' : 'done';
+  }
+
+  return { items: withShopName(items), cursor: { phase, local, rest }, done: phase === 'done' };
+}
+
+// Fusionne « chez moi » puis « ailleurs » pour les boutiques, qui tiennent en
+// une seule bande horizontale et n'ont donc pas besoin de pagination.
+function mergeLocalFirst(localRows, restRows, limit) {
   const seen = new Set();
   const out = [];
-  for (const row of [...(local || []), ...(rest || [])]) {
+  for (const row of [...(localRows || []), ...(restRows || [])]) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     out.push(row);
@@ -35,12 +85,6 @@ function mergeLocalFirst(local, rest, limit) {
 }
 
 export async function fetchHome(country) {
-  const products = () =>
-    supabase
-      .from('products')
-      .select(PRODUCT_COLS)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
   const shops = () =>
     supabase
       .from('shops')
@@ -50,23 +94,21 @@ export async function fetchHome(country) {
 
   // allSettled so a transient hiccup on ONE section doesn't blank the whole
   // home — we render whatever loaded. Only fail if both truly failed.
-  const [pLocal, pAll, sLocal, sAll] = await Promise.allSettled([
-    country ? products().eq('shops.country', country).limit(LIMIT_PRODUCTS) : Promise.resolve({ data: [] }),
-    products().limit(LIMIT_PRODUCTS),
+  const [pRes, sLocal, sAll] = await Promise.allSettled([
+    fetchProductPage(country, initialCursor(country)),
     country ? shops().eq('country', country).limit(LIMIT_SHOPS) : Promise.resolve({ data: [] }),
     shops().limit(LIMIT_SHOPS),
   ]);
 
   const ok = (res) => (res.status === 'fulfilled' && !res.value.error ? res.value.data : null);
-  const allProducts = ok(pAll);
+  const page = pRes.status === 'fulfilled' ? pRes.value : null;
   const allShops = ok(sAll);
-  if (allProducts === null && allShops === null) throw new Error('home_failed');
+  if (page === null && allShops === null) throw new Error('home_failed');
 
   return {
-    products: mergeLocalFirst(ok(pLocal), allProducts, LIMIT_PRODUCTS).map((p) => ({
-      ...p,
-      shop_name: p.shops?.name,
-    })),
+    products: page?.items || [],
+    cursor: page?.cursor || initialCursor(country),
+    done: page ? page.done : true,
     shops: mergeLocalFirst(ok(sLocal), allShops, LIMIT_SHOPS),
   };
 }

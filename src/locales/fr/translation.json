@@ -265,7 +265,8 @@
     "loadError": "Impossible de charger les produits.",
     "noProducts": "Aucun produit pour le moment. Reviens bientôt !",
     "noShops": "Aucune boutique à afficher pour l'instant.",
-    "servicesSubtitle": "Ménage, coiffure, plomberie, BTP…"
+    "servicesSubtitle": "Ménage, coiffure, plomberie, BTP…",
+    "endOfFeed": "Tu as tout vu pour le moment"
   },
   "search": {
     "placeholder": "Rechercher catégories, boutiques, articles…",
