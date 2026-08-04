@@ -1,0 +1,90 @@
+# Fabrique le .aab signé pour le Play Store.
+#
+# Lancement à la main (onglet Actions → « Android AAB » → Run workflow), ou
+# automatiquement quand on modifie l'app native. Le fichier à déposer sur Play
+# Console est publié comme artefact du run (finjaro-release-aab).
+#
+# Secrets requis (une seule fois, dans Settings → Secrets → Actions):
+#   ANDROID_KEYSTORE_BASE64   — le keystore d'upload, encodé en base64
+#   ANDROID_KEYSTORE_PASSWORD — son mot de passe
+# Sans eux, le job s'arrête avec un message clair au lieu d'un .aab non signé
+# que le Play Store rejetterait de toute façon.
+name: Android AAB
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [staging]
+    paths:
+      - 'android/**'
+      - 'capacitor.config.json'
+      - '.github/workflows/android.yml'
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier les secrets de signature
+        id: secrets
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KS" ]; then
+            # Un push ne doit pas devenir une croix rouge tant que la signature
+            # n'est pas configurée; seul un lancement manuel exige le .aab.
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "::error::Secret ANDROID_KEYSTORE_BASE64 manquant — ajoute-le dans Settings → Secrets → Actions."
+              exit 1
+            fi
+            echo "::warning::Signature non configurée — build Android sauté."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: '20'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Construire le web + synchroniser Capacitor
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+
+      - name: Reconstituer le keystore
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KS" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+
+      - name: Construire le bundle release
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          # run_number croît à chaque exécution: jamais deux versions identiques.
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          ANDROID_VERSION_NAME: 1.0.${{ github.run_number }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Publier le .aab
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: finjaro-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
