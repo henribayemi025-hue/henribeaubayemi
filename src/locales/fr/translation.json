@@ -97,7 +97,9 @@
     "phonePasswordHint": "6 caractères minimum. Note-le bien : sans e-mail, il se récupère par SMS.",
     "usePasswordInstead": "Utiliser un mot de passe (sans SMS)",
     "useSmsCodeInstead": "Je préfère recevoir un code par SMS",
-    "forgotPasswordPhone": "Mot de passe oublié ? Recevoir un code par SMS"
+    "forgotPasswordPhone": "Mot de passe oublié ? Recevoir un code par SMS",
+    "phoneAlreadyRegistered": "Ce numéro a déjà un compte — passe par « Se connecter ».",
+    "invalidPhoneCredentials": "Numéro ou mot de passe incorrect."
   },
   "nav": {
     "home": "Accueil",

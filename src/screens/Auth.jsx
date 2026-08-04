@@ -118,7 +118,13 @@ export default function Auth({ consoleMode = false }) {
         navigate(from, { replace: true });
       }
     } catch (err) {
-      toast.error(err.message === 'Invalid login credentials' ? t('auth.invalidCredentials') : err.message);
+      // Les messages bruts de Supabase sont en anglais et parlent d'e-mail —
+      // hors sujet pour quelqu'un qui s'inscrit avec son numéro. On traduit
+      // les deux cas qui arrivent réellement, en disant quoi faire ensuite.
+      const m = err.message || '';
+      if (/already registered|already exists/i.test(m)) toast.error(t('auth.phoneAlreadyRegistered'));
+      else if (m === 'Invalid login credentials') toast.error(t('auth.invalidPhoneCredentials'));
+      else toast.error(m);
     } finally {
       setBusy(false);
     }
