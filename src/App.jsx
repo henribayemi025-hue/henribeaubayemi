@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { SettingsProvider } from './hooks/useSettings';
@@ -83,8 +83,58 @@ function Loading() {
   );
 }
 
+// Écrans à précharger dès que l'accueil est affiché et la connexion au repos.
+//
+// Chaque onglet est un fichier séparé, téléchargé SEULEMENT au moment du clic.
+// Depuis le Cameroun, avec la latence vers l'Europe, ça se voit: on tape, il ne
+// se passe rien, puis l'écran arrive. Beau (04/08): « quand je clique sur un
+// truc ça rame, les gens se plaignent de ça ».
+//
+// On les récupère donc à l'avance, pendant que la personne regarde l'accueil.
+// `requestIdleCallback` attend que le navigateur n'ait plus rien d'urgent à
+// faire: le préchargement ne ralentit jamais l'affichage en cours. Au clic, le
+// fichier est déjà en cache et la navigation est instantanée.
+const PREFETCH = [
+  () => import('./screens/buyer/ProductDetail'),
+  () => import('./screens/buyer/Search'),
+  () => import('./screens/buyer/CategoryListing'),
+  () => import('./screens/buyer/Fin'),
+  () => import('./screens/buyer/NearYou'),
+  () => import('./screens/buyer/UserProfile'),
+  () => import('./screens/buyer/ShopProfile'),
+  () => import('./screens/buyer/Cart'),
+];
+
+function usePrefetchRoutes() {
+  useEffect(() => {
+    // Sur un forfait limité, on n'impose pas 500 Ko à quelqu'un qui n'a rien
+    // demandé: les navigateurs qui signalent une connexion lente ou le mode
+    // économie de données sont épargnés.
+    const net = navigator.connection;
+    if (net && (net.saveData || /2g/.test(net.effectiveType || ''))) return undefined;
+
+    let cancelled = false;
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
+    const cancelIdle = window.cancelIdleCallback || clearTimeout;
+
+    // Un par un: huit téléchargements simultanés se disputeraient la bande
+    // passante avec les photos de l'accueil, qui, elles, sont visibles.
+    let i = 0;
+    const next = () => {
+      if (cancelled || i >= PREFETCH.length) return;
+      PREFETCH[i++]().catch(() => {}).then(() => idle(next));
+    };
+    const handle = idle(next);
+    return () => {
+      cancelled = true;
+      cancelIdle(handle);
+    };
+  }, []);
+}
+
 export default function App() {
   useViewportHeight();
+  usePrefetchRoutes();
   return (
     <BrowserRouter>
       <AuthProvider>
