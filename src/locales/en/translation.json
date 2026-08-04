@@ -290,6 +290,7 @@
     "inCart_one": "{{count}} in cart",
     "inCart_other": "{{count}} in cart",
     "requestQuote": "Request a quote",
+    "priceOnRequest": "Price on request",
     "contactSeller": "Contact seller",
     "addedToCart": "Added to cart",
     "reviews": "Shop reviews",
@@ -663,7 +664,7 @@
     "bulkFilling": "Finia is writing… {{done}}/{{total}} (about 4s per photo)",
     "bulkFilled": "Finia filled in what she could.",
     "bulkNothingToFill": "Every item already has a name.",
-    "bulkReadyCount": "{{ready}} of {{total}} ready — a name and a price are required.",
+    "bulkReadyCount": "{{ready}} of {{total}} ready.",
     "bulkNeedNamePrice": "No item has both a name AND a price yet.",
     "bulkCreate": "Create {{count}} item(s)",
     "bulkCreated": "{{count}} item(s) created as drafts.",
@@ -829,7 +830,9 @@
     "bulkNamePlaceholder": "e.g. Girls' pyjamas",
     "publishAll": "Publish all ({{count}})",
     "publishAllConfirm": "Publish {{count}} item(s) at once? They become visible to everyone. You can unpublish any of them later.",
-    "publishedAll": "{{count}} item(s) published."
+    "publishedAll": "{{count}} item(s) published.",
+    "priceOnRequest": "Price on request",
+    "priceOnRequestHelp": "The item shows no price. Buyers message you to ask instead of ordering directly. Handy when you haven't set your price yet."
   },
   "orderStatus": {
     "new": "Awaiting validation",

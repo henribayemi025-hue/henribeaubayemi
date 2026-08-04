@@ -5,14 +5,14 @@ import { IconSparkles, IconRefresh } from '@tabler/icons-react';
 import { SmartImage } from './SmartImage';
 import { ProductVideo } from './ProductVideo';
 import { PriceBlock, PromoBadge, discountPercent } from './Price';
-import { isQuoteOnly, MIRROR_CATEGORIES, categoryHeadFor } from '../lib/categories';
+import { isPriceOnRequest, MIRROR_CATEGORIES, categoryHeadFor } from '../lib/categories';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
 import { track } from '../lib/track';
 
 // 2-column grid product card. Memoized to avoid re-renders on parent state churn.
 function ProductCardBase({ product }) {
   const { t } = useTranslation();
-  const quote = isQuoteOnly(product.category);
+  const quote = isPriceOnRequest(product);
   const img = product.images?.[0] ? storageThumbUrl('products', product.images[0]) : null;
   const imgFallback = product.images?.[0] ? storageUrl('products', product.images[0]) : null;
   // Repère discret pour l'essayage virtuel — avant, il fallait déjà être entré
@@ -68,7 +68,7 @@ function ProductCardBase({ product }) {
       <div className="p-3">
         <p className="line-clamp-2 text-body text-ink">{product.name}</p>
         {quote ? (
-          <p className="mt-1 text-caption font-semibold text-brass">{t('product.requestQuote')}</p>
+          <p className="mt-1 text-caption font-semibold text-brass">{t('product.priceOnRequest')}</p>
         ) : (
           <PriceBlock
             fcfa={product.price_fcfa}

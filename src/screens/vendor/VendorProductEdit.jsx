@@ -16,7 +16,7 @@ import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadF
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], video_url: null, sizes: [], colors: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], video_url: null, price_on_request: false, sizes: [], colors: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 // Tailles proposées en un clic selon le rayon: lettres pour les vêtements,
@@ -205,7 +205,10 @@ export default function VendorProductEdit() {
   function validate() {
     const e = {};
     if (!form.name.trim()) e.name = t('common.required');
-    if (form.price_fcfa === '' || Number(form.price_fcfa) < 0) e.price = t('common.required');
+    // Un article « sur demande » n'a par définition pas de prix à saisir.
+    if (!form.price_on_request && (form.price_fcfa === '' || Number(form.price_fcfa) < 0)) {
+      e.price = t('common.required');
+    }
     // Un prix barré ne veut rien dire s'il n'est pas STRICTEMENT au-dessus du
     // prix demandé — sinon on afficherait une "promo" à l'envers ou à 0 %.
     if (form.compare_at_price_fcfa !== '' && Number(form.compare_at_price_fcfa) <= Number(form.price_fcfa || 0)) {
@@ -230,7 +233,10 @@ export default function VendorProductEdit() {
       const payload = {
         shop_id: shop.id,
         name: form.name.trim(),
-        price_fcfa: toFcfa(Number(form.price_fcfa), shopCurrency),
+        price_on_request: !!form.price_on_request,
+        // Sur demande: on stocke 0 et l'affichage acheteur ne montre jamais
+        // ce chiffre (voir isPriceOnRequest).
+        price_fcfa: form.price_on_request ? 0 : toFcfa(Number(form.price_fcfa), shopCurrency),
         compare_at_price_fcfa: form.compare_at_price_fcfa === '' ? null : toFcfa(Number(form.compare_at_price_fcfa), shopCurrency),
         description: form.description.trim() || null,
         category: form.category,
@@ -462,9 +468,26 @@ export default function VendorProductEdit() {
         <Field label={t('vendor.productName')} required error={errors.name}>
           {(fid) => <TextInput id={fid} value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
         </Field>
-        <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
-          {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
-        </Field>
+        {/* Prix sur demande: pour qui n'a pas encore fixé son prix, ou vend au
+            cas par cas. Sans ça, un article à 0 s'affiche « 0 FCFA » — lu
+            comme gratuit — et reste commandable à ce prix. */}
+        <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
+          <input
+            type="checkbox"
+            checked={!!form.price_on_request}
+            onChange={(e) => setForm({ ...form, price_on_request: e.target.checked })}
+            className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+          />
+          <span className="flex-1">
+            <span className="block text-body text-ink">{t('vendor.priceOnRequest')}</span>
+            <span className="mt-0.5 block text-caption text-muted">{t('vendor.priceOnRequestHelp')}</span>
+          </span>
+        </label>
+        {!form.price_on_request && (
+          <Field label={`${t('vendor.productPrice')} (${shopCurrency})`} required error={errors.price}>
+            {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.price_fcfa} error={errors.price} onChange={(e) => setForm({ ...form, price_fcfa: e.target.value })} />}
+          </Field>
+        )}
         {/* Optionnel — vide = pas de promo affichée. Le % s'affiche seul,
             calculé côté client ET revérifié partout où le prix s'affiche
             (jamais de "-30%" que le calcul ne confirme pas). */}

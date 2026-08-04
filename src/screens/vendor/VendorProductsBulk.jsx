@@ -66,6 +66,9 @@ export default function VendorProductsBulk() {
   // — numéroté, parce que 500 articles au nom identique sont illisibles
   // autant pour la cliente que pour la vendeuse qui cherche le sien.
   const [bulkName, setBulkName] = useState('');
+  // Verser un lot sans connaître les prix est le cas normal quand on publie
+  // pour quelqu'un d'autre: on le dit à l'acheteuse au lieu d'afficher 0.
+  const [bulkOnRequest, setBulkOnRequest] = useState(false);
 
   async function onPick(e) {
     const files = Array.from(e.target.files || []).filter((f) => (f.type || '').startsWith('image/'));
@@ -171,7 +174,7 @@ export default function VendorProductsBulk() {
     );
   }
 
-  const ready = rows.filter((r) => r.name.trim() && r.price !== '' && Number(r.price) >= 0);
+  const ready = rows.filter((r) => r.name.trim() && (bulkOnRequest || (r.price !== '' && Number(r.price) > 0)));
 
   async function createAll() {
     if (!ready.length) {
@@ -184,7 +187,8 @@ export default function VendorProductsBulk() {
         shop_id: shop.id,
         name: r.name.trim(),
         description: r.description || null,
-        price_fcfa: toFcfa(Number(r.price), shopCurrency),
+        price_on_request: bulkOnRequest,
+        price_fcfa: bulkOnRequest ? 0 : toFcfa(Number(r.price), shopCurrency),
         category: r.category,
         images: [r.path],
         stock: 1,
@@ -235,11 +239,25 @@ export default function VendorProductsBulk() {
                   </Select>
                 )}
               </Field>
+              <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
+                <input
+                  type="checkbox"
+                  checked={bulkOnRequest}
+                  onChange={(e) => setBulkOnRequest(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+                />
+                <span className="flex-1">
+                  <span className="block text-body text-ink">{t('vendor.priceOnRequest')}</span>
+                  <span className="mt-0.5 block text-caption text-muted">{t('vendor.priceOnRequestHelp')}</span>
+                </span>
+              </label>
+              {!bulkOnRequest && (
               <Field label={`${t('vendor.productPrice')} (${shopCurrency}) ${t('common.optional')}`}>
                 {(id) => (
                   <TextInput id={id} type="number" inputMode="numeric" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} />
                 )}
               </Field>
+              )}
               <Button variant="secondary" onClick={applyToAll}>{t('vendor.bulkApplyToAll')}</Button>
               <Button variant="secondary" onClick={fillAllWithAi} disabled={!!aiDone}>
                 {aiDone ? <IconLoader2 size={18} className="animate-spin" /> : <IconSparkles size={18} />}
@@ -259,13 +277,19 @@ export default function VendorProductsBulk() {
                       placeholder={t('vendor.productName')}
                       onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, name: e.target.value } : x)))}
                     />
-                    <TextInput
-                      type="number"
-                      inputMode="numeric"
-                      value={r.price}
-                      placeholder={`${t('vendor.productPrice')} (${shopCurrency})`}
-                      onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)))}
-                    />
+                    {/* Inutile de demander un prix ligne par ligne quand tout
+                        le lot part « sur demande ». */}
+                    {bulkOnRequest ? (
+                      <p className="text-caption font-semibold text-brass">{t('product.requestQuote')}</p>
+                    ) : (
+                      <TextInput
+                        type="number"
+                        inputMode="numeric"
+                        value={r.price}
+                        placeholder={`${t('vendor.productPrice')} (${shopCurrency})`}
+                        onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)))}
+                      />
+                    )}
                     {/* Le rayon DOIT être visible ici: sans lui, « Appliquer à
                         tous » ne produit aucun changement à l'écran et passe
                         pour cassé. Et Finia se trompe parfois de rayon — il
