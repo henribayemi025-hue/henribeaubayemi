@@ -357,6 +357,7 @@ export default function VendorProductEdit() {
                 onChange={(p) => setImage(i, p)}
                 onBusyChange={(b) => setUploads((n) => Math.max(0, n + (b ? 1 : -1)))}
                 shape="square"
+                onAddMany={() => multiRef.current?.click()}
               />
             ))}
           </div>
