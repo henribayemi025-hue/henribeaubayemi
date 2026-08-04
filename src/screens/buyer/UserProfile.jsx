@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout,
+  IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout, IconFileText,
   IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal,
   IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift,
 } from '@tabler/icons-react';
@@ -60,6 +60,7 @@ export default function UserProfile() {
     { icon: IconGift, label: t('referral.navLabel'), to: '/profile/invite' },
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
     { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
+    { icon: IconFileText, label: t('legal.termsTitle'), to: '/legal/terms' },
     // Plus de raccourci "Administration" ici: la console est une application
     // séparée, sur son propre domaine. L'app cliente ne laisse même pas
     // deviner qu'elle existe.

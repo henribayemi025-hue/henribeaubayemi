@@ -422,6 +422,12 @@ export default function Auth({ consoleMode = false }) {
       {!consoleMode && (
         <Link to="/" className="mx-auto mt-2 text-caption text-muted">{t('auth.continueAsGuest')}</Link>
       )}
+      {mode === 'signup' && (
+        <p className="mx-auto mt-4 max-w-xs text-center text-caption text-muted">
+          {t('legal.signupConsent')}{' '}
+          <Link to="/legal/terms" className="font-semibold text-teal underline">{t('legal.termsTitle')}</Link>
+        </p>
+      )}
     </div>
   );
 }

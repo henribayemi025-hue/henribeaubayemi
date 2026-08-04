@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconShieldLock, IconCircleCheck, IconChevronLeft, IconPackage, IconTool, IconPackages } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
@@ -280,7 +280,12 @@ export default function BecomeVendor() {
             </div>
             <label className="flex items-start gap-3">
               <input type="checkbox" checked={agree} onChange={(e) => { setAgree(e.target.checked); setTermsErr(false); }} className="mt-0.5 h-5 w-5 accent-[#C25E38]" />
-              <span className="text-body text-ink">{t('becomeVendor.acceptTerms')}</span>
+              <span className="text-body text-ink">
+                {t('becomeVendor.acceptTerms')}{' '}
+                <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
+                  {t('legal.readTerms')}
+                </Link>
+              </span>
             </label>
             {termsErr && <p className="text-caption text-danger">{t('becomeVendor.termsRequired')}</p>}
           </>
