@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  /* TUTO 1 — « Publier tous tes articles d'un coup » — 1080x1920, 60 s.
+     Pas une pub: un mode d'emploi, étape par étape, à envoyer à chaque
+     nouvelle vendeuse. Même gabarit que compose-v2.html, habillage TUTO. */
+  :root { --creme:#FAF7F2; --ink:#171B26; --terra:#C25E38; --brass:#E09F3E; --muted:#6B6B6B; --ok:#2A9D8F; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; }
+  body { background:var(--creme); font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:var(--ink); }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(90px); }
+  .blob1 { width:700px; height:700px; background:rgba(42,157,143,.12); top:-180px; left:-220px; animation:drift1 60s linear 0s both; }
+  .blob2 { width:640px; height:640px; background:rgba(224,159,62,.14); bottom:-160px; right:-200px; animation:drift2 60s linear 0s both; }
+  @keyframes drift1 { from { transform:translate(0,0) } to { transform:translate(90px,60px) } }
+  @keyframes drift2 { from { transform:translate(0,0) } to { transform:translate(-80px,-70px) } }
+
+  .progress { position:absolute; left:0; bottom:0; height:14px; width:1080px; background:rgba(23,27,38,.08); z-index:50; }
+  .progress > div { height:100%; width:1080px; background:var(--ok); transform-origin:left; animation:prog 60s linear 0s both; }
+  @keyframes prog { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+
+  .scene { position:absolute; inset:0; opacity:0; }
+  .head { position:absolute; top:88px; left:0; width:1080px; text-align:center; padding:0 70px; }
+  .pill { display:inline-block; background:var(--ok); color:#fff; font-weight:800; font-size:36px; letter-spacing:.1em; padding:14px 38px; border-radius:999px; }
+  h1 { font-size:72px; line-height:1.12; font-weight:800; margin-top:24px; }
+  .say { position:absolute; bottom:60px; left:60px; width:960px; text-align:center;
+         background:rgba(255,255,255,.94); border:2px solid rgba(42,157,143,.3);
+         border-radius:28px; padding:30px 44px; font-size:41px; line-height:1.35;
+         font-weight:600; color:var(--ink); box-shadow:0 18px 44px rgba(23,27,38,.10); }
+  .say b { color:var(--ok); }
+
+  .phone { position:absolute; left:50%; top:440px; width:540px; height:1136px; margin-left:-270px;
+           background:#15151a; border-radius:60px; box-shadow:0 50px 110px rgba(23,27,38,.32); padding:13px; }
+  .sbtn { position:absolute; background:#2c2c33; border-radius:3px; }
+  .sbtn.mute { left:-4px; top:240px; width:6px; height:54px; }
+  .sbtn.volu { left:-4px; top:330px; width:6px; height:96px; }
+  .sbtn.vold { left:-4px; top:444px; width:6px; height:96px; }
+  .sbtn.pwr  { right:-4px; top:352px; width:6px; height:152px; }
+  .phone .screen { position:relative; width:514px; height:1110px; border-radius:48px; overflow:hidden; background:#fff; }
+  .phone .screen::after { content:''; position:absolute; inset:0; z-index:30; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.035) 28%, transparent 44%); }
+  .phone .notch { position:absolute; top:34px; left:50%; width:152px; height:36px; margin-left:-76px; background:#15151a; border-radius:999px; z-index:26; }
+  .shot { position:absolute; inset:0; background:var(--sb,#fff); }
+  .shot img { position:absolute; top:61px; left:0; width:514px; height:1050px; }
+  .sbc { position:absolute; top:0; left:0; right:0; height:61px; z-index:25; display:flex; align-items:center;
+         justify-content:space-between; padding:6px 42px 0 54px; font-size:28px; font-weight:700; color:#101014; }
+  .homebar { position:absolute; bottom:13px; left:50%; width:180px; margin-left:-90px; height:7px; border-radius:4px; background:rgba(16,16,20,.32); z-index:25; }
+  .push { transform:translateX(534px); box-shadow:-26px 0 52px rgba(0,0,0,.22); }
+
+  @keyframes sceneIn { from { opacity:1 } to { opacity:1 } }
+  @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
+  @keyframes fadeOut { from { opacity:1 } to { opacity:0 } }
+  @keyframes rise { from { opacity:0; transform:translateY(46px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes riseCenter { from { opacity:0; transform:translateX(-50%) translateY(46px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+  @keyframes pop  { from { opacity:0; transform:scale(.5) } to { opacity:1; transform:scale(1) } }
+  @keyframes phoneUp { from { opacity:0; transform:translateY(190px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes pushIn  { from { transform:translateX(534px) } to { transform:translateX(0) } }
+  @keyframes pulse { 0%,100% { transform:translateX(-50%) scale(1) } 50% { transform:translateX(-50%) scale(1.05) } }
+
+  /* ---- minutage (60 s) ---- */
+  .t1 { animation:sceneIn .01s linear 0s both, fadeOut .5s ease 5.5s both; }
+  .t1 .k { position:absolute; top:560px; width:1080px; text-align:center; font-size:52px; font-weight:800; color:var(--ok); letter-spacing:.14em; animation:rise .7s ease .3s both; }
+  .t1 .t { position:absolute; top:660px; width:1080px; text-align:center; padding:0 80px; font-size:92px; line-height:1.12; font-weight:800; animation:rise .8s ease .7s both; }
+  .t1 .s { position:absolute; top:1080px; width:1080px; text-align:center; padding:0 120px; font-size:46px; line-height:1.35; font-weight:600; color:var(--muted); animation:rise .8s ease 1.4s both; }
+
+  .t2 { animation:fadeIn .5s ease 6s both, fadeOut .5s ease 15.5s both; }
+  .t2 .head  { animation:rise .7s ease 6.2s both; }
+  .t2 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 6.4s both; }
+  .t2 .say   { animation:rise .6s ease 6.9s both; }
+
+  .t3 { animation:fadeIn .5s ease 16s both, fadeOut .5s ease 25.5s both; }
+  .t3 .head  { animation:rise .7s ease 16.2s both; }
+  .t3 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 16.4s both; }
+  .t3 .say   { animation:rise .6s ease 16.9s both; }
+
+  .t4 { animation:fadeIn .5s ease 26s both, fadeOut .5s ease 36.5s both; }
+  .t4 .head  { animation:rise .7s ease 26.2s both; }
+  .t4 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 26.4s both; }
+  .t4 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 31.2s both; }
+  .t4 .say   { animation:rise .6s ease 26.9s both; }
+
+  .t5 { animation:fadeIn .5s ease 37s both, fadeOut .5s ease 45.5s both; }
+  .t5 .head  { animation:rise .7s ease 37.2s both; }
+  .t5 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 37.4s both; }
+  .t5 .say   { animation:rise .6s ease 37.9s both; }
+
+  .t6 { animation:fadeIn .5s ease 46s both, fadeOut .5s ease 53.5s both; }
+  .t6 .head  { animation:rise .7s ease 46.2s both; }
+  .t6 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 46.4s both; }
+  .t6 .say   { animation:rise .6s ease 46.9s both; }
+
+  .t7 { animation:fadeIn .6s ease 54s both; }
+  .t7 .big { position:absolute; top:700px; width:1080px; text-align:center; padding:0 90px; font-size:88px; line-height:1.15; font-weight:800; animation:rise .7s ease 54.3s both; }
+  .t7 .big b { color:var(--ok); }
+  .t7 .cta { position:absolute; top:1150px; left:50%; transform:translateX(-50%); background:var(--terra); color:#fff;
+             font-size:54px; font-weight:800; padding:30px 70px; border-radius:999px; box-shadow:0 24px 60px rgba(194,94,56,.4);
+             animation:riseCenter .7s ease 54.9s both, pulse 2.4s ease 55.9s infinite; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <section class="scene t1">
+    <div class="k">TUTO VENDEUSE</div>
+    <div class="t">Publier tous tes<br>articles d'un coup</div>
+    <div class="s">70 photos → 70 articles en ligne.<br>Suis ces 5 étapes, montre en main.</div>
+  </section>
+
+  <section class="scene t2">
+    <div class="head"><span class="pill">ÉTAPE 1 / 5</span><h1>Ouvre l'ajout<br>en masse</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-empty.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Dans ton espace vendeuse: <b>Produits</b>,<br>puis le bouton <b>« En masse »</b> en haut.</div>
+  </section>
+
+  <section class="scene t3">
+    <div class="head"><span class="pill">ÉTAPE 2 / 5</span><h1>Choisis toutes<br>tes photos</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-photos.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">« Choisir mes photos » → sélectionne-les <b>toutes</b><br>dans ta galerie. Une photo = un article.</div>
+  </section>
+
+  <section class="scene t4">
+    <div class="head"><span class="pill">ÉTAPE 3 / 5</span><h1>Laisse Finia écrire<br>les fiches</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-finia-progress.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/bulk-filled.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Appuie sur <b>« Faire écrire les noms par Finia »</b>.<br>Elle remplit nom, rayon et prix conseillé, photo par photo.</div>
+  </section>
+
+  <section class="scene t5">
+    <div class="head"><span class="pill">ÉTAPE 4 / 5</span><h1>Vérifie, puis<br>crée les articles</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-create.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Corrige un nom ou un prix si besoin, puis<br><b>« Créer les articles »</b>. Ils partent en brouillon — rien n'est public.</div>
+  </section>
+
+  <section class="scene t6">
+    <div class="head"><span class="pill">ÉTAPE 5 / 5</span><h1>Publie tout<br>d'un geste</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/drafts-publish.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Onglet <b>« Brouillons »</b> → bouton <b>« Tout publier »</b>.<br>Et voilà: tout ton stock est en ligne.</div>
+  </section>
+
+  <section class="scene t7">
+    <div class="big">5 minutes.<br><b>70 articles en ligne.</b></div>
+    <div class="cta">finjaro.net</div>
+  </section>
+
+  <div class="progress"><div></div></div>
+
+  <script>
+    const SBC = '<div class="sbc"><span>9:41</span>'
+      + '<svg width="128" height="26" viewBox="0 0 128 26" fill="#101014"><rect x="0" y="14" width="5" height="8" rx="1.5"/><rect x="8" y="10" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="16" rx="1.5"/><rect x="24" y="2" width="5" height="20" rx="1.5"/><path d="M48 10.5a14 14 0 0 1 18 0l-2.6 3a10 10 0 0 0-12.8 0z"/><path d="M52.4 15.5a8 8 0 0 1 9.2 0L57 21z"/><rect x="78" y="4" width="38" height="18" rx="5" fill="none" stroke="#101014" stroke-width="2.4" opacity=".5"/><rect x="81" y="7" width="26" height="12" rx="2.6"/><path d="M119 9v8a5 5 0 0 0 0-8z" opacity=".5"/></svg></div>';
+    document.querySelectorAll('.sbc-slot').forEach((el) => { el.outerHTML = SBC; });
+  </script>
+</body>
+</html>

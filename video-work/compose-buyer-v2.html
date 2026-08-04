@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  /* Vidéo acheteuse v2 — 1080x1920, 80 s. Plus lente et plus explicative que
+     la v1; couvre le fil diversifié, le prix sur demande, Finia, Fin et
+     Services. Même gabarit que compose-v2.html. */
+  :root { --creme:#FAF7F2; --ink:#171B26; --terra:#C25E38; --brass:#E09F3E; --muted:#6B6B6B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; }
+  body { background:var(--creme); font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:var(--ink); }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(90px); }
+  .blob1 { width:700px; height:700px; background:rgba(194,94,56,.14); top:-180px; left:-220px; animation:drift1 80s linear 0s both; }
+  .blob2 { width:640px; height:640px; background:rgba(224,159,62,.16); bottom:-160px; right:-200px; animation:drift2 80s linear 0s both; }
+  @keyframes drift1 { from { transform:translate(0,0) } to { transform:translate(90px,60px) } }
+  @keyframes drift2 { from { transform:translate(0,0) } to { transform:translate(-80px,-70px) } }
+
+  .progress { position:absolute; left:0; bottom:0; height:14px; width:1080px; background:rgba(23,27,38,.08); z-index:50; }
+  .progress > div { height:100%; width:1080px; background:var(--terra); transform-origin:left; animation:prog 80s linear 0s both; }
+  @keyframes prog { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+
+  .scene { position:absolute; inset:0; opacity:0; }
+  .head { position:absolute; top:88px; left:0; width:1080px; text-align:center; padding:0 70px; }
+  .pill { display:inline-block; background:var(--terra); color:#fff; font-weight:800; font-size:34px; letter-spacing:.12em; padding:14px 34px; border-radius:999px; }
+  .pill.brass { background:var(--brass); }
+  h1 { font-size:74px; line-height:1.12; font-weight:800; margin-top:24px; }
+  .say { position:absolute; bottom:60px; left:60px; width:960px; text-align:center;
+         background:rgba(255,255,255,.92); border:2px solid rgba(194,94,56,.25);
+         border-radius:28px; padding:30px 44px; font-size:41px; line-height:1.35;
+         font-weight:600; color:var(--ink); box-shadow:0 18px 44px rgba(23,27,38,.10); }
+  .say b { color:var(--terra); }
+
+  .phone { position:absolute; left:50%; top:440px; width:540px; height:1136px; margin-left:-270px;
+           background:#15151a; border-radius:60px; box-shadow:0 50px 110px rgba(23,27,38,.32); padding:13px; }
+  .sbtn { position:absolute; background:#2c2c33; border-radius:3px; }
+  .sbtn.mute { left:-4px; top:240px; width:6px; height:54px; }
+  .sbtn.volu { left:-4px; top:330px; width:6px; height:96px; }
+  .sbtn.vold { left:-4px; top:444px; width:6px; height:96px; }
+  .sbtn.pwr  { right:-4px; top:352px; width:6px; height:152px; }
+  .phone .screen { position:relative; width:514px; height:1110px; border-radius:48px; overflow:hidden; background:#fff; }
+  .phone .screen::after { content:''; position:absolute; inset:0; z-index:30; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.035) 28%, transparent 44%); }
+  .phone .notch { position:absolute; top:34px; left:50%; width:152px; height:36px; margin-left:-76px; background:#15151a; border-radius:999px; z-index:26; }
+  .shot { position:absolute; inset:0; background:var(--sb,#fff); }
+  .shot img { position:absolute; top:61px; left:0; width:514px; height:1050px; }
+  .sbc { position:absolute; top:0; left:0; right:0; height:61px; z-index:25; display:flex; align-items:center;
+         justify-content:space-between; padding:6px 42px 0 54px; font-size:28px; font-weight:700; color:#101014; }
+  .homebar { position:absolute; bottom:13px; left:50%; width:180px; margin-left:-90px; height:7px; border-radius:4px; background:rgba(16,16,20,.32); z-index:25; }
+  .push { transform:translateX(534px); box-shadow:-26px 0 52px rgba(0,0,0,.22); }
+
+  @keyframes sceneIn { from { opacity:1 } to { opacity:1 } }
+  @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
+  @keyframes fadeOut { from { opacity:1 } to { opacity:0 } }
+  @keyframes rise { from { opacity:0; transform:translateY(46px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes riseCenter { from { opacity:0; transform:translateX(-50%) translateY(46px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+  @keyframes pop  { from { opacity:0; transform:scale(.5) } to { opacity:1; transform:scale(1) } }
+  @keyframes phoneUp { from { opacity:0; transform:translateY(190px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes pushIn  { from { transform:translateX(534px) } to { transform:translateX(0) } }
+  @keyframes pulse { 0%,100% { transform:translateX(-50%) scale(1) } 50% { transform:translateX(-50%) scale(1.05) } }
+
+  /* ---- minutage v2 (80 s) ---- */
+  .b1  { animation:sceneIn .01s linear 0s both, fadeOut .5s ease 5.0s both; }
+  .b1 .logo { position:absolute; top:520px; left:50%; width:340px; height:340px; margin-left:-170px; animation:pop .8s cubic-bezier(.2,1.4,.4,1) .2s both; }
+  .b1 .logo img { width:100%; height:100%; }
+  .b1 .word { position:absolute; top:920px; width:1080px; text-align:center; font-size:120px; font-weight:800; color:var(--terra); animation:rise .7s ease .6s both; }
+  .b1 .tag  { position:absolute; top:1080px; width:1080px; text-align:center; font-size:44px; font-weight:600; color:var(--muted); animation:rise .7s ease .9s both; }
+  .b1 .hook { position:absolute; top:1300px; width:1080px; text-align:center; padding:0 90px; font-size:72px; line-height:1.16; font-weight:800; animation:rise .8s ease 1.8s both; }
+
+  .b2 { animation:fadeIn .5s ease 5.5s both, fadeOut .5s ease 12.5s both; }
+  .b2 .head  { animation:rise .7s ease 5.7s both; }
+  .b2 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 5.9s both; }
+  .b2 .say   { animation:rise .6s ease 6.4s both; }
+
+  .b3 { animation:fadeIn .5s ease 13s both, fadeOut .5s ease 20s both; }
+  .b3 .head  { animation:rise .7s ease 13.2s both; }
+  .b3 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 13.4s both; }
+  .b3 .say   { animation:rise .6s ease 13.9s both; }
+
+  .b4 { animation:fadeIn .5s ease 20.5s both, fadeOut .5s ease 27.5s both; }
+  .b4 .head  { animation:rise .7s ease 20.7s both; }
+  .b4 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 20.9s both; }
+  .b4 .say   { animation:rise .6s ease 21.4s both; }
+
+  .b5 { animation:fadeIn .5s ease 28s both, fadeOut .5s ease 36s both; }
+  .b5 .head  { animation:rise .7s ease 28.2s both; }
+  .b5 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 28.4s both; }
+  .b5 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 32.2s both; }
+  .b5 .say   { animation:rise .6s ease 28.9s both; }
+
+  .b6 { animation:fadeIn .5s ease 36.5s both, fadeOut .5s ease 44.5s both; }
+  .b6 .head  { animation:rise .7s ease 36.7s both; }
+  .b6 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 36.9s both; }
+  .b6 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 40.7s both; }
+  .b6 .say   { animation:rise .6s ease 37.4s both; }
+
+  .b7 { animation:fadeIn .5s ease 45s both, fadeOut .5s ease 52.5s both; }
+  .b7 .head  { animation:rise .7s ease 45.2s both; }
+  .b7 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 45.4s both; }
+  .b7 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 49.2s both; }
+  .b7 .say   { animation:rise .6s ease 45.9s both; }
+
+  .b8 { animation:fadeIn .5s ease 53s both, fadeOut .5s ease 59.5s both; }
+  .b8 .head  { animation:rise .7s ease 53.2s both; }
+  .b8 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 53.4s both; }
+  .b8 .say   { animation:rise .6s ease 53.9s both; }
+
+  .b9 { animation:fadeIn .5s ease 60s both, fadeOut .5s ease 66.5s both; }
+  .b9 .head  { animation:rise .7s ease 60.2s both; }
+  .b9 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 60.4s both; }
+  .b9 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 63.6s both; }
+  .b9 .say   { animation:rise .6s ease 60.9s both; }
+
+  .b10 { animation:fadeIn .5s ease 67s both, fadeOut .5s ease 73.5s both; }
+  .b10 .head  { animation:rise .7s ease 67.2s both; }
+  .b10 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 67.4s both; }
+  .b10 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 70.6s both; }
+  .b10 .say   { animation:rise .6s ease 67.9s both; }
+
+  .b11 { animation:fadeIn .6s ease 74s both; }
+  .b11 .logo { position:absolute; top:480px; left:50%; width:300px; height:300px; margin-left:-150px; animation:pop .8s cubic-bezier(.2,1.4,.4,1) 74.3s both; }
+  .b11 .logo img { width:100%; height:100%; }
+  .b11 .word { position:absolute; top:830px; width:1080px; text-align:center; font-size:110px; font-weight:800; color:var(--terra); animation:rise .7s ease 74.6s both; }
+  .b11 .line { position:absolute; top:990px; width:1080px; text-align:center; padding:0 100px; font-size:56px; line-height:1.25; font-weight:700; animation:rise .7s ease 75.1s both; }
+  .b11 .cta  { position:absolute; top:1250px; left:50%; transform:translateX(-50%); background:var(--terra); color:#fff;
+               font-size:58px; font-weight:800; padding:34px 78px; border-radius:999px; box-shadow:0 24px 60px rgba(194,94,56,.4);
+               animation:riseCenter .7s ease 75.6s both, pulse 2.4s ease 76.6s infinite; }
+  .b11 .sub  { position:absolute; top:1470px; width:1080px; text-align:center; font-size:40px; color:var(--muted); font-weight:600; animation:rise .7s ease 76.1s both; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <section class="scene b1">
+    <div class="logo"><img src="logo.svg" alt=""></div>
+    <div class="word">Finjaro</div>
+    <div class="tag">Au-delà des rêves</div>
+    <div class="hook">Le marché camerounais,<br>dans ta poche —<br>où que tu sois.</div>
+  </section>
+
+  <section class="scene b2">
+    <div class="head"><span class="pill">DÉCOUVRE</span><h1>Des boutiques<br>vérifiées, près de toi</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-home-mix.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Mode, beauté, déco, services… des <b>boutiques vérifiées</b><br>du Cameroun et de la diaspora, au même endroit.</div>
+  </section>
+
+  <section class="scene b3">
+    <div class="head"><span class="pill">LE FIL</span><h1>Chaque boutique<br>a sa place</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-feed-grid.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Le fil mélange <b>toutes les boutiques</b> — tu découvres<br>les petites vendeuses, pas seulement les grandes.</div>
+  </section>
+
+  <section class="scene b4">
+    <div class="head"><span class="pill">NOUVEAU</span><h1>« Prix sur demande » ?<br>Écris à la vendeuse</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-quote.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Un article sans prix affiché ? Un bouton<br><b>« Demander un devis »</b> et la vendeuse te répond.</div>
+  </section>
+
+  <section class="scene b5">
+    <div class="head"><span class="pill">ACHÈTE</span><h1>Choisis ta taille,<br>ta couleur</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-product.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/buyer-product-added.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Photos, tailles, couleurs, avis —<br>tu choisis et tu ajoutes au <b>panier</b>.</div>
+  </section>
+
+  <section class="scene b6">
+    <div class="head"><span class="pill">PAIE SEREINE</span><h1>Rien à payer<br>en ligne</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-cart.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/buyer-checkout.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Tu paies <b>à la livraison</b> ou au retrait en boutique.<br>Aucune carte bancaire demandée.</div>
+  </section>
+
+  <section class="scene b7">
+    <div class="head"><span class="pill">SUIS</span><h1>Ta commande,<br>étape par étape</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-order-done.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/buyer-orders-track.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Validée, préparée, en route, livrée:<br>tu sais <b>toujours où en est</b> ta commande.</div>
+  </section>
+
+  <section class="scene b8">
+    <div class="head"><span class="pill">PARLE</span><h1>Directement<br>avec la vendeuse</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-chat.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Une question sur un article ?<br>Tu écris <b>directement</b> à la vendeuse, dans l'app.</div>
+  </section>
+
+  <section class="scene b9">
+    <div class="head"><span class="pill brass">✨ FINIA</span><h1>Ton assistante<br>shopping</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-finia-open.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/buyer-finia-reply.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">« Trouve-moi une robe wax pour un mariage » —<br><b>Finia</b> cherche dans toutes les boutiques pour toi.</div>
+  </section>
+
+  <section class="scene b10">
+    <div class="head"><span class="pill">ET AUSSI</span><h1>Fin, les vidéos —<br>Services, les pros</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#000000"><img src="shots/buyer-fin.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/buyer-services.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say"><b>Fin</b>: shoppe en vidéo, comme sur TikTok.<br><b>Services</b>: coiffure, ménage, BTP — des pros à domicile.</div>
+  </section>
+
+  <section class="scene b11">
+    <div class="logo"><img src="logo.svg" alt=""></div>
+    <div class="word">Finjaro</div>
+    <div class="line">Achète au pays,<br>où que tu sois.</div>
+    <div class="cta">finjaro.net</div>
+    <div class="sub">Gratuit · Cameroun &amp; diaspora</div>
+  </section>
+
+  <div class="progress"><div></div></div>
+
+  <script>
+    const SBC = '<div class="sbc"><span>9:41</span>'
+      + '<svg width="128" height="26" viewBox="0 0 128 26" fill="#101014"><rect x="0" y="14" width="5" height="8" rx="1.5"/><rect x="8" y="10" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="16" rx="1.5"/><rect x="24" y="2" width="5" height="20" rx="1.5"/><path d="M48 10.5a14 14 0 0 1 18 0l-2.6 3a10 10 0 0 0-12.8 0z"/><path d="M52.4 15.5a8 8 0 0 1 9.2 0L57 21z"/><rect x="78" y="4" width="38" height="18" rx="5" fill="none" stroke="#101014" stroke-width="2.4" opacity=".5"/><rect x="81" y="7" width="26" height="12" rx="2.6"/><path d="M119 9v8a5 5 0 0 0 0-8z" opacity=".5"/></svg></div>';
+    document.querySelectorAll('.sbc-slot').forEach((el) => { el.outerHTML = SBC; });
+  </script>
+</body>
+</html>
