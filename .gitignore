@@ -11,3 +11,6 @@ supabase/.temp
 npm-debug.log*
 dist-admin
 video-work/
+
+# Captures de vérification produites par les tests ponctuels
+test-*.png
