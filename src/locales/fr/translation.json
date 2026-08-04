@@ -820,7 +820,8 @@
     "markShippingHint": "La cliente sera prévenue par notification.",
     "markReadyHint": "La cliente sera prévenue qu'elle peut venir chercher sa commande.",
     "markDeliveredHint": "Clôture la commande — la cliente pourra laisser un avis.",
-    "countryCurrencyHint": "Fixe la devise de tes prix — actuellement {{currency}}."
+    "countryCurrencyHint": "Fixe la devise de tes prix — actuellement {{currency}}.",
+    "bulkFromSingle": "Tu as plusieurs articles différents ? Ajoute-les tous d’un coup"
   },
   "orderStatus": {
     "new": "En attente de validation",

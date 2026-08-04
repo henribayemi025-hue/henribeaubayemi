@@ -820,7 +820,8 @@
     "markDeliveredHint": "Closes the order — the buyer can then leave a review.",
     "actionAddProduct": "Add",
     "actionShare": "Share",
-    "countryCurrencyHint": "Sets the currency of your prices — currently {{currency}}."
+    "countryCurrencyHint": "Sets the currency of your prices — currently {{currency}}.",
+    "bulkFromSingle": "Several different items? Add them all at once"
   },
   "orderStatus": {
     "new": "Awaiting validation",

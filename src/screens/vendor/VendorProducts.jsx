@@ -69,8 +69,13 @@ export default function VendorProducts() {
           <div className="flex items-center gap-2">
             {/* Remplir une boutique se fait par lots, pas article par
                 article — le raccourci doit être aussi visible que le « + ». */}
-            <Link to="/vendor/products/bulk" className="btn-ghost gap-1 px-2 py-1 text-caption">
-              <IconPhotoPlus size={17} /> {t('vendor.bulkShort')}
+            {/* Chip pleine, pas un lien discret: collé au « + » rond, un
+                libellé fin se fait attraper par le pouce à la place du +. */}
+            <Link
+              to="/vendor/products/bulk"
+              className="flex items-center gap-1 rounded-pill border border-teal/30 bg-teal/8 px-3 py-1.5 text-caption font-semibold text-teal"
+            >
+              <IconPhotoPlus size={16} /> {t('vendor.bulkShort')}
             </Link>
             <Link to="/vendor/products/new" aria-label={t('vendor.addProduct')} className="rounded-full bg-teal p-1.5 text-white"><IconPlus size={20} /></Link>
           </div>
