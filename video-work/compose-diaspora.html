@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  /* PUB DIASPORA — 1080x1920, 32 s.
+     Traitement différent des autres vidéos: on ne démontre PAS l'app écran par
+     écran, on raconte une situation. Le téléphone n'apparaît qu'au milieu,
+     quand la solution arrive — avant, on installe le problème (« ils sont
+     là-bas, tu es ici »). Faite pour circuler dans les groupes WhatsApp de la
+     diaspora, donc: lisible sans le son, et un message unique. */
+  :root { --creme:#FAF7F2; --ink:#171B26; --terra:#C25E38; --brass:#E09F3E; --muted:#6B6B6B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; }
+  body { background:var(--creme); font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:var(--ink); }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(90px); }
+  .blob1 { width:760px; height:760px; background:rgba(194,94,56,.16); top:-200px; left:-240px; animation:drift 32s linear 0s both; }
+  .blob2 { width:680px; height:680px; background:rgba(224,159,62,.18); bottom:-180px; right:-220px; animation:drift2 32s linear 0s both; }
+  @keyframes drift { from { transform:translate(0,0) } to { transform:translate(80px,50px) } }
+  @keyframes drift2 { from { transform:translate(0,0) } to { transform:translate(-70px,-60px) } }
+
+  .progress { position:absolute; left:0; bottom:0; height:12px; width:1080px; background:rgba(23,27,38,.08); z-index:50; }
+  .progress > div { height:100%; width:1080px; background:var(--terra); transform-origin:left; animation:prog 32s linear 0s both; }
+  @keyframes prog { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+
+  .scene { position:absolute; inset:0; opacity:0; }
+
+  /* --- Scène « les deux villes »: deux blocs qui se répondent --- */
+  .city { position:absolute; left:0; width:1080px; text-align:center; }
+  .city .where { font-size:44px; font-weight:800; letter-spacing:.16em; color:var(--muted); }
+  .city .what  { font-size:74px; font-weight:800; line-height:1.14; margin-top:18px; padding:0 90px; }
+  .city .what b { color:var(--terra); }
+  .arrow { position:absolute; left:50%; margin-left:-3px; width:6px; background:linear-gradient(180deg, var(--terra), var(--brass)); border-radius:3px; }
+
+  h1 { position:absolute; top:0; left:0; width:1080px; text-align:center; padding:0 70px;
+       font-size:88px; line-height:1.12; font-weight:800; }
+  h1 b { color:var(--terra); }
+  .sub { position:absolute; left:0; width:1080px; text-align:center; padding:0 110px;
+         font-size:48px; line-height:1.34; font-weight:600; color:var(--muted); }
+
+  .phone { position:absolute; left:50%; top:520px; width:500px; height:1052px; margin-left:-250px;
+           background:#15151a; border-radius:56px; box-shadow:0 46px 100px rgba(23,27,38,.34); padding:12px; }
+  .sbtn { position:absolute; background:#2c2c33; border-radius:3px; }
+  .sbtn.volu { left:-4px; top:308px; width:6px; height:88px; }
+  .sbtn.vold { left:-4px; top:414px; width:6px; height:88px; }
+  .sbtn.pwr  { right:-4px; top:328px; width:6px; height:140px; }
+  .screen { position:relative; width:476px; height:1028px; border-radius:44px; overflow:hidden; background:#fff; }
+  .screen::after { content:''; position:absolute; inset:0; z-index:30; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.035) 28%, transparent 44%); }
+  .notch { position:absolute; top:32px; left:50%; width:140px; height:34px; margin-left:-70px; background:#15151a; border-radius:999px; z-index:26; }
+  .shot { position:absolute; inset:0; background:#fff; }
+  .shot img { position:absolute; top:57px; left:0; width:476px; height:971px; }
+  .sbc { position:absolute; top:0; left:0; right:0; height:57px; z-index:25; display:flex; align-items:center;
+         justify-content:space-between; padding:6px 38px 0 50px; font-size:26px; font-weight:700; color:#101014; }
+  .homebar { position:absolute; bottom:12px; left:50%; width:166px; margin-left:-83px; height:6px; border-radius:4px; background:rgba(16,16,20,.32); z-index:25; }
+  .push { transform:translateX(496px); box-shadow:-24px 0 48px rgba(0,0,0,.22); }
+
+  .say { position:absolute; bottom:56px; left:60px; width:960px; text-align:center;
+         background:rgba(255,255,255,.94); border:2px solid rgba(194,94,56,.28);
+         border-radius:30px; padding:30px 46px; font-size:44px; line-height:1.3; font-weight:700;
+         box-shadow:0 18px 44px rgba(23,27,38,.10); }
+  .say b { color:var(--terra); }
+
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  @keyframes fadeOut { from { opacity:1 } to { opacity:0 } }
+  @keyframes sceneIn { from { opacity:1 } to { opacity:1 } }
+  @keyframes rise { from { opacity:0; transform:translateY(46px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes riseCenter { from { opacity:0; transform:translateX(-50%) translateY(46px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+  @keyframes pop { from { opacity:0; transform:scale(.55) } to { opacity:1; transform:scale(1) } }
+  @keyframes phoneUp { from { opacity:0; transform:translateY(170px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes pushIn { from { transform:translateX(496px) } to { transform:translateX(0) } }
+  @keyframes growY { from { height:0 } to { height:210px } }
+  @keyframes pulse { 0%,100% { transform:translateX(-50%) scale(1) } 50% { transform:translateX(-50%) scale(1.05) } }
+
+  /* ---- minutage (32 s) ---- */
+  /* D1 — la situation, 0 → 7 s */
+  .d1 { animation:sceneIn .01s linear 0s both, fadeOut .5s ease 6.5s both; }
+  .d1 .c-here  { top:430px; animation:rise .7s ease .3s both; }
+  .d1 .arrow   { top:760px; height:210px; animation:growY .8s ease 1.4s both; }
+  .d1 .c-there { top:1030px; animation:rise .7s ease 2.2s both; }
+  .d1 .sub     { top:1430px; animation:rise .7s ease 3.4s both; }
+
+  /* D2 — la question, 7 → 12 s */
+  .d2 { animation:fadeIn .5s ease 7s both, fadeOut .5s ease 11.5s both; }
+  .d2 h1  { top:700px; animation:rise .7s ease 7.3s both; }
+  .d2 .sub { top:1120px; animation:rise .7s ease 8.2s both; }
+
+  /* D3 — tu choisis, 12 → 19 s */
+  .d3 { animation:fadeIn .5s ease 12s both, fadeOut .5s ease 18.5s both; }
+  .d3 h1    { top:170px; animation:rise .7s ease 12.3s both; }
+  .d3 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 12.6s both; }
+  .d3 .shot-b { animation:pushIn .6s cubic-bezier(.3,.9,.3,1) 15.6s both; }
+  .d3 .say  { animation:rise .6s ease 13.2s both; }
+
+  /* D4 — ils reçoivent, 19 → 26 s */
+  .d4 { animation:fadeIn .5s ease 19s both, fadeOut .5s ease 25.5s both; }
+  .d4 h1    { top:170px; animation:rise .7s ease 19.3s both; }
+  .d4 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 19.6s both; }
+  .d4 .shot-b { animation:pushIn .6s cubic-bezier(.3,.9,.3,1) 22.6s both; }
+  .d4 .say  { animation:rise .6s ease 20.2s both; }
+
+  /* D5 — clôture, 26 → 32 s */
+  .d5 { animation:fadeIn .6s ease 26s both; }
+  .d5 .logo { position:absolute; top:520px; left:50%; width:280px; height:280px; margin-left:-140px;
+              animation:pop .8s cubic-bezier(.2,1.4,.4,1) 26.3s both; }
+  .d5 .logo img { width:100%; height:100%; }
+  .d5 .word { position:absolute; top:850px; width:1080px; text-align:center; font-size:112px; font-weight:800; color:var(--terra);
+              animation:rise .7s ease 26.6s both; }
+  .d5 .line { position:absolute; top:1010px; width:1080px; text-align:center; padding:0 100px;
+              font-size:60px; line-height:1.2; font-weight:800; animation:rise .7s ease 27.1s both; }
+  .d5 .cta  { position:absolute; top:1280px; left:50%; transform:translateX(-50%); background:var(--terra); color:#fff;
+              font-size:58px; font-weight:800; padding:34px 78px; border-radius:999px; box-shadow:0 24px 60px rgba(194,94,56,.4);
+              animation:riseCenter .7s ease 27.6s both, pulse 2.4s ease 28.6s infinite; }
+  .d5 .sub  { top:1490px; animation:rise .7s ease 28.1s both; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <!-- D1: installer la situation avant de parler de l'app -->
+  <section class="scene d1">
+    <div class="city c-here">
+      <div class="where">TOI, À PARIS</div>
+      <div class="what">Tu penses à eux<br><b>tous les jours.</b></div>
+    </div>
+    <div class="arrow"></div>
+    <div class="city c-there">
+      <div class="where">EUX, À DOUALA</div>
+      <div class="what">Ils t'attendent<br><b>toute l'année.</b></div>
+    </div>
+    <div class="sub">6 000 km. Et l'envie de leur faire plaisir.</div>
+  </section>
+
+  <!-- D2: la question que tout le monde se pose -->
+  <section class="scene d2">
+    <h1>Comment leur offrir<br>quelque chose<br><b>d'ici</b>&nbsp;?</h1>
+    <div class="sub">Sans mandat. Sans intermédiaire. Sans attendre les vacances.</div>
+  </section>
+
+  <!-- D3: tu commandes -->
+  <section class="scene d3">
+    <h1>Tu choisis<br><b>depuis ton canapé</b></h1>
+    <div class="phone">
+      <span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot"><img src="shots/buyer-feed-grid.png"></div>
+        <div class="shot push shot-b"><img src="shots/buyer-product.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Des <b>vraies boutiques camerounaises</b>,<br>vérifiées, dans ton téléphone.</div>
+  </section>
+
+  <!-- D4: ils reçoivent -->
+  <section class="scene d4">
+    <h1>Ils reçoivent<br><b>chez eux</b></h1>
+    <div class="phone">
+      <span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot"><img src="shots/buyer-order-done.png"></div>
+        <div class="shot push shot-b"><img src="shots/buyer-orders-track.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">La vendeuse livre à Douala.<br>Tu suis <b>chaque étape</b> depuis Paris.</div>
+  </section>
+
+  <!-- D5 -->
+  <section class="scene d5">
+    <div class="logo"><img src="logo.svg" alt=""></div>
+    <div class="word">Finjaro</div>
+    <div class="line">Achète au pays,<br>où que tu sois.</div>
+    <div class="cta">finjaro.net</div>
+    <div class="sub">Gratuit · Cameroun &amp; diaspora</div>
+  </section>
+
+  <div class="progress"><div></div></div>
+
+  <script>
+    const SBC = '<div class="sbc"><span>9:41</span>'
+      + '<svg width="128" height="26" viewBox="0 0 128 26" fill="#101014"><rect x="0" y="14" width="5" height="8" rx="1.5"/><rect x="8" y="10" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="16" rx="1.5"/><rect x="24" y="2" width="5" height="20" rx="1.5"/><path d="M48 10.5a14 14 0 0 1 18 0l-2.6 3a10 10 0 0 0-12.8 0z"/><path d="M52.4 15.5a8 8 0 0 1 9.2 0L57 21z"/><rect x="78" y="4" width="38" height="18" rx="5" fill="none" stroke="#101014" stroke-width="2.4" opacity=".5"/><rect x="81" y="7" width="26" height="12" rx="2.6"/><path d="M119 9v8a5 5 0 0 0 0-8z" opacity=".5"/></svg></div>';
+    document.querySelectorAll('.sbc-slot').forEach((el) => { el.outerHTML = SBC; });
+  </script>
+</body>
+</html>

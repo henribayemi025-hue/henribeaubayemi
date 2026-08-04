@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  /* VIDÉO CONFIANCE — « Acheter sans se faire avoir » — 1080x1920, 40 s.
+     Répond au frein n°1 au Cameroun: la peur de l'arnaque. Chaque scène = une
+     objection réelle qu'on entend, suivie de la réponse concrète de l'app.
+     Habillage vert (sécurité) plutôt que terracotta, pour se distinguer des
+     vidéos promotionnelles. */
+  :root { --creme:#FAF7F2; --ink:#171B26; --ok:#2A9D8F; --terra:#C25E38; --muted:#6B6B6B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; }
+  body { background:var(--creme); font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:var(--ink); }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(90px); }
+  .blob1 { width:720px; height:720px; background:rgba(42,157,143,.15); top:-190px; left:-230px; animation:drift 40s linear 0s both; }
+  .blob2 { width:660px; height:660px; background:rgba(42,157,143,.10); bottom:-170px; right:-210px; animation:drift2 40s linear 0s both; }
+  @keyframes drift { from { transform:translate(0,0) } to { transform:translate(75px,50px) } }
+  @keyframes drift2 { from { transform:translate(0,0) } to { transform:translate(-65px,-55px) } }
+
+  .progress { position:absolute; left:0; bottom:0; height:12px; width:1080px; background:rgba(23,27,38,.08); z-index:50; }
+  .progress > div { height:100%; width:1080px; background:var(--ok); transform-origin:left; animation:prog 40s linear 0s both; }
+  @keyframes prog { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+
+  .scene { position:absolute; inset:0; opacity:0; }
+
+  /* L'objection: écrite comme on la dit vraiment, entre guillemets. */
+  .fear { position:absolute; top:150px; left:60px; width:960px; text-align:center;
+          background:rgba(255,255,255,.9); border:3px dashed rgba(23,27,38,.18);
+          border-radius:30px; padding:34px 44px; font-size:50px; line-height:1.28;
+          font-style:italic; font-weight:600; color:var(--muted); }
+  .answer { position:absolute; top:400px; left:0; width:1080px; text-align:center; padding:0 70px;
+            font-size:80px; line-height:1.12; font-weight:800; }
+  .answer b { color:var(--ok); }
+
+  .phone { position:absolute; left:50%; top:640px; width:470px; height:988px; margin-left:-235px;
+           background:#15151a; border-radius:54px; box-shadow:0 44px 96px rgba(23,27,38,.32); padding:12px; }
+  .sbtn { position:absolute; background:#2c2c33; border-radius:3px; }
+  .sbtn.volu { left:-4px; top:290px; width:6px; height:84px; }
+  .sbtn.vold { left:-4px; top:390px; width:6px; height:84px; }
+  .sbtn.pwr  { right:-4px; top:308px; width:6px; height:132px; }
+  .screen { position:relative; width:446px; height:964px; border-radius:42px; overflow:hidden; background:#fff; }
+  .screen::after { content:''; position:absolute; inset:0; z-index:30; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.035) 28%, transparent 44%); }
+  .notch { position:absolute; top:30px; left:50%; width:132px; height:32px; margin-left:-66px; background:#15151a; border-radius:999px; z-index:26; }
+  .shot { position:absolute; inset:0; background:#fff; }
+  .shot img { position:absolute; top:53px; left:0; width:446px; height:911px; }
+  .sbc { position:absolute; top:0; left:0; right:0; height:53px; z-index:25; display:flex; align-items:center;
+         justify-content:space-between; padding:5px 36px 0 46px; font-size:25px; font-weight:700; color:#101014; }
+  .homebar { position:absolute; bottom:11px; left:50%; width:156px; margin-left:-78px; height:6px; border-radius:4px; background:rgba(16,16,20,.32); z-index:25; }
+
+  .say { position:absolute; bottom:54px; left:60px; width:960px; text-align:center;
+         background:rgba(255,255,255,.94); border:2px solid rgba(42,157,143,.32);
+         border-radius:30px; padding:28px 44px; font-size:42px; line-height:1.3; font-weight:700;
+         box-shadow:0 18px 44px rgba(23,27,38,.10); }
+  .say b { color:var(--ok); }
+
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  @keyframes fadeOut { from { opacity:1 } to { opacity:0 } }
+  @keyframes sceneIn { from { opacity:1 } to { opacity:1 } }
+  @keyframes rise { from { opacity:0; transform:translateY(44px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes riseCenter { from { opacity:0; transform:translateX(-50%) translateY(44px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+  @keyframes pop { from { opacity:0; transform:scale(.55) } to { opacity:1; transform:scale(1) } }
+  @keyframes phoneUp { from { opacity:0; transform:translateY(160px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes pulse { 0%,100% { transform:translateX(-50%) scale(1) } 50% { transform:translateX(-50%) scale(1.05) } }
+
+  /* ---- minutage (40 s) ---- */
+  /* S1 — l'accroche, 0 → 6 s */
+  .k1 { animation:sceneIn .01s linear 0s both, fadeOut .5s ease 5.5s both; }
+  .k1 .big { position:absolute; top:640px; left:0; width:1080px; text-align:center; padding:0 80px;
+             font-size:92px; line-height:1.12; font-weight:800; animation:rise .8s ease .3s both; }
+  .k1 .big b { color:var(--ok); }
+  .k1 .sub { position:absolute; top:1080px; left:0; width:1080px; text-align:center; padding:0 110px;
+             font-size:48px; line-height:1.32; font-weight:600; color:var(--muted); animation:rise .8s ease 1.3s both; }
+
+  /* S2 → S5 — une objection par scène */
+  .k2 { animation:fadeIn .5s ease 6s both, fadeOut .5s ease 14s both; }
+  .k2 .fear   { animation:rise .6s ease 6.3s both; }
+  .k2 .answer { animation:rise .6s ease 7.3s both; }
+  .k2 .phone  { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 8s both; }
+  .k2 .say    { animation:rise .6s ease 8.7s both; }
+
+  .k3 { animation:fadeIn .5s ease 14.5s both, fadeOut .5s ease 22.5s both; }
+  .k3 .fear   { animation:rise .6s ease 14.8s both; }
+  .k3 .answer { animation:rise .6s ease 15.8s both; }
+  .k3 .phone  { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 16.5s both; }
+  .k3 .say    { animation:rise .6s ease 17.2s both; }
+
+  .k4 { animation:fadeIn .5s ease 23s both, fadeOut .5s ease 31s both; }
+  .k4 .fear   { animation:rise .6s ease 23.3s both; }
+  .k4 .answer { animation:rise .6s ease 24.3s both; }
+  .k4 .phone  { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 25s both; }
+  .k4 .say    { animation:rise .6s ease 25.7s both; }
+
+  /* S5 — l'avertissement honnête, 31 → 35.5 s */
+  .k5 { animation:fadeIn .5s ease 31.5s both, fadeOut .5s ease 35s both; }
+  .k5 .warn { position:absolute; top:700px; left:60px; width:960px; text-align:center;
+              background:rgba(224,159,62,.14); border:3px solid rgba(224,159,62,.5);
+              border-radius:30px; padding:40px 48px; font-size:54px; line-height:1.26; font-weight:800;
+              animation:rise .7s ease 31.8s both; }
+  .k5 .warn b { color:#B8860B; }
+  .k5 .sub { position:absolute; top:1130px; left:0; width:1080px; text-align:center; padding:0 100px;
+             font-size:44px; line-height:1.3; font-weight:600; color:var(--muted); animation:rise .7s ease 32.6s both; }
+
+  /* S6 — clôture */
+  .k6 { animation:fadeIn .6s ease 35.5s both; }
+  .k6 .logo { position:absolute; top:560px; left:50%; width:270px; height:270px; margin-left:-135px;
+              animation:pop .8s cubic-bezier(.2,1.4,.4,1) 35.8s both; }
+  .k6 .logo img { width:100%; height:100%; }
+  .k6 .word { position:absolute; top:880px; width:1080px; text-align:center; font-size:108px; font-weight:800; color:var(--terra);
+              animation:rise .7s ease 36.1s both; }
+  .k6 .line { position:absolute; top:1035px; width:1080px; text-align:center; padding:0 100px;
+              font-size:56px; line-height:1.22; font-weight:800; animation:rise .7s ease 36.5s both; }
+  .k6 .cta  { position:absolute; top:1290px; left:50%; transform:translateX(-50%); background:var(--terra); color:#fff;
+              font-size:56px; font-weight:800; padding:32px 74px; border-radius:999px; box-shadow:0 24px 60px rgba(194,94,56,.4);
+              animation:riseCenter .7s ease 37s both, pulse 2.4s ease 38s infinite; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <section class="scene k1">
+    <div class="big">Acheter en ligne<br>sans <b>se faire avoir</b></div>
+    <div class="sub">On sait tous pourquoi tu hésites.<br>Voilà ce que Finjaro fait pour toi.</div>
+  </section>
+
+  <section class="scene k2">
+    <div class="fear">« Et si je paie et que<br>je ne reçois rien ? »</div>
+    <div class="answer">Tu ne paies<br><b>rien en ligne</b></div>
+    <div class="phone">
+      <span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot"><img src="shots/buyer-checkout.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Tu paies <b>à la livraison</b> ou au retrait,<br>quand tu as l'article dans les mains.</div>
+  </section>
+
+  <section class="scene k3">
+    <div class="fear">« Je ne sais pas<br>à qui j'achète. »</div>
+    <div class="answer">Des boutiques<br><b>identifiées</b></div>
+    <div class="phone">
+      <span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot"><img src="shots/buyer-feed-grid.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Nom, ville, note, avis. Les boutiques vérifiées<br>portent un <b>badge bleu</b>.</div>
+  </section>
+
+  <section class="scene k4">
+    <div class="fear">« Et si l'article n'est<br>pas comme sur la photo ? »</div>
+    <div class="answer">Écris-lui<br><b>avant d'acheter</b></div>
+    <div class="phone">
+      <span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot"><img src="shots/buyer-chat.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Pose tes questions, demande une autre photo.<br>La conversation reste <b>dans l'app</b>.</div>
+  </section>
+
+  <section class="scene k5">
+    <div class="warn">La règle d'or&nbsp;:<br><b>ne paie jamais en dehors<br>de l'application.</b></div>
+    <div class="sub">Un vendeur qui te demande un dépôt<br>par un autre canal, c'est une arnaque. Signale-le.</div>
+  </section>
+
+  <section class="scene k6">
+    <div class="logo"><img src="logo.svg" alt=""></div>
+    <div class="word">Finjaro</div>
+    <div class="line">Achète l'esprit<br>tranquille.</div>
+    <div class="cta">finjaro.net</div>
+  </section>
+
+  <div class="progress"><div></div></div>
+
+  <script>
+    const SBC = '<div class="sbc"><span>9:41</span>'
+      + '<svg width="118" height="24" viewBox="0 0 128 26" fill="#101014"><rect x="0" y="14" width="5" height="8" rx="1.5"/><rect x="8" y="10" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="16" rx="1.5"/><rect x="24" y="2" width="5" height="20" rx="1.5"/><path d="M48 10.5a14 14 0 0 1 18 0l-2.6 3a10 10 0 0 0-12.8 0z"/><path d="M52.4 15.5a8 8 0 0 1 9.2 0L57 21z"/><rect x="78" y="4" width="38" height="18" rx="5" fill="none" stroke="#101014" stroke-width="2.4" opacity=".5"/><rect x="81" y="7" width="26" height="12" rx="2.6"/><path d="M119 9v8a5 5 0 0 0 0-8z" opacity=".5"/></svg></div>';
+    document.querySelectorAll('.sbc-slot').forEach((el) => { el.outerHTML = SBC; });
+  </script>
+</body>
+</html>
