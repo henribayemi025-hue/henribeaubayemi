@@ -65,6 +65,7 @@ const Landing = lazyWithReload(() => import('../landing/Landing'));
 const VendorDashboard = lazyWithReload(() => import('./screens/vendor/VendorDashboard'));
 const VendorProducts = lazyWithReload(() => import('./screens/vendor/VendorProducts'));
 const VendorProductEdit = lazyWithReload(() => import('./screens/vendor/VendorProductEdit'));
+const VendorProductsBulk = lazyWithReload(() => import('./screens/vendor/VendorProductsBulk'));
 const VendorOrders = lazyWithReload(() => import('./screens/vendor/VendorOrders'));
 const VendorMessages = lazyWithReload(() => import('./screens/vendor/VendorMessages'));
 const VendorReels = lazyWithReload(() => import('./screens/vendor/VendorReels'));
@@ -128,6 +129,9 @@ export default function App() {
                     <Route path="/vendor" element={<RequireAuth><VendorLayout /></RequireAuth>}>
                       <Route index element={<VendorDashboard />} />
                       <Route path="products" element={<VendorProducts />} />
+                      {/* Avant products/:id — sinon "bulk" serait pris pour
+                          un identifiant d'article. */}
+                      <Route path="products/bulk" element={<VendorProductsBulk />} />
                       <Route path="products/:id" element={<VendorProductEdit />} />
                       <Route path="orders" element={<VendorOrders />} />
                       <Route path="messages" element={<VendorMessages />} />
