@@ -666,7 +666,7 @@
     "bulkFilled": "Finia a rempli ce qu’elle a pu.",
     "bulkNothingToFill": "Tous les articles ont déjà un nom.",
     "bulkReadyCount": "{{ready}} prêt(s) sur {{total}}.",
-    "bulkNeedNamePrice": "Aucun article n’a encore un nom ET un prix.",
+    "bulkNeedNamePrice": "Ajoute un nom et un prix pour pouvoir créer.",
     "bulkCreate": "Créer {{count}} article(s)",
     "bulkCreated": "{{count}} article(s) créé(s) en brouillon.",
     "productName": "Nom du produit",

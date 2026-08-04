@@ -42,6 +42,54 @@ export function AuthProvider({ children }) {
     };
   }, [loadProfile]);
 
+  // Reprise de session au réveil de l'app.
+  //
+  // Le jeton d'accès dure 1 h. Sur iPhone, quand Safari est en arrière-plan,
+  // les minuteurs de la bibliothèque sont gelés: au retour, le jeton est
+  // périmé et il faut le renouveler AVANT toute requête. Or à cet instant
+  // précis le réseau mobile n'est pas encore rétabli — le renouvellement part,
+  // échoue, et la session est perdue. C'est ce qui obligeait à se reconnecter
+  // à chaque retour après une heure.
+  //
+  // On reprend donc la main: au réveil (ou au retour du réseau), on renouvelle
+  // nous-mêmes, en réessayant, et seulement quand le navigateur se dit en
+  // ligne. Un échec réseau ne doit jamais valoir une déconnexion.
+  useEffect(() => {
+    let busy = false;
+
+    async function recover() {
+      if (busy || document.visibilityState !== 'visible') return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+      const { data } = await supabase.auth.getSession();
+      const s = data.session;
+      if (!s) return; // vraiment déconnecté: rien à sauver ici
+      // Marge de 60 s: on renouvelle avant l'expiration plutôt qu'après.
+      const expiresAt = (s.expires_at || 0) * 1000;
+      if (expiresAt - Date.now() > 60_000) return;
+
+      busy = true;
+      try {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const { error } = await supabase.auth.refreshSession();
+          if (!error) break;
+          await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+        }
+      } finally {
+        busy = false;
+      }
+    }
+
+    document.addEventListener('visibilitychange', recover);
+    window.addEventListener('online', recover);
+    window.addEventListener('focus', recover);
+    recover();
+    return () => {
+      document.removeEventListener('visibilitychange', recover);
+      window.removeEventListener('online', recover);
+      window.removeEventListener('focus', recover);
+    };
+  }, []);
+
   const value = {
     session,
     user: session?.user || null,
