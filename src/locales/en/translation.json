@@ -93,7 +93,11 @@
     "continueWithGoogle": "Continue with Google",
     "smsLateTitle": "Code not arriving?",
     "smsLateBody": "Some carriers block automated SMS, sometimes for several minutes. No need to wait — you can get in right now another way.",
-    "useEmailInstead": "Use my e-mail instead"
+    "useEmailInstead": "Use my e-mail instead",
+    "phonePasswordHint": "6 characters minimum. Keep it safe — without an e-mail, it can only be recovered by SMS.",
+    "usePasswordInstead": "Use a password (no SMS)",
+    "useSmsCodeInstead": "I'd rather get a code by SMS",
+    "forgotPasswordPhone": "Forgot your password? Get a code by SMS"
   },
   "nav": {
     "home": "Home",

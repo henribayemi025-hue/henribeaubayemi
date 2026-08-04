@@ -93,7 +93,11 @@
     "continueWithGoogle": "Continuer avec Google",
     "smsLateTitle": "Le code n'arrive pas ?",
     "smsLateBody": "Certains opérateurs bloquent les SMS automatiques, parfois plusieurs minutes. Pas la peine d'attendre : tu peux entrer tout de suite autrement.",
-    "useEmailInstead": "Utiliser mon e-mail à la place"
+    "useEmailInstead": "Utiliser mon e-mail à la place",
+    "phonePasswordHint": "6 caractères minimum. Note-le bien : sans e-mail, il se récupère par SMS.",
+    "usePasswordInstead": "Utiliser un mot de passe (sans SMS)",
+    "useSmsCodeInstead": "Je préfère recevoir un code par SMS",
+    "forgotPasswordPhone": "Mot de passe oublié ? Recevoir un code par SMS"
   },
   "nav": {
     "home": "Accueil",

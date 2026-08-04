@@ -60,6 +60,16 @@ export function AuthProvider({ children }) {
     signInWithPhone: (phone, { name, ref } = {}) =>
       supabase.auth.signInWithOtp({ phone, options: { channel: 'sms', data: { name, ...(ref ? { ref } : {}) } } } ),
     verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
+    // Numéro + mot de passe, SANS SMS — la voie principale au Cameroun, où
+    // les opérateurs filtrent les SMS automatiques (constaté en production:
+    // toutes les inscriptions en +237 restaient bloquées). Même principe que
+    // Jumia. Supabase renvoie une session immédiatement tant que la
+    // confirmation du téléphone est désactivée côté projet; si elle est
+    // active, `data.session` est nul et l'appelant bascule sur le code SMS.
+    signUpWithPhonePassword: (phone, password, name, ref) =>
+      supabase.auth.signUp({ phone, password, options: { data: { name, ...(ref ? { ref } : {}) } } }),
+    signInWithPhonePassword: (phone, password) =>
+      supabase.auth.signInWithPassword({ phone, password }),
     // OAuth redirige vers Google puis revient sur cette même URL — pas de
     // deuxième étape à gérer côté client, `onAuthStateChange` (ci-dessus)
     // s'occupe de charger la session au retour.

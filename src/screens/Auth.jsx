@@ -27,7 +27,10 @@ export default function Auth({ consoleMode = false }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp, signInWithGoogle } = useAuth();
+  const {
+    signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp, signInWithGoogle,
+    signUpWithPhonePassword, signInWithPhonePassword,
+  } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
   const [mode, setMode] = useState(refCode && !consoleMode ? 'signup' : 'login');
@@ -40,6 +43,11 @@ export default function Auth({ consoleMode = false }) {
   // Le flux téléphone se déroule en 2 temps: on envoie le code, PUIS on le
   // vérifie — deux écrans, pas un formulaire à choix multiples.
   const [otpSent, setOtpSent] = useState(false);
+  // Le téléphone marche d'abord SANS SMS (numéro + mot de passe). Le code
+  // par SMS reste accessible d'un lien — c'est la seule façon de récupérer un
+  // compte téléphone dont le mot de passe est oublié, puisqu'il n'y a pas
+  // d'e-mail où envoyer un lien de réinitialisation.
+  const [phoneMethod, setPhoneMethod] = useState('password'); // 'password' | 'otp'
   // Certains opérateurs (constaté au Cameroun: MTN/Orange) filtrent les SMS
   // automatiques venus de l'étranger — le serveur SMS dit « envoyé » et rien
   // n'arrive jamais. Sans porte de sortie, la personne attend indéfiniment
@@ -74,6 +82,40 @@ export default function Auth({ consoleMode = false }) {
         if (error) throw error;
         if (data.session) navigate(from, { replace: true });
         else toast.success(t('auth.checkEmail'));
+      }
+    } catch (err) {
+      toast.error(err.message === 'Invalid login credentials' ? t('auth.invalidCredentials') : err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Numéro + mot de passe, sans aucun SMS. Si le projet Supabase exige encore
+  // la confirmation du téléphone, l'inscription ne renvoie pas de session —
+  // on bascule alors proprement sur l'écran du code plutôt que de laisser la
+  // personne devant un formulaire qui « ne fait rien ».
+  async function submitPhonePassword(e) {
+    e.preventDefault();
+    const phone = normalizePhone(form.phone);
+    if (!E164_RE.test(phone)) {
+      toast.error(t('auth.phoneInvalid'));
+      return;
+    }
+    setBusy(true);
+    try {
+      if (mode === 'signup') {
+        const { data, error } = await signUpWithPhonePassword(phone, form.password, form.name.trim(), refCode);
+        if (error) throw error;
+        if (data.session) navigate(from, { replace: true });
+        else {
+          setPhoneMethod('otp');
+          setOtpSent(true);
+          toast.success(t('auth.codeSent'));
+        }
+      } else {
+        const { error } = await signInWithPhonePassword(phone, form.password);
+        if (error) throw error;
+        navigate(from, { replace: true });
       }
     } catch (err) {
       toast.error(err.message === 'Invalid login credentials' ? t('auth.invalidCredentials') : err.message);
@@ -156,7 +198,7 @@ export default function Auth({ consoleMode = false }) {
           </button>
           <button
             type="button"
-            onClick={() => { setChannel('phone'); setOtpSent(false); }}
+            onClick={() => { setChannel('phone'); setOtpSent(false); setPhoneMethod('password'); }}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-input py-2 text-caption font-semibold transition ${channel === 'phone' ? 'bg-white text-teal shadow-sm' : 'text-muted'}`}
           >
             <IconPhone size={16} /> {t('auth.byPhone')}
@@ -202,7 +244,14 @@ export default function Auth({ consoleMode = false }) {
               <div className="rounded-card border border-warning/25 bg-warning-bg p-4">
                 <p className="text-caption font-semibold text-ink">{t('auth.smsLateTitle')}</p>
                 <p className="mt-1 text-caption text-muted">{t('auth.smsLateBody')}</p>
-                <Button variant="secondary" className="mt-3" onClick={handleGoogle} loading={busy}>
+                <Button
+                  variant="secondary"
+                  className="mt-3"
+                  onClick={() => { setOtpSent(false); setPhoneMethod('password'); }}
+                >
+                  {t('auth.usePasswordInstead')}
+                </Button>
+                <Button variant="secondary" className="mt-2" onClick={handleGoogle} loading={busy}>
                   <IconBrandGoogleFilled size={18} /> {t('auth.continueWithGoogle')}
                 </Button>
                 <button
@@ -216,7 +265,7 @@ export default function Auth({ consoleMode = false }) {
             )}
           </form>
         ) : (
-          <form onSubmit={sendPhoneCode} className="space-y-3">
+          <form onSubmit={phoneMethod === 'password' ? submitPhonePassword : sendPhoneCode} className="space-y-3">
             {mode === 'signup' && (
               <Field label={t('auth.name')}>
                 {(id) => <TextInput id={id} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required autoComplete="name" />}
@@ -236,7 +285,57 @@ export default function Auth({ consoleMode = false }) {
                 />
               )}
             </Field>
-            <Button type="submit" loading={busy}>{t('auth.sendCode')}</Button>
+            {phoneMethod === 'password' ? (
+              <>
+                <Field label={t('auth.password')} hint={mode === 'signup' ? t('auth.phonePasswordHint') : undefined}>
+                  {(id) => (
+                    <div className="relative">
+                      <TextInput
+                        id={id}
+                        type={showPassword ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        required
+                        minLength={6}
+                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                        className="pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted transition-colors hover:text-ink"
+                        aria-label={showPassword ? t('common.hide') : t('common.show')}
+                      >
+                        {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
+                      </button>
+                    </div>
+                  )}
+                </Field>
+                <Button type="submit" loading={busy}>
+                  {mode === 'signup' ? t('auth.signup') : t('auth.login')}
+                </Button>
+                {/* Seule voie de secours pour un compte téléphone: pas d'e-mail,
+                    donc pas de lien de réinitialisation possible. */}
+                <button
+                  type="button"
+                  onClick={() => setPhoneMethod('otp')}
+                  className="btn-ghost mx-auto block text-caption"
+                >
+                  {mode === 'signup' ? t('auth.useSmsCodeInstead') : t('auth.forgotPasswordPhone')}
+                </button>
+              </>
+            ) : (
+              <>
+                <Button type="submit" loading={busy}>{t('auth.sendCode')}</Button>
+                <button
+                  type="button"
+                  onClick={() => setPhoneMethod('password')}
+                  className="btn-ghost mx-auto block text-caption"
+                >
+                  {t('auth.usePasswordInstead')}
+                </button>
+              </>
+            )}
           </form>
         )
       ) : (
