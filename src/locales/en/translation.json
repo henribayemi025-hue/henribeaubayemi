@@ -824,7 +824,9 @@
     "bulkFillFailed": "Finia couldn't write anything — try again shortly, or type the names yourself.",
     "bulkFilledPartial": "Finia filled {{ok}} of {{total}} items. Run it again for the rest.",
     "bulkAppliedCategory": "Category applied to {{count}} item(s).",
-    "bulkAppliedBoth": "Category and price applied to {{count}} item(s)."
+    "bulkAppliedBoth": "Category and price applied to {{count}} item(s).",
+    "bulkNameHint": "Only fills rows with no name yet, and numbers them: “Girls' pyjamas 1, 2, 3…”. Whatever Finia wrote is never overwritten.",
+    "bulkNamePlaceholder": "e.g. Girls' pyjamas"
   },
   "orderStatus": {
     "new": "Awaiting validation",

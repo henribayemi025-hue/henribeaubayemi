@@ -824,7 +824,9 @@
     "bulkFillFailed": "Finia n’a rien pu écrire — réessaie dans un instant, ou tape les noms toi-même.",
     "bulkFilledPartial": "Finia a rempli {{ok}} article(s) sur {{total}}. Relance pour les autres.",
     "bulkAppliedCategory": "Rayon appliqué à {{count}} article(s).",
-    "bulkAppliedBoth": "Rayon et prix appliqués à {{count}} article(s)."
+    "bulkAppliedBoth": "Rayon et prix appliqués à {{count}} article(s).",
+    "bulkNameHint": "Rempli seulement là où il n’y a pas encore de nom, et numéroté : « Pyjama fille 1, 2, 3… ». Ce que Finia a écrit n’est jamais écrasé.",
+    "bulkNamePlaceholder": "ex. Pyjama fille"
   },
   "orderStatus": {
     "new": "En attente de validation",
