@@ -821,7 +821,9 @@
     "actionAddProduct": "Add",
     "actionShare": "Share",
     "countryCurrencyHint": "Sets the currency of your prices — currently {{currency}}.",
-    "bulkFromSingle": "Several different items? Add them all at once"
+    "bulkFromSingle": "Several different items? Add them all at once",
+    "bulkFillFailed": "Finia couldn't write anything — try again shortly, or type the names yourself.",
+    "bulkFilledPartial": "Finia filled {{ok}} of {{total}} items. Run it again for the rest."
   },
   "orderStatus": {
     "new": "Awaiting validation",

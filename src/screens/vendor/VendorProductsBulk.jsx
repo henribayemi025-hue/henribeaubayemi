@@ -95,6 +95,7 @@ export default function VendorProductsBulk() {
       return;
     }
     setAiDone({ done: 0, total: todo.length });
+    let ok = 0;
     await runPool(todo, AI_POOL, async (row) => {
       try {
         const { data, error } = await supabase.functions.invoke('vendor-copilot', {
@@ -116,6 +117,7 @@ export default function VendorProductsBulk() {
                 }
           )
         );
+        ok += 1;
       } catch {
         /* meilleur effort: cette ligne restera à remplir à la main */
       } finally {
@@ -123,7 +125,12 @@ export default function VendorProductsBulk() {
       }
     });
     setAiDone(null);
-    toast.success(t('vendor.bulkFilled'));
+    // Annoncer « c'est rempli » alors que RIEN ne l'est envoie chercher le
+    // problème au mauvais endroit (on relit ses fiches, on ne comprend pas).
+    // On dit ce qui s'est réellement passé.
+    if (ok === 0) toast.error(t('vendor.bulkFillFailed'));
+    else if (ok < todo.length) toast.info(t('vendor.bulkFilledPartial', { ok, total: todo.length }));
+    else toast.success(t('vendor.bulkFilled'));
   }
 
   function applyToAll() {

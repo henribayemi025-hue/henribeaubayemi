@@ -821,7 +821,9 @@
     "markReadyHint": "La cliente sera prévenue qu'elle peut venir chercher sa commande.",
     "markDeliveredHint": "Clôture la commande — la cliente pourra laisser un avis.",
     "countryCurrencyHint": "Fixe la devise de tes prix — actuellement {{currency}}.",
-    "bulkFromSingle": "Tu as plusieurs articles différents ? Ajoute-les tous d’un coup"
+    "bulkFromSingle": "Tu as plusieurs articles différents ? Ajoute-les tous d’un coup",
+    "bulkFillFailed": "Finia n’a rien pu écrire — réessaie dans un instant, ou tape les noms toi-même.",
+    "bulkFilledPartial": "Finia a rempli {{ok}} article(s) sur {{total}}. Relance pour les autres."
   },
   "orderStatus": {
     "new": "En attente de validation",

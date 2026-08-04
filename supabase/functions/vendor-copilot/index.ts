@@ -65,21 +65,37 @@ function monthStartIso(): string {
   return d.toISOString();
 }
 
-const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=';
+// Mêmes modèles et même garde-temps que finou-chat. Un seul modèle codé en
+// dur laissait la fonction retourner 502 dès que CE modèle refusait (quota,
+// surcharge, retrait) — constaté le 04/08: l'ajout en masse ne remplissait
+// rien pendant que finou-chat, qui a un repli, continuait de répondre.
+const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
+const GEMINI_TIMEOUT_MS = 30_000;
 
 // deno-lint-ignore no-explicit-any
 async function gemini(apiKey: string, body: unknown): Promise<any | null> {
-  const res = await fetch(GEMINI_URL + apiKey, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    console.error('Gemini error', res.status, await res.text());
-    return null;
+  for (const model of MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        },
+      );
+      if (res.ok) return await res.json();
+      const detail = (await res.text()).slice(0, 300);
+      console.error('vendor-copilot: gemini error', model, res.status, detail);
+      // 4xx (hors quota) = refus définitif: réessayer un autre modèle avec la
+      // même requête ne changerait rien.
+      if (res.status < 500 && res.status !== 429) return null;
+    } catch (e) {
+      console.error('vendor-copilot: gemini call failed', model, String(e));
+    }
   }
-  return res.json();
+  return null;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -124,9 +140,14 @@ Deno.serve(async (req: Request) => {
 
     const sb = admin();
 
+    // 20 appels / 5 min suffisaient tant qu'on remplissait une fiche à la
+    // fois; l'ajout en masse en demande un PAR PHOTO (Beau: 72 d'un coup), et
+    // tout ce qui dépassait échouait en silence. Le vrai garde-fou contre la
+    // dépense reste le budget mensuel partagé ci-dessous — celui-ci ne sert
+    // qu'à empêcher l'emballement.
     const { data: allowed } = await sb.rpc('check_rate_limit', {
       p_bucket: `vendor_copilot:u:${user.id}`,
-      p_limit: 20,
+      p_limit: 120,
       p_window_seconds: 300,
     });
     if (allowed === false) return json({ error: 'rate_limited' }, 429);
@@ -170,34 +191,59 @@ Deno.serve(async (req: Request) => {
           `Description: 2-3 warm, concrete sentences (max 60 words), no invented price or availability. ` +
           `Keywords: 3-6 search words. Category: the best-matching id.`;
 
-      const data = await gemini(apiKey, {
+      const geminiBody = (withSchema: boolean) => ({
         contents: [{
           role: 'user',
-          parts: [{ inlineData: { mimeType: mime, data: b64(buf) } }, { text: prompt }],
+          parts: [
+            { inlineData: { mimeType: mime, data: b64(buf) } },
+            {
+              text: withSchema
+                ? prompt
+                // Sans schéma, le format et la liste des ids doivent passer
+                // par le texte de la consigne.
+                : `${prompt}\n\nRéponds UNIQUEMENT en JSON: ` +
+                  `{"title":"","description":"","keywords":[],"category":""}. ` +
+                  `"category" doit être exactement l'un de: ${catIds.join(', ')}.`,
+            },
+          ],
         }],
         generationConfig: {
           temperature: 0.4,
           maxOutputTokens: 400,
           responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'OBJECT',
-            required: ['title', 'description', 'keywords', 'category'],
-            properties: {
-              title: { type: 'STRING' },
-              description: { type: 'STRING' },
-              keywords: { type: 'ARRAY', items: { type: 'STRING' } },
-              category: { type: 'STRING', enum: catIds },
-            },
-          },
+          ...(withSchema
+            ? {
+                responseSchema: {
+                  type: 'OBJECT',
+                  required: ['title', 'description', 'keywords', 'category'],
+                  properties: {
+                    title: { type: 'STRING' },
+                    description: { type: 'STRING' },
+                    keywords: { type: 'ARRAY', items: { type: 'STRING' } },
+                    category: { type: 'STRING', enum: catIds },
+                  },
+                },
+              }
+            : {}),
         },
       });
+      // Repli sans `responseSchema`: l'enum des catégories fait plusieurs
+      // dizaines de valeurs et Gemini refuse parfois le schéma en bloc — dans
+      // ce cas on redemande en JSON libre puis on valide la catégorie
+      // nous-mêmes. Mieux vaut une fiche remplie qu'un 502.
+      let data = await gemini(apiKey, geminiBody(true));
+      if (!data) data = await gemini(apiKey, geminiBody(false));
       if (!data) return json({ error: 'gemini_error' }, 502);
       let parsed: { title: string; description: string; keywords: string[]; category: string };
       try {
-        parsed = JSON.parse(textOf(data));
+        // En JSON libre, le modèle encadre parfois sa réponse de ```json.
+        parsed = JSON.parse(textOf(data).replace(/^```(?:json)?|```$/g, '').trim());
       } catch {
         return json({ error: 'bad_ai_response' }, 502);
       }
+      // La catégorie doit exister en base, que le schéma l'ait contrainte ou
+      // non — sinon la fiche partirait avec un rayon inconnu.
+      if (!catIds.includes(parsed.category)) parsed.category = '';
 
       // Repère de prix HONNÊTE : médiane du catalogue dans la même famille de
       // catégories (la catégorie + ses sœurs sous la même tête). Jamais un
