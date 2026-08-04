@@ -16,6 +16,12 @@ const PRODUCT_COLS =
 const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
 export const HOME_PAGE_SIZE = 24;
 const LIMIT_SHOPS = 12;
+// En dessous de ces seuils, le pays du visiteur n'a pas de quoi remplir son
+// accueil: on complète alors avec l'étranger. Au-dessus, le fil reste
+// strictement local — montrer une robe vendue à Paris à une acheteuse de
+// Douala n'a aucun sens, elle ne pourra jamais la commander.
+const MIN_LOCAL_PRODUCTS = HOME_PAGE_SIZE;
+const MIN_LOCAL_SHOPS = 3;
 
 // Le fil défile à l'infini: on PRIORISE le pays du visiteur sans jamais MASQUER
 // le reste. Plutôt que de fusionner deux requêtes qui se recouvrent (le même
@@ -28,17 +34,10 @@ const LIMIT_SHOPS = 12;
 // des dizaines d'articles à la même milliseconde, et sans départage un
 // `created_at` ex aequo fait réapparaître ou sauter des lignes d'une page à
 // l'autre.
-function productsQuery() {
-  return supabase
-    .from('products')
-    .select(PRODUCT_COLS)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false });
-}
-
+// `allowRest` vaut null tant qu'on ignore la taille du catalogue local: il est
+// tranché au premier chargement, en comptant les articles du pays du visiteur.
 export function initialCursor(country) {
-  return { phase: country ? 'local' : 'rest', local: 0, rest: 0 };
+  return { phase: country ? 'local' : 'rest', local: 0, rest: 0, allowRest: country ? null : true };
 }
 
 const withShopName = (rows) => (rows || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
@@ -47,35 +46,55 @@ const withShopName = (rows) => (rows || []).map((p) => ({ ...p, shop_name: p.sho
 // fin du flux local et le début du flux « ailleurs », pour ne jamais afficher
 // une demi-page à la charnière entre les deux.
 export async function fetchProductPage(country, cursor) {
-  let { phase, local, rest } = cursor || initialCursor(country);
+  let { phase, local, rest, allowRest } = cursor || initialCursor(country);
   const items = [];
 
   while (items.length < HOME_PAGE_SIZE && phase !== 'done') {
     const need = HOME_PAGE_SIZE - items.length;
     const isLocal = phase === 'local';
     const offset = isLocal ? local : rest;
-    let q = productsQuery();
+    // Le compte exact n'est demandé qu'une fois, sur la toute première requête
+    // locale: il sert uniquement à décider si l'étranger a le droit de
+    // compléter le fil.
+    const needsCount = isLocal && allowRest === null;
+    let q = supabase
+      .from('products')
+      .select(PRODUCT_COLS, needsCount ? { count: 'exact' } : undefined)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
     if (isLocal) q = q.eq('shops.country', country);
     else if (country) q = q.not('shops.country', 'eq', country);
 
-    const { data, error } = await q.range(offset, offset + need - 1);
+    const { data, error, count } = await q.range(offset, offset + need - 1);
     if (error) throw error;
+    if (needsCount) allowRest = (count ?? 0) < MIN_LOCAL_PRODUCTS;
     const rows = data || [];
     items.push(...rows);
     if (isLocal) local += rows.length;
     else rest += rows.length;
-    if (rows.length < need) phase = isLocal ? 'rest' : 'done';
+    // Flux local épuisé: on ne bascule vers l'étranger que si le pays du
+    // visiteur était trop pauvre pour se suffire.
+    if (rows.length < need) phase = isLocal && allowRest ? 'rest' : 'done';
   }
 
-  return { items: withShopName(items), cursor: { phase, local, rest }, done: phase === 'done' };
+  return {
+    items: withShopName(items),
+    cursor: { phase, local, rest, allowRest },
+    done: phase === 'done',
+  };
 }
 
-// Fusionne « chez moi » puis « ailleurs » pour les boutiques, qui tiennent en
-// une seule bande horizontale et n'ont donc pas besoin de pagination.
-function mergeLocalFirst(localRows, restRows, limit) {
-  const seen = new Set();
-  const out = [];
-  for (const row of [...(localRows || []), ...(restRows || [])]) {
+// Les boutiques tiennent en une seule bande horizontale, donc pas de
+// pagination. Même règle que le fil: la bande s'intitule « près de chez toi »,
+// on n'y met des boutiques étrangères que si le pays du visiteur n'en compte
+// pas assez pour remplir la bande.
+function localShopsFirst(localRows, restRows, limit) {
+  const localList = localRows || [];
+  if (localList.length >= MIN_LOCAL_SHOPS) return localList.slice(0, limit);
+  const seen = new Set(localList.map((r) => r.id));
+  const out = [...localList];
+  for (const row of restRows || []) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     out.push(row);
@@ -109,7 +128,7 @@ export async function fetchHome(country) {
     products: page?.items || [],
     cursor: page?.cursor || initialCursor(country),
     done: page ? page.done : true,
-    shops: mergeLocalFirst(ok(sLocal), allShops, LIMIT_SHOPS),
+    shops: localShopsFirst(ok(sLocal), allShops, LIMIT_SHOPS),
   };
 }
 
