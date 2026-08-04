@@ -826,7 +826,10 @@
     "bulkAppliedCategory": "Category applied to {{count}} item(s).",
     "bulkAppliedBoth": "Category and price applied to {{count}} item(s).",
     "bulkNameHint": "Only fills rows with no name yet, and numbers them: “Girls' pyjamas 1, 2, 3…”. Whatever Finia wrote is never overwritten.",
-    "bulkNamePlaceholder": "e.g. Girls' pyjamas"
+    "bulkNamePlaceholder": "e.g. Girls' pyjamas",
+    "publishAll": "Publish all ({{count}})",
+    "publishAllConfirm": "Publish {{count}} item(s) at once? They become visible to everyone. You can unpublish any of them later.",
+    "publishedAll": "{{count}} item(s) published."
   },
   "orderStatus": {
     "new": "Awaiting validation",
