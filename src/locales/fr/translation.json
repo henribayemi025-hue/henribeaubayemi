@@ -1201,5 +1201,10 @@
     "rowPaid": "Encaissé",
     "rowPending": "En attente",
     "rowCancelled": "Annulée"
+  },
+  "legal": {
+    "termsTitle": "Conditions générales",
+    "readTerms": "Lire les conditions",
+    "signupConsent": "En créant un compte, vous acceptez nos"
   }
 }

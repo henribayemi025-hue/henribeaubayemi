@@ -59,6 +59,7 @@ const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
 const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazyWithReload(() => import('./screens/Auth'));
+const Terms = lazyWithReload(() => import('./screens/Terms'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
 const Landing = lazyWithReload(() => import('../landing/Landing'));
 
@@ -99,6 +100,9 @@ export default function App() {
                         est une application à part (src/AdminApp.jsx), livrée
                         sur son propre domaine. Voir wrangler.admin.toml. */}
                     <Route path="/landing" element={<Landing />} />
+                    {/* Page légale hors layout: accessible depuis l'écran de
+                        connexion, l'espace acheteur et l'espace vendeur. */}
+                    <Route path="/legal/terms" element={<Terms />} />
 
                     <Route element={<BuyerLayout />}>
                       <Route index element={<Home />} />
