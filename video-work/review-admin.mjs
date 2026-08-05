@@ -34,7 +34,10 @@ const SHOP = { id: 'shop-a', slug: 'atelier-kente', name: 'Atelier Kenté', avat
 const SHOP_STATS = { shop_id: SHOP.id, orders_total: 12, orders_pending: 2, orders_delivered: 9, revenue_fcfa: 340000, products_total: 9, last_order_at: new Date(now - 3600000).toISOString() };
 const SHOP_ORDER = { id: 'so-1', order_no: '1042', status: 'delivered', total_fcfa: 30000, created_at: new Date(now - 86400000).toISOString(), buyer_name: 'Test Acheteuse', delivery_method: 'delivery' };
 
-const USER_ROW = { id: 'user-2', name: 'Cliente Test', phone: '+237677889900', city: 'Yaoundé', country: 'CM', is_vendor: false, is_admin: false, is_suspended: false, report_count: 0, created_at: new Date(now - 30 * 86400000).toISOString(), referral_code: 'ABC123' };
+// deletion_requested_at/reason renseignés: couvre la fiche « suppression de
+// compte » (badge + encart rouge + bouton "marquer comme traité") ajoutée
+// pour la demande d'effacement (CGU art. 20).
+const USER_ROW = { id: 'user-2', name: 'Cliente Test', phone: '+237677889900', city: 'Yaoundé', country: 'CM', is_vendor: false, is_admin: false, is_suspended: false, report_count: 0, created_at: new Date(now - 30 * 86400000).toISOString(), referral_code: 'ABC123', deletion_requested_at: new Date(now - 3600000).toISOString(), deletion_reason: 'Je n’utilise plus l’application' };
 
 const ORDER = { id: 'ao-1', order_no: '1050', status: 'shipped', total_fcfa: 22000, created_at: new Date(now - 3600000).toISOString(), buyer_name: 'Test Acheteuse', buyer_phone: '+237699000000', delivery_method: 'delivery', city: 'Douala', cancel_reason: null, shops: { name: SHOP.name }, order_items: [{ name: 'Robe wax', qty: 1 }] };
 
@@ -84,7 +87,14 @@ await page.route('**/rest/v1/**', (route) => {
   const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
   const params = url.searchParams;
   let rows = [];
-  if (table === 'profiles') rows = params.get('id')?.includes(USER_ID) || !params.get('id') ? [PROFILE] : [USER_ROW];
+  // AdminUsers charge TOUS les profils sans filtre id — un mock qui ne
+  // renvoyait que [PROFILE] dans ce cas cachait la seconde utilisatrice
+  // (celle avec une demande de suppression) de la liste des Comptes.
+  if (table === 'profiles') {
+    if (params.get('id')?.includes(USER_ID)) rows = [PROFILE];
+    else if (!params.get('id')) rows = [PROFILE, USER_ROW];
+    else rows = [USER_ROW];
+  }
   else if (table === 'shops') rows = [SHOP];
   else if (table === 'orders') {
     const shopFilter = params.get('shop_id');
@@ -167,6 +177,33 @@ report.push({
   consoleErrors: findings.filter((f) => f.kind === 'console').map((f) => f.text),
   pageErrors: findings.filter((f) => f.kind === 'pageerror').map((f) => f.text),
   suspicious: sheetSuspicious,
+});
+
+// Fiche « demande de suppression de compte » (badge liste + encart rouge +
+// bouton « marquer comme traité ») — même logique que la fiche boutique.
+findings.length = 0;
+let delSuspicious = [];
+try {
+  await page.goto('http://localhost:4803/?s=users', { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.waitForTimeout(800);
+  await page.getByText(USER_ROW.name, { exact: false }).first().click();
+  await page.waitForTimeout(1000);
+  const delBody = await page.locator('body').innerText().catch(() => '');
+  if (!delBody.includes(USER_ROW.deletion_reason)) delSuspicious.push('raison de suppression absente de la fiche');
+  if (/\bundefined\b/.test(delBody)) delSuspicious.push('« undefined » visible');
+  if (/\[object Object\]/.test(delBody)) delSuspicious.push('« [object Object] » visible');
+  const rawKeys = [...delBody.matchAll(/\b[a-z]+(?:\.[a-zA-Z]+){1,4}\b/g)].map((m) => m[0])
+    .filter((s) => /^(admin|becomeVendor)\./.test(s));
+  if (rawKeys.length) delSuspicious.push(`clés i18n non traduites: ${[...new Set(rawKeys)].join(', ')}`);
+  await page.screenshot({ path: `${OUT}/admin__deletion_sheet.png` }).catch(() => {});
+} catch (e) {
+  delSuspicious.push(`échec: ${String(e).slice(0, 200)}`);
+}
+report.push({
+  path: '/?s=users (suppression)', label: 'Fiche demande de suppression (modale)',
+  consoleErrors: findings.filter((f) => f.kind === 'console').map((f) => f.text),
+  pageErrors: findings.filter((f) => f.kind === 'pageerror').map((f) => f.text),
+  suspicious: delSuspicious,
 });
 
 console.log('\n=== REVUE ADMIN ===\n');
