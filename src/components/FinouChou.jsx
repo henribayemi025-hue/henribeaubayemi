@@ -255,7 +255,7 @@ export function FinouChou() {
                   {m.category && !m.products?.length && (
                     <button
                       onClick={() => goCategory(m.category)}
-                      className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+                      className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
                     >
                       {t('finou.seeCategory', { cat: t(`categories.${m.category}`) })}
                     </button>
