@@ -1224,6 +1224,7 @@
   "legal": {
     "termsTitle": "Terms & Conditions",
     "readTerms": "Read the terms",
-    "signupConsent": "By creating an account you accept our"
+    "signupConsent": "By creating an account you accept our",
+    "aboutTitle": "About Finjaro"
   }
 }

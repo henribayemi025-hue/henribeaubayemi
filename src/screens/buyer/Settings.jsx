@@ -149,7 +149,14 @@ export default function Settings() {
             connexion — Réglages est la seule page publique commune à tout le
             monde (visiteuse, acheteuse, vendeuse). Avant, quelqu'un qui ne
             passait jamais par /auth n'avait aucun lien visible vers /legal/terms. */}
-        <section>
+        <section className="space-y-2">
+          <Link
+            to="/a-propos"
+            className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.aboutTitle')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </Link>
           <Link
             to="/legal/terms"
             className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"

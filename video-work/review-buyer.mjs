@@ -122,6 +122,7 @@ const ROUTES = [
   ['/profile/invite', 'Parrainage'],
   ['/profile/help', 'Aide'],
   ['/legal/terms', 'CGU'],
+  ['/a-propos', 'À propos (public)'],
 ];
 
 const report = [];

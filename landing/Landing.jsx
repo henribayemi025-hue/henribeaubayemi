@@ -66,9 +66,14 @@ export default function Landing() {
           {language === 'fr' ? 'Commencer maintenant' : 'Get started now'}
         </Link>
         <p className="mt-6 text-caption text-muted">© {new Date().getFullYear()} Finjaro — {t('common.tagline')}</p>
-        <Link to="/legal/terms" className="mt-1 inline-block text-caption text-teal underline">
-          {t('legal.termsTitle')}
-        </Link>
+        <p className="mt-1 space-x-3">
+          <Link to="/a-propos" className="text-caption text-teal underline">
+            {language === 'fr' ? 'À propos' : 'About'}
+          </Link>
+          <Link to="/legal/terms" className="text-caption text-teal underline">
+            {t('legal.termsTitle')}
+          </Link>
+        </p>
       </footer>
     </div>
   );
