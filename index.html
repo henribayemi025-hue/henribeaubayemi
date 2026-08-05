@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#C25E38" />
+    <!-- Positionnement volontairement général: le ciblage réel (Afrique +
+         diaspora) reste une logique interne au code, pas un texte public. -->
     <meta
       name="description"
-      content="Finjaro — Au-delà des rêves. Marketplace beauté, mode, parfum et décoration d'événement pour l'Afrique et la diaspora."
+      content="Finjaro — Au-delà des rêves. La marketplace mode, beauté, parfum et décoration d'événement : boutiques vérifiées, paiement à la livraison, assistante IA."
     />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Finjaro" />
+    <meta property="og:title" content="Finjaro — Au-delà des rêves" />
+    <meta property="og:description" content="La marketplace mode, beauté, parfum et décoration d'événement : boutiques vérifiées, paiement à la livraison, assistante IA." />
+    <meta property="og:url" content="https://finjaro.net/" />
+    <meta property="og:image" content="https://finjaro.net/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://finjaro.net/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <!-- iOS ignore les icônes SVG: sans ce PNG, « Sur l'écran d'accueil »
          posait une capture de la page au lieu du logo Finjaro. -->
@@ -17,6 +27,19 @@
     <meta name="apple-mobile-web-app-title" content="Finjaro" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Finjaro — Au-delà des rêves</title>
+    <!-- Fiche d'identité lue par Google (et les résumés IA) pour construire
+         un vrai encart de résultat au lieu d'un simple lien bleu. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Finjaro",
+        "url": "https://finjaro.net/",
+        "logo": "https://finjaro.net/icon-512.png",
+        "description": "Finjaro est une marketplace en ligne pour la mode, la beauté, le parfum et la décoration d'événement, avec boutiques vérifiées, paiement à la livraison et assistante d'achat IA.",
+        "email": "fin.finjaro@gmail.com"
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

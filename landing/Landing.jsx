@@ -30,8 +30,8 @@ export default function Landing() {
         </span>
         <h1 className="mt-4 text-[28px] font-semibold leading-tight text-ink">
           {language === 'fr'
-            ? 'La marketplace beauté, mode & déco pour l’Afrique et la diaspora.'
-            : 'The beauty, fashion & decor marketplace for Africa and the diaspora.'}
+            ? 'La marketplace beauté, mode, parfum & déco d’événement.'
+            : 'The beauty, fashion, perfume & event decor marketplace.'}
         </h1>
         <p className="mt-3 text-body text-muted">
           {language === 'fr'
