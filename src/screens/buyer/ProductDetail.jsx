@@ -50,7 +50,11 @@ export default function ProductDetail() {
       .rpc('similar_products', { p_product_id: id, p_limit: 6 })
       .then(({ data }) => {
         if (active && Array.isArray(data)) setSimilar(data);
-      });
+      })
+      // Hors ligne, le `.then` seul partait en rejet non capturé dans la
+      // console. La section reste simplement vide — elle n'a jamais bloqué
+      // la page.
+      .catch(() => {});
     return () => {
       active = false;
     };

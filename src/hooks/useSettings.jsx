@@ -70,13 +70,20 @@ export function SettingsProvider({ children }) {
     if (!detected) return;
     const patch = { country: detected };
     if (!profile.currency) patch.currency = currencyForCountry(detected);
-    supabase.from('profiles').update(patch).eq('id', user.id).then(() => {});
+    // Synchro d'arrière-plan: le réglage est déjà dans localStorage, donc un
+    // échec ne casse rien ici — il empêche seulement de le retrouver sur un
+    // autre appareil. On le trace sans déranger l'utilisatrice.
+    supabase.from('profiles').update(patch).eq('id', user.id)
+      .then(({ error }) => { if (error) console.error('[Settings] pays/devise non synchronisés:', error.message); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile]);
 
   const persist = useCallback(
     (patch) => {
-      if (user) supabase.from('profiles').update(patch).eq('id', user.id).then(() => {});
+      if (user) {
+        supabase.from('profiles').update(patch).eq('id', user.id)
+          .then(({ error }) => { if (error) console.error('[Settings] réglage non synchronisé:', error.message); });
+      }
     },
     [user]
   );

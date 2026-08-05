@@ -637,7 +637,12 @@
     "paymentSuccess": "Payment successful! Thanks for your order.",
     "deliveryZone": "Delivery zone",
     "zoneDays_one": "within {{count}} day",
-    "zoneDays_other": "within {{count}} days"
+    "zoneDays_other": "within {{count}} days",
+    "errProductMissing": "An item in your cart no longer exists. Remove it to continue.",
+    "errProductInactive": "“{{name}}” is no longer for sale. Remove it from your cart.",
+    "errProductOnRequest": "“{{name}}” is price-on-request — please chat with the shop.",
+    "errOutOfStock": "“{{name}}” is no longer available in that quantity.",
+    "errShopUnavailable": "This shop is currently unavailable."
   },
   "vendor": {
     "greeting": "Hello, {{name}}",

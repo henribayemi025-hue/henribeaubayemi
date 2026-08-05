@@ -11,6 +11,7 @@ import { ReelCommentsSheet } from './ReelCommentsSheet';
 import { ShopAvatar } from './ShopAvatar';
 import { Price } from './Price';
 import { track } from '../lib/track';
+import { networkMessage } from '../lib/netError';
 
 // Ombre systématique derrière icônes/texte blancs: une vidéo claire (fond
 // blanc, robe blanche…) faisait disparaître les icônes blanches et le texte
@@ -55,16 +56,24 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     }
   }, [user, reel.id, reel.shop_id]);
 
+  // Le compteur est tenu par la base (trigger trg_reel_like_change, migration
+  // 0043) — comme celui des commentaires et des abonnés. On n'écrit donc PLUS
+  // reels.likes ici: le faire en plus du trigger compterait double. On se
+  // contente d'ajouter/retirer la ligne, et si l'écriture échoue on remet
+  // l'affichage dans son état d'avant plutôt que de laisser un like fantôme
+  // qui disparaîtra au prochain chargement.
   async function toggleLike() {
     if (!user) return requireLogin();
-    if (liked) {
-      setLiked(false); setLikes((n) => Math.max(0, n - 1));
-      await supabase.from('reel_likes').delete().eq('reel_id', reel.id).eq('user_id', user.id);
-      await supabase.from('reels').update({ likes: Math.max(0, likes - 1) }).eq('id', reel.id);
-    } else {
-      setLiked(true); setLikes((n) => n + 1);
-      await supabase.from('reel_likes').insert({ reel_id: reel.id, user_id: user.id });
-      await supabase.from('reels').update({ likes: likes + 1 }).eq('id', reel.id);
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikes((n) => (wasLiked ? Math.max(0, n - 1) : n + 1));
+    const { error } = wasLiked
+      ? await supabase.from('reel_likes').delete().eq('reel_id', reel.id).eq('user_id', user.id)
+      : await supabase.from('reel_likes').insert({ reel_id: reel.id, user_id: user.id });
+    if (error) {
+      setLiked(wasLiked);
+      setLikes((n) => (wasLiked ? n + 1 : Math.max(0, n - 1)));
+      toast.error(networkMessage(error, t));
     }
   }
 
@@ -74,14 +83,17 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     e.preventDefault();
     if (!user) return requireLogin();
     if (!reel.shop_id) return;
-    if (following) {
-      setFollowing(false);
-      await supabase.from('shop_follows').delete().eq('follower_id', user.id).eq('shop_id', reel.shop_id);
-    } else {
-      setFollowing(true);
-      await supabase.from('shop_follows').insert({ follower_id: user.id, shop_id: reel.shop_id });
-      track('follow', reel.shop_id);
+    const wasFollowing = following;
+    setFollowing(!wasFollowing);
+    const { error } = wasFollowing
+      ? await supabase.from('shop_follows').delete().eq('follower_id', user.id).eq('shop_id', reel.shop_id)
+      : await supabase.from('shop_follows').insert({ follower_id: user.id, shop_id: reel.shop_id });
+    if (error) {
+      setFollowing(wasFollowing); // l'abonnement n'a pas pris: on ne le prétend pas
+      toast.error(networkMessage(error, t));
+      return;
     }
+    if (!wasFollowing) track('follow', reel.shop_id);
   }
 
   async function share() {

@@ -101,9 +101,16 @@ export default function BecomeVendor() {
     }
     setBusy(true);
     try {
-      // Keep the application record (stores ID docs when provided, useful for a
-      // future Admin) — but it no longer gates activation.
-      await supabase.from('vendor_applications').insert({ user_id: user.id, ...form });
+      // La candidature ne conditionne plus l'activation, mais c'est elle qui
+      // porte les pièces d'identité et qui alimente « Candidatures vendeur »
+      // dans la console. Si son enregistrement échoue en silence, la boutique
+      // existe et la vérification d'identité n'apparaît nulle part — donc on
+      // regarde l'erreur. Elle reste non bloquante: mieux vaut une boutique
+      // créée sans dossier qu'une inscription refusée à ce stade.
+      const { error: appErr } = await supabase
+        .from('vendor_applications')
+        .insert({ user_id: user.id, ...form });
+      if (appErr) console.error('[BecomeVendor] candidature non enregistrée:', appErr.message);
       // Create the shop immediately: the user becomes a vendor right away, even
       // without an ID. is_verified stays false until the 4 badge conditions hold.
       const slug = `${slugify(form.shop_name)}-${Math.random().toString(36).slice(2, 6)}`;

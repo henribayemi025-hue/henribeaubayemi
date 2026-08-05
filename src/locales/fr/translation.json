@@ -637,7 +637,12 @@
     "paymentSuccess": "Paiement réussi ! Merci pour ta commande.",
     "deliveryZone": "Zone de livraison",
     "zoneDays_one": "sous {{count}} jour",
-    "zoneDays_other": "sous {{count}} jours"
+    "zoneDays_other": "sous {{count}} jours",
+    "errProductMissing": "Un article de ton panier n'existe plus. Retire-le pour continuer.",
+    "errProductInactive": "« {{name}} » n'est plus en vente. Retire-le de ton panier.",
+    "errProductOnRequest": "« {{name}} » est à prix sur demande : passe par la conversation avec la boutique.",
+    "errOutOfStock": "« {{name}} » n'est plus disponible en quantité suffisante.",
+    "errShopUnavailable": "Cette boutique n'est plus disponible pour le moment."
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",
