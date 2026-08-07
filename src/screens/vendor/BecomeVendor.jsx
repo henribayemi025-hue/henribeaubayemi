@@ -292,6 +292,13 @@ export default function BecomeVendor() {
                 <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
                   {t('legal.readTerms')}
                 </Link>
+                {' '}{t('legal.and')}{' '}
+                {/* La vendeuse téléverse une pièce d'identité à cette étape:
+                    c'est précisément là qu'elle doit pouvoir lire ce qu'on en
+                    fait (article 5 de la politique). */}
+                <Link to="/legal/confidentialite" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
+                  {t('legal.privacyTitle')}
+                </Link>
               </span>
             </label>
             {termsErr && <p className="text-caption text-danger">{t('becomeVendor.termsRequired')}</p>}

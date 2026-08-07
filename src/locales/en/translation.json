@@ -1226,6 +1226,7 @@
     "readTerms": "Read the terms",
     "signupConsent": "By creating an account you accept our",
     "aboutTitle": "About Finjaro",
-    "privacyTitle": "Privacy Policy"
+    "privacyTitle": "Privacy Policy",
+    "and": "and"
   }
 }
