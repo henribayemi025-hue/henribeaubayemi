@@ -578,11 +578,7 @@
     "copied": "Link copied!",
     "share": "Share my link",
     "invited": "Friends invited",
-    "emptyInvited": "No one yet — share your link to get started!",
-    "friendsGoal": "{{goal}} friends invited",
-    "friendsReward": "€5 / 3,300 FCFA",
-    "vendorsGoal": "{{goal}} active vendors",
-    "vendorsReward": "€50 / 33,000 FCFA"
+    "emptyInvited": "No one yet — share your link to get started!"
   },
   "fin": {
     "forYou": "For you",
