@@ -196,6 +196,7 @@ const fr = {
         'Conformément à la réglementation applicable, notamment au Règlement général sur la protection des données pour les Utilisateurs résidant dans l’Union européenne et à la loi camerounaise n° 2010/012 relative à la cybersécurité et à la cybercriminalité, l’Utilisateur dispose d’un droit d’accès, de rectification, d’effacement, de limitation, d’opposition et de portabilité de ses données. Ces droits s’exercent à l’adresse indiquée à l’article 20.',
         'Certaines données peuvent être transférées à des sous-traitants techniques (hébergement, envoi de messages, paiement, intelligence artificielle) situés hors du pays de résidence de l’Utilisateur, sous réserve de garanties appropriées.',
         'Les échanges entre Acheteurs et Vendeurs peuvent être conservés aux fins de preuve, de sécurité et de traitement des litiges.',
+        'Le détail des traitements (données collectées, finalités, sous-traitants, durées de conservation, droits) figure dans la Politique de confidentialité, accessible à l’adresse finjaro.net/legal/confidentialite, qui fait partie intégrante des présentes Conditions.',
       ],
     },
     {
@@ -428,6 +429,7 @@ const en = {
         'In accordance with applicable regulations, in particular the General Data Protection Regulation for Users resident in the European Union and Cameroonian law no. 2010/012 on cybersecurity and cybercrime, Users have rights of access, rectification, erasure, restriction, objection and portability. These rights are exercised at the address given in section 20.',
         'Some data may be transferred to technical processors (hosting, messaging, payment, artificial intelligence) located outside the User’s country of residence, subject to appropriate safeguards.',
         'Exchanges between Buyers and Sellers may be retained for evidential, security and dispute-handling purposes.',
+        'Full details of the processing (data collected, purposes, processors, retention periods, rights) are set out in the Privacy Policy, available at finjaro.net/legal/confidentialite, which forms an integral part of these Terms.',
       ],
     },
     {

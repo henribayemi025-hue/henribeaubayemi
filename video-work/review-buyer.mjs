@@ -123,6 +123,7 @@ const ROUTES = [
   ['/profile/help', 'Aide'],
   ['/legal/terms', 'CGU'],
   ['/a-propos', 'À propos (public)'],
+  ['/legal/confidentialite', 'Politique de confidentialité (public)'],
 ];
 
 const report = [];

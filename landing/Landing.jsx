@@ -73,6 +73,9 @@ export default function Landing() {
           <Link to="/legal/terms" className="text-caption text-teal underline">
             {t('legal.termsTitle')}
           </Link>
+          <Link to="/legal/confidentialite" className="text-caption text-teal underline">
+            {t('legal.privacyTitle')}
+          </Link>
         </p>
       </footer>
     </div>
