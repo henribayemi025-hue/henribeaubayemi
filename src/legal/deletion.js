@@ -47,8 +47,21 @@ const fr = {
       ],
     },
     {
+      id: 'partielle',
+      title: 'Supprimer seulement certaines données, sans fermer votre compte',
+      body: [
+        'Vous n’êtes pas obligé de supprimer votre compte pour faire effacer une partie de vos données. Plusieurs éléments s’effacent directement depuis l’application :',
+        '• Photo de profil, nom, adresse de livraison, ville : « Profil », puis « Modifier le profil ». Videz le champ concerné et enregistrez.',
+        '• Un article que vous vendez : ouvrez-le depuis « Mes articles » et utilisez l’icône de suppression.',
+        '• Vos favoris et les boutiques que vous suivez : retirez-les depuis la fiche concernée.',
+        '• Les notifications : désactivez-les dans « Réglages », ce qui efface l’identifiant de notification de votre appareil.',
+        `Pour toute autre donnée — un message, un avis, une information que vous ne trouvez pas — écrivez à ${CONTACT_EMAIL} en précisant ce que vous souhaitez faire effacer. Nous répondons dans un délai raisonnable, et au plus tard dans le délai prévu par la réglementation applicable.`,
+        'Dans tous ces cas, votre compte reste ouvert et utilisable.',
+      ],
+    },
+    {
       id: 'supprime',
-      title: 'Ce qui est supprimé',
+      title: 'Ce qui est supprimé quand vous supprimez votre compte',
       body: [
         '• Votre compte et vos identifiants de connexion.',
         '• Votre profil : nom, adresse e-mail, numéro de téléphone, adresse de livraison enregistrée, photo de profil, pays, ville, langue et devise.',
@@ -119,8 +132,21 @@ const en = {
       ],
     },
     {
+      id: 'partielle',
+      title: 'Deleting only some data, without closing your account',
+      body: [
+        'You do not have to delete your account to have part of your data erased. Several items can be removed directly from the app:',
+        '• Profile picture, name, delivery address, city: "Profile", then "Edit profile". Clear the field and save.',
+        '• An item you sell: open it from "My items" and use the delete icon.',
+        '• Your favourites and the shops you follow: remove them from the relevant page.',
+        '• Notifications: turn them off in "Settings", which erases your device’s notification identifier.',
+        `For anything else — a message, a review, information you cannot find — write to ${CONTACT_EMAIL} stating what you want erased. We reply within a reasonable time, and at the latest within the period set by applicable law.`,
+        'In all these cases your account stays open and usable.',
+      ],
+    },
+    {
       id: 'supprime',
-      title: 'What is deleted',
+      title: 'What is deleted when you delete your account',
       body: [
         '• Your account and your sign-in credentials.',
         '• Your profile: name, email address, phone number, saved delivery address, profile picture, country, city, language and currency.',
