@@ -61,6 +61,11 @@ export default function UserProfile() {
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
     { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
     { icon: IconFileText, label: t('legal.termsTitle'), to: '/legal/terms' },
+    // Les CGU étaient listées ici mais pas la politique de confidentialité,
+    // qui n'existait que dans Paramètres: quelqu'un qui cherchait « mes
+    // données » depuis le Profil ne la trouvait pas. Les deux documents se
+    // lisent ensemble, ils sont donc proposés ensemble.
+    { icon: IconFileText, label: t('legal.privacyTitle'), to: '/legal/confidentialite' },
     // Plus de raccourci "Administration" ici: la console est une application
     // séparée, sur son propre domaine. L'app cliente ne laisse même pas
     // deviner qu'elle existe.

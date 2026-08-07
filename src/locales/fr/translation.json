@@ -578,11 +578,7 @@
     "copied": "Lien copié !",
     "share": "Partager mon lien",
     "invited": "Amis invités",
-    "emptyInvited": "Personne pour l'instant — partage ton lien pour commencer !",
-    "friendsGoal": "{{goal}} amis invités",
-    "friendsReward": "5€ / 3 300 FCFA",
-    "vendorsGoal": "{{goal}} vendeurs actifs",
-    "vendorsReward": "50€ / 33 000 FCFA"
+    "emptyInvited": "Personne pour l'instant — partage ton lien pour commencer !"
   },
   "fin": {
     "forYou": "Pour toi",
@@ -1226,6 +1222,7 @@
     "readTerms": "Lire les conditions",
     "signupConsent": "En créant un compte, vous acceptez nos",
     "aboutTitle": "À propos de Finjaro",
-    "privacyTitle": "Politique de confidentialité"
+    "privacyTitle": "Politique de confidentialité",
+    "and": "et"
   }
 }

@@ -427,6 +427,10 @@ export default function Auth({ consoleMode = false }) {
         <p className="mx-auto mt-4 max-w-xs text-center text-caption text-muted">
           {t('legal.signupConsent')}{' '}
           <Link to="/legal/terms" className="font-semibold text-teal underline">{t('legal.termsTitle')}</Link>
+          {' '}{t('legal.and')}{' '}
+          <Link to="/legal/confidentialite" className="font-semibold text-teal underline">
+            {t('legal.privacyTitle')}
+          </Link>
         </p>
       )}
     </div>
