@@ -21,14 +21,46 @@ import { VendorLayout } from './screens/vendor/VendorLayout';
 // only real fix is a fresh index.html with the current build's chunk hashes,
 // so: on an import failure, reload the page once (guarded so a genuinely
 // broken module doesn't reload-loop — it'll surface as a normal error after).
+const CHUNK_RELOAD_KEY = 'finjaro-chunk-reload';
+
+// Le rechargement peut être resservi depuis le cache du service worker —
+// donc le MÊME index.html, avec les mêmes adresses de chunk mortes. On vide
+// la coquille avant de recharger, sinon la tentative de secours ne sert à
+// rien. Sans Cache API (navigateur ancien, mode privé), on recharge quand
+// même: le réseau fera le travail.
+async function dropShellCache() {
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k.startsWith('finjaro-')).map((k) => caches.delete(k)));
+  } catch {
+    /* Cache API indisponible — on continue. */
+  }
+}
+
 function lazyWithReload(factory) {
   return lazy(async () => {
     try {
-      return await factory();
+      const mod = await factory();
+      // Un import qui aboutit prouve qu'on tourne sur un index.html à jour:
+      // on réarme le rechargement pour le PROCHAIN déploiement.
+      //
+      // C'est le correctif du 07/08. Avant, le drapeau était posé une fois
+      // et jamais retiré: la tentative de secours ne valait donc que pour le
+      // premier déploiement rencontré par l'onglet. Une app installée reste
+      // ouverte des jours — au DEUXIÈME déploiement (il y en a eu deux le
+      // 07/08), le rechargement était déjà « consommé » et l'écran partait
+      // droit en erreur. Constaté en vrai: une vendeuse cliquant sur
+      // « Ajouter » depuis son tableau de bord, bloquée sur « Quelque chose
+      // n'a pas fonctionné ».
+      sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+      return mod;
     } catch (err) {
-      const key = 'finjaro-chunk-reload';
-      if (!sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, '1');
+      // Le garde-fou reste: un module réellement cassé ne doit pas faire
+      // boucler la page indéfiniment. Il est simplement remis à zéro à
+      // chaque chargement réussi.
+      if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+        await dropShellCache();
         window.location.reload();
         return new Promise(() => {}); // hold rendering until the reload lands
       }
