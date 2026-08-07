@@ -171,6 +171,13 @@ export default function Settings() {
             <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.privacyTitle')}</span>
             <IconChevronRight size={18} className="text-muted" />
           </Link>
+          <Link
+            to="/suppression-compte"
+            className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.deletionTitle')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </Link>
         </section>
 
         {/* Volontairement discret, en bas — pas un gros bouton rouge en tête
