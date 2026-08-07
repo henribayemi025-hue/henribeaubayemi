@@ -15,13 +15,16 @@ import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
 import { pushNotify } from '../../lib/notify';
+import { networkMessage } from '../../lib/netError';
 
 export default function CheckoutCOD() {
   const { shopId } = useParams();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { items, clearShop } = useCart();
-  const { user, profile } = useAuth();
+  // `user` n'est plus nécessaire ici: c'est le serveur qui identifie
+  // l'acheteuse (auth.uid() dans `place_order`), il ne la prend plus du client.
+  const { profile } = useAuth();
   const { country: geoCountry } = useSettings();
   const toast = useToast();
 
@@ -87,42 +90,54 @@ export default function CheckoutCOD() {
   }
   const valid = required.every((k) => form[k]) && (method === 'pickup' || phoneOk);
 
-  // Create the order + its items. Returns the order row, or null on failure.
-  // `payment_status` defaults to 'cod'; the card flow flips it via the edge fn.
+  // Une commande = UN appel atomique (fonction SQL `place_order`, migration
+  // 0042). Avant, la commande et ses articles partaient en deux requêtes dont
+  // la seconde n'était pas vérifiée: un article supprimé pendant que le panier
+  // dormait dans localStorage, ou une coupure réseau entre les deux, laissait
+  // une commande SANS articles pendant que l'acheteuse lisait « commande
+  // passée ». Le serveur relit aussi les prix lui-même — le panier peut dater
+  // de plusieurs jours, et le total ne doit pas venir du navigateur.
   async function placeOrder(paymentStatus) {
-    const { data: order, error: oErr } = await supabase
-      .from('orders')
-      .insert({
-        buyer_id: user.id,
-        shop_id: shopId,
-        status: 'new',
-        delivery_method: method,
-        subtotal_fcfa: subtotal,
-        delivery_fee_fcfa: deliveryFee,
-        total_fcfa: total,
-        payment_status: paymentStatus,
-        buyer_name: form.name || null,
-        buyer_phone: form.phone || null,
-        address: method === 'delivery' ? form.address : null,
-        city: method === 'delivery' ? (zone ? zone.name : form.city) : null,
-        country: method === 'delivery' ? form.country : null,
-      })
-      .select('id, order_no, shop_id')
-      .single();
-    if (oErr) throw oErr;
-
-    await supabase.from('order_items').insert(
-      shopItems.map((it) => ({
-        order_id: order.id,
+    const { data, error: rpcErr } = await supabase.rpc('place_order', {
+      p_shop_id: shopId,
+      p_method: method,
+      p_payment_status: paymentStatus,
+      p_buyer_name: form.name || null,
+      p_buyer_phone: form.phone || null,
+      p_address: method === 'delivery' ? form.address : null,
+      p_city: method === 'delivery' ? form.city : null,
+      p_country: method === 'delivery' ? form.country : null,
+      p_zone_index: method === 'delivery' && zone ? Math.min(zoneIdx, zones.length - 1) : null,
+      p_items: shopItems.map((it) => ({
         product_id: it.id,
-        // La variante voyage dans le nom — la boutique voit direct
-        // « Robe (XL · Rouge) » et sait quoi préparer.
-        name: it.size || it.color ? `${it.name} (${[it.size, it.color].filter(Boolean).join(' · ')})` : it.name,
-        price_fcfa: it.price_fcfa,
         qty: it.qty,
-      }))
-    );
+        size: it.size || null,
+        color: it.color || null,
+      })),
+    });
+    if (rpcErr) throw rpcErr;
+    const order = Array.isArray(data) ? data[0] : data;
+    if (!order?.id) throw new Error(t('errors.generic'));
     return order;
+  }
+
+  // Les refus de `place_order` arrivent en clair (« insufficient_stock:Robe »).
+  // On les traduit en langage d'acheteuse, avec le nom de l'article fautif.
+  function orderErrorMessage(e) {
+    const raw = e?.message || '';
+    const [code, name] = raw.split(':');
+    const known = {
+      product_missing: 'checkout.errProductMissing',
+      product_inactive: 'checkout.errProductInactive',
+      product_other_shop: 'checkout.errProductMissing',
+      product_on_request: 'checkout.errProductOnRequest',
+      insufficient_stock: 'checkout.errOutOfStock',
+      shop_unavailable: 'checkout.errShopUnavailable',
+      shop_not_found: 'checkout.errShopUnavailable',
+      empty_cart: 'cart.empty',
+    }[code?.trim()];
+    if (known) return t(known, { name: (name || '').trim() });
+    return networkMessage(e, t);
   }
 
   async function notifyOwner(order) {
@@ -142,7 +157,7 @@ export default function CheckoutCOD() {
       clearShop(shopId);
       setPlaced(order.order_no);
     } catch (e) {
-      toast.error(e.message || t('errors.generic'));
+      toast.error(orderErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -160,7 +175,7 @@ export default function CheckoutCOD() {
       clearShop(shopId);
       window.location.href = data.url; // Stripe hosted checkout
     } catch (e) {
-      toast.error(e.message || t('errors.generic'));
+      toast.error(orderErrorMessage(e));
       setPayingCard(false);
     }
   }

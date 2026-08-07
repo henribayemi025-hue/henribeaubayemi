@@ -60,6 +60,8 @@ const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'
 const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazyWithReload(() => import('./screens/Auth'));
 const Terms = lazyWithReload(() => import('./screens/Terms'));
+const About = lazyWithReload(() => import('./screens/About'));
+const Privacy = lazyWithReload(() => import('./screens/Privacy'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
 const Landing = lazyWithReload(() => import('../landing/Landing'));
 
@@ -153,6 +155,10 @@ export default function App() {
                     {/* Page légale hors layout: accessible depuis l'écran de
                         connexion, l'espace acheteur et l'espace vendeur. */}
                     <Route path="/legal/terms" element={<Terms />} />
+                    <Route path="/a-propos" element={<About />} />
+                    {/* URL exigée telle quelle par Google Play et l'App Store:
+                        publique, sans connexion, hors de tout layout privé. */}
+                    <Route path="/legal/confidentialite" element={<Privacy />} />
 
                     <Route element={<BuyerLayout />}>
                       <Route index element={<Home />} />

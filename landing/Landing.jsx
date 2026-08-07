@@ -30,8 +30,8 @@ export default function Landing() {
         </span>
         <h1 className="mt-4 text-[28px] font-semibold leading-tight text-ink">
           {language === 'fr'
-            ? 'La marketplace beauté, mode & déco pour l’Afrique et la diaspora.'
-            : 'The beauty, fashion & decor marketplace for Africa and the diaspora.'}
+            ? 'La marketplace beauté, mode, parfum & déco d’événement.'
+            : 'The beauty, fashion, perfume & event decor marketplace.'}
         </h1>
         <p className="mt-3 text-body text-muted">
           {language === 'fr'
@@ -66,6 +66,17 @@ export default function Landing() {
           {language === 'fr' ? 'Commencer maintenant' : 'Get started now'}
         </Link>
         <p className="mt-6 text-caption text-muted">© {new Date().getFullYear()} Finjaro — {t('common.tagline')}</p>
+        <p className="mt-1 space-x-3">
+          <Link to="/a-propos" className="text-caption text-teal underline">
+            {language === 'fr' ? 'À propos' : 'About'}
+          </Link>
+          <Link to="/legal/terms" className="text-caption text-teal underline">
+            {t('legal.termsTitle')}
+          </Link>
+          <Link to="/legal/confidentialite" className="text-caption text-teal underline">
+            {t('legal.privacyTitle')}
+          </Link>
+        </p>
       </footer>
     </div>
   );

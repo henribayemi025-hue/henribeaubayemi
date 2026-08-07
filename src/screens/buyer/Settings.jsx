@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLanguage, IconCoin, IconBell, IconMail } from '@tabler/icons-react';
+import { IconLanguage, IconCoin, IconBell, IconMail, IconFileText, IconChevronRight, IconAlertTriangle } from '@tabler/icons-react';
 import { useSettings } from '../../hooks/useSettings';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
+import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
+import { TextArea } from '../../components/Field';
 import { CURRENCIES } from '../../lib/currency';
 import { enablePush } from '../../lib/push';
+import { networkMessage } from '../../lib/netError';
 import { supabase } from '../../lib/supabase';
 
 /* global __BUILD_ID__ */
@@ -14,9 +19,40 @@ const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
 
 export default function Settings() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { language, setLanguage, currency, setCurrency } = useSettings();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const toast = useToast();
+
+  // Suppression de compte (droit d'effacement, CGU art. 20) — volontairement
+  // PAS instantanée. C'est une DEMANDE: la base Supabase de Finjaro héberge
+  // aussi d'autres applications sans rapport, sur le même système de
+  // connexion — un DELETE en cascade déclenché par un simple clic serait trop
+  // risqué. La demande est déposée, puis traitée à la main dans la console
+  // admin. Le formulaire (raison à écrire, case à cocher) sert aussi de
+  // friction volontaire: on ne supprime pas un compte d'un tap distrait.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  async function requestDeletion() {
+    if (!user || !deleteConfirmed) return;
+    setDeleteBusy(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ deletion_requested_at: new Date().toISOString(), deletion_reason: deleteReason.trim() || null })
+      .eq('id', user.id);
+    setDeleteBusy(false);
+    if (error) {
+      toast.error(networkMessage(error, t));
+      return;
+    }
+    setDeleteOpen(false);
+    toast.success(t('profile.deleteAccountSent'));
+    await signOut();
+    navigate('/auth', { replace: true });
+  }
 
   async function turnOnPush() {
     const res = await enablePush(user?.id);
@@ -109,8 +145,85 @@ export default function Settings() {
           </section>
         )}
 
+        {/* Seul accès aux CGU qui ne dépend ni d'un compte ni de l'écran de
+            connexion — Réglages est la seule page publique commune à tout le
+            monde (visiteuse, acheteuse, vendeuse). Avant, quelqu'un qui ne
+            passait jamais par /auth n'avait aucun lien visible vers /legal/terms. */}
+        <section className="space-y-2">
+          <Link
+            to="/a-propos"
+            className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.aboutTitle')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </Link>
+          <Link
+            to="/legal/terms"
+            className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.termsTitle')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </Link>
+          <Link
+            to="/legal/confidentialite"
+            className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.privacyTitle')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </Link>
+        </section>
+
+        {/* Volontairement discret, en bas — pas un gros bouton rouge en tête
+            d'écran. Seul un compte réel peut être supprimé. */}
+        {user && (
+          <p className="pt-2 text-center">
+            <button
+              onClick={() => setDeleteOpen(true)}
+              className="text-caption text-muted underline decoration-dotted"
+            >
+              {t('profile.deleteAccount')}
+            </button>
+          </p>
+        )}
+
         <p className="pt-2 text-center text-caption text-muted">Finjaro · build {BUILD_ID}</p>
       </div>
+
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title={t('profile.deleteAccountTitle')}>
+        <div className="space-y-4">
+          <div className="flex items-start gap-2 rounded-card border border-hairline bg-warning-bg p-3">
+            <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-brass" />
+            <p className="text-caption text-muted">{t('profile.deleteAccountWarning')}</p>
+          </div>
+
+          <TextArea
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            placeholder={t('profile.deleteAccountReasonPlaceholder')}
+            rows={3}
+          />
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={deleteConfirmed}
+              onChange={(e) => setDeleteConfirmed(e.target.checked)}
+              className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+            />
+            <span className="text-caption text-ink">{t('profile.deleteAccountCheckbox')}</span>
+          </label>
+
+          <Button
+            variant="secondary"
+            disabled={!deleteConfirmed || deleteBusy}
+            loading={deleteBusy}
+            className="!border-danger/50 !text-danger"
+            onClick={requestDeletion}
+          >
+            {t('profile.deleteAccountConfirm')}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

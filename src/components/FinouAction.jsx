@@ -46,7 +46,7 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
     return (
       <button
         onClick={() => { onNavigate?.(); requireLogin(); }}
-        className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconLogin2 size={14} /> {t('finou.actionLogin')}
       </button>
@@ -58,7 +58,7 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
       return (
         <button
           onClick={() => { onNavigate?.(); requireLogin(); }}
-          className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
         >
           <IconLogin2 size={14} /> {t('finou.actionLogin')}
         </button>
@@ -92,7 +92,7 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
     return (
       <button
         onClick={() => { onNavigate?.(); navigate('/become-vendor'); }}
-        className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
       </button>
@@ -104,7 +104,7 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
     return (
       <button
         onClick={shareShop}
-        className="mt-2 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconShare2 size={14} /> {t('finou.actionShareShop')}
       </button>
@@ -116,7 +116,7 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
     return (
       <button
         onClick={onStartDelete}
-        className="mt-2 inline-flex items-center gap-1 rounded-pill border border-danger px-3 py-1 text-caption font-semibold text-danger"
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill border border-danger px-3 py-1 text-caption font-semibold text-danger"
       >
         <IconTrash size={14} /> {t('finouDelete.title')}
       </button>

@@ -6,12 +6,15 @@ import { Spinner } from './Spinner';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
+import { useToast } from '../hooks/useToast';
 import { timeAgo } from '../lib/format';
+import { networkMessage } from '../lib/netError';
 
 // Comments on a reel, shown in a bottom-sheet (not a DM). Public read; posting
 // requires login. Optimistically appends and bumps the local count via onAdded.
 export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
   const { t, i18n } = useTranslation();
+  const toast = useToast();
   const { user } = useAuth();
   const { requireLogin } = useUI();
   const [comments, setComments] = useState([]);
@@ -49,7 +52,12 @@ export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
       .select('id, body, created_at, user_id, profiles!reel_comments_profile_fk(name)')
       .single();
     setSending(false);
-    if (error) return;
+    // Un échec silencieux laissait croire que le commentaire était publié: le
+    // texte restait dans le champ, sans un mot d'explication.
+    if (error) {
+      toast.error(networkMessage(error, t));
+      return;
+    }
     setComments((c) => [data, ...c]);
     setText('');
     onAdded?.();

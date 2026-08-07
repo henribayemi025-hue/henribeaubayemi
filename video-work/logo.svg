@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Le « F » est dessiné en formes, pas en <text>: un texte dépend des
+       polices installées sur l'appareil qui affiche l'icône, et rendait donc
+       un logo légèrement différent (et mal centré) d'un téléphone à l'autre.
+       Ici la géométrie est fixe — même dessin partout, à toutes les tailles.
+       L'encre occupe x 21→40 et y 14→50; le point doré à droite rééquilibre
+       optiquement la barre du F. -->
+  <rect width="64" height="64" rx="14" fill="#C25E38"/>
+  <g fill="#FFFFFF">
+    <rect x="21" y="14" width="9" height="36" rx="1.5"/>
+    <rect x="21" y="14" width="19" height="9" rx="1.5"/>
+    <rect x="21" y="28" width="15" height="9" rx="1.5"/>
+  </g>
+  <circle cx="47" cy="17.5" r="5.5" fill="#E09F3E"/>
+</svg>

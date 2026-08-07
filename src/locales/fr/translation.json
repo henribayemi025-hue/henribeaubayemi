@@ -560,7 +560,14 @@
     "displayName": "Nom affiché",
     "savedAddress": "Adresse de livraison enregistrée",
     "savedAddressHint": "Pré-remplit tes prochaines commandes — tu peux toujours la changer au moment de commander.",
-    "savedCity": "Ville"
+    "savedCity": "Ville",
+    "deleteAccount": "Supprimer mon compte",
+    "deleteAccountTitle": "Supprimer ton compte",
+    "deleteAccountWarning": "Cette action est irréversible. Ta boutique (si tu en as une), tes commandes, tes messages et toutes tes données personnelles seront supprimés. Conformément à nos CGU (art. 20), ta demande est traitée par l'équipe Finjaro — tu recevras une confirmation. Tu peux aussi écrire directement à fin.finjaro@gmail.com.",
+    "deleteAccountReasonPlaceholder": "Dis-nous pourquoi, si tu veux bien (facultatif)",
+    "deleteAccountCheckbox": "Je comprends que cette action est définitive et je confirme vouloir supprimer mon compte.",
+    "deleteAccountConfirm": "Supprimer définitivement",
+    "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter."
   },
   "referral": {
     "navLabel": "Inviter des amis",
@@ -637,7 +644,12 @@
     "paymentSuccess": "Paiement réussi ! Merci pour ta commande.",
     "deliveryZone": "Zone de livraison",
     "zoneDays_one": "sous {{count}} jour",
-    "zoneDays_other": "sous {{count}} jours"
+    "zoneDays_other": "sous {{count}} jours",
+    "errProductMissing": "Un article de ton panier n'existe plus. Retire-le pour continuer.",
+    "errProductInactive": "« {{name}} » n'est plus en vente. Retire-le de ton panier.",
+    "errProductOnRequest": "« {{name}} » est à prix sur demande : passe par la conversation avec la boutique.",
+    "errOutOfStock": "« {{name}} » n'est plus disponible en quantité suffisante.",
+    "errShopUnavailable": "Cette boutique n'est plus disponible pour le moment."
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",
@@ -1100,7 +1112,8 @@
       "all": "Tous",
       "vendors": "Vendeuses",
       "suspended": "Suspendus",
-      "admins": "Admins"
+      "admins": "Admins",
+      "deletionRequested": "Suppr. demandée"
     },
     "suspendAccount": "Suspendre le compte",
     "reactivateAccount": "Réactiver le compte",
@@ -1152,7 +1165,12 @@
     "pendingReportsBanner": "{{count}} signalement(s) à traiter",
     "pendingAppsBanner": "{{count}} candidature(s) vendeur en attente",
     "revenueHint": "Commandes livrées",
-    "followers": "Abonnés"
+    "followers": "Abonnés",
+    "deletionRequested": "Suppr. demandée",
+    "deletionRequestedOn": "Suppression demandée {{when}}",
+    "deletionManualHint": "Après vérification, supprime le compte via Authentication → Users dans le tableau de bord Supabase, puis marque cette demande comme traitée ici.",
+    "deletionMarkDone": "Marquer comme traité (compte supprimé)",
+    "deletionMarkedDone": "Demande marquée comme traitée."
   },
   "troc": {
     "title": "Évaluer un troc",
@@ -1206,6 +1224,8 @@
   "legal": {
     "termsTitle": "Conditions générales",
     "readTerms": "Lire les conditions",
-    "signupConsent": "En créant un compte, vous acceptez nos"
+    "signupConsent": "En créant un compte, vous acceptez nos",
+    "aboutTitle": "À propos de Finjaro",
+    "privacyTitle": "Politique de confidentialité"
   }
 }

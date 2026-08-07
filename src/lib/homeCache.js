@@ -65,25 +65,39 @@ export async function fetchProductPage(country, cursor) {
     const isLocal = phase === 'local';
     const offset = isLocal ? local : rest;
 
-    // Le compte exact n'est demandé qu'une fois, sur la toute première requête
-    // locale: il sert uniquement à décider si l'étranger a le droit de
-    // compléter le fil.
-    if (isLocal && allowRest === null) {
-      const { data: total, error: countErr } = await supabase.rpc('home_feed_count', { p_country: country });
-      if (countErr) throw countErr;
-      // Hors du Cameroun, la suite du fil est acquise: on la donne sans même
-      // regarder le compte local.
-      allowRest = country !== HOME_COUNTRY || (total ?? 0) < MIN_LOCAL_PRODUCTS;
-    }
-
-    const { data, error } = await supabase.rpc('home_feed_page', {
+    const pageCall = supabase.rpc('home_feed_page', {
       p_local_country: isLocal ? country : null,
       p_exclude_country: isLocal ? null : country,
       p_limit: need,
       p_offset: offset,
     });
-    if (error) throw error;
-    const rows = data || [];
+
+    // Le compte exact n'est demandé qu'une fois, sur la toute première requête
+    // locale: il sert uniquement à décider si l'étranger a le droit de
+    // compléter le fil. Son résultat NE change RIEN aux paramètres de la page
+    // locale ci-dessus — donc plus besoin de l'attendre avant de lancer la
+    // page: les deux partent EN MÊME TEMPS. Avant, ils s'enchaînaient (deux
+    // allers-retours réseau l'un après l'autre), ce qui doublait la latence
+    // du tout premier chargement de l'accueil. Mesuré en conditions réelles
+    // (Cloudflare Web Vitals): LCP à 100% "Poor" — la base est à Paris
+    // (eu-west-3), et deux allers-retours séquentiels depuis une connexion
+    // camerounaise se voient beaucoup plus qu'un seul.
+    let pageRes;
+    if (isLocal && allowRest === null) {
+      const [countRes, pRes] = await Promise.all([
+        supabase.rpc('home_feed_count', { p_country: country }),
+        pageCall,
+      ]);
+      if (countRes.error) throw countRes.error;
+      // Hors du Cameroun, la suite du fil est acquise: on la donne sans même
+      // regarder le compte local.
+      allowRest = country !== HOME_COUNTRY || (countRes.data ?? 0) < MIN_LOCAL_PRODUCTS;
+      pageRes = pRes;
+    } else {
+      pageRes = await pageCall;
+    }
+    if (pageRes.error) throw pageRes.error;
+    const rows = pageRes.data || [];
     items.push(...rows);
     if (isLocal) local += rows.length;
     else rest += rows.length;

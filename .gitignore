@@ -10,7 +10,13 @@ dist-ssr
 supabase/.temp
 npm-debug.log*
 dist-admin
-video-work/
+# Atelier vidéo: on IGNORE les gros fichiers produits (captures PNG, rendus
+# MP4, aperçus JPEG) mais on VERSIONNE les scripts et les compositions — sans
+# eux, chaque session devrait réécrire tout le pipeline de zéro.
+video-work/*
+!video-work/*.mjs
+!video-work/*.html
+!video-work/logo.svg
 
 # Captures de vérification produites par les tests ponctuels
 test-*.png

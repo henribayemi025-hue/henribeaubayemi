@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  /* Vidéo vendeuse v2 — 1080x1920, 78 s. Plus lente et plus « parlante » que
+     la v1 (retour de Beau: plusieurs personnes ne comprenaient pas), et
+     couvrant les nouveautés: ajout en masse, Finia, prix sur demande,
+     Tout publier, fil diversifié. Rendu par render.mjs (currentTime piloté). */
+  :root { --creme:#FAF7F2; --ink:#171B26; --terra:#C25E38; --brass:#E09F3E; --muted:#6B6B6B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1080px; height:1920px; overflow:hidden; }
+  body { background:var(--creme); font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:var(--ink); }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(90px); }
+  .blob1 { width:700px; height:700px; background:rgba(194,94,56,.14); top:-180px; left:-220px; animation:drift1 78s linear 0s both; }
+  .blob2 { width:640px; height:640px; background:rgba(224,159,62,.16); bottom:-160px; right:-200px; animation:drift2 78s linear 0s both; }
+  @keyframes drift1 { from { transform:translate(0,0) } to { transform:translate(90px,60px) } }
+  @keyframes drift2 { from { transform:translate(0,0) } to { transform:translate(-80px,-70px) } }
+
+  .progress { position:absolute; left:0; bottom:0; height:14px; width:1080px; background:rgba(23,27,38,.08); z-index:50; }
+  .progress > div { height:100%; width:1080px; background:var(--terra); transform-origin:left; animation:prog 78s linear 0s both; }
+  @keyframes prog { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+
+  .scene { position:absolute; inset:0; opacity:0; }
+  .head { position:absolute; top:88px; left:0; width:1080px; text-align:center; padding:0 70px; }
+  .pill { display:inline-block; background:var(--terra); color:#fff; font-weight:800; font-size:34px; letter-spacing:.12em; padding:14px 34px; border-radius:999px; }
+  .pill.brass { background:var(--brass); }
+  h1 { font-size:74px; line-height:1.12; font-weight:800; margin-top:24px; }
+  /* v2: la légende devient une vraie explication sur 2-3 lignes. */
+  .say { position:absolute; bottom:60px; left:60px; width:960px; text-align:center;
+         background:rgba(255,255,255,.92); border:2px solid rgba(194,94,56,.25);
+         border-radius:28px; padding:30px 44px; font-size:41px; line-height:1.35;
+         font-weight:600; color:var(--ink); box-shadow:0 18px 44px rgba(23,27,38,.10); }
+  .say b { color:var(--terra); }
+
+  .phone { position:absolute; left:50%; top:440px; width:540px; height:1136px; margin-left:-270px;
+           background:#15151a; border-radius:60px; box-shadow:0 50px 110px rgba(23,27,38,.32); padding:13px; }
+  .sbtn { position:absolute; background:#2c2c33; border-radius:3px; }
+  .sbtn.mute { left:-4px; top:240px; width:6px; height:54px; }
+  .sbtn.volu { left:-4px; top:330px; width:6px; height:96px; }
+  .sbtn.vold { left:-4px; top:444px; width:6px; height:96px; }
+  .sbtn.pwr  { right:-4px; top:352px; width:6px; height:152px; }
+  .phone .screen { position:relative; width:514px; height:1110px; border-radius:48px; overflow:hidden; background:#fff; }
+  .phone .screen::after { content:''; position:absolute; inset:0; z-index:30; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.035) 28%, transparent 44%); }
+  .phone .notch { position:absolute; top:34px; left:50%; width:152px; height:36px; margin-left:-76px; background:#15151a; border-radius:999px; z-index:26; }
+  .shot { position:absolute; inset:0; background:var(--sb,#fff); }
+  .shot img { position:absolute; top:61px; left:0; width:514px; height:1050px; }
+  .sbc { position:absolute; top:0; left:0; right:0; height:61px; z-index:25; display:flex; align-items:center;
+         justify-content:space-between; padding:6px 42px 0 54px; font-size:28px; font-weight:700; color:#101014; }
+  .homebar { position:absolute; bottom:13px; left:50%; width:180px; margin-left:-90px; height:7px; border-radius:4px; background:rgba(16,16,20,.32); z-index:25; }
+  .push { transform:translateX(534px); box-shadow:-26px 0 52px rgba(0,0,0,.22); }
+
+  @keyframes sceneIn { from { opacity:1 } to { opacity:1 } }
+  @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
+  @keyframes fadeOut { from { opacity:1 } to { opacity:0 } }
+  @keyframes rise { from { opacity:0; transform:translateY(46px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes riseCenter { from { opacity:0; transform:translateX(-50%) translateY(46px) } to { opacity:1; transform:translateX(-50%) translateY(0) } }
+  @keyframes pop  { from { opacity:0; transform:scale(.5) } to { opacity:1; transform:scale(1) } }
+  @keyframes phoneUp { from { opacity:0; transform:translateY(190px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes pushIn  { from { transform:translateX(534px) } to { transform:translateX(0) } }
+  @keyframes pulse { 0%,100% { transform:translateX(-50%) scale(1) } 50% { transform:translateX(-50%) scale(1.05) } }
+
+  /* ---- minutage v2 (78 s) ---- */
+  .s1  { animation:sceneIn .01s linear 0s both, fadeOut .5s ease 5.0s both; }
+  .s1 .logo { position:absolute; top:520px; left:50%; width:340px; height:340px; margin-left:-170px; animation:pop .8s cubic-bezier(.2,1.4,.4,1) .2s both; }
+  .s1 .logo img { width:100%; height:100%; }
+  .s1 .word { position:absolute; top:920px; width:1080px; text-align:center; font-size:120px; font-weight:800; color:var(--terra); animation:rise .7s ease .6s both; }
+  .s1 .tag  { position:absolute; top:1080px; width:1080px; text-align:center; font-size:44px; font-weight:600; color:var(--muted); animation:rise .7s ease .9s both; }
+  .s1 .hook { position:absolute; top:1300px; width:1080px; text-align:center; padding:0 90px; font-size:72px; line-height:1.16; font-weight:800; animation:rise .8s ease 1.8s both; }
+
+  .s2 { animation:fadeIn .5s ease 5.5s both, fadeOut .5s ease 12.5s both; }
+  .s2 .head  { animation:rise .7s ease 5.7s both; }
+  .s2 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 5.9s both; }
+  .s2 .say   { animation:rise .6s ease 6.4s both; }
+
+  .s3 { animation:fadeIn .5s ease 13s both, fadeOut .5s ease 20s both; }
+  .s3 .head  { animation:rise .7s ease 13.2s both; }
+  .s3 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 13.4s both; }
+  .s3 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 17.2s both; }
+  .s3 .say   { animation:rise .6s ease 13.9s both; }
+
+  .s4 { animation:fadeIn .5s ease 20.5s both, fadeOut .5s ease 28s both; }
+  .s4 .head  { animation:rise .7s ease 20.7s both; }
+  .s4 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 20.9s both; }
+  .s4 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 24.4s both; }
+  .s4 .say   { animation:rise .6s ease 21.4s both; }
+
+  .s5 { animation:fadeIn .5s ease 28.5s both, fadeOut .5s ease 36.5s both; }
+  .s5 .head  { animation:rise .7s ease 28.7s both; }
+  .s5 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 28.9s both; }
+  .s5 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 32.6s both; }
+  .s5 .say   { animation:rise .6s ease 29.4s both; }
+
+  .s6 { animation:fadeIn .5s ease 37s both, fadeOut .5s ease 43.5s both; }
+  .s6 .head  { animation:rise .7s ease 37.2s both; }
+  .s6 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 37.4s both; }
+  .s6 .say   { animation:rise .6s ease 37.9s both; }
+
+  .s7 { animation:fadeIn .5s ease 44s both, fadeOut .5s ease 50.5s both; }
+  .s7 .head  { animation:rise .7s ease 44.2s both; }
+  .s7 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 44.4s both; }
+  .s7 .say   { animation:rise .6s ease 44.9s both; }
+
+  .s8 { animation:fadeIn .5s ease 51s both, fadeOut .5s ease 58.5s both; }
+  .s8 .head  { animation:rise .7s ease 51.2s both; }
+  .s8 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 51.4s both; }
+  .s8 .shot-b { animation:pushIn .55s cubic-bezier(.3,.9,.3,1) 55.2s both; }
+  .s8 .say   { animation:rise .6s ease 51.9s both; }
+
+  .s9 { animation:fadeIn .5s ease 59s both, fadeOut .5s ease 65.5s both; }
+  .s9 .head  { animation:rise .7s ease 59.2s both; }
+  .s9 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 59.4s both; }
+  .s9 .say   { animation:rise .6s ease 59.9s both; }
+
+  .s10 { animation:fadeIn .5s ease 66s both, fadeOut .5s ease 71.5s both; }
+  .s10 .head  { animation:rise .7s ease 66.2s both; }
+  .s10 .phone { animation:phoneUp .9s cubic-bezier(.2,1,.3,1) 66.4s both; }
+  .s10 .say   { animation:rise .6s ease 66.9s both; }
+
+  .s11 { animation:fadeIn .6s ease 72s both; }
+  .s11 .logo { position:absolute; top:480px; left:50%; width:300px; height:300px; margin-left:-150px; animation:pop .8s cubic-bezier(.2,1.4,.4,1) 72.3s both; }
+  .s11 .logo img { width:100%; height:100%; }
+  .s11 .word { position:absolute; top:830px; width:1080px; text-align:center; font-size:110px; font-weight:800; color:var(--terra); animation:rise .7s ease 72.6s both; }
+  .s11 .line { position:absolute; top:990px; width:1080px; text-align:center; padding:0 100px; font-size:56px; line-height:1.25; font-weight:700; animation:rise .7s ease 73.1s both; }
+  .s11 .cta  { position:absolute; top:1250px; left:50%; transform:translateX(-50%); background:var(--terra); color:#fff;
+               font-size:58px; font-weight:800; padding:34px 78px; border-radius:999px; box-shadow:0 24px 60px rgba(194,94,56,.4);
+               animation:riseCenter .7s ease 73.6s both, pulse 2.4s ease 74.6s infinite; }
+  .s11 .sub  { position:absolute; top:1470px; width:1080px; text-align:center; font-size:40px; color:var(--muted); font-weight:600; animation:rise .7s ease 74.1s both; }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <section class="scene s1">
+    <div class="logo"><img src="logo.svg" alt=""></div>
+    <div class="word">Finjaro</div>
+    <div class="tag">Au-delà des rêves</div>
+    <div class="hook">Vends en ligne,<br>même avec 70 articles<br>à publier d'un coup.</div>
+  </section>
+
+  <section class="scene s2">
+    <div class="head"><span class="pill">ÉTAPE 1</span><h1>Crée ton compte<br>avec ton numéro</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#faf6f1"><img src="shots/auth-phone.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Ton <b>numéro de téléphone</b> et un mot de passe.<br>Pas besoin d'e-mail, pas besoin de carte.</div>
+  </section>
+
+  <section class="scene s3">
+    <div class="head"><span class="pill">ÉTAPE 2</span><h1>Ouvre ta boutique</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/shop-step1.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/shop-done.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Le nom, la ville, ce que tu vends —<br><b>2 minutes</b> et ta boutique existe. C'est gratuit.</div>
+  </section>
+
+  <section class="scene s4">
+    <div class="head"><span class="pill">ÉTAPE 3</span><h1>Ajoute toutes<br>tes photos d'un coup</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-empty.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/bulk-photos.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">10, 30, 70 photos ? Choisis-les <b>toutes à la fois</b>.<br>Une photo = un article créé.</div>
+  </section>
+
+  <section class="scene s5">
+    <div class="head"><span class="pill brass">✨ FINIA</span><h1>L'IA écrit tes fiches<br>à ta place</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-finia-progress.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/bulk-filled.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say"><b>Finia</b> regarde chaque photo et écrit le nom,<br>le rayon et un prix conseillé. Tu corriges si besoin.</div>
+  </section>
+
+  <section class="scene s6">
+    <div class="head"><span class="pill">NOUVEAU</span><h1>Pas encore de prix&nbsp;?<br>« Prix sur demande »</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/bulk-onrequest.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Coche une case: l'article s'affiche <b>sans prix</b><br>et la cliente t'écrit pour le connaître.</div>
+  </section>
+
+  <section class="scene s7">
+    <div class="head"><span class="pill">ÉTAPE 4</span><h1>Relis, puis publie<br>tout d'un geste</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/drafts-publish.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Tes articles attendent en <b>brouillon</b> — rien ne part sans toi.<br>Un bouton, et les 70 sont en ligne.</div>
+  </section>
+
+  <section class="scene s8">
+    <div class="head"><span class="pill">ÉTAPE 5</span><h1>Reçois et gère<br>tes commandes</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/order-new.png"></div>
+        <div class="shot push shot-b" style="--sb:#ffffff"><img src="shots/order-accepted.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">Chaque commande arrive avec une <b>notification</b>.<br>Tu valides, tu prépares, tu livres — tout est suivi.</div>
+  </section>
+
+  <section class="scene s9">
+    <div class="head"><span class="pill brass">✨ FINIA</span><h1>Ton assistante<br>suit tes ventes</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/finia-vendor.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say">« Tes ventes montent de 18&nbsp;% cette semaine » —<br>Finia analyse et te <b>conseille</b>, en français.</div>
+  </section>
+
+  <section class="scene s10">
+    <div class="head"><span class="pill">RÉSULTAT</span><h1>Tes articles dans le fil<br>de toutes les clientes</h1></div>
+    <div class="phone"><span class="sbtn mute"></span><span class="sbtn volu"></span><span class="sbtn vold"></span><span class="sbtn pwr"></span>
+      <div class="screen">
+        <div class="shot" style="--sb:#ffffff"><img src="shots/buyer-feed-grid.png"></div>
+        <div class="sbc-slot"></div><span class="homebar"></span>
+      </div>
+      <div class="notch"></div>
+    </div>
+    <div class="say"><b>Chaque boutique a sa place</b> dans le fil —<br>les petites comme les grandes.</div>
+  </section>
+
+  <section class="scene s11">
+    <div class="logo"><img src="logo.svg" alt=""></div>
+    <div class="word">Finjaro</div>
+    <div class="line">Ta boutique en ligne,<br>ce soir.</div>
+    <div class="cta">finjaro.net</div>
+    <div class="sub">Gratuit · Cameroun &amp; diaspora</div>
+  </section>
+
+  <div class="progress"><div></div></div>
+
+  <script>
+    // La barre de statut iOS est identique sur tous les écrans: on la duplique
+    // ici plutôt que 10 fois dans le HTML.
+    const SBC = '<div class="sbc"><span>9:41</span>'
+      + '<svg width="128" height="26" viewBox="0 0 128 26" fill="#101014"><rect x="0" y="14" width="5" height="8" rx="1.5"/><rect x="8" y="10" width="5" height="12" rx="1.5"/><rect x="16" y="6" width="5" height="16" rx="1.5"/><rect x="24" y="2" width="5" height="20" rx="1.5"/><path d="M48 10.5a14 14 0 0 1 18 0l-2.6 3a10 10 0 0 0-12.8 0z"/><path d="M52.4 15.5a8 8 0 0 1 9.2 0L57 21z"/><rect x="78" y="4" width="38" height="18" rx="5" fill="none" stroke="#101014" stroke-width="2.4" opacity=".5"/><rect x="81" y="7" width="26" height="12" rx="2.6"/><path d="M119 9v8a5 5 0 0 0 0-8z" opacity=".5"/></svg></div>';
+    document.querySelectorAll('.sbc-slot').forEach((el) => { el.outerHTML = SBC; });
+  </script>
+</body>
+</html>

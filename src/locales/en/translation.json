@@ -560,7 +560,14 @@
     "displayName": "Display name",
     "savedAddress": "Saved delivery address",
     "savedAddressHint": "Pre-fills your next orders — you can always change it at checkout.",
-    "savedCity": "City"
+    "savedCity": "City",
+    "deleteAccount": "Delete my account",
+    "deleteAccountTitle": "Delete your account",
+    "deleteAccountWarning": "This action is irreversible. Your shop (if you have one), your orders, your messages and all your personal data will be deleted. In line with our Terms (section 20), your request is handled by the Finjaro team — you'll get a confirmation. You can also write directly to fin.finjaro@gmail.com.",
+    "deleteAccountReasonPlaceholder": "Tell us why, if you'd like (optional)",
+    "deleteAccountCheckbox": "I understand this action is final and I confirm I want to delete my account.",
+    "deleteAccountConfirm": "Delete permanently",
+    "deleteAccountSent": "Your request has been recorded. You're now signed out — the Finjaro team will process it."
   },
   "referral": {
     "navLabel": "Invite friends",
@@ -637,7 +644,12 @@
     "paymentSuccess": "Payment successful! Thanks for your order.",
     "deliveryZone": "Delivery zone",
     "zoneDays_one": "within {{count}} day",
-    "zoneDays_other": "within {{count}} days"
+    "zoneDays_other": "within {{count}} days",
+    "errProductMissing": "An item in your cart no longer exists. Remove it to continue.",
+    "errProductInactive": "“{{name}}” is no longer for sale. Remove it from your cart.",
+    "errProductOnRequest": "“{{name}}” is price-on-request — please chat with the shop.",
+    "errOutOfStock": "“{{name}}” is no longer available in that quantity.",
+    "errShopUnavailable": "This shop is currently unavailable."
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
@@ -1100,7 +1112,8 @@
       "all": "All",
       "vendors": "Sellers",
       "suspended": "Suspended",
-      "admins": "Admins"
+      "admins": "Admins",
+      "deletionRequested": "Deletion requested"
     },
     "suspendAccount": "Suspend account",
     "reactivateAccount": "Reactivate account",
@@ -1152,7 +1165,12 @@
     "pendingReportsBanner": "{{count}} report(s) to review",
     "pendingAppsBanner": "{{count}} seller application(s) pending",
     "revenueHint": "Delivered orders",
-    "followers": "Followers"
+    "followers": "Followers",
+    "deletionRequested": "Deletion requested",
+    "deletionRequestedOn": "Deletion requested {{when}}",
+    "deletionManualHint": "After checking, delete the account via Authentication → Users in the Supabase dashboard, then mark this request as done here.",
+    "deletionMarkDone": "Mark as done (account deleted)",
+    "deletionMarkedDone": "Request marked as done."
   },
   "troc": {
     "title": "Evaluate a trade",
@@ -1206,6 +1224,8 @@
   "legal": {
     "termsTitle": "Terms & Conditions",
     "readTerms": "Read the terms",
-    "signupConsent": "By creating an account you accept our"
+    "signupConsent": "By creating an account you accept our",
+    "aboutTitle": "About Finjaro",
+    "privacyTitle": "Privacy Policy"
   }
 }

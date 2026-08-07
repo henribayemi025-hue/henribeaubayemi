@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogleFilled } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
+import { networkMessage } from '../lib/netError';
 import { Button } from '../components/Button';
 import { Field, TextInput } from '../components/Field';
 
@@ -84,7 +85,7 @@ export default function Auth({ consoleMode = false }) {
         else toast.success(t('auth.checkEmail'));
       }
     } catch (err) {
-      toast.error(err.message === 'Invalid login credentials' ? t('auth.invalidCredentials') : err.message);
+      toast.error(err.message === 'Invalid login credentials' ? t('auth.invalidCredentials') : networkMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -124,7 +125,7 @@ export default function Auth({ consoleMode = false }) {
       const m = err.message || '';
       if (/already registered|already exists/i.test(m)) toast.error(t('auth.phoneAlreadyRegistered'));
       else if (m === 'Invalid login credentials') toast.error(t('auth.invalidPhoneCredentials'));
-      else toast.error(m);
+      else toast.error(networkMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -144,7 +145,7 @@ export default function Auth({ consoleMode = false }) {
       setOtpSent(true);
       toast.success(t('auth.codeSent'));
     } catch (err) {
-      toast.error(err.message);
+      toast.error(networkMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -158,7 +159,7 @@ export default function Auth({ consoleMode = false }) {
       if (error) throw error;
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err.message === 'Token has expired or is invalid' ? t('auth.otpInvalid') : err.message);
+      toast.error(err.message === 'Token has expired or is invalid' ? t('auth.otpInvalid') : networkMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -171,7 +172,7 @@ export default function Auth({ consoleMode = false }) {
     // On ne repasse busy à false qu'en cas d'échec (erreur réseau, provider
     // désactivé), sinon on verrait un clignotement juste avant la redirection.
     if (error) {
-      toast.error(error.message);
+      toast.error(networkMessage(error, t));
       setBusy(false);
     }
   }

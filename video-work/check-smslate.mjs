@@ -1,0 +1,36 @@
+import { chromium } from 'playwright';
+import { createServer } from 'http';
+import { readFileSync, existsSync } from 'fs';
+import { join, extname } from 'path';
+const DIST = '/home/user/henribeaubayemi/dist';
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg' };
+const srv = createServer((req, res) => {
+  let p = join(DIST, req.url.split('?')[0]);
+  if (!existsSync(p) || extname(p) === '') p = join(DIST, 'index.html');
+  res.writeHead(200, { 'content-type': MIME[extname(p)] || 'application/octet-stream' });
+  res.end(readFileSync(p));
+});
+await new Promise((r) => srv.listen(4703, r));
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 797 }, deviceScaleFactor: 2, locale: 'fr-FR' });
+const page = await ctx.newPage();
+page.on('pageerror', (e) => console.log('PAGEERROR', String(e).slice(0, 200)));
+await page.route('**/auth/v1/**', (r) => r.fulfill({ json: {} }));
+await page.route('**/rest/v1/**', (r) => r.fulfill({ status: 200, headers: { 'content-type': 'application/json' }, body: '[]' }));
+await page.goto('http://localhost:4703/auth', { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(1500);
+await page.locator('button', { hasText: /S'inscrire/ }).click();
+await page.waitForTimeout(300);
+await page.locator('button', { hasText: 'Téléphone' }).click();
+await page.waitForTimeout(300);
+await page.locator('input').nth(0).fill('Sandra T.');
+await page.locator('input[type="tel"]').fill('+237 652 92 71 68');
+await page.locator('button', { hasText: 'Envoyer le code' }).click();
+await page.waitForTimeout(1200);
+console.log('AVANT 20s, aide visible ?', await page.locator('text=Le code n\'arrive pas').count());
+// Avancer le temps sans attendre 20 s réelles: on relance l'horloge côté page.
+await page.clock?.install?.();
+await page.waitForTimeout(21000);
+console.log('APRES 20s, aide visible ?', await page.locator("text=Le code n'arrive pas").count());
+await page.screenshot({ path: 'check-smslate.png' });
+await browser.close(); srv.close();

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconUsers, IconBan, IconCheck, IconShieldHalfFilled, IconBuildingStore } from '@tabler/icons-react';
+import { IconSearch, IconUsers, IconBan, IconCheck, IconShieldHalfFilled, IconBuildingStore, IconUserX, IconAlertTriangle } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -20,6 +20,7 @@ const FILTERS = [
   { key: 'vendors', match: (u) => u.is_vendor },
   { key: 'suspended', match: (u) => u.is_suspended },
   { key: 'admins', match: (u) => u.is_admin },
+  { key: 'deletionRequested', match: (u) => !!u.deletion_requested_at },
 ];
 
 export default function AdminUsers() {
@@ -31,7 +32,7 @@ export default function AdminUsers() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: rows, error: err } = await supabase
       .from('profiles')
-      .select('id, name, phone, city, country, is_vendor, is_admin, is_suspended, report_count, created_at, referral_code')
+      .select('id, name, phone, city, country, is_vendor, is_admin, is_suspended, report_count, created_at, referral_code, deletion_requested_at, deletion_reason')
       .order('created_at', { ascending: false });
     if (err) throw err;
     return rows || [];
@@ -88,6 +89,11 @@ export default function AdminUsers() {
                     {[u.phone, u.city].filter(Boolean).join(' · ') || timeAgo(u.created_at, i18n.language)}
                   </p>
                 </div>
+                {u.deletion_requested_at && (
+                  <span className="shrink-0 rounded-pill bg-danger-bg px-2 py-0.5 text-[10px] font-bold text-danger">
+                    {t('admin.deletionRequested')}
+                  </span>
+                )}
                 {u.is_suspended && (
                   <span className="shrink-0 rounded-pill bg-danger-bg px-2 py-0.5 text-[10px] font-bold text-danger">
                     {t('admin.suspended')}
@@ -128,6 +134,21 @@ function UserSheet({ user, onClose, onChanged, lang }) {
 
   return (
     <Modal open onClose={onClose} title={user.name || t('admin.account')}>
+      {user.deletion_requested_at && (
+        <div className="mb-3 flex items-start gap-2 rounded-card border border-danger/40 bg-danger-bg p-3">
+          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-danger" />
+          <div className="min-w-0 flex-1">
+            <p className="text-caption font-semibold text-danger">
+              {t('admin.deletionRequestedOn', { when: timeAgo(user.deletion_requested_at, lang) })}
+            </p>
+            {user.deletion_reason && (
+              <p className="mt-1 text-caption text-ink">« {user.deletion_reason} »</p>
+            )}
+            <p className="mt-1 text-[11px] text-muted">{t('admin.deletionManualHint')}</p>
+          </div>
+        </div>
+      )}
+
       <dl className="space-y-1 text-body">
         <Row label={t('becomeVendor.phone')} value={user.phone} />
         <Row label={t('becomeVendor.city')} value={[user.city, user.country].filter(Boolean).join(', ')} />
@@ -138,6 +159,16 @@ function UserSheet({ user, onClose, onChanged, lang }) {
       </dl>
 
       <div className="mt-4 space-y-2">
+        {user.deletion_requested_at && (
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onClick={() => patch({ deletion_requested_at: null, deletion_reason: null }, 'admin.deletionMarkedDone')}
+          >
+            <IconUserX size={17} />
+            {t('admin.deletionMarkDone')}
+          </Button>
+        )}
         <Button
           variant="secondary"
           disabled={busy || isSelf}
