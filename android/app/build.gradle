@@ -10,8 +10,13 @@ android {
         // Le versionCode vient de la CI (numéro de run GitHub Actions): chaque
         // build est strictement supérieur au précédent, comme l'exige le Play
         // Store. Le 1 n'est qu'un repli pour un build local.
-        versionCode (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
-        versionName (System.getenv("ANDROID_VERSION_NAME") ?: "1.0.0")
+        // Forme AFFECTATION obligatoire. Écrit « versionCode (…).toInteger() »,
+        // Groovy comprenait « appeler versionCode(…) PUIS .toInteger() sur ce
+        // que ça renvoie » — c'est-à-dire rien: le build s'arrêtait sur
+        // « Value is null » à cette ligne, et le numéro de version partait en
+        // texte au lieu d'un entier.
+        versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
+        versionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
