@@ -47,7 +47,10 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.secrets.outputs.ready == 'true'
         with:
-          node-version: '20'
+          # 22 minimum: en dessous, `npx cap sync` s'arrête net sur
+          # « The Capacitor CLI requires NodeJS >=22.0.0 » — c'est ce qui a
+          # fait échouer le run du 04/08 après un build web pourtant réussi.
+          node-version: '22'
           cache: npm
 
       - uses: actions/setup-java@v4
