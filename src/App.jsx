@@ -94,6 +94,7 @@ const Auth = lazyWithReload(() => import('./screens/Auth'));
 const Terms = lazyWithReload(() => import('./screens/Terms'));
 const About = lazyWithReload(() => import('./screens/About'));
 const Privacy = lazyWithReload(() => import('./screens/Privacy'));
+const AccountDeletion = lazyWithReload(() => import('./screens/AccountDeletion'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
 const Landing = lazyWithReload(() => import('../landing/Landing'));
 
@@ -191,6 +192,10 @@ export default function App() {
                     {/* URL exigée telle quelle par Google Play et l'App Store:
                         publique, sans connexion, hors de tout layout privé. */}
                     <Route path="/legal/confidentialite" element={<Privacy />} />
+                    {/* Adresse déclarée à Google Play (« URL de suppression
+                        de compte »): publique, sans connexion, sinon
+                        l'examinateur ne peut pas l'ouvrir. */}
+                    <Route path="/suppression-compte" element={<AccountDeletion />} />
 
                     <Route element={<BuyerLayout />}>
                       <Route index element={<Home />} />

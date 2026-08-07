@@ -124,6 +124,7 @@ const ROUTES = [
   ['/legal/terms', 'CGU'],
   ['/a-propos', 'À propos (public)'],
   ['/legal/confidentialite', 'Politique de confidentialité (public)'],
+  ['/suppression-compte', 'Suppression de compte (public)'],
 ];
 
 const report = [];
