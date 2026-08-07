@@ -67,7 +67,24 @@ const MESSAGES = [
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 // 360x640 CSS x3 = 1080x1920 = 9:16 exact.
-const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, locale: 'fr-FR', timezoneId: 'Africa/Douala' });
+// Trois formats, tous en 16:9 ou 9:16 comme l'exige Google Play:
+//   phone   360x640  x3 = 1080x1920 (9:16)  — mise en page mobile
+//   tab7    960x540  x2 = 1920x1080 (16:9)  — mise en page large, barre latérale
+//   tab10  1280x720  x2 = 2560x1440 (16:9)
+// Les tablettes sont en PAYSAGE volontairement: au-delà d'environ 900 px de
+// large l'app passe sur la version à barre latérale, et c'est bien celle-là
+// qu'une personne sur tablette verra — montrer la version mobile étirée
+// donnerait une fausse idée de l'application.
+const FORMATS = {
+  phone: { width: 360, height: 640, scale: 3, dir: '' },
+  tab7: { width: 960, height: 540, scale: 2, dir: 'tablette-7' },
+  tab10: { width: 1280, height: 720, scale: 2, dir: 'tablette-10' },
+};
+const format = FORMATS[process.argv[2] || 'phone'];
+if (!format) throw new Error('format inconnu: ' + process.argv[2]);
+const outDir = format.dir ? `${OUT}/${format.dir}` : OUT;
+mkdirSync(outDir, { recursive: true });
+const ctx = await browser.newContext({ viewport: { width: format.width, height: format.height }, deviceScaleFactor: format.scale, locale: 'fr-FR', timezoneId: 'Africa/Douala' });
 
 const session = {
   access_token: 'test-access-token', token_type: 'bearer', expires_in: 3600,
@@ -108,11 +125,17 @@ await page.route('**/rest/v1/**', (route) => {
   // réponse à plusieurs lignes et l'écran basculait en « Quelque chose n'a pas
   // fonctionné » — une erreur muette, sans trace en console, qui serait partie
   // telle quelle sur la fiche Play Store.
+  // Le chemin peut traverser une table liée (`shops.slug=eq.atelier-kente`,
+  // le filtre du catalogue d'une boutique). Sans la descente dans l'objet
+  // imbriqué, plus aucune ligne ne passait et la fiche boutique affichait
+  // « 0 Produits » — vrai côté simulateur, faux et désastreux sur une
+  // capture publicitaire.
+  const at = (row, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), row);
   for (const [key, value] of url.searchParams) {
     if (['select', 'order', 'limit', 'offset'].includes(key)) continue;
     if (!value.startsWith('eq.')) continue;
     const wanted = value.slice(3);
-    rows = rows.filter((r) => String(r[key]) === wanted);
+    rows = rows.filter((r) => String(at(r, key)) === wanted);
   }
 
   return route.fulfill({
@@ -138,7 +161,7 @@ for (const [path, name] of SHOTS) {
   // dessert l'app plus qu'elle ne la montre.
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(2500);
-  await page.screenshot({ path: `${OUT}/${name}.png` });
+  await page.screenshot({ path: `${outDir}/${name}.png` });
   console.log('✓', name);
 }
 
