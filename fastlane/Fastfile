@@ -29,8 +29,14 @@ platform :ios do
 
     # Trousseau temporaire, déverrouillé pour la durée du job.
     setup_ci
-    keychain = File.expand_path(lane_context[SharedValues::KEYCHAIN_PATH])
+    # macOS écrit le trousseau sous « <nom>-db », alors que fastlane publie le
+    # chemin SANS ce suffixe: le passer tel quel donne « Keychain not found at
+    # path » (run 6). On prend celui des deux qui existe vraiment plutôt que de
+    # parier sur la convention.
+    raw = File.expand_path(lane_context[SharedValues::KEYCHAIN_PATH])
+    keychain = File.exist?(raw) ? raw : "#{raw}-db"
     keychain_password = ENV.fetch('MATCH_KEYCHAIN_PASSWORD')
+    UI.user_error!("Trousseau introuvable: #{raw}") unless File.exist?(keychain)
 
     revoke_orphan_distribution_certificates(api_key)
 
