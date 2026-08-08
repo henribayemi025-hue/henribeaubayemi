@@ -99,7 +99,8 @@
     "useSmsCodeInstead": "I'd rather get a code by SMS",
     "forgotPasswordPhone": "Forgot your password? Get a code by SMS",
     "phoneAlreadyRegistered": "This number already has an account — use “Log in” instead.",
-    "invalidPhoneCredentials": "Wrong number or password."
+    "invalidPhoneCredentials": "Wrong number or password.",
+    "continueWithApple": "Continue with Apple"
   },
   "nav": {
     "home": "Home",

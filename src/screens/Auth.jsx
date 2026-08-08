@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogleFilled } from '@tabler/icons-react';
+import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogleFilled, IconBrandApple } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { networkMessage } from '../lib/netError';
@@ -19,6 +19,15 @@ const E164_RE = /^\+[1-9]\d{6,14}$/;
 // initial (l'autre écriture de l'international) devient « + ».
 const normalizePhone = (raw) => raw.trim().replace(/^00/, '+').replace(/[\s.\-()]/g, '');
 
+// Le bouton « Continuer avec Apple » est écrit et testé, mais il ne peut pas
+// aboutir tant que le fournisseur `apple` n'est pas activé côté Supabase
+// (Services ID + Team ID + clé .p8 du compte développeur). Sans ça, un clic
+// répond « Unsupported provider » et la cliente se retrouve devant une erreur
+// sur l'écran de connexion — le pire endroit possible.
+// Passer à `true` UNIQUEMENT après avoir vu une vraie connexion Apple
+// aboutir. iOS ne peut pas être soumis à l'App Store avant (règle 4.8).
+const APPLE_SIGNIN_ENABLED = false;
+
 // `consoleMode`: écran de connexion de la console d'administration. On n'y
 // crée pas de compte (les droits admin s'accordent depuis la console
 // elle-même) et « continuer sans compte » n'a aucun sens là où tout est
@@ -30,7 +39,7 @@ export default function Auth({ consoleMode = false }) {
   const location = useLocation();
   const {
     signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp, signInWithGoogle,
-    signUpWithPhonePassword, signInWithPhonePassword,
+    signInWithApple, signUpWithPhonePassword, signInWithPhonePassword,
   } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
@@ -177,6 +186,18 @@ export default function Auth({ consoleMode = false }) {
     }
   }
 
+  // Même mécanique que Google. Bouton requis sur iOS (App Store, règle 4.8)
+  // dès lors que Google Sign-In est proposé — affiché partout, par symétrie
+  // et parce que Sign in with Apple fonctionne aussi sur le web.
+  async function handleApple() {
+    setBusy(true);
+    const { error } = await signInWithApple();
+    if (error) {
+      toast.error(networkMessage(error, t));
+      setBusy(false);
+    }
+  }
+
   return (
     <div
       className="mx-auto flex max-w-app flex-col justify-center overflow-y-auto px-6"
@@ -261,6 +282,11 @@ export default function Auth({ consoleMode = false }) {
                 <Button variant="secondary" className="mt-2" onClick={handleGoogle} loading={busy}>
                   <IconBrandGoogleFilled size={18} /> {t('auth.continueWithGoogle')}
                 </Button>
+                {APPLE_SIGNIN_ENABLED && (
+                  <Button variant="secondary" className="mt-2" onClick={handleApple} loading={busy}>
+                    <IconBrandApple size={18} /> {t('auth.continueWithApple')}
+                  </Button>
+                )}
                 <button
                   type="button"
                   onClick={() => { setOtpSent(false); setChannel('email'); }}
@@ -408,6 +434,17 @@ export default function Auth({ consoleMode = false }) {
             <IconBrandGoogleFilled size={18} />
             {t('auth.continueWithGoogle')}
           </button>
+          {APPLE_SIGNIN_ENABLED && (
+            <button
+              type="button"
+              onClick={handleApple}
+              disabled={busy}
+              className="mt-2 flex items-center justify-center gap-2 rounded-input border border-hairline py-3 text-body font-semibold text-ink transition active:scale-[0.98] disabled:opacity-50"
+            >
+              <IconBrandApple size={18} />
+              {t('auth.continueWithApple')}
+            </button>
+          )}
         </>
       )}
 

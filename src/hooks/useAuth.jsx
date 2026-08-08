@@ -123,6 +123,13 @@ export function AuthProvider({ children }) {
     // s'occupe de charger la session au retour.
     signInWithGoogle: () =>
       supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
+    // Exigé par l'App Store (règle 4.8): une app qui propose Google Sign-In
+    // doit aussi proposer Sign in with Apple. Même flux OAuth que Google —
+    // le provider `apple` doit être configuré côté Supabase (Services ID,
+    // Team ID, clé .p8 du compte développeur de Beau) avant que le bouton
+    // fonctionne réellement.
+    signInWithApple: () =>
+      supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: window.location.origin } }),
     signOut: () => supabase.auth.signOut(),
     resetPassword: (email) =>
       supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset` }),
