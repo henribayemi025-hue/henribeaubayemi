@@ -44,18 +44,37 @@ const SHOP_A = { id: 'shop-a', slug: 'atelier-kente', name: 'Atelier Kenté', co
 const SHOP_B = { id: 'shop-b', slug: 'maison-akwa', name: 'Maison Akwa', country: 'CM', city: 'Yaoundé', status: 'active', is_verified: true, rating: 4.6, followers_count: 188, avatar_url: null, bio: 'Décoration d’événement.' };
 
 const now = Date.now();
-const PHOTOS = ['/demo-products/wd-03.jpg', '/demo-products/wd-01.jpg', '/demo-products/wd-02.jpg', '/demo-products/wd-04.jpg'];
-const NAMES = ['Robe longue en wax', 'Ensemble tailleur', 'Sac à main cuir', 'Parure de table'];
-const mkProd = (i, shop) => ({
-  id: `prod-${i}`, shop_id: shop.id, name: NAMES[(i - 1) % NAMES.length],
-  price_fcfa: 12000 + i * 2500, compare_at_price_fcfa: i === 1 ? 21000 : null,
-  price_on_request: false, images: [PHOTOS[(i - 1) % PHOTOS.length]], video_url: null,
-  category: 'mode_femme', stock: 6, views: 120 + i, is_active: true,
-  created_at: new Date(now - i * 60000).toISOString(),
-  sizes: ['S', 'M', 'L'], colors: ['Rouge', 'Bleu', 'Ocre'], attributes: {},
-  shops: shop, shop_name: shop.name, shop_slug: shop.slug, shop_country: shop.country,
-});
-const PRODUCTS = [mkProd(1, SHOP_A), mkProd(2, SHOP_A), mkProd(3, SHOP_B), mkProd(4, SHOP_B), mkProd(5, SHOP_A), mkProd(6, SHOP_B)];
+// Chaque article a SA photo et SON nom: le fil d'accueil d'un grand écran
+// affiche une douzaine de vignettes d'un coup, et une liste plus courte que
+// ça se met à boucler — trois fois la même robe sur la première image de la
+// fiche, ce qui donne l'impression d'un catalogue vide.
+const CATALOGUE = [
+  ['Robe longue en wax', '/demo-products/wd-03.jpg', 14500, 21000],
+  ['Ensemble tailleur', '/demo-products/wd-01.jpg', 17000, null],
+  ['Sac à main cuir', '/demo-products/wd-02.jpg', 19500, null],
+  ['Parure de table', '/demo-products/wd-04.jpg', 22000, null],
+  ['Blazer sur mesure', '/demo-products/blazer-01.jpg', 26000, null],
+  ['Collier plaqué or', '/demo-products/bague-01.jpg', 12500, 16000],
+  ['Coffret beauté', '/demo-products/beaute-01.jpg', 9500, null],
+  ['Tresses africaines', '/demo-products/braids-01.jpg', 15000, null],
+  ['Boucles d’oreilles', '/demo-products/bj-02.jpg', 8000, null],
+  ['Soin cheveux', '/demo-products/cheveux-01.jpg', 11000, null],
+  ['Accessoire tendance', '/demo-products/ac1-01.jpg', 13500, null],
+  ['Ensemble de fête', '/demo-products/as-01.jpg', 24000, 30000],
+];
+const mkProd = (i, shop) => {
+  const [name, photo, price, was] = CATALOGUE[(i - 1) % CATALOGUE.length];
+  return {
+    id: `prod-${i}`, shop_id: shop.id, name,
+    price_fcfa: price, compare_at_price_fcfa: was,
+    price_on_request: false, images: [photo], video_url: null,
+    category: 'mode_femme', stock: 6, views: 120 + i, is_active: true,
+    created_at: new Date(now - i * 60000).toISOString(),
+    sizes: ['S', 'M', 'L'], colors: ['Rouge', 'Bleu', 'Ocre'], attributes: {},
+    shops: shop, shop_name: shop.name, shop_slug: shop.slug, shop_country: shop.country,
+  };
+};
+const PRODUCTS = CATALOGUE.map((_, idx) => mkProd(idx + 1, idx % 2 === 0 ? SHOP_A : SHOP_B));
 
 const ORDER = {
   id: 'order-1', order_no: '1042', status: 'shipped', shop_id: SHOP_A.id, buyer_id: USER_ID,
@@ -141,7 +160,23 @@ await page.route('**/rest/v1/**', (route) => {
 
   if (path.startsWith('rpc/')) {
     const fn = path.slice(4);
-    const json = fn === 'home_feed_page' ? PRODUCTS : fn === 'home_feed_count' ? PRODUCTS.length : [];
+    let json = [];
+    if (fn === 'home_feed_count') {
+      json = PRODUCTS.length;
+    } else if (fn === 'home_feed_page') {
+      // Le fil se charge page par page et RÉCLAME la suite tant qu'il n'a pas
+      // son compte. En renvoyant tout le catalogue à chaque appel, on le
+      // servait en double puis en triple: la même robe trois fois dans la
+      // grille. On respecte donc p_offset/p_limit.
+      // p_local_country vaut null quand l'app demande le fil « ailleurs dans
+      // le monde »: toutes les boutiques de démonstration étant au Cameroun,
+      // la bonne réponse est vide — sinon le catalogue local revient une
+      // seconde fois sous un autre titre.
+      const p = route.request().postDataJSON?.() || {};
+      const offset = p.p_offset ?? 0;
+      const limit = p.p_limit ?? PRODUCTS.length;
+      json = p.p_local_country ? PRODUCTS.slice(offset, offset + limit) : [];
+    }
     return route.fulfill({
       status: 200,
       headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
