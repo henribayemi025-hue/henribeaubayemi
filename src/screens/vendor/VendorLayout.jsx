@@ -84,7 +84,14 @@ export function VendorLayout() {
         )}
         <VendorNav />
         <LoginPrompt />
-        <FinouChou />
+        {/* Finia vit DANS la mise en page, donc au-dessus du garde-fou qui
+            protège les écrans: la moindre exception chez elle faisait
+            disparaître toute l'application, sans rien laisser à l'écran
+            qu'un fond blanc. Son propre garde-fou la contient — l'assistant
+            s'efface, le reste de l'app continue de fonctionner. */}
+        <ErrorBoundary silent>
+          <FinouChou />
+        </ErrorBoundary>
       </div>
     </div>
   );
