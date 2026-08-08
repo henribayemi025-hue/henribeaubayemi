@@ -1,5 +1,8 @@
-// Vérifie que le bouton « Continuer avec Apple » apparaît sur /auth,
-// sous le bouton Google, sans casser l'écran.
+// Vérifie l'écran /auth: le bouton Google est toujours là, et le bouton
+// « Continuer avec Apple » est affiché SI ET SEULEMENT SI le drapeau
+// APPLE_SIGNIN_ENABLED (src/screens/Auth.jsx) est à true.
+// Le drapeau est lu dans la source plutôt que codé en dur ici: le jour où on
+// l'allume, ce contrôle vérifie le nouvel état sans qu'on ait à y penser.
 import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
@@ -18,10 +21,18 @@ const page = await (await b.newContext({ viewport: { width: 390, height: 844 }, 
 await page.route('**/rest/v1/**', (r) => r.fulfill({ status: 200, headers: { 'content-type': 'application/json' }, body: '[]' }));
 await page.goto('http://localhost:4810/auth', { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(1500);
+const src = readFileSync('/home/user/henribeaubayemi/src/screens/Auth.jsx', 'utf8');
+const expectApple = /const APPLE_SIGNIN_ENABLED = true;/.test(src);
 const google = await page.getByText('Continuer avec Google').count();
 const apple = await page.getByText('Continuer avec Apple').count();
-console.log(google >= 1 ? '✅ bouton Google présent' : '❌ bouton Google ABSENT');
-console.log(apple >= 1 ? '✅ bouton Apple présent' : '❌ bouton Apple ABSENT');
+const googleOk = google >= 1;
+const appleOk = expectApple ? apple >= 1 : apple === 0;
+console.log(googleOk ? '✅ bouton Google présent' : '❌ bouton Google ABSENT');
+console.log(
+  appleOk
+    ? `✅ bouton Apple ${expectApple ? 'présent' : 'masqué'} — conforme au drapeau`
+    : `❌ bouton Apple ${apple >= 1 ? 'VISIBLE' : 'ABSENT'} alors que le drapeau dit ${expectApple}`,
+);
 await page.screenshot({ path: 'video-work/review-shots/auth-apple.png', fullPage: false });
 await b.close(); srv.close();
-process.exit(google >= 1 && apple >= 1 ? 0 : 1);
+process.exit(googleOk && appleOk ? 0 : 1);
