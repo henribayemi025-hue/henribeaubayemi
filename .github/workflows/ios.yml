@@ -1,0 +1,149 @@
+# Fabrique l'app iOS signée et l'ENVOIE directement à App Store Connect.
+#
+# Lancement à la main (onglet Actions → « iOS IPA » → Run workflow), ou
+# automatiquement quand on modifie l'app native. Contrairement à Android, pas
+# de fichier à télécharger puis déposer: l'envoi vers Apple fait partie du
+# job, parce que l'outil de dépôt d'Apple (Transporter) n'existe pas sous
+# Windows — Beau ne pourrait pas déposer le fichier lui-même.
+#
+# Signature: AUCUN certificat à fabriquer ni à garder. On donne à Xcode une
+# clé d'API App Store Connect et il crée/renouvelle lui-même certificat et
+# profil sur les serveurs d'Apple (« cloud signing », -allowProvisioningUpdates).
+# C'est le pendant iOS de Play App Signing.
+#
+# Secrets requis (Settings → Secrets → Actions):
+#   APPSTORE_API_KEY_ID      — l'identifiant de la clé (10 caractères)
+#   APPSTORE_API_ISSUER_ID   — l'Issuer ID du compte (formé comme un UUID)
+#   APPSTORE_API_KEY_BASE64  — le fichier AuthKey_XXXXXXXXXX.p8 encodé en base64
+# La clé se crée sur App Store Connect → Utilisateurs et accès → Intégrations
+# → Clés API (rôle Admin ou App Manager). Comme la clé Sign in with Apple,
+# le .p8 ne se télécharge qu'UNE fois.
+#
+# Prérequis côté App Store Connect: la fiche de l'app doit exister (Mes apps
+# → + → Nouvelle app, bundle net.finjaro.app), sinon l'envoi échoue avec
+# « No suitable application records were found ».
+name: iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [staging]
+    paths:
+      - 'ios/**'
+      - 'capacitor.config.json'
+      - '.github/workflows/ios.yml'
+
+jobs:
+  ipa:
+    # Les minutes macOS comptent 10x dans le quota GitHub: ce job ne tourne
+    # que quand l'app NATIVE change, ce qui est rare — le contenu vient de
+    # finjaro.net et se met à jour sans reconstruire l'app.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier les secrets App Store Connect
+        id: secrets
+        env:
+          KID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ISS: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          P8: ${{ secrets.APPSTORE_API_KEY_BASE64 }}
+        run: |
+          if [ -z "$KID" ] || [ -z "$ISS" ] || [ -z "$P8" ]; then
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "::error::Secrets App Store Connect manquants (APPSTORE_API_KEY_ID, APPSTORE_API_ISSUER_ID, APPSTORE_API_KEY_BASE64)."
+              exit 1
+            fi
+            echo "::warning::Clé App Store Connect absente — build iOS sauté."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          # Même exigence que la chaîne Android: la CLI Capacitor veut Node 22.
+          node-version: '22'
+          cache: npm
+
+      - name: Construire le web + synchroniser Capacitor
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          npm ci
+          npm run build
+          npx cap sync ios
+
+      - name: Poser la clé d'API
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          KID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          P8: ${{ secrets.APPSTORE_API_KEY_BASE64 }}
+        run: |
+          # Même précaution que pour le keystore Android: un copier-coller de
+          # secret embarque facilement un retour à la ligne invisible.
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "$P8" | tr -d ' \r\n' | base64 -d > "$HOME/private_keys/AuthKey_${KID}.p8"
+
+      - name: Préparer un trousseau pour la signature
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          # Le certificat que Xcode fabrique en « cloud signing » doit être
+          # rangé dans un trousseau déverrouillé. Celui de la machine de CI ne
+          # l'est pas: on en crée un dédié, déverrouillé pour la durée du job.
+          security create-keychain -p ci-tmp build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci-tmp build.keychain
+          security set-keychain-settings -lut 3600 build.keychain
+
+      - name: Archiver
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          KID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ISS: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          # CURRENT_PROJECT_VERSION = numéro de run: chaque envoi porte un
+          # numéro de build strictement croissant, comme l'exige Apple —
+          # même mécanique que versionCode côté Android.
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${KID}.p8" \
+            -authenticationKeyID "$KID" \
+            -authenticationKeyIssuerID "$ISS" \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=CP87XRK5CD \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            MARKETING_VERSION=1.0.${{ github.run_number }}
+
+      - name: Envoyer à App Store Connect
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          KID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          ISS: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+        run: |
+          # `destination: upload`: l'export part directement chez Apple, il ne
+          # laisse aucun .ipa à télécharger — voulu, voir l'en-tête du fichier.
+          cat > "$RUNNER_TEMP/exportOptions.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>CP87XRK5CD</string>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/exportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${KID}.p8" \
+            -authenticationKeyID "$KID" \
+            -authenticationKeyIssuerID "$ISS"
+          echo "Build 1.0.${{ github.run_number }} envoyé — visible dans App Store Connect → TestFlight d'ici quelques minutes."
