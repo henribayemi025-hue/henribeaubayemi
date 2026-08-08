@@ -16,6 +16,8 @@
   },
   "android": {
     "allowMixedContent": false,
+    "//2": "adjustMarginsForEdgeToEdge: depuis Android 15 (notre cible SDK 36), le système force les applis à dessiner JUSQUE SOUS la barre d'état et la barre de navigation — constaté par Beau sur la version de test du 08/08: le titre de l'écran collé au trou de la caméra, le bandeau orange du profil qui monte jusqu'en haut du téléphone. « force » demande à Capacitor de réserver lui-même la place des deux barres autour de la fenêtre web.",
+    "adjustMarginsForEdgeToEdge": "force",
     "//": "overrideUserAgent: Google refuse sa page de connexion aux navigateurs intégrés — il reconnaît la fenêtre d'une appli Android au marqueur « ; wv) » de sa signature et répond « disallowed_useragent ». On se présente donc avec la signature d'un Chrome Android ordinaire, sans le marqueur. Sans cette ligne, le correctif allowNavigation ci-dessus ne suffit pas: la page Google s'afficherait dans l'appli mais refuserait la connexion.",
     "overrideUserAgent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
   },
