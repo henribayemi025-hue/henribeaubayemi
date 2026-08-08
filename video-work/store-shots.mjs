@@ -1,23 +1,28 @@
-// Captures d'écran pour la fiche Google Play.
+// Captures d'écran pour les fiches Google Play ET App Store.
 //
 // Reprend le harnais de revue (review-buyer.mjs): même serveur statique sur
 // dist/, mêmes données simulées, même session pré-posée — donc aucun appel
 // réseau réel et des écrans toujours identiques d'une exécution à l'autre.
 //
-// Seule vraie différence: le format. Google Play impose des captures en 16:9
-// ou 9:16, chaque côté entre 320 et 3840 px, et exige au moins 1080 px de côté
-// pour que l'appli soit éligible aux mises en avant. Un viewport de 360x640
-// (un vrai gabarit de téléphone, donc la mise en page mobile — au-delà, l'app
-// bascule sur la version large avec barre latérale) rendu à l'échelle 3 donne
-// exactement 1080x1920, soit 9:16 pile.
+// Seule vraie différence: le format, et chaque magasin a le sien.
+//
+// Google Play impose du 16:9 ou du 9:16, chaque côté entre 320 et 3840 px, et
+// au moins 1080 px de côté pour être éligible aux mises en avant.
+//
+// L'App Store, lui, n'accepte QUE les dimensions exactes de ses appareils de
+// référence: une image à un pixel près à côté est refusée à l'envoi, sans
+// possibilité de recadrage. Les gabarits ci-dessous sont donc calculés pour
+// tomber juste — viewport en points x densité = dimensions attendues.
+//
+// Usage: node video-work/store-shots.mjs <format>
+//   (voir la table FORMATS; défaut « phone »)
 import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { join, extname } from 'path';
 
 const DIST = '/home/user/henribeaubayemi/dist';
-const OUT = '/home/user/henribeaubayemi/video-work/playstore';
-mkdirSync(OUT, { recursive: true });
+const ROOT = '/home/user/henribeaubayemi/video-work';
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webmanifest': 'application/manifest+json' };
 const srv = createServer((req, res) => {
@@ -39,18 +44,37 @@ const SHOP_A = { id: 'shop-a', slug: 'atelier-kente', name: 'Atelier Kenté', co
 const SHOP_B = { id: 'shop-b', slug: 'maison-akwa', name: 'Maison Akwa', country: 'CM', city: 'Yaoundé', status: 'active', is_verified: true, rating: 4.6, followers_count: 188, avatar_url: null, bio: 'Décoration d’événement.' };
 
 const now = Date.now();
-const PHOTOS = ['/demo-products/wd-03.jpg', '/demo-products/wd-01.jpg', '/demo-products/wd-02.jpg', '/demo-products/wd-04.jpg'];
-const NAMES = ['Robe longue en wax', 'Ensemble tailleur', 'Sac à main cuir', 'Parure de table'];
-const mkProd = (i, shop) => ({
-  id: `prod-${i}`, shop_id: shop.id, name: NAMES[(i - 1) % NAMES.length],
-  price_fcfa: 12000 + i * 2500, compare_at_price_fcfa: i === 1 ? 21000 : null,
-  price_on_request: false, images: [PHOTOS[(i - 1) % PHOTOS.length]], video_url: null,
-  category: 'mode_femme', stock: 6, views: 120 + i, is_active: true,
-  created_at: new Date(now - i * 60000).toISOString(),
-  sizes: ['S', 'M', 'L'], colors: ['Rouge', 'Bleu', 'Ocre'], attributes: {},
-  shops: shop, shop_name: shop.name, shop_slug: shop.slug, shop_country: shop.country,
-});
-const PRODUCTS = [mkProd(1, SHOP_A), mkProd(2, SHOP_A), mkProd(3, SHOP_B), mkProd(4, SHOP_B), mkProd(5, SHOP_A), mkProd(6, SHOP_B)];
+// Chaque article a SA photo et SON nom: le fil d'accueil d'un grand écran
+// affiche une douzaine de vignettes d'un coup, et une liste plus courte que
+// ça se met à boucler — trois fois la même robe sur la première image de la
+// fiche, ce qui donne l'impression d'un catalogue vide.
+const CATALOGUE = [
+  ['Robe longue en wax', '/demo-products/wd-03.jpg', 14500, 21000],
+  ['Ensemble tailleur', '/demo-products/wd-01.jpg', 17000, null],
+  ['Sac à main cuir', '/demo-products/wd-02.jpg', 19500, null],
+  ['Parure de table', '/demo-products/wd-04.jpg', 22000, null],
+  ['Blazer sur mesure', '/demo-products/blazer-01.jpg', 26000, null],
+  ['Collier plaqué or', '/demo-products/bague-01.jpg', 12500, 16000],
+  ['Coffret beauté', '/demo-products/beaute-01.jpg', 9500, null],
+  ['Tresses africaines', '/demo-products/braids-01.jpg', 15000, null],
+  ['Boucles d’oreilles', '/demo-products/bj-02.jpg', 8000, null],
+  ['Soin cheveux', '/demo-products/cheveux-01.jpg', 11000, null],
+  ['Accessoire tendance', '/demo-products/ac1-01.jpg', 13500, null],
+  ['Ensemble de fête', '/demo-products/as-01.jpg', 24000, 30000],
+];
+const mkProd = (i, shop) => {
+  const [name, photo, price, was] = CATALOGUE[(i - 1) % CATALOGUE.length];
+  return {
+    id: `prod-${i}`, shop_id: shop.id, name,
+    price_fcfa: price, compare_at_price_fcfa: was,
+    price_on_request: false, images: [photo], video_url: null,
+    category: 'mode_femme', stock: 6, views: 120 + i, is_active: true,
+    created_at: new Date(now - i * 60000).toISOString(),
+    sizes: ['S', 'M', 'L'], colors: ['Rouge', 'Bleu', 'Ocre'], attributes: {},
+    shops: shop, shop_name: shop.name, shop_slug: shop.slug, shop_country: shop.country,
+  };
+};
+const PRODUCTS = CATALOGUE.map((_, idx) => mkProd(idx + 1, idx % 2 === 0 ? SHOP_A : SHOP_B));
 
 const ORDER = {
   id: 'order-1', order_no: '1042', status: 'shipped', shop_id: SHOP_A.id, buyer_id: USER_ID,
@@ -66,8 +90,7 @@ const MESSAGES = [
 ];
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-// 360x640 CSS x3 = 1080x1920 = 9:16 exact.
-// Trois formats, tous en 16:9 ou 9:16 comme l'exige Google Play:
+// Google Play — 16:9 ou 9:16, 1080 px de côté minimum:
 //   phone   360x640  x3 = 1080x1920 (9:16)  — mise en page mobile
 //   tab7    960x540  x2 = 1920x1080 (16:9)  — mise en page large, barre latérale
 //   tab10  1280x720  x2 = 2560x1440 (16:9)
@@ -75,14 +98,30 @@ const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromi
 // large l'app passe sur la version à barre latérale, et c'est bien celle-là
 // qu'une personne sur tablette verra — montrer la version mobile étirée
 // donnerait une fausse idée de l'application.
+//
+// App Store — dimensions imposées au pixel près:
+//   iphone69  440x956  x3 = 1320x2868  iPhone 16 Pro Max, le seul format
+//                                      d'iPhone encore exigé par Apple
+//   iphone65  428x926  x3 = 1284x2778  ancien gabarit, accepté en secours
+//   ipad13   1024x1366 x2 = 2048x2732  OBLIGATOIRE: le projet iOS déclare
+//                                      TARGETED_DEVICE_FAMILY "1,2", donc une
+//                                      app iPad, et Apple refuse la fiche sans
+//                                      captures iPad. À 1024 points de large,
+//                                      c'est bien la version à barre latérale
+//                                      qui s'affiche — la bonne.
+// Les valeurs en points sont celles des vrais appareils: y toucher casse la
+// correspondance et l'envoi est rejeté.
 const FORMATS = {
-  phone: { width: 360, height: 640, scale: 3, dir: '' },
-  tab7: { width: 960, height: 540, scale: 2, dir: 'tablette-7' },
-  tab10: { width: 1280, height: 720, scale: 2, dir: 'tablette-10' },
+  phone: { width: 360, height: 640, scale: 3, store: 'playstore', dir: '' },
+  tab7: { width: 960, height: 540, scale: 2, store: 'playstore', dir: 'tablette-7' },
+  tab10: { width: 1280, height: 720, scale: 2, store: 'playstore', dir: 'tablette-10' },
+  iphone69: { width: 440, height: 956, scale: 3, store: 'appstore', dir: 'iphone-6.9' },
+  iphone65: { width: 428, height: 926, scale: 3, store: 'appstore', dir: 'iphone-6.5' },
+  ipad13: { width: 1024, height: 1366, scale: 2, store: 'appstore', dir: 'ipad-13' },
 };
 const format = FORMATS[process.argv[2] || 'phone'];
-if (!format) throw new Error('format inconnu: ' + process.argv[2]);
-const outDir = format.dir ? `${OUT}/${format.dir}` : OUT;
+if (!format) throw new Error(`format inconnu: ${process.argv[2]} (attendu: ${Object.keys(FORMATS).join(', ')})`);
+const outDir = format.dir ? `${ROOT}/${format.store}/${format.dir}` : `${ROOT}/${format.store}`;
 mkdirSync(outDir, { recursive: true });
 const ctx = await browser.newContext({ viewport: { width: format.width, height: format.height }, deviceScaleFactor: format.scale, locale: 'fr-FR', timezoneId: 'Africa/Douala' });
 
@@ -102,13 +141,50 @@ await page.route('**/realtime/v1/**', (r) => r.abort());
 await page.route('**/auth/v1/user**', (r) => r.fulfill({ json: session.user }));
 await page.route('**/auth/v1/token**', (r) => r.fulfill({ json: session }));
 await page.route('**/auth/v1/**', (r) => r.fulfill({ json: {} }));
-await page.route('**/rest/v1/rpc/home_feed_count**', (r) => r.fulfill({ json: PRODUCTS.length }));
-await page.route('**/rest/v1/rpc/home_feed_page**', (r) => r.fulfill({ json: PRODUCTS }));
-await page.route('**/rest/v1/rpc/**', (r) => r.fulfill({ json: [] }));
+// UN SEUL gestionnaire pour tout /rest/v1/, appels de fonction compris.
+//
+// Il y en avait quatre auparavant, du plus précis au plus général. Playwright
+// consulte ses routes de la DERNIÈRE enregistrée à la première: le filet
+// `**/rest/v1/**` passait donc AVANT les trois routes `rpc/…` et les avalait.
+// `home_feed_page` retombait sur la table nommée « rpc/home_feed_page », donc
+// aucune ligne, donc « Aucun produit pour le moment » sur la capture d'accueil
+// — la première image de la fiche des deux magasins. Rien en console, rien
+// dans les journaux: l'écran d'accueil est LÉGITIMEMENT vide quand il n'y a
+// pas d'article, et review-buyer.mjs ne vérifie que les erreurs.
+// Un gestionnaire unique qui aiguille lui-même supprime la question de
+// l'ordre plutôt que d'en dépendre.
 await page.route('**/rest/v1/**', (route) => {
   const req = route.request();
   const url = new URL(req.url());
-  const table = url.pathname.split('/rest/v1/')[1].split('?')[0];
+  const path = url.pathname.split('/rest/v1/')[1].split('?')[0];
+
+  if (path.startsWith('rpc/')) {
+    const fn = path.slice(4);
+    let json = [];
+    if (fn === 'home_feed_count') {
+      json = PRODUCTS.length;
+    } else if (fn === 'home_feed_page') {
+      // Le fil se charge page par page et RÉCLAME la suite tant qu'il n'a pas
+      // son compte. En renvoyant tout le catalogue à chaque appel, on le
+      // servait en double puis en triple: la même robe trois fois dans la
+      // grille. On respecte donc p_offset/p_limit.
+      // p_local_country vaut null quand l'app demande le fil « ailleurs dans
+      // le monde »: toutes les boutiques de démonstration étant au Cameroun,
+      // la bonne réponse est vide — sinon le catalogue local revient une
+      // seconde fois sous un autre titre.
+      const p = route.request().postDataJSON?.() || {};
+      const offset = p.p_offset ?? 0;
+      const limit = p.p_limit ?? PRODUCTS.length;
+      json = p.p_local_country ? PRODUCTS.slice(offset, offset + limit) : [];
+    }
+    return route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
+      body: JSON.stringify(json),
+    });
+  }
+
+  const table = path;
   const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
   let rows = [];
   if (table === 'shops') rows = [SHOP_A, SHOP_B];
@@ -155,15 +231,32 @@ const SHOTS = [
   ['/services', '7-services'],
 ];
 
+// Dimensions réelles d'un PNG: elles sont dans l'en-tête IHDR, deux entiers de
+// 4 octets à partir de l'octet 16. On les relit au lieu de faire confiance au
+// viewport — l'App Store refuse une image dont la taille ne tombe pas juste, et
+// le message d'erreur arrive après un envoi de plusieurs minutes.
+const pngSize = (file) => {
+  const b = readFileSync(file);
+  return [b.readUInt32BE(16), b.readUInt32BE(20)];
+};
+const expected = [format.width * format.scale, format.height * format.scale];
+
+let bad = 0;
 for (const [path, name] of SHOTS) {
   await page.goto(`http://localhost:4802${path}`, { waitUntil: 'domcontentloaded', timeout: 20000 });
   // Laisse les images du fil se charger: une capture avec des vignettes grises
   // dessert l'app plus qu'elle ne la montre.
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(2500);
-  await page.screenshot({ path: `${outDir}/${name}.png` });
-  console.log('✓', name);
+  const file = `${outDir}/${name}.png`;
+  await page.screenshot({ path: file });
+  const [w, h] = pngSize(file);
+  const ok = w === expected[0] && h === expected[1];
+  if (!ok) bad += 1;
+  console.log(`${ok ? '✓' : '✗'} ${name}  ${w}x${h}${ok ? '' : ` — ATTENDU ${expected[0]}x${expected[1]}`}`);
 }
+console.log(`\n${format.width}x${format.height} @${format.scale}x → ${expected[0]}x${expected[1]} · ${outDir}`);
 
 await browser.close();
 srv.close();
+process.exit(bad ? 1 : 0);

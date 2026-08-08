@@ -6,6 +6,7 @@ import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { SmartImage } from '../../components/SmartImage';
+import { BlockButton } from '../../components/BlockButton';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { MessagesShell } from './Inbox';
@@ -38,6 +39,10 @@ export default function VendorChat({ vendor = false }) {
   const [error, setError] = useState(false);
   const [input, setInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  // Conversation bloquee (dans un sens ou dans l'autre): la zone de saisie
+  // laisse la place a un rappel. Sans ca, on taperait un message que la
+  // base refuserait ensuite, sans que personne comprenne pourquoi.
+  const [blocked, setBlocked] = useState(false);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -258,6 +263,14 @@ export default function VendorChat({ vendor = false }) {
             <IconPhone size={18} />
           </a>
         )}
+        {/* Bloquer: l'acheteuse bloque la boutique, la vendeuse bloque
+            l'acheteuse. Exigé par la règle 1.2 de l'App Store, et c'est le
+            premier bouton que cherche une examinatrice dans un fil. */}
+        <BlockButton
+          shopId={vendor ? null : meta?.shop_id}
+          userId={vendor ? meta?.buyer_id : null}
+          onChange={setBlocked}
+        />
       </header>
       {loading ? (
         <div className="flex-1 space-y-3 p-4">
@@ -361,6 +374,11 @@ export default function VendorChat({ vendor = false }) {
               </button>
             </div>
           )}
+          {blocked ? (
+            <div className="shrink-0 border-t border-hairline bg-white p-4 text-center text-caption text-muted">
+              {t('report.blockedNotice')}
+            </div>
+          ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -387,6 +405,7 @@ export default function VendorChat({ vendor = false }) {
               <IconSend2 size={20} />
             </button>
           </form>
+          )}
         </>
       )}
     </div>

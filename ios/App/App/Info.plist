@@ -22,6 +22,32 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- iOS n'affiche PAS de demande d'autorisation quand le texte
+	     correspondant manque: il termine l'application sur-le-champ. Ces
+	     quatre clés sont donc obligatoires, et pas seulement « propres »:
+	     l'app ouvre l'appareil photo (MirrorModal, capture="user"), la
+	     photothèque (ajout d'articles, messagerie, Finia) et la
+	     géolocalisation (« Boutiques près de vous », position d'une
+	     boutique). Sans elles, une examinatrice Apple qui touche à une photo
+	     voit l'app se fermer — rejet immédiat.
+	     Le micro est déclaré parce que le sélecteur de fichiers iOS propose
+	     « Prendre une vidéo » là où l'app accepte les vidéos, et
+	     l'enregistrement capte le son. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Finjaro utilise l’appareil photo pour prendre en photo les articles que vous vendez et pour vous essayer un article en réalité augmentée.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Finjaro accède à vos photos pour publier les images de vos articles, votre photo de profil et les images envoyées dans la messagerie.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Finjaro utilise le micro lorsque vous enregistrez une vidéo pour présenter un article.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Finjaro utilise votre position pour vous montrer les boutiques et les services proches de vous. Vous pouvez aussi choisir votre ville à la main.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<!-- Finjaro n'embarque aucun chiffrement propre: elle se contente du HTTPS
+	     fourni par le système, ce qui relève de l'exemption prévue par la
+	     réglementation américaine sur l'exportation. Sans cette clé, App Store
+	     Connect repose la question à CHAQUE envoi de build et bloque la
+	     soumission tant qu'on n'a pas répondu à la main. -->
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

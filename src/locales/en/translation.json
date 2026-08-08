@@ -969,7 +969,15 @@
       "scam": "Scam / fraud",
       "inappropriate": "Inappropriate content",
       "other": "Other"
-    }
+    },
+    "reportContent": "Report this content",
+    "blockTitle": "Block this conversation",
+    "block": "Block",
+    "unblock": "Unblock",
+    "blockConfirm": "You will no longer receive messages from this person, and they will not be able to write to you. You can undo this at any time.",
+    "blocked": "Conversation blocked.",
+    "unblocked": "Block removed.",
+    "blockedNotice": "You have blocked this conversation. Unblock it to write again."
   },
   "suspended": {
     "title": "Account suspended",
