@@ -860,7 +860,10 @@ Deno.serve(async (req: Request) => {
     }
     contents.push({ role: 'user', parts: userParts });
 
-    async function callGemini(model: string) {
+    // `noThinking` n'est vrai qu'en REPLI: si un modèle refusait le champ
+    // thinkingConfig, on rejouerait l'appel sans lui plutôt que de laisser
+    // un 400 se transformer en « je n'ai pas bien compris ».
+    async function callGemini(model: string, noThinking = false) {
       const resp = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
@@ -870,7 +873,24 @@ Deno.serve(async (req: Request) => {
             systemInstruction: { parts: [{ text: systemPrompt() + systemPromptTools() }] },
             contents,
             tools: [{ functionDeclarations: toolDeclarations() }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+            generationConfig: {
+              temperature: 0.7,
+              // 800 était trop court, et d'une façon sournoise: sur les
+              // modèles « qui réfléchissent » (2.5 et au-delà), les jetons de
+              // réflexion se prennent sur CE budget. Une question claire tenait
+              // dans les 800; un message court et dépendant du contexte
+              // (« Femme », « Tendances du moment ») demande plus
+              // d'interprétation, la réflexion consommait tout, et la réponse
+              // revenait SANS AUCUN TEXTE. L'appel réussissait — 200 en deux
+              // secondes dans les journaux — et Finia répondait « Je n'ai pas
+              // bien compris, peux-tu reformuler ? » à des phrases parfaitement
+              // claires. Signalé par un utilisateur de Beau.
+              maxOutputTokens: 2048,
+              // Et on coupe la réflexion: Finia cherche des articles et répond,
+              // elle n'a pas de problème à résoudre. Tout le budget va au
+              // texte, et la réponse arrive plus vite.
+              ...(noThinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+            },
           }),
           signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
         }
@@ -902,6 +922,13 @@ Deno.serve(async (req: Request) => {
           const r = await callGemini(model);
           if (r.ok) { res = r; pinnedModel = model; break; }
           console.error('finou-chat: gemini error', model, r.status, JSON.stringify(r.body).slice(0, 300));
+          // Un modèle qui ne connaît pas thinkingConfig répond 400: on rejoue
+          // sans le champ au lieu d'abandonner sur ce seul motif.
+          if (r.status === 400 && JSON.stringify(r.body).includes('thinking')) {
+            calls++;
+            const retry = await callGemini(model, true);
+            if (retry.ok) { res = retry; pinnedModel = model; break; }
+          }
           if (r.status < 500 && r.status !== 429) break; // erreur définitive
         } catch (e) {
           console.error('finou-chat: gemini call failed', model, e);
@@ -931,7 +958,25 @@ Deno.serve(async (req: Request) => {
       ((data?.candidates as Array<Json> | undefined)?.[0]?.content?.parts as Array<Json> | undefined)
         ?.map((p) => (p.text as string) ?? '')
         .join('')
-        .trim() || "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+        .trim() || '';
+
+    // Une réponse VIDE n'est pas une incompréhension: c'est un appel qui a
+    // réussi sans produire un mot. On trace la vraie raison (MAX_TOKENS,
+    // blocage de sécurité...) au lieu de la maquiller en « reformule ta
+    // question » — c'est ce silence dans les journaux qui a fait passer ce
+    // défaut inaperçu, alors qu'il répondait ça à des phrases très claires.
+    if (!reply) {
+      const cand = (data?.candidates as Array<Json> | undefined)?.[0];
+      console.error(
+        'finou-chat: reponse sans texte',
+        JSON.stringify({
+          finishReason: cand?.finishReason ?? null,
+          blockReason: (data?.promptFeedback as Json | undefined)?.blockReason ?? null,
+          usage: data?.usageMetadata ?? null,
+        })
+      );
+      reply = "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+    }
 
     let category: string | null = null;
     let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | null = null;
