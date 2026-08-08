@@ -20,3 +20,10 @@ video-work/*
 
 # Captures de vérification produites par les tests ponctuels
 test-*.png
+
+# Clés de signature — jamais dans le dépôt.
+# .p8: la clé Sign in with Apple, qu'Apple ne fournit qu'UNE seule fois.
+# .keystore/.jks: la clé d'upload Android, reconstituée en CI depuis un secret.
+*.p8
+*.keystore
+*.jks
