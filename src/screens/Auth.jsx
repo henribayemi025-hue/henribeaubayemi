@@ -19,14 +19,14 @@ const E164_RE = /^\+[1-9]\d{6,14}$/;
 // initial (l'autre écriture de l'international) devient « + ».
 const normalizePhone = (raw) => raw.trim().replace(/^00/, '+').replace(/[\s.\-()]/g, '');
 
-// Le bouton « Continuer avec Apple » est écrit et testé, mais il ne peut pas
-// aboutir tant que le fournisseur `apple` n'est pas activé côté Supabase
-// (Services ID + Team ID + clé .p8 du compte développeur). Sans ça, un clic
-// répond « Unsupported provider » et la cliente se retrouve devant une erreur
-// sur l'écran de connexion — le pire endroit possible.
-// Passer à `true` UNIQUEMENT après avoir vu une vraie connexion Apple
-// aboutir. iOS ne peut pas être soumis à l'App Store avant (règle 4.8).
-const APPLE_SIGNIN_ENABLED = false;
+// Le fournisseur `apple` est activé côté Supabase depuis le 08/08 (Services ID
+// net.finjaro.app.signin, clé .p8 YTXF8Y6SAQ). Le bouton est donc affiché.
+//
+// ⚠️ Le « client secret » d'Apple EXPIRE — six mois maximum, imposé par Apple,
+// soit le 05/02/2027 pour celui en place. Passé cette date le bouton renvoie
+// « invalid_client » sans autre avertissement. `scripts/apple-client-secret.mjs`
+// refabrique le jeton à partir du fichier .p8 conservé hors du dépôt.
+const APPLE_SIGNIN_ENABLED = true;
 
 // `consoleMode`: écran de connexion de la console d'administration. On n'y
 // crée pas de compte (les droits admin s'accordent depuis la console
