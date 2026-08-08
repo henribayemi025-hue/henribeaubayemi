@@ -4,10 +4,24 @@
   "webDir": "dist",
   "server": {
     "url": "https://finjaro.net",
-    "allowNavigation": ["finjaro.net", "*.finjaro.net", "bokwivwizghdlaedczbw.supabase.co"]
+    "//": "allowNavigation: les domaines que l'appli a le droit d'afficher DANS sa propre fenêtre. Tout domaine absent de cette liste s'ouvre dans le navigateur du téléphone — c'est ce qui cassait « Continuer avec Google »: accounts.google.com n'y figurait pas, la page Google partait dans Chrome, et la session naissait dans Chrome au lieu de l'appli (constaté par Beau sur la version de test interne du 08/08, pendant que e-mail + mot de passe marchait très bien). Google et Apple doivent donc rester ici tant que la connexion passe par eux.",
+    "allowNavigation": [
+      "finjaro.net",
+      "*.finjaro.net",
+      "bokwivwizghdlaedczbw.supabase.co",
+      "accounts.google.com",
+      "*.googleusercontent.com",
+      "appleid.apple.com"
+    ]
   },
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "//": "overrideUserAgent: Google refuse sa page de connexion aux navigateurs intégrés — il reconnaît la fenêtre d'une appli Android au marqueur « ; wv) » de sa signature et répond « disallowed_useragent ». On se présente donc avec la signature d'un Chrome Android ordinaire, sans le marqueur. Sans cette ligne, le correctif allowNavigation ci-dessus ne suffit pas: la page Google s'afficherait dans l'appli mais refuserait la connexion.",
+    "overrideUserAgent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+  },
+  "ios": {
+    "//": "Même logique que côté Android: la signature par défaut d'une fenêtre intégrée iOS n'a pas le jeton « Safari/… », et Google s'en sert aussi pour refuser. On se présente comme le vrai Safari d'un iPhone.",
+    "overrideUserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
   },
   "plugins": {
     "SplashScreen": {

@@ -74,6 +74,26 @@ export default function Auth({ consoleMode = false }) {
     return () => clearTimeout(id);
   }, [otpSent]);
 
+  // Un clic sur Google/Apple laisse `busy` à vrai le temps de quitter la page
+  // — normal sur le web, où l'écran est remplacé. Mais si le détour échoue et
+  // qu'on REVIENT sur cet écran (retour arrière, ou l'appli mobile qui éjecte
+  // la page de connexion vers le navigateur du téléphone — le cas constaté par
+  // Beau: « un bouton qui tourne, tourne, je dois refresh »), rien ne remettait
+  // le formulaire en service. On le débloque dès que l'écran redevient visible.
+  useEffect(() => {
+    const wake = () => {
+      if (document.visibilityState === 'visible') setBusy(false);
+    };
+    document.addEventListener('visibilitychange', wake);
+    // `pageshow` couvre le retour arrière depuis le cache du navigateur, qui
+    // ne déclenche pas toujours visibilitychange.
+    window.addEventListener('pageshow', wake);
+    return () => {
+      document.removeEventListener('visibilitychange', wake);
+      window.removeEventListener('pageshow', wake);
+    };
+  }, []);
+
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
