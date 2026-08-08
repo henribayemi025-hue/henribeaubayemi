@@ -21,7 +21,17 @@ export function FinouDeleteProduct({ onClose, onDeleted }) {
   const [target, setTarget] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  // `shop` vaut null au PREMIER rendu — useVendorStatus part toujours de
+  // { loading: true, shop: null } et ne remplit la boutique qu'après son
+  // effet. Le tableau de dépendances `[shop.id]` était donc évalué sur null
+  // à chaque ouverture: une exception PENDANT le rendu, que rien n'attrape
+  // ici. Et comme Finia vit dans la mise en page, au-dessus du garde-fou des
+  // écrans, c'est TOUTE l'application qui disparaissait — la page blanche que
+  // Beau ne pouvait quitter qu'en rechargeant.
+  // `shop?.id` suffit à ne plus planter, et la requête attend d'avoir une
+  // boutique plutôt que d'aller chercher les articles de personne.
   const { data, loading } = useAsync(async () => {
+    if (!shop?.id) return [];
     const { data: products, error } = await supabase
       .from('products')
       .select('id, name, price_fcfa, images')
@@ -29,7 +39,7 @@ export function FinouDeleteProduct({ onClose, onDeleted }) {
       .order('created_at', { ascending: false });
     if (error) throw error;
     return products || [];
-  }, [shop.id]);
+  }, [shop?.id]);
 
   async function confirmDelete() {
     setBusy(true);

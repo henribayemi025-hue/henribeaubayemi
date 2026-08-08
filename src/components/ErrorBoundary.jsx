@@ -34,7 +34,11 @@ export class ErrorBoundary extends Component {
   }
 
   render() {
-    if (this.state.hasError) return <Fallback />;
+    // `silent`: pour ce qui est ACCESSOIRE à l'écran — l'assistant flottant,
+    // par exemple. Y afficher « Quelque chose n'a pas fonctionné » par-dessus
+    // une page qui, elle, marche très bien, inquiéterait pour rien. On
+    // s'efface; la trace reste dans la console pour le diagnostic.
+    if (this.state.hasError) return this.props.silent ? null : <Fallback />;
     return this.props.children;
   }
 }
