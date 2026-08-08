@@ -194,23 +194,70 @@ Deno.serve(async (req) => {
       }
     }
 
-    // A ring needs a hand in frame, a watch needs a wrist, etc. — telling
-    // Gemini which body part to expect (and to work with whatever is
-    // actually in the photo) cuts down on it silently declining to edit.
+    // Consigne par catégorie: OÙ se porte l'article, et surtout où il NE se
+    // porte PAS.
+    //
+    // Cinq catégories qui déclenchent l'essayage n'avaient AUCUNE consigne
+    // (mode_femme, mode_homme, enfants_bebe, maroquinerie, bijoux_montres):
+    // la table n'en couvrait que 7 sur 12, et le repli était une chaîne vide.
+    // Sans consigne, le modèle improvise — un boubou d'homme s'est retrouvé
+    // noué sur le crâne, ce qu'un client a signalé à Beau en photo.
+    //
+    // Les interdits comptent autant que les instructions: dire « habille le
+    // buste » ne suffit pas, il faut dire « ne touche NI aux cheveux NI à la
+    // tête ». Et la photo de l'article le montre presque toujours seul, à
+    // plat ou sur cintre: sans le préciser, le modèle recopie le cintre ou
+    // colle l'article comme un autocollant.
+    const HANGER_NOTE =
+      "La photo de l'article le montre seul (à plat, sur cintre ou sur mannequin): ne reproduis NI le cintre, NI le mannequin, NI le fond — reprends uniquement l'article et fais-le porter naturellement, avec les plis, l'ombre et la perspective du corps.";
+
     const BODY_PART_HINTS: Record<string, string> = {
-      bijoux: "Le bijou se porte probablement sur la main, le cou ou les oreilles visibles sur la photo — édite la zone du corps pertinente qui apparaît dans l'image.",
-      montres: "La montre se porte au poignet — édite le poignet visible sur la photo.",
-      chaussures: "Les chaussures se portent aux pieds — édite les pieds visibles sur la photo.",
-      mode: "Édite les vêtements de la personne sur la photo.",
-      sacs: "Ajoute le sac porté ou tenu par la personne sur la photo.",
-      accessoires: "Édite la zone du corps où cet accessoire se porte habituellement, selon ce qui est visible sur la photo.",
-      cheveux: "Édite la coiffure/cheveux de la personne sur la photo.",
+      // --- Vêtements: le piège, c'est la tête ---
+      mode: `Ce vêtement se porte sur le CORPS. Remplace la tenue actuelle de la personne. Ne touche NI au visage, NI aux cheveux, NI à la coiffure, NI au couvre-chef: la tête doit rester exactement comme sur la photo d'origine. ${HANGER_NOTE}`,
+      mode_femme: `Ce vêtement de femme se porte sur le CORPS (buste, taille, jambes selon la pièce). Remplace la tenue actuelle. Ne touche NI au visage, NI aux cheveux, NI à la coiffure: la tête reste identique à la photo d'origine. ${HANGER_NOTE}`,
+      mode_homme: `Ce vêtement d'homme se porte sur le CORPS (buste, épaules, taille, jambes selon la pièce). Remplace la tenue actuelle. Ne touche NI au visage, NI à la barbe, NI aux cheveux, NI à la coiffure — et n'ajoute AUCUN couvre-chef, foulard ou turban qui ne serait pas l'article lui-même. ${HANGER_NOTE}`,
+      enfants_bebe: `Ce vêtement d'enfant se porte sur le CORPS. Remplace la tenue actuelle en gardant la morphologie de l'enfant. Ne touche NI au visage NI aux cheveux. ${HANGER_NOTE}`,
+
+      // --- Ce qui se porte sur la tête: là, c'est l'inverse ---
+      cheveux: `Il s'agit d'une coiffure, d'une perruque, d'un foulard ou d'un couvre-chef: édite UNIQUEMENT la tête et les cheveux. Ne change NI le visage, NI les vêtements, NI le fond. Respecte la forme du crâne et la ligne du front.`,
+
+      // --- Le reste: une partie du corps précise ---
+      chaussures: `Les chaussures se portent AUX PIEDS. Édite uniquement les pieds et les chevilles visibles. Ne change ni les vêtements, ni le visage. Si les pieds ne sont pas dans le cadre, montre la personne en pied plutôt que de refuser. ${HANGER_NOTE}`,
+      sacs: `Le sac se porte À LA MAIN, à l'épaule ou en bandoulière. Ajoute-le sans modifier la tenue, le visage ni la coiffure. Choisis le port naturel selon le type de sac et la pose de la personne. ${HANGER_NOTE}`,
+      maroquinerie: `Cet article de maroquinerie (sac, valise, ceinture, portefeuille) se tient à la main, se porte à l'épaule ou à la taille selon la pièce. Ajoute-le sans modifier la tenue, le visage ni la coiffure. ${HANGER_NOTE}`,
+      bijoux: `Le bijou se porte au COU, aux OREILLES, aux POIGNETS ou aux DOIGTS selon la pièce. Édite uniquement la zone concernée qui apparaît sur la photo, à la bonne échelle — un bijou est petit. Ne change ni la tenue, ni le visage, ni la coiffure.`,
+      bijoux_montres: `Selon la pièce: un bijou se porte au cou, aux oreilles, aux poignets ou aux doigts; une montre se porte au POIGNET. Édite uniquement la zone concernée visible sur la photo, à la bonne échelle. Ne change ni la tenue, ni le visage, ni la coiffure.`,
+      montres: `La montre se porte AU POIGNET, cadran vers l'extérieur, à taille réaliste. Édite uniquement le poignet visible. Ne change ni la tenue, ni le visage.`,
+      accessoires: `Détermine d'abord OÙ cet accessoire se porte (tête, cou, poignet, taille, mains...) d'après sa forme sur la photo de l'article, puis édite UNIQUEMENT cette zone. En cas de doute, ne touche ni au visage ni à la coiffure. ${HANGER_NOTE}`,
     };
+
     const bodyPartHint = BODY_PART_HINTS[category] || '';
 
     const promptText = productImagePart
-      ? `Essayage virtuel. Voici deux images : la PREMIÈRE est la photo de la personne, la SECONDE est la photo réelle de l'article "${prompt}" à lui faire porter. ${bodyPartHint} Édite la première photo pour que la personne porte exactement l'article montré dans la seconde image (même couleur, forme et matière). Garde le visage, la pose et la morphologie de la personne identiques. Si la partie du corps nécessaire n'est pas visible sur la photo, fais de ton mieux avec ce qui est visible plutôt que de refuser. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`
-      : `Essayage virtuel : montre la personne sur cette photo portant ${prompt}. ${bodyPartHint} Garde le visage, la pose et la morphologie identiques, change seulement la tenue/le look décrit. Si la partie du corps nécessaire n'est pas visible sur la photo, fais de ton mieux avec ce qui est visible plutôt que de refuser. Tu DOIS produire une image éditée en sortie — ne réponds jamais uniquement par du texte.`;
+      ? `Essayage virtuel photoréaliste.
+
+Voici DEUX images :
+- IMAGE 1 : la photo de la personne. C'est elle que tu édites.
+- IMAGE 2 : la photo réelle de l'article « ${prompt} » qu'elle doit porter.
+
+OÙ PLACER L'ARTICLE : ${bodyPartHint}
+
+FIDÉLITÉ À L'ARTICLE : reproduis exactement ce que montre l'IMAGE 2 — même couleur, même motif, même matière, même coupe, même longueur. N'invente aucun détail, ne change pas les imprimés.
+
+FIDÉLITÉ À LA PERSONNE : le visage, le teint, la carrure, la pose, les mains, l'arrière-plan et l'éclairage de l'IMAGE 1 restent RIGOUREUSEMENT identiques. Tu ne modifies que la zone décrite ci-dessus.
+
+SI LA ZONE N'EST PAS VISIBLE (par exemple les pieds hors cadre) : élargis le cadrage ou fais au mieux avec ce qui apparaît, mais ne refuse jamais.
+
+SORTIE : tu DOIS renvoyer une image éditée. Ne réponds jamais uniquement par du texte.`
+      : `Essayage virtuel photoréaliste : montre la personne de cette photo portant « ${prompt} ».
+
+OÙ PLACER L'ARTICLE : ${bodyPartHint}
+
+FIDÉLITÉ À LA PERSONNE : le visage, le teint, la carrure, la pose, les mains, l'arrière-plan et l'éclairage restent RIGOUREUSEMENT identiques. Tu ne modifies que la zone décrite ci-dessus.
+
+SI LA ZONE N'EST PAS VISIBLE : élargis le cadrage ou fais au mieux avec ce qui apparaît, mais ne refuse jamais.
+
+SORTIE : tu DOIS renvoyer une image éditée. Ne réponds jamais uniquement par du texte.`;
 
     async function callGemini(model: string) {
       const parts: Array<Record<string, unknown>> = [

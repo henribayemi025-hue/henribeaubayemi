@@ -42,7 +42,19 @@ export function VendorLayout() {
       <VendorSidebarNav />
       <div
         className="fixed left-0 right-0 top-0 mx-auto flex w-full max-w-app flex-col overflow-hidden bg-white lg:relative lg:mx-0 lg:h-dvh lg:min-w-0 lg:max-w-none lg:flex-1"
-        style={{ height: 'var(--app-height, 100dvh)', paddingBottom: 'var(--kb, 0px)' }}
+        style={{
+          height: 'var(--app-height, 100dvh)',
+          // L'appli mobile dessine SOUS la barre d'état et le trou de la
+          // caméra: index.html demande « viewport-fit=cover », et depuis
+          // Android 15 le système impose ce plein écran. Aucune règle ne
+          // réservait la place — d'où le titre collé à la caméra constaté
+          // par Beau. Sur le web le navigateur pose sa propre barre
+          // par-dessus, ce qui masquait complètement le problème.
+          // env(...) vaut 0 partout où il n'y a pas d'encoche, donc cette
+          // marge ne coûte rien sur un écran ordinaire.
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'var(--kb, 0px)',
+        }}
       >
         {/* Marge basse tant que la barre d'onglets flottante est là (elle
             survole le contenu) — masquée dans un fil de discussion, qui gère

@@ -34,7 +34,7 @@ export default function ResetPassword() {
   return (
     <div
       className="mx-auto flex max-w-app flex-col justify-center overflow-y-auto px-6"
-      style={{ minHeight: 'var(--app-height, 100dvh)', height: 'var(--app-height, 100dvh)' }}
+      style={{ minHeight: 'var(--app-height, 100dvh)', height: 'var(--app-height, 100dvh)', paddingTop: 'env(safe-area-inset-top)' }}
     >
       <Link to="/" className="mb-8 flex items-center justify-center gap-1">
         <span className="text-title font-semibold text-teal">Finjaro</span>

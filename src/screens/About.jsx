@@ -12,7 +12,7 @@ export default function About() {
   const doc = aboutFor(i18n.language);
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'var(--app-height, 100dvh)' }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: 'var(--app-height, 100dvh)', paddingTop: 'env(safe-area-inset-top)' }}>
       <AppHeader title={doc.title} back />
       <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 overflow-y-auto overscroll-contain p-4 pb-16">
         <p className="text-section font-semibold text-teal">{doc.tagline}</p>

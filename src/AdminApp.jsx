@@ -44,7 +44,7 @@ export default function AdminApp() {
                   clavier iOS de pousser toute l'app vers le haut). Chaque
                   écran défile donc dans son propre cadre; la console avait
                   été livrée sans, et ne défilait pas du tout. */}
-              <div className="flex flex-col overflow-hidden" style={{ height: 'var(--app-height, 100dvh)' }}>
+              <div className="flex flex-col overflow-hidden" style={{ height: 'var(--app-height, 100dvh)', paddingTop: 'env(safe-area-inset-top)' }}>
                 <main className="flex-1 overflow-y-auto overscroll-contain">
                   <Suspense fallback={<Loading />}>
                     <Routes>
