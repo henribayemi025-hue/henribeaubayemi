@@ -71,14 +71,30 @@ await page.route('**/auth/v1/user**', (r) => r.fulfill({ json: session.user }));
 await page.route('**/auth/v1/token**', (r) => r.fulfill({ json: session }));
 await page.route('**/auth/v1/**', (r) => r.fulfill({ json: {} }));
 
-await page.route('**/rest/v1/rpc/home_feed_count**', (r) => r.fulfill({ json: PRODUCTS.length }));
-await page.route('**/rest/v1/rpc/home_feed_page**', (r) => r.fulfill({ json: PRODUCTS }));
-await page.route('**/rest/v1/rpc/**', (r) => r.fulfill({ json: [] }));
-
+// UN SEUL gestionnaire pour tout /rest/v1/, appels de fonction compris.
+// Playwright consulte ses routes de la DERNIÈRE enregistrée à la première: le
+// filet `**/rest/v1/**` passait donc AVANT les routes `rpc/…` et les avalait.
+// Conséquence: `home_feed_page` retombait sur une table nommée
+// « rpc/home_feed_page », l'accueil restait vide, et la revue l'annonçait
+// quand même « ✅ » — elle ne regarde que la console, or un écran vide ne
+// produit aucune erreur. Un gestionnaire unique qui aiguille lui-même
+// supprime la question de l'ordre.
 await page.route('**/rest/v1/**', (route) => {
   const req = route.request();
   const url = new URL(req.url());
-  const table = url.pathname.split('/rest/v1/')[1].split('?')[0];
+  const path = url.pathname.split('/rest/v1/')[1].split('?')[0];
+
+  if (path.startsWith('rpc/')) {
+    const fn = path.slice(4);
+    const json = fn === 'home_feed_page' ? PRODUCTS : fn === 'home_feed_count' ? PRODUCTS.length : [];
+    return route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
+      body: JSON.stringify(json),
+    });
+  }
+
+  const table = path;
   const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
   let rows = [];
   if (table === 'shops') rows = [SHOP_A, SHOP_B];
@@ -92,6 +108,20 @@ await page.route('**/rest/v1/**', (route) => {
   else if (table === 'favorites') rows = [];
   else if (table === 'categories') rows = [{ id: 'mode_femme', parent_id: null, kind: 'PRODUCT', label_fr: 'Mode Femme', label_en: 'Women' }];
   else if (table === 'push_subscriptions') rows = [];
+  // Respecter les filtres d'égalité (`id=eq.prod-1`, `shops.slug=eq.…`).
+  // Sans ça, la fiche article recevait les QUATRE articles: `.maybeSingle()`
+  // refuse une réponse à plusieurs lignes et l'écran basculait en « Quelque
+  // chose n'a pas fonctionné » — que cette revue annonçait pourtant « ✅ »,
+  // puisqu'un écran d'erreur en français ne produit aucune erreur console.
+  // Le chemin peut traverser une table liée, d'où la descente dans l'objet
+  // imbriqué.
+  const at = (row, path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), row);
+  for (const [key, value] of url.searchParams) {
+    if (['select', 'order', 'limit', 'offset'].includes(key)) continue;
+    if (!value.startsWith('eq.')) continue;
+    rows = rows.filter((r) => String(at(r, key)) === value.slice(3));
+  }
+
   const total = rows.length;
   return route.fulfill({
     status: 200,

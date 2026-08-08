@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
 import { timeAgo } from '../lib/format';
+import { ReportButton } from './ReportButton';
 import { networkMessage } from '../lib/netError';
 
 // Comments on a reel, shown in a bottom-sheet (not a DM). Public read; posting
@@ -89,6 +90,13 @@ export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
                     </p>
                     <p className="whitespace-pre-wrap break-words text-body text-ink">{c.body}</p>
                   </div>
+                  {/* Un commentaire est le contenu le plus exposé aux abus, et
+                      c'est justement celui qu'un examinateur Apple cherche à
+                      pouvoir signaler. On ne propose pas de se signaler
+                      soi-même. */}
+                  {c.user_id !== user?.id && (
+                    <ReportButton targetType="reel_comment" targetId={c.id} className="shrink-0 self-start pt-0.5" />
+                  )}
                 </li>
               ))}
             </ul>

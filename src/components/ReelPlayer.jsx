@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ReportButton } from './ReportButton';
 import { IconHeart, IconHeartFilled, IconMessageCircle, IconShare3, IconVolume, IconVolumeOff, IconShoppingBagPlus, IconPlus, IconCheck } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -186,6 +187,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         <button onClick={share} className="flex flex-col items-center" aria-label={t('common.share')}>
           <IconShare3 size={30} />
         </button>
+        <ReportButton targetType="reel" targetId={reel.id} variant="overlay" />
       </div>
 
       <div className="absolute inset-x-0 bottom-20 z-10 px-3 pr-20 text-white">

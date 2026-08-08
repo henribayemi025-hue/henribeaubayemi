@@ -969,7 +969,15 @@
       "scam": "Arnaque / fraude",
       "inappropriate": "Contenu inapproprié",
       "other": "Autre"
-    }
+    },
+    "reportContent": "Signaler ce contenu",
+    "blockTitle": "Bloquer cette conversation",
+    "block": "Bloquer",
+    "unblock": "Débloquer",
+    "blockConfirm": "Vous ne recevrez plus de messages de cette personne, et elle ne pourra plus vous écrire. Vous pouvez annuler ce blocage à tout moment.",
+    "blocked": "Conversation bloquée.",
+    "unblocked": "Blocage retiré.",
+    "blockedNotice": "Vous avez bloqué cette conversation. Débloquez-la pour pouvoir écrire à nouveau."
   },
   "suspended": {
     "title": "Compte suspendu",

@@ -8,7 +8,12 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { useUI } from '../hooks/useUI';
 
-// Report a shop/user. 3 reports auto-suspend the target (enforced by DB trigger).
+// Signaler une boutique, une personne, ou un contenu précis (article, vidéo,
+// commentaire) — voir migration 0047.
+// Trois signalements suspendent automatiquement une BOUTIQUE ou une PERSONNE
+// (déclencheur en base). Un contenu signalé, lui, est examiné à la main depuis
+// la console: retirer un article parce qu'il déplaît à trois personnes serait
+// disproportionné.
 export function ReportModal({ open, onClose, targetType, targetId }) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -42,7 +47,7 @@ export function ReportModal({ open, onClose, targetType, targetId }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('report.reportShop')}>
+    <Modal open={open} onClose={onClose} title={t(targetType === 'shop' ? 'report.reportShop' : 'report.reportContent')}>
       <div className="space-y-3">
         <Field label={t('report.reason')}>
           {(id) => (

@@ -15,6 +15,7 @@ import { ProductCard } from '../../components/ProductCard';
 import { SmartImage } from '../../components/SmartImage';
 import { ProductVideo } from '../../components/ProductVideo';
 import { StarRating } from '../../components/StarRating';
+import { ReportButton } from '../../components/ReportButton';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Skeleton, ErrorState } from '../../components/states';
 import { isPriceOnRequest, MIRROR_CATEGORIES } from '../../lib/categories';
@@ -199,10 +200,16 @@ export default function ProductDetail() {
           </div>
         )}
 
-        <Link to={`/boutique/${shop.slug}`} className="mt-3 flex items-center gap-2 text-body text-muted">
-          <span>{t('product.soldBy')} <span className="font-semibold text-ink">{shop.name}</span></span>
-          {shop.is_verified && <VerifiedBadge size={15} />}
-        </Link>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <Link to={`/boutique/${shop.slug}`} className="flex min-w-0 items-center gap-2 text-body text-muted">
+            <span>{t('product.soldBy')} <span className="font-semibold text-ink">{shop.name}</span></span>
+            {shop.is_verified && <VerifiedBadge size={15} />}
+          </Link>
+          {/* Signaler CET article, pas la boutique entière: exigé par la règle
+              1.2 de l'App Store, et la seule action proportionnée quand c'est
+              une photo ou une description qui pose problème. */}
+          <ReportButton targetType="product" targetId={p.id} className="shrink-0" />
+        </div>
 
         {outOfStock && (
           <span className="mt-3 inline-block rounded-pill bg-danger-bg px-3 py-1 text-caption font-semibold text-danger">
