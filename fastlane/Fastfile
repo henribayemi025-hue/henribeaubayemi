@@ -52,12 +52,14 @@ platform :ios do
       keychain_password: keychain_password,
     )
 
-    # Le profil App Store, celui qui n'exige aucun appareil enregistré.
+    # Le profil App Store — celui qui n'exige aucun appareil enregistré — est
+    # ce que produit `sigh` quand on ne demande NI développement NI ad hoc.
+    # Ne pas nommer ces deux options: fastlane les déclare incompatibles et
+    # refuse dès qu'on les mentionne, fussent-elles toutes deux à false
+    # (« You can't enable both :development and :adhoc », run 7).
     get_provisioning_profile(
       api_key: api_key,
       app_identifier: APP_ID,
-      adhoc: false,
-      development: false,
     )
     profile = lane_context[SharedValues::SIGH_NAME]
 
