@@ -220,11 +220,17 @@ function toolDeclarations() {
   {
     name: 'search_products',
     description:
-      "Cherche des articles réellement en vente sur Finjaro. À utiliser dès qu'on parle d'un article, d'un prix ou d'une disponibilité.",
+      "Cherche des articles réellement en vente sur Finjaro. À utiliser dès qu'on parle d'un article, d'un prix ou d'une disponibilité. " +
+      "RENSEIGNE TOUJOURS `category` quand la demande le permet: sans elle, une recherche infructueuse ne peut rien proposer d'approchant. " +
+      "Si la réponse contient `resultat_approche: true`, ce ne sont PAS des correspondances exactes: annonce-le (« je n'ai pas trouvé exactement ça, mais voici ce qu'il y a en... ») au lieu de les présenter comme la demande.",
     parameters: {
       type: 'OBJECT',
       properties: {
-        query: { type: 'STRING', description: "Mots-clés, ex: 'robe rouge', 'parfum homme'" },
+        query: {
+          type: 'STRING',
+          description:
+            "Mots-clés, ex: 'robe rouge', 'parfum homme'. Chaque mot est cherché séparément, dans le nom ET la description — inutile de deviner le titre exact de l'annonce.",
+        },
         category: { type: 'STRING', description: `Une de: ${PRODUCT_CATEGORIES.join(', ')}` },
         max_price_fcfa: { type: 'NUMBER', description: 'Prix maximum en FCFA' },
       },
@@ -379,24 +385,86 @@ async function runTool(
   }
   switch (name) {
     case 'search_products': {
-      let q = db
-        .from('products')
-        .select('id,name,price_fcfa,category,stock,shop_id,shops(name,slug)')
-        .eq('is_active', true)
-        .limit(6);
-      if (typeof args.query === 'string' && args.query.trim()) {
-        q = q.ilike('name', `%${args.query.trim()}%`);
+      // La recherche ne cherchait la phrase ENTIÈRE que dans le NOM de
+      // l'article: « habit pour femme » exigeait un article nommé exactement
+      // ainsi, donc zéro résultat, et Finia annonçait un catalogue vide alors
+      // que la boutique est pleine de robes et d'ensembles. Constaté par un
+      // utilisateur de Beau, sur « habit pour femme », « produit pour femme »
+      // et « jus » — tandis que « boisson » marchait, parce qu'un article
+      // portait ce mot-là.
+      //
+      // Une cliente ne connaît pas le nom que la vendeuse a choisi. On
+      // cherche donc CHAQUE MOT utile, dans le nom ET dans la description.
+      const CATALOG_FIELDS = 'id,name,price_fcfa,category,stock,shop_id,shops(name,slug)';
+      // Mots vides du français: sans ce tri, « pour » et « femme » pèsent
+      // pareil et « pour » ramène la moitié du catalogue.
+      const STOP = new Set([
+        'pour', 'avec', 'sans', 'dans', 'des', 'les', 'une', 'un', 'le', 'la', 'de', 'du',
+        'et', 'ou', 'mon', 'ma', 'mes', 'ce', 'cette', 'que', 'qui', 'chez', 'sur',
+        'produit', 'produits', 'article', 'articles', 'cherche', 'voudrais', 'veux',
+      ]);
+      const rawQuery = typeof args.query === 'string' ? args.query.trim() : '';
+      // Les virgules et parenthèses servent de séparateurs à PostgREST dans un
+      // `or(...)`: les laisser passer casserait la requête entière.
+      const words = rawQuery
+        .toLowerCase()
+        .split(/[\s,()%]+/)
+        .map((w) => w.replace(/[^\p{L}\p{N}-]/gu, ''))
+        .filter((w) => w.length >= 3 && !STOP.has(w))
+        .slice(0, 4);
+
+      const category =
+        typeof args.category === 'string' && PRODUCT_CATEGORIES.includes(args.category)
+          ? args.category
+          : null;
+
+      // Une catégorie PARENTE ne porte aucun article: tout est rangé dans ses
+      // enfants. « mode_femme » compte 0 article en direct mais 16 dans
+      // femme_robes, femme_pantalons et femme_vestes_manteaux; « alimentaire »
+      // 0 en direct et 3 dans alimentaire_boissons. Filtrer sur la seule
+      // catégorie demandée renvoyait donc un catalogue vide — c'est
+      // précisément pourquoi « Jus » ne trouvait rien là où « Boisson »
+      // marchait, ce dernier tombant par chance sur le NOM d'un article.
+      // On élargit à la catégorie ET à ses enfants, comme le fait déjà la
+      // recherche de services.
+      let categoryIds: string[] = [];
+      if (category) {
+        const { data: kids } = await db.from('categories').select('id').eq('parent_id', category);
+        categoryIds = [category, ...((kids ?? []) as Array<{ id: string }>).map((k) => k.id)];
       }
-      if (typeof args.category === 'string' && PRODUCT_CATEGORIES.includes(args.category)) {
-        q = q.eq('category', args.category);
+
+      async function run(useWords: boolean) {
+        let q = db.from('products').select(CATALOG_FIELDS).eq('is_active', true).limit(6);
+        if (useWords && words.length) {
+          q = q.or(words.flatMap((w) => [`name.ilike.%${w}%`, `description.ilike.%${w}%`]).join(','));
+        }
+        if (categoryIds.length) q = q.in('category', categoryIds);
+        if (typeof args.max_price_fcfa === 'number') q = q.lte('price_fcfa', args.max_price_fcfa);
+        return await q;
       }
-      if (typeof args.max_price_fcfa === 'number') {
-        q = q.lte('price_fcfa', args.max_price_fcfa);
-      }
-      const { data, error } = await q;
+
+      let { data, error } = await run(true);
       if (error) return { error: error.message };
+
+      // Rien trouvé mais une catégorie était visée: on montre ce que cette
+      // catégorie contient plutôt que de répondre « je n'ai rien ». Beau:
+      // « avant, même quand il n'avait pas une chose, ça proposait autre
+      // chose ». `resultat_approche` prévient le modèle que ce ne sont pas
+      // des correspondances exactes, pour qu'il l'annonce honnêtement au lieu
+      // de faire passer une robe pour le jus qu'on lui demandait.
+      let approximate = false;
+      if ((data?.length ?? 0) === 0 && categoryIds.length) {
+        const retry = await run(false);
+        if (!retry.error && (retry.data?.length ?? 0) > 0) {
+          data = retry.data;
+          approximate = true;
+        }
+      }
+
       return {
         count: data?.length ?? 0,
+        resultat_approche: approximate,
+        mots_cherches: words,
         products: (data ?? []).map((p: Json) => ({
           id: p.id,
           nom: p.name,
@@ -860,7 +928,10 @@ Deno.serve(async (req: Request) => {
     }
     contents.push({ role: 'user', parts: userParts });
 
-    async function callGemini(model: string) {
+    // `noThinking` n'est vrai qu'en REPLI: si un modèle refusait le champ
+    // thinkingConfig, on rejouerait l'appel sans lui plutôt que de laisser
+    // un 400 se transformer en « je n'ai pas bien compris ».
+    async function callGemini(model: string, noThinking = false) {
       const resp = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
@@ -870,7 +941,24 @@ Deno.serve(async (req: Request) => {
             systemInstruction: { parts: [{ text: systemPrompt() + systemPromptTools() }] },
             contents,
             tools: [{ functionDeclarations: toolDeclarations() }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+            generationConfig: {
+              temperature: 0.7,
+              // 800 était trop court, et d'une façon sournoise: sur les
+              // modèles « qui réfléchissent » (2.5 et au-delà), les jetons de
+              // réflexion se prennent sur CE budget. Une question claire tenait
+              // dans les 800; un message court et dépendant du contexte
+              // (« Femme », « Tendances du moment ») demande plus
+              // d'interprétation, la réflexion consommait tout, et la réponse
+              // revenait SANS AUCUN TEXTE. L'appel réussissait — 200 en deux
+              // secondes dans les journaux — et Finia répondait « Je n'ai pas
+              // bien compris, peux-tu reformuler ? » à des phrases parfaitement
+              // claires. Signalé par un utilisateur de Beau.
+              maxOutputTokens: 2048,
+              // Et on coupe la réflexion: Finia cherche des articles et répond,
+              // elle n'a pas de problème à résoudre. Tout le budget va au
+              // texte, et la réponse arrive plus vite.
+              ...(noThinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+            },
           }),
           signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
         }
@@ -902,6 +990,13 @@ Deno.serve(async (req: Request) => {
           const r = await callGemini(model);
           if (r.ok) { res = r; pinnedModel = model; break; }
           console.error('finou-chat: gemini error', model, r.status, JSON.stringify(r.body).slice(0, 300));
+          // Un modèle qui ne connaît pas thinkingConfig répond 400: on rejoue
+          // sans le champ au lieu d'abandonner sur ce seul motif.
+          if (r.status === 400 && JSON.stringify(r.body).includes('thinking')) {
+            calls++;
+            const retry = await callGemini(model, true);
+            if (retry.ok) { res = retry; pinnedModel = model; break; }
+          }
           if (r.status < 500 && r.status !== 429) break; // erreur définitive
         } catch (e) {
           console.error('finou-chat: gemini call failed', model, e);
@@ -931,7 +1026,25 @@ Deno.serve(async (req: Request) => {
       ((data?.candidates as Array<Json> | undefined)?.[0]?.content?.parts as Array<Json> | undefined)
         ?.map((p) => (p.text as string) ?? '')
         .join('')
-        .trim() || "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+        .trim() || '';
+
+    // Une réponse VIDE n'est pas une incompréhension: c'est un appel qui a
+    // réussi sans produire un mot. On trace la vraie raison (MAX_TOKENS,
+    // blocage de sécurité...) au lieu de la maquiller en « reformule ta
+    // question » — c'est ce silence dans les journaux qui a fait passer ce
+    // défaut inaperçu, alors qu'il répondait ça à des phrases très claires.
+    if (!reply) {
+      const cand = (data?.candidates as Array<Json> | undefined)?.[0];
+      console.error(
+        'finou-chat: reponse sans texte',
+        JSON.stringify({
+          finishReason: cand?.finishReason ?? null,
+          blockReason: (data?.promptFeedback as Json | undefined)?.blockReason ?? null,
+          usage: data?.usageMetadata ?? null,
+        })
+      );
+      reply = "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+    }
 
     let category: string | null = null;
     let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | null = null;

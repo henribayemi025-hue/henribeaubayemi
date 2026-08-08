@@ -138,7 +138,13 @@ Deno.serve(async (req: Request) => {
           }],
           generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 400,
+            // Même piège que sur finou-chat: gemini-2.5-flash réfléchit avant
+            // de répondre, et cette réflexion se prend sur maxOutputTokens.
+            // À 400, l'évaluation d'un troc — deux objets à comparer, donc du
+            // raisonnement — pouvait revenir vide, sans erreur ni trace.
+            // On coupe la réflexion et on laisse de la marge au JSON attendu.
+            maxOutputTokens: 1024,
+            thinkingConfig: { thinkingBudget: 0 },
             responseMimeType: 'application/json',
             responseSchema: {
               type: 'OBJECT',
