@@ -99,7 +99,8 @@
     "useSmsCodeInstead": "Je préfère recevoir un code par SMS",
     "forgotPasswordPhone": "Mot de passe oublié ? Recevoir un code par SMS",
     "phoneAlreadyRegistered": "Ce numéro a déjà un compte — passe par « Se connecter ».",
-    "invalidPhoneCredentials": "Numéro ou mot de passe incorrect."
+    "invalidPhoneCredentials": "Numéro ou mot de passe incorrect.",
+    "continueWithApple": "Continuer avec Apple"
   },
   "nav": {
     "home": "Accueil",
