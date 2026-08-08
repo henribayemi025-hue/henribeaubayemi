@@ -6,10 +6,13 @@
 # job, parce que l'outil de dépôt d'Apple (Transporter) n'existe pas sous
 # Windows — Beau ne pourrait pas déposer le fichier lui-même.
 #
-# Signature: AUCUN certificat à fabriquer ni à garder. On donne à Xcode une
-# clé d'API App Store Connect et il crée/renouvelle lui-même certificat et
-# profil sur les serveurs d'Apple (« cloud signing », -allowProvisioningUpdates).
-# C'est le pendant iOS de Play App Signing.
+# Signature: AUCUN certificat à fabriquer ni à garder à la main. fastlane
+# demande à Apple, à partir de la clé d'API, un certificat de distribution et
+# un profil App Store, les installe, puis archive en les désignant.
+# La signature « automatique » de Xcode a été essayée d'abord et ne peut pas
+# marcher ici: elle ne signe qu'en développement, et un profil de
+# développement exige au moins un iPhone enregistré dans le compte — ce
+# qu'une machine de CI n'a pas. Voir fastlane/Fastfile pour le détail.
 #
 # Secrets requis (Settings → Secrets → Actions):
 #   APPSTORE_API_KEY_ID      — l'identifiant de la clé (10 caractères)
@@ -85,77 +88,20 @@ jobs:
           mkdir -p "$HOME/private_keys"
           printf '%s' "$P8" | tr -d ' \r\n' | base64 -d > "$HOME/private_keys/AuthKey_${KID}.p8"
 
-      - name: Préparer un trousseau pour la signature
-        if: steps.secrets.outputs.ready == 'true'
-        run: |
-          # Le certificat que Xcode fabrique en « cloud signing » doit être
-          # rangé dans un trousseau déverrouillé. Celui de la machine de CI ne
-          # l'est pas: on en crée un dédié, déverrouillé pour la durée du job.
-          security create-keychain -p ci-tmp build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p ci-tmp build.keychain
-          security set-keychain-settings -lut 3600 build.keychain
-
-      - name: Archiver
+      - name: Fabriquer et envoyer
         if: steps.secrets.outputs.ready == 'true'
         env:
-          KID: ${{ secrets.APPSTORE_API_KEY_ID }}
-          ISS: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          # Le trousseau temporaire que crée `setup_ci` a besoin d'un mot de
+          # passe; sans lui fastlane en invente un et le certificat devient
+          # illisible à l'étape suivante.
+          MATCH_KEYCHAIN_PASSWORD: ci-tmp
         run: |
-          # CURRENT_PROJECT_VERSION = numéro de run: chaque envoi porte un
-          # numéro de build strictement croissant, comme l'exige Apple —
-          # même mécanique que versionCode côté Android.
-          #
-          #
-          # L'identité de signature N'EST PAS forcée ici, et c'est délibéré.
-          # Le projet généré par Capacitor porte « iPhone Developer » au
-          # niveau du projet: Xcode réclamait donc un profil de DÉVELOPPEMENT,
-          # qui exige un iPhone enregistré dans le compte, d'où l'échec du
-          # run 2 (« Your team has no devices »). Mais l'imposer en ligne de
-          # commande a produit l'échec du run 3: « conflicting provisioning
-          # settings », la signature automatique n'acceptant pas qu'on lui
-          # dicte une identité. La correction tient donc dans le projet
-          # lui-même (Release signe en « Apple Distribution »), et Xcode
-          # fabrique le profil App Store via -allowProvisioningUpdates.
-          xcodebuild archive \
-            -project ios/App/App.xcodeproj \
-            -scheme App \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${KID}.p8" \
-            -authenticationKeyID "$KID" \
-            -authenticationKeyIssuerID "$ISS" \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=CP87XRK5CD \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
-            MARKETING_VERSION=1.0.${{ github.run_number }}
-
-      - name: Envoyer à App Store Connect
-        if: steps.secrets.outputs.ready == 'true'
-        env:
-          KID: ${{ secrets.APPSTORE_API_KEY_ID }}
-          ISS: ${{ secrets.APPSTORE_API_ISSUER_ID }}
-        run: |
-          # `destination: upload`: l'export part directement chez Apple, il ne
-          # laisse aucun .ipa à télécharger — voulu, voir l'en-tête du fichier.
-          cat > "$RUNNER_TEMP/exportOptions.plist" <<'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
-            <key>teamID</key><string>CP87XRK5CD</string>
-          </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/App.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/exportOptions.plist" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${KID}.p8" \
-            -authenticationKeyID "$KID" \
-            -authenticationKeyIssuerID "$ISS"
-          echo "Build 1.0.${{ github.run_number }} envoyé — visible dans App Store Connect → TestFlight d'ici quelques minutes."
+          export ASC_KEY_PATH="$HOME/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8"
+          # fastlane est préinstallé sur les machines macOS de GitHub; on ne
+          # l'installe que s'il venait à disparaître d'une image future.
+          fastlane --version >/dev/null 2>&1 || sudo gem install fastlane -NV
+          fastlane ios release
+          echo "Build 1.0.${BUILD_NUMBER} envoyé — visible dans App Store Connect → TestFlight d'ici quelques minutes."
