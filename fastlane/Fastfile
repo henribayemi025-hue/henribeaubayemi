@@ -9,9 +9,9 @@
 # provisioning settings ».
 # La sortie, c'est la signature MANUELLE: on demande à Apple un certificat de
 # distribution et un profil App Store, on les installe, puis on archive en
-# les désignant explicitement. `cert` et `sigh` font exactement cela à partir
-# de la clé d'API, et réutilisent ce qui existe déjà au lieu d'en recréer à
-# chaque exécution — Apple limite le nombre de certificats de distribution.
+# les désignant explicitement.
+require 'spaceship'
+
 default_platform(:ios)
 
 APP_ID = 'net.finjaro.app'
@@ -27,19 +27,33 @@ platform :ios do
       key_filepath: ENV.fetch('ASC_KEY_PATH'),
     )
 
-    # Trousseau temporaire, déverrouillé pour la durée du job: le certificat
-    # doit être rangé quelque part d'accessible, et celui de la machine ne
-    # l'est pas.
+    # Trousseau temporaire, déverrouillé pour la durée du job.
     setup_ci
+    keychain = File.expand_path(lane_context[SharedValues::KEYCHAIN_PATH])
+    keychain_password = ENV.fetch('MATCH_KEYCHAIN_PASSWORD')
 
-    get_certificates(api_key: api_key, development: false)
+    revoke_orphan_distribution_certificates(api_key)
+
+    # keychain_path/keychain_password sont INDISPENSABLES: sans eux le
+    # certificat atterrit dans le trousseau `login` de la machine alors que
+    # Xcode lit celui qu'a créé setup_ci, et le run échoue sur « There are no
+    # local code signing identities found » — après avoir pourtant fabriqué le
+    # certificat chez Apple (constaté au run 5).
+    get_certificates(
+      api_key: api_key,
+      development: false,
+      keychain_path: keychain,
+      keychain_password: keychain_password,
+    )
+
+    # Le profil App Store, celui qui n'exige aucun appareil enregistré.
     get_provisioning_profile(
       api_key: api_key,
       app_identifier: APP_ID,
-      # Le profil App Store, celui qui n'exige aucun appareil enregistré.
       adhoc: false,
       development: false,
     )
+    profile = lane_context[SharedValues::SIGH_NAME]
 
     update_code_signing_settings(
       path: PROJECT,
@@ -48,7 +62,7 @@ platform :ios do
       team_id: TEAM_ID,
       bundle_identifier: APP_ID,
       code_sign_identity: 'Apple Distribution',
-      profile_name: lane_context[SharedValues::SIGH_NAME],
+      profile_name: profile,
     )
 
     build = ENV.fetch('BUILD_NUMBER')
@@ -60,6 +74,11 @@ platform :ios do
       # Numéro de build strictement croissant, comme l'exige Apple: le numéro
       # de run GitHub, même mécanique que versionCode côté Android.
       xcargs: "CURRENT_PROJECT_VERSION=#{build} MARKETING_VERSION=1.0.#{build}",
+      export_options: {
+        signingStyle: 'manual',
+        teamID: TEAM_ID,
+        provisioningProfiles: { APP_ID => profile },
+      },
       output_directory: ENV.fetch('RUNNER_TEMP'),
       clean: true,
     )
@@ -73,4 +92,33 @@ platform :ios do
       skip_waiting_for_build_processing: true,
     )
   end
+end
+
+# Apple plafonne le nombre de certificats de distribution (deux ou trois selon
+# le compte). Or une machine de CI est effacée à la fin du job: la clé privée
+# du certificat qu'elle vient d'obtenir disparaît avec elle, le certificat
+# devient inutilisable, et `cert` en redemande un au run suivant. Sans ce
+# ménage, le quota est épuisé en trois exécutions et PLUS AUCUN build ne
+# passe — y compris depuis un Mac.
+#
+# Révoquer est sans effet sur ce qui est déjà publié: Apple re-signe lui-même
+# les apps de l'App Store. Le seul usage qu'on casserait serait une signature
+# depuis un Mac, et le projet n'en a pas.
+#
+# L'échec n'interrompt pas le build: si le ménage ne se fait pas, `cert`
+# fonctionnera quand même tant que le quota reste disponible.
+def revoke_orphan_distribution_certificates(api_key)
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(**api_key)
+  types = [
+    Spaceship::ConnectAPI::Certificate::CertificateType::DISTRIBUTION,
+    Spaceship::ConnectAPI::Certificate::CertificateType::IOS_DISTRIBUTION,
+  ]
+  certs = Spaceship::ConnectAPI::Certificate.all.select { |c| types.include?(c.certificate_type) }
+  UI.message("Certificats de distribution existants: #{certs.count}")
+  certs.each do |cert|
+    UI.message("Révocation de #{cert.serial_number} (clé privée perdue avec la machine du run précédent)")
+    cert.delete!
+  end
+rescue StandardError => e
+  UI.important("Ménage des certificats impossible (#{e.message}) — on continue.")
 end
