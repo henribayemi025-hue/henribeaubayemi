@@ -34,6 +34,9 @@ on:
     paths:
       - 'ios/**'
       - 'capacitor.config.json'
+      # Le Fastfile EST la recette du build: l'oublier ici, c'est pousser un
+      # correctif de signature qui ne declenche aucun run (arrive au run 6).
+      - 'fastlane/**'
       - '.github/workflows/ios.yml'
 
 jobs:
