@@ -44,7 +44,12 @@ jobs:
     # Les minutes macOS comptent 10x dans le quota GitHub: ce job ne tourne
     # que quand l'app NATIVE change, ce qui est rare — le contenu vient de
     # finjaro.net et se met à jour sans reconstruire l'app.
-    runs-on: macos-15
+    #
+    # macos-26 et non macos-15: Apple REFUSE désormais tout envoi compilé avec
+    # un SDK antérieur à iOS 26 (« This app was built with the iOS 18.5 SDK »,
+    # erreur 409 au run 8 — l'app était pourtant construite et signée
+    # correctement). L'image macos-15 ne fournit que Xcode 16.
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
@@ -65,6 +70,17 @@ jobs:
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Sélectionner le Xcode le plus récent
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          # On prend le plus récent installé plutôt que d'écrire un numéro en
+          # dur: les images GitHub changent de version d'Xcode régulièrement,
+          # et Apple relève son exigence de SDK chaque année.
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
+          xcodebuild -version
+          echo "SDK iOS: $(xcodebuild -showsdks | grep -i iphoneos | tail -1)"
 
       - uses: actions/setup-node@v4
         if: steps.secrets.outputs.ready == 'true'
