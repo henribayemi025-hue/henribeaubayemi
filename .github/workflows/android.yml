@@ -70,18 +70,36 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: echo "$KS" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+          PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          # Un copier-coller embarque facilement un retour à la ligne ou un
+          # espace en bout de valeur — invisible dans l'interface GitHub,
+          # mais suffisant pour finir sur « keystore password was incorrect »
+          # au bout de 90 s de build (runs 4 et 5). On nettoie les DEUX
+          # secrets, et on vérifie tout de suite que la clé s'ouvre: si ça ne
+          # va pas, l'échec est immédiat et son message dit quoi corriger.
+          printf '%s' "$KS" | tr -d ' \r\n' | base64 -d > "$RUNNER_TEMP/upload.keystore"
+          printf '%s' "$PW" | tr -d '\r\n' > "$RUNNER_TEMP/ks-password"
+          if ! keytool -list -keystore "$RUNNER_TEMP/upload.keystore" -alias finjaro \
+              -storepass "$(cat "$RUNNER_TEMP/ks-password")" >/dev/null 2>&1; then
+            echo "::error::La clé ne s'ouvre pas avec ce mot de passe. Vérifie que ANDROID_KEYSTORE_BASE64 et ANDROID_KEYSTORE_PASSWORD viennent bien de la MÊME paire de fichiers (upload.keystore.base64 + motdepasse.txt)."
+            exit 1
+          fi
+          echo "Clé vérifiée: alias finjaro lisible."
 
       - name: Construire le bundle release
         if: steps.secrets.outputs.ready == 'true'
         working-directory: android
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload.keystore
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           # run_number croît à chaque exécution: jamais deux versions identiques.
           ANDROID_VERSION_CODE: ${{ github.run_number }}
           ANDROID_VERSION_NAME: 1.0.${{ github.run_number }}
-        run: ./gradlew bundleRelease --no-daemon
+        run: |
+          # Le mot de passe vient du fichier NETTOYÉ à l'étape précédente, pas
+          # du secret brut — voir « Reconstituer le keystore ».
+          export ANDROID_KEYSTORE_PASSWORD="$(cat "$RUNNER_TEMP/ks-password")"
+          ./gradlew bundleRelease --no-daemon
 
       - name: Publier le .aab
         if: steps.secrets.outputs.ready == 'true'
