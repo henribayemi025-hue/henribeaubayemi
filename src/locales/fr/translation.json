@@ -483,6 +483,8 @@
     "noShops": "Aucune boutique trouvée près de chez vous.",
     "noListings": "Aucune annonce dans ta zone pour l'instant.",
     "broaden": "Élargir la recherche",
+    "broadenCount_one": "+{{count}} ailleurs",
+    "broadenCount_other": "+{{count}} ailleurs",
     "iLookFor": "Je cherche",
     "iOffer": "Je propose",
     "listingKind": "Article ou service ?",
