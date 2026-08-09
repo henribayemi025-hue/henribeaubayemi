@@ -114,20 +114,30 @@ export default function NearYou() {
   const { data, loading, error, retry } = useAsync(async () => {
     const shopsQuery = supabase.from('shops').select('*').eq('status', 'active').order('followers_count', { ascending: false }).limit(40);
     if (radius === 'country' && country) shopsQuery.eq('country', country);
+    // Ce qui est CACHÉ par le filtre pays. Depuis la France, l'annuaire
+    // n'affichait qu'un seul prestataire alors qu'il y en a sept ailleurs —
+    // et « Élargir la recherche » ne disait pas ce qu'on manquait, donc
+    // personne ne cliquait. On compte les prestataires des autres pays pour
+    // l'annoncer avec un vrai chiffre.
+    const elsewhereQuery = radius === 'country' && country
+      ? supabase.from('shops').select('categories').eq('status', 'active').neq('country', country).limit(200)
+      : Promise.resolve({ data: null, error: null });
     // Explicit FK join (near_you_listings.user_id -> profiles) so PostgREST can
     // resolve the poster's name. The FK is added in migration 0007.
-    const [shopsRes, listingsRes] = await Promise.all([
+    const [shopsRes, listingsRes, elsewhereRes] = await Promise.all([
       shopsQuery,
       supabase
         .from('near_you_listings')
         .select('*, profiles!near_you_listings_profile_fk(name)')
         .order('created_at', { ascending: false })
         .limit(40),
+      elsewhereQuery,
     ]);
     if (shopsRes.error) throw shopsRes.error;
     // Surface (don't silently swallow) a listings error, but keep Boutiques usable.
     if (listingsRes.error) console.error('[NearYou] listings query failed:', listingsRes.error.message);
     const shops = shopsRes.data || [];
+    const providersElsewhere = (elsewhereRes.data || []).filter(isServiceShop).length;
 
     // Vitrine des cartes prestataire: photos du catalogue, nombre d'avis et
     // prix d'appel. Deux requêtes groupées pour TOUTES les fiches — jamais
@@ -158,6 +168,7 @@ export default function NearYou() {
       portfolios,
       reviewCounts,
       minPrices,
+      providersElsewhere,
     };
   }, [country, radius]);
 
@@ -382,7 +393,15 @@ export default function NearYou() {
                 onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))}
                 className="chip h-10 shrink-0 whitespace-nowrap bg-white text-teal"
               >
-                {radius === 'country' ? t('nearYou.broaden') : countryLabel(country, i18n.language)}
+                {/* Le chiffre est le vrai décompte des prestataires des autres
+                    pays: « Élargir la recherche » tout seul ne donnait aucune
+                    raison de cliquer, et l'annuaire semblait vide alors qu'il
+                    ne l'était pas. */}
+                {radius === 'country'
+                  ? (data?.providersElsewhere > 0
+                      ? t('nearYou.broadenCount', { count: data.providersElsewhere })
+                      : t('nearYou.broaden'))
+                  : countryLabel(country, i18n.language)}
               </button>
             )}
           </div>
