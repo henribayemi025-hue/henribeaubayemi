@@ -316,6 +316,13 @@ export function FinouChou() {
               <button onClick={() => fileRef.current?.click()} className="chip text-ink">{t('finou.suggestPhoto')}</button>
               {vendorStatus === 'approved' ? (
                 <>
+                  {/* Ajouter ouvre l'assistant DIRECTEMENT, sans passer par le
+                      modèle — exactement comme Supprimer juste en dessous.
+                      L'asymétrie précédente (supprimer en un geste, ajouter en
+                      tapant du texte) poussait le vendeur à écrire « ajouter mes
+                      articles », et le modèle, faute de consigne, lui répondait
+                      de saisir nom/catégorie/prix/stock à la main. */}
+                  <button onClick={() => setWizardOpen(true)} className="chip text-ink">{t('finou.actionAddProduct')}</button>
                   <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
                   <button onClick={() => send(t('finou.actionShareShop'))} className="chip text-ink">{t('finou.actionShareShop')}</button>
                   <button onClick={() => setDeleteOpen(true)} className="chip text-ink">{t('finouDelete.title')}</button>
