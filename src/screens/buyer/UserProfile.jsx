@@ -101,6 +101,39 @@ export default function UserProfile() {
         <Link to="/profile/edit" className="text-caption font-semibold text-teal">{t('profile.editProfile')}</Link>
       </div>
 
+      {/* Vendre: une CARTE en haut, plus une ligne de liste en bas.
+          « Devenir vendeur » était la 8e ligne d'une liste où toutes les
+          lignes se ressemblent — même taille, même gris, même chevron. Sur
+          42 comptes créés, 22 boutiques: la marche à franchir n'est pas le
+          formulaire, c'est de trouver la porte. Ici elle se voit avant
+          d'avoir à faire défiler, et elle dit ce qu'on y gagne. */}
+      {status !== 'pending' && (
+        <div className="mt-4 px-4">
+          {isVendor ? (
+            <button
+              onClick={() => navigate('/switch/to-vendor')}
+              className="flex w-full items-center gap-3 rounded-card bg-teal px-4 py-3.5 text-left text-white transition active:scale-[0.98]"
+            >
+              <IconSwitchHorizontal size={22} />
+              <span className="flex-1 text-body font-semibold">{t('profile.switchToVendor')}</span>
+              <IconChevronRight size={18} />
+            </button>
+          ) : (
+            <Link
+              to="/become-vendor"
+              className="flex items-center gap-3 rounded-card border border-teal bg-white px-4 py-3.5 transition active:scale-[0.98]"
+            >
+              <IconBuildingStore size={26} className="shrink-0 text-teal" />
+              <span className="flex-1">
+                <span className="block text-body font-semibold text-ink">{t('profile.sellCardTitle')}</span>
+                <span className="block text-caption text-muted">{t('profile.sellCardHint')}</span>
+              </span>
+              <IconChevronRight size={18} className="shrink-0 text-teal" />
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Stats grid — real data, tappable cards route to the matching page. */}
       <div className="mt-4 grid grid-cols-3 gap-3 px-4">
         <StatTile to="/profile/orders" value={stats?.orders} label={t('profile.statOrders')} icon={IconShoppingBag} />
@@ -119,27 +152,18 @@ export default function UserProfile() {
           </li>
         ))}
 
-        {/* Devenir vendeur — state-dependent row. */}
-        <li>
-          {isVendor ? (
-            <button onClick={() => navigate('/switch/to-vendor')} className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3.5 text-left text-body text-teal">
-              <IconSwitchHorizontal size={22} />
-              <span className="flex-1 font-semibold">{t('profile.switchToVendor')}</span>
-              <IconChevronRight size={18} className="text-hairline" />
-            </button>
-          ) : status === 'pending' ? (
+        {/* Candidature en cours: le seul état que la carte du haut ne couvre
+            pas — il n'y a rien à cliquer, juste à attendre. Les deux autres
+            états (vendeur / pas encore) sont montés en haut de l'écran; les
+            répéter ici n'aidait personne et allongeait la liste. */}
+        {status === 'pending' && (
+          <li>
             <div className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-muted">
               <IconClockHour4 size={22} />
               <span className="flex-1">{t('profile.vendorPending')}</span>
             </div>
-          ) : (
-            <Link to="/become-vendor" className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-ink">
-              <IconBuildingStore size={22} className="text-muted" />
-              <span className="flex-1">{t('profile.becomeVendor')}</span>
-              <IconChevronRight size={18} className="text-hairline" />
-            </Link>
-          )}
-        </li>
+          </li>
+        )}
 
         <li>
           <button

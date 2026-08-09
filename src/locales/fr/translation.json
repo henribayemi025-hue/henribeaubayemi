@@ -570,7 +570,9 @@
     "deleteAccountReasonPlaceholder": "Dis-nous pourquoi, si tu veux bien (facultatif)",
     "deleteAccountCheckbox": "Je comprends que cette action est définitive et je confirme vouloir supprimer mon compte.",
     "deleteAccountConfirm": "Supprimer définitivement",
-    "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter."
+    "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter.",
+    "sellCardTitle": "Vendre sur Finjaro",
+    "sellCardHint": "Ouvre ta boutique gratuitement, en quelques minutes."
   },
   "referral": {
     "navLabel": "Inviter des amis",
@@ -946,7 +948,10 @@
     "titleProvider": "Devenir prestataire",
     "providerName": "Nom de ton activité",
     "generating": "Finia t'habille… ça prend quelques secondes.",
-    "askDescription": "Ajoute une description, ou laisse Finia la rédiger."
+    "askDescription": "Ajoute une description, ou laisse Finia la rédiger.",
+    "stepOptional": "facultative",
+    "skipToEnd": "Passer, je le ferai plus tard",
+    "addFirstProduct": "Publier mon premier article"
   },
   "switchMode": {
     "welcomeVendor": "Bienvenue dans ton espace vendeur.",
