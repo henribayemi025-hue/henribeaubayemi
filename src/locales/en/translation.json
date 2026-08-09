@@ -846,7 +846,8 @@
     "publishAllConfirm": "Publish {{count}} item(s) at once? They become visible to everyone. You can unpublish any of them later.",
     "publishedAll": "{{count}} item(s) published.",
     "priceOnRequest": "Price on request",
-    "priceOnRequestHelp": "The item shows no price. Buyers message you to ask instead of ordering directly. Handy when you haven't set your price yet."
+    "priceOnRequestHelp": "The item shows no price. Buyers message you to ask instead of ordering directly. Handy when you haven't set your price yet.",
+    "switchToBuyerShort": "Buyer mode"
   },
   "orderStatus": {
     "new": "Awaiting validation",

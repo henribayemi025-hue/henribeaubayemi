@@ -86,8 +86,16 @@ export default function VendorDashboard() {
         <h1 className="flex-1 truncate text-section text-ink">{t('vendor.greeting', { name: shop.name })}</h1>
         <NotificationBell />
         <Link to="/vendor/stats" aria-label={t('nav.stats')} className="p-1 text-ink"><IconChartBar size={22} /></Link>
-        <button onClick={() => navigate('/switch/to-buyer')} aria-label={t('vendor.switchToBuyer')} className="p-1 text-teal">
-          <IconSwitchHorizontal size={22} />
+        {/* Le retour vers l'acheteur portait sur une icône SEULE — deux
+            flèches croisées, qui ne disent pas où elles mènent. Le mot est
+            écrit: c'est ce que les gens cherchent, et une flèche ne se
+            devine pas. */}
+        <button
+          onClick={() => navigate('/switch/to-buyer')}
+          className="flex shrink-0 items-center gap-1 rounded-pill border border-teal px-2.5 py-1 text-caption font-semibold text-teal"
+        >
+          <IconSwitchHorizontal size={16} />
+          {t('vendor.switchToBuyerShort')}
         </button>
       </header>
 

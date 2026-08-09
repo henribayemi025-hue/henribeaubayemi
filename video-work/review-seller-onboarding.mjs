@@ -139,6 +139,14 @@ const vendor = await makePage({ hasShop: true });
 allOk &= await check(vendor, 'Profil AVEC boutique — « Passer en mode vendeur »', '/profile',
   ['Passer en mode vendeur'], 'onboarding_profil-avec-boutique');
 
+// Le RETOUR. C'est la question de Beau: la sortie doit se lire, pas se
+// deviner sous une icône de deux flèches croisées.
+allOk &= await check(vendor, 'Tableau de bord vendeur — « Mode acheteur » écrit', '/vendor',
+  ['Mode acheteur'], 'onboarding_vendeur-tableau-de-bord');
+
+allOk &= await check(vendor, 'Ma boutique — « Passer en mode acheteur »', '/vendor/shop',
+  ['Passer en mode acheteur'], 'onboarding_vendeur-ma-boutique');
+
 console.log(`\n${allOk ? 'TOUT EST CONFORME' : 'DES POINTS À CORRIGER CI-DESSUS'}\n`);
 await browser.close();
 srv.close();

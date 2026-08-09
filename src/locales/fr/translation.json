@@ -846,7 +846,8 @@
     "publishAllConfirm": "Publier {{count}} article(s) d’un coup ? Ils deviennent visibles par tout le monde. Tu pourras en retirer un à tout moment.",
     "publishedAll": "{{count}} article(s) publié(s).",
     "priceOnRequest": "Prix sur demande",
-    "priceOnRequestHelp": "L’article s’affiche sans prix. La cliente t’écrit pour le demander au lieu de commander directement. Utile quand tu n’as pas encore fixé ton prix."
+    "priceOnRequestHelp": "L’article s’affiche sans prix. La cliente t’écrit pour le demander au lieu de commander directement. Utile quand tu n’as pas encore fixé ton prix.",
+    "switchToBuyerShort": "Mode acheteur"
   },
   "orderStatus": {
     "new": "En attente de validation",
