@@ -861,7 +861,11 @@
     "welcomeStep1": "Boutique ouverte",
     "welcomeStep2": "Publie ton premier article",
     "welcomeStep3": "Partage ton lien à tes clientes",
-    "finiaWritesHint": "Envoie tes photos, Finia rédige les fiches."
+    "finiaWritesHint": "Envoie tes photos, Finia rédige les fiches.",
+    "reelDeleted": "Vidéo supprimée.",
+    "reelOpen": "Voir la vidéo",
+    "reelTooBig": "Ta vidéo fait {{size}} Mo — la limite est 50 Mo. Filme plus court, ou choisis une qualité plus basse dans ton téléphone.",
+    "reelSizeHint": "50 Mo maximum (environ 40 secondes en bonne qualité)."
   },
   "orderStatus": {
     "new": "En attente de validation",

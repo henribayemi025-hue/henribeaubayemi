@@ -861,7 +861,11 @@
     "welcomeStep1": "Shop opened",
     "welcomeStep2": "Post your first item",
     "welcomeStep3": "Share your link with your customers",
-    "finiaWritesHint": "Send your photos, Finia writes the listings."
+    "finiaWritesHint": "Send your photos, Finia writes the listings.",
+    "reelDeleted": "Video deleted.",
+    "reelOpen": "View video",
+    "reelTooBig": "Your video is {{size}} MB — the limit is 50 MB. Film shorter, or lower the quality in your phone settings.",
+    "reelSizeHint": "50 MB maximum (about 40 seconds at good quality)."
   },
   "orderStatus": {
     "new": "Awaiting validation",
