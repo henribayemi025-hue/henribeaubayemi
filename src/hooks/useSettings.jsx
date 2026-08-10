@@ -23,7 +23,10 @@ function initialCurrency(country) {
   const stored = localStorage.getItem(CUR_KEY);
   if (stored && CURRENCIES.includes(stored)) return stored;
   if (country) return currencyForCountry(country);
-  return detectCurrencyRegionSync() || 'FCFA';
+  // Dernier repli: le même que `currencyForCountry`, JAMAIS le FCFA en dur.
+  // Supposer l'Afrique centrale pour quelqu'un dont on ne sait rien est
+  // précisément ce que Beau a interdit — Finjaro est mondiale.
+  return detectCurrencyRegionSync() || currencyForCountry(null);
 }
 
 function initialCountry() {
