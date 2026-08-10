@@ -36,6 +36,7 @@ const TRADE_EMOJI = {
   electricite_plomberie: '⚡',
   livraison_demenagement: '🚚',
   traiteur_chef: '🍳',
+  patisserie_service: '🎂',
   location_immobiliere: '🏠',
   location_vehicules: '🚗',
   cours: '📚',
