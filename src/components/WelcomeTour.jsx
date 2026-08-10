@@ -43,6 +43,20 @@ export function WelcomeTour() {
 
   useEffect(() => {
     if (!user?.id) return;
+
+    // Ouverture forcée: finjaro.net/?tour=1
+    //
+    // Beau teste depuis un téléphone, où l'on ne peut ni vider une marque de
+    // stockage ni lire une console. Sans cette porte, « je ne vois pas la
+    // visite » ne se distingue pas de « la visite a déjà été vue » — et on
+    // perd la soirée à se demander lequel des deux c'est. La porte ne montre
+    // rien de privé et ne saute que les conditions d'affichage.
+    let forced = false;
+    try {
+      forced = new URLSearchParams(window.location.search).get('tour') === '1';
+    } catch { /* URL illisible: on continue normalement */ }
+    if (forced) { setShow(true); return; }
+
     try {
       if (localStorage.getItem(seenKey(user.id))) return;
     } catch { /* stockage indisponible: on montre, ce n'est pas grave */ }

@@ -26,7 +26,7 @@ const PROJECT_REF = 'bokwivwizghdlaedczbw';
 const USER_ID = 'new-user-0000-0000-0000-000000000001';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 
-async function run({ label, ageMs, expectVisible, shot, priorKeys = {} }) {
+async function run({ label, ageMs, expectVisible, shot, priorKeys = {}, query = '' }) {
   const createdAt = new Date(Date.now() - ageMs).toISOString();
   const session = {
     access_token: 't', token_type: 'bearer', expires_in: 3600,
@@ -59,7 +59,7 @@ async function run({ label, ageMs, expectVisible, shot, priorKeys = {} }) {
     });
   });
 
-  await page.goto('http://localhost:4807/', { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto(`http://localhost:4807/${query}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
   await page.waitForTimeout(2200);
   const body = await page.locator('body').innerText().catch(() => '');
   if (shot) await page.screenshot({ path: `${OUT}/${shot}.png` }).catch(() => {});
@@ -84,6 +84,13 @@ allOk &= await run({
 allOk &= await run({
   label: 'Compte neuf qui a deja ecarte la visite',
   ageMs: 2 * 60 * 1000, expectVisible: false,
+  priorKeys: { [`finjaro:welcome-seen:${USER_ID}`]: '1' },
+});
+// La porte de secours ?tour=1 doit passer outre l'age ET la marque, sinon
+// Beau ne peut rien verifier depuis son telephone.
+allOk &= await run({
+  label: '?tour=1 sur un vieux compte deja marque',
+  ageMs: 30 * 24 * 3600 * 1000, expectVisible: true, query: '?tour=1',
   priorKeys: { [`finjaro:welcome-seen:${USER_ID}`]: '1' },
 });
 console.log(`\n${allOk ? 'CONFORME' : 'À CORRIGER'}\n`);
