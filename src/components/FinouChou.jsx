@@ -311,6 +311,10 @@ export function FinouChou() {
           ))}
           {messages.length === 1 && !sending && (
             <div className="flex flex-wrap gap-2">
+              {/* EN PREMIER, pour tout le monde: la porte d'entrée de ceux qui
+                  ne savent pas quoi demander. Beau: « plusieurs ne connaissent
+                  pas quoi faire, il doit y avoir un guide sur l'app ». */}
+              <button onClick={() => send(t('finou.suggestGuide'))} className="chip text-ink">{t('finou.suggestGuide')}</button>
               <button onClick={() => send(t('finou.suggestTrends'))} className="chip text-ink">{t('finou.suggestTrends')}</button>
               <button onClick={() => send(t('finou.suggestGift'))} className="chip text-ink">{t('finou.suggestGift')}</button>
               <button onClick={() => fileRef.current?.click()} className="chip text-ink">{t('finou.suggestPhoto')}</button>

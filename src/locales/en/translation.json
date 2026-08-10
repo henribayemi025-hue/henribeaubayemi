@@ -363,7 +363,8 @@
     "promoEmpty": "No deals right now.",
     "ownShop": "This is your shop",
     "ownShopManage": "Manage",
-    "ownShopAdd": "Add"
+    "ownShopAdd": "Add",
+    "tabVideos": "Videos ({{count}})"
   },
   "finou": {
     "title": "Finia",
@@ -399,7 +400,8 @@
       "Search by photo",
       "Add this to my cart"
     ],
-    "actionVendorSpace": "Open my seller space"
+    "actionVendorSpace": "Open my seller space",
+    "suggestGuide": "How does it work?"
   },
   "mirror": {
     "title": "Virtual try-on",
