@@ -7,15 +7,21 @@
 //
 // Les teintes restent dans l'univers "Terre & Or" — terres cuites, ocres,
 // verts profonds, prunes — jamais des couleurs vives hors charte.
+// Révisée: le violet, le bleu et le rose posaient un pastille criard à côté
+// d'une photo de robe — huit couleurs vives en rang, ça ne dit pas
+// « identité », ça dit « bouche-trou ». Les teintes sont désormais toutes
+// terreuses, désaturées et proches les unes des autres: on distingue encore
+// deux boutiques voisines, mais aucune ne crie plus fort que le produit
+// qu'elle vend.
 const PALETTE = [
-  { from: '#C25E38', to: '#E09F3E' }, // terracotta -> laiton
-  { from: '#2A6F63', to: '#4FA392' }, // vert profond -> jade
-  { from: '#8C4A5F', to: '#C2708A' }, // prune -> rose fané
-  { from: '#B5761F', to: '#E0B25C' }, // ocre -> miel
-  { from: '#3D5A80', to: '#6B8CB5' }, // bleu nuit -> bleu poussière
-  { from: '#7A5230', to: '#B08355' }, // brun cuir -> caramel
-  { from: '#6B4E9E', to: '#9B84C9' }, // aubergine -> lilas
-  { from: '#276B5A', to: '#5AA88C' }, // émeraude -> sauge
+  { from: '#C25E38', to: '#D98352' }, // terracotta
+  { from: '#8A5A3C', to: '#A9784F' }, // brun cuir
+  { from: '#9A6B2F', to: '#BE8D46' }, // ocre
+  { from: '#6E5140', to: '#8C6C56' }, // taupe
+  { from: '#4A6357', to: '#6B8478' }, // vert grisé
+  { from: '#8C5A4A', to: '#A97767' }, // brique douce
+  { from: '#7A6A4E', to: '#9C8C6C' }, // olive sableux
+  { from: '#5E5A55', to: '#7D7873' }, // pierre
 ];
 
 function hash(str) {

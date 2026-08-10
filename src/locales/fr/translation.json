@@ -360,7 +360,9 @@
     "bestProducts": "Nos produits",
     "seeAllProducts": "Voir tous les produits",
     "promoEmpty": "Pas de promo en ce moment.",
-    "ownShop": "C'est ta boutique"
+    "ownShop": "C'est ta boutique",
+    "ownShopManage": "Gérer",
+    "ownShopAdd": "Ajouter"
   },
   "finou": {
     "title": "Finia",

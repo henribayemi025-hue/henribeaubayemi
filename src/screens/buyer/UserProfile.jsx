@@ -110,13 +110,19 @@ export default function UserProfile() {
       {status !== 'pending' && (
         <div className="mt-4 px-4">
           {isVendor ? (
+            /* Un aplat orange pleine largeur pour un simple changement de
+               mode, c'était grossier (Beau). La carte reste blanche comme le
+               reste du profil; seule la pastille d'icône porte la couleur.
+               Elle se distingue par sa bordure teintée, pas en criant. */
             <button
               onClick={() => navigate('/switch/to-vendor')}
-              className="flex w-full items-center gap-3 rounded-card bg-teal px-4 py-3.5 text-left text-white transition active:scale-[0.98]"
+              className="flex w-full items-center gap-3 rounded-card border border-teal/30 bg-white px-4 py-3 text-left transition active:scale-[0.98]"
             >
-              <IconSwitchHorizontal size={22} />
-              <span className="flex-1 text-body font-semibold">{t('profile.switchToVendor')}</span>
-              <IconChevronRight size={18} />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal">
+                <IconSwitchHorizontal size={18} />
+              </span>
+              <span className="flex-1 text-body font-semibold text-ink">{t('profile.switchToVendor')}</span>
+              <IconChevronRight size={18} className="text-muted" />
             </button>
           ) : (
             /* Accroche + titre + VRAI bouton, repris des maquettes AI Studio

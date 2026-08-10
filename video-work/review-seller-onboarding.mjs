@@ -183,7 +183,7 @@ allOk &= vendorChipOk;
 // Les deux gestes qu'elle cherchait doivent être là, et « S'abonner » (à
 // soi-même) ne doit plus l'être.
 const ownShop = await check(vendor, 'Sa propre boutique — bandeau propriétaire', '/boutique/ma-boutique',
-  ["C'est ta boutique", 'Passer en mode vendeur', 'Ajouter un article'], 'onboarding_boutique-proprietaire');
+  ["C'est ta boutique", 'Gérer', 'Ajouter'], 'onboarding_boutique-proprietaire');
 allOk &= ownShop;
 const ownBody = await vendor.locator('body').innerText().catch(() => '');
 const noFollowSelf = !/\bSuivre\b/.test(ownBody);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore } from '@tabler/icons-react';
+import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
@@ -146,10 +146,12 @@ export default function Home() {
             Volontairement fine et sur UNE ligne de texte: la version en gros
             pavé de trois lignes écrasait le reste de l'accueil. */}
         <section className="mt-4 px-4">
-          {/* Teinte brass (accent secondaire) plutôt que teal: la bande se
-              distingue d'un coup d'œil du reste de l'accueil (tout en teal
-              jusqu'ici), et signale "c'est une autre sorte de contenu" —
-              réserver un service, pas acheter un produit. */}
+          {/* Teinte laiton CONSERVÉE. J'avais commencé par la retirer au nom
+              d'« une seule couleur d'accent » — c'était mon goût, pas celui de
+              Finjaro. Beau: « c'est ça qui fait son style, les gens ont bien
+              aimé le style vintage ». Le crème, la terracotta et le laiton
+              SONT l'identité; les enlever rendrait l'app correcte et
+              anonyme. Ce qu'on corrige, ce sont les défauts, pas le style. */}
           <Link
             to="/services"
             className="flex items-center gap-3 rounded-card border border-brass/25 bg-brass/8 px-3.5 py-3 shadow-sm transition-transform duration-150 active:scale-[0.99]"
@@ -180,9 +182,12 @@ export default function Home() {
           <>
             {data.shops.length > 0 && (
               <section className="mt-5">
-                <h2 className="flex items-center gap-1.5 px-4 text-section text-ink">
-                  <IconBuildingStore size={18} className="text-teal" /> {t('home.shopsNearYou')}
-                </h2>
+                {/* Titres de section: MÊME taille que « Catégories »
+                    (text-section) — Beau garde cette taille-là, donc les trois
+                    s'alignent dessus au lieu d'être chacun différent. Ce qui
+                    saute, ce sont les icônes teintées: chacune ajoutait une
+                    couleur de plus à un écran qui en comptait déjà cinq. */}
+                <h2 className="px-4 text-section text-ink">{t('home.shopsNearYou')}</h2>
                 <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4">
                   {data.shops.map((s) => (
                     <ShopCard key={s.id} shop={s} />
@@ -192,9 +197,7 @@ export default function Home() {
             )}
 
             <section className="mt-6 px-4">
-              <h2 className="flex items-center gap-1.5 text-section text-ink">
-                <IconFlame size={18} className="text-brass" /> {t('home.trending')}
-              </h2>
+              <h2 className="text-section text-ink">{t('home.trending')}</h2>
               {data.products.length === 0 ? (
                 <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
               ) : (

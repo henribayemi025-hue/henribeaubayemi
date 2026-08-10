@@ -5,7 +5,7 @@ import {
   IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh,
   IconBrandWhatsapp, IconPhone, IconBrandInstagram, IconSearch, IconMovie,
   IconShieldCheck, IconRosetteDiscountCheck, IconTruckDelivery, IconHeadset,
-  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown,
+  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -290,20 +290,27 @@ export default function ShopProfile() {
             « Écrire à la boutique » — s'écrire à elle-même — n'aidait pas:
             quand c'est TA boutique, les deux boutons deviennent les deux
             gestes que tu es venue faire. */}
+        {/* Deux pavés pleine largeur dans un cadre teinté, c'était grossier
+            (Beau). Une barre fine suffit: on est sur SA boutique, elle sait
+            déjà que c'est la sienne — il ne manque qu'une porte d'entrée
+            discrète, pas une affiche. Les libellés raccourcissent
+            (« Gérer », « Ajouter ») pour tenir côte à côte sans se replier. */}
         {user && shop.owner_id === user.id ? (
-          <div className="mt-3 rounded-card border border-teal bg-teal/5 p-3 sm:max-w-md">
-            <p className="text-caption font-semibold text-teal">{t('shop.ownShop')}</p>
-            {/* EMPILÉS, pas côte à côte: deux libellés longs dans une
-                moitié d'écran de téléphone, ça se replie sur deux lignes et
-                ça se lit « écrasé » — vu sur capture, signalé par Beau. */}
-            <div className="mt-2 space-y-2">
-              <Button onClick={() => navigate('/switch/to-vendor')}>
-                {t('profile.switchToVendor')}
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/vendor/products/bulk')}>
-                {t('finou.actionAddProduct')}
-              </Button>
-            </div>
+          <div className="mt-3 flex items-center gap-2 rounded-card border border-hairline bg-white px-3 py-2.5 sm:max-w-md">
+            <IconBuildingStore size={18} className="shrink-0 text-teal" />
+            <span className="min-w-0 flex-1 truncate text-caption text-muted">{t('shop.ownShop')}</span>
+            <button
+              onClick={() => navigate('/vendor/products/bulk')}
+              className="shrink-0 rounded-pill px-3 py-1.5 text-caption font-semibold text-teal transition-colors active:bg-teal-light"
+            >
+              {t('shop.ownShopAdd')}
+            </button>
+            <button
+              onClick={() => navigate('/switch/to-vendor')}
+              className="shrink-0 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white transition-transform active:scale-95"
+            >
+              {t('shop.ownShopManage')}
+            </button>
           </div>
         ) : (
           <div className="mt-3 flex gap-2 sm:max-w-md">
