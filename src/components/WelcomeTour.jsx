@@ -4,7 +4,21 @@ import { IconShoppingBag, IconBuildingStore, IconSparkles } from '@tabler/icons-
 import { useAuth } from '../hooks/useAuth';
 import { useUI } from '../hooks/useUI';
 
-const SEEN_KEY = 'finjaro:welcome-seen';
+// « J'ai rechargé et je n'ai pas vu la visite. » — Beau, sur un compte créé
+// onze minutes plus tôt, donc largement dans les temps.
+//
+// La cause: la marque « déjà vue » était posée sur le NAVIGATEUR, pas sur la
+// personne. Or l'ancienne version la posait aussi pour les comptes anciens.
+// Beau, connecté depuis des jours sur son compte habituel, avait donc déjà la
+// marque; en créant un compte neuf dans le même navigateur, il héritait de la
+// marque de l'ancien et la visite ne s'ouvrait jamais.
+//
+// Ce n'est pas qu'un problème de test: au Cameroun un téléphone sert souvent à
+// plusieurs personnes. Avec une marque commune, la deuxième inscription du
+// téléphone n'aurait jamais eu droit à la visite. La marque suit maintenant le
+// compte.
+const seenKey = (uid) => `finjaro:welcome-seen:${uid}`;
+
 // Un compte de moins de 24 h est un compte qui vient d'arriver. Au-delà, la
 // personne a déjà navigué: lui ouvrir une visite guidée serait déplacé.
 const FRESH_MS = 24 * 60 * 60 * 1000;
@@ -28,21 +42,19 @@ export function WelcomeTour() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     try {
-      if (localStorage.getItem(SEEN_KEY)) return;
+      if (localStorage.getItem(seenKey(user.id))) return;
     } catch { /* stockage indisponible: on montre, ce n'est pas grave */ }
+    // Un compte ancien n'a rien à marquer: son âge suffit à l'écarter, et
+    // écrire quoi que ce soit ici est précisément ce qui bloquait les autres.
     const created = new Date(profile?.created_at || user.created_at || 0).getTime();
-    if (!created || Date.now() - created > FRESH_MS) {
-      // Compte ancien: on marque comme vu pour ne jamais le déranger ensuite.
-      try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* noop */ }
-      return;
-    }
+    if (!created || Date.now() - created > FRESH_MS) return;
     setShow(true);
   }, [user, profile]);
 
   function dismiss() {
-    try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* noop */ }
+    try { localStorage.setItem(seenKey(user.id), '1'); } catch { /* noop */ }
     setShow(false);
   }
 

@@ -26,7 +26,7 @@ const PROJECT_REF = 'bokwivwizghdlaedczbw';
 const USER_ID = 'new-user-0000-0000-0000-000000000001';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 
-async function run({ label, ageMs, expectVisible, shot }) {
+async function run({ label, ageMs, expectVisible, shot, priorKeys = {} }) {
   const createdAt = new Date(Date.now() - ageMs).toISOString();
   const session = {
     access_token: 't', token_type: 'bearer', expires_in: 3600,
@@ -35,6 +35,13 @@ async function run({ label, ageMs, expectVisible, shot }) {
   };
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR' });
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(session)]);
+  // Traces laissées dans CE navigateur par un AUTRE compte — le cas de Beau,
+  // et celui d'un telephone partagé par plusieurs personnes.
+  if (Object.keys(priorKeys).length) {
+    await ctx.addInitScript((pairs) => {
+      for (const [k, v] of pairs) localStorage.setItem(k, v);
+    }, Object.entries(priorKeys));
+  }
   const page = await ctx.newPage();
   await page.route('**/realtime/v1/**', (r) => r.abort());
   await page.route('**/auth/v1/user**', (r) => r.fulfill({ json: session.user }));
@@ -67,6 +74,18 @@ console.log('\n=== VISITE GUIDÉE APRÈS INSCRIPTION ===\n');
 let allOk = true;
 allOk &= await run({ label: "Compte cree il y a 2 minutes", ageMs: 2 * 60 * 1000, expectVisible: true, shot: 'welcome-nouveau-compte' });
 allOk &= await run({ label: 'Compte cree il y a 5 jours', ageMs: 5 * 24 * 3600 * 1000, expectVisible: false });
+// Le bug signale par Beau: navigateur deja marque par son compte habituel.
+allOk &= await run({
+  label: 'Compte neuf, navigateur deja marque par un autre compte',
+  ageMs: 2 * 60 * 1000, expectVisible: true,
+  priorKeys: { 'finjaro:welcome-seen': '1', 'finjaro:welcome-seen:un-autre-compte': '1' },
+});
+// Et l'inverse doit rester vrai: qui a deja ecarte la visite ne la revoit pas.
+allOk &= await run({
+  label: 'Compte neuf qui a deja ecarte la visite',
+  ageMs: 2 * 60 * 1000, expectVisible: false,
+  priorKeys: { [`finjaro:welcome-seen:${USER_ID}`]: '1' },
+});
 console.log(`\n${allOk ? 'CONFORME' : 'À CORRIGER'}\n`);
 
 await browser.close();
