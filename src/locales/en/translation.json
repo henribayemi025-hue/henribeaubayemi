@@ -865,7 +865,10 @@
     "reelDeleted": "Video deleted.",
     "reelOpen": "View video",
     "reelTooBig": "Your video is {{size}} MB — the limit is 50 MB. Film shorter, or lower the quality in your phone settings.",
-    "reelSizeHint": "50 MB maximum (about 40 seconds at good quality)."
+    "reelSizeHint": "50 MB maximum (about 40 seconds at good quality).",
+    "reelCategory": "Category",
+    "reelCategoryPlaceholder": "Pick a category…",
+    "reelCategoryRequired": "Pick a category: without one, your video shows up in no filter."
   },
   "orderStatus": {
     "new": "Awaiting validation",

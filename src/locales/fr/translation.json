@@ -865,7 +865,10 @@
     "reelDeleted": "Vidéo supprimée.",
     "reelOpen": "Voir la vidéo",
     "reelTooBig": "Ta vidéo fait {{size}} Mo — la limite est 50 Mo. Filme plus court, ou choisis une qualité plus basse dans ton téléphone.",
-    "reelSizeHint": "50 Mo maximum (environ 40 secondes en bonne qualité)."
+    "reelSizeHint": "50 Mo maximum (environ 40 secondes en bonne qualité).",
+    "reelCategory": "Rayon",
+    "reelCategoryPlaceholder": "Choisis un rayon…",
+    "reelCategoryRequired": "Choisis un rayon: sans lui, ta vidéo n'apparaît dans aucun filtre."
   },
   "orderStatus": {
     "new": "En attente de validation",

@@ -10,6 +10,7 @@ import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Field, TextArea, Select } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
+import { CATEGORIES, SELECTABLE_SUBCATEGORIES } from '../../lib/categories';
 
 // Limite RÉELLE d'un fichier chez Supabase (offre gratuite). Une vidéo de
 // téléphone la dépasse très vite: 40 secondes en 1080p suffisent. Sans
@@ -110,8 +111,13 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
   const { t } = useTranslation();
   const [caption, setCaption] = useState('');
   const [productId, setProductId] = useState('');
+  // Vide au départ, VOLONTAIREMENT: une catégorie pré-remplie serait acceptée
+  // sans y penser, et le réel finirait au mauvais rayon. Beau: « si quelqu'un
+  // ne choisit pas la catégorie, ça ne dit pas non, ça publie juste ».
+  const [category, setCategory] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
+  const subcats = SELECTABLE_SUBCATEGORIES[category];
 
   async function submit() {
     const file = fileRef.current?.files?.[0];
@@ -123,6 +129,12 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
       toast.error(t('vendor.reelTooBig', { size: Math.round(file.size / 1024 / 1024) }));
       return;
     }
+    // Sans rayon, la vidéo n'apparaît dans aucun filtre du fil Fin: elle est
+    // publiée pour personne. On refuse plutôt que de publier en silence.
+    if (!category) {
+      toast.error(t('vendor.reelCategoryRequired'));
+      return;
+    }
     setBusy(true);
     try {
       const path = `${shop.owner_id}/${crypto.randomUUID()}.${file.name.split('.').pop()}`;
@@ -132,11 +144,12 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
         shop_id: shop.id,
         video_url: path,
         caption: caption.trim() || null,
+        category: subcats ? (subcats.includes(category) ? category : subcats[0]) : category,
         product_id: productId || null,
       });
       if (error) throw error;
       toast.success(t('vendor.reelPublished'));
-      setCaption(''); setProductId('');
+      setCaption(''); setProductId(''); setCategory('');
       if (fileRef.current) fileRef.current.value = '';
       onClose();
       onDone?.();
@@ -154,6 +167,27 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
           {(id) => <input id={id} ref={fileRef} type="file" accept="video/*" className="input py-2" />}
         </Field>
         <p className="text-caption text-muted">{t('vendor.reelSizeHint')}</p>
+        {/* Le RAYON, pas « produit associé ». Le menu ne listait que les
+            articles de la boutique — sur une boutique beauté, on n'y voyait
+            que de la beauté, et on croyait que Finjaro n'avait qu'une
+            catégorie. Ici c'est l'arborescence entière du site. */}
+        <Field label={t('vendor.reelCategory')} required>
+          {(id) => (
+            <Select id={id} value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">{t('vendor.reelCategoryPlaceholder')}</option>
+              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
+            </Select>
+          )}
+        </Field>
+        {subcats && (
+          <Field label={t('vendor.productSubcategory')}>
+            {(id) => (
+              <Select id={id} value={subcats.includes(category) ? category : subcats[0]} onChange={(e) => setCategory(e.target.value)}>
+                {subcats.map((cid) => <option key={cid} value={cid}>{t(`categories.${cid}`)}</option>)}
+              </Select>
+            )}
+          </Field>
+        )}
         <Field label={t('vendor.reelCaption')}>
           {(id) => <TextArea id={id} value={caption} onChange={(e) => setCaption(e.target.value)} />}
         </Field>
