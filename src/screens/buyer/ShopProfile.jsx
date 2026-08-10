@@ -454,6 +454,38 @@ export default function ShopProfile() {
                 </div>
               )}
 
+              {/* Aperçu VIDÉOS sur l'accueil, avant les produits — demande de
+                  Beau (« les vidéos doivent aussi être à l'accueil »). Pour
+                  une boutique comme Hegshair (3 vidéos, 0 article), c'est même
+                  tout ce qu'il y a à montrer: l'écran « prépare sa première
+                  collection » mentait par omission. */}
+              {data.reels.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h2 className="text-section text-ink">{t('shop.homeVideos')}</h2>
+                    <button onClick={() => setTab('videos')} className="text-caption font-semibold text-teal">
+                      {t('shop.seeAllVideos', { count: data.reels.length })}
+                    </button>
+                  </div>
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    {data.reels.slice(0, 6).map((r) => (
+                      <Link key={r.id} to={`/fin?shop=${shop.id}`} className="relative block w-28 shrink-0 overflow-hidden rounded-input bg-black">
+                        <video
+                          src={`${storageUrl('reels', r.video_url)}#t=0.1`}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="aspect-[9/16] w-full object-cover"
+                        />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[11px] text-white">
+                          ♥ {r.likes || 0}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Aperçu produits (les plus vus) + lien vers l'onglet complet. */}
               {bestProducts.length > 0 && (
                 <div>
@@ -466,7 +498,9 @@ export default function ShopProfile() {
                   {productGrid(bestProducts)}
                 </div>
               )}
-              {data.products.length === 0 && <EmptyState title={sk('emptyProducts')} />}
+              {/* « Prépare sa première collection » SEULEMENT s'il n'y a
+                  vraiment rien: ni articles, ni vidéos. */}
+              {data.products.length === 0 && data.reels.length === 0 && <EmptyState title={sk('emptyProducts')} />}
             </div>
           )}
 

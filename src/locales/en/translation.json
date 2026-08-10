@@ -364,7 +364,9 @@
     "ownShop": "This is your shop",
     "ownShopManage": "Manage",
     "ownShopAdd": "Add",
-    "tabVideos": "Videos ({{count}})"
+    "tabVideos": "Videos ({{count}})",
+    "homeVideos": "Their videos",
+    "seeAllVideos": "See all ({{count}})"
   },
   "finou": {
     "title": "Finia",

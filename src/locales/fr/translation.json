@@ -364,7 +364,9 @@
     "ownShop": "C'est ta boutique",
     "ownShopManage": "Gérer",
     "ownShopAdd": "Ajouter",
-    "tabVideos": "Vidéos ({{count}})"
+    "tabVideos": "Vidéos ({{count}})",
+    "homeVideos": "Ses vidéos",
+    "seeAllVideos": "Tout voir ({{count}})"
   },
   "finou": {
     "title": "Finia",
