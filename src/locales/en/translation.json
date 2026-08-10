@@ -1293,5 +1293,22 @@
     "askBuy": "I'm new and I'm here to buy. Explain how it works.",
     "askSell": "I'm new and I want to sell on Finjaro. Explain how it works.",
     "skip": "Later"
+  },
+  "intro": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Let's go",
+    "discover": {
+      "title": "The Cameroonian market, in your pocket",
+      "body": "Shops near you and across the country, gathered in one place."
+    },
+    "buy": {
+      "title": "Order without paying upfront",
+      "body": "Pick what you want, order, and pay on delivery or when you collect it."
+    },
+    "sell": {
+      "title": "Sell, for free",
+      "body": "Open your shop and post your items. Finia walks you through it."
+    }
   }
 }
