@@ -10,6 +10,7 @@ import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { useCart } from '../hooks/useCart';
 import { SmartImage } from './SmartImage';
+import { RichText } from './RichText';
 import { Price } from './Price';
 import { FinouAction } from './FinouAction';
 import { MirrorModal } from './MirrorModal';
@@ -256,12 +257,16 @@ export function FinouChou() {
             <div key={m.id || i}>
               <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-body ${
-                    m.role === 'user' ? 'bg-[#F4EFE6] text-ink' : 'border border-hairline bg-white text-ink'
+                  className={`max-w-[80%] break-words rounded-2xl px-3 py-2 text-body ${
+                    m.role === 'user'
+                      ? 'whitespace-pre-wrap bg-[#F4EFE6] text-ink'
+                      : 'border border-hairline bg-white text-ink'
                   }`}
                 >
                   {m.image && <img src={m.image} alt="" className="mb-1 max-h-40 rounded-input object-cover" />}
-                  {m.text}
+                  {/* Finia écrit en Markdown: on le rend au lieu de l'imprimer.
+                      Le message de la personne, lui, reste tel qu'elle l'a tapé. */}
+                  {m.role === 'user' ? m.text : <RichText text={m.text} />}
                   {/* No products found → keep the category shortcut as a fallback. */}
                   {m.category && !m.products?.length && (
                     <button
