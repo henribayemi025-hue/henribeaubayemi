@@ -293,11 +293,14 @@ export default function ShopProfile() {
         {user && shop.owner_id === user.id ? (
           <div className="mt-3 rounded-card border border-teal bg-teal/5 p-3 sm:max-w-md">
             <p className="text-caption font-semibold text-teal">{t('shop.ownShop')}</p>
-            <div className="mt-2 flex gap-2">
-              <Button onClick={() => navigate('/switch/to-vendor')} className="flex-1">
+            {/* EMPILÉS, pas côte à côte: deux libellés longs dans une
+                moitié d'écran de téléphone, ça se replie sur deux lignes et
+                ça se lit « écrasé » — vu sur capture, signalé par Beau. */}
+            <div className="mt-2 space-y-2">
+              <Button onClick={() => navigate('/switch/to-vendor')}>
                 {t('profile.switchToVendor')}
               </Button>
-              <Button variant="secondary" onClick={() => navigate('/vendor/products/bulk')} className="flex-1">
+              <Button variant="secondary" onClick={() => navigate('/vendor/products/bulk')}>
                 {t('finou.actionAddProduct')}
               </Button>
             </div>

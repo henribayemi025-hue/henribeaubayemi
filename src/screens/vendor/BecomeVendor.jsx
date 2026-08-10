@@ -326,9 +326,12 @@ export default function BecomeVendor() {
           <>
             <Button disabled={step === 1 && !step1Valid} onClick={() => setStep(step + 1)}>{t('common.continue')}</Button>
             {/* Aller droit au récapitulatif, pas seulement à l'étape suivante:
-                proposer « passer » deux fois de suite reste deux obstacles. */}
+                proposer « passer » deux fois de suite reste deux obstacles.
+                w-full: le style ghost est inline par défaut et le texte se
+                collait à gauche sous un « Continuer » pleine largeur —
+                bancal sur capture. */}
             {skippable && (
-              <Button variant="ghost" className="mt-1" onClick={() => setStep(4)}>{t('becomeVendor.skipToEnd')}</Button>
+              <Button variant="ghost" className="mt-1 w-full" onClick={() => setStep(4)}>{t('becomeVendor.skipToEnd')}</Button>
             )}
           </>
         ) : (

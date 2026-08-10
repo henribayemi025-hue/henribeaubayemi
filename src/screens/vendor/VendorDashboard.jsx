@@ -83,7 +83,10 @@ export default function VendorDashboard() {
   return (
     <div className="pb-6">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-4">
-        <h1 className="flex-1 truncate text-section text-ink">{t('vendor.greeting', { name: shop.name })}</h1>
+        {/* Le nom seul, sans « Bonjour, »: avec le bouton « Mode acheteur »
+            à droite, la politesse coûtait le nom — « Bonjour, Ma b… ».
+            Entre saluer et dire de quelle boutique il s'agit, le nom gagne. */}
+        <h1 className="flex-1 truncate text-section text-ink">{shop.name}</h1>
         <NotificationBell />
         <Link to="/vendor/stats" aria-label={t('nav.stats')} className="p-1 text-ink"><IconChartBar size={22} /></Link>
         {/* Le retour vers l'acheteur portait sur une icône SEULE — deux
