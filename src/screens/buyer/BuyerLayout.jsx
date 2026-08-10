@@ -6,6 +6,7 @@ import { TAB_BAR_SPACE } from '../../components/TabBar';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
+import { WelcomeTour } from '../../components/WelcomeTour';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
 import CartDrawer from '../../components/CartDrawer';
 import { useAuth } from '../../hooks/useAuth';
@@ -67,6 +68,12 @@ export function BuyerLayout() {
             disparaître toute l'application, sans rien laisser à l'écran
             qu'un fond blanc. Son propre garde-fou la contient — l'assistant
             s'efface, le reste de l'app continue de fonctionner. */}
+        {/* La visite guidée passe par le même garde-fou que Finia: si elle
+            plante, elle disparaît en silence au lieu d'emporter toute
+            l'application avec elle. */}
+        <ErrorBoundary silent>
+          <WelcomeTour />
+        </ErrorBoundary>
         <ErrorBoundary silent>
           <FinouChou />
         </ErrorBoundary>

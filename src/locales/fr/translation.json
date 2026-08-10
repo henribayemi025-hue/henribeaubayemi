@@ -1282,5 +1282,16 @@
     "privacyTitle": "Politique de confidentialité",
     "and": "et",
     "deletionTitle": "Supprimer mon compte"
+  },
+  "welcome": {
+    "title": "Bienvenue {{name}} !",
+    "hint": "Dis-moi ce qui t'amène, je te guide en une minute.",
+    "buyTitle": "Je viens acheter",
+    "buyHint": "Trouver un article, commander, payer à la livraison.",
+    "sellTitle": "Je viens vendre",
+    "sellHint": "Ouvrir ma boutique et publier mes articles. C'est gratuit.",
+    "askBuy": "Je suis nouveau et je viens pour acheter. Explique-moi comment ça marche.",
+    "askSell": "Je suis nouveau et je veux vendre sur Finjaro. Explique-moi comment ça marche.",
+    "skip": "Plus tard"
   }
 }

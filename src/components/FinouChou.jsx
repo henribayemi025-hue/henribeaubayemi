@@ -48,7 +48,7 @@ async function fetchVendorSnapshot(shop) {
 export function FinouChou() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { finouOpen, closeFinou, requireLogin } = useUI();
+  const { finouOpen, closeFinou, requireLogin, finouSeed, consumeFinouSeed } = useUI();
   const { user } = useAuth();
   const { shop, status: vendorStatus } = useVendorStatus();
   const cart = useCart();
@@ -100,6 +100,17 @@ export function FinouChou() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finouOpen]);
+
+  // Ouverture AVEC une question déjà posée (visite guidée après inscription):
+  // on l'envoie une seule fois, une fois le message d'accueil en place, pour
+  // que la conversation démarre toute seule.
+  useEffect(() => {
+    if (!finouOpen || !finouSeed || messages.length === 0) return;
+    const question = finouSeed;
+    consumeFinouSeed();
+    send(question);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finouOpen, finouSeed, messages.length]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });

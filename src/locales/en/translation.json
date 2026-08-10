@@ -1282,5 +1282,16 @@
     "privacyTitle": "Privacy Policy",
     "and": "and",
     "deletionTitle": "Delete my account"
+  },
+  "welcome": {
+    "title": "Welcome {{name}}!",
+    "hint": "Tell me what brings you here, I'll guide you in a minute.",
+    "buyTitle": "I'm here to buy",
+    "buyHint": "Find an item, order, pay on delivery.",
+    "sellTitle": "I'm here to sell",
+    "sellHint": "Open my shop and post my items. It's free.",
+    "askBuy": "I'm new and I'm here to buy. Explain how it works.",
+    "askSell": "I'm new and I want to sell on Finjaro. Explain how it works.",
+    "skip": "Later"
   }
 }
