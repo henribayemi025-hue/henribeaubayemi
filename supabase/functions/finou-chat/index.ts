@@ -197,6 +197,22 @@ Si le [Contexte écran] contient "shopUrl", c'est le VRAI lien de la boutique du
 vendeur connecté: donne-le tel quel si on te le demande, et termine par
 "ACTION: share_shop".
 
+OÙ SE TROUVENT LES CHOSES — pour guider quelqu'un de perdu, ne devine jamais:
+Finjaro a deux modes. Le mode ACHETEUR (onglets: Accueil, Fin, Services,
+Messages, Profil) sert à acheter. Le mode VENDEUR (onglets: Tableau de bord,
+Produits, Commandes, Boutique) sert à gérer sa boutique: ajouter ses articles,
+voir ses commandes et ses ventes, répondre à ses clientes vendeuses.
+- Passer en mode vendeur: la carte « Vendre sur Finjaro » en haut du Profil
+  (ou « Passer en mode vendeur » si la boutique existe déjà).
+- Revenir en mode acheteur: le bouton « Mode acheteur » en haut du tableau de
+  bord vendeur.
+Si le [Contexte écran] contient "vendorStats" ou "shopUrl", l'utilisateur EST
+un vendeur avec une boutique active. S'il semble perdu — il cherche sa
+boutique, ses articles, ses commandes, comment ajouter, « ça ne marche pas »,
+« je ne trouve pas » — explique en une phrase que ça se passe en mode vendeur
+et termine par "ACTION: vendor_space". Ne le laisse JAMAIS penser que sa
+boutique a disparu: elle est dans l'autre mode, dis-le.
+
 Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-5 phrases,
 ton amical, un emoji max.
 
@@ -212,6 +228,8 @@ Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
 - Demande du lien de sa boutique (shopUrl présent) — "ACTION: share_shop".
 - Intention de supprimer un de ses articles — "ACTION: delete_product". Ne demande
   jamais toi-même lequel: le choix se fait ensuite dans une liste réelle.
+- Vendeur (vendorStats/shopUrl présent) perdu, qui cherche sa boutique ou
+  comment la gérer — "ACTION: vendor_space".
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 }
 
@@ -957,11 +975,16 @@ Deno.serve(async (req: Request) => {
               // secondes dans les journaux — et Finia répondait « Je n'ai pas
               // bien compris, peux-tu reformuler ? » à des phrases parfaitement
               // claires. Signalé par un utilisateur de Beau.
-              maxOutputTokens: 2048,
-              // Et on coupe la réflexion: Finia cherche des articles et répond,
-              // elle n'a pas de problème à résoudre. Tout le budget va au
-              // texte, et la réponse arrive plus vite.
-              ...(noThinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+              maxOutputTokens: 3072,
+              // Réflexion BORNÉE, pas coupée. Le bug des réponses vides venait
+              // d'une réflexion ILLIMITÉE qui consommait tout maxOutputTokens
+              // avant d'écrire le moindre mot. La couper à zéro a réparé ça —
+              // mais un modèle qui ne réfléchit plus choisit mal ses outils,
+              // et Beau l'a vu: « il ne parvient même plus à faire les basic
+              // trucs ». 512 tokens de réflexion suffisent à choisir le bon
+              // outil, et il reste toujours ~2500 tokens garantis pour le
+              // texte: le bug ne peut pas revenir.
+              ...(noThinking ? {} : { thinkingConfig: { thinkingBudget: 512 } }),
             },
           }),
           signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
@@ -1051,17 +1074,17 @@ Deno.serve(async (req: Request) => {
     }
 
     let category: string | null = null;
-    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | null = null;
+    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | 'vendor_space' | null = null;
     // [a-z_]: les ids du pivot contiennent des underscores (mode_femme…).
     const catMatch = reply.match(/CAT:\s*([a-z_]+)\s*$/i);
     if (catMatch && PRODUCT_CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z_]+\s*$/i, '').trim();
     }
-    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i);
+    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product|vendor_space)\s*$/i);
     if (actionMatch) {
       action = actionMatch[1].toLowerCase() as typeof action;
-      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i, '').trim();
+      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product|vendor_space)\s*$/i, '').trim();
     }
 
     // Fusionne les doublons (même article ajouté deux fois dans le tour) en

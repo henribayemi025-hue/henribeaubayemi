@@ -32,6 +32,13 @@ const SHOP = {
   country: 'CM', city: 'Douala', status: 'active', is_verified: false, rating: 0,
   followers_count: 0, avatar_url: null, banner_url: null, categories: ['mode_femme'],
 };
+// La boutique de QUELQU'UN D'AUTRE: le bandeau « C'est ta boutique » ne doit
+// jamais s'y montrer — l'inverse serait pire que son absence.
+const OTHER_SHOP = {
+  id: 'shop-other', slug: 'autre-boutique', name: 'Autre boutique', owner_id: 'someone-else-0000',
+  country: 'CM', city: 'Yaoundé', status: 'active', is_verified: false, rating: 0,
+  followers_count: 3, avatar_url: null, banner_url: null, categories: ['mode_femme'],
+};
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 
@@ -47,7 +54,12 @@ async function makePage({ hasShop }) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR', timezoneId: 'Africa/Douala' });
   await ctx.addInitScript(([key, val]) => localStorage.setItem(key, val), [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(session)]);
   const page = await ctx.newPage();
-  page.on('console', (m) => { if (m.type() === 'error') findings.push({ kind: 'console', text: m.text().slice(0, 200) }); });
+  page.on('console', (m) => {
+    // Le websocket realtime n'est pas interceptable par page.route (ce n'est
+    // pas du HTTP) et le proxy de l'environnement de test le bloque: c'est un
+    // artefact du banc d'essai, pas un défaut de l'application.
+    if (m.type() === 'error' && !m.text().includes('WebSocket connection')) findings.push({ kind: 'console', text: m.text().slice(0, 200) });
+  });
   page.on('pageerror', (e) => findings.push({ kind: 'pageerror', text: String(e).slice(0, 200) }));
 
   await page.route('**/realtime/v1/**', (r) => r.abort());
@@ -64,7 +76,7 @@ async function makePage({ hasShop }) {
     }
     const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
     let rows = [];
-    if (path === 'shops') rows = hasShop ? [SHOP] : [];
+    if (path === 'shops') rows = hasShop ? [SHOP, OTHER_SHOP] : [OTHER_SHOP];
     else if (path === 'profiles') rows = [{ id: USER_ID, name: 'Test Vendeuse', avatar_url: null, country: 'CM', currency: 'FCFA', is_vendor: hasShop, created_at: new Date().toISOString() }];
     else if (path === 'categories') rows = [{ id: 'mode_femme', parent_id: null, kind: 'PRODUCT', label_fr: 'Mode Femme', label_en: 'Women' }];
     const at = (row, p) => p.split('.').reduce((o, k) => (o == null ? o : o[k]), row);
@@ -166,6 +178,24 @@ const vendorChipOk = finiaVendor.includes('Passer en mode acheteur');
 console.log(`${vendorChipOk ? '✅' : '⚠️ '} Finia depuis Produits — raccourci « Passer en mode acheteur »`);
 if (!vendorChipOk) console.log(`   texte vu: ${finiaVendor.replace(/\n+/g, ' | ').slice(0, 300)}`);
 allOk &= vendorChipOk;
+
+// SA boutique vue en mode acheteur: le cas exact de la vendeuse perdue.
+// Les deux gestes qu'elle cherchait doivent être là, et « S'abonner » (à
+// soi-même) ne doit plus l'être.
+const ownShop = await check(vendor, 'Sa propre boutique — bandeau propriétaire', '/boutique/ma-boutique',
+  ["C'est ta boutique", 'Passer en mode vendeur', 'Ajouter un article'], 'onboarding_boutique-proprietaire');
+allOk &= ownShop;
+const ownBody = await vendor.locator('body').innerText().catch(() => '');
+const noFollowSelf = !/\bSuivre\b/.test(ownBody);
+console.log(`${noFollowSelf ? '✅' : '⚠️ '} Sa propre boutique — « Suivre » bien retiré`);
+allOk &= noFollowSelf;
+
+allOk &= await check(vendor, "La boutique d'une AUTRE — pas de bandeau, «Suivre» présent", '/boutique/autre-boutique',
+  ['Suivre'], 'onboarding_boutique-autrui');
+const otherBody = await vendor.locator('body').innerText().catch(() => '');
+const noOwnerBannerElsewhere = !otherBody.includes("C'est ta boutique");
+console.log(`${noOwnerBannerElsewhere ? '✅' : '⚠️ '} La boutique d'une autre — le bandeau propriétaire est bien ABSENT`);
+allOk &= noOwnerBannerElsewhere;
 
 const finiaBuyer = await openFinia(vendor, '/');
 await vendor.screenshot({ path: `${OUT}/onboarding_finia-acheteur.png` }).catch(() => {});

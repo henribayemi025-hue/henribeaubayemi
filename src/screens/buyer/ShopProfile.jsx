@@ -284,14 +284,34 @@ export default function ShopProfile() {
           />
         </div>
 
-        <div className="mt-3 flex gap-2 sm:max-w-md">
-          <Button variant={following ? 'secondary' : 'primary'} loading={busy} onClick={toggleFollow} className="flex-1">
-            {following ? t('common.following') : t('common.follow')}
-          </Button>
-          <button onClick={contact} className="flex h-12 items-center gap-1 rounded-[10px] border-[1.5px] border-teal px-4 text-teal" aria-label={sk('contactPrompt')}>
-            <IconMessage size={20} />
-          </button>
-        </div>
+        {/* La PROPRIÉTAIRE sur sa propre fiche. Une vraie vendeuse a atterri
+            ici en mode acheteur, n'a trouvé ni « mode vendeur » ni « ajouter »
+            et a cru la plateforme cassée. Lui proposer « S'abonner » et
+            « Écrire à la boutique » — s'écrire à elle-même — n'aidait pas:
+            quand c'est TA boutique, les deux boutons deviennent les deux
+            gestes que tu es venue faire. */}
+        {user && shop.owner_id === user.id ? (
+          <div className="mt-3 rounded-card border border-teal bg-teal/5 p-3 sm:max-w-md">
+            <p className="text-caption font-semibold text-teal">{t('shop.ownShop')}</p>
+            <div className="mt-2 flex gap-2">
+              <Button onClick={() => navigate('/switch/to-vendor')} className="flex-1">
+                {t('profile.switchToVendor')}
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/vendor/products/bulk')} className="flex-1">
+                {t('finou.actionAddProduct')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 flex gap-2 sm:max-w-md">
+            <Button variant={following ? 'secondary' : 'primary'} loading={busy} onClick={toggleFollow} className="flex-1">
+              {following ? t('common.following') : t('common.follow')}
+            </Button>
+            <button onClick={contact} className="flex h-12 items-center gap-1 rounded-[10px] border-[1.5px] border-teal px-4 text-teal" aria-label={sk('contactPrompt')}>
+              <IconMessage size={20} />
+            </button>
+          </div>
+        )}
 
         {/* Contact rapide: chaque canal n'apparaît QUE si renseigné. */}
         {(shop.whatsapp || shop.phone || shop.instagram) && (

@@ -358,7 +358,8 @@
     "seeAllZones": "Voir toutes les zones ({{count}})",
     "bestProducts": "Nos produits",
     "seeAllProducts": "Voir tous les produits",
-    "promoEmpty": "Pas de promo en ce moment."
+    "promoEmpty": "Pas de promo en ce moment.",
+    "ownShop": "C'est ta boutique"
   },
   "finou": {
     "title": "Finia",
@@ -393,7 +394,8 @@
       "Demande à la boutique si c'est dispo",
       "Cherche par photo",
       "Ajoute ça à mon panier"
-    ]
+    ],
+    "actionVendorSpace": "Ouvrir mon espace vendeur"
   },
   "mirror": {
     "title": "Essayage virtuel",

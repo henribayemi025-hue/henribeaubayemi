@@ -358,7 +358,8 @@
     "seeAllZones": "See all zones ({{count}})",
     "bestProducts": "Our products",
     "seeAllProducts": "See all products",
-    "promoEmpty": "No deals right now."
+    "promoEmpty": "No deals right now.",
+    "ownShop": "This is your shop"
   },
   "finou": {
     "title": "Finia",
@@ -393,7 +394,8 @@
       "Ask the shop if it's available",
       "Search by photo",
       "Add this to my cart"
-    ]
+    ],
+    "actionVendorSpace": "Open my seller space"
   },
   "mirror": {
     "title": "Virtual try-on",
