@@ -47,7 +47,23 @@ export function AppIntro() {
     try {
       forced = new URLSearchParams(search).get('intro') === '1';
     } catch { /* URL illisible */ }
-    if (forced) { setI(0); setShow(true); return; }
+    if (forced) {
+      setI(0);
+      setShow(true);
+      // On retire ?intro=1 de l'adresse tout de suite.
+      //
+      // Beau: « je sors, je sors, et je revois ça ». C'est le lien que je lui
+      // ai donné qui le lui remettait: tant que le paramètre reste dans la
+      // barre d'adresse, chaque rechargement rouvre la présentation — même
+      // après l'avoir passée, puisque « forcé » saute justement la marque.
+      // Une porte de secours ne doit s'ouvrir qu'une fois.
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.delete('intro');
+        window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+      } catch { /* URL illisible: sans gravité */ }
+      return;
+    }
     try {
       if (localStorage.getItem(SEEN_KEY)) return;
     } catch { /* stockage indisponible: on montre */ }
