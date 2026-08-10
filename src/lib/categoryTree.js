@@ -38,6 +38,7 @@ export const SERVICE_HEADS = [
   "electricite_plomberie",
   "livraison_demenagement",
   "traiteur_chef",
+  "patisserie_service",
   "location_immobiliere",
   "location_vehicules",
   "photo_video",

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle, IconClock, IconTruckDelivery, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle, IconClock, IconTruckDelivery, IconPlus, IconTrash, IconSwitchHorizontal, IconChevronRight } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -185,6 +185,22 @@ export default function VendorShop() {
     <div>
       <AppHeader title={t('vendor.shopEdit')} right={<button onClick={share} aria-label={t('common.shareShop')} className="p-1 text-teal"><IconShare2 size={20} /></button>} />
       <div className="space-y-4 p-4">
+        {/* Repasser en acheteur n'existait QUE dans l'en-tête du tableau de
+            bord, sous une icône de deux flèches croisées qui ne dit pas où
+            elle mène. Depuis Produits, Commandes, Messages ou Réels, il
+            fallait d'abord retrouver le tableau de bord.
+            « Ma boutique » est un onglet de la barre du bas: la sortie est
+            donc à un geste depuis n'importe quel écran vendeur. En HAUT de
+            l'écran, pas en bas — ce formulaire fait plusieurs écrans de
+            long, et une sortie qu'il faut chercher n'est pas une sortie. */}
+        <Link
+          to="/switch/to-buyer"
+          className="flex items-center gap-3 rounded-card border border-hairline px-4 py-3.5 text-body text-ink"
+        >
+          <IconSwitchHorizontal size={22} className="text-teal" />
+          <span className="flex-1 font-semibold">{t('vendor.switchToBuyer')}</span>
+          <IconChevronRight size={18} className="text-hairline" />
+        </Link>
         <ImageUpload bucket="shops" value={form.banner_url} onChange={(p) => saveImage('banner_url', p)} label={t('vendor.shopBanner')} shape="wide" />
         <ImageUpload bucket="shops" value={form.avatar_url} onChange={(p) => saveImage('avatar_url', p)} label={t('vendor.shopAvatar')} shape="round" />
         <Field label={t('vendor.shopName')}>

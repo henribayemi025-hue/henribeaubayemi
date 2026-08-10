@@ -171,6 +171,22 @@ TES OUTILS — utilise-les, ne devine jamais:
   catégorie et stock, attends le OK, puis appelle l'outil. Précise ensuite
   que l'article est en BROUILLON: il faut y ajouter des photos et le publier
   depuis « Mes articles » pour qu'il apparaisse dans le catalogue.
+- Vendeuse qui veut CHANGER un article ("baisse le prix de la robe wax à 20000",
+  "je n'ai plus de stock sur les sandales", "publie mon brouillon") ->
+  list_my_products d'ABORD pour retrouver l'id réel, puis update_product. Ne
+  devine jamais un id. S'il y a plusieurs articles possibles, montre-les et
+  demande lequel. Récapitule le changement, attends le OK, puis appelle.
+  Publier exige au moins une photo: si l'outil refuse pour cette raison,
+  dis-le simplement et renvoie vers « Mes articles » pour les ajouter.
+- Vendeuse qui gère ses COMMANDES REÇUES ("j'ai des commandes ?", "accepte la
+  commande 1042", "c'est livré", "je ne peux pas honorer celle-là") ->
+  list_shop_orders puis update_order_status. Attention: get_my_orders donne
+  ses PROPRES achats, list_shop_orders donne ce que sa boutique a reçu — ce
+  ne sont pas les mêmes commandes. L'acheteuse est prévenue automatiquement,
+  dis-le. Une commande n'avance que dans l'ordre (nouvelle -> acceptée ->
+  envoyée -> livrée); si l'outil refuse, explique l'étape qui manque au lieu
+  d'insister. Pour annuler, demande TOUJOURS la raison d'abord: elle est
+  envoyée telle quelle à l'acheteuse.
 - Vendeuse qui travaille par arrivage ("mes habits changent chaque semaine",
   "je veux que ça s'efface tous les 7 jours et je remets du neuf") ->
   set_rotation. Par DÉFAUT les articles de l'arrivage passé sont SUPPRIMÉS
@@ -197,6 +213,39 @@ Si le [Contexte écran] contient "shopUrl", c'est le VRAI lien de la boutique du
 vendeur connecté: donne-le tel quel si on te le demande, et termine par
 "ACTION: share_shop".
 
+OÙ SE TROUVENT LES CHOSES — pour guider quelqu'un de perdu, ne devine jamais:
+Finjaro a deux modes. Le mode ACHETEUR (onglets: Accueil, Fin, Services,
+Messages, Profil) sert à acheter. Le mode VENDEUR (onglets: Tableau de bord,
+Produits, Commandes, Boutique) sert à gérer sa boutique: ajouter ses articles,
+voir ses commandes et ses ventes, répondre à ses clientes vendeuses.
+- Passer en mode vendeur: la carte « Vendre sur Finjaro » en haut du Profil
+  (ou « Passer en mode vendeur » si la boutique existe déjà).
+- Revenir en mode acheteur: le bouton « Mode acheteur » en haut du tableau de
+  bord vendeur.
+Si le [Contexte écran] contient "vendorStats" ou "shopUrl", l'utilisateur EST
+un vendeur avec une boutique active. S'il semble perdu — il cherche sa
+boutique, ses articles, ses commandes, comment ajouter, « ça ne marche pas »,
+« je ne trouve pas » — explique en une phrase que ça se passe en mode vendeur
+et termine par "ACTION: vendor_space". Ne le laisse JAMAIS penser que sa
+boutique a disparu: elle est dans l'autre mode, dis-le.
+
+LE GUIDE — quand on te demande comment marche Finjaro (« comment ça marche »,
+« je suis nouveau », « guide-moi », « je fais quoi ici »):
+- Demande D'ABORD, en une phrase, si la personne veut ACHETER ou VENDRE — sauf
+  si le contexte le dit déjà (vendorStats présent = elle vend).
+- Puis guide EN TROIS ÉTAPES MAXIMUM à la fois, dans ses mots à elle, en
+  t'appuyant sur « où se trouvent les choses » ci-dessus. Jamais la visite
+  complète d'un coup: personne ne retient huit étapes.
+- Pour ACHETER: chercher (ou me demander, je cherche pour toi) → commander →
+  payer à la livraison ou au retrait, rien en ligne. Dis ce dernier point
+  clairement, c'est LA question que tout le monde se pose sans oser.
+- Pour VENDRE: ouvrir sa boutique (Profil → « Vendre sur Finjaro », gratuit) →
+  publier ses articles (une photo suffit, je rédige la fiche) → répondre aux
+  commandes dans l'espace vendeur. Termine par "ACTION: sell" si elle n'a pas
+  encore de boutique, "ACTION: vendor_space" si elle en a une.
+- Ferme chaque réponse en proposant l'étape suivante ou en offrant de la
+  faire ensemble — jamais un « voilà » qui laisse la personne seule.
+
 Style: réponds dans la langue de l'utilisateur (français ou anglais), 2-5 phrases,
 ton amical, un emoji max.
 
@@ -212,6 +261,8 @@ Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
 - Demande du lien de sa boutique (shopUrl présent) — "ACTION: share_shop".
 - Intention de supprimer un de ses articles — "ACTION: delete_product". Ne demande
   jamais toi-même lequel: le choix se fait ensuite dans une liste réelle.
+- Vendeur (vendorStats/shopUrl présent) perdu, qui cherche sa boutique ou
+  comment la gérer — "ACTION: vendor_space".
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 }
 
@@ -324,6 +375,64 @@ function toolDeclarations() {
     },
   },
   {
+    name: 'list_my_products',
+    description:
+      "Liste les articles de la boutique du vendeur connecté, avec leur id, prix, stock et s'ils sont publiés ou en brouillon. Appelle TOUJOURS cet outil avant update_product: c'est lui qui donne les ids réels, et il ne faut jamais en deviner un.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        query: { type: 'STRING', description: "Filtre optionnel sur le nom de l'article" },
+        only_drafts: { type: 'BOOLEAN', description: 'true pour ne lister que les brouillons non publiés' },
+      },
+    },
+  },
+  {
+    name: 'update_product',
+    description:
+      "Modifie UN article de la boutique du vendeur connecté: son prix, son stock, ou sa publication (publié / brouillon). Récapitule d'abord à voix haute ce que tu vas changer et sur quel article, attends le OK, puis appelle l'outil. Ne sert pas à créer un article (create_product) ni à en supprimer un.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        product_id: { type: 'STRING', description: "L'id exact renvoyé par list_my_products" },
+        price_fcfa: { type: 'NUMBER', description: 'Nouveau prix en FCFA' },
+        stock: { type: 'NUMBER', description: 'Nouveau stock disponible' },
+        is_active: { type: 'BOOLEAN', description: 'true pour publier au catalogue, false pour repasser en brouillon' },
+      },
+      required: ['product_id'],
+    },
+  },
+  {
+    name: 'list_shop_orders',
+    description:
+      "Les commandes REÇUES par la boutique du vendeur connecté (à ne pas confondre avec get_my_orders, qui donne ses propres achats). Donne l'id, le numéro, le statut, l'acheteuse et les articles. Appelle-le avant update_order_status: c'est lui qui fournit les ids réels.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        status: {
+          type: 'STRING',
+          description: "Filtre optionnel: 'new', 'confirmed', 'shipped', 'delivered' ou 'cancelled'",
+        },
+      },
+    },
+  },
+  {
+    name: 'update_order_status',
+    description:
+      "Fait avancer UNE commande de la boutique du vendeur connecté: l'accepter, la marquer envoyée/prête, la marquer livrée, ou l'annuler. L'acheteuse est prévenue automatiquement. Récapitule d'abord le numéro de commande et l'action, attends le OK, puis appelle l'outil. Une annulation demande toujours une raison à dire à l'acheteuse.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        order_id: { type: 'STRING', description: "L'id exact de la commande, renvoyé par list_shop_orders" },
+        action: {
+          type: 'STRING',
+          description: "'confirm' (accepter), 'ship' (envoyée ou prête au retrait), 'deliver' (livrée), 'cancel' (refuser/annuler)",
+        },
+        reason: { type: 'STRING', description: "Obligatoire pour 'cancel': la raison, lisible par l'acheteuse" },
+      },
+      required: ['order_id', 'action'],
+    },
+  },
+  {
     name: 'set_rotation',
     description:
       "Active, désactive ou règle les arrivages tournants de la boutique de l'utilisateur vendeur: ses articles repassent automatiquement en brouillon après N jours pour laisser place au nouvel arrivage. Appelle aussi cet outil SANS argument pour simplement lire le réglage actuel.",
@@ -383,7 +492,10 @@ async function runTool(
   cartActions: Json[],
 ): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
-  const NEEDS_AUTH = ['get_my_orders', 'get_my_shop_stats', 'message_shop', 'follow_shop', 'create_product', 'set_rotation'];
+  const NEEDS_AUTH = [
+    'get_my_orders', 'get_my_shop_stats', 'message_shop', 'follow_shop', 'create_product', 'set_rotation',
+    'list_my_products', 'update_product', 'list_shop_orders', 'update_order_status',
+  ];
   if (!userId && NEEDS_AUTH.includes(name)) {
     return { signed_in: false, message: "L'utilisateur n'est pas connecté: invite-le à se connecter pour faire ça." };
   }
@@ -463,6 +575,16 @@ async function runTool(
           data = retry.data;
           approximate = true;
         }
+      }
+
+      // Une recherche de Finia qui ne trouve RIEN est le signal le plus net
+      // qu'on ait sur la demande non servie: quelqu'un a formulé un besoin,
+      // en toutes lettres, et le catalogue n'avait rien. On l'enregistre pour
+      // le rapport hebdomadaire — sans jamais bloquer la réponse.
+      if ((data?.length ?? 0) === 0) {
+        db.from('events')
+          .insert({ type: 'search', user_id: userId, meta: { q: String(args.query ?? ''), n: 0, via: 'finia' } })
+          .then(() => {}, () => {});
       }
 
       return {
@@ -768,6 +890,181 @@ async function runTool(
       };
     }
 
+    // ATTENTION — `db` est le client SERVICE_ROLE: la sécurité au niveau des
+    // lignes ne s'applique PAS ici. Chaque outil vendeur doit donc vérifier
+    // lui-même que l'objet touché appartient bien à la boutique de
+    // l'utilisateur. Un `.eq('id', …)` sans `.eq('shop_id', …)` laisserait
+    // n'importe quel vendeur modifier l'article ou la commande d'une autre
+    // boutique en devinant un identifiant.
+    case 'list_my_products': {
+      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+      let q = db
+        .from('products')
+        .select('id,name,price_fcfa,stock,is_active,category')
+        .eq('shop_id', shop.id)
+        .order('created_at', { ascending: false })
+        .limit(40);
+      if (typeof args.query === 'string' && args.query.trim()) q = q.ilike('name', `%${args.query.trim()}%`);
+      if (args.only_drafts === true) q = q.eq('is_active', false);
+      const { data: rows, error } = await q;
+      if (error) return { ok: false, message: error.message };
+      return {
+        ok: true,
+        nombre: rows?.length ?? 0,
+        articles: (rows ?? []).map((r) => ({
+          id: r.id, nom: r.name, prix_fcfa: r.price_fcfa, stock: r.stock,
+          publie: r.is_active, categorie: r.category,
+        })),
+      };
+    }
+
+    case 'update_product': {
+      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+      const id = typeof args.product_id === 'string' ? args.product_id : '';
+      if (!id) return { ok: false, message: 'product_id manquant' };
+
+      const patch: Json = {};
+      if (typeof args.price_fcfa === 'number') {
+        const prix = Math.round(args.price_fcfa);
+        if (prix < 0) return { ok: false, message: 'prix invalide' };
+        patch.price_fcfa = prix;
+      }
+      if (typeof args.stock === 'number') {
+        const s = Math.floor(args.stock);
+        if (s < 0) return { ok: false, message: 'stock invalide' };
+        patch.stock = s;
+      }
+      if (typeof args.is_active === 'boolean') patch.is_active = args.is_active;
+      if (Object.keys(patch).length === 0) {
+        return { ok: false, message: 'Rien à modifier: précise un prix, un stock ou la publication.' };
+      }
+
+      // Publier une fiche SANS photo créerait un article fantôme dans le
+      // catalogue — c'est déjà la règle de create_product, elle vaut aussi ici.
+      if (patch.is_active === true) {
+        const { data: cur } = await db
+          .from('products').select('images').eq('id', id).eq('shop_id', shop.id).maybeSingle();
+        if (!cur) return { ok: false, message: "Cet article n'existe pas dans cette boutique." };
+        if (!Array.isArray(cur.images) || cur.images.length === 0) {
+          return {
+            ok: false,
+            message: "Impossible de publier: cet article n'a aucune photo. Elles s'ajoutent depuis « Mes articles ».",
+          };
+        }
+      }
+
+      const { data: updated, error } = await db
+        .from('products')
+        .update(patch)
+        .eq('id', id)
+        .eq('shop_id', shop.id)
+        .select('id,name,price_fcfa,stock,is_active')
+        .maybeSingle();
+      if (error) return { ok: false, message: error.message };
+      if (!updated) return { ok: false, message: "Cet article n'existe pas dans cette boutique." };
+      return {
+        ok: true,
+        id: updated.id, nom: updated.name, prix_fcfa: updated.price_fcfa,
+        stock: updated.stock, publie: updated.is_active,
+      };
+    }
+
+    case 'list_shop_orders': {
+      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+      let q = db
+        .from('orders')
+        .select('id,order_no,status,total_fcfa,created_at,delivery_method,buyer_name,order_items(name,qty)')
+        .eq('shop_id', shop.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (typeof args.status === 'string' && args.status.trim()) q = q.eq('status', args.status.trim());
+      const { data: rows, error } = await q;
+      if (error) return { ok: false, message: error.message };
+      return {
+        ok: true,
+        nombre: rows?.length ?? 0,
+        commandes: (rows ?? []).map((o: Json) => ({
+          id: o.id,
+          numero: o.order_no,
+          statut: o.status,
+          total_fcfa: o.total_fcfa,
+          mode: o.delivery_method,
+          acheteuse: o.buyer_name,
+          date: o.created_at,
+          articles: ((o.order_items as Json[] | null) ?? []).map((it: Json) => `${it.qty}× ${it.name}`),
+        })),
+      };
+    }
+
+    case 'update_order_status': {
+      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+      const id = typeof args.order_id === 'string' ? args.order_id : '';
+      const action = typeof args.action === 'string' ? args.action.toLowerCase() : '';
+      if (!id) return { ok: false, message: 'order_id manquant' };
+
+      const { data: order } = await db
+        .from('orders')
+        .select('id,order_no,status,buyer_id,delivery_method')
+        .eq('id', id)
+        .eq('shop_id', shop.id)
+        .maybeSingle();
+      if (!order) return { ok: false, message: "Cette commande n'appartient pas à cette boutique." };
+
+      // Le MÊME enchaînement que l'écran Commandes: une commande n'avance que
+      // dans l'ordre. Sans ça, Finia pourrait déclarer « livrée » une commande
+      // jamais acceptée, et la boutique perdrait la trace de ce qui s'est
+      // réellement passé.
+      const now = new Date().toISOString();
+      let patch: Json;
+      let notif: string;
+      if (action === 'confirm') {
+        if (order.status !== 'new') return { ok: false, message: `Déjà au statut « ${order.status} »: on n'accepte qu'une commande nouvelle.` };
+        patch = { status: 'confirmed', confirmed_at: now };
+        notif = 'Commande validée';
+      } else if (action === 'ship') {
+        if (order.status !== 'confirmed') return { ok: false, message: `Il faut d'abord accepter la commande (statut actuel: ${order.status}).` };
+        patch = { status: 'shipped', shipped_at: now };
+        notif = order.delivery_method === 'pickup' ? 'Commande prête au retrait' : 'Commande expédiée';
+      } else if (action === 'deliver') {
+        if (order.status !== 'shipped') return { ok: false, message: `Il faut d'abord la marquer envoyée (statut actuel: ${order.status}).` };
+        patch = { status: 'delivered', delivered_at: now };
+        notif = 'Commande livrée';
+      } else if (action === 'cancel') {
+        if (order.status === 'delivered' || order.status === 'cancelled') {
+          return { ok: false, message: `Une commande « ${order.status} » ne s'annule plus.` };
+        }
+        const reason = typeof args.reason === 'string' ? args.reason.trim() : '';
+        if (!reason) return { ok: false, message: "Il faut une raison à donner à l'acheteuse avant d'annuler." };
+        patch = { status: 'cancelled', cancelled_at: now, cancel_reason: reason };
+        notif = order.status === 'new' ? 'Commande refusée' : 'Commande annulée';
+      } else {
+        return { ok: false, message: "action doit valoir 'confirm', 'ship', 'deliver' ou 'cancel'." };
+      }
+
+      const { error } = await db.from('orders').update(patch).eq('id', order.id).eq('shop_id', shop.id);
+      if (error) return { ok: false, message: error.message };
+
+      // L'acheteuse est prévenue, exactement comme depuis l'écran Commandes:
+      // une commande qui change d'état sans que personne ne le sache est pire
+      // qu'une commande qui n'avance pas.
+      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+        body: JSON.stringify({
+          user_id: order.buyer_id,
+          title: notif,
+          body: `#${order.order_no}${patch.cancel_reason ? ` — ${patch.cancel_reason}` : ''}`,
+          url: '/profile/orders',
+        }),
+      }).catch(() => {});
+
+      return { ok: true, commande: order.order_no, nouveau_statut: patch.status, acheteuse_prevenue: true };
+    }
+
     case 'set_rotation': {
       const { data: shop } = await db
         .from('shops')
@@ -957,11 +1254,16 @@ Deno.serve(async (req: Request) => {
               // secondes dans les journaux — et Finia répondait « Je n'ai pas
               // bien compris, peux-tu reformuler ? » à des phrases parfaitement
               // claires. Signalé par un utilisateur de Beau.
-              maxOutputTokens: 2048,
-              // Et on coupe la réflexion: Finia cherche des articles et répond,
-              // elle n'a pas de problème à résoudre. Tout le budget va au
-              // texte, et la réponse arrive plus vite.
-              ...(noThinking ? {} : { thinkingConfig: { thinkingBudget: 0 } }),
+              maxOutputTokens: 3072,
+              // Réflexion BORNÉE, pas coupée. Le bug des réponses vides venait
+              // d'une réflexion ILLIMITÉE qui consommait tout maxOutputTokens
+              // avant d'écrire le moindre mot. La couper à zéro a réparé ça —
+              // mais un modèle qui ne réfléchit plus choisit mal ses outils,
+              // et Beau l'a vu: « il ne parvient même plus à faire les basic
+              // trucs ». 512 tokens de réflexion suffisent à choisir le bon
+              // outil, et il reste toujours ~2500 tokens garantis pour le
+              // texte: le bug ne peut pas revenir.
+              ...(noThinking ? {} : { thinkingConfig: { thinkingBudget: 512 } }),
             },
           }),
           signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
@@ -1051,17 +1353,17 @@ Deno.serve(async (req: Request) => {
     }
 
     let category: string | null = null;
-    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | null = null;
+    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | 'vendor_space' | null = null;
     // [a-z_]: les ids du pivot contiennent des underscores (mode_femme…).
     const catMatch = reply.match(/CAT:\s*([a-z_]+)\s*$/i);
     if (catMatch && PRODUCT_CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z_]+\s*$/i, '').trim();
     }
-    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i);
+    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product|vendor_space)\s*$/i);
     if (actionMatch) {
       action = actionMatch[1].toLowerCase() as typeof action;
-      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product)\s*$/i, '').trim();
+      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product|vendor_space)\s*$/i, '').trim();
     }
 
     // Fusionne les doublons (même article ajouté deux fois dans le tour) en

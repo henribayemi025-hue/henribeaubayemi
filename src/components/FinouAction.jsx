@@ -111,6 +111,32 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
     );
   }
 
+  if (action === 'vendor_space') {
+    // Vendeur perdu en mode acheteur (« où est ma boutique ? », « je ne
+    // trouve pas mes articles »): la réponse texte explique le mode vendeur,
+    // ce bouton l'y emmène. Pas encore vendeur -> le formulaire d'ouverture;
+    // candidature en cours -> rien, le texte suffit.
+    if (status === 'approved') {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); navigate('/switch/to-vendor'); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconBuildingStore size={14} /> {t('finou.actionVendorSpace')}
+        </button>
+      );
+    }
+    if (status === 'pending') return null;
+    return (
+      <button
+        onClick={() => { onNavigate?.(); navigate('/become-vendor'); }}
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+      >
+        <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+      </button>
+    );
+  }
+
   if (action === 'delete_product') {
     if (status !== 'approved' || !onStartDelete) return null; // no shop / not in FinouChou
     return (

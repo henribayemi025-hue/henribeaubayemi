@@ -51,7 +51,10 @@ export default function Search() {
           .filter((s) => s && s.name.toLowerCase().includes(lower));
         const products = (prodRes.data || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
         setState({ loading: false, error: false, data: { cats, shops: shopsRes.data || [], products, followed } });
-        track('search', null, { q: term });
+        // `n` = nombre de résultats. Sans lui, on sait ce que les gens
+        // cherchent mais pas ce qu'ils n'ont pas trouvé — or c'est exactement
+        // ça qui dit quelles vendeuses il faut aller recruter.
+        track('search', null, { q: term, n: products.length + (shopsRes.data || []).length });
       } catch (err) {
         if (signal.aborted || err?.name === 'AbortError') return; // stale, ignore
         setState({ loading: false, error: true, data: null });

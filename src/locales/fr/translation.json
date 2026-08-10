@@ -164,6 +164,7 @@
     "electricite_plomberie": "Électricité & Plomberie",
     "livraison_demenagement": "Livraison & Déménagement",
     "traiteur_chef": "Traiteur & Chef à domicile",
+    "patisserie_service": "Pâtisserie & Gâteaux sur commande",
     "location_immobiliere": "Location immobilière",
     "location_vehicules": "Location de véhicules",
     "mode_a_trier": "Mode",
@@ -309,7 +310,8 @@
     "similarTitle": "Vous aimerez aussi",
     "wasPrice": "Prix avant promo",
     "secondHandBadge": "Seconde main",
-    "chooseSizeFirst": "Choisis d'abord une taille."
+    "chooseSizeFirst": "Choisis d'abord une taille.",
+    "codReassurance": "Paie à la livraison ou au retrait — rien à payer en ligne."
   },
   "shop": {
     "products": "Produits",
@@ -358,7 +360,13 @@
     "seeAllZones": "Voir toutes les zones ({{count}})",
     "bestProducts": "Nos produits",
     "seeAllProducts": "Voir tous les produits",
-    "promoEmpty": "Pas de promo en ce moment."
+    "promoEmpty": "Pas de promo en ce moment.",
+    "ownShop": "C'est ta boutique",
+    "ownShopManage": "Gérer",
+    "ownShopAdd": "Ajouter",
+    "tabVideos": "Vidéos ({{count}})",
+    "homeVideos": "Ses vidéos",
+    "seeAllVideos": "Tout voir ({{count}})"
   },
   "finou": {
     "title": "Finia",
@@ -393,7 +401,9 @@
       "Demande à la boutique si c'est dispo",
       "Cherche par photo",
       "Ajoute ça à mon panier"
-    ]
+    ],
+    "actionVendorSpace": "Ouvrir mon espace vendeur",
+    "suggestGuide": "Comment ça marche ?"
   },
   "mirror": {
     "title": "Essayage virtuel",
@@ -536,7 +546,8 @@
     "mapTab": "Carte géolocalisée",
     "filterByTrade": "Filtrer par métier",
     "allTradesCount": "Tous les métiers ({{count}})",
-    "radiusLabel": "Rayon :"
+    "radiusLabel": "Rayon :",
+    "onlyCountry": "{{country}} seulement"
   },
   "profile": {
     "title": "Profil",
@@ -570,7 +581,11 @@
     "deleteAccountReasonPlaceholder": "Dis-nous pourquoi, si tu veux bien (facultatif)",
     "deleteAccountCheckbox": "Je comprends que cette action est définitive et je confirme vouloir supprimer mon compte.",
     "deleteAccountConfirm": "Supprimer définitivement",
-    "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter."
+    "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter.",
+    "sellCardTitle": "Ouvre ta boutique Finjaro",
+    "sellCardHint": "Gratuit. Publie tes articles et tes vidéos, reçois tes commandes.",
+    "sellCardKicker": "Tu vends des articles ?",
+    "sellCardCta": "Ouvrir ma boutique gratuite"
   },
   "referral": {
     "navLabel": "Inviter des amis",
@@ -844,7 +859,21 @@
     "publishAllConfirm": "Publier {{count}} article(s) d’un coup ? Ils deviennent visibles par tout le monde. Tu pourras en retirer un à tout moment.",
     "publishedAll": "{{count}} article(s) publié(s).",
     "priceOnRequest": "Prix sur demande",
-    "priceOnRequestHelp": "L’article s’affiche sans prix. La cliente t’écrit pour le demander au lieu de commander directement. Utile quand tu n’as pas encore fixé ton prix."
+    "priceOnRequestHelp": "L’article s’affiche sans prix. La cliente t’écrit pour le demander au lieu de commander directement. Utile quand tu n’as pas encore fixé ton prix.",
+    "switchToBuyerShort": "Mode acheteur",
+    "welcomeTitle": "Ta boutique est prête !",
+    "welcomeHint": "Encore une étape pour recevoir tes premières commandes.",
+    "welcomeStep1": "Boutique ouverte",
+    "welcomeStep2": "Publie ton premier article",
+    "welcomeStep3": "Partage ton lien à tes clientes",
+    "finiaWritesHint": "Envoie tes photos, Finia rédige les fiches.",
+    "reelDeleted": "Vidéo supprimée.",
+    "reelOpen": "Voir la vidéo",
+    "reelTooBig": "Ta vidéo fait {{size}} Mo — la limite est 50 Mo. Filme plus court, ou choisis une qualité plus basse dans ton téléphone.",
+    "reelSizeHint": "50 Mo maximum (environ 40 secondes en bonne qualité).",
+    "reelCategory": "Rayon",
+    "reelCategoryPlaceholder": "Choisis un rayon…",
+    "reelCategoryRequired": "Choisis un rayon: sans lui, ta vidéo n'apparaît dans aucun filtre."
   },
   "orderStatus": {
     "new": "En attente de validation",
@@ -946,7 +975,10 @@
     "titleProvider": "Devenir prestataire",
     "providerName": "Nom de ton activité",
     "generating": "Finia t'habille… ça prend quelques secondes.",
-    "askDescription": "Ajoute une description, ou laisse Finia la rédiger."
+    "askDescription": "Ajoute une description, ou laisse Finia la rédiger.",
+    "stepOptional": "facultative",
+    "skipToEnd": "Passer, je le ferai plus tard",
+    "addFirstProduct": "Publier mon premier article"
   },
   "switchMode": {
     "welcomeVendor": "Bienvenue dans ton espace vendeur.",
@@ -1007,7 +1039,11 @@
     "orderDeclined": "Commande refusée",
     "orderCancelledAfterConfirm": "Commande annulée",
     "empty": "Aucune notification pour le moment.",
-    "markAllRead": "Tout marquer comme lu"
+    "markAllRead": "Tout marquer comme lu",
+    "promptTitle": "Active les alertes",
+    "promptHint": "Sois prévenu·e dès qu'il se passe quelque chose.",
+    "promptHintVendor": "Une commande peut tomber à tout moment. Sans alerte, tu l'apprends trop tard — et la cliente attend.",
+    "promptCta": "Activer"
   },
   "productAttrs": {
     "marque": "Marque",
@@ -1024,7 +1060,17 @@
     "generic": "Quelque chose n'a pas fonctionné. Réessaie.",
     "crashTitle": "Oups, un souci est survenu",
     "crashHint": "Cette page a rencontré une erreur. Réessaie — le reste de l'app fonctionne toujours.",
-    "notFound": "Introuvable."
+    "notFound": "Introuvable.",
+    "auth": {
+      "alreadyRegistered": "Ce numéro (ou cet e-mail) a déjà un compte. Connecte-toi plutôt, ou utilise « Mot de passe oublié ».",
+      "invalidCredentials": "Numéro/e-mail ou mot de passe incorrect.",
+      "weakPassword": "Mot de passe trop court : 6 caractères minimum.",
+      "tooManyAttempts": "Trop de tentatives. Attends quelques minutes avant de réessayer.",
+      "otpExpired": "Ce code a expiré ou n'est pas le bon. Demande un nouveau code.",
+      "notConfirmed": "Ton compte n'est pas encore confirmé. Vérifie le code reçu.",
+      "signupDisabled": "Les inscriptions sont momentanément fermées.",
+      "validationFailed": "Une information saisie n'est pas valide. Vérifie le numéro et le mot de passe."
+    }
   },
   "admin": {
     "title": "Administration",
@@ -1236,5 +1282,16 @@
     "privacyTitle": "Politique de confidentialité",
     "and": "et",
     "deletionTitle": "Supprimer mon compte"
+  },
+  "welcome": {
+    "title": "Bienvenue {{name}} !",
+    "hint": "Dis-moi ce qui t'amène, je te guide en une minute.",
+    "buyTitle": "Je viens acheter",
+    "buyHint": "Trouver un article, commander, payer à la livraison.",
+    "sellTitle": "Je viens vendre",
+    "sellHint": "Ouvrir ma boutique et publier mes articles. C'est gratuit.",
+    "askBuy": "Je suis nouveau et je viens pour acheter. Explique-moi comment ça marche.",
+    "askSell": "Je suis nouveau et je veux vendre sur Finjaro. Explique-moi comment ça marche.",
+    "skip": "Plus tard"
   }
 }

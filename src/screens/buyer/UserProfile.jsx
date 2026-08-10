@@ -101,6 +101,49 @@ export default function UserProfile() {
         <Link to="/profile/edit" className="text-caption font-semibold text-teal">{t('profile.editProfile')}</Link>
       </div>
 
+      {/* Vendre: une CARTE en haut, plus une ligne de liste en bas.
+          « Devenir vendeur » était la 8e ligne d'une liste où toutes les
+          lignes se ressemblent — même taille, même gris, même chevron. Sur
+          42 comptes créés, 22 boutiques: la marche à franchir n'est pas le
+          formulaire, c'est de trouver la porte. Ici elle se voit avant
+          d'avoir à faire défiler, et elle dit ce qu'on y gagne. */}
+      {status !== 'pending' && (
+        <div className="mt-4 px-4">
+          {isVendor ? (
+            /* Un aplat orange pleine largeur pour un simple changement de
+               mode, c'était grossier (Beau). La carte reste blanche comme le
+               reste du profil; seule la pastille d'icône porte la couleur.
+               Elle se distingue par sa bordure teintée, pas en criant. */
+            <button
+              onClick={() => navigate('/switch/to-vendor')}
+              className="flex w-full items-center gap-3 rounded-card border border-teal/30 bg-white px-4 py-3 text-left transition active:scale-[0.98]"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal">
+                <IconSwitchHorizontal size={18} />
+              </span>
+              <span className="flex-1 text-body font-semibold text-ink">{t('profile.switchToVendor')}</span>
+              <IconChevronRight size={18} className="text-muted" />
+            </button>
+          ) : (
+            /* Accroche + titre + VRAI bouton, repris des maquettes AI Studio
+               de Beau: une ligne fine avec chevron se lit comme un réglage de
+               plus, un bouton plein se lit comme l'action qu'on est venu
+               faire. */
+            <Link
+              to="/become-vendor"
+              className="block rounded-card border border-hairline bg-white p-4 transition active:scale-[0.98]"
+            >
+              <span className="block text-caption font-semibold text-teal">{t('profile.sellCardKicker')}</span>
+              <span className="mt-0.5 block text-section text-ink">{t('profile.sellCardTitle')}</span>
+              <span className="mt-0.5 block text-caption text-muted">{t('profile.sellCardHint')}</span>
+              <span className="btn-primary mt-3">
+                <IconBuildingStore size={20} /> {t('profile.sellCardCta')}
+              </span>
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Stats grid — real data, tappable cards route to the matching page. */}
       <div className="mt-4 grid grid-cols-3 gap-3 px-4">
         <StatTile to="/profile/orders" value={stats?.orders} label={t('profile.statOrders')} icon={IconShoppingBag} />
@@ -119,27 +162,18 @@ export default function UserProfile() {
           </li>
         ))}
 
-        {/* Devenir vendeur — state-dependent row. */}
-        <li>
-          {isVendor ? (
-            <button onClick={() => navigate('/switch/to-vendor')} className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3.5 text-left text-body text-teal">
-              <IconSwitchHorizontal size={22} />
-              <span className="flex-1 font-semibold">{t('profile.switchToVendor')}</span>
-              <IconChevronRight size={18} className="text-hairline" />
-            </button>
-          ) : status === 'pending' ? (
+        {/* Candidature en cours: le seul état que la carte du haut ne couvre
+            pas — il n'y a rien à cliquer, juste à attendre. Les deux autres
+            états (vendeur / pas encore) sont montés en haut de l'écran; les
+            répéter ici n'aidait personne et allongeait la liste. */}
+        {status === 'pending' && (
+          <li>
             <div className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-muted">
               <IconClockHour4 size={22} />
               <span className="flex-1">{t('profile.vendorPending')}</span>
             </div>
-          ) : (
-            <Link to="/become-vendor" className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-ink">
-              <IconBuildingStore size={22} className="text-muted" />
-              <span className="flex-1">{t('profile.becomeVendor')}</span>
-              <IconChevronRight size={18} className="text-hairline" />
-            </Link>
-          )}
-        </li>
+          </li>
+        )}
 
         <li>
           <button

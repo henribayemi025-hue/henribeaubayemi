@@ -164,6 +164,7 @@
     "electricite_plomberie": "Electrical & Plumbing",
     "livraison_demenagement": "Delivery & Moving",
     "traiteur_chef": "Catering & Private Chef",
+    "patisserie_service": "Custom cakes & pastry",
     "location_immobiliere": "Property rental",
     "location_vehicules": "Vehicle rental",
     "mode_a_trier": "Fashion",
@@ -309,7 +310,8 @@
     "similarTitle": "You may also like",
     "wasPrice": "Price before discount",
     "secondHandBadge": "Second-hand",
-    "chooseSizeFirst": "Please pick a size first."
+    "chooseSizeFirst": "Please pick a size first.",
+    "codReassurance": "Pay on delivery or at pickup — nothing to pay online."
   },
   "shop": {
     "products": "Products",
@@ -358,7 +360,13 @@
     "seeAllZones": "See all zones ({{count}})",
     "bestProducts": "Our products",
     "seeAllProducts": "See all products",
-    "promoEmpty": "No deals right now."
+    "promoEmpty": "No deals right now.",
+    "ownShop": "This is your shop",
+    "ownShopManage": "Manage",
+    "ownShopAdd": "Add",
+    "tabVideos": "Videos ({{count}})",
+    "homeVideos": "Their videos",
+    "seeAllVideos": "See all ({{count}})"
   },
   "finou": {
     "title": "Finia",
@@ -393,7 +401,9 @@
       "Ask the shop if it's available",
       "Search by photo",
       "Add this to my cart"
-    ]
+    ],
+    "actionVendorSpace": "Open my seller space",
+    "suggestGuide": "How does it work?"
   },
   "mirror": {
     "title": "Virtual try-on",
@@ -536,7 +546,8 @@
     "mapTab": "Map view",
     "filterByTrade": "Filter by trade",
     "allTradesCount": "All trades ({{count}})",
-    "radiusLabel": "Radius:"
+    "radiusLabel": "Radius:",
+    "onlyCountry": "{{country}} only"
   },
   "profile": {
     "title": "Profile",
@@ -570,7 +581,11 @@
     "deleteAccountReasonPlaceholder": "Tell us why, if you'd like (optional)",
     "deleteAccountCheckbox": "I understand this action is final and I confirm I want to delete my account.",
     "deleteAccountConfirm": "Delete permanently",
-    "deleteAccountSent": "Your request has been recorded. You're now signed out — the Finjaro team will process it."
+    "deleteAccountSent": "Your request has been recorded. You're now signed out — the Finjaro team will process it.",
+    "sellCardTitle": "Open your Finjaro shop",
+    "sellCardHint": "Free. Post your items and videos, receive your orders.",
+    "sellCardKicker": "Do you sell things?",
+    "sellCardCta": "Open my free shop"
   },
   "referral": {
     "navLabel": "Invite friends",
@@ -844,7 +859,21 @@
     "publishAllConfirm": "Publish {{count}} item(s) at once? They become visible to everyone. You can unpublish any of them later.",
     "publishedAll": "{{count}} item(s) published.",
     "priceOnRequest": "Price on request",
-    "priceOnRequestHelp": "The item shows no price. Buyers message you to ask instead of ordering directly. Handy when you haven't set your price yet."
+    "priceOnRequestHelp": "The item shows no price. Buyers message you to ask instead of ordering directly. Handy when you haven't set your price yet.",
+    "switchToBuyerShort": "Buyer mode",
+    "welcomeTitle": "Your shop is ready!",
+    "welcomeHint": "One more step to receive your first orders.",
+    "welcomeStep1": "Shop opened",
+    "welcomeStep2": "Post your first item",
+    "welcomeStep3": "Share your link with your customers",
+    "finiaWritesHint": "Send your photos, Finia writes the listings.",
+    "reelDeleted": "Video deleted.",
+    "reelOpen": "View video",
+    "reelTooBig": "Your video is {{size}} MB — the limit is 50 MB. Film shorter, or lower the quality in your phone settings.",
+    "reelSizeHint": "50 MB maximum (about 40 seconds at good quality).",
+    "reelCategory": "Category",
+    "reelCategoryPlaceholder": "Pick a category…",
+    "reelCategoryRequired": "Pick a category: without one, your video shows up in no filter."
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -946,7 +975,10 @@
     "titleProvider": "Become a provider",
     "providerName": "Your business name",
     "generating": "Finia is dressing you up… this takes a few seconds.",
-    "askDescription": "Add a description, or let Finia write it."
+    "askDescription": "Add a description, or let Finia write it.",
+    "stepOptional": "optional",
+    "skipToEnd": "Skip, I'll do it later",
+    "addFirstProduct": "Post my first item"
   },
   "switchMode": {
     "welcomeVendor": "Welcome to your seller space.",
@@ -1007,7 +1039,11 @@
     "orderDeclined": "Order declined",
     "orderCancelledAfterConfirm": "Order cancelled",
     "empty": "No notifications yet.",
-    "markAllRead": "Mark all as read"
+    "markAllRead": "Mark all as read",
+    "promptTitle": "Turn on alerts",
+    "promptHint": "Get notified as soon as something happens.",
+    "promptHintVendor": "An order can arrive any time. Without alerts you find out too late — and the customer is waiting.",
+    "promptCta": "Turn on"
   },
   "productAttrs": {
     "marque": "Brand",
@@ -1024,7 +1060,17 @@
     "generic": "Something didn't work. Try again.",
     "crashTitle": "Oops, something went wrong",
     "crashHint": "This page hit an error. Try again — the rest of the app still works.",
-    "notFound": "Not found."
+    "notFound": "Not found.",
+    "auth": {
+      "alreadyRegistered": "This number (or email) already has an account. Log in instead, or use “Forgot password”.",
+      "invalidCredentials": "Wrong number/email or password.",
+      "weakPassword": "Password too short: 6 characters minimum.",
+      "tooManyAttempts": "Too many attempts. Wait a few minutes before trying again.",
+      "otpExpired": "That code has expired or is wrong. Request a new one.",
+      "notConfirmed": "Your account isn't confirmed yet. Check the code you received.",
+      "signupDisabled": "Sign-ups are temporarily closed.",
+      "validationFailed": "Something you entered isn't valid. Check the number and password."
+    }
   },
   "admin": {
     "title": "Administration",
@@ -1236,5 +1282,16 @@
     "privacyTitle": "Privacy Policy",
     "and": "and",
     "deletionTitle": "Delete my account"
+  },
+  "welcome": {
+    "title": "Welcome {{name}}!",
+    "hint": "Tell me what brings you here, I'll guide you in a minute.",
+    "buyTitle": "I'm here to buy",
+    "buyHint": "Find an item, order, pay on delivery.",
+    "sellTitle": "I'm here to sell",
+    "sellHint": "Open my shop and post my items. It's free.",
+    "askBuy": "I'm new and I'm here to buy. Explain how it works.",
+    "askSell": "I'm new and I want to sell on Finjaro. Explain how it works.",
+    "skip": "Later"
   }
 }

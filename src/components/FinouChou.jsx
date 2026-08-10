@@ -48,7 +48,7 @@ async function fetchVendorSnapshot(shop) {
 export function FinouChou() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { finouOpen, closeFinou, requireLogin } = useUI();
+  const { finouOpen, closeFinou, requireLogin, finouSeed, consumeFinouSeed } = useUI();
   const { user } = useAuth();
   const { shop, status: vendorStatus } = useVendorStatus();
   const cart = useCart();
@@ -100,6 +100,17 @@ export function FinouChou() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finouOpen]);
+
+  // Ouverture AVEC une question déjà posée (visite guidée après inscription):
+  // on l'envoie une seule fois, une fois le message d'accueil en place, pour
+  // que la conversation démarre toute seule.
+  useEffect(() => {
+    if (!finouOpen || !finouSeed || messages.length === 0) return;
+    const question = finouSeed;
+    consumeFinouSeed();
+    send(question);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finouOpen, finouSeed, messages.length]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' });
@@ -245,7 +256,7 @@ export function FinouChou() {
             <div key={m.id || i}>
               <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-body ${
+                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-body ${
                     m.role === 'user' ? 'bg-[#F4EFE6] text-ink' : 'border border-hairline bg-white text-ink'
                   }`}
                 >
@@ -311,6 +322,10 @@ export function FinouChou() {
           ))}
           {messages.length === 1 && !sending && (
             <div className="flex flex-wrap gap-2">
+              {/* EN PREMIER, pour tout le monde: la porte d'entrée de ceux qui
+                  ne savent pas quoi demander. Beau: « plusieurs ne connaissent
+                  pas quoi faire, il doit y avoir un guide sur l'app ». */}
+              <button onClick={() => send(t('finou.suggestGuide'))} className="chip text-ink">{t('finou.suggestGuide')}</button>
               <button onClick={() => send(t('finou.suggestTrends'))} className="chip text-ink">{t('finou.suggestTrends')}</button>
               <button onClick={() => send(t('finou.suggestGift'))} className="chip text-ink">{t('finou.suggestGift')}</button>
               <button onClick={() => fileRef.current?.click()} className="chip text-ink">{t('finou.suggestPhoto')}</button>
@@ -326,6 +341,23 @@ export function FinouChou() {
                   <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
                   <button onClick={() => send(t('finou.actionShareShop'))} className="chip text-ink">{t('finou.actionShareShop')}</button>
                   <button onClick={() => setDeleteOpen(true)} className="chip text-ink">{t('finouDelete.title')}</button>
+                  {/* Troisième sortie de l'espace vendeur. Les deux autres
+                      vivent sur le tableau de bord et dans « Ma boutique »:
+                      depuis Produits, Commandes, Messages ou Réels, il fallait
+                      d'abord rejoindre l'un des deux. Finia flotte sur TOUS
+                      les écrans vendeur, donc ce raccourci sort de n'importe
+                      où.
+                      Conditionné au chemin `/vendor`: en mode acheteur, la
+                      même personne est déjà acheteuse — lui proposer d'y
+                      passer n'aurait aucun sens. */}
+                  {location.pathname.startsWith('/vendor') && (
+                    <button
+                      onClick={() => { closeFinou(); navigate('/switch/to-buyer'); }}
+                      className="chip text-ink"
+                    >
+                      {t('vendor.switchToBuyer')}
+                    </button>
+                  )}
                 </>
               ) : (
                 <button onClick={() => send(t('finou.suggestSell'))} className="chip text-ink">{t('finou.suggestSell')}</button>

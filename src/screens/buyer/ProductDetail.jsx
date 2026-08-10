@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles } from '@tabler/icons-react';
+import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck } from '@tabler/icons-react';
 import { MirrorModal } from '../../components/MirrorModal';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -198,6 +198,18 @@ export default function ProductDetail() {
             <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
             {pct && <PromoBadge percent={pct} />}
           </div>
+        )}
+
+        {/* LE frein d'achat ici n'est pas le prix, c'est la peur de payer un
+            inconnu en ligne. Le dire sous le prix, à l'endroit exact où l'on
+            hésite — repris des maquettes AI Studio de Beau. Vrai partout:
+            aucun paiement n'existe dans l'application. Masqué sur les
+            articles sur devis, où « paie à la livraison » n'a pas de sens. */}
+        {!quote && (
+          <p className="mt-2 flex items-center gap-2 rounded-input bg-teal-light px-3 py-2 text-caption text-ink">
+            <IconShieldCheck size={16} className="shrink-0 text-success" />
+            {t('product.codReassurance')}
+          </p>
         )}
 
         <div className="mt-3 flex items-center justify-between gap-3">

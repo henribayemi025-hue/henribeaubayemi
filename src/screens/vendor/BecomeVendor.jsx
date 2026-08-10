@@ -93,6 +93,9 @@ export default function BecomeVendor() {
   const showServiceCats = kind === 'services' || kind === 'both';
 
   const step1Valid = form.shop_name.trim() && form.country && form.categories.length > 0;
+  // Étapes 2 et 3: aucun champ obligatoire. Tout s'ajoute plus tard depuis
+  // « Ma boutique », donc rien ne justifie de bloquer une inscription ici.
+  const skippable = step === 2 || step === 3;
 
   async function submit() {
     if (!agree) {
@@ -157,8 +160,12 @@ export default function BecomeVendor() {
         <IconCircleCheck size={64} className="text-success" stroke={1.5} />
         <h1 className="mt-4 text-title text-ink">{t('becomeVendor.activatedTitle')}</h1>
         <p className="mt-2 max-w-sm text-body text-muted">{t('becomeVendor.activatedBody')}</p>
-        <Button className="mt-8 max-w-xs" onClick={() => navigate('/switch/to-vendor')}>{t('becomeVendor.goToVendorSpace')}</Button>
-        <Button variant="ghost" className="mt-2" onClick={() => navigate('/profile')}>{t('common.back')}</Button>
+        {/* La boutique existe — l'étape suivante est de la remplir, pas de
+            regarder un tableau de bord à zéro. Huit boutiques sur vingt-deux
+            se sont arrêtées exactement ici. On envoie donc vers l'ajout par
+            photos: on choisit ses images, Finia rédige les fiches. */}
+        <Button className="mt-8 max-w-xs" onClick={() => navigate('/vendor/products/bulk')}>{t('becomeVendor.addFirstProduct')}</Button>
+        <Button variant="ghost" className="mt-2" onClick={() => navigate('/switch/to-vendor')}>{t('becomeVendor.goToVendorSpace')}</Button>
       </div>
     );
   }
@@ -178,7 +185,15 @@ export default function BecomeVendor() {
             <div key={s} className={`h-1.5 flex-1 rounded-pill ${s <= step ? 'bg-teal' : 'bg-hairline'}`} />
           ))}
         </div>
-        <p className="mt-2 text-caption text-muted">{t('becomeVendor.stepLabel', { current: step })}</p>
+        {/* « Facultative » annoncé DÈS l'en-tête. Seule l'étape 1 a des champs
+            obligatoires; les 2 et 3 ne demandent que du confort (photos,
+            description, téléphone). Mais quatre barres de progression se
+            lisent comme un dossier administratif, et on abandonne avant de
+            découvrir qu'on pouvait passer. */}
+        <p className="mt-2 text-caption text-muted">
+          {t('becomeVendor.stepLabel', { current: step })}
+          {skippable && <> · {t('becomeVendor.stepOptional')}</>}
+        </p>
       </div>
 
       <div className="space-y-4 p-4">
@@ -308,7 +323,17 @@ export default function BecomeVendor() {
 
       <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-3">
         {step < 4 ? (
-          <Button disabled={step === 1 && !step1Valid} onClick={() => setStep(step + 1)}>{t('common.continue')}</Button>
+          <>
+            <Button disabled={step === 1 && !step1Valid} onClick={() => setStep(step + 1)}>{t('common.continue')}</Button>
+            {/* Aller droit au récapitulatif, pas seulement à l'étape suivante:
+                proposer « passer » deux fois de suite reste deux obstacles.
+                w-full: le style ghost est inline par défaut et le texte se
+                collait à gauche sous un « Continuer » pleine largeur —
+                bancal sur capture. */}
+            {skippable && (
+              <Button variant="ghost" className="mt-1 w-full" onClick={() => setStep(4)}>{t('becomeVendor.skipToEnd')}</Button>
+            )}
+          </>
         ) : (
           <Button onClick={submit} loading={busy}>{t('becomeVendor.submit')}</Button>
         )}

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconSwitchHorizontal, IconChartBar, IconAlertCircle, IconChevronRight,
   IconArrowUpRight, IconArrowDownRight, IconWallet, IconPlus, IconShare2,
-  IconMovie, IconTrophy, IconAward,
+  IconMovie, IconTrophy, IconAward, IconBuildingStore, IconCircleCheck,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -12,6 +12,7 @@ import { Price } from '../../components/Price';
 import { NotificationBell } from '../../components/NotificationBell';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
+import { PushPrompt } from '../../components/PushPrompt';
 import { timeAgo } from '../../lib/format';
 
 function pct(cur, prev) {
@@ -48,13 +49,14 @@ export default function VendorDashboard() {
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
     const weekFrom = new Date(now - 7 * 864e5).toISOString();
     const prevWeekFrom = new Date(now - 14 * 864e5).toISOString();
-    const [{ data: weekOrders }, { data: orders }, { data: convs }, { count: pending }, { count: todayCount }, { data: shopRow }] = await Promise.all([
+    const [{ data: weekOrders }, { data: orders }, { data: convs }, { count: pending }, { count: todayCount }, { data: shopRow }, { count: productsCount }] = await Promise.all([
       supabase.from('orders').select('total_fcfa, status, created_at').eq('shop_id', shop.id).gte('created_at', prevWeekFrom),
       supabase.from('orders').select('id, order_no, status, total_fcfa, created_at, buyer_name').eq('shop_id', shop.id).order('created_at', { ascending: false }).limit(5),
       supabase.from('conversations').select('id, last_message, last_message_at, vendor_unread, buyer_id, profiles:buyer_id(name)').eq('shop_id', shop.id).order('last_message_at', { ascending: false }).limit(3),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).eq('status', 'new'),
       supabase.from('orders').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id).gte('created_at', startOfDay.toISOString()),
       supabase.from('shops').select('seller_points').eq('id', shop.id).maybeSingle(),
+      supabase.from('products').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id),
     ]);
     const all = weekOrders || [];
     const paid = (o) => o.status === 'delivered';
@@ -75,6 +77,7 @@ export default function VendorDashboard() {
       revenue, revenueChange: pct(revenue, revenuePrev), week,
       orders: orders || [], convs: convs || [], pending: pending || 0,
       unread, today: todayCount || 0, points: shopRow?.seller_points || 0,
+      productsCount: productsCount || 0,
     };
   }, [shop.id]);
 
@@ -83,11 +86,22 @@ export default function VendorDashboard() {
   return (
     <div className="pb-6">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-4">
-        <h1 className="flex-1 truncate text-section text-ink">{t('vendor.greeting', { name: shop.name })}</h1>
+        {/* Le nom seul, sans « Bonjour, »: avec le bouton « Mode acheteur »
+            à droite, la politesse coûtait le nom — « Bonjour, Ma b… ».
+            Entre saluer et dire de quelle boutique il s'agit, le nom gagne. */}
+        <h1 className="flex-1 truncate text-section text-ink">{shop.name}</h1>
         <NotificationBell />
         <Link to="/vendor/stats" aria-label={t('nav.stats')} className="p-1 text-ink"><IconChartBar size={22} /></Link>
-        <button onClick={() => navigate('/switch/to-buyer')} aria-label={t('vendor.switchToBuyer')} className="p-1 text-teal">
-          <IconSwitchHorizontal size={22} />
+        {/* Le retour vers l'acheteur portait sur une icône SEULE — deux
+            flèches croisées, qui ne disent pas où elles mènent. Le mot est
+            écrit: c'est ce que les gens cherchent, et une flèche ne se
+            devine pas. */}
+        <button
+          onClick={() => navigate('/switch/to-buyer')}
+          className="flex shrink-0 items-center gap-1 rounded-pill border border-teal px-2.5 py-1 text-caption font-semibold text-teal"
+        >
+          <IconSwitchHorizontal size={16} />
+          {t('vendor.switchToBuyerShort')}
         </button>
       </header>
 
@@ -97,6 +111,11 @@ export default function VendorDashboard() {
         <ErrorState onRetry={retry} />
       ) : (
         <div className="space-y-5 p-4">
+          {/* Les alertes se proposent ICI, au-dessus des commandes en attente:
+              c'est le seul endroit où « ne rate plus une commande » se comprend
+              sans explication. */}
+          <PushPrompt reason="notifications.promptHintVendor" />
+
           {/* L'action nº1 d'une boutique: répondre aux commandes en attente. */}
           {data.pending > 0 && (
             <Link
@@ -114,8 +133,38 @@ export default function VendorDashboard() {
             </Link>
           )}
 
-          {/* Carte revenus façon Uber conducteur: LE chiffre de la semaine,
-              mini graphe 7 jours, et un tap ouvre la compta complète. */}
+          {/* Boutique VIDE: un graphe de revenus à zéro n'apprend rien et
+              décourage — c'est ici que 8 boutiques sur 22 se sont arrêtées.
+              À la place, un parcours en 3 étapes dont la première est DÉJÀ
+              cochée: on ne part pas de rien, on continue quelque chose.
+              (Idée reprise des maquettes AI Studio de Beau, version sobre.) */}
+          {data.productsCount === 0 ? (
+            <div className="rounded-card border border-hairline bg-white p-5 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal-light text-teal">
+                <IconBuildingStore size={28} />
+              </span>
+              <p className="mt-3 text-section text-ink">{t('vendor.welcomeTitle')}</p>
+              <p className="mt-1 text-caption text-muted">{t('vendor.welcomeHint')}</p>
+              <div className="mt-4 space-y-2 text-left">
+                <div className="flex items-center gap-3 rounded-input border-l-[3px] border-success bg-base p-3">
+                  <IconCircleCheck size={20} className="shrink-0 text-success" />
+                  <span className="text-caption font-medium text-muted">{t('vendor.welcomeStep1')}</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-input border-l-[3px] border-teal bg-base p-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal text-[11px] font-bold text-white">2</span>
+                  <span className="text-caption font-semibold text-ink">{t('vendor.welcomeStep2')}</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-input bg-base p-3 opacity-60">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-white">3</span>
+                  <span className="text-caption text-ink">{t('vendor.welcomeStep3')}</span>
+                </div>
+              </div>
+              <button onClick={() => navigate('/vendor/products/bulk')} className="btn-primary mt-4">
+                <IconPlus size={20} /> {t('becomeVendor.addFirstProduct')}
+              </button>
+              <p className="mt-2 text-caption text-muted">{t('vendor.finiaWritesHint')}</p>
+            </div>
+          ) : (
           <Link to="/vendor/finances" className="block rounded-card bg-gradient-to-br from-teal to-[#0F4C46] p-5 text-white shadow-lg transition active:scale-[0.99]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-white/80">
@@ -140,6 +189,7 @@ export default function VendorDashboard() {
               ))}
             </div>
           </Link>
+          )}
 
           <div className="grid grid-cols-3 gap-3">
             <Stat value={data.today} label={t('vendor.todayOrders')} />

@@ -297,7 +297,7 @@ export default function VendorChat({ vendor = false }) {
                       <p className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-teal">
                         <IconSparkles size={12} /> Finia
                       </p>
-                      <p className="whitespace-pre-wrap text-body text-ink">{m.body}</p>
+                      <p className="whitespace-pre-wrap break-words text-body text-ink">{m.body}</p>
                       {m.category && (
                         <Link
                           to={`/category/${m.category}`}
@@ -329,7 +329,7 @@ export default function VendorChat({ vendor = false }) {
                     }`}
                   >
                     {m.image_url && <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />}
-                    {m.body && <p className="whitespace-pre-wrap text-body">{m.body}</p>}
+                    {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
                     <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
                       <span>{clockTime(m.created_at, i18n.language)}</span>
                       {mine && !m.failed && (m.id.toString().startsWith('temp') ? <IconCheck size={13} /> : <IconChecks size={13} />)}

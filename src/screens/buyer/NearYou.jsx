@@ -36,6 +36,7 @@ const TRADE_EMOJI = {
   electricite_plomberie: '⚡',
   livraison_demenagement: '🚚',
   traiteur_chef: '🍳',
+  patisserie_service: '🎂',
   location_immobiliere: '🏠',
   location_vehicules: '🚗',
   cours: '📚',
@@ -67,7 +68,14 @@ export default function NearYou() {
   const [view, setView] = useState('list'); // 'list' | 'map'
   const [publishOpen, setPublishOpen] = useState(false);
   const [trocOpen, setTrocOpen] = useState(false);
-  const [radius, setRadius] = useState('country');
+  // TOUS les pays par défaut, pas seulement le sien. Finjaro existe pour
+  // relier des prestataires camerounais à leurs clientes — y compris celles
+  // installées en France. Le filtre pays par défaut faisait exactement
+  // l'inverse: depuis la France, l'annuaire affichait UN prestataire sur huit
+  // et paraissait vide (« je t'avais demandé d'ajouter Tidal, tu ne l'as pas
+  // fait » — ils y étaient depuis toujours, cachés par ce réglage).
+  // Le sélecteur de pays reste là pour se restreindre volontairement.
+  const [radius, setRadius] = useState('all');
   const [userPos, setUserPos] = useState(null);
   // Rayon en km, utilisé UNIQUEMENT quand une position réelle est connue —
   // sans position, un rayon en km ne veut rien dire (on filtre par pays).
@@ -397,11 +405,15 @@ export default function NearYou() {
                     pays: « Élargir la recherche » tout seul ne donnait aucune
                     raison de cliquer, et l'annuaire semblait vide alors qu'il
                     ne l'était pas. */}
+                {/* En mode « tous les pays », le bouton affichait juste
+                    « France » — juste sous un sélecteur qui affichait déjà
+                    « France ». On ne pouvait pas deviner que c'était l'action
+                    « me limiter à ce pays ». Le libellé le dit maintenant. */}
                 {radius === 'country'
                   ? (data?.providersElsewhere > 0
                       ? t('nearYou.broadenCount', { count: data.providersElsewhere })
                       : t('nearYou.broaden'))
-                  : countryLabel(country, i18n.language)}
+                  : t('nearYou.onlyCountry', { country: countryLabel(country, i18n.language) })}
               </button>
             )}
           </div>

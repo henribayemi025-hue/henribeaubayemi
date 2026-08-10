@@ -5,7 +5,7 @@ import {
   IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh,
   IconBrandWhatsapp, IconPhone, IconBrandInstagram, IconSearch, IconMovie,
   IconShieldCheck, IconRosetteDiscountCheck, IconTruckDelivery, IconHeadset,
-  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown,
+  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -62,7 +62,7 @@ export default function ShopProfile() {
   const { data, loading, error, retry } = useAsync(async () => {
     // All four filter directly by slug (products/reviews/reels via an inner
     // join on shops) so they fire in PARALLEL instead of a lookup waterfall.
-    const [{ data: shop, error: sErr }, { data: products, error: pErr }, { data: reviews }, { count: reelsCount }] = await Promise.all([
+    const [{ data: shop, error: sErr }, { data: products, error: pErr }, { data: reviews }, { data: reels }] = await Promise.all([
       supabase.from('shops').select('*').eq('slug', slug).maybeSingle(),
       supabase
         .from('products')
@@ -75,12 +75,17 @@ export default function ShopProfile() {
         .select('id, rating, body, created_at, shops!inner(slug)')
         .eq('shops.slug', slug)
         .order('created_at', { ascending: false }),
-      supabase.from('reels').select('id, shops!inner(slug)', { count: 'exact', head: true }).eq('shops.slug', slug),
+      supabase
+        .from('reels')
+        .select('id, video_url, caption, views, likes, shops!inner(slug)')
+        .eq('shops.slug', slug)
+        .order('created_at', { ascending: false })
+        .limit(12),
     ]);
     if (sErr) throw sErr;
     if (!shop) return null;
     if (pErr) throw pErr;
-    return { shop, products: products || [], reviews: reviews || [], reelsCount: reelsCount || 0 };
+    return { shop, products: products || [], reviews: reviews || [], reels: reels || [] };
   }, [slug]);
 
   useEffect(() => {
@@ -203,6 +208,12 @@ export default function ShopProfile() {
     { key: 'home', label: t('shop.tabHome') },
     { key: 'products', label: sk('products') },
     ...(promoProducts.length > 0 ? [{ key: 'promos', label: t('shop.tabPromos') }] : []),
+    // Une boutique peut vivre par ses VIDÉOS avant d'avoir un seul article —
+    // cas réel: Hegshair, 3 reels publiés, 0 article. Ses vidéos n'étaient
+    // visibles que derrière la petite pastille « Nos Reels » près de
+    // l'avatar, pendant que la page criait « prépare sa première
+    // collection »: Beau a cru qu'elles n'apparaissaient pas du tout.
+    ...(data.reels.length > 0 ? [{ key: 'videos', label: t('shop.tabVideos', { count: data.reels.length }) }] : []),
     { key: 'reviews', label: sk('reviews') },
     { key: 'about', label: sk('about') },
   ];
@@ -238,7 +249,7 @@ export default function ShopProfile() {
             Le bouton n'apparaît que si la boutique A des reels. */}
         <div className="-mt-10 flex items-end justify-between">
           <ShopAvatar src={avatar} name={shop.name} seed={shop.id} className="h-20 w-20 border-2 border-white lg:h-24 lg:w-24" />
-          {data.reelsCount > 0 && (
+          {data.reels.length > 0 && (
             <Link
               to={`/fin?shop=${shop.id}`}
               className="mb-1 flex items-center gap-1.5 rounded-pill bg-ink px-3 py-1.5 text-caption font-semibold text-white shadow"
@@ -284,14 +295,44 @@ export default function ShopProfile() {
           />
         </div>
 
-        <div className="mt-3 flex gap-2 sm:max-w-md">
-          <Button variant={following ? 'secondary' : 'primary'} loading={busy} onClick={toggleFollow} className="flex-1">
-            {following ? t('common.following') : t('common.follow')}
-          </Button>
-          <button onClick={contact} className="flex h-12 items-center gap-1 rounded-[10px] border-[1.5px] border-teal px-4 text-teal" aria-label={sk('contactPrompt')}>
-            <IconMessage size={20} />
-          </button>
-        </div>
+        {/* La PROPRIÉTAIRE sur sa propre fiche. Une vraie vendeuse a atterri
+            ici en mode acheteur, n'a trouvé ni « mode vendeur » ni « ajouter »
+            et a cru la plateforme cassée. Lui proposer « S'abonner » et
+            « Écrire à la boutique » — s'écrire à elle-même — n'aidait pas:
+            quand c'est TA boutique, les deux boutons deviennent les deux
+            gestes que tu es venue faire. */}
+        {/* Deux pavés pleine largeur dans un cadre teinté, c'était grossier
+            (Beau). Une barre fine suffit: on est sur SA boutique, elle sait
+            déjà que c'est la sienne — il ne manque qu'une porte d'entrée
+            discrète, pas une affiche. Les libellés raccourcissent
+            (« Gérer », « Ajouter ») pour tenir côte à côte sans se replier. */}
+        {user && shop.owner_id === user.id ? (
+          <div className="mt-3 flex items-center gap-2 rounded-card border border-hairline bg-white px-3 py-2.5 sm:max-w-md">
+            <IconBuildingStore size={18} className="shrink-0 text-teal" />
+            <span className="min-w-0 flex-1 truncate text-caption text-muted">{t('shop.ownShop')}</span>
+            <button
+              onClick={() => navigate('/vendor/products/bulk')}
+              className="shrink-0 rounded-pill px-3 py-1.5 text-caption font-semibold text-teal transition-colors active:bg-teal-light"
+            >
+              {t('shop.ownShopAdd')}
+            </button>
+            <button
+              onClick={() => navigate('/switch/to-vendor')}
+              className="shrink-0 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white transition-transform active:scale-95"
+            >
+              {t('shop.ownShopManage')}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-3 flex gap-2 sm:max-w-md">
+            <Button variant={following ? 'secondary' : 'primary'} loading={busy} onClick={toggleFollow} className="flex-1">
+              {following ? t('common.following') : t('common.follow')}
+            </Button>
+            <button onClick={contact} className="flex h-12 items-center gap-1 rounded-[10px] border-[1.5px] border-teal px-4 text-teal" aria-label={sk('contactPrompt')}>
+              <IconMessage size={20} />
+            </button>
+          </div>
+        )}
 
         {/* Contact rapide: chaque canal n'apparaît QUE si renseigné. */}
         {(shop.whatsapp || shop.phone || shop.instagram) && (
@@ -413,6 +454,38 @@ export default function ShopProfile() {
                 </div>
               )}
 
+              {/* Aperçu VIDÉOS sur l'accueil, avant les produits — demande de
+                  Beau (« les vidéos doivent aussi être à l'accueil »). Pour
+                  une boutique comme Hegshair (3 vidéos, 0 article), c'est même
+                  tout ce qu'il y a à montrer: l'écran « prépare sa première
+                  collection » mentait par omission. */}
+              {data.reels.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h2 className="text-section text-ink">{t('shop.homeVideos')}</h2>
+                    <button onClick={() => setTab('videos')} className="text-caption font-semibold text-teal">
+                      {t('shop.seeAllVideos', { count: data.reels.length })}
+                    </button>
+                  </div>
+                  <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                    {data.reels.slice(0, 6).map((r) => (
+                      <Link key={r.id} to={`/fin?shop=${shop.id}`} className="relative block w-28 shrink-0 overflow-hidden rounded-input bg-black">
+                        <video
+                          src={`${storageUrl('reels', r.video_url)}#t=0.1`}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="aspect-[9/16] w-full object-cover"
+                        />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[11px] text-white">
+                          ♥ {r.likes || 0}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Aperçu produits (les plus vus) + lien vers l'onglet complet. */}
               {bestProducts.length > 0 && (
                 <div>
@@ -425,7 +498,9 @@ export default function ShopProfile() {
                   {productGrid(bestProducts)}
                 </div>
               )}
-              {data.products.length === 0 && <EmptyState title={sk('emptyProducts')} />}
+              {/* « Prépare sa première collection » SEULEMENT s'il n'y a
+                  vraiment rien: ni articles, ni vidéos. */}
+              {data.products.length === 0 && data.reels.length === 0 && <EmptyState title={sk('emptyProducts')} />}
             </div>
           )}
 
@@ -462,6 +537,27 @@ export default function ShopProfile() {
             ))}
 
           {/* ---------------- Avis ---------------- */}
+          {tab === 'videos' && (
+            <div className="grid grid-cols-3 gap-2">
+              {data.reels.map((r) => (
+                <Link key={r.id} to={`/fin?shop=${shop.id}`} className="relative block overflow-hidden rounded-input bg-black">
+                  {/* #t=0.1: sans lui la vignette reste NOIRE jusqu'à lecture
+                      — même correctif que côté vendeur. */}
+                  <video
+                    src={`${storageUrl('reels', r.video_url)}#t=0.1`}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="aspect-[9/16] w-full object-cover"
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[11px] text-white">
+                    ♥ {r.likes || 0}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
           {tab === 'reviews' &&
             (data.reviews.length === 0 ? (
               <p className="py-6 text-center text-caption text-muted">{sk('noReviews')}</p>
