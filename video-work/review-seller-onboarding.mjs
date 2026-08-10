@@ -116,8 +116,8 @@ console.log('\n=== PARCOURS DEVENIR VENDEUR ===\n');
 let allOk = true;
 
 const guest = await makePage({ hasShop: false });
-allOk &= await check(guest, 'Profil sans boutique — carte « Vendre sur Finjaro »', '/profile',
-  ['Vendre sur Finjaro', 'Ouvre ta boutique gratuitement'], 'onboarding_profil-sans-boutique');
+allOk &= await check(guest, 'Profil sans boutique — carte d\'ouverture de boutique', '/profile',
+  ['Tu vends des articles ?', 'Ouvre ta boutique Finjaro', 'Ouvrir ma boutique gratuite'], 'onboarding_profil-sans-boutique');
 
 allOk &= await check(guest, 'Formulaire étape 1 — champs obligatoires', '/become-vendor',
   ['Étape 1'], 'onboarding_form-etape1');
@@ -153,8 +153,8 @@ allOk &= await check(vendor, 'Profil AVEC boutique — « Passer en mode vendeur
 
 // Le RETOUR. C'est la question de Beau: la sortie doit se lire, pas se
 // deviner sous une icône de deux flèches croisées.
-allOk &= await check(vendor, 'Tableau de bord vendeur — « Mode acheteur » écrit', '/vendor',
-  ['Mode acheteur'], 'onboarding_vendeur-tableau-de-bord');
+allOk &= await check(vendor, 'Tableau de bord vendeur (0 article) — accueil guidé 3 étapes', '/vendor',
+  ['Mode acheteur', 'Ta boutique est prête !', 'Publie ton premier article', 'Publier mon premier article'], 'onboarding_vendeur-tableau-de-bord');
 
 allOk &= await check(vendor, 'Ma boutique — « Passer en mode acheteur »', '/vendor/shop',
   ['Passer en mode acheteur'], 'onboarding_vendeur-ma-boutique');

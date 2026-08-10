@@ -573,8 +573,10 @@
     "deleteAccountCheckbox": "Je comprends que cette action est définitive et je confirme vouloir supprimer mon compte.",
     "deleteAccountConfirm": "Supprimer définitivement",
     "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter.",
-    "sellCardTitle": "Vendre sur Finjaro",
-    "sellCardHint": "Ouvre ta boutique gratuitement, en quelques minutes."
+    "sellCardTitle": "Ouvre ta boutique Finjaro",
+    "sellCardHint": "Gratuit. Publie tes articles et tes vidéos, reçois tes commandes.",
+    "sellCardKicker": "Tu vends des articles ?",
+    "sellCardCta": "Ouvrir ma boutique gratuite"
   },
   "referral": {
     "navLabel": "Inviter des amis",
@@ -849,7 +851,13 @@
     "publishedAll": "{{count}} article(s) publié(s).",
     "priceOnRequest": "Prix sur demande",
     "priceOnRequestHelp": "L’article s’affiche sans prix. La cliente t’écrit pour le demander au lieu de commander directement. Utile quand tu n’as pas encore fixé ton prix.",
-    "switchToBuyerShort": "Mode acheteur"
+    "switchToBuyerShort": "Mode acheteur",
+    "welcomeTitle": "Ta boutique est prête !",
+    "welcomeHint": "Encore une étape pour recevoir tes premières commandes.",
+    "welcomeStep1": "Boutique ouverte",
+    "welcomeStep2": "Publie ton premier article",
+    "welcomeStep3": "Partage ton lien à tes clientes",
+    "finiaWritesHint": "Envoie tes photos, Finia rédige les fiches."
   },
   "orderStatus": {
     "new": "En attente de validation",

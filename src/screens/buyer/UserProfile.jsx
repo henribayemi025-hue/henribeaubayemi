@@ -119,16 +119,20 @@ export default function UserProfile() {
               <IconChevronRight size={18} />
             </button>
           ) : (
+            /* Accroche + titre + VRAI bouton, repris des maquettes AI Studio
+               de Beau: une ligne fine avec chevron se lit comme un réglage de
+               plus, un bouton plein se lit comme l'action qu'on est venu
+               faire. */
             <Link
               to="/become-vendor"
-              className="flex items-center gap-3 rounded-card border border-teal bg-white px-4 py-3.5 transition active:scale-[0.98]"
+              className="block rounded-card border border-hairline bg-white p-4 transition active:scale-[0.98]"
             >
-              <IconBuildingStore size={26} className="shrink-0 text-teal" />
-              <span className="flex-1">
-                <span className="block text-body font-semibold text-ink">{t('profile.sellCardTitle')}</span>
-                <span className="block text-caption text-muted">{t('profile.sellCardHint')}</span>
+              <span className="block text-caption font-semibold text-teal">{t('profile.sellCardKicker')}</span>
+              <span className="mt-0.5 block text-section text-ink">{t('profile.sellCardTitle')}</span>
+              <span className="mt-0.5 block text-caption text-muted">{t('profile.sellCardHint')}</span>
+              <span className="btn-primary mt-3">
+                <IconBuildingStore size={20} /> {t('profile.sellCardCta')}
               </span>
-              <IconChevronRight size={18} className="shrink-0 text-teal" />
             </Link>
           )}
         </div>
