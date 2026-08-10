@@ -148,17 +148,11 @@ export function HomeHeroCarousel({ products }) {
             >
               {image && (
                 <>
-                  {/* La photo REMPLIT le cadre. L'ancien montage — fond flou +
-                      photo entière au centre — voulait ne jamais couper un
-                      visage, mais sur une bannière large avec une photo en
-                      portrait il produisait deux grosses bandes grises: ça ne
-                      se lisait pas comme un choix, ça se lisait comme une
-                      image cassée (signalé par Beau).
-                      `object-top` garde le haut du cadrage, donc les visages,
-                      qui sont presque toujours dans le tiers supérieur. Le
-                      montage flou reste en place sur les fiches article, où
-                      le cadre est carré et où rien n'est coupé. */}
-                  <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-cover object-top" />
+                  {/* Blurred same-image backdrop fills the frame; the real photo
+                      on top is never cropped, so a face can never get cut off
+                      no matter how the source photo was originally framed. */}
+                  <img src={image} alt="" draggable="false" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
+                  <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-contain" />
                 </>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
