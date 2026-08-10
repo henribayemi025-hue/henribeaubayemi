@@ -1060,7 +1060,17 @@
     "generic": "Something didn't work. Try again.",
     "crashTitle": "Oops, something went wrong",
     "crashHint": "This page hit an error. Try again — the rest of the app still works.",
-    "notFound": "Not found."
+    "notFound": "Not found.",
+    "auth": {
+      "alreadyRegistered": "This number (or email) already has an account. Log in instead, or use “Forgot password”.",
+      "invalidCredentials": "Wrong number/email or password.",
+      "weakPassword": "Password too short: 6 characters minimum.",
+      "tooManyAttempts": "Too many attempts. Wait a few minutes before trying again.",
+      "otpExpired": "That code has expired or is wrong. Request a new one.",
+      "notConfirmed": "Your account isn't confirmed yet. Check the code you received.",
+      "signupDisabled": "Sign-ups are temporarily closed.",
+      "validationFailed": "Something you entered isn't valid. Check the number and password."
+    }
   },
   "admin": {
     "title": "Administration",

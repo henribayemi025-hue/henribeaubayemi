@@ -1060,7 +1060,17 @@
     "generic": "Quelque chose n'a pas fonctionné. Réessaie.",
     "crashTitle": "Oups, un souci est survenu",
     "crashHint": "Cette page a rencontré une erreur. Réessaie — le reste de l'app fonctionne toujours.",
-    "notFound": "Introuvable."
+    "notFound": "Introuvable.",
+    "auth": {
+      "alreadyRegistered": "Ce numéro (ou cet e-mail) a déjà un compte. Connecte-toi plutôt, ou utilise « Mot de passe oublié ».",
+      "invalidCredentials": "Numéro/e-mail ou mot de passe incorrect.",
+      "weakPassword": "Mot de passe trop court : 6 caractères minimum.",
+      "tooManyAttempts": "Trop de tentatives. Attends quelques minutes avant de réessayer.",
+      "otpExpired": "Ce code a expiré ou n'est pas le bon. Demande un nouveau code.",
+      "notConfirmed": "Ton compte n'est pas encore confirmé. Vérifie le code reçu.",
+      "signupDisabled": "Les inscriptions sont momentanément fermées.",
+      "validationFailed": "Une information saisie n'est pas valide. Vérifie le numéro et le mot de passe."
+    }
   },
   "admin": {
     "title": "Administration",
