@@ -541,7 +541,8 @@
     "mapTab": "Map view",
     "filterByTrade": "Filter by trade",
     "allTradesCount": "All trades ({{count}})",
-    "radiusLabel": "Radius:"
+    "radiusLabel": "Radius:",
+    "onlyCountry": "{{country}} only"
   },
   "profile": {
     "title": "Profile",

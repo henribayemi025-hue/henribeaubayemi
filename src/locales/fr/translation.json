@@ -541,7 +541,8 @@
     "mapTab": "Carte géolocalisée",
     "filterByTrade": "Filtrer par métier",
     "allTradesCount": "Tous les métiers ({{count}})",
-    "radiusLabel": "Rayon :"
+    "radiusLabel": "Rayon :",
+    "onlyCountry": "{{country}} seulement"
   },
   "profile": {
     "title": "Profil",
