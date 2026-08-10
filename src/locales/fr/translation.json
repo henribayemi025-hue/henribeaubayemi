@@ -1293,5 +1293,22 @@
     "askBuy": "Je suis nouveau et je viens pour acheter. Explique-moi comment ça marche.",
     "askSell": "Je suis nouveau et je veux vendre sur Finjaro. Explique-moi comment ça marche.",
     "skip": "Plus tard"
+  },
+  "intro": {
+    "skip": "Passer",
+    "next": "Suivant",
+    "start": "C'est parti",
+    "discover": {
+      "title": "Le marché camerounais, dans ta poche",
+      "body": "Des boutiques près de chez toi et partout au pays, réunies au même endroit."
+    },
+    "buy": {
+      "title": "Commande sans avancer d'argent",
+      "body": "Tu choisis, tu commandes, et tu paies à la livraison ou au moment du retrait."
+    },
+    "sell": {
+      "title": "Vends, gratuitement",
+      "body": "Ouvre ta boutique et publie tes articles. Finia t'accompagne pas à pas."
+    }
   }
 }
