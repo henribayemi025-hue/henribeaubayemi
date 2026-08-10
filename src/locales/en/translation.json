@@ -1310,6 +1310,7 @@
     "sell": {
       "title": "Sell, for free",
       "body": "Open your shop and post your items. Finia walks you through it."
-    }
+    },
+    "replayIntro": "Replay the intro"
   }
 }

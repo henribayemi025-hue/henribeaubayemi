@@ -55,7 +55,17 @@ export function WelcomeTour() {
     try {
       forced = new URLSearchParams(window.location.search).get('tour') === '1';
     } catch { /* URL illisible: on continue normalement */ }
-    if (forced) { setShow(true); return; }
+    if (forced) {
+      setShow(true);
+      // Même correctif que pour la présentation: on retire le paramètre, sinon
+      // chaque rechargement de cette adresse rouvre la visite indéfiniment.
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.delete('tour');
+        window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+      } catch { /* sans gravité */ }
+      return;
+    }
 
     try {
       if (localStorage.getItem(seenKey(user.id))) return;

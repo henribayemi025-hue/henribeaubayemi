@@ -1310,6 +1310,7 @@
     "sell": {
       "title": "Vends, gratuitement",
       "body": "Ouvre ta boutique et publie tes articles. Finia t'accompagne pas à pas."
-    }
+    },
+    "replayIntro": "Revoir la présentation"
   }
 }

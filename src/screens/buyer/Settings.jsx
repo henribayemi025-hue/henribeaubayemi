@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLanguage, IconCoin, IconBell, IconMail, IconFileText, IconChevronRight, IconAlertTriangle } from '@tabler/icons-react';
+import { IconLanguage, IconCoin, IconBell, IconMail, IconFileText, IconChevronRight, IconAlertTriangle, IconSparkles } from '@tabler/icons-react';
 import { useSettings } from '../../hooks/useSettings';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -150,6 +150,23 @@ export default function Settings() {
             monde (visiteuse, acheteuse, vendeuse). Avant, quelqu'un qui ne
             passait jamais par /auth n'avait aucun lien visible vers /legal/terms. */}
         <section className="space-y-2">
+          {/* Revoir la présentation.
+              Beau: « s'il a déjà skip ça une fois, il ne doit plus le revoir —
+              ou bien il y a un petit bouton au profil ». Les deux: on ne la
+              repropose jamais d'elle-même, et qui veut la relire la trouve ici.
+              On efface la marque puis on revient à l'accueil, où la
+              présentation se rouvre d'elle-même — aucun paramètre d'adresse,
+              donc rien qui puisse se rejouer en boucle au rechargement. */}
+          <button
+            onClick={() => {
+              try { localStorage.removeItem('finjaro:intro-seen'); } catch { /* noop */ }
+              navigate('/');
+            }}
+            className="flex w-full items-center justify-between rounded-card border border-hairline p-3 text-left text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconSparkles size={18} /> {t('intro.replayIntro')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </button>
           <Link
             to="/a-propos"
             className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"

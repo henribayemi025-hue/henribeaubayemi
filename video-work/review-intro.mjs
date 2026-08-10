@@ -120,6 +120,65 @@ console.log('\n=== PREMIER LANCEMENT ===\n');
   await ctx.close();
 }
 
+// 3bis. Le cas de Beau: DECONNECTE, je passe, je ressors, je reviens.
+//
+// « Je sors, je sors, et je revois ca. » La marque est posee sur le
+// navigateur, pas sur le compte: passer une fois doit suffire meme sans
+// jamais se connecter.
+{
+  const { ctx, page } = await newCtx();
+  await page.goto('http://localhost:4808/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  check((await page.locator('body').innerText()).includes('Passer'), 'Deconnecte: la presentation s\'ouvre');
+  await page.getByRole('button', { name: 'Passer' }).click();
+  await page.waitForTimeout(500);
+  // On ressort et on revient, plusieurs fois, sans jamais se connecter.
+  for (const n of [1, 2, 3]) {
+    await page.goto('http://localhost:4808/fin', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(700);
+    await page.goto('http://localhost:4808/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1200);
+    const back = (await page.locator('body').innerText()).includes('Passer');
+    check(!back, `Deconnecte: elle ne revient pas (passage ${n})`);
+  }
+  await ctx.close();
+}
+
+// 3ter. La porte de secours ne doit s'ouvrir qu'UNE fois.
+//
+// C'est le lien que j'avais donne a Beau. Tant que ?intro=1 restait dans la
+// barre d'adresse, chaque rechargement rouvrait la presentation — meme apres
+// l'avoir passee, puisque « force » saute justement la marque.
+{
+  const { ctx, page } = await newCtx();
+  await page.goto('http://localhost:4808/?intro=1', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  check((await page.locator('body').innerText()).includes('Passer'), '?intro=1 rouvre bien la presentation');
+  const url = page.url();
+  check(!url.includes('intro=1'), "L'adresse est nettoyee tout de suite", url);
+  await page.getByRole('button', { name: 'Passer' }).click();
+  await page.waitForTimeout(500);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  check(!(await page.locator('body').innerText()).includes('Passer'), 'Apres rechargement, elle ne revient pas');
+  await ctx.close();
+}
+
+// 3quater. Le bouton des Reglages la rejoue quand on le demande.
+{
+  const { ctx, page } = await newCtx({ seen: true });
+  await page.goto('http://localhost:4808/profile/settings', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1800);
+  const has = (await page.locator('body').innerText()).includes('Revoir la présentation');
+  check(has, 'Un bouton « Revoir la présentation » existe dans les Réglages');
+  if (has) {
+    await page.getByRole('button', { name: 'Revoir la présentation' }).click();
+    await page.waitForTimeout(1500);
+    check((await page.locator('body').innerText()).includes('Passer'), 'Le bouton rouvre bien la presentation');
+  }
+  await ctx.close();
+}
+
 console.log('\n=== TEXTE DE FINIA ===\n');
 
 // 4. Le Markdown est rendu, pas imprime.
