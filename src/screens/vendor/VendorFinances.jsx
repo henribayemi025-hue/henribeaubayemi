@@ -8,7 +8,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
-import { Price } from '../../components/Price';
+import { VendorPrice } from '../../components/Price';
 import { Skeleton, ErrorState } from '../../components/states';
 
 const PERIODS = [
@@ -111,7 +111,7 @@ export default function VendorFinances() {
               <IconWallet size={18} />
               <p className="text-caption font-semibold uppercase tracking-wide">{t('finances.earned')}</p>
             </div>
-            <Price fcfa={data.paid} className="mt-1 block text-[32px] font-bold leading-tight" />
+            <VendorPrice fcfa={data.paid} className="mt-1 block text-[32px] font-bold leading-tight" />
             <div className="mt-1 flex items-center gap-1.5 text-caption">
               <span className={`flex items-center gap-0.5 rounded-pill px-2 py-0.5 font-semibold ${data.paidChange >= 0 ? 'bg-white/20' : 'bg-black/20'}`}>
                 {data.paidChange >= 0 ? <IconArrowUpRight size={13} /> : <IconArrowDownRight size={13} />}
@@ -138,9 +138,9 @@ export default function VendorFinances() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <Tile icon={IconHourglassHigh} tint="text-warning" label={t('finances.pending')} value={<Price fcfa={data.pending} />} />
+            <Tile icon={IconHourglassHigh} tint="text-warning" label={t('finances.pending')} value={<VendorPrice fcfa={data.pending} />} />
             <Tile icon={IconShoppingBag} tint="text-teal" label={t('finances.salesCount')} value={data.paidCount} />
-            <Tile icon={IconReceipt} tint="text-brass" label={t('finances.avgBasket')} value={<Price fcfa={data.avg} />} />
+            <Tile icon={IconReceipt} tint="text-brass" label={t('finances.avgBasket')} value={<VendorPrice fcfa={data.avg} />} />
           </div>
 
           <section>
@@ -191,7 +191,7 @@ function LedgerRow({ order }) {
           #{order.order_no} · {paid ? t('finances.rowPaid') : cancelled ? t('finances.rowCancelled') : t('finances.rowPending')}
         </p>
       </div>
-      <Price
+      <VendorPrice
         fcfa={order.total_fcfa}
         className={`shrink-0 text-body font-semibold ${paid ? 'text-success' : cancelled ? 'text-muted line-through' : 'text-warning'}`}
       />

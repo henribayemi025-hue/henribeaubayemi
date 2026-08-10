@@ -8,7 +8,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
-import { Price } from '../../components/Price';
+import { VendorPrice } from '../../components/Price';
 import { NotificationBell } from '../../components/NotificationBell';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -175,7 +175,7 @@ export default function VendorDashboard() {
                 {t('finances.seeAll')} <IconChevronRight size={14} />
               </span>
             </div>
-            <Price fcfa={data.revenue} className="mt-1 block text-[30px] font-bold leading-tight" />
+            <VendorPrice fcfa={data.revenue} className="mt-1 block text-[30px] font-bold leading-tight" />
             <div className="mt-1 flex items-center gap-1.5 text-caption">
               <span className={`flex items-center gap-0.5 rounded-pill px-2 py-0.5 font-semibold ${data.revenueChange >= 0 ? 'bg-white/20' : 'bg-black/20'}`}>
                 {data.revenueChange >= 0 ? <IconArrowUpRight size={13} /> : <IconArrowDownRight size={13} />}
@@ -233,7 +233,7 @@ export default function VendorDashboard() {
                     <Link to="/vendor/orders" className="flex items-center justify-between rounded-card border border-hairline p-3">
                       <div className="min-w-0">
                         <p className="truncate text-body text-ink">{o.buyer_name || `#${o.order_no}`}</p>
-                        <p className="text-caption text-muted">#{o.order_no} · <Price fcfa={o.total_fcfa} /></p>
+                        <p className="text-caption text-muted">#{o.order_no} · <VendorPrice fcfa={o.total_fcfa} /></p>
                       </div>
                       <OrderStatusBadge status={o.status} />
                     </Link>

@@ -10,7 +10,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
-import { Price } from '../../components/Price';
+import { VendorPrice } from '../../components/Price';
 import { Modal } from '../../components/Modal';
 import { Field, TextArea } from '../../components/Field';
 import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatusBadge';
@@ -170,7 +170,7 @@ export default function VendorOrders() {
                         <span className="truncate">{it.name}</span>
                         <span className="shrink-0 rounded-pill bg-white px-1.5 text-[11px] font-semibold text-muted">×{it.qty}</span>
                       </span>
-                      <Price fcfa={it.price_fcfa * it.qty} className="shrink-0 font-medium text-muted" />
+                      <VendorPrice fcfa={it.price_fcfa * it.qty} className="shrink-0 font-medium text-muted" />
                     </div>
                   ))}
                 </div>
@@ -182,7 +182,7 @@ export default function VendorOrders() {
                     <span className="text-hairline">·</span>
                     {t('vendor.itemCount', { count: itemCount })}
                   </span>
-                  <Price fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                  <VendorPrice fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
                 </div>
                 {o.delivery_method === 'delivery' && o.address && (
                   <p className="mt-1.5 flex items-start gap-1 text-caption text-muted">
