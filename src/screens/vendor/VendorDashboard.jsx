@@ -12,6 +12,7 @@ import { Price } from '../../components/Price';
 import { NotificationBell } from '../../components/NotificationBell';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
+import { PushPrompt } from '../../components/PushPrompt';
 import { timeAgo } from '../../lib/format';
 
 function pct(cur, prev) {
@@ -110,6 +111,11 @@ export default function VendorDashboard() {
         <ErrorState onRetry={retry} />
       ) : (
         <div className="space-y-5 p-4">
+          {/* Les alertes se proposent ICI, au-dessus des commandes en attente:
+              c'est le seul endroit où « ne rate plus une commande » se comprend
+              sans explication. */}
+          <PushPrompt reason="notifications.promptHintVendor" />
+
           {/* L'action nº1 d'une boutique: répondre aux commandes en attente. */}
           {data.pending > 0 && (
             <Link

@@ -1027,7 +1027,11 @@
     "orderDeclined": "Order declined",
     "orderCancelledAfterConfirm": "Order cancelled",
     "empty": "No notifications yet.",
-    "markAllRead": "Mark all as read"
+    "markAllRead": "Mark all as read",
+    "promptTitle": "Turn on alerts",
+    "promptHint": "Get notified as soon as something happens.",
+    "promptHintVendor": "An order can arrive any time. Without alerts you find out too late — and the customer is waiting.",
+    "promptCta": "Turn on"
   },
   "productAttrs": {
     "marque": "Brand",
