@@ -245,7 +245,7 @@ export function FinouChou() {
             <div key={m.id || i}>
               <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-body ${
+                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-body ${
                     m.role === 'user' ? 'bg-[#F4EFE6] text-ink' : 'border border-hairline bg-white text-ink'
                   }`}
                 >
