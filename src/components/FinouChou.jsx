@@ -326,6 +326,23 @@ export function FinouChou() {
                   <button onClick={() => send(t('finou.suggestSales'))} className="chip text-ink">{t('finou.suggestSales')}</button>
                   <button onClick={() => send(t('finou.actionShareShop'))} className="chip text-ink">{t('finou.actionShareShop')}</button>
                   <button onClick={() => setDeleteOpen(true)} className="chip text-ink">{t('finouDelete.title')}</button>
+                  {/* Troisième sortie de l'espace vendeur. Les deux autres
+                      vivent sur le tableau de bord et dans « Ma boutique »:
+                      depuis Produits, Commandes, Messages ou Réels, il fallait
+                      d'abord rejoindre l'un des deux. Finia flotte sur TOUS
+                      les écrans vendeur, donc ce raccourci sort de n'importe
+                      où.
+                      Conditionné au chemin `/vendor`: en mode acheteur, la
+                      même personne est déjà acheteuse — lui proposer d'y
+                      passer n'aurait aucun sens. */}
+                  {location.pathname.startsWith('/vendor') && (
+                    <button
+                      onClick={() => { closeFinou(); navigate('/switch/to-buyer'); }}
+                      className="chip text-ink"
+                    >
+                      {t('vendor.switchToBuyer')}
+                    </button>
+                  )}
                 </>
               ) : (
                 <button onClick={() => send(t('finou.suggestSell'))} className="chip text-ink">{t('finou.suggestSell')}</button>

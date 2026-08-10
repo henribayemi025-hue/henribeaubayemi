@@ -147,6 +147,33 @@ allOk &= await check(vendor, 'Tableau de bord vendeur — « Mode acheteur » é
 allOk &= await check(vendor, 'Ma boutique — « Passer en mode acheteur »', '/vendor/shop',
   ['Passer en mode acheteur'], 'onboarding_vendeur-ma-boutique');
 
+// Finia: la troisième sortie. On l'ouvre depuis un écran vendeur SANS sortie
+// propre (Produits), puis on vérifie l'inverse côté acheteur — un raccourci
+// « passe en mode acheteur » affiché à une acheteuse serait absurde, et c'est
+// le genre d'erreur qu'une capture seule ne signale pas.
+async function openFinia(page, url) {
+  await page.goto(`http://localhost:4803${url}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.waitForTimeout(1200);
+  await page.locator('button[aria-label="Finia"], button[aria-label*="Finia"]').first().click({ timeout: 5000 })
+    .catch(async () => { await page.locator('.fixed button.rounded-full').last().click({ timeout: 5000 }); });
+  await page.waitForTimeout(1200);
+  return page.locator('body').innerText().catch(() => '');
+}
+
+const finiaVendor = await openFinia(vendor, '/vendor/products');
+await vendor.screenshot({ path: `${OUT}/onboarding_finia-vendeur.png` }).catch(() => {});
+const vendorChipOk = finiaVendor.includes('Passer en mode acheteur');
+console.log(`${vendorChipOk ? '✅' : '⚠️ '} Finia depuis Produits — raccourci « Passer en mode acheteur »`);
+if (!vendorChipOk) console.log(`   texte vu: ${finiaVendor.replace(/\n+/g, ' | ').slice(0, 300)}`);
+allOk &= vendorChipOk;
+
+const finiaBuyer = await openFinia(vendor, '/');
+await vendor.screenshot({ path: `${OUT}/onboarding_finia-acheteur.png` }).catch(() => {});
+const buyerChipAbsent = !finiaBuyer.includes('Passer en mode acheteur');
+console.log(`${buyerChipAbsent ? '✅' : '⚠️ '} Finia côté acheteur — le raccourci est bien ABSENT`);
+if (!buyerChipAbsent) console.log('   le raccourci s\'affiche alors qu\'on est déjà en mode acheteur');
+allOk &= buyerChipAbsent;
+
 console.log(`\n${allOk ? 'TOUT EST CONFORME' : 'DES POINTS À CORRIGER CI-DESSUS'}\n`);
 await browser.close();
 srv.close();
