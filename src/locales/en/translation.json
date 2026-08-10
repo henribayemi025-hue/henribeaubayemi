@@ -694,7 +694,7 @@
     "bulkReadyCount": "{{ready}} of {{total}} ready.",
     "bulkNeedNamePrice": "Add a name and a price to create.",
     "bulkCreate": "Create {{count}} item(s)",
-    "bulkCreated": "{{count}} item(s) created as drafts.",
+    "bulkCreated": "{{count}} item(s) saved. They still need publishing.",
     "productName": "Product name",
     "productPrice": "Price",
     "compareAtPrice": "Original price (optional)",
@@ -873,7 +873,8 @@
     "reelSizeHint": "50 MB maximum (about 40 seconds at good quality).",
     "reelCategory": "Category",
     "reelCategoryPlaceholder": "Pick a category…",
-    "reelCategoryRequired": "Pick a category: without one, your video shows up in no filter."
+    "reelCategoryRequired": "Pick a category: without one, your video shows up in no filter.",
+    "draftsHelp": "These items aren't visible to customers yet. Publish them so they show up in the shop."
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -1299,8 +1300,8 @@
     "next": "Next",
     "start": "Let's go",
     "discover": {
-      "title": "The Cameroonian market, in your pocket",
-      "body": "Shops near you and across the country, gathered in one place."
+      "title": "The market, in your pocket",
+      "body": "Shops near you and all over the world, gathered in one place."
     },
     "buy": {
       "title": "Order without paying upfront",

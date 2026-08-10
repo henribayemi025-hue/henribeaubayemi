@@ -694,7 +694,7 @@
     "bulkReadyCount": "{{ready}} prêt(s) sur {{total}}.",
     "bulkNeedNamePrice": "Ajoute un nom et un prix pour pouvoir créer.",
     "bulkCreate": "Créer {{count}} article(s)",
-    "bulkCreated": "{{count}} article(s) créé(s) en brouillon.",
+    "bulkCreated": "{{count}} article(s) enregistré(s). Il reste à les publier.",
     "productName": "Nom du produit",
     "productPrice": "Prix",
     "compareAtPrice": "Prix barré (optionnel)",
@@ -873,7 +873,8 @@
     "reelSizeHint": "50 Mo maximum (environ 40 secondes en bonne qualité).",
     "reelCategory": "Rayon",
     "reelCategoryPlaceholder": "Choisis un rayon…",
-    "reelCategoryRequired": "Choisis un rayon: sans lui, ta vidéo n'apparaît dans aucun filtre."
+    "reelCategoryRequired": "Choisis un rayon: sans lui, ta vidéo n'apparaît dans aucun filtre.",
+    "draftsHelp": "Ces articles ne sont pas encore visibles par les clients. Publie-les pour qu'ils apparaissent dans la boutique."
   },
   "orderStatus": {
     "new": "En attente de validation",
@@ -1299,8 +1300,8 @@
     "next": "Suivant",
     "start": "C'est parti",
     "discover": {
-      "title": "Le marché camerounais, dans ta poche",
-      "body": "Des boutiques près de chez toi et partout au pays, réunies au même endroit."
+      "title": "Le marché, dans ta poche",
+      "body": "Des boutiques près de chez toi et partout dans le monde, réunies au même endroit."
     },
     "buy": {
       "title": "Commande sans avancer d'argent",

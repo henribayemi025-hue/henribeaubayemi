@@ -56,7 +56,14 @@ async function makePage({ hasShop }) {
   // Ces tests portent sur une app DEJA lancee une fois: sans cette marque,
   // ils cliqueraient a travers la presentation et echoueraient pour une
   // raison qui n'a rien a voir avec ce qu'ils verifient.
-  await ctx.addInitScript(() => localStorage.setItem('finjaro:intro-seen', '1'));
+  // Deux couches se superposent a toute l'app et n'ont rien a voir avec ce
+  // que ce test verifie: la presentation du premier lancement (z-60) et la
+  // visite guidee proposee aux comptes de moins de 24 h (z-50). On les
+  // marque comme deja vues, sinon les clics tombent dessus.
+  await ctx.addInitScript((uid) => {
+    localStorage.setItem('finjaro:intro-seen', '1');
+    localStorage.setItem(`finjaro:welcome-seen:${uid}`, '1');
+  }, USER_ID);
   await ctx.addInitScript(([key, val]) => localStorage.setItem(key, val), [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(session)]);
   const page = await ctx.newPage();
   page.on('console', (m) => {

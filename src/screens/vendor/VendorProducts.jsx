@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPlus, IconBox, IconEye, IconEyeOff, IconPhotoPlus } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
@@ -21,7 +21,11 @@ export default function VendorProducts() {
   const { shop } = useOutletContext();
   const { t } = useTranslation();
   const toast = useToast();
-  const [tab, setTab] = useState('online');
+  // L'ajout en masse renvoie ici avec ?tab=drafts: sans ça on ouvrait « En
+  // ligne », qui ne contient justement pas ce qu'on vient d'ajouter.
+  const [params] = useSearchParams();
+  const asked = params.get('tab');
+  const [tab, setTab] = useState(TABS.includes(asked) ? asked : 'online');
   const [busyId, setBusyId] = useState(null);
   const [publishingAll, setPublishingAll] = useState(false);
 
@@ -128,6 +132,11 @@ export default function VendorProducts() {
         <>
           {tab === 'archive' && (
             <p className="px-4 pt-3 text-caption text-muted">{t('vendor.archiveHelp')}</p>
+          )}
+          {/* Dire ce que « brouillon » veut dire. Le mot est clair pour qui
+              connaît, opaque pour qui vend pour la première fois. */}
+          {tab === 'drafts' && (
+            <p className="px-4 pt-3 text-caption text-muted">{t('vendor.draftsHelp')}</p>
           )}
           {/* Tout publier d'un coup — la sortie normale d'un ajout en masse. */}
           {tab === 'drafts' && (

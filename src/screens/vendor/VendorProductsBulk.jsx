@@ -203,7 +203,14 @@ export default function VendorProductsBulk() {
       const { error } = await supabase.from('products').insert(payload);
       if (error) throw error;
       toast.success(t('vendor.bulkCreated', { count: payload.length }));
-      navigate('/vendor/products');
+      // On atterrit sur la pile où sont VRAIMENT les articles.
+      //
+      // Beau: « quand quelqu'un met ses articles, ça part brouillon, puis il
+      // ne sait vraiment pas qu'il faut publier ». La cause était là: on
+      // renvoyait sur l'onglet « En ligne », qui ne contient précisément pas
+      // ce qu'on vient d'ajouter. La personne voyait sa liste inchangée et
+      // concluait que rien n'avait marché.
+      navigate('/vendor/products?tab=drafts');
     } catch (err) {
       toast.error(err.message || t('errors.generic'));
     } finally {

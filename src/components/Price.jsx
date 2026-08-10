@@ -35,7 +35,11 @@ export function Price({ fcfa, className = '', currency: forced }) {
 // un appel PAR PRIX affiché: une liste de vingt articles en ferait vingt.
 export function VendorPrice({ fcfa, className = '' }) {
   const { shop } = useOutletContext() || {};
-  return <Price fcfa={fcfa} className={className} currency={currencyForCountry(shop?.country)} />;
+  // Tant que la boutique n'est pas chargée, on ne force rien: `Price` garde la
+  // devise habituelle. Forcer le repli ici ferait clignoter des dollars sur
+  // l'écran d'une vendeuse camerounaise avant de se corriger.
+  const currency = shop?.country ? currencyForCountry(shop.country) : undefined;
+  return <Price fcfa={fcfa} className={className} currency={currency} />;
 }
 
 // Remise réelle en %, ou null s'il n'y en a pas.
