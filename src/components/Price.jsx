@@ -1,11 +1,41 @@
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../hooks/useSettings';
-import { formatPrice } from '../lib/currency';
+import { useOutletContext } from 'react-router-dom';
+import { formatPrice, currencyForCountry } from '../lib/currency';
 
 // Renders an FCFA-stored amount in the user's selected currency, app-wide.
-export function Price({ fcfa, className = '' }) {
+// `currency` force la devise — utilisé par l'espace vendeur, voir plus bas.
+export function Price({ fcfa, className = '', currency: forced }) {
   const { currency, language } = useSettings();
-  return <span className={className}>{formatPrice(fcfa, currency, language)}</span>;
+  return <span className={className}>{formatPrice(fcfa, forced || currency, language)}</span>;
+}
+
+// Le prix tel que LA VENDEUSE le voit: dans la devise de SA boutique.
+//
+// Signalé par Beau, capture à l'appui: une vendeuse à Douala voyait son
+// catalogue en euros. Sa boutique est pourtant bien enregistrée au Cameroun —
+// la donnée était juste, c'est l'affichage qui mentait.
+//
+// La cause: `Price` affiche dans la devise de CELUI QUI REGARDE. C'est le bon
+// choix pour une acheteuse — elle veut le prix dans sa monnaie. Mais dans
+// l'espace vendeur, la personne ne « regarde » pas un prix: elle gère le sien.
+// Le formulaire d'article le savait déjà et saisissait en devise de boutique
+// (`toFcfa(..., shopCurrency)`); les écrans qui RELISENT ces montants, eux,
+// repassaient par la devise du téléphone. On tapait donc en FCFA pour relire
+// des euros.
+//
+// Et la devise du téléphone se trompe facilement: faute de fuseau exploitable,
+// la détection retombe sur la langue du système. Un téléphone camerounais
+// réglé en « fr-FR » — c'est courant — annonce la France.
+//
+// Un vendeur doit voir ses chiffres dans la monnaie où il les a pensés.
+//
+// La boutique vient du contexte déjà fourni par `VendorLayout` — pas d'une
+// requête à elle. Un composant qui interrogerait la base lui-même déclencherait
+// un appel PAR PRIX affiché: une liste de vingt articles en ferait vingt.
+export function VendorPrice({ fcfa, className = '' }) {
+  const { shop } = useOutletContext() || {};
+  return <Price fcfa={fcfa} className={className} currency={currencyForCountry(shop?.country)} />;
 }
 
 // Remise réelle en %, ou null s'il n'y en a pas.

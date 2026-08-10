@@ -34,6 +34,11 @@ async function run({ label, ageMs, expectVisible, shot, priorKeys = {}, query = 
     user: { id: USER_ID, email: 'new@test.dev', app_metadata: {}, user_metadata: { name: 'Awa Mbala' }, aud: 'authenticated', created_at: createdAt },
   };
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR' });
+  // L'ecran d'accueil du premier lancement se superpose a toute l'app (z-60).
+  // Ces tests portent sur une app DEJA lancee une fois: sans cette marque,
+  // ils cliqueraient a travers la presentation et echoueraient pour une
+  // raison qui n'a rien a voir avec ce qu'ils verifient.
+  await ctx.addInitScript(() => localStorage.setItem('finjaro:intro-seen', '1'));
   await ctx.addInitScript(([k, v]) => localStorage.setItem(k, v), [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(session)]);
   // Traces laissées dans CE navigateur par un AUTRE compte — le cas de Beau,
   // et celui d'un telephone partagé par plusieurs personnes.

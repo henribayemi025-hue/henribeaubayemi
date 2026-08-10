@@ -52,6 +52,11 @@ const findings = [];
 
 async function makePage({ hasShop }) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'fr-FR', timezoneId: 'Africa/Douala' });
+  // L'ecran d'accueil du premier lancement se superpose a toute l'app (z-60).
+  // Ces tests portent sur une app DEJA lancee une fois: sans cette marque,
+  // ils cliqueraient a travers la presentation et echoueraient pour une
+  // raison qui n'a rien a voir avec ce qu'ils verifient.
+  await ctx.addInitScript(() => localStorage.setItem('finjaro:intro-seen', '1'));
   await ctx.addInitScript(([key, val]) => localStorage.setItem(key, val), [`sb-${PROJECT_REF}-auth-token`, JSON.stringify(session)]);
   const page = await ctx.newPage();
   page.on('console', (m) => {

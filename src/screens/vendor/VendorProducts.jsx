@@ -7,8 +7,9 @@ import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { SmartImage } from '../../components/SmartImage';
-import { Price } from '../../components/Price';
+import { VendorPrice } from '../../components/Price';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
+import { isPriceOnRequest } from '../../lib/categories';
 import { Button } from '../../components/Button';
 
 // Trois piles bien distinctes. Avant, tout arrivait dans une seule grille:
@@ -143,7 +144,15 @@ export default function VendorProducts() {
                   <SmartImage src={p.images?.[0] ? storageThumbUrl('products', p.images[0]) : null} fallbackSrc={p.images?.[0] ? storageUrl('products', p.images[0]) : null} alt={p.name} className="aspect-square w-full" />
                   <div className="p-2">
                     <p className="line-clamp-1 text-body text-ink">{p.name}</p>
-                    <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                    {/* « Prix sur demande » est un choix de la vendeuse, pas un
+                        prix de zéro. La carte côté acheteuse le disait déjà;
+                        ici on affichait « 0 » — la vendeuse pouvait croire que
+                        son article était offert. */}
+                    {isPriceOnRequest(p) ? (
+                      <p className="text-caption font-semibold text-brass">{t('product.priceOnRequest')}</p>
+                    ) : (
+                      <VendorPrice fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                    )}
                     <p className={`text-caption ${p.stock > 0 ? 'text-muted' : 'text-danger'}`}>
                       {p.stock > 0 ? `${t('product.inStock')}: ${p.stock}` : t('product.outOfStock')}
                     </p>

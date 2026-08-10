@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
-import { Price } from '../../components/Price';
+import { VendorPrice } from '../../components/Price';
 import { Skeleton, ErrorState } from '../../components/states';
 
 const PERIODS = [
@@ -105,7 +105,7 @@ export default function VendorStats() {
       ) : (
         <div className="space-y-6 p-4">
           <div className="grid grid-cols-2 gap-3">
-            <KPI label={t('stats.sales')} value={<Price fcfa={data.sales} />} change={data.salesChange} />
+            <KPI label={t('stats.sales')} value={<VendorPrice fcfa={data.sales} />} change={data.salesChange} />
             <KPI label={t('stats.ordersCount')} value={data.orders} change={data.ordersChange} />
             <KPI label={t('stats.views')} value={data.views} />
             <KPI label={t('stats.followers')} value={data.followers} />
@@ -148,7 +148,7 @@ export default function VendorStats() {
                       <p className="line-clamp-1 text-body text-ink">{p.name}</p>
                       <p className="text-caption text-muted">{t('stats.salesCount', { n: p.sales })} · {p.views || 0} {t('stats.views').toLowerCase()}</p>
                     </div>
-                    <Price fcfa={p.revenue} className="text-caption font-semibold text-teal" />
+                    <VendorPrice fcfa={p.revenue} className="text-caption font-semibold text-teal" />
                   </li>
                 ))}
               </ul>
