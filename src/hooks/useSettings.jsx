@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CURRENCIES, currencyForCountry } from '../lib/currency';
-import { detectCountrySync, detectCurrencyRegionSync } from '../lib/countries';
+import { detectCountrySync, detectCurrencyRegionSync, countryFromPhone } from '../lib/countries';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 
@@ -61,7 +61,19 @@ export function SettingsProvider({ children }) {
       setCurrencyState(profile.currency);
     }
     if (profile.locale && profile.locale !== i18n.language) i18n.changeLanguage(profile.locale);
-    if (profile.country) setCountryState(profile.country);
+    if (profile.country) {
+      setCountryState(profile.country);
+      // La devise SUIT le pays du profil tant que personne ne l'a choisie
+      // explicitement. Sans cette ligne, une valeur fautive mémorisée sur
+      // l'appareil survivait à la correction du pays: on rectifiait « France »
+      // en « Cameroun » dans les Réglages et les prix restaient en euros.
+      const chosen = localStorage.getItem(CUR_MANUAL_KEY) === '1' || !!profile.currency;
+      if (!chosen) {
+        const fromCountry = currencyForCountry(profile.country);
+        setCurrencyState(fromCountry);
+        localStorage.setItem(CUR_KEY, fromCountry);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
@@ -69,10 +81,19 @@ export function SettingsProvider({ children }) {
   // pas encore — sinon la personne repart de zéro sur chaque appareil.
   useEffect(() => {
     if (!user || !profile || profile.country) return;
-    const detected = country || detectCountrySync();
+    // Le numéro du compte PRIME sur la détection: c'est un fait saisi par la
+    // personne, là où le fuseau et la langue sont des indices faillibles.
+    const detected = countryFromPhone(user.phone) || country || detectCountrySync();
     if (!detected) return;
+    // On n'enregistre QUE le pays.
+    //
+    // Écrire aussi la devise transformait une simple détection en préférence
+    // gravée dans le profil — impossible ensuite de distinguer « cette
+    // personne veut des euros » de « on avait mal deviné ». C'est ce qui a
+    // enfermé plusieurs comptes camerounais en euros: corriger son pays ne
+    // suffisait pas, la devise fautive restait. Désormais `profiles.currency`
+    // non nul signifie vraiment « choisie dans les Réglages ».
     const patch = { country: detected };
-    if (!profile.currency) patch.currency = currencyForCountry(detected);
     // Synchro d'arrière-plan: le réglage est déjà dans localStorage, donc un
     // échec ne casse rien ici — il empêche seulement de le retrouver sur un
     // autre appareil. On le trace sans déranger l'utilisatrice.
@@ -120,10 +141,12 @@ export function SettingsProvider({ children }) {
         const cur = currencyForCountry(code);
         setCurrencyState(cur);
         localStorage.setItem(CUR_KEY, cur);
-        persist({ country: code, currency: cur });
-      } else {
-        persist({ country: code });
       }
+      // On n'écrit JAMAIS la devise déduite dans le profil: seule celle
+      // choisie dans les Réglages y est enregistrée. Une devise deduite qui
+      // s'y installe devient indiscernable d'un choix, et plus rien ne peut
+      // la corriger — c'est ce qui a enfermé des comptes camerounais en euros.
+      persist({ country: code });
     },
     [persist]
   );

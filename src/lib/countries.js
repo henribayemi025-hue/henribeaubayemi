@@ -176,3 +176,44 @@ export function detectCountrySync() {
 export async function detectCountry() {
   return detectCountrySync();
 }
+
+// Le pays d'après le numéro de téléphone du compte.
+//
+// Beau, 10/08: une vendeuse à Douala voyait son catalogue en euros, et une
+// cliente au Cameroun voyait des prix en euros. Enquête: leur profil portait
+// « FR / EUR ». Personne ne l'avait choisi — c'est la détection qui l'avait
+// écrit, puis enregistré comme si c'était une préférence.
+//
+// La détection retombe sur la langue du système quand le fuseau horaire n'est
+// pas exploitable. Or un téléphone camerounais réglé en « fr-FR » est courant:
+// l'app en concluait « France ». Un compte de la base a un numéro en +237 et
+// un profil marqué France — le téléphone dit la vérité, la langue ment.
+//
+// L'indicatif est un fait, pas une supposition: la personne a saisi ce numéro
+// elle-même. On le fait donc primer sur tout le reste.
+//
+// Correspondance par préfixe le plus long: +1 est partagé (États-Unis, Canada)
+// et +237 doit être reconnu avant +23.
+const DIAL_COUNTRY = {
+  237: 'CM', 33: 'FR', 44: 'GB', 1: 'US', 49: 'DE', 34: 'ES', 39: 'IT',
+  32: 'BE', 351: 'PT', 31: 'NL', 353: 'IE', 30: 'GR', 43: 'AT', 358: 'FI',
+  41: 'CH', 47: 'NO', 46: 'SE', 45: 'DK', 48: 'PL', 420: 'CZ', 40: 'RO',
+  225: 'CI', 221: 'SN', 223: 'ML', 226: 'BF', 229: 'BJ', 228: 'TG',
+  227: 'NE', 245: 'GW', 241: 'GA', 242: 'CG', 235: 'TD', 236: 'CF',
+  240: 'GQ', 234: 'NG', 233: 'GH', 254: 'KE', 27: 'ZA', 20: 'EG',
+  212: 'MA', 216: 'TN', 213: 'DZ', 243: 'CD', 244: 'AO', 250: 'RW',
+  255: 'TZ', 256: 'UG', 251: 'ET', 971: 'AE', 966: 'SA', 974: 'QA',
+  90: 'TR', 91: 'IN', 86: 'CN', 81: 'JP', 55: 'BR', 52: 'MX', 54: 'AR',
+  61: 'AU', 64: 'NZ', 7: 'RU',
+};
+
+export function countryFromPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return null;
+  // Du préfixe le plus long au plus court, sinon « 237… » serait lu « 2 ».
+  for (const len of [4, 3, 2, 1]) {
+    const code = DIAL_COUNTRY[Number(digits.slice(0, len))];
+    if (code && COUNTRIES.some((c) => c.code === code)) return code;
+  }
+  return null;
+}
