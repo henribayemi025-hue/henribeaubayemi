@@ -13,6 +13,7 @@ import { ShopAvatar } from './ShopAvatar';
 import { Price } from './Price';
 import { track } from '../lib/track';
 import { networkMessage } from '../lib/netError';
+import { visitorId } from '../lib/visitor';
 
 // Ombre systématique derrière icônes/texte blancs: une vidéo claire (fond
 // blanc, robe blanche…) faisait disparaître les icônes blanches et le texte
@@ -48,9 +49,13 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
   }, [active]);
 
   useEffect(() => {
+    // Le cœur déjà donné se retrouve aussi SANS compte: on interroge alors
+    // avec le jeton de l'appareil au lieu de l'identifiant du compte.
+    const q = user
+      ? supabase.from('reel_likes').select('id').eq('reel_id', reel.id).eq('user_id', user.id)
+      : supabase.from('reel_likes').select('id').eq('reel_id', reel.id).eq('visitor_id', visitorId());
+    q.maybeSingle().then(({ data }) => setLiked(!!data));
     if (!user) return;
-    supabase.from('reel_likes').select('id').eq('reel_id', reel.id).eq('user_id', user.id).maybeSingle()
-      .then(({ data }) => setLiked(!!data));
     if (reel.shop_id) {
       supabase.from('shop_follows').select('id').eq('follower_id', user.id).eq('shop_id', reel.shop_id).maybeSingle()
         .then(({ data }) => setFollowing(!!data));
@@ -63,14 +68,22 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
   // contente d'ajouter/retirer la ligne, et si l'écriture échoue on remet
   // l'affichage dans son état d'avant plutôt que de laisser un like fantôme
   // qui disparaîtra au prochain chargement.
+  // Aimer ne demande PAS de compte.
+  //
+  // Beau: « pour moi quelqu'un qui n'a pas de compte peut liker les reels ».
+  // C'est le geste le plus léger de l'app: exiger une inscription pour un
+  // cœur fait fuir la personne avant qu'elle ait rien vu. Sans compte, la
+  // ligne porte le jeton de l'appareil (voir lib/visitor.js) au lieu d'un
+  // identifiant de compte — le compteur, lui, reste tenu par la base.
   async function toggleLike() {
-    if (!user) return requireLogin();
+    const owner = user ? { user_id: user.id } : { visitor_id: visitorId() };
+    const [col, val] = Object.entries(owner)[0];
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikes((n) => (wasLiked ? Math.max(0, n - 1) : n + 1));
     const { error } = wasLiked
-      ? await supabase.from('reel_likes').delete().eq('reel_id', reel.id).eq('user_id', user.id)
-      : await supabase.from('reel_likes').insert({ reel_id: reel.id, user_id: user.id });
+      ? await supabase.from('reel_likes').delete().eq('reel_id', reel.id).eq(col, val)
+      : await supabase.from('reel_likes').insert({ reel_id: reel.id, ...owner });
     if (error) {
       setLiked(wasLiked);
       setLikes((n) => (wasLiked ? n + 1 : Math.max(0, n - 1)));
