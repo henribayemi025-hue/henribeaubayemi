@@ -79,6 +79,7 @@ const ProductDetail = lazyWithReload(() => import('./screens/buyer/ProductDetail
 const ShopProfile = lazyWithReload(() => import('./screens/buyer/ShopProfile'));
 const Cart = lazyWithReload(() => import('./screens/buyer/Cart'));
 const CheckoutCOD = lazyWithReload(() => import('./screens/buyer/CheckoutCOD'));
+const CheckoutAll = lazyWithReload(() => import('./screens/buyer/CheckoutAll'));
 const NearYou = lazyWithReload(() => import('./screens/buyer/NearYou'));
 const Fin = lazyWithReload(() => import('./screens/buyer/Fin'));
 const Inbox = lazyWithReload(() => import('./screens/buyer/Inbox'));
@@ -215,6 +216,9 @@ export default function App() {
                       <Route path="services" element={<NearYou />} />
                       <Route path="near-you" element={<NearYou />} />
                       <Route path="cart" element={<Cart />} />
+                      {/* Avant checkout/:shopId — sinon « tout » serait pris pour
+                          un identifiant de boutique, comme products/bulk. */}
+                      <Route path="checkout/tout" element={<RequireAuth><CheckoutAll /></RequireAuth>} />
                       <Route path="checkout/:shopId" element={<RequireAuth><CheckoutCOD /></RequireAuth>} />
                       <Route path="inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
                       <Route path="chat/:conversationId" element={<RequireAuth><VendorChat /></RequireAuth>} />

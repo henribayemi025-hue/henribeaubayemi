@@ -486,7 +486,8 @@
     "removeAll": "Tout retirer",
     "multiShopTitle_one": "Tes articles viennent de {{count}} boutique",
     "multiShopTitle_other": "Tes articles viennent de {{count}} boutiques",
-    "multiShopHelp": "Chaque boutique prépare et livre sa propre commande — tu valides donc une commande par boutique. Tes coordonnées sont déjà enregistrées, les suivantes prennent quelques secondes."
+    "multiShopHelp": "Chaque boutique prépare et livre sa propre commande — tu valides donc une commande par boutique. Tes coordonnées sont déjà enregistrées, les suivantes prennent quelques secondes.",
+    "checkoutAll": "Tout commander"
   },
   "nearYou": {
     "shops": "Prestataires",
@@ -668,7 +669,22 @@
     "errOutOfStock": "« {{name}} » n'est plus disponible en quantité suffisante.",
     "errShopUnavailable": "Cette boutique n'est plus disponible pour le moment.",
     "nextShopTitle": "Il te reste des articles chez {{shop}}",
-    "nextShopCta": "Commander chez {{shop}}"
+    "nextShopCta": "Commander chez {{shop}}",
+    "allTitle": "Tout commander",
+    "allIntro": "Tes {{count}} boutiques préparent chacune sa commande. Tu remplis tes coordonnées une seule fois.",
+    "allItemCount_one": "{{count}} article",
+    "allItemCount_other": "{{count}} articles",
+    "allContactTitle": "Tes coordonnées",
+    "allCta_one": "Commander ({{count}} boutique)",
+    "allCta_other": "Commander chez les {{count}} boutiques",
+    "allSuccessTitle_one": "{{count}} commande passée !",
+    "allSuccessTitle_other": "{{count}} commandes passées !",
+    "allNoneTitle": "Aucune commande n'a pu être passée",
+    "allFailedTitle_one": "{{count}} boutique n'a pas pu être commandée",
+    "allFailedTitle_other": "{{count}} boutiques n'ont pas pu être commandées",
+    "allFailedHelp": "Ces articles sont restés dans ton panier — rien n'a été perdu. Tu peux réessayer.",
+    "allBackToCart": "Retour au panier",
+    "total": "Total"
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",

@@ -486,7 +486,8 @@
     "removeAll": "Remove all",
     "multiShopTitle_one": "Your items come from {{count}} shop",
     "multiShopTitle_other": "Your items come from {{count}} shops",
-    "multiShopHelp": "Each shop prepares and delivers its own order, so you confirm one order per shop. Your details are already saved — the next ones take seconds."
+    "multiShopHelp": "Each shop prepares and delivers its own order, so you confirm one order per shop. Your details are already saved — the next ones take seconds.",
+    "checkoutAll": "Order everything"
   },
   "nearYou": {
     "shops": "Providers",
@@ -668,7 +669,22 @@
     "errOutOfStock": "“{{name}}” is no longer available in that quantity.",
     "errShopUnavailable": "This shop is currently unavailable.",
     "nextShopTitle": "You still have items from {{shop}}",
-    "nextShopCta": "Order from {{shop}}"
+    "nextShopCta": "Order from {{shop}}",
+    "allTitle": "Order everything",
+    "allIntro": "Your {{count}} shops each prepare their own order. You fill in your details only once.",
+    "allItemCount_one": "{{count}} item",
+    "allItemCount_other": "{{count}} items",
+    "allContactTitle": "Your details",
+    "allCta_one": "Order ({{count}} shop)",
+    "allCta_other": "Order from all {{count}} shops",
+    "allSuccessTitle_one": "{{count}} order placed!",
+    "allSuccessTitle_other": "{{count}} orders placed!",
+    "allNoneTitle": "No order could be placed",
+    "allFailedTitle_one": "{{count}} shop could not be ordered",
+    "allFailedTitle_other": "{{count}} shops could not be ordered",
+    "allFailedHelp": "Those items stayed in your cart — nothing was lost. You can try again.",
+    "allBackToCart": "Back to cart",
+    "total": "Total"
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
