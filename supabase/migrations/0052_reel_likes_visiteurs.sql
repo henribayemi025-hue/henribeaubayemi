@@ -3,8 +3,12 @@
 -- Beau: « pour moi quelqu'un qui n'a pas de compte peut liker les vidéos, les
 -- reels ». C'est le geste le plus léger de l'application: demander une
 -- inscription pour un cœur, c'est perdre la personne avant qu'elle ait vu
--- quoi que ce soit. TikTok et Instagram laissent regarder et aimer avant de
--- demander quoi que ce soit.
+-- quoi que ce soit.
+--
+-- Précision, parce que j'avais écrit ici le contraire: TikTok et Instagram
+-- laissent REGARDER sans compte, mais exigent un compte pour aimer comme
+-- pour commenter. Finjaro va donc plus loin qu'eux sur le like. C'est un
+-- choix assumé de Beau, pas un alignement sur l'usage du secteur.
 --
 -- Une visiteuse est identifiée par un jeton tiré au hasard et gardé dans son
 -- navigateur (`visitor_id`). Ce n'est pas une identité: on ne sait pas qui

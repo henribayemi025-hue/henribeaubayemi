@@ -483,7 +483,10 @@
     "viewCart": "Voir le panier",
     "itemsCount_one": "{{count}} article",
     "itemsCount_other": "{{count}} articles",
-    "removeAll": "Tout retirer"
+    "removeAll": "Tout retirer",
+    "multiShopTitle_one": "Tes articles viennent de {{count}} boutique",
+    "multiShopTitle_other": "Tes articles viennent de {{count}} boutiques",
+    "multiShopHelp": "Chaque boutique prépare et livre sa propre commande — tu valides donc une commande par boutique. Tes coordonnées sont déjà enregistrées, les suivantes prennent quelques secondes."
   },
   "nearYou": {
     "shops": "Prestataires",
@@ -663,7 +666,9 @@
     "errProductInactive": "« {{name}} » n'est plus en vente. Retire-le de ton panier.",
     "errProductOnRequest": "« {{name}} » est à prix sur demande : passe par la conversation avec la boutique.",
     "errOutOfStock": "« {{name}} » n'est plus disponible en quantité suffisante.",
-    "errShopUnavailable": "Cette boutique n'est plus disponible pour le moment."
+    "errShopUnavailable": "Cette boutique n'est plus disponible pour le moment.",
+    "nextShopTitle": "Il te reste des articles chez {{shop}}",
+    "nextShopCta": "Commander chez {{shop}}"
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",

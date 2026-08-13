@@ -46,6 +46,14 @@ export default function CheckoutCOD() {
   const [payingCard, setPayingCard] = useState(false);
   const [placed, setPlaced] = useState(null);
 
+  // La boutique suivante encore au panier, s'il en reste une. `items` est
+  // relu APRÈS le vidage de la boutique commandée, donc ce qui reste ici est
+  // exactement ce qu'il reste à commander.
+  const remaining = items.filter((i) => i.shop_id !== shopId);
+  const nextShop = remaining.length
+    ? { id: remaining[0].shop_id, name: remaining[0].shop_name }
+    : null;
+
   // Paiement par carte MASQUÉ (décision Beau 01/08): le flux Stripe n'est pas
   // opérationnel pour de vrai, donc on ne montre pas un bouton qui déçoit.
   // Tout le code (payByCard, create-checkout) reste en place — repasser ce
@@ -189,7 +197,26 @@ export default function CheckoutCOD() {
         <p className="mt-4 rounded-pill bg-teal/5 px-4 py-2 text-body font-semibold text-teal">
           {t('checkout.orderNumber')}: #{placed}
         </p>
-        <Button className="mt-8 max-w-xs" onClick={() => navigate('/')}>{t('checkout.backHome')}</Button>
+        {/* Enchaîner sur la boutique suivante.
+            « Je dois les passer une par une ? » — oui, parce que chaque
+            boutique livre la sienne. Mais on ne renvoyait qu'à l'accueil, et
+            il fallait retrouver son panier tout seul pour finir sa deuxième
+            commande. Le raccourci part directement au bon endroit, avec les
+            coordonnées déjà remplies. */}
+        {nextShop && (
+          <div className="mt-8 w-full max-w-xs">
+            <p className="text-caption text-muted">{t('checkout.nextShopTitle', { shop: nextShop.name })}</p>
+            <Button className="mt-2" onClick={() => navigate(`/checkout/${nextShop.id}`)}>
+              {t('checkout.nextShopCta', { shop: nextShop.name })}
+            </Button>
+            <button onClick={() => navigate('/')} className="mt-3 w-full py-2 text-caption font-semibold text-muted">
+              {t('checkout.backHome')}
+            </button>
+          </div>
+        )}
+        {!nextShop && (
+          <Button className="mt-8 max-w-xs" onClick={() => navigate('/')}>{t('checkout.backHome')}</Button>
+        )}
       </div>
     );
   }
