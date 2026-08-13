@@ -213,6 +213,22 @@ Si le [Contexte écran] contient "shopUrl", c'est le VRAI lien de la boutique du
 vendeur connecté: donne-le tel quel si on te le demande, et termine par
 "ACTION: share_shop".
 
+L'ARGENT — parler la monnaie de la personne.
+Le [Contexte écran] contient "buyerCurrency": c'est la monnaie dans laquelle
+la personne voit les prix. Donne TOUJOURS les montants dans celle-là. Quelqu'un
+qui annonce « j'ai 20 euros » et à qui on répond « 8 500 FCFA » doit faire la
+conversion de tête pour savoir si c'est dans ses moyens — c'est notre travail,
+pas le sien. Les outils te renvoient `prix_fcfa` parce que la base stocke en
+FCFA; convertis à l'affichage.
+
+Un budget se transmet TEL QUE DIT: `max_price` = 20, `max_price_currency` =
+EUR. Ne fais jamais la conversion toi-même, le serveur s'en charge. (Le
+paramètre `max_price_fcfa` a fait proposer des gants de chantier à 0 F à
+quelqu'un qui cherchait un cadeau avec 20 €: le modèle y avait mis 20.)
+
+Quand un article revient avec `prix_sur_demande: true`, il n'a PAS de prix:
+dis « prix sur demande », jamais un montant, et jamais zéro.
+
 AVANT DE PROPOSER — POSER LA QUESTION QUI MANQUE.
 Un testeur, capture à l'appui: « il loupe des étapes, il peut poser plus de
 questions avant de faire des propositions — comme un cadeau pour un homme ou
@@ -311,7 +327,16 @@ function toolDeclarations() {
             "Mots-clés, ex: 'robe rouge', 'parfum homme'. Chaque mot est cherché séparément, dans le nom ET la description — inutile de deviner le titre exact de l'annonce.",
         },
         category: { type: 'STRING', description: `Une de: ${PRODUCT_CATEGORIES.join(', ')}` },
-        max_price_fcfa: { type: 'NUMBER', description: 'Prix maximum en FCFA' },
+        max_price: {
+          type: 'NUMBER',
+          description:
+            "Budget maximum, DANS LA MONNAIE OÙ LA PERSONNE L'A DIT. Si elle dit « 20 euros », mets 20 et max_price_currency EUR. Ne convertis jamais toi-même: le serveur s'en charge.",
+        },
+        max_price_currency: {
+          type: 'STRING',
+          description: "Monnaie du budget: FCFA, EUR, USD ou GBP. À défaut, celle de la personne.",
+        },
+        max_price_fcfa: { type: 'NUMBER', description: 'Budget maximum déjà exprimé en FCFA (ancien paramètre).' },
       },
     },
   },
@@ -508,6 +533,24 @@ type Json = Record<string, unknown>;
 // que la réponse finale renvoie au client. FinouChou.jsx applique chaque
 // ligne via cart.add(), qui déclenche déjà la mini-fenêtre de confirmation
 // globale du panier — aucune UI neuve nécessaire.
+// Taux de conversion, alignés sur src/lib/currency.js côté client.
+// Le budget arrive dans la monnaie où la personne l'a formulé; c'est ICI
+// qu'on le ramène en FCFA, l'unité de stockage. Laisser le modèle faire ce
+// calcul, c'est accepter qu'il se trompe — et il s'est trompé.
+const RATES: Record<string, number> = { FCFA: 1, EUR: 0.001524, USD: 0.00165, GBP: 0.0013 };
+
+function budgetEnFcfa(args: Json): number | null {
+  if (typeof args.max_price === 'number' && args.max_price > 0) {
+    const cur = String(args.max_price_currency ?? 'FCFA').toUpperCase();
+    const rate = RATES[cur] ?? 1;
+    return Math.round(args.max_price / rate);
+  }
+  if (typeof args.max_price_fcfa === 'number' && args.max_price_fcfa > 0) {
+    return Math.round(args.max_price_fcfa);
+  }
+  return null;
+}
+
 async function runTool(
   name: string,
   args: Json,
@@ -535,7 +578,7 @@ async function runTool(
       //
       // Une cliente ne connaît pas le nom que la vendeuse a choisi. On
       // cherche donc CHAQUE MOT utile, dans le nom ET dans la description.
-      const CATALOG_FIELDS = 'id,name,price_fcfa,category,stock,shop_id,shops(name,slug)';
+      const CATALOG_FIELDS = 'id,name,price_fcfa,price_on_request,category,stock,shop_id,shops(name,slug)';
       // Mots vides du français: sans ce tri, « pour » et « femme » pèsent
       // pareil et « pour » ramène la moitié du catalogue.
       const STOP = new Set([
@@ -579,7 +622,24 @@ async function runTool(
           q = q.or(words.flatMap((w) => [`name.ilike.%${w}%`, `description.ilike.%${w}%`]).join(','));
         }
         if (categoryIds.length) q = q.in('category', categoryIds);
-        if (typeof args.max_price_fcfa === 'number') q = q.lte('price_fcfa', args.max_price_fcfa);
+        // Budget: converti ICI, jamais par le modèle.
+        //
+        // Beau, capture à l'appui: quelqu'un dit « j'ai 20 euros » et Finia
+        // propose des gants de chantier et des bouchons d'oreille. Deux
+        // fautes enchaînées, toutes les deux de notre côté:
+        //
+        // 1. Le seul paramètre existant s'appelait `max_price_fcfa`. Le modèle
+        //    y a mis 20 — vingt FRANCS, pas vingt euros (20 € ≈ 13 100 FCFA).
+        // 2. Un article « prix sur demande » est stocké à 0 FCFA. Il passait
+        //    donc sous N'IMPORTE quel plafond: 127 articles du catalogue sont
+        //    dans ce cas. Avec un plafond de 20, il ne restait qu'eux.
+        //
+        // Un article sans prix ne peut PAS être déclaré dans un budget: on
+        // l'écarte dès qu'un budget est demandé.
+        const maxFcfa = budgetEnFcfa(args);
+        if (maxFcfa !== null) {
+          q = q.lte('price_fcfa', maxFcfa).gt('price_fcfa', 0).eq('price_on_request', false);
+        }
         return await q;
       }
 
@@ -619,6 +679,7 @@ async function runTool(
           id: p.id,
           nom: p.name,
           prix_fcfa: p.price_fcfa,
+          prix_sur_demande: !!p.price_on_request,
           categorie: p.category,
           en_stock: (p.stock as number) > 0,
           boutique: (p.shops as Json | null)?.name ?? null,
