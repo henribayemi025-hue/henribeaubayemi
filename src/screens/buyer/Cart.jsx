@@ -33,10 +33,26 @@ export default function Cart() {
     );
   }
 
+  const shopCount = Object.keys(byShop).length;
+
   return (
     <div>
       <AppHeader title={t('cart.title')} back />
       <div className="space-y-4 p-4">
+        {/* Dire POURQUOI il y a un bouton par boutique.
+            Un testeur, capture à l'appui: « je ne vois pas de bouton pour
+            passer les deux commandes, je dois les passer une par une ? » —
+            c'était une question, pas un reproche: rien à l'écran n'expliquait
+            que chaque boutique prépare et livre sa propre commande. Le panier
+            était déjà groupé par boutique, mais muet. */}
+        {shopCount > 1 && (
+          <section className="rounded-card border border-hairline bg-teal-light/60 p-3">
+            <p className="text-body font-semibold text-ink">
+              {t('cart.multiShopTitle', { count: shopCount })}
+            </p>
+            <p className="mt-1 text-caption text-muted">{t('cart.multiShopHelp')}</p>
+          </section>
+        )}
         {Object.entries(byShop).map(([shopId, group]) => (
           <div key={shopId} className="card">
             <div className="mb-3 flex items-center justify-between">
@@ -85,11 +101,14 @@ export default function Cart() {
       </div>
 
       <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-4">
-        <div className="flex items-center justify-between">
+        {/* Marge à droite: le bouton flottant de Finia se pose exactement là et
+            recouvrait le montant du sous-total — le seul chiffre que la
+            personne cherche à cet instant. */}
+        <div className="flex items-center justify-between pr-16">
           <span className="text-body text-muted">{t('cart.subtotal')}</span>
           <Price fcfa={subtotal} className="text-section font-semibold text-ink" />
         </div>
-        <p className="mt-1 text-caption text-muted">{t('cart.deliveryNote')}</p>
+        <p className="mt-1 pr-16 text-caption text-muted">{t('cart.deliveryNote')}</p>
       </div>
     </div>
   );

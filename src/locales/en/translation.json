@@ -483,7 +483,10 @@
     "viewCart": "View cart",
     "itemsCount_one": "{{count}} item",
     "itemsCount_other": "{{count}} items",
-    "removeAll": "Remove all"
+    "removeAll": "Remove all",
+    "multiShopTitle_one": "Your items come from {{count}} shop",
+    "multiShopTitle_other": "Your items come from {{count}} shops",
+    "multiShopHelp": "Each shop prepares and delivers its own order, so you confirm one order per shop. Your details are already saved — the next ones take seconds."
   },
   "nearYou": {
     "shops": "Providers",
@@ -663,7 +666,9 @@
     "errProductInactive": "“{{name}}” is no longer for sale. Remove it from your cart.",
     "errProductOnRequest": "“{{name}}” is price-on-request — please chat with the shop.",
     "errOutOfStock": "“{{name}}” is no longer available in that quantity.",
-    "errShopUnavailable": "This shop is currently unavailable."
+    "errShopUnavailable": "This shop is currently unavailable.",
+    "nextShopTitle": "You still have items from {{shop}}",
+    "nextShopCta": "Order from {{shop}}"
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
