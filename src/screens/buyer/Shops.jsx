@@ -8,6 +8,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { ShopCard } from '../../components/ShopCard';
 import { TextInput } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
+import { nameMatches } from '../../lib/searchNorm';
 
 // L'annuaire de TOUTES les boutiques.
 //
@@ -49,8 +50,9 @@ export default function Shops() {
   const shops = useMemo(() => {
     const rows = data || [];
     const q = term.trim().toLowerCase();
+    // Même pli que la recherche globale: accents et apostrophes ignorés.
     const filtered = q
-      ? rows.filter((s) => (s.name || '').toLowerCase().includes(q) || (s.city || '').toLowerCase().includes(q))
+      ? rows.filter((s) => nameMatches(s.name, q) || nameMatches(s.city, q))
       : rows;
     return [...filtered].sort((a, b) => {
       if (a.hasProducts !== b.hasProducts) return a.hasProducts ? -1 : 1;

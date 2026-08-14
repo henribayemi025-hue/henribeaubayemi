@@ -22,6 +22,9 @@ const BOUTIQUES = Array.from({ length: 31 }, (_, i) => ({
   rating: 0, is_verified: false, followers_count: 31 - i,
   country: i % 3 === 0 ? 'CM' : 'FR', city: i === 5 ? 'Douala' : 'Yaoundé', status: 'active',
 }));
+// Deux noms REELS du catalogue, ceux qui ont revele le bug des accents.
+BOUTIQUES[29].name = 'Décoration évents';
+BOUTIQUES[30].name = 'Kem’S Surprise';
 const ARTICLES = BOUTIQUES.slice(0, 21).map((s) => ({ shop_id: s.id }));
 
 const browser = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
@@ -101,6 +104,31 @@ if (body.includes('Voir tout')) {
   const voirTout = await p2.locator('a[href="/boutiques"]').count();
   check(voirTout >= 2, "Le bout de la bande offre « Voir tout » (en plus du titre)", `${voirTout} liens`);
   await ctx2.close();
+}
+
+// Les accents. Beau: « quand tu recherches une boutique qui est dans Voir
+// tout mais pas dans le bandeau, on ne voit pas ». Verifie en base: taper
+// « decoration » ne trouvait pas « Décoration évents » — la recherche
+// exigeait les accents exacts.
+{
+  await page.goto('http://localhost:4817/boutiques', { waitUntil:'domcontentloaded' });
+  await page.waitForTimeout(2200);
+  await page.locator('input.input').first().fill('decoration');
+  await page.waitForTimeout(600);
+  let b = await page.locator('body').innerText();
+  check(b.includes('Décoration évents'), 'Annuaire: « decoration » trouve « Décoration évents »');
+  await page.locator('input.input').first().fill('kems');
+  await page.waitForTimeout(600);
+  b = await page.locator('body').innerText();
+  check(b.includes('Kem’S Surprise'), 'Annuaire: « kems » trouve « Kem’S Surprise »');
+
+  // La recherche globale aussi.
+  await page.goto('http://localhost:4817/search', { waitUntil:'domcontentloaded' });
+  await page.waitForTimeout(1500);
+  await page.locator('input').first().fill('decoration');
+  await page.waitForTimeout(1200);
+  b = await page.locator('body').innerText();
+  check(b.includes('Décoration évents'), 'Recherche globale: « decoration » trouve la boutique accentuee');
 }
 
 console.log(`\n${allOk ? 'CONFORME' : 'À CORRIGER'}\n`);
