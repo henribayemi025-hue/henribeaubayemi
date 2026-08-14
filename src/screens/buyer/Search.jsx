@@ -10,6 +10,7 @@ import { ProductCard } from '../../components/ProductCard';
 import { Skeleton, ErrorState } from '../../components/states';
 import { CATEGORIES } from '../../lib/categories';
 import { track } from '../../lib/track';
+import { nameMatches } from '../../lib/searchNorm';
 
 export default function Search() {
   const { t } = useTranslation();
@@ -38,7 +39,12 @@ export default function Search() {
         const lower = term.toLowerCase();
         const cats = CATEGORIES.filter((c) => t(`categories.${c.id}`).toLowerCase().includes(lower));
         const [shopsRes, prodRes, followsRes] = await Promise.all([
-          supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').ilike('name', `%${term}%`).limit(10).abortSignal(signal),
+          // PAS de ilike ici: il exige les accents exacts (« decoration » ne
+          // trouvait pas « Décoration évents », vérifié en base) et bute sur
+          // les apostrophes (« kems » vs « Kem'S »). Les boutiques actives se
+          // comptent en dizaines de lignes légères: on les rapatrie et on
+          // compare en repliant accents et apostrophes des deux côtés.
+          supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').limit(300).abortSignal(signal),
           supabase.from('products').select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops(name)').eq('is_active', true).ilike('name', `%${term}%`).limit(12).abortSignal(signal),
           user
             ? supabase.from('shop_follows').select('shops(id,slug,name,avatar_url,is_verified,rating)').eq('follower_id', user.id).abortSignal(signal)
@@ -50,11 +56,12 @@ export default function Search() {
           .map((r) => r.shops)
           .filter((s) => s && s.name.toLowerCase().includes(lower));
         const products = (prodRes.data || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
-        setState({ loading: false, error: false, data: { cats, shops: shopsRes.data || [], products, followed } });
+        const shops = (shopsRes.data || []).filter((sh) => nameMatches(sh.name, term)).slice(0, 10);
+        setState({ loading: false, error: false, data: { cats, shops, products, followed } });
         // `n` = nombre de résultats. Sans lui, on sait ce que les gens
         // cherchent mais pas ce qu'ils n'ont pas trouvé — or c'est exactement
         // ça qui dit quelles vendeuses il faut aller recruter.
-        track('search', null, { q: term, n: products.length + (shopsRes.data || []).length });
+        track('search', null, { q: term, n: products.length + shops.length });
       } catch (err) {
         if (signal.aborted || err?.name === 'AbortError') return; // stale, ignore
         setState({ loading: false, error: true, data: null });

@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 import { useCart } from '../hooks/useCart';
+import { useSettings } from '../hooks/useSettings';
 import { SmartImage } from './SmartImage';
 import { RichText } from './RichText';
 import { Price } from './Price';
@@ -53,6 +54,9 @@ export function FinouChou() {
   const { user } = useAuth();
   const { shop, status: vendorStatus } = useVendorStatus();
   const cart = useCart();
+  // La monnaie de la personne accompagne chaque message: sans elle, Finia
+  // répondait « 8 500 FCFA » à quelqu'un qui venait de dire « 20 euros ».
+  const { currency: buyerCurrency } = useSettings();
   const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -160,7 +164,7 @@ export function FinouChou() {
           message: content,
           image: img || undefined,
           history,
-          context: { screen: location.pathname, ...(vendorStats ? { vendorStats } : {}), ...(shopUrl ? { shopUrl } : {}) },
+          context: { screen: location.pathname, buyerCurrency, ...(vendorStats ? { vendorStats } : {}), ...(shopUrl ? { shopUrl } : {}) },
         },
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
@@ -300,7 +304,13 @@ export function FinouChou() {
                           rounded="rounded-input"
                         />
                         <p className="mt-1 line-clamp-1 text-caption text-ink">{p.name}</p>
-                        <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                        {/* Un article sans prix ne s'annonce pas à zéro: la
+                            carte acheteuse le disait déjà, pas celle-ci. */}
+                        {p.price_on_request || p.prix_sur_demande ? (
+                          <p className="text-caption font-semibold text-brass">{t('product.priceOnRequest')}</p>
+                        ) : (
+                          <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                        )}
                       </button>
                       {MIRROR_CATEGORIES.includes(p.category) && (
                         <button

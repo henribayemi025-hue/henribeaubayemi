@@ -100,7 +100,9 @@ export default function Cart() {
         ))}
       </div>
 
-      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-4">
+      {/* La barre de navigation flotte au-dessus du bas de l'écran: sans
+          cette réserve, elle recouvre le bouton et le vol au pouce. */}
+      <div className="sticky bottom-0 z-30 border-t border-hairline bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+72px)]">
         {/* Marge à droite: le bouton flottant de Finia se pose exactement là et
             recouvrait le montant du sous-total — le seul chiffre que la
             personne cherche à cet instant. */}
@@ -109,6 +111,15 @@ export default function Cart() {
           <Price fcfa={subtotal} className="text-section font-semibold text-ink" />
         </div>
         <p className="mt-1 pr-16 text-caption text-muted">{t('cart.deliveryNote')}</p>
+        {/* Le bouton que le testeur cherchait: un seul passage pour toutes les
+            boutiques. Il n'apparaît que s'il y en a plusieurs — avec une seule
+            boutique, « Passer commande » au-dessus fait déjà exactement ça, et
+            un second bouton identique ne ferait qu'hésiter. */}
+        {shopCount > 1 && (
+          <Button className="mt-3" onClick={() => navigate('/checkout/tout')}>
+            {t('cart.checkoutAll')}
+          </Button>
+        )}
       </div>
     </div>
   );

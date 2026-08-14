@@ -180,13 +180,34 @@ export default function Home() {
           <>
             {data.shops.length > 0 && (
               <section className="mt-5">
-                <h2 className="flex items-center gap-1.5 px-4 text-section text-ink">
-                  <IconBuildingStore size={18} className="text-teal" /> {t('home.shopsNearYou')}
-                </h2>
+                {/* « Voir tout » — le chaînon qui manquait.
+                    Beau: « l'admin dit 30 boutiques, j'en vois 10 ». Ce
+                    bandeau est plafonné à douze, et c'était le SEUL endroit
+                    où une boutique apparaissait: la treizième était invisible
+                    pour toujours. */}
+                <div className="flex items-center justify-between px-4">
+                  <h2 className="flex items-center gap-1.5 text-section text-ink">
+                    <IconBuildingStore size={18} className="text-teal" /> {t('home.shopsNearYou')}
+                  </h2>
+                  <Link to="/boutiques" className="text-caption font-semibold text-teal">
+                    {t('shops.seeAll')}
+                  </Link>
+                </div>
                 <div className="no-scrollbar mt-3 flex gap-4 overflow-x-auto px-4">
                   {data.shops.map((s) => (
                     <ShopCard key={s.id} shop={s} />
                   ))}
+                  {/* Le bout du geste: qui glisse jusqu'ici cherche la suite.
+                      On la lui donne, au lieu d'un bord qui s'arrête sec. */}
+                  <Link
+                    to="/boutiques"
+                    className="flex w-24 shrink-0 flex-col items-center text-center transition-transform duration-150 active:scale-95"
+                  >
+                    <span className="flex h-16 w-16 items-center justify-center rounded-full border border-teal/40 bg-teal-light text-teal">
+                      <IconChevronRight size={24} />
+                    </span>
+                    <span className="mt-2 text-caption font-semibold text-teal">{t('shops.seeAll')}</span>
+                  </Link>
                 </div>
               </section>
             )}

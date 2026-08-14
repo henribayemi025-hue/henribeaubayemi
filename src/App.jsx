@@ -77,8 +77,10 @@ const Search = lazyWithReload(() => import('./screens/buyer/Search'));
 const CategoryListing = lazyWithReload(() => import('./screens/buyer/CategoryListing'));
 const ProductDetail = lazyWithReload(() => import('./screens/buyer/ProductDetail'));
 const ShopProfile = lazyWithReload(() => import('./screens/buyer/ShopProfile'));
+const Shops = lazyWithReload(() => import('./screens/buyer/Shops'));
 const Cart = lazyWithReload(() => import('./screens/buyer/Cart'));
 const CheckoutCOD = lazyWithReload(() => import('./screens/buyer/CheckoutCOD'));
+const CheckoutAll = lazyWithReload(() => import('./screens/buyer/CheckoutAll'));
 const NearYou = lazyWithReload(() => import('./screens/buyer/NearYou'));
 const Fin = lazyWithReload(() => import('./screens/buyer/Fin'));
 const Inbox = lazyWithReload(() => import('./screens/buyer/Inbox'));
@@ -208,6 +210,7 @@ export default function App() {
                       <Route path="search" element={<Search />} />
                       <Route path="category/:categoryId" element={<CategoryListing />} />
                       <Route path="product/:id" element={<ProductDetail />} />
+                      <Route path="boutiques" element={<Shops />} />
                       <Route path="boutique/:slug" element={<ShopProfile />} />
                       <Route path="fin" element={<Fin />} />
                       {/* Pivot: l'onglet s'appelle désormais "Services" — /near-you
@@ -215,6 +218,9 @@ export default function App() {
                       <Route path="services" element={<NearYou />} />
                       <Route path="near-you" element={<NearYou />} />
                       <Route path="cart" element={<Cart />} />
+                      {/* Avant checkout/:shopId — sinon « tout » serait pris pour
+                          un identifiant de boutique, comme products/bulk. */}
+                      <Route path="checkout/tout" element={<RequireAuth><CheckoutAll /></RequireAuth>} />
                       <Route path="checkout/:shopId" element={<RequireAuth><CheckoutCOD /></RequireAuth>} />
                       <Route path="inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
                       <Route path="chat/:conversationId" element={<RequireAuth><VendorChat /></RequireAuth>} />
