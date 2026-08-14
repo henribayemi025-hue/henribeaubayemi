@@ -77,6 +77,7 @@ const Search = lazyWithReload(() => import('./screens/buyer/Search'));
 const CategoryListing = lazyWithReload(() => import('./screens/buyer/CategoryListing'));
 const ProductDetail = lazyWithReload(() => import('./screens/buyer/ProductDetail'));
 const ShopProfile = lazyWithReload(() => import('./screens/buyer/ShopProfile'));
+const Shops = lazyWithReload(() => import('./screens/buyer/Shops'));
 const Cart = lazyWithReload(() => import('./screens/buyer/Cart'));
 const CheckoutCOD = lazyWithReload(() => import('./screens/buyer/CheckoutCOD'));
 const CheckoutAll = lazyWithReload(() => import('./screens/buyer/CheckoutAll'));
@@ -209,6 +210,7 @@ export default function App() {
                       <Route path="search" element={<Search />} />
                       <Route path="category/:categoryId" element={<CategoryListing />} />
                       <Route path="product/:id" element={<ProductDetail />} />
+                      <Route path="boutiques" element={<Shops />} />
                       <Route path="boutique/:slug" element={<ShopProfile />} />
                       <Route path="fin" element={<Fin />} />
                       {/* Pivot: l'onglet s'appelle désormais "Services" — /near-you

@@ -1333,5 +1333,14 @@
       "body": "Open your shop and post your items. Finia walks you through it."
     },
     "replayIntro": "Replay the intro"
+  },
+  "shops": {
+    "title": "All shops",
+    "searchPlaceholder": "Search a shop, a city…",
+    "count_one": "{{count}} shop",
+    "count_other": "{{count}} shops",
+    "noMatch": "No shop matches.",
+    "empty": "No shop yet.",
+    "seeAll": "See all"
   }
 }
