@@ -13,7 +13,12 @@ let cachedFor; // pays ayant servi à construire `homeCache`
 
 const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
 export const HOME_PAGE_SIZE = 24;
-const LIMIT_SHOPS = 12;
+// 30 et non 12. Beau, en glissant la bande: « quand je glisse je ne vois
+// pas » — la bande s'arrêtait à douze sans jamais dire qu'il en existait
+// d'autres. Une bande horizontale de cartes légères supporte très bien la
+// trentaine; le jour où les boutiques se comptent en centaines, c'est
+// l'annuaire /boutiques qui prend le relais, pas cette limite.
+const LIMIT_SHOPS = 30;
 // Finjaro est une place de marché CAMEROUNAISE avec une clientèle en diaspora.
 // La règle n'est donc pas symétrique, et c'est voulu:
 //

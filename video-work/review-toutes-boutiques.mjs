@@ -67,9 +67,40 @@ await page.waitForTimeout(2600);
 body = await page.locator('body').innerText();
 check(body.includes('Voir tout'), "L'accueil propose « Voir tout »");
 if (body.includes('Voir tout')) {
-  await page.getByRole('link', { name: 'Voir tout' }).click();
+  // Deux liens « Voir tout » desormais (titre + carte au bout de la bande):
+  // les deux menent au meme endroit, on clique le premier.
+  await page.getByRole('link', { name: 'Voir tout' }).first().click();
   await page.waitForTimeout(2200);
   check(page.url().includes('/boutiques'), 'Le lien mene bien a l\'annuaire', page.url());
+}
+
+// « Quand je glisse, je ne vois pas »: la bande s'arretait a 12 sans issue.
+// Un visiteur hors Cameroun recoit toutes les boutiques dans la bande — on
+// verifie qu'elle depasse l'ancien plafond ET se termine par « Voir tout ».
+{
+  const ctx2 = await browser.newContext({ viewport:{width:390,height:844}, locale:'fr-FR' });
+  await ctx2.addInitScript(() => {
+    localStorage.setItem('finjaro:intro-seen','1');
+    localStorage.setItem('finjaro_country','FR');
+  });
+  const p2 = await ctx2.newPage();
+  await p2.route('**/realtime/v1/**', r=>r.abort());
+  await p2.route('**/auth/v1/**', r=>r.fulfill({json:{}}));
+  await p2.route('**/rest/v1/**', route => {
+    const url = new URL(route.request().url());
+    const path = url.pathname.split('/rest/v1/')[1].split('?')[0];
+    let rows = [];
+    if (path === 'shops') rows = BOUTIQUES;
+    else if (path === 'products') rows = url.searchParams.get('select') === 'shop_id' ? ARTICLES : [];
+    route.fulfill({status:200,headers:{'content-type':'application/json','content-range':`0-0/${rows.length}`,'access-control-allow-origin':'*','access-control-expose-headers':'content-range'},body:JSON.stringify(rows)});
+  });
+  await p2.goto('http://localhost:4817/', { waitUntil:'domcontentloaded' });
+  await p2.waitForTimeout(2600);
+  const bande = await p2.locator('a[href^="/boutique/"]').count();
+  check(bande > 12, "La bande de l'accueil depasse l'ancien plafond de 12", `${bande} boutiques`);
+  const voirTout = await p2.locator('a[href="/boutiques"]').count();
+  check(voirTout >= 2, "Le bout de la bande offre « Voir tout » (en plus du titre)", `${voirTout} liens`);
+  await ctx2.close();
 }
 
 console.log(`\n${allOk ? 'CONFORME' : 'À CORRIGER'}\n`);

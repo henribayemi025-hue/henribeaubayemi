@@ -197,6 +197,17 @@ export default function Home() {
                   {data.shops.map((s) => (
                     <ShopCard key={s.id} shop={s} />
                   ))}
+                  {/* Le bout du geste: qui glisse jusqu'ici cherche la suite.
+                      On la lui donne, au lieu d'un bord qui s'arrête sec. */}
+                  <Link
+                    to="/boutiques"
+                    className="flex w-24 shrink-0 flex-col items-center text-center transition-transform duration-150 active:scale-95"
+                  >
+                    <span className="flex h-16 w-16 items-center justify-center rounded-full border border-teal/40 bg-teal-light text-teal">
+                      <IconChevronRight size={24} />
+                    </span>
+                    <span className="mt-2 text-caption font-semibold text-teal">{t('shops.seeAll')}</span>
+                  </Link>
                 </div>
               </section>
             )}
