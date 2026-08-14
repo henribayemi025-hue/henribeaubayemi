@@ -1294,7 +1294,15 @@
     "noEntries": "Aucune commande sur cette période.",
     "rowPaid": "Encaissé",
     "rowPending": "En attente",
-    "rowCancelled": "Annulée"
+    "rowCancelled": "Annulée",
+    "download": "Télécharger le relevé (Excel/CSV)",
+    "csvDate": "Date",
+    "csvOrder": "Commande",
+    "csvBuyer": "Client",
+    "csvItems": "Articles",
+    "csvStatus": "Statut",
+    "csvTotal": "Total",
+    "csvPaidTotal": "TOTAL ENCAISSÉ (commandes livrées)"
   },
   "legal": {
     "termsTitle": "Conditions générales",

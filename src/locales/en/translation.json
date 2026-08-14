@@ -1294,7 +1294,15 @@
     "noEntries": "No orders in this period.",
     "rowPaid": "Received",
     "rowPending": "Pending",
-    "rowCancelled": "Cancelled"
+    "rowCancelled": "Cancelled",
+    "download": "Download statement (Excel/CSV)",
+    "csvDate": "Date",
+    "csvOrder": "Order",
+    "csvBuyer": "Customer",
+    "csvItems": "Items",
+    "csvStatus": "Status",
+    "csvTotal": "Total",
+    "csvPaidTotal": "TOTAL COLLECTED (delivered orders)"
   },
   "legal": {
     "termsTitle": "Terms & Conditions",

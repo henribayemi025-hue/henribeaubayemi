@@ -4,12 +4,15 @@ import { useTranslation } from 'react-i18next';
 import {
   IconArrowUpRight, IconArrowDownRight, IconWallet, IconHourglassHigh,
   IconShoppingBag, IconReceipt, IconCircleCheck, IconCircleX, IconClock,
+  IconDownload,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
 import { VendorPrice } from '../../components/Price';
 import { Skeleton, ErrorState } from '../../components/states';
+import { Button } from '../../components/Button';
+import { currencyForCountry, convertFromFcfa } from '../../lib/currency';
 
 const PERIODS = [
   { key: '7d', days: 7, label: 'stats.period7d' },
@@ -34,6 +37,85 @@ export default function VendorFinances() {
   const [period, setPeriod] = useState('7d');
   const days = PERIODS.find((p) => p.key === period).days;
   const lang = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
+
+  // Le relevé à TÉLÉCHARGER — la comptabilité simple d'une PME.
+  //
+  // Beau: « un système de compte dans le mode vendeur que vont utiliser les
+  // PME, et qu'ils pourront télécharger ». Une petite entreprise a besoin de
+  // sortir ses chiffres de l'application: pour son cahier, son comptable, sa
+  // demande de crédit. L'écran Finances montrait tout mais ne laissait rien
+  // emporter.
+  //
+  // Format CSV, pas PDF: il s'ouvre dans Excel, Google Sheets et sur un
+  // téléphone, et reste recopiable dans n'importe quel cahier de comptes.
+  // Le séparateur est le point-virgule — c'est ce qu'Excel en français
+  // attend — et le fichier commence par un BOM pour que les accents passent.
+  const [exporting, setExporting] = useState(false);
+  async function downloadStatement() {
+    setExporting(true);
+    try {
+      const currency = currencyForCountry(shop.country);
+      const from = new Date(Date.now() - days * 864e5).toISOString();
+      const { data: rows, error: err } = await supabase
+        .from('orders')
+        .select('order_no, created_at, buyer_name, status, method, total_fcfa, order_items(name, qty, price_fcfa)')
+        .eq('shop_id', shop.id)
+        .gte('created_at', from)
+        .order('created_at', { ascending: true });
+      if (err) throw err;
+
+      const statusLabel = (st) => t(`orderStatus.${st}`, st);
+      const montant = (fcfa) =>
+        currency === 'FCFA' ? String(Math.round(fcfa)) : convertFromFcfa(fcfa, currency).toFixed(2).replace('.', ',');
+      const champ = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+
+      const lignes = [
+        [t('finances.csvDate'), t('finances.csvOrder'), t('finances.csvBuyer'), t('finances.csvItems'),
+         t('finances.csvStatus'), `${t('finances.csvTotal')} (${currency})`].map(champ).join(';'),
+      ];
+      let totalEncaisse = 0;
+      for (const o of rows || []) {
+        const items = (o.order_items || []).map((it) => `${it.name} x${it.qty}`).join(' + ');
+        if (isPaid(o)) totalEncaisse += o.total_fcfa;
+        lignes.push([
+          new Date(o.created_at).toLocaleDateString(lang),
+          `#${o.order_no}`, o.buyer_name || '', items, statusLabel(o.status), montant(o.total_fcfa),
+        ].map(champ).join(';'));
+      }
+      lignes.push('');
+      lignes.push([t('finances.csvPaidTotal'), '', '', '', '', montant(totalEncaisse)].map(champ).join(';'));
+
+      // BOM UTF-8: sans lui, Excel affiche « Ã© » à la place de « é ».
+      const blob = new Blob(['\ufeff' + lignes.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const nomFichier = `finjaro-releve-${shop.slug}-${period}.csv`;
+
+      // Sur téléphone, le PARTAGE d'abord: dans l'application (WebView), le
+      // téléchargement classique peut ne rien faire du tout — même famille de
+      // pièges que les notifications, découverte aux dépens de Beau le 10/08.
+      // Et pour une PME, envoyer son relevé sur WhatsApp ou par e-mail est
+      // précisément l'usage. Le navigateur d'ordinateur, lui, télécharge.
+      const fichier = new File([blob], nomFichier, { type: 'text/csv' });
+      if (navigator.canShare?.({ files: [fichier] })) {
+        try {
+          await navigator.share({ files: [fichier], title: nomFichier });
+          return;
+        } catch (e) {
+          if (e?.name === 'AbortError') return; // la personne a refermé: fini
+          // Partage indisponible en pratique: on retombe sur le téléchargement.
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nomFichier;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const { data, loading, error, retry } = useAsync(async () => {
     const now = Date.now();
@@ -136,6 +218,12 @@ export default function VendorFinances() {
               </div>
             )}
           </div>
+
+          {/* Emporter ses chiffres: le relevé de la période en un fichier
+              qu'Excel et Google Sheets ouvrent tel quel. */}
+          <Button variant="secondary" onClick={downloadStatement} loading={exporting}>
+            <IconDownload size={18} /> {t('finances.download')}
+          </Button>
 
           <div className="grid grid-cols-3 gap-3">
             <Tile icon={IconHourglassHigh} tint="text-warning" label={t('finances.pending')} value={<VendorPrice fcfa={data.pending} />} />
