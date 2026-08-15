@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconUsers, IconBan, IconCheck, IconShieldHalfFilled, IconBuildingStore, IconUserX, IconAlertTriangle } from '@tabler/icons-react';
+import { IconSearch, IconUsers, IconBan, IconCheck, IconShieldHalfFilled, IconBuildingStore, IconUserX, IconAlertTriangle, IconEyeOff, IconMovie, IconPackage } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -158,6 +158,12 @@ function UserSheet({ user, onClose, onChanged, lang }) {
         <Row label={t('admin.referralCode')} value={user.referral_code} />
       </dl>
 
+      {/* Beau: « pouvoir voir le contenu de quelqu'un ». Suspendre un compte
+          sans avoir regardé ce qu'il publie, c'est décider à l'aveugle: la
+          liste des boutiques, des articles et des vidéos est ce qu'on veut
+          lire AVANT d'appuyer sur le bouton rouge, pas après. */}
+      <ContenuDuCompte userId={user.id} />
+
       <div className="mt-4 space-y-2">
         {user.deletion_requested_at && (
           <Button
@@ -189,6 +195,86 @@ function UserSheet({ user, onClose, onChanged, lang }) {
         {isSelf && <p className="text-[11px] text-muted">{t('admin.selfLocked')}</p>}
       </div>
     </Modal>
+  );
+}
+
+// Ce que cette personne a publié. Chargé seulement à l'ouverture de la fiche
+// (une requête par compte consulté, pas pour les 55 lignes de la liste).
+function ContenuDuCompte({ userId }) {
+  const { t } = useTranslation();
+  const [etat, setEtat] = useState({ loading: true, shops: [], products: [], reels: [] });
+
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      const { data: shops } = await supabase
+        .from('shops')
+        .select('id, name, slug, status, moderation_hidden_at')
+        .eq('owner_id', userId);
+      const ids = (shops || []).map((s) => s.id);
+      if (!ids.length) {
+        if (vivant) setEtat({ loading: false, shops: [], products: [], reels: [] });
+        return;
+      }
+      const [{ data: products }, { data: reels }] = await Promise.all([
+        supabase.from('products')
+          .select('id, name, is_active, moderation_hidden_at')
+          .in('shop_id', ids).order('created_at', { ascending: false }).limit(50),
+        supabase.from('reels')
+          .select('id, caption, moderation_hidden_at')
+          .in('shop_id', ids).order('created_at', { ascending: false }).limit(30),
+      ]);
+      if (vivant) setEtat({ loading: false, shops: shops || [], products: products || [], reels: reels || [] });
+    })();
+    return () => { vivant = false; };
+  }, [userId]);
+
+  if (etat.loading) return <Skeleton className="mt-4 h-20 w-full" />;
+  if (!etat.shops.length) {
+    return <p className="mt-4 rounded-card bg-base p-3 text-caption text-muted">{t('admin.noContent')}</p>;
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      {etat.shops.map((s) => (
+        <div key={s.id} className="rounded-card border border-hairline p-3">
+          <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
+            <IconBuildingStore size={16} className="shrink-0 text-teal" />
+            <span className="truncate">{s.name}</span>
+            {(s.moderation_hidden_at || s.status !== 'active') && (
+              <IconEyeOff size={15} className="shrink-0 text-danger" />
+            )}
+          </p>
+          <p className="mt-1 flex flex-wrap gap-x-3 text-caption text-muted">
+            <span className="inline-flex items-center gap-1">
+              <IconPackage size={13} /> {t('admin.contentProducts', { count: etat.products.length })}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <IconMovie size={13} /> {t('admin.contentReels', { count: etat.reels.length })}
+            </span>
+          </p>
+          {s.slug && (
+            <a href={`/boutique/${s.slug}`} target="_blank" rel="noreferrer" className="mt-1 inline-block text-caption font-semibold text-teal">
+              {t('admin.openTarget')}
+            </a>
+          )}
+        </div>
+      ))}
+
+      {/* Les titres, pas seulement les nombres: c'est en lisant les intitulés
+          qu'on repère ce qui ne va pas. */}
+      <ul className="max-h-56 divide-y divide-hairline overflow-y-auto rounded-card border border-hairline">
+        {[
+          ...etat.products.map((p) => ({ id: `p${p.id}`, nom: p.name, hors: !!p.moderation_hidden_at || !p.is_active, Icon: IconPackage })),
+          ...etat.reels.map((r) => ({ id: `r${r.id}`, nom: r.caption || '—', hors: !!r.moderation_hidden_at, Icon: IconMovie })),
+        ].map((x) => (
+          <li key={x.id} className="flex items-center gap-2 px-3 py-1.5">
+            <x.Icon size={13} className="shrink-0 text-muted" />
+            <span className={`truncate text-caption ${x.hors ? 'text-muted line-through' : 'text-ink'}`}>{x.nom}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

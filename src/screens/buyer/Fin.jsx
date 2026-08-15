@@ -30,6 +30,9 @@ export default function Fin() {
       let query = supabase
         .from('reels')
         .select('*, shops(name, slug, avatar_url, owner_id), products(id, name, price_fcfa, images, stock, shop_id)')
+        // Une vidéo retirée par la modération ne revient pas dans le fil.
+        // `reels` n'a pas de `is_active`: c'est cet horodatage qui la masque.
+        .is('moderation_hidden_at', null)
         .order('created_at', { ascending: false })
         .limit(30);
       if (shopFilter) query = query.eq('shop_id', shopFilter);
