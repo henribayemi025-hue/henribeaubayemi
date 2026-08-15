@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconSwitchHorizontal, IconChartBar, IconAlertCircle, IconChevronRight,
   IconArrowUpRight, IconArrowDownRight, IconWallet, IconPlus, IconShare2,
-  IconMovie, IconTrophy, IconAward, IconBuildingStore, IconCircleCheck,
+  IconMovie, IconTrophy, IconAward, IconBuildingStore, IconCircleCheck, IconSparkles,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -14,6 +14,7 @@ import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
 import { PushPrompt } from '../../components/PushPrompt';
 import { timeAgo } from '../../lib/format';
+import { estEnAvant } from '../../lib/featured';
 
 function pct(cur, prev) {
   if (!prev) return cur > 0 ? 100 : 0;
@@ -217,6 +218,31 @@ export default function VendorDashboard() {
               <p className="text-section font-semibold text-ink">{data.points}</p>
             </div>
             <p className="max-w-[45%] text-right text-caption text-muted">{t('vendor.sellerPointsHint')}</p>
+          </Link>
+
+          {/* Le parrainage n'était rangé QUE dans le menu acheteuse. Une
+              vendeuse ne le voyait donc jamais — c'est la première raison
+              pour laquelle il n'a servi aucune fois sur 55 comptes. Il vit
+              maintenant là où elle passe tous les jours, et il annonce ce
+              qu'elle gagne au lieu de se contenter d'un lien. */}
+          <Link
+            to="/profile/invite"
+            className={`flex items-center gap-3 rounded-card border p-3.5 transition active:scale-[0.99] ${
+              estEnAvant(shop) ? 'border-brass/40 bg-brass/8' : 'border-hairline'
+            }`}
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal">
+              <IconSparkles size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-body font-semibold text-ink">
+                {estEnAvant(shop)
+                  ? t('referral.featuredUntil', { when: new Date(shop.featured_until).toLocaleDateString(i18n.language) })
+                  : t('vendor.inviteCta')}
+              </p>
+              <p className="mt-0.5 text-caption text-muted">{t('referral.rewardRule')}</p>
+            </div>
+            <IconChevronRight size={18} className="shrink-0 text-muted" />
           </Link>
 
           <section>

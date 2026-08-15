@@ -594,12 +594,18 @@
   "referral": {
     "navLabel": "Inviter des amis",
     "title": "Inviter des amis",
-    "intro": "Partage ton lien : quand un ami s'inscrit avec, vous êtes tous les deux liés sur Finjaro.",
+    "intro": "Invite une vendeuse à ouvrir sa boutique : ta boutique passe en avant sur l'accueil.",
+    "rewardRule": "7 jours de mise en avant par personne que tu amènes et qui ouvre vraiment sa boutique.",
+    "featuredUntil": "Ta boutique est mise en avant jusqu'au {{when}}",
+    "notFeatured": "Ta boutique n'est pas encore mise en avant",
+    "vendorsBrought": "{{count}} boutique ouverte grâce à toi",
+    "vendorsBrought_other": "{{count}} boutiques ouvertes grâce à toi",
+    "shareText": "Ouvre ta boutique sur Finjaro, c'est gratuit.",
     "yourLink": "Ton lien d'invitation",
     "copy": "Copier",
     "copied": "Lien copié !",
     "share": "Partager mon lien",
-    "invited": "Amis invités",
+    "invited": "Personnes invitées",
     "emptyInvited": "Personne pour l'instant — partage ton lien pour commencer !"
   },
   "fin": {
@@ -778,6 +784,7 @@
     "imageStillUploading": "Image en cours d’envoi…",
     "sellerPoints": "Points vendeur",
     "sellerPointsHint": "+10 par commande livrée",
+    "inviteCta": "Fais passer ta boutique en avant",
     "actionAddProduct": "Ajouter",
     "actionShare": "Partager",
     "leaderboard": "Classement",

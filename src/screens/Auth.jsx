@@ -5,6 +5,7 @@ import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogl
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { networkMessage } from '../lib/netError';
+import { souvenirCode } from '../lib/referral';
 import { Button } from '../components/Button';
 import { Field, TextInput } from '../components/Field';
 
@@ -43,6 +44,11 @@ export default function Auth({ consoleMode = false }) {
   } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
+  // Google et Apple partent sur leur propre site et reviennent sans rien
+  // porter: le code doit être mis de côté AVANT de quitter la page, sinon il
+  // est perdu. C'est ce qui explique zéro parrainage enregistré sur 55
+  // comptes. Le rattrapage se fait au retour, dans `useAuth`.
+  useEffect(() => { souvenirCode(refCode); }, [refCode]);
   const [mode, setMode] = useState(refCode && !consoleMode ? 'signup' : 'login');
   // 'email' | 'phone' — indépendant de `mode` (connexion/inscription/oubli),
   // exactement comme le prototype le proposait pour qui n'a pas d'e-mail.

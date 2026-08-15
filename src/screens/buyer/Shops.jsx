@@ -9,6 +9,7 @@ import { ShopCard } from '../../components/ShopCard';
 import { TextInput } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { nameMatches } from '../../lib/searchNorm';
+import { avantDabord } from '../../lib/featured';
 
 // L'annuaire de TOUTES les boutiques.
 //
@@ -35,7 +36,7 @@ export default function Shops() {
     const [{ data: shops, error: err }, { data: withProducts }] = await Promise.all([
       supabase
         .from('shops')
-        .select('id, slug, name, avatar_url, rating, is_verified, followers_count, country, city')
+        .select('id, slug, name, avatar_url, rating, is_verified, followers_count, country, city, featured_until')
         .eq('status', 'active')
         .order('followers_count', { ascending: false }),
       // Une seule requête pour savoir qui a du stock en ligne, plutôt qu'une
@@ -55,7 +56,12 @@ export default function Shops() {
       ? rows.filter((s) => nameMatches(s.name, q) || nameMatches(s.city, q))
       : rows;
     return [...filtered].sort((a, b) => {
+      // Une boutique vide déçoit l'acheteuse, même mise en avant: le stock
+      // reste le tout premier critère. La récompense du parrainage vient
+      // juste après, avant le pays et les abonnés.
       if (a.hasProducts !== b.hasProducts) return a.hasProducts ? -1 : 1;
+      const parAvant = avantDabord(a, b);
+      if (parAvant !== 0) return parAvant;
       const aLocal = country && a.country === country;
       const bLocal = country && b.country === country;
       if (aLocal !== bLocal) return aLocal ? -1 : 1;

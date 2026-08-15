@@ -594,12 +594,18 @@
   "referral": {
     "navLabel": "Invite friends",
     "title": "Invite friends",
-    "intro": "Share your link: when a friend signs up with it, you're both linked on Finjaro.",
+    "intro": "Invite a seller to open their shop: yours moves up on the home screen.",
+    "rewardRule": "7 days featured for every person you bring who actually opens a shop.",
+    "featuredUntil": "Your shop is featured until {{when}}",
+    "notFeatured": "Your shop isn't featured yet",
+    "vendorsBrought": "{{count}} shop opened thanks to you",
+    "vendorsBrought_other": "{{count}} shops opened thanks to you",
+    "shareText": "Open your shop on Finjaro — it's free.",
     "yourLink": "Your invite link",
     "copy": "Copy",
     "copied": "Link copied!",
     "share": "Share my link",
-    "invited": "Friends invited",
+    "invited": "People invited",
     "emptyInvited": "No one yet — share your link to get started!"
   },
   "fin": {
@@ -778,6 +784,7 @@
     "imageStillUploading": "Image still uploading…",
     "sellerPoints": "Seller points",
     "sellerPointsHint": "+10 per delivered order",
+    "inviteCta": "Move your shop up the home screen",
     "leaderboard": "Leaderboard",
     "leaderboardTitle": "Vendor leaderboard",
     "leaderboardEmpty": "No leaderboard to show yet.",

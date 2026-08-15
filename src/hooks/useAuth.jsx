@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { reclamerParrainage } from '../lib/referral';
 
 const AuthCtx = createContext(null);
 
@@ -29,12 +30,19 @@ export function AuthProvider({ children }) {
       await loadProfile(data.session?.user?.id);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s);
       const uid = s?.user?.id || null;
       // Only refetch when the user actually changed (sign in/out/switch),
       // not on token refreshes for the same user.
-      if (uid !== loadedFor.current) loadProfile(uid);
+      if (uid !== loadedFor.current) {
+        // Le retour de Google ou d'Apple passe par ici, et c'est le seul
+        // endroit où l'on sait que la session vient de s'ouvrir: le code de
+        // parrainage mis de côté avant le départ est réclamé maintenant.
+        // Avant, un compte créé par Google perdait son parrainage.
+        if (uid) await reclamerParrainage();
+        loadProfile(uid);
+      }
     });
     return () => {
       active = false;
