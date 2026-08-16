@@ -113,8 +113,26 @@ export function AuthProvider({ children }) {
     // se contente de vérifier le code aux suivants. `name`/`ref` ne servent
     // que pour un compte NOUVEAU — sur un compte existant, Supabase les
     // ignore silencieusement (le profil garde son nom déjà enregistré).
-    signInWithPhone: (phone, { name, ref } = {}) =>
-      supabase.auth.signInWithOtp({ phone, options: { channel: 'sms', data: { name, ...(ref ? { ref } : {}) } } } ),
+    // `creerSiAbsent` est le réglage le plus important de cette fonction.
+    //
+    // `signInWithOtp` crée un compte par DÉFAUT quand le numéro est inconnu.
+    // Sur l'écran de CONNEXION, il n'y a pas de champ « nom » — donc chaque
+    // personne qui tapait son numéro pour se connecter alors qu'elle n'avait
+    // pas encore de compte en obtenait un, vide, sans nom, sans boutique,
+    // sans jamais l'avoir demandé. Cinq comptes dans ce cas au 15/08, et
+    // à chaque fois la personne s'est réinscrite deux minutes plus tard par
+    // Google: elle n'avait pas compris qu'elle était déjà entrée.
+    //
+    // Se connecter ne doit jamais créer. S'inscrire, oui.
+    signInWithPhone: (phone, { name, ref, creerSiAbsent = false } = {}) =>
+      supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          channel: 'sms',
+          shouldCreateUser: creerSiAbsent,
+          ...(creerSiAbsent ? { data: { name, ...(ref ? { ref } : {}) } } : {}),
+        },
+      }),
     verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
     // Numéro + mot de passe, SANS SMS — la voie principale au Cameroun, où
     // les opérateurs filtrent les SMS automatiques (constaté en production:

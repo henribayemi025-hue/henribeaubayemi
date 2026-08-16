@@ -99,6 +99,9 @@
     "useSmsCodeInstead": "Je préfère recevoir un code par SMS",
     "forgotPasswordPhone": "Mot de passe oublié ? Recevoir un code par SMS",
     "phoneAlreadyRegistered": "Ce numéro a déjà un compte — passe par « Se connecter ».",
+    "phoneNoAccount": "Aucun compte avec ce numéro. Crée le tien juste en dessous.",
+    "nameMissingTitle": "Comment on t'appelle ?",
+    "nameMissingHelp": "Ton compte n'a pas encore de nom. C'est celui que verront les boutiques quand tu leur écris ou que tu commandes chez elles.",
     "invalidPhoneCredentials": "Numéro ou mot de passe incorrect.",
     "continueWithApple": "Continuer avec Apple"
   },

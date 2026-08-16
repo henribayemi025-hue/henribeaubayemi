@@ -175,12 +175,27 @@ export default function Auth({ consoleMode = false }) {
     }
     setBusy(true);
     try {
-      const { error } = await signInWithPhone(phone, { name: form.name.trim(), ref: refCode });
+      const { error } = await signInWithPhone(phone, {
+        name: form.name.trim(),
+        ref: refCode,
+        // Seule l'inscription a le droit de créer un compte. Voir useAuth.
+        creerSiAbsent: mode === 'signup',
+      });
       if (error) throw error;
       setOtpSent(true);
       toast.success(t('auth.codeSent'));
     } catch (err) {
-      toast.error(networkMessage(err, t));
+      // Numéro inconnu en connexion: Supabase refuse désormais de créer le
+      // compte en douce. On le dit clairement et on bascule sur le
+      // formulaire d'inscription, où le nom sera demandé — plutôt que de
+      // laisser la personne devant une erreur en anglais qui parle de
+      // « signups disabled ».
+      if (/signup|not allowed|otp_disabled/i.test(err.message || '')) {
+        setMode('signup');
+        toast.error(t('auth.phoneNoAccount'));
+      } else {
+        toast.error(networkMessage(err, t));
+      }
     } finally {
       setBusy(false);
     }
