@@ -901,7 +901,7 @@
     "finiaWritesHint": "Send your photos, Finia writes the listings.",
     "reelDeleted": "Video deleted.",
     "reelOpen": "View video",
-    "reelTooBig": "Your video is {{size}} MB — the limit is 50 MB. Film shorter, or lower the quality in your phone settings.",
+    "reelTooBig": "Your video is {{size}} MB — the limit is 15 MB. Film shorter (30 to 60 seconds is plenty), or lower the video quality in your phone settings.",
     "reelSizeHint": "50 MB maximum (about 40 seconds at good quality).",
     "reelCategory": "Category",
     "reelCategoryPlaceholder": "Pick a category…",

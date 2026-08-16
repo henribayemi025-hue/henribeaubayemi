@@ -18,7 +18,20 @@ import { CATEGORIES, SELECTABLE_SUBCATEGORIES } from '../../lib/categories';
 // de téléversement, et n'affichait qu'un message technique — « une personne se
 // plaint que quand le fichier est gros ça ne part pas » (Beau). On le dit donc
 // AVANT, avec le poids réel du fichier et quoi faire.
-const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+// 15 Mo, et non 50.
+//
+// La limite précédente n'était pas une protection, c'était une autorisation:
+// trois vidéos de 50, 30 et 19 Mo sont arrivées le 10/08 et pèsent à elles
+// seules 99 Mo — soit un dixième de tout l'espace disponible, pour trois
+// fichiers. Le stockage est passé de 32 Mo le 04/08 à 449 Mo le 16/08.
+//
+// 15 Mo laisse passer une vidéo de 30 à 60 secondes filmée normalement au
+// téléphone. Ce n'est pas la vraie réponse — la vraie réponse est de
+// compresser la vidéo AVANT l'envoi, pour que la vendeuse n'ait rien à
+// changer à sa façon de filmer. Mais tant que ce n'est pas fait, mieux vaut
+// un refus qui explique quoi faire qu'une plateforme qui se remplit en
+// silence jusqu'à refuser les photos de tout le monde.
+const MAX_VIDEO_BYTES = 15 * 1024 * 1024;
 
 export default function VendorReels() {
   const { shop } = useOutletContext();
