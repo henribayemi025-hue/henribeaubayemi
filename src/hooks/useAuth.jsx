@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { reclamerParrainage } from '../lib/referral';
 
 const AuthCtx = createContext(null);
 
@@ -29,12 +30,19 @@ export function AuthProvider({ children }) {
       await loadProfile(data.session?.user?.id);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s);
       const uid = s?.user?.id || null;
       // Only refetch when the user actually changed (sign in/out/switch),
       // not on token refreshes for the same user.
-      if (uid !== loadedFor.current) loadProfile(uid);
+      if (uid !== loadedFor.current) {
+        // Le retour de Google ou d'Apple passe par ici, et c'est le seul
+        // endroit où l'on sait que la session vient de s'ouvrir: le code de
+        // parrainage mis de côté avant le départ est réclamé maintenant.
+        // Avant, un compte créé par Google perdait son parrainage.
+        if (uid) await reclamerParrainage();
+        loadProfile(uid);
+      }
     });
     return () => {
       active = false;
@@ -105,8 +113,26 @@ export function AuthProvider({ children }) {
     // se contente de vérifier le code aux suivants. `name`/`ref` ne servent
     // que pour un compte NOUVEAU — sur un compte existant, Supabase les
     // ignore silencieusement (le profil garde son nom déjà enregistré).
-    signInWithPhone: (phone, { name, ref } = {}) =>
-      supabase.auth.signInWithOtp({ phone, options: { channel: 'sms', data: { name, ...(ref ? { ref } : {}) } } } ),
+    // `creerSiAbsent` est le réglage le plus important de cette fonction.
+    //
+    // `signInWithOtp` crée un compte par DÉFAUT quand le numéro est inconnu.
+    // Sur l'écran de CONNEXION, il n'y a pas de champ « nom » — donc chaque
+    // personne qui tapait son numéro pour se connecter alors qu'elle n'avait
+    // pas encore de compte en obtenait un, vide, sans nom, sans boutique,
+    // sans jamais l'avoir demandé. Cinq comptes dans ce cas au 15/08, et
+    // à chaque fois la personne s'est réinscrite deux minutes plus tard par
+    // Google: elle n'avait pas compris qu'elle était déjà entrée.
+    //
+    // Se connecter ne doit jamais créer. S'inscrire, oui.
+    signInWithPhone: (phone, { name, ref, creerSiAbsent = false } = {}) =>
+      supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          channel: 'sms',
+          shouldCreateUser: creerSiAbsent,
+          ...(creerSiAbsent ? { data: { name, ...(ref ? { ref } : {}) } } : {}),
+        },
+      }),
     verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
     // Numéro + mot de passe, SANS SMS — la voie principale au Cameroun, où
     // les opérateurs filtrent les SMS automatiques (constaté en production:

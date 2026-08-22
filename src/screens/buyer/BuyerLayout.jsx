@@ -6,6 +6,7 @@ import { TAB_BAR_SPACE } from '../../components/TabBar';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
+import { NameGate } from '../../components/NameGate';
 import { WelcomeTour } from '../../components/WelcomeTour';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
 import CartDrawer from '../../components/CartDrawer';
@@ -78,6 +79,11 @@ export function BuyerLayout() {
           <FinouChou />
         </ErrorBoundary>
         <LoginPrompt />
+        {/* Rattrape les comptes créés sans nom par l'ancien écran de
+            connexion. Ne s'affiche que pour eux, une seule fois. */}
+        <ErrorBoundary silent>
+          <NameGate />
+        </ErrorBoundary>
         <CartDrawer />
       </div>
     </div>

@@ -113,6 +113,10 @@ export function notificationHref(n) {
       return '/fin';
     case 'new_listing':
       return '/services';
+    // La récompense de parrainage renvoie là où elle se constate et se
+    // rejoue: sa date de fin, et le lien à repartager.
+    case 'referral_reward':
+      return '/profile/invite';
     default:
       return null;
   }

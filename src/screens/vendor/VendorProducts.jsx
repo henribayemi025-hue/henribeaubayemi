@@ -71,7 +71,9 @@ export default function VendorProducts() {
   // d'articles: les publier un par un est absurde. Une seule requête les
   // bascule tous, avec les mêmes règles que la publication à l'unité.
   async function publishAll() {
-    const ids = shown.map((p) => p.id);
+    // Les articles retirés par la modération sont exclus: la base refuserait
+    // de les republier, et les compter ici ferait annoncer un nombre faux.
+    const ids = shown.filter((p) => !p.moderation_hidden_at).map((p) => p.id);
     if (!ids.length) return;
     if (!window.confirm(t('vendor.publishAllConfirm', { count: ids.length }))) return;
     setPublishingAll(true);
@@ -142,7 +144,7 @@ export default function VendorProducts() {
           {tab === 'drafts' && (
             <div className="px-4 pt-3">
               <Button onClick={publishAll} loading={publishingAll}>
-                <IconEye size={18} /> {t('vendor.publishAll', { count: shown.length })}
+                <IconEye size={18} /> {t('vendor.publishAll', { count: shown.filter((p) => !p.moderation_hidden_at).length })}
               </Button>
             </div>
           )}
@@ -167,14 +169,26 @@ export default function VendorProducts() {
                     </p>
                   </div>
                 </Link>
-                <button
-                  onClick={() => togglePublish(p)}
-                  disabled={busyId === p.id}
-                  className="flex w-full items-center justify-center gap-1.5 border-t border-hairline py-2 text-caption font-semibold text-teal disabled:opacity-50"
-                >
-                  {p.is_active ? <IconEyeOff size={15} /> : <IconEye size={15} />}
-                  {p.is_active ? t('vendor.unpublish') : t('vendor.publish')}
-                </button>
+                {/* Un article retiré par la modération ne se republie pas
+                    d'un clic — la base le refuse. Sans ce bloc, le bouton
+                    « Publier » aurait annoncé « publié » et l'article serait
+                    resté hors ligne: la vendeuse aurait cherché longtemps.
+                    Elle voit donc la raison, en clair, à la place du bouton. */}
+                {p.moderation_hidden_at ? (
+                  <p className="border-t border-hairline bg-danger-bg px-2 py-2 text-caption text-danger">
+                    <span className="font-semibold">{t('vendor.blockedByModeration')}</span>
+                    {p.moderation_reason ? <span className="mt-0.5 block">{p.moderation_reason}</span> : null}
+                  </p>
+                ) : (
+                  <button
+                    onClick={() => togglePublish(p)}
+                    disabled={busyId === p.id}
+                    className="flex w-full items-center justify-center gap-1.5 border-t border-hairline py-2 text-caption font-semibold text-teal disabled:opacity-50"
+                  >
+                    {p.is_active ? <IconEyeOff size={15} /> : <IconEye size={15} />}
+                    {p.is_active ? t('vendor.unpublish') : t('vendor.publish')}
+                  </button>
+                )}
               </div>
             ))}
           </div>

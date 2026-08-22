@@ -5,6 +5,7 @@ import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogl
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { networkMessage } from '../lib/netError';
+import { souvenirCode } from '../lib/referral';
 import { Button } from '../components/Button';
 import { Field, TextInput } from '../components/Field';
 
@@ -43,6 +44,11 @@ export default function Auth({ consoleMode = false }) {
   } = useAuth();
   const toast = useToast();
   const refCode = new URLSearchParams(location.search).get('ref');
+  // Google et Apple partent sur leur propre site et reviennent sans rien
+  // porter: le code doit être mis de côté AVANT de quitter la page, sinon il
+  // est perdu. C'est ce qui explique zéro parrainage enregistré sur 55
+  // comptes. Le rattrapage se fait au retour, dans `useAuth`.
+  useEffect(() => { souvenirCode(refCode); }, [refCode]);
   const [mode, setMode] = useState(refCode && !consoleMode ? 'signup' : 'login');
   // 'email' | 'phone' — indépendant de `mode` (connexion/inscription/oubli),
   // exactement comme le prototype le proposait pour qui n'a pas d'e-mail.
@@ -169,12 +175,27 @@ export default function Auth({ consoleMode = false }) {
     }
     setBusy(true);
     try {
-      const { error } = await signInWithPhone(phone, { name: form.name.trim(), ref: refCode });
+      const { error } = await signInWithPhone(phone, {
+        name: form.name.trim(),
+        ref: refCode,
+        // Seule l'inscription a le droit de créer un compte. Voir useAuth.
+        creerSiAbsent: mode === 'signup',
+      });
       if (error) throw error;
       setOtpSent(true);
       toast.success(t('auth.codeSent'));
     } catch (err) {
-      toast.error(networkMessage(err, t));
+      // Numéro inconnu en connexion: Supabase refuse désormais de créer le
+      // compte en douce. On le dit clairement et on bascule sur le
+      // formulaire d'inscription, où le nom sera demandé — plutôt que de
+      // laisser la personne devant une erreur en anglais qui parle de
+      // « signups disabled ».
+      if (/signup|not allowed|otp_disabled/i.test(err.message || '')) {
+        setMode('signup');
+        toast.error(t('auth.phoneNoAccount'));
+      } else {
+        toast.error(networkMessage(err, t));
+      }
     } finally {
       setBusy(false);
     }

@@ -79,6 +79,7 @@ export default function ShopProfile() {
         .from('reels')
         .select('id, video_url, caption, views, likes, shops!inner(slug)')
         .eq('shops.slug', slug)
+        .is('moderation_hidden_at', null)
         .order('created_at', { ascending: false })
         .limit(12),
     ]);

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { detectCountrySync } from './countries';
+import { avantDabord } from './featured';
 
 // Shared with Home.jsx, but kept in its own tiny module (not part of the
 // lazy-loaded Home chunk) so main.jsx can kick off the fetch the INSTANT the
@@ -11,7 +12,7 @@ export let homeCache = null;
 let inFlight = null;
 let cachedFor; // pays ayant servi à construire `homeCache`
 
-const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country';
+const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country, featured_until';
 export const HOME_PAGE_SIZE = 24;
 // 30 et non 12. Beau, en glissant la bande: « quand je glisse je ne vois
 // pas » — la bande s'arrêtait à douze sans jamais dire qu'il en existait
@@ -127,17 +128,22 @@ function localShopsFirst(localRows, restRows, limit, country) {
   // Même asymétrie que le fil: seul un visiteur AU Cameroun voit sa bande se
   // limiter à son pays.
   if (country === HOME_COUNTRY && localList.length >= MIN_LOCAL_SHOPS) {
-    return localList.slice(0, limit);
+    return [...localList].sort(avantDabord).slice(0, limit);
   }
   const seen = new Set(localList.map((r) => r.id));
-  const out = [...localList];
+  const reste = [];
   for (const row of restRows || []) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
-    out.push(row);
-    if (out.length >= limit) break;
+    reste.push(row);
+    if (localList.length + reste.length >= limit) break;
   }
-  return out;
+  // La proximité reste le PREMIER critère: la bande s'intitule « près de chez
+  // toi », et une boutique mise en avant à l'autre bout du monde n'a rien à
+  // faire devant celle d'à côté. On trie donc chaque moitié séparément.
+  return [...localList].sort(avantDabord)
+    .concat(reste.sort(avantDabord))
+    .slice(0, limit);
 }
 
 export async function fetchHome(country) {
@@ -146,6 +152,14 @@ export async function fetchHome(country) {
       .from('shops')
       .select(SHOP_COLS)
       .eq('status', 'active')
+      // La mise en avant gagnée par parrainage passe devant le nombre
+      // d'abonnés. C'est TOUTE la récompense: sans cet ordre, le programme
+      // promet une place en tête et ne la donne pas.
+      //
+      // `featured_until` est trié en base sur la date brute, ce qui ferait
+      // aussi remonter une mise en avant PÉRIMÉE — d'où le tri final côté
+      // client, qui compare la date à maintenant.
+      .order('featured_until', { ascending: false, nullsFirst: false })
       .order('followers_count', { ascending: false });
 
   // allSettled so a transient hiccup on ONE section doesn't blank the whole
