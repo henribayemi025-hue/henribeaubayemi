@@ -17,9 +17,18 @@ import { currencyForCountry, toFcfa } from '../../lib/currency';
 // voulait tout verser d'un coup — la fiche article, elle, plafonne à 10 photos
 // parce que ce sont 10 vues DU MÊME produit.
 //
-// Une photo = un article. On crée des BROUILLONS (is_active = false): rien de
-// à moitié rempli n'atterrit dans le catalogue public, et la pile
-// « Brouillons » existe déjà dans la liste des articles pour finir le travail.
+// Une photo = un article, et l'article part EN LIGNE.
+//
+// Ce chemin créait des brouillons, et lui seul: l'ajout à l'unité comme
+// l'assistant de Finia publiaient déjà directement. Le résultat s'est vu en
+// base: 40 articles finis — titre, prix, photo, rayon, stock, rien ne
+// manquait — dormaient invisibles. Deux boutiques entières n'avaient AUCUN
+// article en ligne alors que leurs vendeuses avaient tout rempli et se
+// croyaient ouvertes; l'une d'elles depuis douze jours.
+//
+// Beau: « quand elle tape sa publie, ça part direct; le brouillon devient une
+// option si elle veut ». C'est le bon sens: personne ne remplit vingt fiches
+// pour les garder cachées. Celle qui veut relire coche la case.
 
 // Envoyer 72 fichiers simultanément fait tomber les connexions mobiles et
 // sature le navigateur. Quatre à la fois, c'est le compromis: assez pour que
@@ -74,6 +83,8 @@ export default function VendorProductsBulk() {
   // Verser un lot sans connaître les prix est le cas normal quand on publie
   // pour quelqu'un d'autre: on le dit à l'acheteuse au lieu d'afficher 0.
   const [bulkOnRequest, setBulkOnRequest] = useState(false);
+  // Décoché par défaut: on publie. Voir l'en-tête du fichier.
+  const [enBrouillon, setEnBrouillon] = useState(false);
 
   async function onPick(e) {
     const files = Array.from(e.target.files || []).filter((f) => (f.type || '').startsWith('image/'));
@@ -209,21 +220,16 @@ export default function VendorProductsBulk() {
         category: r.category,
         images: [r.path],
         stock: 1,
-        // Brouillon: la vendeuse relit et publie depuis la liste des articles.
-        // Rien d'à moitié fini ne part dans le catalogue public.
-        is_active: false,
+        is_active: !enBrouillon,
       }));
       const { error } = await supabase.from('products').insert(payload);
       if (error) throw error;
-      toast.success(t('vendor.bulkCreated', { count: payload.length }));
-      // On atterrit sur la pile où sont VRAIMENT les articles.
-      //
-      // Beau: « quand quelqu'un met ses articles, ça part brouillon, puis il
-      // ne sait vraiment pas qu'il faut publier ». La cause était là: on
-      // renvoyait sur l'onglet « En ligne », qui ne contient précisément pas
-      // ce qu'on vient d'ajouter. La personne voyait sa liste inchangée et
-      // concluait que rien n'avait marché.
-      navigate('/vendor/products?tab=drafts');
+      toast.success(t(enBrouillon ? 'vendor.bulkCreatedDraft' : 'vendor.bulkCreated', { count: payload.length }));
+      // On atterrit sur la pile où sont VRAIMENT les articles: en ligne si on
+      // vient de publier, dans les brouillons si la vendeuse a coché la case.
+      // Renvoyer sur un onglet qui ne contient pas ce qu'on vient d'ajouter
+      // fait croire que rien n'a marché.
+      navigate(enBrouillon ? '/vendor/products?tab=drafts' : '/vendor/products');
     } catch (err) {
       toast.error(err.message || t('errors.generic'));
     } finally {
@@ -355,8 +361,25 @@ export default function VendorProductsBulk() {
            hors de vue — le bouton « Créer » semblait absent. Ancrée à l'écran,
            elle est visible en permanence, quel que soit le nombre de photos. */
         <div className="fixed inset-x-0 bottom-[96px] z-50 mx-4 rounded-card border border-hairline bg-white p-3 shadow-[0_10px_30px_rgba(23,27,38,0.18)] lg:sticky lg:bottom-0 lg:mx-0">
+          {/* Le choix est ici, juste au-dessus du bouton: c'est le dernier
+              endroit que la vendeuse regarde avant de valider, et le seul où
+              « en ligne ou pas » se décide encore. */}
+          <label className="mb-2 flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={enBrouillon}
+              onChange={(e) => setEnBrouillon(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#C25E38]"
+            />
+            <span className="flex-1">
+              <span className="block text-body text-ink">{t('vendor.bulkKeepDraft')}</span>
+              <span className="mt-0.5 block text-caption text-muted">{t('vendor.bulkKeepDraftHelp')}</span>
+            </span>
+          </label>
           <Button onClick={createAll} loading={saving} disabled={!ready.length}>
-            {t('vendor.bulkCreate', { count: ready.length })}
+            {enBrouillon
+              ? t('vendor.bulkCreateDraft', { count: ready.length })
+              : t('vendor.bulkCreate', { count: ready.length })}
           </Button>
           {/* Un bouton grisé sans explication laisse croire à une panne. */}
           {!ready.length && (
