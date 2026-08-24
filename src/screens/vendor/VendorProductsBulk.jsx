@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPhotoPlus, IconSparkles, IconLoader2, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
+import { uid } from '../../lib/uid';
 import { compressForUploadWithThumb } from '../../lib/image';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -80,10 +81,11 @@ export default function VendorProductsBulk() {
     if (!files.length) return;
     setUploading(files.length);
     const uploaded = [];
+    let raison = '';
     await runPool(files, UPLOAD_POOL, async (file) => {
       try {
         const { full, thumb } = await compressForUploadWithThumb(file);
-        const uuid = crypto.randomUUID();
+        const uuid = uid();
         const path = `${user.id}/${uuid}.${full.ext}`;
         const { error } = await supabase.storage.from('products').upload(path, full.blob, { upsert: false, contentType: full.contentType });
         if (error) throw error;
@@ -93,15 +95,26 @@ export default function VendorProductsBulk() {
             .catch(() => {});
         }
         uploaded.push({ path, name: '', price: '', category: bulkCategory });
-      } catch {
-        /* une photo ratée ne doit pas emporter les 71 autres */
+      } catch (e) {
+        // On RETIENT la raison. Avant, ce `catch` vide était le seul indice
+        // qu'il restait: la personne lisait « les photos n'ont pas pu être
+        // envoyées » et nous n'avions rien pour chercher — une vendeuse a
+        // ainsi passé dix-sept jours sans réussir un seul envoi, sans que ni
+        // elle ni nous ne sachions pourquoi.
+        if (!raison) raison = e?.message || String(e);
       } finally {
         setUploading((n) => Math.max(0, n - 1));
       }
     });
     setRows((r) => [...r, ...uploaded]);
     const failed = files.length - uploaded.length;
-    if (failed > 0) toast.error(t('vendor.bulkSomeFailed', { count: failed }));
+    if (failed > 0) {
+      toast.error(
+        raison
+          ? `${t('vendor.bulkSomeFailed', { count: failed })} ${raison}`
+          : t('vendor.bulkSomeFailed', { count: failed })
+      );
+    }
   }
 
   // Finia regarde chaque photo et propose titre + description + catégorie.

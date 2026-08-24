@@ -3,6 +3,7 @@ import { IconUpload, IconX, IconLoader2 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { supabase, storageUrl } from '../lib/supabase';
 import { compressForUploadWithThumb } from '../lib/image';
+import { uid } from '../lib/uid';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 
@@ -80,7 +81,7 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
       // compressForUploadWithThumb renvoie le fichier original et thumb=null
       // plutôt que d'échouer — voir lib/image.js.
       const { full, thumb } = await compressForUploadWithThumb(file);
-      const uuid = crypto.randomUUID();
+      const uuid = uid();
       const path = `${user.id}/${uuid}.${full.ext}`;
       const { error } = await supabase.storage.from(bucket).upload(path, full.blob, { upsert: false, contentType: full.contentType });
       if (error) throw error;

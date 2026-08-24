@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { CATEGORIES } from '../lib/categories';
 import { currencyForCountry, toFcfa } from '../lib/currency';
+import { uid } from '../lib/uid';
 import { SmartImage } from './SmartImage';
 
 const STEPS = ['photos', 'category', 'details', 'description', 'confirm', 'done'];
@@ -85,7 +86,7 @@ export function FinouProductWizard({ onClose, onPublished }) {
           // son type réel plutôt que de coder .jpg en dur.
           const contentType = img.blob.type || 'image/jpeg';
           const ext = contentType === 'image/webp' ? 'webp' : 'jpg';
-          const uuid = crypto.randomUUID();
+          const uuid = uid();
           const path = `${user.id}/${uuid}.${ext}`;
           const { error: upErr } = await supabase.storage.from('products').upload(path, img.blob, { upsert: false, contentType });
           if (upErr) throw upErr;

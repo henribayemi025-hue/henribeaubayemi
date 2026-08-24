@@ -3,6 +3,7 @@ import { useParams, useNavigate, useOutletContext, Link } from 'react-router-dom
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2, IconX } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
+import { uid } from '../../lib/uid';
 import { compressForUploadWithThumb } from '../../lib/image';
 import { isVideoFile, videoDuration, videoPoster, posterPathFor, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from '../../lib/video';
 import { useAuth } from '../../hooks/useAuth';
@@ -311,7 +312,7 @@ export default function VendorProductEdit() {
         return;
       }
       const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const path = `${user.id}/${uid()}.${ext}`;
       const { error } = await supabase.storage.from('products').upload(path, file, { upsert: false, contentType: file.type || 'video/mp4' });
       if (error) throw error;
       // Meilleur effort: sans couverture la vidéo s'affiche quand même, elle
@@ -357,7 +358,7 @@ export default function VendorProductEdit() {
           // centralisés dans lib/image.js. Une vignette légère part en plus,
           // sous le même nom + `_thumb` — c'est elle que les grilles affichent.
           const { full, thumb } = await compressForUploadWithThumb(file);
-          const uuid = crypto.randomUUID();
+          const uuid = uid();
           const path = `${user.id}/${uuid}.${full.ext}`;
           const thumbPath = `${user.id}/${uuid}_thumb.${full.ext}`;
           const { error } = await supabase.storage.from('products').upload(path, full.blob, { upsert: false, contentType: full.contentType });

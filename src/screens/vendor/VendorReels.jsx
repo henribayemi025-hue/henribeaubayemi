@@ -3,6 +3,7 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPlus, IconMovie, IconEye, IconHeart, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
+import { uid } from '../../lib/uid';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -150,7 +151,7 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
     }
     setBusy(true);
     try {
-      const path = `${shop.owner_id}/${crypto.randomUUID()}.${file.name.split('.').pop()}`;
+      const path = `${shop.owner_id}/${uid()}.${file.name.split('.').pop()}`;
       const { error: upErr } = await supabase.storage.from('reels').upload(path, file);
       if (upErr) throw upErr;
       const { error } = await supabase.from('reels').insert({

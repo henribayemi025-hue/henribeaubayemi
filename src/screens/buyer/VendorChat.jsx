@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
+import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { SmartImage } from '../../components/SmartImage';
@@ -199,7 +200,7 @@ export default function VendorChat({ vendor = false }) {
     if (!file) return;
     setUploading(true);
     try {
-      const path = `${user.id}/${crypto.randomUUID()}.${file.name.split('.').pop()}`;
+      const path = `${user.id}/${uid()}.${file.name.split('.').pop()}`;
       const { error: upErr } = await supabase.storage.from('chat').upload(path, file);
       if (upErr) throw upErr;
       await send(null, path);
