@@ -103,6 +103,8 @@ export default function VendorProductsBulk() {
   // Vrai seulement si des lignes venaient du stockage local au premier rendu.
   const [repris] = useState(() => rows.length > 0);
   const [uploading, setUploading] = useState(0);
+  // Photos deja envoyees sur le serveur mais rattachees a aucun article.
+  const [orphelines, setOrphelines] = useState([]);
   const [aiDone, setAiDone] = useState(null); // {done, total} pendant l'analyse
   const [saving, setSaving] = useState(false);
   const [bulkCategory, setBulkCategory] = useState('mode_femme');
@@ -158,6 +160,48 @@ export default function VendorProductsBulk() {
           : t('vendor.bulkSomeFailed', { count: failed })
       );
     }
+  }
+
+  // RÉCUPÉRER LES PHOTOS ABANDONNÉES.
+  //
+  // La sauvegarde locale (plus haut) protège le travail À PARTIR DE
+  // MAINTENANT. Elle ne rend pas ce qui a déjà été perdu — et il y en a: un
+  // vendeur a envoyé 36 photos le 25/08 à 17h59, puis a rouvert l'écran et
+  // l'a trouvé vide. Ses photos étaient bien sur le serveur, invisibles pour
+  // lui, et il aurait dû les renvoyer une par une.
+  //
+  // On liste donc ce qui dort dans son dossier et qui n'est rattaché à aucun
+  // article, et on le lui propose. Ça répare son cas, et ça récupère au
+  // passage du quota de stockage payé pour rien.
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      if (!user?.id || !shop?.id) return;
+      const [{ data: fichiers }, { data: articles }] = await Promise.all([
+        supabase.storage.from('products').list(user.id, { limit: 500, sortBy: { column: 'created_at', order: 'desc' } }),
+        supabase.from('products').select('images').eq('shop_id', shop.id),
+      ]);
+      if (!vivant || !fichiers) return;
+      // Les vignettes (`_thumb`) accompagnent une photo, elles n'en sont pas une.
+      const utilisees = new Set((articles || []).flatMap((a) => a.images || []));
+      const libres = fichiers
+        .filter((f) => f.name && !f.name.includes('_thumb'))
+        .map((f) => `${user.id}/${f.name}`)
+        .filter((chemin) => !utilisees.has(chemin));
+      setOrphelines(libres);
+    })();
+    return () => { vivant = false; };
+  }, [user?.id, shop?.id]);
+
+  function recupererOrphelines() {
+    const dejaLa = new Set(rows.map((r) => r.path));
+    const ajout = orphelines
+      .filter((chemin) => !dejaLa.has(chemin))
+      .map((chemin) => ({ path: chemin, name: '', price: '', category: bulkCategory }));
+    if (!ajout.length) return;
+    setRows((r) => [...r, ...ajout]);
+    setOrphelines([]);
+    toast.success(t('vendor.bulkRecovered', { count: ajout.length }));
   }
 
   // Finia regarde chaque photo et propose titre + description + catégorie.
@@ -277,6 +321,21 @@ export default function VendorProductsBulk() {
       <AppHeader title={t('vendor.bulkTitle')} back />
       <div className="space-y-4 p-4">
         <p className="text-caption text-muted">{t('vendor.bulkIntro')}</p>
+
+        {/* Les photos deja envoyees mais jamais publiees. Proposees AVANT le
+            bouton « Choisir mes photos »: sans ca, la personne renvoie les
+            memes fichiers une deuxieme fois sans savoir qu'ils sont deja la. */}
+        {orphelines.length > 0 && (
+          <div className="rounded-card border border-brass/50 bg-brass/10 p-3">
+            <p className="text-body font-semibold text-ink">
+              {t('vendor.bulkOrphansTitle', { count: orphelines.length })}
+            </p>
+            <p className="mt-1 text-caption text-muted">{t('vendor.bulkOrphansHelp')}</p>
+            <Button variant="secondary" className="mt-3" onClick={recupererOrphelines}>
+              <IconPhotoPlus size={18} /> {t('vendor.bulkOrphansCta', { count: orphelines.length })}
+            </Button>
+          </div>
+        )}
 
         {/* Sans ce mot, la reprise passe pour un bug: on rouvre l'écran et
             des photos qu'on n'a pas re-choisies sont déjà là. */}
