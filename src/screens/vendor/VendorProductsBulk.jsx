@@ -131,6 +131,10 @@ export default function VendorProductsBulk() {
   const [bulkOnRequest, setBulkOnRequest] = useState(false);
   // Décoché par défaut: on publie. Voir l'en-tête du fichier.
   const [enBrouillon, setEnBrouillon] = useState(false);
+  // Ce qu'elle cherchait quand elle a choisi « Autre ». Sans cette phrase on
+  // saurait qu'un rayon manque, jamais lequel — et c'est justement comme ça
+  // que 49 casques de chantier ont fini dans « Mode Femme ».
+  const [cherchait, setCherchait] = useState('');
 
   async function onPick(e) {
     const files = Array.from(e.target.files || []).filter((f) => (f.type || '').startsWith('image/'));
@@ -320,8 +324,22 @@ export default function VendorProductsBulk() {
         stock: 1,
         is_active: !enBrouillon,
       }));
-      const { error } = await supabase.from('products').insert(payload);
+      const { data: crees, error } = await supabase.from('products').insert(payload).select('id, category');
       if (error) throw error;
+      // Le mot de la vendeuse, une fois par article rangé dans « Autre ».
+      // Meilleur effort: si cette écriture échoue, ses articles sont déjà en
+      // ligne et c'est ce qui compte — on ne lui montre pas une erreur pour
+      // une note interne.
+      const orphelins = (crees || []).filter((p) => p.category === 'autre_produit');
+      if (orphelins.length && cherchait.trim()) {
+        await supabase.from('rayons_manquants').insert(
+          orphelins.map((p) => ({
+            product_id: p.id,
+            shop_id: shop.id,
+            cherchait: cherchait.trim().slice(0, 200),
+          })),
+        );
+      }
       // Le travail est en base: le brouillon local n'a plus de raison d'être.
       setRows([]);
       try { localStorage.removeItem(CLE_BROUILLON); } catch { /* ignore */ }
@@ -394,6 +412,18 @@ export default function VendorProductsBulk() {
                   </Select>
                 )}
               </Field>
+              {bulkCategory === 'autre_produit' && (
+                <Field label={t('vendor.missingCategoryLabel')} hint={t('vendor.missingCategoryHint')}>
+                  {(id) => (
+                    <TextInput
+                      id={id}
+                      value={cherchait}
+                      placeholder={t('vendor.missingCategoryPlaceholder')}
+                      onChange={(e) => setCherchait(e.target.value)}
+                    />
+                  )}
+                </Field>
+              )}
               <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
                 <input
                   type="checkbox"

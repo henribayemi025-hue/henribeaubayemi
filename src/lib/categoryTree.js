@@ -28,7 +28,8 @@ export const PRODUCT_HEADS = [
   "sante_bienetre",
   "animaux",
   "jardin_exterieur",
-  "equipement_pro"
+  "equipement_pro",
+  "autre_produit"
 ];
 
 export const SERVICE_HEADS = [

@@ -7,7 +7,7 @@ import {
   IconDiamond, IconHome2, IconConfetti, IconToolsKitchen2, IconGlassFull,
   IconRefresh, IconCar, IconBuildingSkyscraper, IconArchive,
   IconMusic, IconBallFootball, IconWashMachine, IconBook, IconHeartbeat,
-  IconPaw, IconPlant2, IconHelmet,
+  IconPaw, IconPlant2, IconHelmet, IconDots,
 } from '@tabler/icons-react';
 import { CATEGORIES } from '../lib/categories';
 import { featuredCategoryOrder } from '../lib/region';
@@ -43,6 +43,7 @@ const CATEGORY_ICON = {
   // Rayon ajouté en 0059: l'équipement de chantier n'avait aucun rayon, et
   // atterrissait donc dans « Mode Femme ».
   equipement_pro: IconHelmet,
+  autre_produit: IconDots,
 };
 
 // Dégradés stables par id (même recette que ShopAvatar): une nouvelle

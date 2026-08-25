@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconFlag, IconCheck, IconX, IconExternalLink, IconTrash, IconRobot, IconUser, IconEyeOff, IconArrowBackUp, IconArrowsExchange } from '@tabler/icons-react';
+import { IconFlag, IconCheck, IconX, IconExternalLink, IconTrash, IconRobot, IconUser, IconEyeOff, IconArrowBackUp, IconArrowsExchange, IconHelpCircle } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -76,7 +76,16 @@ export default function AdminModeration() {
     const products = Object.fromEntries((productsRes.data || []).map((p) => [p.id, p]));
     const reels = Object.fromEntries((reelsRes.data || []).map((r) => [r.id, r]));
 
-    return rows.map((r) => {
+    // Ce que des vendeuses ont cherche sans le trouver: c'est cette liste
+    // qui dit quel rayon creer ensuite. Elle vit dans la pile « Rangement »,
+    // parce que c'est le meme sujet — des articles au mauvais endroit.
+    const { data: manquants } = await supabase
+      .from('rayons_manquants')
+      .select('id, cherchait, created_at, shops(name)')
+      .is('traite_at', null)
+      .order('created_at', { ascending: false });
+
+    const signalements = rows.map((r) => {
       const cible = r.target_type === 'shop' ? shops[r.target_id]
         : r.target_type === 'product' ? products[r.target_id]
           : reels[r.target_id];
@@ -89,6 +98,7 @@ export default function AdminModeration() {
           : r.target_type === 'product' && cible ? `/product/${r.target_id}` : null,
       };
     });
+    return { signalements, manquants: manquants || [] };
   }, []);
 
   async function decide(report, status) {
@@ -144,11 +154,24 @@ export default function AdminModeration() {
     retry();
   }
 
+  async function rayonTraite(ligne) {
+    setBusyId(ligne.id);
+    const { error: err } = await supabase
+      .from('rayons_manquants')
+      .update({ traite_at: new Date().toISOString() })
+      .eq('id', ligne.id);
+    setBusyId(null);
+    if (err) return toast.error(err.message);
+    retry();
+  }
+
   if (loading) return <div className="space-y-3 p-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>;
   if (error) return <ErrorState onRetry={retry} />;
 
-  const counts = Object.fromEntries(TABS.map((s) => [s, (data || []).filter((r) => pileDe(r) === s).length]));
-  const list = (data || []).filter((r) => pileDe(r) === tab);
+  const signalements = data?.signalements || [];
+  const manquants = data?.manquants || [];
+  const counts = Object.fromEntries(TABS.map((s) => [s, signalements.filter((r) => pileDe(r) === s).length]));
+  const list = signalements.filter((r) => pileDe(r) === tab);
 
   return (
     <div className="space-y-3 p-4">
@@ -161,6 +184,33 @@ export default function AdminModeration() {
         ))}
       </div>
 
+      {tab === 'rangement' && manquants.length > 0 && (
+        <div className="rounded-card border border-brass/40 bg-brass/8 p-3">
+          <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
+            <IconHelpCircle size={17} /> {t('admin.missingCategories', { count: manquants.length })}
+          </p>
+          <p className="mt-0.5 text-caption text-muted">{t('admin.missingCategoriesHelp')}</p>
+          <ul className="mt-2 space-y-1.5">
+            {manquants.map((m) => (
+              <li key={m.id} className="flex items-start justify-between gap-2 rounded-input bg-white p-2">
+                <span className="min-w-0 text-caption text-ink">
+                  <span className="font-semibold">« {m.cherchait} »</span>
+                  <span className="block text-[11px] text-muted">
+                    {m.shops?.name || '—'} · {timeAgo(m.created_at, i18n.language)}
+                  </span>
+                </span>
+                <button
+                  onClick={() => rayonTraite(m)}
+                  disabled={busyId === m.id}
+                  className="shrink-0 rounded-pill border border-hairline px-2 py-1 text-[11px] font-semibold text-teal disabled:opacity-50"
+                >
+                  {t('admin.missingCategoriesDone')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {list.length === 0 ? (
         <EmptyState icon={IconFlag} title={t('admin.noReports')} />
       ) : (

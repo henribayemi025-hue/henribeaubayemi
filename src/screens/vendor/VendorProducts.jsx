@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBox, IconEye, IconEyeOff, IconPhotoPlus } from '@tabler/icons-react';
+import { IconPlus, IconBox, IconEye, IconEyeOff, IconPhotoPlus, IconSparkles } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -11,6 +11,8 @@ import { VendorPrice } from '../../components/Price';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { isPriceOnRequest } from '../../lib/categories';
 import { Button } from '../../components/Button';
+import { RenameWithFinia } from '../../components/RenameWithFinia';
+import { articlesSansVraiNom } from '../../lib/nameQuality';
 
 // Trois piles bien distinctes. Avant, tout arrivait dans une seule grille:
 // impossible de voir ce qui était en ligne, et les arrivages passés se
@@ -28,6 +30,7 @@ export default function VendorProducts() {
   const [tab, setTab] = useState(TABS.includes(asked) ? asked : 'online');
   const [busyId, setBusyId] = useState(null);
   const [publishingAll, setPublishingAll] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
     const { data: products, error: err } = await supabase
@@ -60,6 +63,12 @@ export default function VendorProducts() {
   }
 
   const rows = data || [];
+  // « Baby 1 » a « Baby 63 », « T-shirt no name 1 » a « 18 »: de vrais
+  // articles avec de vraies photos, que personne ne peut trouver. Ils
+  // viennent du nom commun numerote d'« Appliquer a tous » — c'est nous qui
+  // les avons produits, c'est donc a nous d'offrir la sortie.
+  const aRenommerIds = articlesSansVraiNom(rows);
+  const aRenommer = rows.filter((p) => aRenommerIds.includes(p.id));
   const buckets = {
     online: rows.filter((p) => p.is_active),
     drafts: rows.filter((p) => !p.is_active && !p.rotated_at),
@@ -121,6 +130,30 @@ export default function VendorProducts() {
             </button>
           ))}
         </div>
+      )}
+      {/* Avant la grille, parce qu'une vendeuse qui fait defiler 63 « Baby »
+          ne remonte pas chercher un bouton. */}
+      {!loading && !error && aRenommer.length > 0 && (
+        <div className="mx-4 mt-3 rounded-card border border-brass/40 bg-brass/8 p-3">
+          <p className="text-body font-semibold text-ink">
+            {t('vendor.renameBannerTitle', { count: aRenommer.length })}
+          </p>
+          <p className="mt-0.5 text-caption text-muted">{t('vendor.renameBannerHelp')}</p>
+          <button
+            onClick={() => setRenaming(true)}
+            className="mt-2 flex items-center gap-1.5 rounded-pill bg-brass px-3 py-1.5 text-caption font-semibold text-white"
+          >
+            <IconSparkles size={16} /> {t('vendor.renameBannerCta')}
+          </button>
+        </div>
+      )}
+      {renaming && (
+        <RenameWithFinia
+          open
+          onClose={() => setRenaming(false)}
+          products={aRenommer}
+          onSaved={(noms) => setData((all) => all.map((r) => (noms[r.id] ? { ...r, name: noms[r.id] } : r)))}
+        />
       )}
       {loading ? (
         <div className="grid grid-cols-2 gap-3 p-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-square w-full" />)}</div>
