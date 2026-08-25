@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
-  IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight,
+  IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -19,6 +19,7 @@ const AdminUsers = lazy(() => import('./admin/AdminUsers'));
 const AdminOrders = lazy(() => import('./admin/AdminOrders'));
 const AdminModeration = lazy(() => import('./admin/AdminModeration'));
 const AdminContent = lazy(() => import('./admin/AdminContent'));
+const AdminSupport = lazy(() => import('./admin/AdminSupport'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
 const AI_BUDGET_EUR = 20;
@@ -32,6 +33,7 @@ const SECTIONS = [
   { key: 'users', icon: IconUsers, Component: AdminUsers },
   { key: 'orders', icon: IconShoppingBag, Component: AdminOrders },
   { key: 'moderation', icon: IconFlag, Component: AdminModeration },
+  { key: 'support', icon: IconLifebuoy, Component: AdminSupport },
   { key: 'content', icon: IconSpeakerphone, Component: AdminContent },
 ];
 
@@ -101,7 +103,7 @@ function Overview({ goTo }) {
     const [
       visitsTotal, visits7d, usersTotal, users7d, vendorsTotal,
       ordersTotal, orders7d, revenueRes, topProducts, eventCounts, recentVisitorsRes, aiUsageRes,
-      pendingReports, pendingApps,
+      pendingReports, ticketsOuverts, pendingApps,
     ] = await Promise.all([
       countSince('events', null, (q) => q.eq('type', 'visit')),
       countSince('events', 7, (q) => q.eq('type', 'visit')),
@@ -125,6 +127,7 @@ function Overview({ goTo }) {
         .limit(20),
       supabase.from('ai_usage').select('cost_eur').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
       countSince('reports', null, (q) => q.eq('status', 'pending')),
+      countSince('support_tickets', null, (q) => q.eq('statut', 'ouvert')),
       countSince('vendor_applications', null, (q) => q.eq('status', 'pending')),
     ]);
     const revenueFcfa = (revenueRes.data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
@@ -134,7 +137,7 @@ function Overview({ goTo }) {
       topProducts: topProducts.data || [],
       events: EVENT_TYPES.map((type, i) => ({ type, count: eventCounts[i] })),
       recentVisitors: recentVisitorsRes.data || [],
-      aiSpendEur, pendingReports, pendingApps,
+      aiSpendEur, pendingReports, ticketsOuverts, pendingApps,
     };
   }, []);
 
@@ -149,8 +152,19 @@ function Overview({ goTo }) {
           peut dormir des jours sans que personne ne le voie. Ce sont des
           BOUTONS qui changent d'onglet, pas des liens vers une adresse — la
           console n'a qu'une seule page. */}
-      {(data.pendingReports > 0 || data.pendingApps > 0) && (
+      {(data.pendingReports > 0 || data.ticketsOuverts > 0 || data.pendingApps > 0) && (
         <div className="space-y-2">
+          {data.ticketsOuverts > 0 && (
+            <button
+              type="button"
+              onClick={() => goTo('support')}
+              className="flex w-full items-center gap-2 rounded-card border border-teal/30 bg-teal-light/60 p-3 text-left text-body font-semibold text-teal transition active:scale-[0.99]"
+            >
+              <IconLifebuoy size={18} className="shrink-0" />
+              <span className="flex-1">{t('admin.supportBanner', { count: data.ticketsOuverts })}</span>
+              <IconChevronRight size={18} className="shrink-0" />
+            </button>
+          )}
           {data.pendingReports > 0 && (
             <button
               type="button"

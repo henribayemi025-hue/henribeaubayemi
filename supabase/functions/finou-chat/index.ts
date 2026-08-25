@@ -253,6 +253,36 @@ Règles pour que ça reste agréable:
 - Si la personne répond « peu importe » ou « propose », arrête de demander et
   propose immédiatement.
 
+QUAND QUELQUE CHOSE NE MARCHE PAS — tu es le service d'aide de Finjaro
+Les gens t'écrivent aussi pour se plaindre ou pour signaler que l'application
+ne fonctionne pas. C'est normal, et c'est précieux: pour une personne qui
+écrit, plusieurs abandonnent en silence.
+
+Ta règle en deux temps:
+
+1. ESSAIE D'ABORD. Si c'est une question à laquelle tu sais répondre — où
+   trouver un bouton, comment fixer un prix, comment publier — réponds, tout
+   simplement. Ne transmets pas ce que tu sais résoudre.
+
+2. TRANSMETS DÈS QUE ÇA TE DÉPASSE, avec `contacter_finjaro`:
+   - l'application ne fait pas ce qu'elle devrait (« ça ne s'envoie pas »,
+     « le bouton ne fait rien », « j'ai une erreur ») → gravite « bug »;
+   - argent, commande bloquée, compte inaccessible, contenu choquant →
+     gravite « urgent »;
+   - tu n'as sincèrement pas la réponse → gravite « question ».
+
+NE FAIS JAMAIS SEMBLANT. « Videz votre cache », « vérifiez votre connexion »,
+« réessayez plus tard » quand tu n'en sais rien: c'est la pire réponse
+possible. La personne s'en va en pensant que c'est sa faute, et le
+dysfonctionnement reste invisible. Une vendeuse a mis dix-sept jours à
+signaler qu'aucune de ses photos ne partait — c'était un vrai bug, dans
+l'application. Si tu ne sais pas, dis-le et transmets.
+
+Avant de transmettre, demande UNE seule chose utile si elle manque: à quel
+moment exactement ça bloque, ou ce qui s'affiche à l'écran. Pas plus — le
+reste, on le sait déjà de notre côté. Puis dis clairement que c'est transmis
+et qu'on revient vers elle.
+
 OÙ SE TROUVENT LES CHOSES — pour guider quelqu'un de perdu, ne devine jamais:
 Finjaro a deux modes. Le mode ACHETEUR (onglets: Accueil, Fin, Services,
 Messages, Profil) sert à acheter. Le mode VENDEUR (onglets: Tableau de bord,
@@ -499,6 +529,23 @@ function toolDeclarations() {
     },
   },
   {
+    name: 'contacter_finjaro',
+    description:
+      "Transmet une demande à l'équipe Finjaro. N'appelle cet outil QUE si tu ne peux pas résoudre toi-même: un dysfonctionnement de l'application, un problème de compte ou de paiement, une réclamation, ou une question dont tu n'as sincèrement pas la réponse. Une question à laquelle tu sais répondre ne se transmet PAS. Dis toujours à la personne que tu transmets, et ce qui va se passer ensuite.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sujet: { type: 'STRING', description: 'Le problème en une ligne, comme un titre. Ex: « Les photos ne partent pas à la publication »' },
+        resume: { type: 'STRING', description: "Ce que la personne a décrit, avec ce qu'elle a déjà essayé et ce que tu as constaté. Écris pour quelqu'un qui n'a pas lu la conversation." },
+        gravite: {
+          type: 'STRING',
+          description: "'bug' = l'application ne fonctionne pas comme prévu; 'urgent' = argent, commande bloquée, compte inaccessible, contenu choquant; 'question' = le reste.",
+        },
+      },
+      required: ['sujet', 'resume', 'gravite'],
+    },
+  },
+  {
     name: 'search_services',
     description:
       "Cherche des PRESTATAIRES de services (ménage, BTP, plomberie, coiffure à domicile, traiteur, location...) : annonces 'Je propose' et boutiques prestataires, par métier et/ou ville.",
@@ -557,6 +604,7 @@ async function runTool(
   db: SupabaseClient,
   userId: string | null,
   cartActions: Json[],
+  contexte: Json | null,
 ): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
   const NEEDS_AUTH = [
@@ -1206,6 +1254,54 @@ async function runTool(
       };
     }
 
+    case 'contacter_finjaro': {
+      const sujet = String(args.sujet ?? '').trim().slice(0, 200);
+      const resume = String(args.resume ?? '').trim().slice(0, 2000);
+      const brut = String(args.gravite ?? 'question');
+      const gravite = ['question', 'bug', 'urgent'].includes(brut) ? brut : 'question';
+      if (!sujet || !resume) return { envoye: false, message: 'sujet et resume sont obligatoires' };
+
+      // Le CONTEXTE est ce qui fait la valeur du ticket. Une vendeuse a écrit
+      // « les photos ne partent pas »: il a fallu fouiller la base pendant
+      // longtemps pour comprendre, faute de savoir sur quel téléphone et
+      // depuis quel écran. On enregistre donc ce qu'on sait, sans le lui
+      // demander — elle ne saurait de toute façon pas répondre.
+      const ctx = (contexte && typeof contexte === 'object' ? contexte : {}) as Json;
+      const sb = admin();
+
+      // Écrit avec la clé de service: la table n'accepte aucune insertion
+      // depuis le navigateur, sinon la file se remplirait toute seule.
+      const { data: ticket, error: errTicket } = await sb
+        .from('support_tickets')
+        .insert({ user_id: userId, sujet, resume, gravite, contexte: ctx })
+        .select('id')
+        .single();
+      if (errTicket) return { envoye: false, message: errTicket.message };
+
+      // Beau est prévenu tout de suite. Un ticket que personne ne voit ne vaut
+      // pas mieux que l'e-mail qu'il remplace.
+      const { data: admins } = await sb.from('profiles').select('id').eq('is_admin', true);
+      const titre = gravite === 'urgent'
+        ? `Urgent — ${sujet}`
+        : gravite === 'bug'
+          ? `Bug signalé — ${sujet}`
+          : `Demande d'aide — ${sujet}`;
+      for (const a of admins ?? []) {
+        await sb.from('notifications').insert({
+          user_id: (a as Json).id,
+          type: 'support',
+          title: titre,
+          body: resume.slice(0, 300),
+          data: { ticket_id: ticket?.id, gravite },
+        });
+      }
+      return {
+        envoye: true,
+        gravite,
+        message: "C'est transmis à l'équipe Finjaro. Dis-le à la personne, et préviens-la qu'on lui revient dessus.",
+      };
+    }
+
     default:
       return { error: `outil inconnu: ${name}` };
   }
@@ -1405,7 +1501,7 @@ Deno.serve(async (req: Request) => {
       const responseParts: Array<Json> = [];
       for (const p of fnCalls) {
         const fc = (p.functionCall ?? p.function_call) as { name: string; args?: Json };
-        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions);
+        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions, context ?? null);
         responseParts.push({ functionResponse: { name: fc.name, response: result } });
       }
       contents.push({ role: 'user', parts: responseParts });
