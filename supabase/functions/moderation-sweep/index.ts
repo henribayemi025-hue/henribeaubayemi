@@ -377,8 +377,16 @@ Deno.serve(async (req) => {
     const MAX_RAYON = 150;
     let mauvaisRayon = 0;
     try {
+      // TOUS les rayons, services compris — et pas seulement les produits.
+      //
+      // Certaines fiches portent un rayon de service (« Marketing &
+      // Communication », « Informatique & Digital »): une prestation vendue
+      // comme un article. En ne montrant que les rayons produits, le modele
+      // lisait « ce rayon n'existe pas » et proposait de deplacer une
+      // prestation de creation de contenus vers « Accessoires high-tech ».
+      // Le rayon etait bon; c'est la liste qui etait incomplete.
       const { data: rayons } = await db
-        .from('categories').select('id, label_fr, parent_id').eq('kind', 'PRODUCT');
+        .from('categories').select('id, label_fr, parent_id');
       const { data: aRanger } = await db
         .from('products')
         .select('id, name, description, category, rayon_checked_at, shops(name)')
