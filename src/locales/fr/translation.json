@@ -721,6 +721,8 @@
     "bulkFilling": "Finia écrit… {{done}}/{{total}} (compte ~4 s par photo)",
     "bulkFilled": "Finia a rempli ce qu’elle a pu.",
     "bulkNothingToFill": "Tous les articles ont déjà un nom.",
+    "bulkWhatsMissing": "Chaque photo a besoin d’un nom et d’un prix. Sers-toi de « Appliquer à tous les articles » ou laisse Finia les écrire pour toi — c’est bien plus rapide que 36 fois à la main.",
+    "bulkResumed": "On a retrouvé ton travail en cours : {{count}} photo(s). Reprends où tu t’étais arrêté.",
     "bulkReadyCount": "{{ready}} prêt(s) sur {{total}}.",
     "bulkNeedNamePrice": "Ajoute un nom et un prix pour pouvoir créer.",
     "bulkCreate": "Publier {{count}} article(s)",

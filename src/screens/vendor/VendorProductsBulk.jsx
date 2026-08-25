@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPhotoPlus, IconSparkles, IconLoader2, IconTrash } from '@tabler/icons-react';
@@ -68,8 +68,40 @@ export default function VendorProductsBulk() {
   const fileRef = useRef(null);
   const shopCurrency = currencyForCountry(shop?.country);
 
-  // Une ligne par photo: { path, name, price, category, status }
-  const [rows, setRows] = useState([]);
+  // Le travail en cours SURVIT à la fermeture de l'application.
+  //
+  // Les lignes ne vivaient qu'à l'écran. Quitter l'onglet, recevoir un appel,
+  // laisser le téléphone se verrouiller — et tout disparaissait: les photos
+  // restaient sur le serveur, mais les noms et les prix déjà tapés étaient
+  // perdus, et on revenait devant un écran vide.
+  //
+  // Constaté en direct le 25/08: un vendeur envoie 36 photos à 17h59, puis
+  // écrit « je n'arrive pas à publier les produits ». Ses photos étaient bien
+  // arrivées. Remplir 36 lignes prend du temps, et rien ne le protégeait
+  // pendant ce temps-là.
+  //
+  // Une ligne par photo: { path, name, price, category, description }
+  const CLE_BROUILLON = `finjaro:ajout-en-masse:${shop.id}`;
+  const [rows, setRows] = useState(() => {
+    try {
+      const brut = localStorage.getItem(CLE_BROUILLON);
+      const lu = brut ? JSON.parse(brut) : null;
+      return Array.isArray(lu) ? lu : [];
+    } catch {
+      return []; // navigation privée, stockage plein: on repart de zéro
+    }
+  });
+
+  // Sauvegarde à chaque frappe. Les lignes ne contiennent que du texte et un
+  // chemin de fichier — quelques kilo-octets, même à 500 articles.
+  useEffect(() => {
+    try {
+      if (rows.length) localStorage.setItem(CLE_BROUILLON, JSON.stringify(rows));
+      else localStorage.removeItem(CLE_BROUILLON);
+    } catch { /* on n'interrompt jamais la saisie pour un problème de stockage */ }
+  }, [rows, CLE_BROUILLON]);
+  // Vrai seulement si des lignes venaient du stockage local au premier rendu.
+  const [repris] = useState(() => rows.length > 0);
   const [uploading, setUploading] = useState(0);
   const [aiDone, setAiDone] = useState(null); // {done, total} pendant l'analyse
   const [saving, setSaving] = useState(false);
@@ -224,6 +256,9 @@ export default function VendorProductsBulk() {
       }));
       const { error } = await supabase.from('products').insert(payload);
       if (error) throw error;
+      // Le travail est en base: le brouillon local n'a plus de raison d'être.
+      setRows([]);
+      try { localStorage.removeItem(CLE_BROUILLON); } catch { /* ignore */ }
       toast.success(t(enBrouillon ? 'vendor.bulkCreatedDraft' : 'vendor.bulkCreated', { count: payload.length }));
       // On atterrit sur la pile où sont VRAIMENT les articles: en ligne si on
       // vient de publier, dans les brouillons si la vendeuse a coché la case.
@@ -242,6 +277,14 @@ export default function VendorProductsBulk() {
       <AppHeader title={t('vendor.bulkTitle')} back />
       <div className="space-y-4 p-4">
         <p className="text-caption text-muted">{t('vendor.bulkIntro')}</p>
+
+        {/* Sans ce mot, la reprise passe pour un bug: on rouvre l'écran et
+            des photos qu'on n'a pas re-choisies sont déjà là. */}
+        {repris && rows.length > 0 && (
+          <p className="rounded-card border border-teal/30 bg-teal-light/60 p-3 text-caption font-semibold text-teal">
+            {t('vendor.bulkResumed', { count: rows.length })}
+          </p>
+        )}
 
         <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={uploading > 0}>
           {uploading > 0 ? <IconLoader2 size={18} className="animate-spin" /> : <IconPhotoPlus size={18} />}
@@ -295,7 +338,19 @@ export default function VendorProductsBulk() {
               </Button>
             </section>
 
-            <p className="text-caption text-muted">{t('vendor.bulkReadyCount', { ready: ready.length, total: rows.length })}</p>
+                {/* Ce qui manque, dit clairement et au bon endroit.
+                « 0 prêt sur 36 » en gris ne dit pas QUOI faire; on nomme donc
+                l'action manquante, et on la rend visible tant qu'aucune ligne
+                n'est complète. C'est exactement là que des vendeurs se sont
+                arrêtés en croyant que l'application ne marchait pas. */}
+            {ready.length === 0 ? (
+              <p className="rounded-card border border-brass/40 bg-brass/8 p-3 text-caption text-ink">
+                <span className="font-semibold">{t('vendor.bulkReadyCount', { ready: ready.length, total: rows.length })}</span>{' '}
+                {t('vendor.bulkWhatsMissing')}
+              </p>
+            ) : (
+              <p className="text-caption text-muted">{t('vendor.bulkReadyCount', { ready: ready.length, total: rows.length })}</p>
+            )}
 
             <div className="space-y-2">
               {rows.map((r, i) => (
