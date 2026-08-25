@@ -15,6 +15,21 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
+
+      # Les fonctions Supabase ne passent pas par Vite: rien ici ne les
+      # lisait. Une simple apostrophe inverse non echappee dans le texte
+      # francais de Finia (« les outils te renvoient `prix_fcfa` ») a coupe
+      # son gabarit de chaine et fait echouer le deploiement — pendant DEUX
+      # SEMAINES, en silence. La CI etait verte, les correctifs ne partaient
+      # pas, et personne ne regardait l'autre workflow.
+      - name: Verifier la syntaxe des fonctions Supabase
+        run: |
+          for f in supabase/functions/*/index.ts; do
+            npx --yes esbuild@0.24 "$f" --outfile=/dev/null || exit 1
+          done
+
+      - run: npm test
+
       - run: npm run build
         env:
           # Publishable client values (safe to expose in the built bundle).
