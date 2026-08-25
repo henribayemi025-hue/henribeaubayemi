@@ -390,6 +390,11 @@ Deno.serve(async (req) => {
       if (rayons?.length && aRanger?.length) {
         const libelle = new Map((rayons as Json[]).map((c) => [String(c.id), String(c.label_fr)]));
         const valides = new Set(libelle.keys());
+        // Le rayon de tete d'un id: « femme_robes » -> « mode_femme ».
+        // Sert au garde-fou ci-dessous, qui vaut mieux qu'une consigne.
+        const tete = new Map(
+          (rayons as Json[]).map((c) => [String(c.id), String(c.parent_id ?? c.id)]),
+        );
         const catalogue = (rayons as Json[])
           .map((c) => `${c.id} = ${c.label_fr}${c.parent_id ? ` (dans ${libelle.get(String(c.parent_id)) ?? c.parent_id})` : ''}`)
           .join('\n');
@@ -432,6 +437,17 @@ Deno.serve(async (req) => {
             // correspondance en base, on ne propose rien plutot que
             // d'afficher un identifiant qui n'existe pas.
             if (!valides.has(propose) || propose === String(p.category)) continue;
+            // MEME FAMILLE = pas une erreur de rangement.
+            //
+            // Le modele proposait « Robes » -> « Mode Femme », « Vestes &
+            // Manteaux » -> « Mode Femme », « Telephones » -> « Accessoires
+            // high-tech ». Aucune n'est une correction: c'est le meme rayon,
+            // en plus ou en moins precis. Le demander dans la consigne n'a
+            // enleve que la moitie du bruit; la parente, elle, se verifie.
+            // Ne restent signalees que les vraies erreurs — un camion dans
+            // « Mode », des plats dans « Evenement ».
+            const actuel = String(p.category);
+            if ((tete.get(propose) ?? propose) === (tete.get(actuel) ?? actuel)) continue;
 
             const { data: deja } = await db.from('reports')
               .select('id').is('reporter_id', null)
