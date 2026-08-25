@@ -711,7 +711,7 @@
     "newProduct": "New product",
     "bulkShort": "In bulk",
     "bulkTitle": "Add several items",
-    "bulkIntro": "Pick all your photos at once: one photo = one item. Finia can then write the names and descriptions for you. Items are created as drafts — you publish them when you're happy.",
+    "bulkIntro": "Pick all your photos at once: one photo = one item. Finia can then write the names and descriptions for you. You just add a name and a price on each line — the “Publish” button lights up as soon as one line is complete.",
     "bulkPickPhotos": "Pick my photos",
     "bulkUploading": "Uploading… {{count}} left",
     "bulkSomeFailed": "{{count}} photo(s) could not be uploaded.",

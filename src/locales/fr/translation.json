@@ -711,7 +711,7 @@
     "newProduct": "Nouveau produit",
     "bulkShort": "En masse",
     "bulkTitle": "Ajouter plusieurs articles",
-    "bulkIntro": "Choisis toutes tes photos d’un coup : une photo = un article. Finia peut ensuite écrire les noms et les descriptions à ta place. Les articles sont créés en brouillon — tu les publies quand ils te conviennent.",
+    "bulkIntro": "Choisis toutes tes photos d’un coup : une photo = un article. Finia peut ensuite écrire les noms et les descriptions à ta place. Il te reste à mettre un nom et un prix sur chaque ligne — le bouton « Publier » s’allume dès qu’une ligne est complète.",
     "bulkPickPhotos": "Choisir mes photos",
     "bulkUploading": "Envoi en cours… {{count}} restantes",
     "bulkSomeFailed": "{{count}} photo(s) n’ont pas pu être envoyées.",
