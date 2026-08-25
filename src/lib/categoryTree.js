@@ -27,7 +27,8 @@ export const PRODUCT_HEADS = [
   "livres_papeterie",
   "sante_bienetre",
   "animaux",
-  "jardin_exterieur"
+  "jardin_exterieur",
+  "equipement_pro"
 ];
 
 export const SERVICE_HEADS = [
@@ -177,5 +178,11 @@ export const CATEGORY_CHILDREN = {
     "photo_evenement",
     "photo_studio",
     "video_montage"
+  ],
+  "equipement_pro": [
+    "epi_protection",
+    "pro_vetements",
+    "pro_signalisation",
+    "pro_outillage"
   ]
 };

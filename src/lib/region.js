@@ -38,7 +38,7 @@ const ORDER = {
     'electromenager', 'sport_loisirs', 'jus_naturels', 'maison_deco',
     'musique', 'seconde_main', 'vehicules', 'evenementiel_mariages',
     'sante_bienetre', 'livres_papeterie', 'jardin_exterieur', 'animaux',
-    'immobilier_vente',
+    'equipement_pro', 'immobilier_vente',
   ],
   diaspora: [
     'mode_femme', 'beaute_cosmetiques', 'bijoux_montres', 'evenementiel_mariages',
@@ -46,7 +46,7 @@ const ORDER = {
     'hightech', 'sport_loisirs', 'alimentaire', 'musique',
     'seconde_main', 'electromenager', 'jus_naturels', 'sante_bienetre',
     'livres_papeterie', 'jardin_exterieur', 'animaux', 'vehicules',
-    'immobilier_vente',
+    'equipement_pro', 'immobilier_vente',
   ],
 };
 

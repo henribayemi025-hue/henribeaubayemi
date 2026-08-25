@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconFlag, IconCheck, IconX, IconExternalLink, IconTrash, IconRobot, IconUser, IconEyeOff, IconArrowBackUp } from '@tabler/icons-react';
+import { IconFlag, IconCheck, IconX, IconExternalLink, IconTrash, IconRobot, IconUser, IconEyeOff, IconArrowBackUp, IconArrowsExchange } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -9,7 +9,20 @@ import { Button } from '../../components/Button';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 
-const TABS = ['pending', 'resolved', 'dismissed'];
+// « rangement » est une pile A PART, et pas un caprice de presentation.
+//
+// Un article dans le mauvais rayon n'est ni illegal ni douteux: il est au
+// mauvais endroit. Melange aux vrais signalements, il les noie — et c'est
+// justement le volume qui fait rater le seul cas grave de la semaine. La
+// pile « en attente » ne montre donc que la moderation; le rangement a la
+// sienne, avec son propre geste: deplacer.
+const TABS = ['pending', 'rangement', 'resolved', 'dismissed'];
+
+function pileDe(r) {
+  const statut = r.status || 'pending';
+  if (statut !== 'pending') return statut;
+  return r.severity === 'rayon' ? 'rangement' : 'pending';
+}
 
 // Où vit chaque type de cible, et comment on le remet en ligne. Les trois
 // tables ne se masquent pas de la même façon: `products` a `is_active`,
@@ -41,7 +54,7 @@ export default function AdminModeration() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: rows, error: err } = await supabase
       .from('reports')
-      .select('id, target_type, target_id, reason, detail, source, severity, status, created_at, resolved_at, reporter:profiles!reports_reporter_profile_fk(name)')
+      .select('id, target_type, target_id, reason, detail, source, severity, suggested_category, status, created_at, resolved_at, reporter:profiles!reports_reporter_profile_fk(name)')
       .order('created_at', { ascending: false });
     if (err) throw err;
 
@@ -111,11 +124,31 @@ export default function AdminModeration() {
     retry();
   }
 
+  // Appliquer le rayon propose par l'inspection. Le robot ne l'a jamais
+  // applique lui-meme: se tromper de rayon sur la fiche d'une vendeuse est
+  // une modification de SON travail, et ca se decide, ca ne se subit pas.
+  async function deplacer(report) {
+    if (!report.suggested_category) return;
+    setBusyId(report.id);
+    const { error: err } = await supabase
+      .from('products')
+      .update({ category: report.suggested_category })
+      .eq('id', report.target_id);
+    if (err) { setBusyId(null); return toast.error(err.message); }
+    await supabase
+      .from('reports')
+      .update({ status: 'resolved', resolved_at: new Date().toISOString(), resolved_by: user.id })
+      .eq('id', report.id);
+    setBusyId(null);
+    toast.success(t('admin.productMoved', { rayon: t(`categories.${report.suggested_category}`) }));
+    retry();
+  }
+
   if (loading) return <div className="space-y-3 p-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>;
   if (error) return <ErrorState onRetry={retry} />;
 
-  const counts = Object.fromEntries(TABS.map((s) => [s, (data || []).filter((r) => (r.status || 'pending') === s).length]));
-  const list = (data || []).filter((r) => (r.status || 'pending') === tab);
+  const counts = Object.fromEntries(TABS.map((s) => [s, (data || []).filter((r) => pileDe(r) === s).length]));
+  const list = (data || []).filter((r) => pileDe(r) === tab);
 
   return (
     <div className="space-y-3 p-4">
@@ -177,7 +210,17 @@ export default function AdminModeration() {
                   {r.detail || r.reason}
                 </p>
 
-                {tab === 'pending' ? (
+                {tab === 'rangement' ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button variant="secondary" disabled={busyId === r.id || !r.suggested_category} className="flex-1" onClick={() => deplacer(r)}>
+                      <IconArrowsExchange size={17} />
+                      {t('admin.moveTo', { rayon: t(`categories.${r.suggested_category}`, { defaultValue: r.suggested_category }) })}
+                    </Button>
+                    <Button variant="secondary" disabled={busyId === r.id} className="flex-1" onClick={() => decide(r, 'dismissed')}>
+                      <IconX size={17} /> {t('admin.keepCategory')}
+                    </Button>
+                  </div>
+                ) : tab === 'pending' ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {r.hiddenAt ? (
                       <>

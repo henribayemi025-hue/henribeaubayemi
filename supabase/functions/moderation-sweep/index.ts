@@ -86,7 +86,59 @@ Réponds UNIQUEMENT par un tableau JSON, un objet par contenu, dans l'ordre
 reçu, sans texte autour et sans balises de code:
 [{"id":"<id reçu>","verdict":"ok|block|review","raison":"<une phrase en français, vide si ok>"}]`;
 
-async function classify(apiKey: string, items: Array<{ id: string; texte: string }>) {
+// ---------------------------------------------------------------------------
+// Le RANGEMENT, deuxieme metier de l'inspection — et un metier different.
+//
+// Beau, en ouvrant « Mode Femme »: « je vois les trucs masque, anti-bruit,
+// les trucs comme ca. Tout ce qui n'est pas vetement ou truc pour femme doit
+// sortir de ces categories. Chaque matin le robot doit partir dans chacune
+// des categories pour voir si des gens ont mis les trucs dans les mauvaises
+// categories. »
+//
+// Une fiche mal rangee n'est ni illegale ni douteuse: elle est au mauvais
+// endroit. Rien n'est donc JAMAIS masque ici — le verdict le plus severe est
+// « signale », avec le rayon propose pour que le deplacement coute un tap.
+//
+// La liste des rayons valides est lue en base a chaque passage, jamais
+// recopiee ici: un rayon ajoute demain doit etre propose des le lendemain
+// sans redeployer la fonction.
+const RANGEMENT = `Tu ranges les articles d'une place de marche generaliste dans le bon rayon.
+
+On te donne la liste des rayons possibles, puis des articles avec leur rayon actuel.
+Pour CHAQUE article tu dis si son rayon actuel est acceptable.
+
+"ok" — le rayon actuel convient, meme imparfaitement. C'est le cas de la
+tres grande majorite. Sois LARGE: un maillot de football dans « Mode Homme »,
+une robe dans « Mode », un jouet dans « Enfants & Bebe » = "ok". Si le rayon
+actuel est defendable, reponds "ok".
+
+"deplacer" — le rayon actuel est manifestement faux, au point qu'une cliente
+qui ouvre ce rayon serait surprise de tomber dessus. Exemples: du materiel de
+chantier dans « Mode Femme », un refrigerateur dans « Bijoux », une voiture
+dans « Alimentaire ». Donne alors le rayon propose, choisi OBLIGATOIREMENT
+dans la liste fournie.
+
+DEUX INTERDITS, qui ont produit du bruit des le premier passage:
+
+1. N'AFFINE JAMAIS un rayon deja correct. Passer de « Mode » a « Mode Homme »,
+   de « Mode Femme » a « Robes », de « Telephones » a « Accessoires
+   high-tech », c'est preciser, pas corriger: reponds "ok". Tu ne signales
+   qu'un rayon FAUX, jamais un rayon perfectible.
+
+2. NE DEVINE JAMAIS LE GENRE d'un vetement ou d'un accessoire. Une chemise,
+   un blazer, un tailleur, des lunettes de soleil n'ont pas de genre en soi,
+   et le catalogue n'en porte pas l'information. Un vetement range dans
+   « Mode », « Mode Femme » ou « Mode Homme » est toujours "ok" — sauf s'il
+   n'est pas un vetement du tout.
+
+Un titre vague (« Paire », « Produit 3 », « Quelques articles ») ne permet pas
+de juger: reponds "ok". Tu ne corriges ni l'orthographe ni la redaction.
+
+Reponds UNIQUEMENT par un tableau JSON, un objet par article, dans l'ordre
+recu, sans texte autour et sans balises de code:
+[{"id":"<id recu>","verdict":"ok|deplacer","rayon":"<id de rayon propose, vide si ok>","raison":"<une phrase en francais, vide si ok>"}]`;
+
+async function classify(apiKey: string, items: Array<{ id: string; texte: string }>, instruction: string = INSTRUCTION) {
   const payload = items.map((i) => `id=${i.id} :: ${i.texte}`).join('\n');
   let lastErr = '';
   for (const model of MODELS) {
@@ -101,7 +153,7 @@ async function classify(apiKey: string, items: Array<{ id: string; texte: string
           signal: AbortSignal.timeout(45000),
           headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: INSTRUCTION }] },
+            systemInstruction: { parts: [{ text: instruction }] },
             contents: [{ role: 'user', parts: [{ text: payload }] }],
             generationConfig: {
               // Une inspection doit être RÉPÉTABLE: le même article relu
@@ -314,6 +366,106 @@ Deno.serve(async (req) => {
       }
     }
 
+    // -----------------------------------------------------------------
+    // Deuxieme passage: le RANGEMENT.
+    //
+    // Independant du premier, et volontairement: celui-ci ne suit pas le
+    // repere de temps. Il reprend les fiches jamais controlees, puis les
+    // plus anciennement controlees — tout le catalogue defile par tranches,
+    // et une fiche dont la vendeuse a change le rayon repasse un jour.
+    // Aucun masquage possible ici: le pire verdict est un signalement.
+    const MAX_RAYON = 150;
+    let mauvaisRayon = 0;
+    try {
+      const { data: rayons } = await db
+        .from('categories').select('id, label_fr, parent_id').eq('kind', 'PRODUCT');
+      const { data: aRanger } = await db
+        .from('products')
+        .select('id, name, description, category, rayon_checked_at, shops(name)')
+        .eq('is_active', true)
+        .is('moderation_hidden_at', null)
+        .order('rayon_checked_at', { ascending: true, nullsFirst: true })
+        .limit(MAX_RAYON);
+
+      if (rayons?.length && aRanger?.length) {
+        const libelle = new Map((rayons as Json[]).map((c) => [String(c.id), String(c.label_fr)]));
+        const valides = new Set(libelle.keys());
+        const catalogue = (rayons as Json[])
+          .map((c) => `${c.id} = ${c.label_fr}${c.parent_id ? ` (dans ${libelle.get(String(c.parent_id)) ?? c.parent_id})` : ''}`)
+          .join('\n');
+
+        const parId = new Map((aRanger as Json[]).map((p) => [String(p.id), p]));
+        const aClasser = (aRanger as Json[]).map((p) => ({
+          id: String(p.id),
+          texte: texte([
+            p.name,
+            p.description,
+            `rayon actuel: ${libelle.get(String(p.category)) ?? p.category} (${p.category})`,
+            `boutique: ${(p.shops as Json)?.name ?? ''}`,
+          ]),
+        }));
+
+        const lotsR: Array<Array<{ id: string; texte: string }>> = [];
+        for (let i = 0; i < aClasser.length; i += 40) lotsR.push(aClasser.slice(i, i + 40));
+
+        const rangs = await Promise.allSettled(
+          lotsR.map((lot) =>
+            classify(apiKey, [{ id: 'RAYONS', texte: `LISTE DES RAYONS:\n${catalogue}` }, ...lot], RANGEMENT),
+          ),
+        );
+
+        // Marquer comme controlees SEULEMENT les fiches d'un lot qui a
+        // abouti: sinon un lot rate serait repute vu, et ces fiches-la ne
+        // repasseraient qu'apres tout le reste du catalogue.
+        const vues: string[] = [];
+        for (let i = 0; i < rangs.length; i++) {
+          const r = rangs[i];
+          if (r.status === 'rejected') continue;
+          for (const item of lotsR[i]) vues.push(item.id);
+
+          for (const v of r.value as Json[]) {
+            const id = String(v.id ?? '');
+            const p = parId.get(id);
+            if (!p || String(v.verdict ?? 'ok') !== 'deplacer') continue;
+            const propose = String(v.rayon ?? '');
+            // Un rayon invente par le modele ne vaut rien: sans
+            // correspondance en base, on ne propose rien plutot que
+            // d'afficher un identifiant qui n'existe pas.
+            if (!valides.has(propose) || propose === String(p.category)) continue;
+
+            const { data: deja } = await db.from('reports')
+              .select('id').is('reporter_id', null)
+              .eq('target_type', 'product').eq('target_id', id)
+              .eq('severity', 'rayon').eq('status', 'pending').maybeSingle();
+            if (deja) continue;
+
+            await db.from('reports').insert({
+              reporter_id: null,
+              source: 'auto',
+              target_type: 'product',
+              target_id: id,
+              reason: 'mauvais_rayon',
+              severity: 'rayon',
+              suggested_category: propose,
+              detail: `${p.name} — rangé dans « ${libelle.get(String(p.category)) ?? p.category} », devrait aller dans « ${libelle.get(propose)} ». ${String(v.raison ?? '')}`.slice(0, 500),
+              status: 'pending',
+            });
+            mauvaisRayon++;
+          }
+        }
+
+        if (vues.length) {
+          await db.from('products')
+            .update({ rayon_checked_at: new Date().toISOString() })
+            .in('id', vues);
+        }
+      }
+    } catch (e) {
+      // Le rangement ne doit jamais faire echouer l'inspection de contenu:
+      // l'une protège la plateforme, l'autre fait le ménage.
+      console.error('rangement:', e instanceof Error ? e.message : String(e));
+    }
+
     await db.from('moderation_runs').update({
       finished_at: new Date().toISOString(),
       watermark: lotRate ? depuis : watermark,
@@ -325,7 +477,7 @@ Deno.serve(async (req) => {
     // Beau n'est prévenu QUE s'il y a quelque chose à faire. Une inspection
     // qui ne trouve rien ne doit pas produire de message: c'est le cas normal
     // et le plus fréquent, exactement comme la surveillance du stockage.
-    if (bloques + signales > 0) {
+    if (bloques + signales + mauvaisRayon > 0) {
       const { data: admins } = await db.from('profiles').select('id').eq('is_admin', true);
       for (const a of admins ?? []) {
         // Pas de lien cliquable ici, et c'est volontaire: la console
@@ -335,15 +487,19 @@ Deno.serve(async (req) => {
         await db.from('notifications').insert({
           user_id: (a as Json).id,
           type: 'moderation',
-          title: bloques > 0 ? `${bloques} contenu(s) retiré(s)` : `${signales} contenu(s) à vérifier`,
-          body: `Inspection du matin: ${items.length} contenu(s) relu(s), ${bloques} bloqué(s), ${signales} à vérifier. À traiter dans la console d'administration, onglet Modération.`,
-          data: { checked: items.length, blocked: bloques, flagged: signales },
+          title: bloques > 0
+            ? `${bloques} contenu(s) retiré(s)`
+            : signales > 0
+              ? `${signales} contenu(s) à vérifier`
+              : `${mauvaisRayon} article(s) mal rangé(s)`,
+          body: `Inspection du matin: ${items.length} contenu(s) relu(s), ${bloques} bloqué(s), ${signales} à vérifier, ${mauvaisRayon} article(s) dans le mauvais rayon. À traiter dans la console d'administration, onglet Modération.`,
+          data: { checked: items.length, blocked: bloques, flagged: signales, misfiled: mauvaisRayon },
         });
       }
     }
 
     return new Response(
-      JSON.stringify({ checked: items.length, blocked: bloques, flagged: signales }),
+      JSON.stringify({ checked: items.length, blocked: bloques, flagged: signales, misfiled: mauvaisRayon }),
       { headers: { ...CORS, 'Content-Type': 'application/json' } },
     );
   } catch (e) {

@@ -107,7 +107,19 @@ export default function VendorProductsBulk() {
   const [orphelines, setOrphelines] = useState([]);
   const [aiDone, setAiDone] = useState(null); // {done, total} pendant l'analyse
   const [saving, setSaving] = useState(false);
-  const [bulkCategory, setBulkCategory] = useState('mode_femme');
+  // VIDE au départ, et c'est le coeur du sujet.
+  //
+  // Ce champ valait 'mode_femme'. Une vendeuse d'equipement de chantier a
+  // verse 49 articles sans toucher au menu: casques, gants anti-coupure,
+  // masques 3M, cones de balisage, bottes de securite. Tout est parti dans
+  // « Mode Femme », et une cliente qui ouvrait le rayon femme tombait sur du
+  // materiel de chantier. Beau, en le decouvrant: « tout ce qui n'est pas
+  // vetement ou truc pour femme doit sortir de ces categories ».
+  //
+  // Elle n'a pas mal range: un menu deja rempli ne se lit pas, il se
+  // valide. Meme piege que les reels, corrige la pour la meme raison — un
+  // rayon pre-rempli est accepte sans y penser.
+  const [bulkCategory, setBulkCategory] = useState('');
   const [bulkPrice, setBulkPrice] = useState('');
   // Nom commun: à 500 articles, personne ne tape 500 noms, et Finia peut
   // échouer ou se tromper. « Pyjama fille » donne « Pyjama fille 1, 2, 3… »
@@ -264,7 +276,9 @@ export default function VendorProductsBulk() {
         return {
           ...r,
           name: named,
-          category: bulkCategory,
+          // Sans choix commun, on ne remplace pas: appliquer le vide
+          // effacerait le rayon deja mis sur chaque ligne.
+          category: bulkCategory || r.category,
           price: bulkPrice === '' ? r.price : bulkPrice,
         };
       })
@@ -278,11 +292,19 @@ export default function VendorProductsBulk() {
     );
   }
 
-  const ready = rows.filter((r) => r.name.trim() && (bulkOnRequest || (r.price !== '' && Number(r.price) > 0)));
+  // Le rayon fait partie de ce qui rend une ligne publiable, au meme titre
+  // que le nom et le prix: un article sans rayon n'apparait dans aucun
+  // rayon, il est publie pour personne.
+  const ready = rows.filter(
+    (r) => r.name.trim() && r.category && (bulkOnRequest || (r.price !== '' && Number(r.price) > 0)),
+  );
+  const sansRayon = rows.filter((r) => !r.category).length;
 
   async function createAll() {
     if (!ready.length) {
-      toast.info(t('vendor.bulkNeedNamePrice'));
+      // Dire LEQUEL des trois manque: « nom et prix » sur un ecran ou tout
+      // est nomme et chiffre passe pour un bouton casse.
+      toast.info(sansRayon === rows.length && rows.length ? t('vendor.bulkNeedCategory') : t('vendor.bulkNeedNamePrice'));
       return;
     }
     setSaving(true);
@@ -365,6 +387,7 @@ export default function VendorProductsBulk() {
               <Field label={t('vendor.productCategory')}>
                 {(id) => (
                   <Select id={id} value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}>
+                    <option value="">{t('vendor.bulkCategoryPlaceholder')}</option>
                     {CATEGORIES.map((c) => (
                       <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>
                     ))}
@@ -444,8 +467,9 @@ export default function VendorProductsBulk() {
                       // rayon PARENT, et changer ce choix retombe dessus.
                       value={categoryHeadFor(r.category) || r.category}
                       onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, category: e.target.value } : x)))}
-                      className="text-caption"
+                      className={`text-caption ${r.category ? '' : 'border-terracotta text-terracotta'}`}
                     >
+                      <option value="">{t('vendor.bulkCategoryPlaceholder')}</option>
                       {CATEGORIES.map((c) => (
                         <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>
                       ))}
