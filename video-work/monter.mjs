@@ -40,18 +40,22 @@ const CLIPS = [
   // Beau: « tu n'as pas pris les bonnes videos, tu as pris les vieilles qui
   // ne sont meme pas bien ». Exact — j'avais choisi les deux plus LEGERES
   // (1,7 et 8,5 Mo) parce qu'elles se telechargeaient d'une traite, pas les
-  // meilleures. La plus belle pesait 30 Mo: le pot de savon noir et les
-  // meches en vrac sortent, les robes de Maison NGC entrent.
+  // meilleures. Les deux meilleures pesaient 30 et 19 Mo, d'ou leur abandon.
+  // Recuperees par tranches de 8 Mo (requetes HTTP Range depuis la base,
+  // status 206), puis recollees.
   //
-  // Une seule video, trois passages differents: 20 secondes de robes
-  // presentees sur mannequin, « Robes friperie premier choix — Yaounde ».
-  // Recuperee par tranches de 8 Mo (requetes HTTP Range depuis la base),
-  // la lecture d'un seul bloc depassant la taille de reponse admise.
-  { f: `${SC}/reels/ngc.mov`, ss: 0.8, d: 2.8, crop: null,
+  // Hegshair est recadree en haut du cadre: le bandeau musical de TikTok est
+  // incruste en bas de sa video, et une pastille TikTok dans une publicite
+  // Finjaro, ca n'a pas de sens. On coupe 160 px, la vendeuse reste centree.
+  { f: `${SC}/reels/ngc.mov`, ss: 0.8, d: 2.6, crop: null,
     b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
-  { f: `${SC}/reels/ngc.mov`, ss: 8.4, d: 2.8, crop: null,
+  { f: `${SC}/reels/hegs-hd.mp4`, ss: 3.4, d: 3.0, crop: 'crop=720:1120:0:0',
+    b: 'HEGSHAIR · STUTTGART', t: 'Mèches pour tissage' },
+  { f: `${SC}/reels/ngc.mov`, ss: 8.4, d: 2.6, crop: null,
     b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
-  { f: `${SC}/reels/ngc.mov`, ss: 15.0, d: 2.6, crop: null,
+  { f: `${SC}/reels/hegs-hd.mp4`, ss: 17.0, d: 2.8, crop: 'crop=720:1120:0:0',
+    b: 'HEGSHAIR · STUTTGART', t: 'Mèches pour tissage' },
+  { f: `${SC}/reels/ngc.mov`, ss: 15.0, d: 2.4, crop: null,
     b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
 ];
 
