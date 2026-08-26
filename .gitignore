@@ -28,3 +28,4 @@ test-*.png
 *.keystore
 *.jks
 video-work/assets/
+video-work/*.mp4
