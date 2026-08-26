@@ -47,14 +47,18 @@ await page.waitForFunction(() => !document.getElementById('go').disabled, { time
 const charge = await page.evaluate(() => ({ etat: document.getElementById('etat').textContent, total: TOTAL }));
 console.log(charge.etat, '| montage:', charge.total.toFixed(1), 's');
 
-const FRAMES = Math.round(charge.total * FPS);
+// Rendu partiel: on peut ne fabriquer qu'une TRANCHE du montage, pour
+// intercaler ensuite de la vraie video entre deux morceaux de canvas.
+const DEB = Number(process.env.PLAN_FROM ?? 0);
+const FIN = Number(process.env.PLAN_TO ?? charge.total);
+const FRAMES = Math.round((FIN - DEB) * FPS);
 const t0 = Date.now();
 for (let i = 0; i < FRAMES; i++) {
   const b64 = await page.evaluate((t) => {
     const [p, u] = planA(t);
     dessine(p, u);
     return document.getElementById('c').toDataURL('image/jpeg', 0.9).split(',')[1];
-  }, Math.min(i / FPS, charge.total - 0.001));
+  }, Math.min(DEB + i / FPS, FIN - 0.001));
   const buf = Buffer.from(b64, 'base64');
   await new Promise((res, rej) => ffmpeg.stdin.write(buf, (e) => (e ? rej(e) : res())));
   if (i % 300 === 0) console.log(`frame ${i}/${FRAMES} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
