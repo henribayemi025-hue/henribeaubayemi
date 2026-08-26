@@ -198,34 +198,54 @@ function dessine(p,u){
     g.globalAlpha=1; return;
   }
   if(p.type==='fin'){
-    fond();
-    const a=lisse(u/.22), b=lisse((u-.2)/.25), c2=lisse((u-.42)/.25);
+    // La carte de collection, dans la mise en page de la maquette de Beau:
+    // photo en haut, panneau creme en bas avec le bloc-marque.
+    //
+    // Sa photo ne m'est jamais parvenue en FICHIER — visible dans la
+    // conversation, absente du disque, trois fois de suite. Plutot que de
+    // rester bloque, on prend une VRAIE photo de maquillage vendue sur
+    // Finjaro (Nnal Beauty, Yaounde): meme structure, meme effet, et rien
+    // qui appartienne a une autre marque.
+    const HP = Math.round(H*0.615);
+    const im = cache.get('ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/66448e00-33ad-46e7-b7c0-2f385d10e239.jpg');
+    g.fillStyle='#F3E4E9'; g.fillRect(0,0,W,HP);
+    if(im){
+      g.save(); g.beginPath(); g.rect(0,0,W,HP); g.clip();
+      const r=Math.max(W/im.width, HP/im.height)*(1.03+.05*u);
+      const w=im.width*r, h=im.height*r;
+      g.drawImage(im,(W-w)/2,(HP-h)/2,w,h);
+      g.restore();
+    }
+    const gr=g.createLinearGradient(0,HP,0,H);
+    gr.addColorStop(0,'#F5EFE7'); gr.addColorStop(1,'#EFE6DA');
+    g.fillStyle=gr; g.fillRect(0,HP,W,H-HP);
+
+    const a2=lisse(u/.2), b2=lisse((u-.18)/.22), c2=lisse((u-.42)/.24);
     g.textAlign='center';
-    // Le logo F. — la lettre et le point, comme sur la maquette de Beau.
-    g.globalAlpha=a;
-    g.font='900 190px Inter, sans-serif'; g.fillStyle=VERTF;
-    g.fillText('F', W/2-40, 560);
-    g.fillStyle='#D98E32'; g.beginPath(); g.arc(W/2+92, 420, 34, 0, 7); g.fill();
-    g.globalAlpha=b;
-    g.font='600 118px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
-    // FINJARO en lettres espacees, a la main pour maitriser l'espacement.
-    (function(){ const mot='FINJARO'; g.font='600 118px Fraunces, Georgia, serif';
-      const esp=26; let tw=0; for(const ch of mot) tw+=g.measureText(ch).width+esp; tw-=esp;
-      let x=W/2-tw/2; for(const ch of mot){ g.textAlign='left'; g.fillText(ch,x,790); x+=g.measureText(ch).width+esp; } })();
-    g.textAlign='center';
-    g.font='600 52px Inter, sans-serif'; g.fillStyle=LAITON;
-    (function(){ const mot='FINOU WINTER'; const esp=14; g.font='600 52px Inter, sans-serif';
+    g.globalAlpha=a2;
+    g.font='900 128px Inter, sans-serif'; g.fillStyle='#1F3D36';
+    g.fillText('F', W/2-26, HP+180);
+    g.fillStyle='#D98E32'; g.beginPath(); g.arc(W/2+48, HP+82, 24, 0, 7); g.fill();
+    g.globalAlpha=b2;
+    (function(){ const mot='FINJARO', esp=22;
+      g.font='600 96px Fraunces, Georgia, serif';
       let tw=0; for(const ch of mot) tw+=g.measureText(ch).width+esp; tw-=esp;
-      let x=W/2-tw/2; for(const ch of mot){ g.textAlign='left'; g.fillText(ch,x,900); x+=g.measureText(ch).width+esp; } })();
+      let x=W/2-tw/2; g.textAlign='left'; g.fillStyle=ENCRE;
+      for(const ch of mot){ g.fillText(ch,x,HP+300); x+=g.measureText(ch).width+esp; } })();
+    (function(){ const mot='FINOU WINTER', esp=11;
+      g.font='600 42px Inter, sans-serif';
+      let tw=0; for(const ch of mot) tw+=g.measureText(ch).width+esp; tw-=esp;
+      let x=W/2-tw/2; g.textAlign='left'; g.fillStyle=LAITON;
+      for(const ch of mot){ g.fillText(ch,x,HP+372); x+=g.measureText(ch).width+esp; } })();
     g.textAlign='center';
     g.globalAlpha=c2;
-    g.font='800 64px Inter, sans-serif'; g.fillStyle=ENCRE;
-    g.fillText('DÉCOUVREZ LA COLLECTION', W/2, 1080);
-    g.fillText('MAQUILLAGE EXCLUSIVE', W/2, 1165);
+    g.font='800 54px Inter, sans-serif'; g.fillStyle=ENCRE;
+    g.fillText('DÉCOUVREZ LA COLLECTION', W/2, HP+490);
+    g.fillText('MAQUILLAGE EXCLUSIVE', W/2, HP+560);
     g.fillStyle=TERRA;
-    g.beginPath(); g.roundRect(W/2-330, 1260, 660, 96, 48); g.fill();
-    g.fillStyle='#fff'; g.font='800 44px Inter, sans-serif'; g.textBaseline='middle';
-    g.fillText('exclusivement sur finjaro.net', W/2, 1310); g.textBaseline='alphabetic';
+    g.beginPath(); g.roundRect(W/2-290, HP+620, 580, 92, 46); g.fill();
+    g.fillStyle='#fff'; g.font='800 40px Inter, sans-serif'; g.textBaseline='middle';
+    g.fillText('exclusivement sur finjaro.net', W/2, HP+666); g.textBaseline='alphabetic';
     g.globalAlpha=1; return;
   }
   if(p.type==='titre'){
@@ -388,7 +408,8 @@ function dessine(p,u){
 // ---------- chargement ----------
 const etat=document.getElementById('etat');
 (async()=>{
-  const chemins=[...new Set([...SEQ.flatMap(c=>c.items.map(i=>i.i)), ...REELS.map(r=>r.i)])];
+  const chemins=[...new Set([...SEQ.flatMap(c=>c.items.map(i=>i.i)), ...REELS.map(r=>r.i),
+    'ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/66448e00-33ad-46e7-b7c0-2f385d10e239.jpg'])];
   let n=0;
   await Promise.all(chemins.map(c=>new Promise(res=>{
     const im=new Image(); im.crossOrigin='anonymous';
