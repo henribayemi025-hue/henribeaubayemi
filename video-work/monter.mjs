@@ -37,24 +37,28 @@ console.log(`coupure a ${t.coupure.toFixed(2)} s / total canvas ${t.total.toFixe
 
 // 2) Les extraits video, credites.
 const CLIPS = [
-  // Beau: « tu n'as pas pris les bonnes videos, tu as pris les vieilles qui
-  // ne sont meme pas bien ». Exact — j'avais choisi les deux plus LEGERES
-  // (1,7 et 8,5 Mo) parce qu'elles se telechargeaient d'une traite, pas les
-  // meilleures. Les deux meilleures pesaient 30 et 19 Mo, d'ou leur abandon.
-  // Recuperees par tranches de 8 Mo (requetes HTTP Range depuis la base,
-  // status 206), puis recollees.
+  // Beau: « pour les Fin, montre Hegshair avant de montrer les autres ».
+  // Hegshair ouvre donc le chapitre — c'est la seule video du catalogue ou
+  // l'on voit QUELQU'UN: une vendeuse en maillot des Lions qui presente ses
+  // meches face camera. Un visage qui parle accroche mieux qu'un mannequin,
+  // et un chapitre se gagne sur son premier plan.
   //
-  // Hegshair est recadree en haut du cadre: le bandeau musical de TikTok est
-  // incruste en bas de sa video, et une pastille TikTok dans une publicite
-  // Finjaro, ca n'a pas de sens. On coupe 160 px, la vendeuse reste centree.
-  { f: `${SC}/reels/ngc.mov`, ss: 0.8, d: 2.6, crop: null,
-    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
-  { f: `${SC}/reels/hegs-hd.mp4`, ss: 3.4, d: 3.0, crop: 'crop=720:1120:0:0',
+  // Recadree en haut du cadre (720x1120 sur 1280): le bandeau musical de
+  // TikTok est incruste en bas de sa video, et une pastille TikTok dans une
+  // publicite Finjaro n'a pas de sens. La vendeuse reste centree.
+  //
+  // Les deux videos ont ete recuperees par tranches de 8 Mo (requetes HTTP
+  // Range depuis la base, status 206): 19,4 et 30,3 Mo, trop lourdes pour
+  // une lecture d'un seul bloc — c'est ce qui m'avait fait prendre les
+  // mauvaises au depart.
+  { f: `${SC}/reels/hegs-hd.mp4`, ss: 3.4, d: 3.2, crop: 'crop=720:1120:0:0',
     b: 'HEGSHAIR · STUTTGART', t: 'Mèches pour tissage' },
-  { f: `${SC}/reels/ngc.mov`, ss: 8.4, d: 2.6, crop: null,
-    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
   { f: `${SC}/reels/hegs-hd.mp4`, ss: 17.0, d: 2.8, crop: 'crop=720:1120:0:0',
     b: 'HEGSHAIR · STUTTGART', t: 'Mèches pour tissage' },
+  { f: `${SC}/reels/ngc.mov`, ss: 0.8, d: 2.5, crop: null,
+    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
+  { f: `${SC}/reels/ngc.mov`, ss: 8.4, d: 2.5, crop: null,
+    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
   { f: `${SC}/reels/ngc.mov`, ss: 15.0, d: 2.4, crop: null,
     b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
 ];
