@@ -37,12 +37,22 @@ console.log(`coupure a ${t.coupure.toFixed(2)} s / total canvas ${t.total.toFixe
 
 // 2) Les extraits video, credites.
 const CLIPS = [
-  { f: `${SC}/reels/eclat.mp4`, ss: 0.6, d: 2.6, crop: 'crop=1080:1440:0:240',
-    b: "ECLAT D'ÉBÈNE · DOUALA", t: 'Savon noir' },
-  { f: `${SC}/reels/hegs.mov`, ss: 5.2, d: 2.8, crop: null,
-    b: 'HEGSHAIR · STUTTGART', t: 'Mèches pour tissage' },
-  { f: `${SC}/reels/eclat.mp4`, ss: 4.2, d: 2.4, crop: 'crop=1080:1440:0:240',
-    b: "ECLAT D'ÉBÈNE · DOUALA", t: 'Savon noir' },
+  // Beau: « tu n'as pas pris les bonnes videos, tu as pris les vieilles qui
+  // ne sont meme pas bien ». Exact — j'avais choisi les deux plus LEGERES
+  // (1,7 et 8,5 Mo) parce qu'elles se telechargeaient d'une traite, pas les
+  // meilleures. La plus belle pesait 30 Mo: le pot de savon noir et les
+  // meches en vrac sortent, les robes de Maison NGC entrent.
+  //
+  // Une seule video, trois passages differents: 20 secondes de robes
+  // presentees sur mannequin, « Robes friperie premier choix — Yaounde ».
+  // Recuperee par tranches de 8 Mo (requetes HTTP Range depuis la base),
+  // la lecture d'un seul bloc depassant la taille de reponse admise.
+  { f: `${SC}/reels/ngc.mov`, ss: 0.8, d: 2.8, crop: null,
+    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
+  { f: `${SC}/reels/ngc.mov`, ss: 8.4, d: 2.8, crop: null,
+    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
+  { f: `${SC}/reels/ngc.mov`, ss: 15.0, d: 2.6, crop: null,
+    b: 'MAISON NGC · YAOUNDÉ', t: 'Robes, premier choix' },
 ];
 
 // Le bandeau est dessine dans le navigateur (memes polices que le reste),
