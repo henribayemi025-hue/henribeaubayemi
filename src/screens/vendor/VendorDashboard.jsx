@@ -4,6 +4,7 @@ import {
   IconSwitchHorizontal, IconChartBar, IconAlertCircle, IconChevronRight,
   IconArrowUpRight, IconArrowDownRight, IconWallet, IconPlus, IconShare2,
   IconMovie, IconTrophy, IconAward, IconBuildingStore, IconCircleCheck, IconSparkles,
+  IconPhotoPlus,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -59,6 +60,27 @@ export default function VendorDashboard() {
       supabase.from('shops').select('seller_points').eq('id', shop.id).maybeSingle(),
       supabase.from('products').select('id', { count: 'exact', head: true }).eq('shop_id', shop.id),
     ]);
+
+    // Les photos envoyees qui n'ont jamais donne un article.
+    //
+    // Beau: « je ne veux pas non plus harceler en ecrivant sur WhatsApp
+    // "pourquoi tu ne publies pas" ». D'accord — mais une notification dans
+    // la cloche se rate, et l'ecran qui rend ces photos est a deux clics
+    // d'ici. Le rappel se pose donc sur le PREMIER ecran que la vendeuse
+    // voit en ouvrant sa boutique. Elle appuie, ou elle ignore: c'est un
+    // rappel, pas un message qu'il faut lire et auquel il faut repondre.
+    let orphelines = 0;
+    try {
+      const [{ data: fichiers }, { data: avecImages }] = await Promise.all([
+        supabase.storage.from('products').list(shop.owner_id, { limit: 500 }),
+        supabase.from('products').select('images').eq('shop_id', shop.id),
+      ]);
+      const utilisees = new Set((avecImages || []).flatMap((a) => a.images || []));
+      orphelines = (fichiers || [])
+        .filter((f) => f.name && !f.name.includes('_thumb'))
+        .filter((f) => !utilisees.has(`${shop.owner_id}/${f.name}`))
+        .length;
+    } catch { /* le rappel ne doit jamais empecher le tableau de bord de s'afficher */ }
     const all = weekOrders || [];
     const paid = (o) => o.status === 'delivered';
     const cur = all.filter((o) => o.created_at >= weekFrom);
@@ -78,7 +100,7 @@ export default function VendorDashboard() {
       revenue, revenueChange: pct(revenue, revenuePrev), week,
       orders: orders || [], convs: convs || [], pending: pending || 0,
       unread, today: todayCount || 0, points: shopRow?.seller_points || 0,
-      productsCount: productsCount || 0,
+      productsCount: productsCount || 0, orphelines,
     };
   }, [shop.id]);
 
@@ -116,6 +138,27 @@ export default function VendorDashboard() {
               c'est le seul endroit où « ne rate plus une commande » se comprend
               sans explication. */}
           <PushPrompt reason="notifications.promptHintVendor" />
+
+          {/* Des photos envoyees et jamais publiees: c'est du travail deja
+              fait qui ne rapporte rien. Un tap et elles reviennent, pretes
+              a etre nommees. */}
+          {data.orphelines > 0 && (
+            <Link
+              to="/vendor/products/bulk"
+              className="flex items-center gap-3 rounded-card border border-brass/40 bg-brass/10 p-4 transition active:scale-[0.99]"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-brass">
+                <IconPhotoPlus size={24} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-body font-semibold text-ink">
+                  {t('vendor.orphansBanner', { count: data.orphelines })}
+                </p>
+                <p className="text-caption text-muted">{t('vendor.orphansBannerHint')}</p>
+              </div>
+              <IconChevronRight size={20} className="shrink-0 text-muted" />
+            </Link>
+          )}
 
           {/* L'action nº1 d'une boutique: répondre aux commandes en attente. */}
           {data.pending > 0 && (
