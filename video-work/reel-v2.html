@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Finjaro — reel v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>body{background:#12100e;margin:0;display:grid;place-items:center;min-height:100vh}
+canvas{max-width:min(420px,90vw);max-height:86vh;width:auto;height:auto;border-radius:12px}
+#etat{color:#C9B9A6;font:14px Inter,sans-serif;text-align:center;padding:10px}
+#go{display:none}</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<button id="go" disabled></button>
+<p id="etat">chargement…</p>
+<script>
+// Finjaro — le reel « monteur » : salut, chapitres par rayon, la multitude,
+// et la collection Finou Winter en finale.
+//
+// Beau: « mets-toi dans la peau d'un monteur top… salut je vous présente nos
+// top boutiques… montre toute cette multitude… à la fin la collection Finou
+// Winter ». Structure: intro parlante -> 7 chapitres (mode femme, mode homme,
+// beauté, enfants, high-tech, quotidien, pro) -> ce que l'app sait faire ->
+// carte Finou Winter. Coupes a 1,25 s, mouvements alternes (zoom avant,
+// zoom arriere, panoramique gauche/droite) pour que rien ne soit statique.
+//
+// AUCUN CHIFFRE INVENTE: chaque article et chaque prix vient de la base, dans
+// la monnaie du pays de la boutique. Les articles au nom muet (« Baby 12 »)
+// passent en photo seule. Aucune photo prise sur le web.
+const BASE = 'http://127.0.0.1:4790/';
+const W = 1080, H = 1920;
+const CREME='#FAF6F0', CREME2='#F1E8DC', ENCRE='#241C17', TERRA='#C25E38',
+      LAITON='#8C6A3D', TEAL='#2F6D62', VERTF='#1F3D36';
+
+const T_INTRO=4.4, T_CH=1.6, T_PH=1.25, T_FEAT=4.2, T_FIN=7.0;
+
+// Le montage. p = photo (b boutique, v ville, a article, i image, prix texte
+// deja resolu — la monnaie de la boutique, calculee ICI et pas a l'ecran).
+const F = (n) => n.toLocaleString('fr-FR') + ' FCFA';
+const E = (n) => Math.round(n/655.957) + ' €';
+const SEQ = [
+ {chap:'01', titre:'La mode femme', items:[
+  {b:'TANA Shop', v:'Douala', a:'Robe noire dentelle', prix:F(2500), i:'ec5f1982-015e-4c22-9748-e2c4709a32ad/b7cb91fb-10aa-4d8f-8873-90ba8667a488.jpg'},
+  {b:'TANA Shop', v:'Douala', a:'Robe rose fleurie', prix:F(1500), i:'ec5f1982-015e-4c22-9748-e2c4709a32ad/3b244ffc-10c7-4518-8143-3f48e460bcb3.jpg'},
+  {b:'SM Store & Beauty', v:'Yaoundé', a:'Robe maya', prix:F(7000), i:'720c4d78-c78d-49cd-9318-6daf72e7f865/9251938c-a962-437c-ab1a-e55a8333da53.jpg'},
+  {b:'Maison NGC', v:'Yaoundé', a:'Boubou', prix:'Prix sur demande', dem:true, i:'373f6a65-d417-4a84-b899-bd16b52de908/b3edac74-471e-4822-9415-cbb6bacc9399.jpg'}]},
+ {chap:'02', titre:'La mode homme', items:[
+  {b:'MTGBA Market Place', v:'Yaoundé', a:'Ensemble short et polo bordeaux', prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/39f4d24e-166d-4e8c-8c03-ba999a7e20e9.webp'},
+  {b:'MTGBA Market Place', v:'Yaoundé', a:'Mocassins noirs brillants', prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/64259614-180a-42a6-b129-c266925c9117.webp'},
+  {b:'MTGBA Market Place', v:'Yaoundé', a:'Chaussures chukka en daim', prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/9fab68ed-87eb-4866-9767-03f2a8d34917.webp'}]},
+ {chap:'03', titre:'La beauté', items:[
+  {b:'Nnal Beauty', v:'Yaoundé', a:'Fond de teint liquide Avour', prix:F(8999), i:'ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/d3fce225-df53-47bf-9cf7-0d7ed38aabda.jpg'},
+  {b:'Nnal Beauty', v:'Yaoundé', a:'Kit de pinceaux', prix:F(7500), i:'ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/66448e00-33ad-46e7-b7c0-2f385d10e239.jpg'},
+  {b:'Didi_beauty56', v:'Nanterre', a:'French blanche', prix:E(19685), i:'86d2bee7-e378-4efd-84d7-6a9c39c66ca8/b769ef9a-7b74-4ea5-8981-5a75dd378ca9.jpg'},
+  {b:'Didi_beauty56', v:'Nanterre', a:'French Bordeaux', prix:'Prix sur demande', dem:true, i:'86d2bee7-e378-4efd-84d7-6a9c39c66ca8/26f4871a-70f9-4577-bf05-d83a85328bd5.jpg'}]},
+ {chap:'04', titre:'Les enfants & bébé', items:[
+  {b:'ByFlora kids', v:'Douala', i:'dbd3f4a3-6a6a-496e-862b-fee7e22946e4/2b8b843b-af68-4ddb-a24b-4e9c53c8fd13.jpg'},
+  {b:'ByFlora kids', v:'Douala', i:'dbd3f4a3-6a6a-496e-862b-fee7e22946e4/40181c82-544b-466c-b18b-d43fb2fece86.jpg'},
+  {b:'MTGBA Market Place', v:'Yaoundé', a:'Sac à dos licorne', prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/48d9f44e-8be2-4bf8-871a-bdb4214f144a.webp'},
+  {b:'MTGBA Market Place', v:'Yaoundé', a:'Kit scolaire fille', prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/154911d5-558b-4a2c-83a5-16d0f44497d3.webp'},
+  {b:'Meksbabyshop', v:'Toronto', a:'Ensembles jogging fille et garçon', prix:'Prix sur demande', dem:true, i:'f5338549-363d-4719-a785-a2b72227e170/1253c449-be80-4e71-9ed5-4dc7c92cf88a.webp'}]},
+ {chap:'05', titre:'Le high-tech', items:[
+  {b:'Mr Solution', v:'Yaoundé', a:'Samsung Galaxy S22+ 256 Go', prix:F(180000), i:'2630236e-418f-4c06-a808-530743d5795f/27ad0356-7d06-4fca-a9a3-bd97c000d6db.webp'},
+  {b:'Mr Solution', v:'Yaoundé', a:'Samsung Galaxy', prix:'Prix sur demande', dem:true, i:'2630236e-418f-4c06-a808-530743d5795f/27079c9d-e77e-4179-be2f-9b292e080db9.webp'}]},
+ {chap:'06', titre:'Le quotidien', items:[
+  {b:'MTGBA Market Place', v:'Yaoundé', a:"Bouteilles d'eau colorées", prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/f39c80bf-0707-4f54-b309-ca8eea8c5e09.webp'},
+  {b:'MTGBA Market Place', v:'Yaoundé', a:"Bouteille sport avec paille", prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/ed8f2e16-5ff5-49e0-986e-97ee1f4f0dff.webp'},
+  {b:'Crousty chips', v:'Douala', a:'Crousty chips', prix:'Prix sur demande', dem:true, i:'0f52784e-7cb1-4455-b4d3-03e1133c9d9a/3ab3e631-f477-4cc9-9e11-86e590058d15.webp'},
+  {b:'YAKA BAOBAB', v:'Yaoundé', a:'Jus naturel de baobab', prix:F(1000), i:'7be8b524-9c39-4fe2-b804-b71eadf92b88/11787056-5931-4fbd-a303-f6dcaeabca5e.jpg'},
+  {b:'Yak store', v:'Yaoundé', a:'Sacs et chaussures enfants', prix:F(6000), i:'9ccbf156-1079-42c6-8e0b-53ad9f3af301/fd055de5-b601-46ff-a45d-54ef9f09047d.jpg'},
+  {b:'MTGBA Market Place', v:'Yaoundé', a:'Sac à dos unisexe', prix:'Prix sur demande', dem:true, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/8aae55a6-86ad-4edc-9724-62303a6241e0.webp'}]},
+ {chap:'07', titre:"L'équipement pro", items:[
+  {b:'Lmp sarl', v:'Douala Akwa', a:'Bottes Red Wing', prix:F(150000), i:'6c856c40-152f-457a-83cd-a125aa47f3f6/5804fa0f-ec56-4a23-802b-d6234fad8f61.jpg'},
+  {b:'Lmp sarl', v:'Douala Akwa', a:'Gilet de signalisation', prix:F(5000), i:'6c856c40-152f-457a-83cd-a125aa47f3f6/bb196a58-1c81-4b6c-9967-a095051bab49.jpg'}]},
+];
+
+// ---------- timeline ----------
+const plans = [{ type:'intro', d:T_INTRO }];
+let k = 0;
+for (const c of SEQ) {
+  plans.push({ type:'chap', d:T_CH, c });
+  for (const it of c.items) plans.push({ type:'photo', d:T_PH, it, mv:k++ % 4 });
+}
+plans.push({ type:'feat', d:T_FEAT });
+plans.push({ type:'fin', d:T_FIN });
+const TOTAL = plans.reduce((t,p)=>t+p.d,0);
+const bornes=[]; { let a=0; for (const p of plans){ bornes.push([a,a+p.d,p]); a+=p.d; } }
+function planA(t){ for(const [a,b,p] of bornes) if(t>=a&&t<b) return [p,(t-a)/p.d]; return [plans[plans.length-1],1]; }
+
+// ---------- dessin ----------
+const cv=document.getElementById('c'), g=cv.getContext('2d');
+const cache=new Map();
+const lisse=(x)=>x<0?0:x>1?1:x*x*(3-2*x);
+
+function fond(){ const gr=g.createLinearGradient(0,0,W*.4,H);
+  gr.addColorStop(0,CREME); gr.addColorStop(1,CREME2); g.fillStyle=gr; g.fillRect(0,0,W,H); }
+
+function couvre(im, mv, u){
+  const base=Math.max(W/im.width, H/im.height);
+  let z=1.12, dx=0, dy=0;
+  if(mv===0) z=1.04+.10*u;
+  else if(mv===1) z=1.14-.10*u;
+  else if(mv===2){ dx=(u-.5)*W*.055; }
+  else { dx=(.5-u)*W*.055; }
+  const r=base*z, w=im.width*r, h=im.height*r;
+  g.drawImage(im,(W-w)/2+dx,(H-h)/2+dy,w,h);
+}
+function lignes(txt,police,maxL){ g.font=police; const out=[]; let cur='';
+  for(const m of String(txt).split(' ')){ const e=cur?cur+' '+m:m;
+    if(g.measureText(e).width>maxL&&cur){out.push(cur);cur=m;}else cur=e; }
+  if(cur)out.push(cur); return out; }
+
+function dessine(p,u){
+  const e=lisse(u/.24);
+  if(p.type==='intro'){
+    fond();
+    // deux temps: « Salut 👋 » puis la promesse.
+    const a=Math.min(1,u/.32), b=lisse((u-.34)/.28);
+    g.textAlign='center';
+    g.globalAlpha=a;
+    g.font='900 150px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText('Salut 👋', W/2, 760 - (1-a)*40);
+    g.globalAlpha=b;
+    g.font='600 62px Fraunces, Georgia, serif'; g.fillStyle=LAITON;
+    g.fillText('On vous présente', W/2, 950 + (1-b)*40);
+    g.font='900 96px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText('les top boutiques', W/2, 1080 + (1-b)*40);
+    g.fillStyle=TERRA; g.fillText('Finjaro', W/2, 1200 + (1-b)*40);
+    g.globalAlpha=b; g.fillStyle=TERRA;
+    g.beginPath(); g.roundRect(W/2-90, 1268+(1-b)*40, 180, 8, 8); g.fill();
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='chap'){
+    fond();
+    // grand numero en filigrane derriere le titre — la signature du chapitre.
+    g.globalAlpha=.13*e; g.font='900 640px Fraunces, Georgia, serif';
+    g.fillStyle=TERRA; g.textAlign='center'; g.fillText(p.c.chap, W/2, 1160);
+    g.globalAlpha=e;
+    const zoomT=1+.03*(1-e);
+    g.save(); g.translate(W/2,960); g.scale(zoomT,zoomT);
+    g.font='800 34px Inter, sans-serif'; g.fillStyle=LAITON;
+    g.fillText('CHAPITRE '+p.c.chap, 0, -110);
+    const ls=lignes(p.c.titre,'900 118px Fraunces, Georgia, serif',940);
+    g.fillStyle=ENCRE;
+    ls.forEach((l,i)=>g.fillText(l,0,20+i*126));
+    g.fillStyle=TERRA; g.beginPath(); g.roundRect(-80, 90+(ls.length-1)*126, 160, 8, 8); g.fill();
+    g.restore(); g.globalAlpha=1; return;
+  }
+  if(p.type==='feat'){
+    fond();
+    g.globalAlpha=lisse(u/.2); g.textAlign='center';
+    g.font='900 104px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText("Et ce n'est pas tout.", W/2, 640);
+    const items=[['▶','Des vidéos, façon TikTok'],['✦','Des services : coiffure, informatique…'],['✓','Paiement à la livraison']];
+    items.forEach((it,i)=>{
+      const ap=lisse((u-.22-i*.16)/.2); if(ap<=0) return;
+      g.globalAlpha=ap;
+      const y=880+i*190 + (1-ap)*40;
+      g.fillStyle=TERRA; g.beginPath(); g.arc(200,y-18,44,0,7); g.fill();
+      g.fillStyle='#fff'; g.font='800 44px Inter, sans-serif'; g.fillText(it[0],200,y-2);
+      // La ligne doit tenir jusqu'au bord: on reduit la police jusqu'a ce
+      // qu'elle rentre, plutot que de la laisser se faire couper.
+      let t=52; g.textAlign='left'; g.fillStyle=ENCRE;
+      do { g.font='600 '+t+'px Inter, sans-serif'; t-=2; }
+      while (g.measureText(it[1]).width > W-290-70 && t>28);
+      g.fillText(it[1],290,y); g.textAlign='center';
+    });
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='fin'){
+    fond();
+    const a=lisse(u/.22), b=lisse((u-.2)/.25), c2=lisse((u-.42)/.25);
+    g.textAlign='center';
+    // Le logo F. — la lettre et le point, comme sur la maquette de Beau.
+    g.globalAlpha=a;
+    g.font='900 190px Inter, sans-serif'; g.fillStyle=VERTF;
+    g.fillText('F', W/2-40, 560);
+    g.fillStyle='#D98E32'; g.beginPath(); g.arc(W/2+92, 420, 34, 0, 7); g.fill();
+    g.globalAlpha=b;
+    g.font='600 118px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    // FINJARO en lettres espacees, a la main pour maitriser l'espacement.
+    (function(){ const mot='FINJARO'; g.font='600 118px Fraunces, Georgia, serif';
+      const esp=26; let tw=0; for(const ch of mot) tw+=g.measureText(ch).width+esp; tw-=esp;
+      let x=W/2-tw/2; for(const ch of mot){ g.textAlign='left'; g.fillText(ch,x,790); x+=g.measureText(ch).width+esp; } })();
+    g.textAlign='center';
+    g.font='600 52px Inter, sans-serif'; g.fillStyle=LAITON;
+    (function(){ const mot='FINOU WINTER'; const esp=14; g.font='600 52px Inter, sans-serif';
+      let tw=0; for(const ch of mot) tw+=g.measureText(ch).width+esp; tw-=esp;
+      let x=W/2-tw/2; for(const ch of mot){ g.textAlign='left'; g.fillText(ch,x,900); x+=g.measureText(ch).width+esp; } })();
+    g.textAlign='center';
+    g.globalAlpha=c2;
+    g.font='800 64px Inter, sans-serif'; g.fillStyle=ENCRE;
+    g.fillText('DÉCOUVREZ LA COLLECTION', W/2, 1080);
+    g.fillText('MAQUILLAGE EXCLUSIVE', W/2, 1165);
+    g.fillStyle=TERRA;
+    g.beginPath(); g.roundRect(W/2-330, 1260, 660, 96, 48); g.fill();
+    g.fillStyle='#fff'; g.font='800 44px Inter, sans-serif'; g.textBaseline='middle';
+    g.fillText('exclusivement sur finjaro.net', W/2, 1310); g.textBaseline='alphabetic';
+    g.globalAlpha=1; return;
+  }
+  // --- plan photo ---
+  const im=cache.get(p.it.i);
+  if(im){ g.fillStyle='#1a1512'; g.fillRect(0,0,W,H); couvre(im,p.mv,u); }
+  else fond();
+  const gr=g.createLinearGradient(0,H,0,H*.48);
+  gr.addColorStop(0,'rgba(20,14,10,.92)'); gr.addColorStop(.45,'rgba(20,14,10,.4)');
+  gr.addColorStop(1,'rgba(20,14,10,0)');
+  g.fillStyle=gr; g.fillRect(0,H*.48,W,H*.52);
+  // pastille boutique en haut a gauche — le credit se lit tout le long.
+  g.globalAlpha=Math.min(1,e*1.4);
+  g.font='800 30px Inter, sans-serif';
+  const cred=(p.it.b+' · '+p.it.v).toUpperCase();
+  const cw=g.measureText(cred).width+64;
+  g.fillStyle='rgba(20,14,10,.55)'; g.beginPath(); g.roundRect(60,70,cw,74,37); g.fill();
+  g.fillStyle='#fff'; g.textAlign='left'; g.textBaseline='middle';
+  g.fillText(cred,92,109); g.textBaseline='alphabetic';
+  // legende basse
+  const dy=(1-e)*46;
+  if(p.it.a){
+    const ls=lignes(p.it.a,'600 72px Fraunces, Georgia, serif',W-160).slice(0,2);
+    g.fillStyle='#fff'; g.font='600 72px Fraunces, Georgia, serif';
+    ls.forEach((l,i)=>g.fillText(l,80,1620+i*82+dy));
+    const pr=p.it.prix;
+    g.font=(p.it.dem?'800 38px':'800 48px')+' Inter, sans-serif';
+    const w=g.measureText(pr).width+72, yb=1620+ls.length*82+18+dy;
+    g.fillStyle=p.it.dem?LAITON:TERRA; g.beginPath(); g.roundRect(80,yb,w,76,15); g.fill();
+    g.fillStyle='#fff'; g.textBaseline='middle'; g.fillText(pr,116,yb+39); g.textBaseline='alphabetic';
+  }
+  g.globalAlpha=1;
+}
+
+// ---------- chargement ----------
+const etat=document.getElementById('etat');
+(async()=>{
+  const chemins=[...new Set(SEQ.flatMap(c=>c.items.map(i=>i.i)))];
+  let n=0;
+  await Promise.all(chemins.map(c=>new Promise(res=>{
+    const im=new Image(); im.crossOrigin='anonymous';
+    im.onload=()=>{cache.set(c,im);n++;res();};
+    im.onerror=()=>{n++;res();};
+    im.src=BASE+c;
+  })));
+  try{ await document.fonts.ready; }catch{}
+  dessine(plans[0],1);
+  etat.textContent=`${n}/${chemins.length} photos — ${TOTAL.toFixed(1)} s`;
+  document.getElementById('go').disabled=false;
+})();
+</script>
+</body>
+</html>
