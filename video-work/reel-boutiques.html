@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Finjaro — Reel boutiques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --creme:#FAF6F0; --creme2:#F1E8DC; --encre:#241C17;
+    --terracotta:#C25E38; --laiton:#8C6A3D; --teal:#2F6D62;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#0d0b0a;overflow:hidden;
+    font-family:Inter,system-ui,sans-serif;color:var(--encre)}
+  /* La scene fait 1080x1920 en dur, puis on la met a l'echelle de la
+     fenetre: l'enregistrement d'ecran garde le vrai format 9:16 quel que
+     soit l'ordinateur. */
+  #wrap{position:fixed;inset:0;overflow:hidden}
+  /* Centre par translation, PAS par grille: une scene de 1080x1920 mise a
+     l'echelle garde sa boite de 1080x1920 dans la mise en page, donc une
+     grille la deborde et la decale. Constate a l'ecran: le cadre sortait a
+     droite et se faisait couper. */
+  #stage{width:1080px;height:1920px;position:absolute;left:50%;top:50%;
+    transform-origin:center center;overflow:hidden;background:var(--creme);
+    box-shadow:0 0 80px rgba(0,0,0,.6)}
+  .plan{position:absolute;inset:0;opacity:0;visibility:hidden}
+  .plan.on{opacity:1;visibility:visible}
+
+  /* ---------- Intro / outro ---------- */
+  .centre{display:flex;flex-direction:column;align-items:center;
+    justify-content:center;height:100%;text-align:center;padding:0 90px;
+    background:linear-gradient(160deg,var(--creme) 0%,var(--creme2) 100%)}
+  .mot{font-family:Fraunces,Georgia,serif;font-weight:900;letter-spacing:-.03em;
+    line-height:.92;color:var(--encre)}
+  .intro .mot{font-size:186px}
+  .intro .mot em{font-style:normal;color:var(--terracotta)}
+  .sous{margin-top:34px;font-size:44px;font-weight:600;color:var(--laiton);
+    letter-spacing:.01em;line-height:1.3}
+  .filet{width:180px;height:8px;border-radius:8px;background:var(--terracotta);
+    margin:52px 0 0}
+  .outro .mot{font-size:132px}
+  .url{margin-top:44px;font-size:58px;font-weight:800;color:var(--teal)}
+  .cta{margin-top:26px;font-size:40px;color:var(--laiton);font-weight:600}
+
+  /* ---------- Carte boutique ---------- */
+  .carte{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    height:100%;text-align:center;padding:0 90px;
+    background:linear-gradient(160deg,var(--creme) 0%,var(--creme2) 100%)}
+  .logo{width:290px;height:290px;border-radius:50%;object-fit:cover;
+    border:10px solid #fff;box-shadow:0 22px 60px rgba(36,28,23,.22);background:#fff}
+  .nom{font-family:Fraunces,Georgia,serif;font-weight:900;font-size:96px;
+    line-height:1.02;margin-top:46px;letter-spacing:-.02em}
+  .ville{margin-top:22px;font-size:42px;font-weight:600;color:var(--laiton);
+    text-transform:uppercase;letter-spacing:.16em}
+  .rayon{margin-top:30px;font-size:36px;font-weight:700;color:#fff;
+    background:var(--terracotta);padding:16px 40px;border-radius:999px}
+
+  /* ---------- Plan article ---------- */
+  .photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .voile{position:absolute;inset:0;
+    background:linear-gradient(to top,rgba(20,14,10,.90) 0%,rgba(20,14,10,.45) 26%,
+      rgba(20,14,10,0) 52%)}
+  .legende{position:absolute;left:80px;right:80px;bottom:132px;color:#fff}
+  .legende .marque{font-size:34px;font-weight:800;letter-spacing:.18em;
+    text-transform:uppercase;color:#F3D9C6}
+  .legende .titre{font-family:Fraunces,Georgia,serif;font-weight:600;
+    font-size:76px;line-height:1.08;margin-top:16px;
+    text-shadow:0 4px 30px rgba(0,0,0,.5)}
+  .legende .prix{display:inline-block;margin-top:26px;font-size:50px;
+    font-weight:800;background:var(--terracotta);color:#fff;
+    padding:14px 36px;border-radius:16px}
+  .legende .prix.demande{background:var(--laiton);font-size:40px}
+
+  /* Le mouvement: un lent zoom, sens alterne. Une image fixe pendant deux
+     secondes fait « diaporama »; un mouvement continu fait « video ». */
+  @keyframes zoomIn{from{transform:scale(1.0) translate3d(0,0,0)}
+                    to{transform:scale(1.14) translate3d(0,-1.5%,0)}}
+  @keyframes zoomOut{from{transform:scale(1.14) translate3d(0,-1.5%,0)}
+                     to{transform:scale(1.0) translate3d(0,0,0)}}
+  .plan.on .photo{animation:zoomIn var(--dur) linear both}
+  .plan.on.alt .photo{animation-name:zoomOut}
+
+  @keyframes monte{from{opacity:0;transform:translateY(46px)}
+                   to{opacity:1;transform:translateY(0)}}
+  .plan.on .legende>*{animation:monte .62s cubic-bezier(.2,.8,.2,1) both}
+  .plan.on .legende>*:nth-child(2){animation-delay:.09s}
+  .plan.on .legende>*:nth-child(3){animation-delay:.18s}
+  .plan.on .centre>*,.plan.on .carte>*{animation:monte .66s cubic-bezier(.2,.8,.2,1) both}
+  .plan.on .carte>*:nth-child(2){animation-delay:.10s}
+  .plan.on .carte>*:nth-child(3){animation-delay:.18s}
+  .plan.on .carte>*:nth-child(4){animation-delay:.26s}
+  .plan.on .centre>*:nth-child(2){animation-delay:.14s}
+  .plan.on .centre>*:nth-child(3){animation-delay:.26s}
+
+  /* ---------- Barre de commande, hors enregistrement ---------- */
+  #barre{position:fixed;left:0;right:0;bottom:0;padding:14px 20px;
+    background:rgba(13,11,10,.92);color:#F1E8DC;display:flex;gap:16px;
+    align-items:center;font-size:14px;z-index:9}
+  #barre.cache{display:none}
+  button{font:inherit;font-weight:700;padding:10px 22px;border:0;border-radius:10px;
+    background:var(--terracotta);color:#fff;cursor:pointer}
+  button.sec{background:#3a322c}
+  #jauge{flex:1;height:6px;background:#3a322c;border-radius:6px;overflow:hidden}
+  #jauge i{display:block;height:100%;width:0;background:var(--terracotta)}
+  #etat{min-width:150px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage"></div></div>
+
+<div id="barre">
+  <button id="go">▶ Lancer</button>
+  <button id="plein" class="sec">Plein écran</button>
+  <div id="jauge"><i></i></div>
+  <span id="etat">chargement…</span>
+</div>
+
+<script>
+// Finjaro — bande-annonce des boutiques.
+//
+// Beau: « une vidéo qui met en avant les boutiques, les articles, bien
+// nyanga, 1 min 45 ou 2 minutes ».
+//
+// Pourquoi une page et pas un fichier vidéo: je n'ai aucun accès réseau aux
+// photos depuis mon environnement, et aucun outil de montage. Les photos
+// vivent sur Supabase et se chargent ICI, dans TON navigateur. Tu lances,
+// tu enregistres l'écran, tu as ta vidéo. Le décor fait 1080x1920 en dur:
+// l'enregistrement sort au vrai format 9:16 même sur un grand écran.
+//
+// AUCUN CHIFFRE INVENTÉ: chaque boutique, chaque article, chaque prix vient
+// de la base. Aucune photo prise sur le web — ce sont les photos des
+// vendeuses. Les boutiques dont le catalogue repose sur les images de
+// démonstration livrées avec l'application (Camerounian chanel, Décoration
+// évents, Beauty hairs) sont ÉCARTÉES: ce ne sont pas leurs articles.
+const BASE = 'https://bokwivwizghdlaedczbw.supabase.co/storage/v1/object/public/products/';
+const DATA = [{"b": "TANA Shop 🛍️👗", "v": "Douala", "pays": "CM", "logo": "ec5f1982-015e-4c22-9748-e2c4709a32ad/1b9d9b52-a78a-4892-a719-d9b7b18231f6.jpg", "rayon": "Robes", "items": [{"a": "Robe noire dentelle", "i": "ec5f1982-015e-4c22-9748-e2c4709a32ad/b7cb91fb-10aa-4d8f-8873-90ba8667a488.jpg", "f": 2500}, {"a": "Robe rose fleurie", "i": "ec5f1982-015e-4c22-9748-e2c4709a32ad/3b244ffc-10c7-4518-8143-3f48e460bcb3.jpg", "f": 1500}, {"a": "Mini robe bleu", "i": "ec5f1982-015e-4c22-9748-e2c4709a32ad/997e0288-15bb-4eb8-9cfb-d21f19ac02db.jpg", "f": 1500}, {"a": "Robe longue manche", "i": "ec5f1982-015e-4c22-9748-e2c4709a32ad/0d61cd53-32af-42bc-8f95-a41ebdea63cc.jpg", "f": 2500}, {"a": "Robe courte bleu", "i": "ec5f1982-015e-4c22-9748-e2c4709a32ad/faded4bb-c144-4eb7-b56d-415733cd000c.jpg", "f": 2000}, {"a": "Mini robe avec poche", "i": "ec5f1982-015e-4c22-9748-e2c4709a32ad/1f6cdb89-3061-4804-8b0c-114a9b1701d4.jpg", "f": 1500}]}, {"b": "Nnal Beauty", "v": "Yaoundé", "pays": "CM", "logo": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/4f3df060-1c6d-499f-8c1f-1e282da11686.jpg", "rayon": "Beauté & Cosmétiques", "items": [{"a": "Fond de teint liquide Avour", "i": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/d3fce225-df53-47bf-9cf7-0d7ed38aabda.jpg", "f": 8999}, {"a": "Kit de pinceaux", "i": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/66448e00-33ad-46e7-b7c0-2f385d10e239.jpg", "f": 7500}, {"a": "Fond de teint Vee beauty", "i": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/ed9bbf02-2c15-4586-9381-bcf1d8cf438d.jpg", "f": 8999}, {"a": "Zikel : fond de teint compact", "i": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/f10f208d-84a7-4714-8395-e6a1610ce14d.jpg", "f": 7000}, {"a": "Fix makeup : fixateur hydratant", "i": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/9fa43c2a-adc0-4e14-a1e7-83a712bc1299.jpg", "f": 3000}, {"a": "Zikel : fond de teint compact", "i": "ffd110b4-6a6b-4eef-bdd6-fa8d1ea4886e/62fb13fa-d192-414c-bd9f-135c9c4b23cf.jpg", "f": 4000}]}, {"b": "MTGBA MARKET PLACE", "v": "Yaoundé", "pays": "CM", "logo": "49d28698-1f14-4b4e-9276-62d1ca26c03e/850e5857-118c-4eb3-85de-eeb238acbc75.webp", "rayon": "Chaussures homme", "items": [{"a": "Mocassins Homme BOSS Noir Brillant", "i": "49d28698-1f14-4b4e-9276-62d1ca26c03e/64259614-180a-42a6-b129-c266925c9117.webp", "d": true}, {"a": "Chaussures Chukka en Daim", "i": "49d28698-1f14-4b4e-9276-62d1ca26c03e/9fab68ed-87eb-4866-9767-03f2a8d34917.webp", "d": true}, {"a": "Chaussures en daim bleu marine", "i": "49d28698-1f14-4b4e-9276-62d1ca26c03e/e36463bc-d523-46f9-bbf9-4fc32470f311.webp", "d": true}, {"a": "Mocassins noirs vernis", "i": "49d28698-1f14-4b4e-9276-62d1ca26c03e/68e21072-1f5e-4809-912c-857fac348c68.webp", "d": true}, {"a": "Baskets à carreaux", "i": "49d28698-1f14-4b4e-9276-62d1ca26c03e/4f114d56-5d1f-45f7-8b85-6225ecc81750.webp", "d": true}, {"a": "Chaussures en daim noir", "i": "49d28698-1f14-4b4e-9276-62d1ca26c03e/2fe24892-4acb-44a4-a954-eee228324d5d.webp", "d": true}]}, {"b": "SM Store & Beauty", "v": "Yaoundé", "pays": "CM", "logo": "720c4d78-c78d-49cd-9318-6daf72e7f865/298a6868-d544-439f-9ca6-cfa04ac5e2d8.jpg", "rayon": "Mode Femme", "items": [{"a": "Robe maya", "i": "720c4d78-c78d-49cd-9318-6daf72e7f865/9251938c-a962-437c-ab1a-e55a8333da53.jpg", "f": 7000}, {"a": "Robe", "i": "720c4d78-c78d-49cd-9318-6daf72e7f865/f64c4c0e-4a24-4515-b2f4-3ea2668f0ace.jpg", "f": 7000}, {"a": "Ensemble", "i": "720c4d78-c78d-49cd-9318-6daf72e7f865/2d3ab17e-e985-4c76-a100-8bb23de871fe.jpg", "f": 9500}, {"a": "Ensemble", "i": "720c4d78-c78d-49cd-9318-6daf72e7f865/a8ea4dd4-9335-445f-9652-59ddd05e797c.jpg", "f": 9500}, {"a": "Robe", "i": "720c4d78-c78d-49cd-9318-6daf72e7f865/9ac45e4b-0396-422e-a50d-03dae3cbb868.jpg", "f": 7000}]}, {"b": "ByFlora kids 🥰", "v": "Douala", "pays": "CM", "logo": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/4d70775d-6a3a-4a45-89a5-3c2dc196c21a.jpg", "rayon": "Enfants & Bébé", "sansNom": true, "items": [{"i": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/2b8b843b-af68-4ddb-a24b-4e9c53c8fd13.jpg"}, {"i": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/0bcdb23e-8bcc-45ad-a79b-15f37c637073.jpg"}, {"i": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/9890876f-05e2-4750-b071-04f9f232750a.jpg"}, {"i": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/eed4f92c-08dc-42ba-aa3e-4bf67583d3da.jpg"}, {"i": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/9fb0bc04-1595-4343-8b6d-c0084fe8f6a0.jpg"}, {"i": "dbd3f4a3-6a6a-496e-862b-fee7e22946e4/40181c82-544b-466c-b18b-d43fb2fece86.jpg"}]}, {"b": "Didi_beauty56", "v": "Nanterre", "pays": "FR", "logo": "86d2bee7-e378-4efd-84d7-6a9c39c66ca8/fbdf1913-317b-479a-b68e-7aa10717ee86.jpg", "rayon": "Ongles & Manucure", "items": [{"a": "French blanche", "i": "86d2bee7-e378-4efd-84d7-6a9c39c66ca8/b769ef9a-7b74-4ea5-8981-5a75dd378ca9.jpg", "f": 19685}, {"a": "French Bordeaux", "i": "86d2bee7-e378-4efd-84d7-6a9c39c66ca8/26f4871a-70f9-4577-bf05-d83a85328bd5.jpg", "d": true}]}, {"b": "Maison NGC", "v": "Yaoundé", "pays": "CM", "logo": "373f6a65-d417-4a84-b899-bd16b52de908/8ba75b73-8dc7-4f69-8d33-59f5a751bb41.jpg", "rayon": "Mode Femme", "items": [{"a": "Boubou", "i": "373f6a65-d417-4a84-b899-bd16b52de908/b3edac74-471e-4822-9415-cbb6bacc9399.jpg", "d": true}, {"a": "Robe", "i": "373f6a65-d417-4a84-b899-bd16b52de908/4f3e5aef-a5d2-4b05-8921-9c26c4e33bee.jpg", "f": 2500}, {"a": "Robe", "i": "373f6a65-d417-4a84-b899-bd16b52de908/67c69d0e-d90f-471b-9d3e-655123d48475.jpg", "f": 2500}]}, {"b": "YAKA BAOBAB", "v": "Yaoundé", "pays": "CM", "logo": "7be8b524-9c39-4fe2-b804-b71eadf92b88/e7a2bb7a-e76c-4ffe-92ca-861ab347ab6c.jpg", "rayon": "Jus Naturels", "items": [{"a": "YAKA Baobab", "i": "7be8b524-9c39-4fe2-b804-b71eadf92b88/11787056-5931-4fbd-a303-f6dcaeabca5e.jpg", "f": 1000}, {"a": "YAKA Baobab", "i": "7be8b524-9c39-4fe2-b804-b71eadf92b88/44e2f5ad-b8bd-45c8-8aee-446f7f22bcc8.jpg", "f": 1000}]}, {"b": "Lmp sarl", "v": "Douala Akwa", "pays": "CM", "logo": "6c856c40-152f-457a-83cd-a125aa47f3f6/090af901-2703-40cb-aecb-1e5f5aa9f4af.jpg", "rayon": "Équipement pro & Sécurité", "items": [{"a": "Botte red wing", "i": "6c856c40-152f-457a-83cd-a125aa47f3f6/5804fa0f-ec56-4a23-802b-d6234fad8f61.jpg", "f": 150000}, {"a": "Chaussure de sécurité", "i": "6c856c40-152f-457a-83cd-a125aa47f3f6/c1cd52ae-46f9-4f2f-8a56-f6cede8220d1.jpg", "f": 25000}, {"a": "T-shirt de sécurité", "i": "6c856c40-152f-457a-83cd-a125aa47f3f6/c3ff6870-1bb3-4610-88b0-ed5047fc1d80.jpg", "f": 10000}, {"a": "Gilet de signalisation", "i": "6c856c40-152f-457a-83cd-a125aa47f3f6/bb196a58-1c81-4b6c-9967-a095051bab49.jpg", "f": 5000}, {"a": "Casque anti bruit", "i": "6c856c40-152f-457a-83cd-a125aa47f3f6/c94da28d-5022-46d7-bb32-bcf57fd72734.jpg", "f": 4000}, {"a": "Gant nitrile", "i": "6c856c40-152f-457a-83cd-a125aa47f3f6/e156fee8-495f-4521-8c6e-6a322ada3527.jpg", "f": 5000}]}];
+
+// Rythme. 1,9 s par photo est le point où l'œil a le temps de voir l'article
+// sans que le plan traîne; 2,4 s pour une carte boutique, qui porte moins.
+const T_INTRO = 4.6, T_CARTE = 2.4, T_PHOTO = 1.9, T_OUTRO = 5.4;
+
+// La monnaie de la BOUTIQUE, jamais une devise par défaut. Une boutique à
+// Nanterre affiche des euros, une boutique à Douala des FCFA — c'est elle
+// qui a saisi ses prix, les relire dans une autre monnaie n'a aucun sens.
+const TAUX = { FR: 655.957, BE: 655.957, DE: 655.957 };
+function prix(item, pays) {
+  if (item.d || item.f == null) return { texte: 'Prix sur demande', demande: true };
+  if (TAUX[pays]) {
+    const eur = item.f / TAUX[pays];
+    return { texte: eur.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) };
+  }
+  return { texte: item.f.toLocaleString('fr-FR') + ' FCFA' };
+}
+
+const stage = document.getElementById('stage');
+const jauge = document.querySelector('#jauge i');
+const etat = document.getElementById('etat');
+const plans = [];
+
+function ajoute(html, duree, alt) {
+  const d = document.createElement('div');
+  d.className = 'plan' + (alt ? ' alt' : '');
+  d.style.setProperty('--dur', duree + 's');
+  d.innerHTML = html;
+  stage.appendChild(d);
+  plans.push({ el: d, duree });
+}
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// --- Ouverture ---
+ajoute(`<div class="centre intro">
+  <div class="mot">Fin<em>jaro</em></div>
+  <div class="sous">Des boutiques, des vraies.<br>Et elles sont déjà en ligne.</div>
+  <div class="filet"></div>
+</div>`, T_INTRO);
+
+// --- Une boutique après l'autre ---
+let n = 0;
+for (const s of DATA) {
+  ajoute(`<div class="carte">
+    <img class="logo" src="${BASE}${esc(s.logo)}" alt="">
+    <div class="nom">${esc(s.b)}</div>
+    <div class="ville">${esc(s.v)}</div>
+    <div class="rayon">${esc(s.rayon)}</div>
+  </div>`, T_CARTE);
+
+  for (const it of s.items) {
+    const p = prix(it, s.pays);
+    // Pas de nom affiché quand le nom ne dit rien (« Baby 12 »): on ne
+    // remplace pas par un nom inventé, on montre la photo et la boutique.
+    const titre = s.sansNom || !it.a ? '' : `<div class="titre">${esc(it.a)}</div>`;
+    const montant = s.sansNom ? '' :
+      `<div class="prix${p.demande ? ' demande' : ''}">${esc(p.texte)}</div>`;
+    ajoute(`<img class="photo" src="${BASE}${esc(it.i)}" alt="">
+      <div class="voile"></div>
+      <div class="legende">
+        <div class="marque">${esc(s.b)} · ${esc(s.v)}</div>
+        ${titre}${montant}
+      </div>`, T_PHOTO, n++ % 2 === 1);
+  }
+}
+
+// --- Fermeture ---
+ajoute(`<div class="centre outro">
+  <div class="mot">Ta boutique<br>t'attend.</div>
+  <div class="url">finjaro.net</div>
+  <div class="cta">Ouvre la tienne en 5 minutes — c'est gratuit.</div>
+</div>`, T_OUTRO);
+
+const TOTAL = plans.reduce((t, p) => t + p.duree, 0);
+
+// Mise a l'echelle: la scene garde 1080x1920, on l'ajuste a la fenetre.
+function cadre() {
+  const barre = document.getElementById('barre');
+  const h = window.innerHeight - (barre.classList.contains('cache') ? 0 : barre.offsetHeight);
+  const k = Math.min(window.innerWidth / 1080, h / 1920);
+  // La translation vient AVANT l'echelle: on ramene le centre de la scene
+  // sur le centre de la fenetre, puis on reduit autour de ce centre.
+  stage.style.top = (h / 2) + 'px';
+  stage.style.transform = 'translate(-50%,-50%) scale(' + k + ')';
+}
+addEventListener('resize', cadre);
+
+// Precharger AVANT de lancer: une photo qui arrive en retard fait un trou
+// blanc au milieu de l'enregistrement, et il faut tout refaire.
+const urls = [...stage.querySelectorAll('img')].map((i) => i.src);
+let prets = 0;
+urls.forEach((u) => {
+  const im = new Image();
+  const fini = () => {
+    prets++;
+    etat.textContent = `chargement ${prets}/${urls.length}`;
+    if (prets === urls.length) {
+      etat.textContent = `prêt — ${TOTAL.toFixed(0)} s (${Math.floor(TOTAL / 60)} min ${String(Math.round(TOTAL % 60)).padStart(2, '0')})`;
+    }
+  };
+  im.onload = fini; im.onerror = fini; im.src = u;
+});
+
+let t0 = 0, boucle = 0;
+function joue() {
+  document.getElementById('barre').classList.add('cache');
+  cadre();
+  t0 = performance.now();
+  const marques = [];
+  let acc = 0;
+  for (const p of plans) { marques.push([acc, acc + p.duree, p]); acc += p.duree; }
+  let courant = null;
+  cancelAnimationFrame(boucle);
+  (function tic() {
+    const t = (performance.now() - t0) / 1000;
+    jauge.style.width = Math.min(100, (t / TOTAL) * 100) + '%';
+    const m = marques.find(([a, b]) => t >= a && t < b);
+    if (m && m[2] !== courant) {
+      if (courant) courant.el.classList.remove('on');
+      courant = m[2];
+      // Retirer puis remettre la classe relance les animations CSS du plan.
+      courant.el.classList.add('on');
+    }
+    if (t >= TOTAL) {
+      if (courant) courant.el.classList.remove('on');
+      document.getElementById('barre').classList.remove('cache');
+      cadre();
+      return;
+    }
+    boucle = requestAnimationFrame(tic);
+  })();
+}
+
+document.getElementById('go').onclick = joue;
+document.getElementById('plein').onclick = () =>
+  (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
+cadre();
+</script>
+</body>
+</html>
