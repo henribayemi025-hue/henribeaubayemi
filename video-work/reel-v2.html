@@ -76,14 +76,42 @@ const SEQ = [
   {b:'Lmp sarl', v:'Douala Akwa', a:'Gilet de signalisation', prix:F(5000), i:'6c856c40-152f-457a-83cd-a125aa47f3f6/bb196a58-1c81-4b6c-9967-a095051bab49.jpg'}]},
 ];
 
+// Les Fin: images extraites des VRAIES videos publiees sur Finjaro.
+const REELS = [
+ {b:'ECLAT D\'ÉBÈNE', v:'Douala', t:'Savon noir', i:'reel-eclat-1.jpg'},
+ {b:'Hegshair', v:'Stuttgart', t:'Mèches pour tissage', i:'reel-hegs-2.jpg'},
+ {b:'ECLAT D\'ÉBÈNE', v:'Douala', t:'Savon noir', i:'reel-eclat-3.jpg'},
+ {b:'Hegshair', v:'Stuttgart', t:'Mèches pour tissage', i:'reel-hegs-5.jpg'},
+];
+// Les services reellement inscrits, avec leur metier declare.
+const SERVICES = [
+ ['THOT ELECTRICAL','Électricité & plomberie','Yaoundé & Douala'],
+ ['TidalEx','Informatique & digital','Douala'],
+ ['Crea Lab','Marketing & communication','Yaoundé'],
+ ['Music live','Prestataire événementiel','Louveciennes'],
+ ['Teug\'s','Beauté à domicile','Yaoundé'],
+ ['Mr Solution','Transport, cours, photo','Yaoundé'],
+];
+
 // ---------- timeline ----------
 const plans = [{ type:'intro', d:T_INTRO }];
 let k = 0;
+// 1. Les Fin — les videos des boutiques.
+plans.push({ type:'titre', d:1.7, sur:'Les Fin', sous:'Les vidéos des boutiques' });
+for (const r of REELS) plans.push({ type:'reel', d:1.35, it:r, mv:k++ % 4 });
+// 2. Les services.
+plans.push({ type:'titre', d:1.7, sur:'Les services', sous:'Pas que des articles' });
+plans.push({ type:'services', d:5.2 });
+// 3. Les boutiques, rayon par rayon.
+plans.push({ type:'titre', d:1.7, sur:'Les boutiques', sous:'Rayon par rayon' });
 for (const c of SEQ) {
   plans.push({ type:'chap', d:T_CH, c });
   for (const it of c.items) plans.push({ type:'photo', d:T_PH, it, mv:k++ % 4 });
 }
-plans.push({ type:'feat', d:T_FEAT });
+// 4. Finia.
+plans.push({ type:'finia', d:5.0 });
+// 5. L'appel a l'action, puis la carte de collection.
+plans.push({ type:'cta', d:4.0 });
 plans.push({ type:'fin', d:T_FIN });
 const TOTAL = plans.reduce((t,p)=>t+p.d,0);
 const bornes=[]; { let a=0; for (const p of plans){ bornes.push([a,a+p.d,p]); a+=p.d; } }
@@ -200,6 +228,132 @@ function dessine(p,u){
     g.fillText('exclusivement sur finjaro.net', W/2, 1310); g.textBaseline='alphabetic';
     g.globalAlpha=1; return;
   }
+  if(p.type==='titre'){
+    // Une pancarte de section: grand, net, deux secondes, ca respire.
+    fond();
+    const a=lisse(u/.26);
+    g.textAlign='center'; g.globalAlpha=a;
+    g.fillStyle=TERRA; g.beginPath();
+    g.roundRect(W/2-4, 700-(1-a)*40, 8, 96, 4); g.fill();
+    g.font='900 132px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText(p.sur, W/2, 1000+(1-a)*30);
+    g.font='600 48px Inter, sans-serif'; g.fillStyle=LAITON;
+    g.fillText(p.sous, W/2, 1090+(1-a)*30);
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='reel'){
+    const im=cache.get(p.it.i);
+    if(im){ g.fillStyle='#0e0b09'; g.fillRect(0,0,W,H); couvre(im,p.mv,u); }
+    else fond();
+    // Habillage facon lecteur video: bandeau bas + bouton lecture.
+    const gr=g.createLinearGradient(0,H,0,H*.5);
+    gr.addColorStop(0,'rgba(14,11,9,.92)'); gr.addColorStop(1,'rgba(14,11,9,0)');
+    g.fillStyle=gr; g.fillRect(0,H*.5,W,H*.5);
+    const a=lisse(u/.22); g.globalAlpha=a;
+    // gros bouton lecture, qui respire
+    const pulse=1+.05*Math.sin(u*Math.PI*2);
+    g.save(); g.translate(W/2,H/2); g.scale(pulse,pulse);
+    g.fillStyle='rgba(255,255,255,.16)'; g.beginPath(); g.arc(0,0,96,0,7); g.fill();
+    g.fillStyle='#fff'; g.beginPath();
+    g.moveTo(-26,-40); g.lineTo(46,0); g.lineTo(-26,40); g.closePath(); g.fill();
+    g.restore();
+    // credit + titre
+    g.font='800 30px Inter, sans-serif';
+    const cred=(p.it.b+' · '+p.it.v).toUpperCase();
+    const cw=g.measureText(cred).width+64;
+    g.fillStyle='rgba(20,14,10,.55)'; g.beginPath(); g.roundRect(60,70,cw,74,37); g.fill();
+    g.fillStyle='#fff'; g.textAlign='left'; g.textBaseline='middle';
+    g.fillText(cred,92,109); g.textBaseline='alphabetic';
+    g.font='600 68px Fraunces, Georgia, serif'; g.fillStyle='#fff';
+    g.fillText(p.it.t,80,1660+(1-a)*40);
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='services'){
+    fond();
+    g.textAlign='center';
+    const a=lisse(u/.16); g.globalAlpha=a;
+    g.font='900 96px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText('On répare, on coiffe,', W/2, 480);
+    g.fillText('on filme, on installe.', W/2, 590);
+    SERVICES.forEach((sv,i)=>{
+      const ap=lisse((u-.14-i*.085)/.16); if(ap<=0) return;
+      g.globalAlpha=ap;
+      const y=760+i*168+(1-ap)*36;
+      g.fillStyle='#fff'; g.beginPath(); g.roundRect(70,y,W-140,138,26); g.fill();
+      g.fillStyle='rgba(194,94,56,.12)'; g.beginPath(); g.roundRect(70,y,10,138,5); g.fill();
+      g.textAlign='left';
+      g.font='800 46px Inter, sans-serif'; g.fillStyle=ENCRE;
+      let t=46; do{ g.font='800 '+t+'px Inter, sans-serif'; t-=2; }
+      while(g.measureText(sv[0]).width>W-260 && t>26);
+      g.fillText(sv[0],120,y+58);
+      g.font='600 34px Inter, sans-serif'; g.fillStyle=TERRA;
+      g.fillText(sv[1],120,y+106);
+      g.font='400 30px Inter, sans-serif'; g.fillStyle=LAITON;
+      g.textAlign='right'; g.fillText(sv[2],W-120,y+106); g.textAlign='left';
+    });
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='finia'){
+    fond();
+    g.textAlign='center';
+    const a=lisse(u/.16); g.globalAlpha=a;
+    g.font='900 104px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText('Et Finia répond.', W/2, 520);
+    g.font='600 44px Inter, sans-serif'; g.fillStyle=LAITON;
+    g.fillText("L'assistante de Finjaro, 24 h sur 24.", W/2, 600);
+    // Deux bulles de conversation: la question, puis la reponse.
+    const q="Je cherche une robe pour un mariage";
+    const b1=lisse((u-.16)/.16);
+    if(b1>0){
+      g.globalAlpha=b1; g.textAlign='left';
+      g.font='600 42px Inter, sans-serif';
+      const w=g.measureText(q).width+72;
+      g.fillStyle=TEAL; g.beginPath(); g.roundRect(W-90-w,760+(1-b1)*30,w,104,32); g.fill();
+      g.fillStyle='#fff'; g.textBaseline='middle';
+      g.fillText(q,W-90-w+36,812+(1-b1)*30); g.textBaseline='alphabetic';
+    }
+    const b2=lisse((u-.36)/.18);
+    if(b2>0){
+      g.globalAlpha=b2; g.textAlign='left';
+      const rep=["J'ai trouvé 3 robes dans ton budget,","chez TANA Shop à Douala. Je peux","te montrer, ou chercher plus court ?"];
+      g.font='600 40px Inter, sans-serif';
+      let mw=0; for(const l of rep) mw=Math.max(mw,g.measureText(l).width);
+      const bw=mw+80, bh=76+rep.length*56;
+      g.fillStyle='#fff'; g.beginPath(); g.roundRect(90,930+(1-b2)*30,bw,bh,32); g.fill();
+      g.fillStyle=TERRA; g.font='800 30px Inter, sans-serif';
+      g.fillText('FINIA',130,988+(1-b2)*30);
+      g.fillStyle=ENCRE; g.font='600 40px Inter, sans-serif';
+      rep.forEach((l,i)=>g.fillText(l,130,1052+i*56+(1-b2)*30));
+    }
+    const b3=lisse((u-.6)/.2);
+    if(b3>0){
+      g.globalAlpha=b3; g.textAlign='center';
+      g.font='600 40px Inter, sans-serif'; g.fillStyle=LAITON;
+      g.fillText('Elle cherche, elle compare, elle guide.', W/2, 1420+(1-b3)*24);
+      g.fillText('Et elle publie tes articles pour toi.', W/2, 1480+(1-b3)*24);
+    }
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='cta'){
+    fond();
+    g.textAlign='center';
+    const a=lisse(u/.2), b=lisse((u-.24)/.22), c2=lisse((u-.5)/.22);
+    g.globalAlpha=a;
+    g.font='600 56px Inter, sans-serif'; g.fillStyle=LAITON;
+    g.fillText('Toi aussi,', W/2, 720+(1-a)*30);
+    g.globalAlpha=b;
+    g.font='900 116px Fraunces, Georgia, serif'; g.fillStyle=ENCRE;
+    g.fillText('crée ta boutique', W/2, 870+(1-b)*30);
+    g.fillStyle=TERRA;
+    g.fillText('en 2 minutes.', W/2, 1000+(1-b)*30);
+    g.globalAlpha=c2;
+    g.font='600 44px Inter, sans-serif'; g.fillStyle=LAITON;
+    g.fillText("C'est gratuit. Tes photos, tes prix, ta boutique.", W/2, 1130+(1-c2)*24);
+    g.fillStyle=TEAL; g.beginPath(); g.roundRect(W/2-290,1220,580,110,55); g.fill();
+    g.fillStyle='#fff'; g.font='800 50px Inter, sans-serif'; g.textBaseline='middle';
+    g.fillText('finjaro.net', W/2, 1276); g.textBaseline='alphabetic';
+    g.globalAlpha=1; return;
+  }
   // --- plan photo ---
   const im=cache.get(p.it.i);
   if(im){ g.fillStyle='#1a1512'; g.fillRect(0,0,W,H); couvre(im,p.mv,u); }
@@ -234,7 +388,7 @@ function dessine(p,u){
 // ---------- chargement ----------
 const etat=document.getElementById('etat');
 (async()=>{
-  const chemins=[...new Set(SEQ.flatMap(c=>c.items.map(i=>i.i)))];
+  const chemins=[...new Set([...SEQ.flatMap(c=>c.items.map(i=>i.i)), ...REELS.map(r=>r.i)])];
   let n=0;
   await Promise.all(chemins.map(c=>new Promise(res=>{
     const im=new Image(); im.crossOrigin='anonymous';
