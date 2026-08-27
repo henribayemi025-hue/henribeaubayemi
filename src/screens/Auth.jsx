@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconEye, IconEyeOff, IconMail, IconPhone, IconArrowLeft, IconBrandGoogleFilled, IconBrandApple } from '@tabler/icons-react';
+import { IconEye, IconEyeOff, IconMail, IconPhone, IconBrandGoogleFilled, IconBrandApple } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { networkMessage } from '../lib/netError';
@@ -9,6 +9,7 @@ import { souvenirCode } from '../lib/referral';
 import { Button } from '../components/Button';
 import { Field, TextInput } from '../components/Field';
 import { LanguageSwitch } from '../components/LanguageSwitch';
+import { CONTACT_EMAIL } from '../legal/terms';
 
 // Numéro international minimal: un "+" suivi de 7 à 15 chiffres (norme
 // E.164). Volontairement permissif — on ne devine pas le format propre à
@@ -40,7 +41,7 @@ export default function Auth({ consoleMode = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    signIn, signUp, resetPassword, signInWithPhone, verifyPhoneOtp, signInWithGoogle,
+    signIn, signUp, resetPassword, signInWithGoogle,
     signInWithApple, signUpWithPhonePassword, signInWithPhonePassword,
   } = useAuth();
   const toast = useToast();
@@ -57,29 +58,9 @@ export default function Auth({ consoleMode = false }) {
   const [form, setForm] = useState({ email: '', password: '', name: '', phone: '', otp: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Le flux téléphone se déroule en 2 temps: on envoie le code, PUIS on le
-  // vérifie — deux écrans, pas un formulaire à choix multiples.
-  const [otpSent, setOtpSent] = useState(false);
-  // Le téléphone marche d'abord SANS SMS (numéro + mot de passe). Le code
-  // par SMS reste accessible d'un lien — c'est la seule façon de récupérer un
-  // compte téléphone dont le mot de passe est oublié, puisqu'il n'y a pas
-  // d'e-mail où envoyer un lien de réinitialisation.
-  const [phoneMethod, setPhoneMethod] = useState('password'); // 'password' | 'otp'
-  // Certains opérateurs (constaté au Cameroun: MTN/Orange) filtrent les SMS
-  // automatiques venus de l'étranger — le serveur SMS dit « envoyé » et rien
-  // n'arrive jamais. Sans porte de sortie, la personne attend indéfiniment
-  // devant un champ vide: on lui propose une autre voie au bout de 20 s.
-  const [smsLate, setSmsLate] = useState(false);
+  // Panneau « je n'arrive plus à entrer » sur un compte téléphone.
+  const [aideCompte, setAideCompte] = useState(false);
   const from = location.state?.from || '/';
-
-  useEffect(() => {
-    if (!otpSent) {
-      setSmsLate(false);
-      return undefined;
-    }
-    const id = setTimeout(() => setSmsLate(true), 20000);
-    return () => clearTimeout(id);
-  }, [otpSent]);
 
   // Un clic sur Google/Apple laisse `busy` à vrai le temps de quitter la page
   // — normal sur le web, où l'écran est remplacé. Mais si le détour échoue et
@@ -144,11 +125,11 @@ export default function Auth({ consoleMode = false }) {
         const { data, error } = await signUpWithPhonePassword(phone, form.password, form.name.trim(), refCode);
         if (error) throw error;
         if (data.session) navigate(from, { replace: true });
-        else {
-          setPhoneMethod('otp');
-          setOtpSent(true);
-          toast.success(t('auth.codeSent'));
-        }
+        // Sans session, c'est que le projet Supabase exige encore une
+        // confirmation du téléphone. On le dit au lieu de renvoyer vers un
+        // code SMS qui n'arrivera pas — et Beau doit le voir dans les
+        // réglages Supabase, pas la vendeuse dans un écran d'attente.
+        else toast.error(t('auth.phoneConfirmBlocked'));
       } else {
         const { error } = await signInWithPhonePassword(phone, form.password);
         if (error) throw error;
@@ -162,55 +143,6 @@ export default function Auth({ consoleMode = false }) {
       if (/already registered|already exists/i.test(m)) toast.error(t('auth.phoneAlreadyRegistered'));
       else if (m === 'Invalid login credentials') toast.error(t('auth.invalidPhoneCredentials'));
       else toast.error(networkMessage(err, t));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function sendPhoneCode(e) {
-    e.preventDefault();
-    const phone = normalizePhone(form.phone);
-    if (!E164_RE.test(phone)) {
-      toast.error(t('auth.phoneInvalid'));
-      return;
-    }
-    setBusy(true);
-    try {
-      const { error } = await signInWithPhone(phone, {
-        name: form.name.trim(),
-        ref: refCode,
-        // Seule l'inscription a le droit de créer un compte. Voir useAuth.
-        creerSiAbsent: mode === 'signup',
-      });
-      if (error) throw error;
-      setOtpSent(true);
-      toast.success(t('auth.codeSent'));
-    } catch (err) {
-      // Numéro inconnu en connexion: Supabase refuse désormais de créer le
-      // compte en douce. On le dit clairement et on bascule sur le
-      // formulaire d'inscription, où le nom sera demandé — plutôt que de
-      // laisser la personne devant une erreur en anglais qui parle de
-      // « signups disabled ».
-      if (/signup|not allowed|otp_disabled/i.test(err.message || '')) {
-        setMode('signup');
-        toast.error(t('auth.phoneNoAccount'));
-      } else {
-        toast.error(networkMessage(err, t));
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verifyPhoneCode(e) {
-    e.preventDefault();
-    setBusy(true);
-    try {
-      const { error } = await verifyPhoneOtp(normalizePhone(form.phone), form.otp.trim());
-      if (error) throw error;
-      navigate(from, { replace: true });
-    } catch (err) {
-      toast.error(err.message === 'Token has expired or is invalid' ? t('auth.otpInvalid') : networkMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -267,14 +199,14 @@ export default function Auth({ consoleMode = false }) {
         <div className="mb-5 mt-3 flex rounded-card bg-base p-1">
           <button
             type="button"
-            onClick={() => { setChannel('email'); setOtpSent(false); }}
+            onClick={() => { setChannel('email'); setAideCompte(false); }}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-input py-2 text-caption font-semibold transition ${channel === 'email' ? 'bg-white text-teal shadow-sm' : 'text-muted'}`}
           >
             <IconMail size={16} /> {t('auth.byEmail')}
           </button>
           <button
             type="button"
-            onClick={() => { setChannel('phone'); setOtpSent(false); setPhoneMethod('password'); }}
+            onClick={() => { setChannel('phone'); setAideCompte(false); }}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-input py-2 text-caption font-semibold transition ${channel === 'phone' ? 'bg-white text-teal shadow-sm' : 'text-muted'}`}
           >
             <IconPhone size={16} /> {t('auth.byPhone')}
@@ -283,142 +215,97 @@ export default function Auth({ consoleMode = false }) {
       )}
 
       {channel === 'phone' && mode !== 'forgot' ? (
-        otpSent ? (
-          <form onSubmit={verifyPhoneCode} className="space-y-3">
-            <button
-              type="button"
-              onClick={() => setOtpSent(false)}
-              className="flex items-center gap-1 text-caption font-semibold text-teal"
-            >
-              <IconArrowLeft size={14} /> {form.phone}
-            </button>
-            <Field label={t('auth.otpCode')} hint={t('auth.otpHint')}>
-              {(id) => (
+        // TÉLÉPHONE = NUMÉRO + MOT DE PASSE. Rien d'autre.
+        //
+        // Il n'y a plus une seule ligne de SMS ici, et c'est délibéré: au
+        // Cameroun les opérateurs filtrent les SMS automatiques, le code
+        // n'arrive jamais, et un chemin qui ne marche pas est pire que pas de
+        // chemin du tout. Il en restait pourtant un, caché derrière « mot de
+        // passe oublié » — et c'est celui-là qui a piégé une vendeuse le
+        // 27/08: code demandé à 14h22, jamais reçu, nouveau compte Google à
+        // 14h29, deuxième boutique repartie de zéro. Trois comptes pour une
+        // seule personne.
+        <form onSubmit={submitPhonePassword} className="space-y-3">
+          {mode === 'signup' && (
+            <Field label={t('auth.name')}>
+              {(id) => <TextInput id={id} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required autoComplete="name" />}
+            </Field>
+          )}
+          <Field label={t('auth.phone')} hint={t('auth.phoneHint')}>
+            {(id) => (
+              <TextInput
+                id={id}
+                type="tel"
+                inputMode="tel"
+                placeholder="+237 6XX XXX XXX"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                required
+                autoComplete="tel"
+              />
+            )}
+          </Field>
+          <Field label={t('auth.password')} hint={mode === 'signup' ? t('auth.phonePasswordHint') : undefined}>
+            {(id) => (
+              <div className="relative">
                 <TextInput
                   id={id}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={8}
-                  value={form.otp}
-                  onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, '') })}
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
-                  autoFocus
+                  minLength={6}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  className="pr-12"
                 />
-              )}
-            </Field>
-            <Button type="submit" loading={busy}>{t('auth.verifyCode')}</Button>
-            <button type="button" onClick={sendPhoneCode} className="btn-ghost mx-auto block text-caption">
-              {t('auth.resendCode')}
-            </button>
-
-            {/* Porte de sortie quand le SMS ne vient pas. On ne fait PAS de
-                promesse qu'on ne tient pas (« vérifie ton réseau »): on dit ce
-                qui se passe vraiment et on propose deux voies qui marchent
-                tout de suite. */}
-            {smsLate && (
-              <div className="rounded-card border border-warning/25 bg-warning-bg p-4">
-                <p className="text-caption font-semibold text-ink">{t('auth.smsLateTitle')}</p>
-                <p className="mt-1 text-caption text-muted">{t('auth.smsLateBody')}</p>
-                <Button
-                  variant="secondary"
-                  className="mt-3"
-                  onClick={() => { setOtpSent(false); setPhoneMethod('password'); }}
-                >
-                  {t('auth.usePasswordInstead')}
-                </Button>
-                <Button variant="secondary" className="mt-2" onClick={handleGoogle} loading={busy}>
-                  <IconBrandGoogleFilled size={18} /> {t('auth.continueWithGoogle')}
-                </Button>
-                {APPLE_SIGNIN_ENABLED && (
-                  <Button variant="secondary" className="mt-2" onClick={handleApple} loading={busy}>
-                    <IconBrandApple size={18} /> {t('auth.continueWithApple')}
-                  </Button>
-                )}
                 <button
                   type="button"
-                  onClick={() => { setOtpSent(false); setChannel('email'); }}
-                  className="btn-ghost mx-auto mt-1 block text-caption"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted transition-colors hover:text-ink"
+                  aria-label={showPassword ? t('common.hide') : t('common.show')}
                 >
-                  {t('auth.useEmailInstead')}
+                  {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
                 </button>
               </div>
             )}
-          </form>
-        ) : (
-          <form onSubmit={phoneMethod === 'password' ? submitPhonePassword : sendPhoneCode} className="space-y-3">
-            {mode === 'signup' && (
-              <Field label={t('auth.name')}>
-                {(id) => <TextInput id={id} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required autoComplete="name" />}
-              </Field>
-            )}
-            <Field label={t('auth.phone')} hint={t('auth.phoneHint')}>
-              {(id) => (
-                <TextInput
-                  id={id}
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="+237 6XX XXX XXX"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  required
-                  autoComplete="tel"
-                />
+          </Field>
+          <Button type="submit" loading={busy}>
+            {mode === 'signup' ? t('auth.signup') : t('auth.login')}
+          </Button>
+
+          {mode === 'login' && (
+            <>
+              <button
+                type="button"
+                onClick={() => setAideCompte(true)}
+                className="btn-ghost mx-auto block text-caption"
+              >
+                {t('auth.forgotPasswordPhone')}
+              </button>
+
+              {/* Un compte téléphone n'a pas d'e-mail où envoyer un lien de
+                  réinitialisation. La seule voie honnête est donc une vraie
+                  personne — pas un code qui n'arrivera pas. Et on dit
+                  clairement de NE PAS ouvrir un deuxième compte: la boutique,
+                  les articles et les photos sont sur celui-ci. */}
+              {aideCompte && (
+                <div className="rounded-card border border-warning/25 bg-warning-bg p-4">
+                  <p className="text-caption font-semibold text-ink">{t('auth.phoneRecoverTitle')}</p>
+                  <p className="mt-1 text-caption text-muted">{t('auth.phoneRecoverBody')}</p>
+                  <p className="mt-3 rounded-input border border-warning/30 bg-white/60 p-2 text-caption text-ink">
+                    {t('auth.dontCreateSecondAccount')}
+                  </p>
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(t('auth.recoverMailSubject'))}&body=${encodeURIComponent(t('auth.recoverMailBody', { phone: form.phone }))}`}
+                    className="btn-secondary mt-2 flex items-center justify-center gap-2"
+                  >
+                    <IconMail size={18} /> {t('auth.recoverWithSupport')}
+                  </a>
+                </div>
               )}
-            </Field>
-            {phoneMethod === 'password' ? (
-              <>
-                <Field label={t('auth.password')} hint={mode === 'signup' ? t('auth.phonePasswordHint') : undefined}>
-                  {(id) => (
-                    <div className="relative">
-                      <TextInput
-                        id={id}
-                        type={showPassword ? 'text' : 'password'}
-                        value={form.password}
-                        onChange={(e) => setForm({ ...form, password: e.target.value })}
-                        required
-                        minLength={6}
-                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                        className="pr-12"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted transition-colors hover:text-ink"
-                        aria-label={showPassword ? t('common.hide') : t('common.show')}
-                      >
-                        {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
-                      </button>
-                    </div>
-                  )}
-                </Field>
-                <Button type="submit" loading={busy}>
-                  {mode === 'signup' ? t('auth.signup') : t('auth.login')}
-                </Button>
-                {/* Seule voie de secours pour un compte téléphone: pas d'e-mail,
-                    donc pas de lien de réinitialisation possible. */}
-                <button
-                  type="button"
-                  onClick={() => setPhoneMethod('otp')}
-                  className="btn-ghost mx-auto block text-caption"
-                >
-                  {mode === 'signup' ? t('auth.useSmsCodeInstead') : t('auth.forgotPasswordPhone')}
-                </button>
-              </>
-            ) : (
-              <>
-                <Button type="submit" loading={busy}>{t('auth.sendCode')}</Button>
-                <button
-                  type="button"
-                  onClick={() => setPhoneMethod('password')}
-                  className="btn-ghost mx-auto block text-caption"
-                >
-                  {t('auth.usePasswordInstead')}
-                </button>
-              </>
-            )}
-          </form>
-        )
+            </>
+          )}
+        </form>
       ) : (
         <form onSubmit={submit} className="space-y-3">
           {mode === 'signup' && (
@@ -500,7 +387,7 @@ export default function Auth({ consoleMode = false }) {
         <button onClick={() => setMode('login')} className="btn-ghost mx-auto mt-4">{t('auth.backToLogin')}</button>
       ) : (
         !consoleMode && (
-          <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setOtpSent(false); }} className="btn-ghost mx-auto mt-4">
+          <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setAideCompte(false); }} className="btn-ghost mx-auto mt-4">
             {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
           </button>
         )

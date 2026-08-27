@@ -119,39 +119,13 @@ export function AuthProvider({ children }) {
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password, name, ref) =>
       supabase.auth.signUp({ email, password, options: { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } }),
-    // Connexion/inscription par téléphone (SMS OTP) — sans e-mail ni mot de
-    // passe, pour les personnes qui n'ont qu'un numéro WhatsApp/SMS. Un seul
-    // appel gère les deux cas: Supabase crée le compte au premier passage et
-    // se contente de vérifier le code aux suivants. `name`/`ref` ne servent
-    // que pour un compte NOUVEAU — sur un compte existant, Supabase les
-    // ignore silencieusement (le profil garde son nom déjà enregistré).
-    // `creerSiAbsent` est le réglage le plus important de cette fonction.
-    //
-    // `signInWithOtp` crée un compte par DÉFAUT quand le numéro est inconnu.
-    // Sur l'écran de CONNEXION, il n'y a pas de champ « nom » — donc chaque
-    // personne qui tapait son numéro pour se connecter alors qu'elle n'avait
-    // pas encore de compte en obtenait un, vide, sans nom, sans boutique,
-    // sans jamais l'avoir demandé. Cinq comptes dans ce cas au 15/08, et
-    // à chaque fois la personne s'est réinscrite deux minutes plus tard par
-    // Google: elle n'avait pas compris qu'elle était déjà entrée.
-    //
-    // Se connecter ne doit jamais créer. S'inscrire, oui.
-    signInWithPhone: (phone, { name, ref, creerSiAbsent = false } = {}) =>
-      supabase.auth.signInWithOtp({
-        phone,
-        options: {
-          channel: 'sms',
-          shouldCreateUser: creerSiAbsent,
-          ...(creerSiAbsent ? { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } : {}),
-        },
-      }),
-    verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
-    // Numéro + mot de passe, SANS SMS — la voie principale au Cameroun, où
-    // les opérateurs filtrent les SMS automatiques (constaté en production:
-    // toutes les inscriptions en +237 restaient bloquées). Même principe que
-    // Jumia. Supabase renvoie une session immédiatement tant que la
-    // confirmation du téléphone est désactivée côté projet; si elle est
-    // active, `data.session` est nul et l'appelant bascule sur le code SMS.
+    // Numéro + mot de passe, SANS SMS — et c'est désormais la SEULE voie
+    // téléphone. Les opérateurs camerounais filtrent les SMS automatiques:
+    // le serveur dit « envoyé » et rien n'arrive jamais. Le code par SMS a
+    // donc été retiré entièrement, y compris la récupération de mot de passe
+    // qui en dépendait encore — un chemin qui ne marche pas coûte plus cher
+    // que pas de chemin: il fait ouvrir un deuxième compte, vide, et la
+    // boutique reste sur le premier.
     signUpWithPhonePassword: (phone, password, name, ref) =>
       supabase.auth.signUp({ phone, password, options: { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } }),
     signInWithPhonePassword: (phone, password) =>
