@@ -102,6 +102,22 @@ export function SettingsProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile]);
 
+  // Même rattrapage pour la langue, sur un compte qui n'en porte aucune.
+  //
+  // L'inscription par e-mail ou par téléphone transmet la langue choisie dans
+  // les métadonnées (voir useAuth), mais Google et Apple ne le peuvent pas: le
+  // détour passe par LEUR site et rien de ce qui a été choisi ici ne fait le
+  // voyage. Le profil revient donc sans langue — et c'est cette écriture qui
+  // enregistre enfin le choix déjà fait sur l'écran d'inscription, pour qu'on
+  // le retrouve sur un autre téléphone.
+  useEffect(() => {
+    if (!user || !profile || profile.locale) return;
+    const lng = i18n.language?.startsWith('en') ? 'en' : 'fr';
+    supabase.from('profiles').update({ locale: lng }).eq('id', user.id)
+      .then(({ error }) => { if (error) console.error('[Settings] langue non synchronisée:', error.message); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile]);
+
   const persist = useCallback(
     (patch) => {
       if (user) {

@@ -8,6 +8,7 @@ import { networkMessage } from '../lib/netError';
 import { souvenirCode } from '../lib/referral';
 import { Button } from '../components/Button';
 import { Field, TextInput } from '../components/Field';
+import { LanguageSwitch } from '../components/LanguageSwitch';
 
 // Numéro international minimal: un "+" suivi de 7 à 15 chiffres (norme
 // E.164). Volontairement permissif — on ne devine pas le format propre à
@@ -247,7 +248,13 @@ export default function Auth({ consoleMode = false }) {
       <Link to="/" className="mb-8 flex items-center justify-center gap-1">
         <span className="text-title font-semibold text-teal">Finjaro</span>
       </Link>
-      <p className="mb-6 text-center text-caption text-muted">{t('common.tagline')}</p>
+      <p className="mb-4 text-center text-caption text-muted">{t('common.tagline')}</p>
+
+      {/* Le choix de la langue est ici, au-dessus du formulaire, et pas
+          seulement dans les Paramètres: on ne peut pas demander à quelqu'un
+          de créer un compte pour pouvoir lire l'écran où il crée son compte.
+          Visible aussi à la connexion — la même personne revient. */}
+      {!consoleMode && <LanguageSwitch className="mb-6" />}
 
       <h1 className="mb-1 text-title text-ink">
         {mode === 'login' ? t('auth.loginTitle') : mode === 'signup' ? t('auth.signupTitle') : t('auth.forgotTitle')}

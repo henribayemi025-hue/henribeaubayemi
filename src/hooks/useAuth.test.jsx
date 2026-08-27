@@ -5,10 +5,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
-const { signInWithPassword, getSession, getAuthChangeCallback, setAuthChangeCallback } = vi.hoisted(() => {
+const { signInWithPassword, signUp, getSession, getAuthChangeCallback, setAuthChangeCallback } = vi.hoisted(() => {
   let cb = null;
   return {
     signInWithPassword: vi.fn(() => Promise.resolve({ data: {}, error: null })),
+    signUp: vi.fn(() => Promise.resolve({ data: {}, error: null })),
     getSession: vi.fn(() => Promise.resolve({ data: { session: null } })),
     getAuthChangeCallback: () => cb,
     setAuthChangeCallback: (fn) => {
@@ -26,6 +27,7 @@ vi.mock('../lib/supabase', () => ({
         return { data: { subscription: { unsubscribe: () => {} } } };
       },
       signInWithPassword,
+      signUp,
     },
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { id: 'user-1', name: 'Test' }, error: null }) }) }),
@@ -33,10 +35,12 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
+import i18n from '../lib/i18n';
 import { AuthProvider, useAuth } from './useAuth';
 
 beforeEach(() => {
   signInWithPassword.mockClear();
+  signUp.mockClear();
   getSession.mockClear();
 });
 
@@ -64,5 +68,35 @@ describe('useAuth — connexion', () => {
     });
 
     expect(signInWithPassword).toHaveBeenCalledWith({ email: 'buyer@finjaro.net', password: 'hunter2' });
+  });
+});
+
+// La langue choisie sur l'écran d'inscription doit partir AVEC le compte.
+//
+// Sans elle, `handle_new_user` n'a rien à recopier, `profiles.locale` reste
+// nul, et le choix ne se retrouve sur aucun autre appareil. C'est le cas
+// signalé en production: un vendeur anglophone bloqué devant un formulaire
+// en français.
+describe('useAuth — la langue voyage avec l\'inscription', () => {
+  async function inscrire(langue) {
+    await i18n.changeLanguage(langue);
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => {
+      await result.current.signUp('new@finjaro.net', 'hunter2', 'Nouveau', null);
+    });
+    return signUp.mock.calls[0][0].options.data;
+  }
+
+  it('transmet « en » quand English est choisi avant de créer le compte', async () => {
+    expect(await inscrire('en')).toMatchObject({ name: 'Nouveau', locale: 'en' });
+  });
+
+  it('transmet « fr » par défaut', async () => {
+    expect(await inscrire('fr')).toMatchObject({ name: 'Nouveau', locale: 'fr' });
+  });
+
+  it("ramène « en-US » à « en » — profiles.locale ne connaît que fr et en", async () => {
+    expect(await inscrire('en-US')).toMatchObject({ locale: 'en' });
   });
 });

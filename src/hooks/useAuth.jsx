@@ -1,8 +1,20 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { reclamerParrainage } from '../lib/referral';
+import i18n from '../lib/i18n';
 
 const AuthCtx = createContext(null);
+
+// La langue choisie sur l'écran d'inscription part AVEC le compte.
+//
+// `public.profiles.locale` avait « fr » pour valeur par défaut en base: un
+// compte créé par quelqu'un qui venait de choisir English naissait quand même
+// estampillé français, et `useSettings` — qui adopte la langue du profil à la
+// connexion — rebasculait toute l'application en français dans la seconde qui
+// suivait. Le choix était donc perdu au moment précis où il comptait. La
+// migration 0063 enlève ce défaut et fait recopier cette valeur-ci par
+// `handle_new_user`.
+const langueChoisie = () => (i18n.language?.startsWith('en') ? 'en' : 'fr');
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -106,7 +118,7 @@ export function AuthProvider({ children }) {
     refreshProfile: () => loadProfile(session?.user?.id),
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password, name, ref) =>
-      supabase.auth.signUp({ email, password, options: { data: { name, ...(ref ? { ref } : {}) } } }),
+      supabase.auth.signUp({ email, password, options: { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } }),
     // Connexion/inscription par téléphone (SMS OTP) — sans e-mail ni mot de
     // passe, pour les personnes qui n'ont qu'un numéro WhatsApp/SMS. Un seul
     // appel gère les deux cas: Supabase crée le compte au premier passage et
@@ -130,7 +142,7 @@ export function AuthProvider({ children }) {
         options: {
           channel: 'sms',
           shouldCreateUser: creerSiAbsent,
-          ...(creerSiAbsent ? { data: { name, ...(ref ? { ref } : {}) } } : {}),
+          ...(creerSiAbsent ? { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } : {}),
         },
       }),
     verifyPhoneOtp: (phone, token) => supabase.auth.verifyOtp({ phone, token, type: 'sms' }),
@@ -141,7 +153,7 @@ export function AuthProvider({ children }) {
     // confirmation du téléphone est désactivée côté projet; si elle est
     // active, `data.session` est nul et l'appelant bascule sur le code SMS.
     signUpWithPhonePassword: (phone, password, name, ref) =>
-      supabase.auth.signUp({ phone, password, options: { data: { name, ...(ref ? { ref } : {}) } } }),
+      supabase.auth.signUp({ phone, password, options: { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } }),
     signInWithPhonePassword: (phone, password) =>
       supabase.auth.signInWithPassword({ phone, password }),
     // OAuth redirige vers Google puis revient sur cette même URL — pas de
