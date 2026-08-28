@@ -23,9 +23,9 @@ doit pouvoir se connecter sans téléphone ni compte Google).
 Puis dis-le-moi: je remplis la boutique de ce compte avec des articles, pour
 que l'examinateur voie une vraie boutique et pas un écran vide.
 
-**Pourquoi par e-mail:** l'examinateur est aux États-Unis. Il n'a pas de
-numéro camerounais ni français pour recevoir un SMS. S'il ne peut pas se
-connecter, il refuse à nouveau.
+**Pourquoi par e-mail:** l'examinateur est aux États-Unis. Il n'a ni numéro
+camerounais ni compte Google d'essai. S'il ne peut pas se connecter, il
+refuse à nouveau.
 
 ### 2. Enregistrer la vidéo (point 1 de la demande d'Apple)
 
@@ -126,9 +126,9 @@ No sample file is needed.
 
 **5. External services used**
 
-- **Supabase** — authentication (email/password, phone one-time passcode,
-  Sign in with Google, Sign in with Apple), database, file storage, and
-  serverless functions.
+- **Supabase** — authentication (email and password, phone number and
+  password, Sign in with Google, Sign in with Apple), database, file storage,
+  and serverless functions.
 - **Cloudflare Workers** — web hosting and content delivery.
 - **Google Gemini API** — powers our in-app assistant ("Finia"), which helps
   buyers find products, helps sellers write their listings from a photo, and
@@ -150,8 +150,9 @@ feature:
 
 - Prices are displayed in the currency of the country set on the user's
   profile, which the user can change at any time in Settings.
-- The interface is available in French and English, following the device
-  language, and can be changed in Settings.
+- The interface is available in French and English. The language is offered
+  as a choice on the sign-up screen itself and can be changed at any time in
+  Settings.
 
 **7. Regulated industry / protected third-party material**
 
@@ -190,3 +191,19 @@ Le bandeau **trader status (DSA)** en haut de la liste des apps: tant qu'il
 n'est pas rempli, l'app ne peut pas être distribuée dans l'Union européenne,
 même acceptée. App Store Connect → **Business** → Trader Status. C'est Beau
 qui doit le remplir, personne d'autre ne peut.
+
+---
+
+## Mis à jour le 27/08
+
+Deux phrases du texte ci-dessus ont été corrigées, parce que l'app a changé
+depuis le 14/08 et qu'une réponse fausse à Apple se paie cher:
+
+- Le **code par SMS a été retiré** de l'application. Les opérateurs
+  camerounais filtrent les SMS automatiques: le code n'arrivait jamais, et le
+  chemin qui restait poussait les gens à ouvrir un deuxième compte. Le
+  téléphone marche désormais avec un mot de passe, comme l'e-mail. Le point 5
+  ne parle donc plus de « one-time passcode ».
+- La langue **ne suit pas la langue de l'appareil**. Elle se choisit sur
+  l'écran d'inscription (Français / English) et dans les Réglages. Le point 6
+  disait le contraire.
