@@ -5,6 +5,7 @@ import './styles/global.css';
 import App from './App';
 import { prefetchHome } from './lib/homeCache';
 import { track } from './lib/track';
+import { creerGardienRechargement } from './lib/swUpdate';
 
 // Kick off Home's data request the instant the app boots — before routing,
 // before auth resolves, before Home's own (lazy-loaded) code has even
@@ -30,10 +31,17 @@ try {
 // update, not the first install) we reload once so the fresh build takes over.
 if ('serviceWorker' in navigator) {
   const controlledAtLoad = !!navigator.serviceWorker.controller;
+  const gardien = creerGardienRechargement();
+  gardien.ecouter(window);
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     // Ignore the very first install's claim (nothing to refresh into yet).
     if (!controlledAtLoad || refreshing) return;
+    // Personne n'a encore touché l'écran: le rechargement est invisible.
+    // Sinon, ON NE RECHARGE PAS — voir lib/swUpdate.js pour les deux pannes
+    // (connexion coupée en plein envoi, Finia tué au retour de la photo)
+    // que le rechargement immédiat a réellement causées le 27/08.
+    if (!gardien.peutRecharger()) return;
     refreshing = true;
     window.location.reload();
   });

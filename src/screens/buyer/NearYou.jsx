@@ -98,25 +98,42 @@ export default function NearYou() {
     }
   }
 
-  // Attach real distance + sort nearest-first when a position is known.
+  // « Autour de moi », vérifié contre le vrai catalogue (28/08): 35 boutiques
+  // camerounaises dont 11 seulement ont un GPS. L'ancien tri gardait les
+  // fiches à moins de radiusKm, SUPPRIMAIT les boutiques du pays qui ont un
+  // GPS mais sont plus loin, et laissait les fiches sans GPS — y compris
+  // l'Allemagne et le Canada — remonter en tête, dans l'ordre des abonnés.
+  // Constaté par Beau, au Cameroun: « ça ne m'a pas proposé les choses au
+  // Cameroun ». Son propre pays disparaissait, l'étranger restait.
+  //
+  // Ordre désormais: 1) ce qui est vraiment autour (GPS ≤ rayon), du plus
+  // proche au plus loin; 2) TON pays sans GPS (l'immense majorité des
+  // fiches); 3) ton pays plus loin que le rayon — jamais supprimé; 4) le
+  // reste du monde sans GPS (ne jamais vider l'annuaire de qui n'a pas
+  // renseigné son GPS); 5) le reste du monde au-delà du rayon, seul cas
+  // encore écarté — comme avant.
+  function rangAutourDeMoi(x) {
+    if (x._km != null && x._km <= radiusKm) return 0;
+    if (x.country === country) return x._km != null ? 2 : 1;
+    return x._km != null ? 4 : 3;
+  }
+
   function byDistance(items) {
     if (!userPos) return items;
     return items
       .map((x) => ({ ...x, _km: distanceKm(userPos, { lat: x.lat, lng: x.lng }) }))
       .sort((a, b) => {
-        if (a._km == null && b._km == null) return 0;
-        if (a._km == null) return 1;
-        if (b._km == null) return -1;
-        return a._km - b._km;
+        const ra = rangAutourDeMoi(a);
+        const rb = rangAutourDeMoi(b);
+        if (ra !== rb) return ra - rb;
+        if (a._km != null && b._km != null) return a._km - b._km;
+        return 0;
       });
   }
 
-  // Rayon: n'exclut jamais une fiche SANS position (sinon activer "autour de
-  // moi" viderait l'annuaire de tous les prestataires qui n'ont pas encore
-  // renseigné leur GPS) — elles passent juste après celles qui en ont une.
   function withinRadius(items) {
     if (!userPos) return items;
-    return items.filter((x) => x._km == null || x._km <= radiusKm);
+    return items.filter((x) => rangAutourDeMoi(x) < 4);
   }
 
   const { data, loading, error, retry } = useAsync(async () => {
