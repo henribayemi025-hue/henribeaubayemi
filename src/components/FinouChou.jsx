@@ -179,9 +179,17 @@ export function FinouChou() {
       if (Array.isArray(data.cartActions)) {
         for (const line of data.cartActions) cart.add(line, line.qty);
       }
-      // Visual search: if Finou identified a category, surface real, buyable
-      // products from the marketplace as a carousel under the reply.
-      if (data.category) {
+      // Les articles que Finia a VRAIMENT trouves pendant ce tour arrivent
+      // maintenant avec sa reponse: photo, prix, et un lien qui ouvre la
+      // fiche. Avant, ils n'existaient nulle part — Finia annoncait « voici
+      // les meilleures tendances » et l'ecran n'affichait qu'un texte, sans
+      // une seule image ni un seul lien, parce qu'il ne montrait un carrousel
+      // que pour les reponses finissant par un marqueur de categorie.
+      if (data.products?.length) {
+        setMessages((m) => m.map((x) => (x.id === mid ? { ...x, products: data.products } : x)));
+      } else if (data.category) {
+        // Repli inchange: Finia a nomme un rayon sans passer par la recherche
+        // (une photo reconnue, par exemple). On montre ce rayon.
         try {
           const { data: prods } = await supabase
             .from('products')

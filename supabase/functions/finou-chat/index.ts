@@ -598,12 +598,43 @@ function budgetEnFcfa(args: Json): number | null {
   return null;
 }
 
+// `vitrine`: les articles que Finia a REELLEMENT trouves pendant ce tour.
+//
+// Ils partaient a la poubelle. Le modele les recevait, en parlait en toutes
+// lettres — « voici les meilleures tendances… » — et le client n'affichait
+// rien, parce qu'il ne montrait un carrousel QUE si la reponse se terminait
+// par un marqueur « CAT: ». Sur « les meilleures tendances », qui ne sont pas
+// une categorie, il n'y avait donc ni photo ni lien: juste une liste de noms
+// morts, impossible a toucher. Beau: « ca a juste liste, ca n'a pas envoye le
+// lien ni l'image, normalement ca doit mener directement a la boutique ».
+//
+// Meme quand « CAT: » etait la, le client REFAISAIT sa propre requete par
+// categorie triee par vues: les cartes affichees n'etaient pas les articles
+// dont Finia venait de parler. Desormais ce sont exactement les memes.
+// Une ligne `products` de la base -> la carte que l'ecran de Finia sait
+// afficher (photo, nom, prix, bouton « essayer »). Les noms de champs sont
+// ceux de ProductCard, pas ceux qu'on donne au modele en francais.
+function carteArticle(p: Json): Json {
+  return {
+    id: p.id,
+    name: p.name,
+    price_fcfa: p.price_fcfa,
+    price_on_request: !!p.price_on_request,
+    category: p.category,
+    stock: p.stock ?? null,
+    images: p.images ?? [],
+    shop_id: p.shop_id ?? null,
+    shop_name: (p.shops as Json | null)?.name ?? null,
+  };
+}
+
 async function runTool(
   name: string,
   args: Json,
   db: SupabaseClient,
   userId: string | null,
   cartActions: Json[],
+  vitrine: Json[],
   contexte: Json | null,
 ): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
@@ -626,7 +657,7 @@ async function runTool(
       //
       // Une cliente ne connaît pas le nom que la vendeuse a choisi. On
       // cherche donc CHAQUE MOT utile, dans le nom ET dans la description.
-      const CATALOG_FIELDS = 'id,name,price_fcfa,price_on_request,category,stock,shop_id,shops(name,slug)';
+      const CATALOG_FIELDS = 'id,name,price_fcfa,price_on_request,category,stock,shop_id,images,shops(name,slug)';
       // Mots vides du français: sans ce tri, « pour » et « femme » pèsent
       // pareil et « pour » ramène la moitié du catalogue.
       const STOP = new Set([
@@ -719,6 +750,8 @@ async function runTool(
           .then(() => {}, () => {});
       }
 
+      for (const p of (data ?? []) as Json[]) vitrine.push(carteArticle(p));
+
       return {
         count: data?.length ?? 0,
         resultat_approche: approximate,
@@ -739,7 +772,7 @@ async function runTool(
     case 'get_trending_products': {
       let q = db
         .from('products')
-        .select('id,name,price_fcfa,category,views,shops(name)')
+        .select('id,name,price_fcfa,price_on_request,category,stock,shop_id,images,views,shops(name)')
         .eq('is_active', true)
         .order('views', { ascending: false })
         .limit(5);
@@ -748,10 +781,20 @@ async function runTool(
       }
       const { data, error } = await q;
       if (error) return { error: error.message };
+      for (const p of (data ?? []) as Json[]) vitrine.push(carteArticle(p));
       return {
         count: data?.length ?? 0,
+        // L'id manquait: le modele ne pouvait donc RIEN faire d'un article en
+        // tendance — ni l'ouvrir, ni le mettre au panier, ni le suivre.
         products: (data ?? []).map((p: Json) => ({
-          nom: p.name, prix_fcfa: p.price_fcfa, categorie: p.category, boutique: (p.shops as Json | null)?.name ?? null,
+          id: p.id,
+          nom: p.name,
+          prix_fcfa: p.price_fcfa,
+          prix_sur_demande: !!p.price_on_request,
+          categorie: p.category,
+          en_stock: (p.stock as number) > 0,
+          boutique: (p.shops as Json | null)?.name ?? null,
+          shop_id: p.shop_id,
         })),
       };
     }
@@ -1465,6 +1508,9 @@ Deno.serve(async (req: Request) => {
     let calls = 0;
     let pinnedModel: string | null = null;
     const cartActions: Json[] = [];
+    // Les articles que les outils ont vraiment ramenes, dans l'ordre ou Finia
+    // les a decouverts — c'est ce que l'ecran affichera.
+    const vitrine: Json[] = [];
 
     outer:
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -1501,7 +1547,7 @@ Deno.serve(async (req: Request) => {
       const responseParts: Array<Json> = [];
       for (const p of fnCalls) {
         const fc = (p.functionCall ?? p.function_call) as { name: string; args?: Json };
-        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions, context ?? null);
+        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions, vitrine, context ?? null);
         responseParts.push({ functionResponse: { name: fc.name, response: result } });
       }
       contents.push({ role: 'user', parts: responseParts });
@@ -1557,7 +1603,19 @@ Deno.serve(async (req: Request) => {
       else mergedCart.set(id, { ...line });
     }
 
-    return json({ reply, category, action, cartActions: [...mergedCart.values()] });
+    // Doublons ecartes (le meme article peut sortir de deux recherches dans
+    // le meme tour) et dix maximum: c'est un carrousel, pas un catalogue.
+    const dejaVus = new Set<string>();
+    const products: Json[] = [];
+    for (const p of vitrine) {
+      const id = p.id as string;
+      if (!id || dejaVus.has(id)) continue;
+      dejaVus.add(id);
+      products.push(p);
+      if (products.length === 10) break;
+    }
+
+    return json({ reply, category, action, cartActions: [...mergedCart.values()], products });
   } catch (err) {
     console.error('finou-chat exception', err);
     return json({ error: 'internal_error' }, 500);
