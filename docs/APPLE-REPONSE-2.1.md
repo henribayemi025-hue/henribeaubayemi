@@ -10,22 +10,30 @@ reprend.
 
 ---
 
-## Ce que Beau doit faire (2 choses)
+## Ce que Beau doit faire
 
-### 1. Créer le compte de démonstration
+### 1. Le compte de démonstration — FAIT le 28/08
 
-Sur https://finjaro.net → Créer un compte, **par e-mail** (pas Google: Apple
-doit pouvoir se connecter sans téléphone ni compte Google).
+- E-mail: `fin.finjaro+review@gmail.com` (arrive dans la boîte
+  fin.finjaro@gmail.com, celle des Conditions générales)
+- Mot de passe: `FinjaroReview2026`
 
-- E-mail: une adresse que tu contrôles, par ex. `review@finjaro.net`
-- Mot de passe: quelque chose de simple à taper, sans accent
-
-Puis dis-le-moi: je remplis la boutique de ce compte avec des articles, pour
-que l'examinateur voie une vraie boutique et pas un écran vide.
-
-**Pourquoi par e-mail:** l'examinateur est aux États-Unis. Il n'a ni numéro
-camerounais ni compte Google d'essai. S'il ne peut pas se connecter, il
+Compte par **e-mail**, pas Google: l'examinateur est aux États-Unis, il n'a ni
+numéro camerounais ni compte Google d'essai. S'il ne peut pas se connecter, il
 refuse à nouveau.
+
+Il a une boutique, **Finjaro Demo Shop** (Douala), avec trois articles en
+vente — parfum, montre, baskets — pour que l'espace vendeur ne s'ouvre pas sur
+un écran vide. Le nom de la boutique et celui des articles disent
+explicitement qu'il s'agit d'exemples: la boutique est publique comme
+n'importe quelle autre, et personne ne doit la prendre pour un vrai stock.
+
+Les photos viennent de `public/demo-products/`, le jeu d'images de
+démonstration déjà présent dans le dépôt. À remplacer par des photos de Beau
+quand il en aura sous la main.
+
+Une fois l'app acceptée, la boutique se retire du catalogue en passant son
+`status` à `hidden` — dis-le-moi et je le fais.
 
 ### 2. Enregistrer la vidéo (point 1 de la demande d'Apple)
 
@@ -105,8 +113,8 @@ worldwide audience, with no country-specific restriction.
 
 Demo account (buyer and seller — the same account can switch between both):
 
-- Email: `<À REMPLIR>`
-- Password: `<À REMPLIR>`
+- Email: `fin.finjaro+review@gmail.com`
+- Password: `FinjaroReview2026`
 
 After signing in:
 
