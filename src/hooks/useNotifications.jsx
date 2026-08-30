@@ -109,6 +109,11 @@ export function notificationHref(n) {
       return '/switch/to-vendor';
     case 'shop_rejected':
       return '/become-vendor';
+    // Une relance s'ouvre sur son propre ecran: on y lit le message ET on
+    // y repond. La marquer lue dans la cloche ne suffit pas — Beau a besoin
+    // de savoir si elle a ete OUVERTE.
+    case 'relance':
+      return d.relance_id ? `/relance/${d.relance_id}` : null;
     case 'new_reel':
       return '/fin';
     case 'new_listing':

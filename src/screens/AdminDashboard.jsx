@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
-  IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy,
+  IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy, IconMessage2,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -20,6 +20,7 @@ const AdminOrders = lazy(() => import('./admin/AdminOrders'));
 const AdminModeration = lazy(() => import('./admin/AdminModeration'));
 const AdminContent = lazy(() => import('./admin/AdminContent'));
 const AdminSupport = lazy(() => import('./admin/AdminSupport'));
+const AdminRelances = lazy(() => import('./admin/AdminRelances'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
 const AI_BUDGET_EUR = 20;
@@ -34,6 +35,7 @@ const SECTIONS = [
   { key: 'orders', icon: IconShoppingBag, Component: AdminOrders },
   { key: 'moderation', icon: IconFlag, Component: AdminModeration },
   { key: 'support', icon: IconLifebuoy, Component: AdminSupport },
+  { key: 'relances', icon: IconMessage2, Component: AdminRelances },
   { key: 'content', icon: IconSpeakerphone, Component: AdminContent },
 ];
 

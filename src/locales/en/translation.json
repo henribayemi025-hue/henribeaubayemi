@@ -1195,7 +1195,8 @@
       "users": "Accounts",
       "orders": "Orders",
       "moderation": "Moderation",
-      "content": "Content"
+      "content": "Content",
+      "relances": "Follow-ups"
     },
     "searchShops": "Search a shop, a city, an owner…",
     "searchUsers": "Search a name, a phone, a city…",
@@ -1326,7 +1327,34 @@
     "deletionRequestedOn": "Deletion requested {{when}}",
     "deletionManualHint": "After checking, delete the account via Authentication → Users in the Supabase dashboard, then mark this request as done here.",
     "deletionMarkDone": "Mark as done (account deleted)",
-    "deletionMarkedDone": "Request marked as done."
+    "deletionMarkedDone": "Request marked as done.",
+    "relanceTab": {
+      "a_relancer": "To follow up",
+      "envoyees": "Waiting",
+      "repondu": "Replied"
+    },
+    "relanceMotif": {
+      "boutique_vide": "shop open, no items",
+      "sans_boutique": "account created, no shop",
+      "photos_orphelines": "photos uploaded, no items",
+      "manuel": "manual follow-up"
+    },
+    "relanceModele": {
+      "boutique_vide": "Hello {{nom}} 👋 This is Beau, from Finjaro. I saw you opened {{boutique}} — well done! All that's left is adding your first items. If something is blocking you, tell me right here and I'll help.",
+      "sans_boutique": "Hello {{nom}} 👋 This is Beau, from Finjaro. You created your account but not your shop yet. It takes two minutes, and I can walk you through it. Tell me what's stopping you.",
+      "photos_orphelines": "Hello {{nom}} 👋 This is Beau, from Finjaro. Your photos are saved and waiting — they just need to become items. Reply here if you'd like me to show you how.",
+      "manuel": "Hello {{nom}} 👋 This is Beau, from Finjaro."
+    },
+    "relanceNoShop": "No shop",
+    "relanceSince": "joined {{quand}}",
+    "relanceSend": "Send follow-up",
+    "relanceSent": "Follow-up sent.",
+    "relanceNotifTitle": "Finjaro wrote to you",
+    "relanceRead": "Read {{quand}}",
+    "relanceUnread": "Not read yet",
+    "relanceNoTargets": "Nobody to follow up — everyone has published.",
+    "relanceNoneSent": "No follow-up waiting for a reply.",
+    "relanceNoReplies": "Nobody has replied yet."
   },
   "troc": {
     "title": "Evaluate a trade",
@@ -1431,5 +1459,15 @@
     "noMatch": "No shop matches.",
     "empty": "No shop yet.",
     "seeAll": "See all"
+  },
+  "relance": {
+    "title": "Message from Finjaro",
+    "from": "Finjaro",
+    "placeholder": "Your reply…",
+    "send": "Reply",
+    "sent": "Reply sent. Thank you!",
+    "answered": "You replied",
+    "goPublish": "Add my items",
+    "gone": "This message no longer exists."
   }
 }

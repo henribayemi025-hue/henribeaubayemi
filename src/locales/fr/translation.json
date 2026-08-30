@@ -1195,7 +1195,8 @@
       "users": "Comptes",
       "orders": "Commandes",
       "moderation": "Modération",
-      "content": "Contenu"
+      "content": "Contenu",
+      "relances": "Relances"
     },
     "searchShops": "Chercher une boutique, une ville, une propriétaire…",
     "searchUsers": "Chercher un nom, un téléphone, une ville…",
@@ -1326,7 +1327,34 @@
     "deletionRequestedOn": "Suppression demandée {{when}}",
     "deletionManualHint": "Après vérification, supprime le compte via Authentication → Users dans le tableau de bord Supabase, puis marque cette demande comme traitée ici.",
     "deletionMarkDone": "Marquer comme traité (compte supprimé)",
-    "deletionMarkedDone": "Demande marquée comme traitée."
+    "deletionMarkedDone": "Demande marquée comme traitée.",
+    "relanceTab": {
+      "a_relancer": "À relancer",
+      "envoyees": "En attente",
+      "repondu": "Ont répondu"
+    },
+    "relanceMotif": {
+      "boutique_vide": "boutique ouverte, aucun article",
+      "sans_boutique": "compte créé, pas de boutique",
+      "photos_orphelines": "des photos chargées, aucun article",
+      "manuel": "relance manuelle"
+    },
+    "relanceModele": {
+      "boutique_vide": "Bonjour {{nom}} 👋 C'est Beau, de Finjaro. J'ai vu que vous avez ouvert {{boutique}} — bravo ! Il ne reste plus qu'à y mettre vos premiers articles. Si quelque chose bloque, dites-le-moi ici, je vous aide.",
+      "sans_boutique": "Bonjour {{nom}} 👋 C'est Beau, de Finjaro. Vous avez créé votre compte mais pas encore votre boutique. Ça prend deux minutes, et je peux vous accompagner si vous voulez. Dites-moi ce qui vous arrêterait.",
+      "photos_orphelines": "Bonjour {{nom}} 👋 C'est Beau, de Finjaro. Vos photos sont bien enregistrées et vous attendent — il ne manque qu'à en faire des articles. Répondez-moi ici si vous voulez que je vous montre comment.",
+      "manuel": "Bonjour {{nom}} 👋 C'est Beau, de Finjaro."
+    },
+    "relanceNoShop": "Aucune boutique",
+    "relanceSince": "inscrit·e {{quand}}",
+    "relanceSend": "Envoyer la relance",
+    "relanceSent": "Relance envoyée.",
+    "relanceNotifTitle": "Finjaro vous a écrit",
+    "relanceRead": "Lu {{quand}}",
+    "relanceUnread": "Pas encore lu",
+    "relanceNoTargets": "Personne à relancer — tout le monde a publié.",
+    "relanceNoneSent": "Aucune relance en attente de réponse.",
+    "relanceNoReplies": "Personne n’a encore répondu."
   },
   "troc": {
     "title": "Évaluer un troc",
@@ -1431,5 +1459,15 @@
     "noMatch": "Aucune boutique ne correspond.",
     "empty": "Aucune boutique pour le moment.",
     "seeAll": "Voir tout"
+  },
+  "relance": {
+    "title": "Message de Finjaro",
+    "from": "Finjaro",
+    "placeholder": "Votre réponse…",
+    "send": "Répondre",
+    "sent": "Réponse envoyée. Merci !",
+    "answered": "Vous avez répondu",
+    "goPublish": "Ajouter mes articles",
+    "gone": "Ce message n'existe plus."
   }
 }
