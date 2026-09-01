@@ -9,6 +9,7 @@ import { Button } from '../../components/Button';
 import { TextArea } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { pushNotify } from '../../lib/notify';
 
 const ONGLETS = ['a_relancer', 'envoyees', 'repondu'];
 
@@ -136,6 +137,14 @@ export default function AdminRelances() {
     });
     setBusy(null);
     if (notifErr) return toast.error(notifErr.message);
+    // La cloche ne sert à rien si la personne n'ouvre pas l'app. `send-push`
+    // (déjà utilisé pour les commandes) tente le push navigateur ET
+    // l'e-mail (Resend) pour tout compte qui en a un — donc gratuit ici,
+    // sans rien construire de neuf. Beau: « si la personne n'ouvre pas
+    // Finjaro, envoie par mail pour ceux qui ont inscrit par mail ».
+    // Best-effort: une notification déjà écrite en base ne doit jamais
+    // échouer à cause d'un push/mail raté.
+    pushNotify({ user_id: cible.user_id, title: t('admin.relanceNotifTitle'), body: texte.slice(0, 300), url: `/relance/${ligne.id}` });
     setBrouillons((b) => ({ ...b, [cle]: '' }));
     toast.success(t('admin.relanceSent'));
     retry();
