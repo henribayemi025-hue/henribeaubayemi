@@ -17,8 +17,13 @@
 //   • conversations/messages, reviews, favorites
 //   • push_subscriptions -> endpoint + clés du navigateur
 //   • events        -> mesure d'audience PREMIÈRE PARTIE (aucun Google
-//                      Analytics, aucun pixel Meta: vérifié, il n'y a aucun
-//                      script tiers de mesure dans l'app)
+//                      Analytics)
+// Depuis le 01/09: un pixel Meta (Facebook/Instagram Ads) mesure les
+// campagnes de pub, mais UNIQUEMENT sur le site (src/lib/pixel.js se
+// désactive lui-même dans les apps natives, voir son commentaire) et
+// UNIQUEMENT après consentement explicite (src/components/CookieConsent.jsx)
+// — jamais par défaut. Si ce périmètre change (pixel actif en app, ou sans
+// bandeau), ce document doit être corrigé AVANT, pas après.
 // Sous-traitants réellement appelés: Supabase (eu-west-3 Paris), Cloudflare,
 // Google Gemini (generativelanguage.googleapis.com), Resend, Google Sign-In.
 // Stripe est présent dans le code mais le paiement par carte est MASQUÉ depuis
@@ -114,7 +119,7 @@ const fr = {
         '• Avec les autres utilisateurs, pour ce que vous publiez volontairement : votre nom public, votre photo de profil, vos avis, et — pour les boutiques — les coordonnées de contact que vous choisissez d’afficher.',
         '• Avec nos prestataires techniques, qui agissent sur nos instructions et n’ont pas le droit d’utiliser vos données pour leur propre compte. Voir la liste à l’article 7.',
         '• Avec les autorités compétentes, lorsque la loi nous y oblige, ou pour établir, exercer ou défendre un droit en justice.',
-        'Aucune régie publicitaire n’est présente dans l’application : nous n’installons ni Google Analytics, ni pixel de réseau social, ni traceur publicitaire tiers. La mesure d’audience est réalisée par nos propres moyens, sur nos propres serveurs.',
+        'Sur le SITE finjaro.net (pas dans les applications mobiles), un pixel publicitaire Meta (Facebook/Instagram) mesure l’efficacité de nos campagnes de publicité. Il ne se déclenche qu’après votre accord explicite, donné via le bandeau affiché à la première visite — vous pouvez le refuser sans que cela limite l’usage de la plateforme. Aucun autre traceur publicitaire n’est utilisé, et les applications iOS et Android n’en contiennent aucun.',
       ],
     },
     {
@@ -181,8 +186,8 @@ const fr = {
       id: 'stockage-local',
       title: '12. Cookies et stockage local',
       body: [
-        'Finjaro n’utilise pas de cookies publicitaires ni de cookies de suivi appartenant à des tiers.',
         'La plateforme enregistre sur votre appareil un petit nombre d’informations strictement nécessaires à son fonctionnement : votre session de connexion (pour ne pas devoir vous reconnecter à chaque ouverture), votre langue, votre devise, votre pays et le contenu de votre panier.',
+        'Sur le site (hors applications mobiles), un cookie publicitaire du pixel Meta décrit à l’article 6 peut être déposé, mais uniquement après votre accord explicite via le bandeau de consentement — jamais par défaut.',
         'Vous pouvez les effacer à tout moment en vidant les données du site dans les réglages de votre navigateur, ou en désinstallant l’application. Vous serez alors déconnecté et votre panier sera vidé.',
       ],
     },
@@ -288,7 +293,7 @@ const en = {
         '• With other users, for what you publish voluntarily: your public name, profile picture, reviews, and — for shops — the contact details you choose to display.',
         '• With our technical providers, who act on our instructions and may not use your data for their own purposes. See the list in section 7.',
         '• With competent authorities, where the law requires it, or to establish, exercise or defend a legal claim.',
-        'There is no advertising network in the app: we install no Google Analytics, no social network pixel, and no third-party advertising tracker. Audience measurement is carried out with our own means, on our own servers.',
+        'On the finjaro.net WEBSITE (not in the mobile apps), a Meta (Facebook/Instagram) advertising pixel measures the performance of our ad campaigns. It only activates after your explicit consent, given via the banner shown on your first visit — you can decline it without any impact on using the platform. No other advertising tracker is used, and the iOS and Android apps contain none at all.',
       ],
     },
     {
@@ -355,8 +360,8 @@ const en = {
       id: 'stockage-local',
       title: '12. Cookies and local storage',
       body: [
-        'Finjaro uses no advertising cookies and no third-party tracking cookies.',
         'The platform stores on your device a small amount of information strictly necessary for it to work: your sign-in session (so you need not log in every time), your language, currency, country, and the contents of your basket.',
+        'On the website (not in the mobile apps), an advertising cookie from the Meta pixel described in section 6 may be set, but only after your explicit consent via the consent banner — never by default.',
         'You can clear these at any time by clearing the site data in your browser settings, or by uninstalling the app. You will then be signed out and your basket emptied.',
       ],
     },

@@ -1434,6 +1434,11 @@
     "askSell": "Je suis nouveau et je veux vendre sur Finjaro. Explique-moi comment ça marche.",
     "skip": "Plus tard"
   },
+  "cookies": {
+    "body": "Nous utilisons un pixel publicitaire (Meta) pour mesurer nos campagnes sur Facebook et Instagram. Rien n'est activé sans ton accord.",
+    "accept": "Accepter",
+    "decline": "Refuser"
+  },
   "intro": {
     "skip": "Passer",
     "next": "Suivant",
