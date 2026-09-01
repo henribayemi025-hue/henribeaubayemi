@@ -36,6 +36,22 @@
     </application>
 
     <!-- Permissions -->
+    <!--
+    Sans ces lignes, Android REFUSE la demande AVANT même qu'une fenêtre
+    d'autorisation puisse s'afficher — pas de refus visible, juste rien: la
+    position ne revient jamais, l'appareil photo peut se comporter de façon
+    imprévisible selon la version d'Android. Contrairement à iOS (où l'absence
+    du texte ferme carrément l'app), ici le symptôme est silencieux, ce qui le
+    rend plus difficile à repérer — c'est exactement ce que Beau a constaté:
+    « on ne m'a rien demandé ».
 
+    Ces droits eux-mêmes ne montrent aucune fenêtre: c'est ce qui permet à
+    Android de savoir qu'IL A LE DROIT de demander, ensuite. La fenêtre que
+    la personne voit vient du navigateur (WebView) au moment où la page
+    appelle réellement la caméra ou la position — comme sur iOS.
+    -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>
