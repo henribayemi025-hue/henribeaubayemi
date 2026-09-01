@@ -101,7 +101,16 @@ export default function AdminRelances() {
 
   async function envoyer(cible) {
     const cle = `n-${cible.user_id}`;
-    const texte = (brouillons[cle] || '').trim();
+    // Le champ affiche le modèle pré-rempli via `value={brouillons[cle] ??
+    // modele}` (juste en dessous) — mais tant que personne n'y a tapé,
+    // `brouillons[cle]` reste undefined. Lire seulement `brouillons[cle]`
+    // ici revenait donc à envoyer une chaîne vide sur un message qui,
+    // à l'écran, avait pourtant l'air bien rempli: le bouton "Envoyer"
+    // s'arrêtait en silence, sans le moindre message d'erreur. Beau,
+    // capture à l'appui: « je clique sur envoyer la relance, rien ».
+    // Reprendre EXACTEMENT le même repli que l'affichage règle ça.
+    const modele = t(`admin.relanceModele.${cible.motif}`, { nom: cible.nom, boutique: cible.boutique || '' });
+    const texte = (brouillons[cle] ?? modele).trim();
     if (!texte) return;
     setBusy(cle);
     const { data: ligne, error: err } = await supabase
