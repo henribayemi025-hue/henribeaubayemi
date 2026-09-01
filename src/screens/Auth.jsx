@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconEye, IconEyeOff, IconMail, IconPhone, IconBrandGoogleFilled, IconBrandApple } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
-import { networkMessage } from '../lib/netError';
+import { networkMessage, withTimeout } from '../lib/netError';
 import { souvenirCode } from '../lib/referral';
 import { Button } from '../components/Button';
 import { Field, TextInput } from '../components/Field';
@@ -87,16 +87,16 @@ export default function Auth({ consoleMode = false }) {
     setBusy(true);
     try {
       if (mode === 'forgot') {
-        const { error } = await resetPassword(form.email.trim());
+        const { error } = await withTimeout(resetPassword(form.email.trim()));
         if (error) throw error;
         toast.success(t('auth.resetLinkSent'));
         setMode('login');
       } else if (mode === 'login') {
-        const { error } = await signIn(form.email.trim(), form.password);
+        const { error } = await withTimeout(signIn(form.email.trim(), form.password));
         if (error) throw error;
         navigate(from, { replace: true });
       } else {
-        const { data, error } = await signUp(form.email.trim(), form.password, form.name.trim(), refCode);
+        const { data, error } = await withTimeout(signUp(form.email.trim(), form.password, form.name.trim(), refCode));
         if (error) throw error;
         if (data.session) navigate(from, { replace: true });
         else toast.success(t('auth.checkEmail'));
@@ -122,7 +122,7 @@ export default function Auth({ consoleMode = false }) {
     setBusy(true);
     try {
       if (mode === 'signup') {
-        const { data, error } = await signUpWithPhonePassword(phone, form.password, form.name.trim(), refCode);
+        const { data, error } = await withTimeout(signUpWithPhonePassword(phone, form.password, form.name.trim(), refCode));
         if (error) throw error;
         if (data.session) navigate(from, { replace: true });
         // Sans session, c'est que le projet Supabase exige encore une
@@ -131,7 +131,7 @@ export default function Auth({ consoleMode = false }) {
         // réglages Supabase, pas la vendeuse dans un écran d'attente.
         else toast.error(t('auth.phoneConfirmBlocked'));
       } else {
-        const { error } = await signInWithPhonePassword(phone, form.password);
+        const { error } = await withTimeout(signInWithPhonePassword(phone, form.password));
         if (error) throw error;
         navigate(from, { replace: true });
       }

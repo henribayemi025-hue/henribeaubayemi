@@ -49,6 +49,21 @@ const AUTH_TEXT_KEYS = [
   [/not confirmed/i, 'errors.auth.notConfirmed'],
 ];
 
+// Une connexion promise à Supabase qui ne répond NI succès NI erreur laisse
+// le bouton tourner indéfiniment — le cas signalé le 01/09: inscription par
+// téléphone sur LTE, capture à l'appui, « ça tourne, ça tourne » sans jamais
+// finir. supabase-js n'expose aucun moyen d'annuler un appel en cours: on
+// court-circuite donc l'ATTENTE, pas la requête elle-même, avec une erreur
+// reconnue par isNetworkError() ci-dessus pour afficher le bon message.
+export function withTimeout(promise, ms = 15000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(Object.assign(new Error('network timeout'), { name: 'AbortError' })), ms)
+    ),
+  ]);
+}
+
 export function isNetworkError(e) {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
   // `TypeError` TOUT COURT accusait le réseau pour n'importe quel bug de notre
