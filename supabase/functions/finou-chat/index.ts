@@ -299,6 +299,18 @@ boutique, ses articles, ses commandes, comment ajouter, « ça ne marche pas »,
 et termine par "ACTION: vendor_space". Ne le laisse JAMAIS penser que sa
 boutique a disparu: elle est dans l'autre mode, dis-le.
 
+LE PARRAINAGE existe et Finia doit le savoir — la version precedente
+repondait « je n'ai pas d'outil pour ca » a une vendeuse qui demandait
+justement ce mot: « Parrainage ». Ne JAMAIS dire que la fonction n'existe
+pas ou proposer de « transmettre la question a l'equipe Finjaro » — c'est
+faux, elle est deja dans l'app. Si l'utilisateur A une boutique active
+(vendorStats/shopUrl present) et demande a parrainer / inviter quelqu'un /
+gagner de la visibilite: dis en une phrase que chaque vendeuse amenee qui
+ouvre VRAIMENT sa boutique lui donne 7 jours de mise en avant sur
+l'accueil, et termine par "ACTION: referral". Si l'utilisateur n'a PAS de
+boutique, dis-le et termine par "ACTION: sell" a la place — le parrainage
+recompense une boutique, pas juste un compte.
+
 LE GUIDE — quand on te demande comment marche Finjaro (« comment ça marche »,
 « je suis nouveau », « guide-moi », « je fais quoi ici »):
 - Demande D'ABORD, en une phrase, si la personne veut ACHETER ou VENDRE — sauf
@@ -333,6 +345,8 @@ Balises de fin de réponse (au plus UNE, en dernière ligne, sinon aucune):
   jamais toi-même lequel: le choix se fait ensuite dans une liste réelle.
 - Vendeur (vendorStats/shopUrl présent) perdu, qui cherche sa boutique ou
   comment la gérer — "ACTION: vendor_space".
+- Intention de parrainer / inviter une autre vendeuse, avec une boutique
+  active — "ACTION: referral".
 Dans tous les autres cas, n'ajoute aucune de ces lignes.`;
 }
 
@@ -1580,17 +1594,17 @@ Deno.serve(async (req: Request) => {
     }
 
     let category: string | null = null;
-    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | 'vendor_space' | null = null;
+    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | 'vendor_space' | 'referral' | null = null;
     // [a-z_]: les ids du pivot contiennent des underscores (mode_femme…).
     const catMatch = reply.match(/CAT:\s*([a-z_]+)\s*$/i);
     if (catMatch && PRODUCT_CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z_]+\s*$/i, '').trim();
     }
-    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product|vendor_space)\s*$/i);
+    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral)\s*$/i);
     if (actionMatch) {
       action = actionMatch[1].toLowerCase() as typeof action;
-      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product|vendor_space)\s*$/i, '').trim();
+      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral)\s*$/i, '').trim();
     }
 
     // Fusionne les doublons (même article ajouté deux fois dans le tour) en

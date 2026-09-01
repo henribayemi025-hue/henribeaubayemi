@@ -406,7 +406,8 @@
       "Ajoute ça à mon panier"
     ],
     "actionVendorSpace": "Ouvrir mon espace vendeur",
-    "suggestGuide": "Comment ça marche ?"
+    "suggestGuide": "Comment ça marche ?",
+    "actionReferral": "Inviter une vendeuse"
   },
   "mirror": {
     "title": "Essayage virtuel",

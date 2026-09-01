@@ -406,7 +406,8 @@
       "Add this to my cart"
     ],
     "actionVendorSpace": "Open my seller space",
-    "suggestGuide": "How does it work?"
+    "suggestGuide": "How does it work?",
+    "actionReferral": "Invite a seller"
   },
   "mirror": {
     "title": "Virtual try-on",

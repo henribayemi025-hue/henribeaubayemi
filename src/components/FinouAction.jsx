@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash } from '@tabler/icons-react';
+import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash, IconGift } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useUI } from '../hooks/useUI';
@@ -133,6 +133,40 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
         className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+      </button>
+    );
+  }
+
+  if (action === 'referral') {
+    // Symetrique a 'sell': pas de boutique -> on ouvre la porte d'entree
+    // (le parrainage recompense une boutique, pas juste un compte), sinon
+    // direct vers l'ecran ou elle partage son lien.
+    if (!user) {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); requireLogin(); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconLogin2 size={14} /> {t('finou.actionLogin')}
+        </button>
+      );
+    }
+    if (status !== 'approved' || !shop) {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); navigate('/become-vendor'); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+        </button>
+      );
+    }
+    return (
+      <button
+        onClick={() => { onNavigate?.(); navigate('/profile/invite'); }}
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+      >
+        <IconGift size={14} /> {t('finou.actionReferral')}
       </button>
     );
   }
