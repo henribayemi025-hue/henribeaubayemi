@@ -180,9 +180,18 @@ export function isPriceOnRequest(product) {
 }
 
 // Essayage virtuel (Miroir IA): là où "se voir le porter" a du sens.
+//
+// DÉSACTIVÉ le 01/09 sur décision de Beau (pas encore repassé au code) —
+// "bloque ça pour l'instant, masque ça, les utilisateurs n'utilisent pas,
+// Finia est assez". Liste vidée plutôt que supprimée: les trois endroits qui
+// la lisent (ProductCard, ProductDetail, FinouChou) filtrent déjà sur
+// `MIRROR_CATEGORIES.includes(...)`, donc un tableau vide masque le badge et
+// les boutons PARTOUT en un seul endroit, sans toucher à la fonction edge
+// miroir-ia ni à Finia elle-même. Pour réactiver: remettre la liste
+// ci-dessous.
 export const MIRROR_CATEGORIES = [
-  'mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'accessoires', 'cheveux',
-  'mode_femme', 'mode_homme', 'enfants_bebe', 'bijoux_montres',
+  // 'mode', 'chaussures', 'sacs', 'maroquinerie', 'bijoux', 'montres', 'accessoires', 'cheveux',
+  // 'mode_femme', 'mode_homme', 'enfants_bebe', 'bijoux_montres',
 ];
 
 // Champs spécifiques par catégorie (produits.attributes jsonb, migration
