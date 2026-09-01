@@ -70,6 +70,68 @@ async function ensureCategories(sb: SupabaseClient) {
   }
 }
 
+// Le registre des ecrans que Finia peut ouvrir d'un clic (migration
+// 0067_destinations_finia.sql). Avant cette table, une fonctionnalite
+// nouvelle n'entrait dans ce que Finia sait QUE si quelqu'un pensait a
+// aller ecrire une phrase a la main dans le prompt — c'est exactement ce
+// qui s'est passe pour le parrainage. Desormais: une ligne dans la table,
+// et Finia la connait au prochain appel froid. Meme source lue par le
+// client (src/components/FinouAction.jsx) pour rendre le bouton.
+type Destination = {
+  id: string;
+  route: string;
+  description: string;
+  libelle_bouton: string;
+  audience: string;
+  necessite_connexion: boolean;
+  necessite_boutique: boolean;
+};
+let DESTINATIONS: Destination[] = [];
+let destinationsLoaded = false;
+async function ensureDestinations(sb: SupabaseClient) {
+  if (destinationsLoaded) return;
+  try {
+    const { data } = await sb
+      .from('assistant_destinations')
+      .select('id,route,description,libelle_bouton,audience,necessite_connexion,necessite_boutique')
+      .eq('actif', true);
+    if (data) {
+      DESTINATIONS = data as Destination[];
+      destinationsLoaded = true;
+    }
+  } catch {
+    /* repli: aucune destination generique, les actions fixes (sell, referral...) suffisent */
+  }
+}
+
+// Liste FERMEE, jamais inventee: le modele choisit un id EXACT parmi ceux-ci
+// ou ne met aucune balise. Un id hors liste est de toute facon rejete plus
+// bas, cote serveur, avant d'atteindre le client.
+function destinationsPromptSection(): string {
+  if (DESTINATIONS.length === 0) return '';
+  const lignes = DESTINATIONS.map((d) => {
+    const conditions: string[] = [];
+    if (d.necessite_connexion) conditions.push('connexion requise');
+    if (d.necessite_boutique) conditions.push('boutique active requise');
+    const cond = conditions.length ? ` (${conditions.join(', ')})` : '';
+    return `- ${d.id}: ${d.description}${cond}`;
+  }).join('\n');
+  return `
+
+NAVIGUER DIRECTEMENT VERS UN ECRAN — liste fermee ci-dessous, n'invente
+JAMAIS un id hors de cette liste:
+${lignes}
+
+Des que l'intention de la personne correspond CLAIREMENT a l'un de ces
+endroits (elle demande a voir/ouvrir/aller a cet endroit), dis en une
+phrase ce que c'est puis termine par "ACTION: goto:<id>" avec l'id EXACT
+ci-dessus. Si l'endroit demande une boutique active et que l'utilisateur
+n'en a pas, dis-le au lieu d'y renvoyer — le bouton refusera de toute
+facon. N'utilise "goto:" QUE pour ce qui n'a pas deja sa propre balise:
+login, sell, share_shop, delete_product, vendor_space et referral restent
+prioritaires quand ils s'appliquent.`;
+}
+
 // Voir miroir-ia: on teste le HÔTE, pas une liste figée d'URL. Le domaine de
 // production est finjaro.net, pas le sous-domaine Netlify.
 const PROD_HOST = 'finjaro.net';
@@ -1425,6 +1487,7 @@ Deno.serve(async (req: Request) => {
 
     const sb = admin();
     await ensureCategories(sb);
+    await ensureDestinations(sb);
 
     // Anti-abus: 20 messages / 5 min par compte, 6 / 5 min par IP anonyme.
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
@@ -1477,7 +1540,7 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey!, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt() + systemPromptTools() }] },
+            systemInstruction: { parts: [{ text: systemPrompt() + systemPromptTools() + destinationsPromptSection() }] },
             contents,
             tools: [{ functionDeclarations: toolDeclarations() }],
             generationConfig: {
@@ -1594,17 +1657,27 @@ Deno.serve(async (req: Request) => {
     }
 
     let category: string | null = null;
-    let action: 'login' | 'sell' | 'share_shop' | 'delete_product' | 'vendor_space' | 'referral' | null = null;
+    // 'goto:<id>' s'ajoute aux balises fixes historiques — un id qui ne
+    // correspond a aucune ligne active de assistant_destinations est rejete
+    // ICI, jamais transmis au client: mieux vaut aucun bouton qu'un bouton
+    // mort sur un id invente par le modele.
+    let action: string | null = null;
     // [a-z_]: les ids du pivot contiennent des underscores (mode_femme…).
     const catMatch = reply.match(/CAT:\s*([a-z_]+)\s*$/i);
     if (catMatch && PRODUCT_CATEGORIES.includes(catMatch[1].toLowerCase())) {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z_]+\s*$/i, '').trim();
     }
-    const actionMatch = reply.match(/ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral)\s*$/i);
+    const ACTION_TAG = /ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral|goto:[a-z_]+)\s*$/i;
+    const actionMatch = reply.match(ACTION_TAG);
     if (actionMatch) {
-      action = actionMatch[1].toLowerCase() as typeof action;
-      reply = reply.replace(/\n?ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral)\s*$/i, '').trim();
+      const raw = actionMatch[1].toLowerCase();
+      if (raw.startsWith('goto:')) {
+        if (DESTINATIONS.some((d) => d.id === raw.slice(5))) action = raw;
+      } else {
+        action = raw;
+      }
+      reply = reply.replace(new RegExp(`\\n?${ACTION_TAG.source}`, 'i'), '').trim();
     }
 
     // Fusionne les doublons (même article ajouté deux fois dans le tour) en
