@@ -150,9 +150,12 @@ export function HomeHeroCarousel({ products }) {
                 <>
                   {/* Blurred same-image backdrop fills the frame; the real photo
                       on top is never cropped, so a face can never get cut off
-                      no matter how the source photo was originally framed. */}
-                  <img src={image} alt="" draggable="false" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
-                  <img src={image} alt="" draggable="false" className="absolute inset-0 h-full w-full object-contain" />
+                      no matter how the source photo was originally framed.
+                      La 1ʳᵉ slide porte fetchpriority=high — c'est le LCP
+                      de l'accueil; les autres restent lazy pour ne pas
+                      bloquer la bande passante à l'affichage. */}
+                  <img src={image} alt="" draggable="false" aria-hidden="true" loading={i === 0 ? 'eager' : 'lazy'} decoding={i === 0 ? 'sync' : 'async'} fetchPriority={i === 0 ? 'high' : 'auto'} className="absolute inset-0 h-full w-full scale-110 object-cover object-top blur-lg" />
+                  <img src={image} alt="" draggable="false" loading={i === 0 ? 'eager' : 'lazy'} decoding={i === 0 ? 'sync' : 'async'} fetchPriority={i === 0 ? 'high' : 'auto'} className="absolute inset-0 h-full w-full object-contain" />
                 </>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />

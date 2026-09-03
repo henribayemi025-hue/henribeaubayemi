@@ -8,7 +8,13 @@ import { IconPhoto } from '@tabler/icons-react';
 // to load. A photo uploaded before thumbnails existed has no `_thumb` file, so
 // its thumbnail URL 404s — this fallback means it still shows (at full size)
 // instead of vanishing behind the placeholder icon.
-export function SmartImage({ src, fallbackSrc, alt, className = '', rounded = '', fit = 'cover' }) {
+//
+// `priority`: à mettre sur l'image « au-dessus de la ligne de flottaison » —
+// la 1ʳᵉ photo d'une fiche produit, le hero de l'accueil. Passe le navigateur
+// en loading=eager + fetchpriority=high pour qu'elle démarre AVANT tout le
+// reste (elle DÉTERMINE le LCP mesuré par Google). Ne pas mettre partout,
+// sinon plus rien n'est prioritaire.
+export function SmartImage({ src, fallbackSrc, alt, className = '', rounded = '', fit = 'cover', priority = false }) {
   const [stage, setStage] = useState('primary'); // 'primary' | 'fallback' | 'failed'
 
   useEffect(() => {
@@ -34,8 +40,9 @@ export function SmartImage({ src, fallbackSrc, alt, className = '', rounded = ''
     <img
       src={current}
       alt={alt}
-      loading="lazy"
-      decoding="async"
+      loading={priority ? 'eager' : 'lazy'}
+      decoding={priority ? 'sync' : 'async'}
+      fetchpriority={priority ? 'high' : undefined}
       onError={handleError}
       className={`${className} ${rounded} ${fit === 'contain' ? 'object-contain' : 'object-cover'}`}
     />

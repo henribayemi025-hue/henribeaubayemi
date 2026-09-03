@@ -45,26 +45,35 @@ async function resizeToCanvas(file, maxDim) {
 //
 // 1200 px reste largement au-dessus de ce que la fiche produit affiche sur un
 // grand écran, et le WebP retire encore 25 à 35 % à qualité perçue égale.
-// Repli JPEG si le navigateur n'encode pas le WebP (vieux Safari).
+// AVIF fait encore -30 % par rapport au WebP à qualité perçue égale; on l'essaie
+// en premier et on retombe sur WebP puis JPEG selon ce que le navigateur du
+// vendeur sait encoder (Chrome/Edge OK, Safari récent OK, vieux Safari retombe
+// sur JPEG). Repli JPEG si le navigateur n'encode ni AVIF ni WebP.
 export async function compressImage(file, { maxDim = 1200, quality = 0.72 } = {}) {
   const canvas = await resizeToCanvas(file, maxDim);
   const encode = (type) =>
     new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), type, quality));
 
+  // toBlob renvoie du PNG quand le format demandé n'est pas supporté — on
+  // vérifie le type effectif pour ne PAS envoyer des octets PNG annoncés AVIF.
+  const avif = await encode('image/avif');
+  if (avif && avif.type === 'image/avif') return avif;
+
   const webp = await encode('image/webp');
-  // toBlob renvoie du PNG quand le format demandé n'est pas supporté.
   if (webp && webp.type === 'image/webp') return webp;
   return (await encode('image/jpeg')) || file;
 }
 
-// Le format de sortie dépend maintenant du navigateur (WebP ou JPEG): les
-// appelants ne peuvent plus coder ".jpg" en dur, sinon on stocke des octets
-// WebP annoncés comme du JPEG. Ce helper renvoie le blob ET ce qu'il faut pour
-// l'uploader correctement.
+// Le format de sortie dépend maintenant du navigateur (AVIF, WebP ou JPEG):
+// les appelants ne peuvent plus coder ".jpg" en dur, sinon on stocke des
+// octets AVIF/WebP annoncés comme du JPEG. Ce helper renvoie le blob ET ce
+// qu'il faut pour l'uploader correctement.
 export async function compressForUpload(file, opts) {
   const blob = await compressImage(file, opts);
   const contentType = blob.type || 'image/jpeg';
-  const ext = contentType === 'image/webp' ? 'webp' : 'jpg';
+  let ext = 'jpg';
+  if (contentType === 'image/avif') ext = 'avif';
+  else if (contentType === 'image/webp') ext = 'webp';
   return { blob, contentType, ext };
 }
 

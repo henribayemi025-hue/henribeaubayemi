@@ -4,9 +4,14 @@
 # client-side routing works and deep links don't return a white screen.
 name = "finjaro"
 compatibility_date = "2026-07-23"
+# Le Worker sert d'abord la route /img/* (proxy cache devant Supabase Storage —
+# voir src/worker.js pour le pourquoi). Tout le reste passe par le binding
+# ASSETS et reste servi tel quel depuis ./dist.
+main = "src/worker.js"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 not_found_handling = "single-page-application"
 
 # --- Test/staging -----------------------------------------------------------

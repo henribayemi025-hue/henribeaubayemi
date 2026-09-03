@@ -172,9 +172,12 @@ export default function ProductDetail() {
             <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink lg:aspect-[16/9]">
               {/* Blurred same-photo backdrop fills the square; the real photo
                   stays fully visible on top so nothing (like a face) is ever
-                  cropped off, regardless of how the source photo was framed. */}
-              <SmartImage src={src} alt="" className="absolute inset-0 h-full w-full scale-110 blur-lg" />
-              <SmartImage src={src} alt={`${p.name} ${i + 1}`} fit="contain" className="absolute inset-0 h-full w-full" />
+                  cropped off, regardless of how the source photo was framed.
+                  La 1ʳᵉ image porte `priority` — c'est le LCP mesuré par les
+                  Web Vitals; la faire démarrer avant les autres change la note
+                  Google et le vécu des visiteurs 3G/4G. */}
+              <SmartImage src={src} alt="" className="absolute inset-0 h-full w-full scale-110 blur-lg" priority={i === 0} />
+              <SmartImage src={src} alt={`${p.name} ${i + 1}`} fit="contain" className="absolute inset-0 h-full w-full" priority={i === 0} />
             </div>
           ))
         ) : p.video_url ? null : (
