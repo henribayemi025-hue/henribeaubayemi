@@ -13,6 +13,13 @@ const COUNTRY_KEY = 'finjaro_country';
 // d'elle et FCFA était la valeur de repli » — c'est exactement cette
 // confusion qui figeait toute l'app en FCFA.
 const CUR_MANUAL_KEY = 'finjaro_currency_manual';
+// Même idée que CUR_MANUAL_KEY, pour la langue. Sans elle: choisir "English"
+// sur l'écran de connexion PUIS se connecter à un compte existant faisait
+// écraser ce choix tout juste fait par le `profiles.locale` enregistré
+// depuis longtemps (souvent 'fr', d'avant que ce sélecteur n'existe). Beau,
+// capture à l'appui: « j'ai choisi anglais, puis... les choses étaient en
+// français ».
+const LANG_MANUAL_KEY = 'finjaro_lang_manual';
 
 // Devise à afficher AVANT toute connaissance du profil: pays détecté, sinon
 // région du fuseau, sinon FCFA. Calculée de façon synchrone pour que le tout
@@ -60,7 +67,14 @@ export function SettingsProvider({ children }) {
     if (profile.currency && CURRENCIES.includes(profile.currency)) {
       setCurrencyState(profile.currency);
     }
-    if (profile.locale && profile.locale !== i18n.language) i18n.changeLanguage(profile.locale);
+    // On n'adopte la langue du profil QUE si elle n'a pas déjà été choisie
+    // volontairement SUR CET APPAREIL — sinon un choix fait juste avant de se
+    // connecter (écran de connexion) se ferait aussitôt écraser par
+    // l'ancienne valeur du compte.
+    const langueChoisieIci = localStorage.getItem(LANG_MANUAL_KEY) === '1';
+    if (!langueChoisieIci && profile.locale && profile.locale !== i18n.language) {
+      i18n.changeLanguage(profile.locale);
+    }
     if (profile.country) {
       setCountryState(profile.country);
       // La devise SUIT le pays du profil tant que personne ne l'a choisie
@@ -110,9 +124,16 @@ export function SettingsProvider({ children }) {
   // voyage. Le profil revient donc sans langue — et c'est cette écriture qui
   // enregistre enfin le choix déjà fait sur l'écran d'inscription, pour qu'on
   // le retrouve sur un autre téléphone.
+  // Même rattrapage quand le profil A déjà une langue mais qu'un choix
+  // explicite vient d'être fait SUR CET APPAREIL (écran de connexion) et
+  // diffère de la valeur enregistrée: le choix local remonte vers le
+  // profil, au lieu de rester local et de se reperdre au prochain appareil.
   useEffect(() => {
-    if (!user || !profile || profile.locale) return;
+    if (!user || !profile) return;
+    const langueChoisieIci = localStorage.getItem(LANG_MANUAL_KEY) === '1';
+    if (profile.locale && !langueChoisieIci) return; // le profil fait déjà foi
     const lng = i18n.language?.startsWith('en') ? 'en' : 'fr';
+    if (profile.locale === lng) return; // déjà synchronisé
     supabase.from('profiles').update({ locale: lng }).eq('id', user.id)
       .then(({ error }) => { if (error) console.error('[Settings] langue non synchronisée:', error.message); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,6 +162,7 @@ export function SettingsProvider({ children }) {
   const setLanguage = useCallback(
     (lng) => {
       i18n.changeLanguage(lng);
+      localStorage.setItem(LANG_MANUAL_KEY, '1');
       persist({ locale: lng });
     },
     [i18n, persist]

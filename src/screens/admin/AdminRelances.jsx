@@ -9,6 +9,7 @@ import { Button } from '../../components/Button';
 import { TextArea } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { pushNotify } from '../../lib/notify';
 
 const ONGLETS = ['a_relancer', 'envoyees', 'repondu'];
 
@@ -101,7 +102,16 @@ export default function AdminRelances() {
 
   async function envoyer(cible) {
     const cle = `n-${cible.user_id}`;
-    const texte = (brouillons[cle] || '').trim();
+    // Le champ affiche le modèle pré-rempli via `value={brouillons[cle] ??
+    // modele}` (juste en dessous) — mais tant que personne n'y a tapé,
+    // `brouillons[cle]` reste undefined. Lire seulement `brouillons[cle]`
+    // ici revenait donc à envoyer une chaîne vide sur un message qui,
+    // à l'écran, avait pourtant l'air bien rempli: le bouton "Envoyer"
+    // s'arrêtait en silence, sans le moindre message d'erreur. Beau,
+    // capture à l'appui: « je clique sur envoyer la relance, rien ».
+    // Reprendre EXACTEMENT le même repli que l'affichage règle ça.
+    const modele = t(`admin.relanceModele.${cible.motif}`, { nom: cible.nom, boutique: cible.boutique || '' });
+    const texte = (brouillons[cle] ?? modele).trim();
     if (!texte) return;
     setBusy(cle);
     const { data: ligne, error: err } = await supabase
@@ -127,6 +137,14 @@ export default function AdminRelances() {
     });
     setBusy(null);
     if (notifErr) return toast.error(notifErr.message);
+    // La cloche ne sert à rien si la personne n'ouvre pas l'app. `send-push`
+    // (déjà utilisé pour les commandes) tente le push navigateur ET
+    // l'e-mail (Resend) pour tout compte qui en a un — donc gratuit ici,
+    // sans rien construire de neuf. Beau: « si la personne n'ouvre pas
+    // Finjaro, envoie par mail pour ceux qui ont inscrit par mail ».
+    // Best-effort: une notification déjà écrite en base ne doit jamais
+    // échouer à cause d'un push/mail raté.
+    pushNotify({ user_id: cible.user_id, title: t('admin.relanceNotifTitle'), body: texte.slice(0, 300), url: `/relance/${ligne.id}` });
     setBrouillons((b) => ({ ...b, [cle]: '' }));
     toast.success(t('admin.relanceSent'));
     retry();

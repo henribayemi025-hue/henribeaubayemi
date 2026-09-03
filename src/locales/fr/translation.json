@@ -406,7 +406,8 @@
       "Ajoute ça à mon panier"
     ],
     "actionVendorSpace": "Ouvrir mon espace vendeur",
-    "suggestGuide": "Comment ça marche ?"
+    "suggestGuide": "Comment ça marche ?",
+    "actionReferral": "Inviter une vendeuse"
   },
   "mirror": {
     "title": "Essayage virtuel",
@@ -1443,6 +1444,11 @@
     "askBuy": "Je suis nouveau et je viens pour acheter. Explique-moi comment ça marche.",
     "askSell": "Je suis nouveau et je veux vendre sur Finjaro. Explique-moi comment ça marche.",
     "skip": "Plus tard"
+  },
+  "cookies": {
+    "body": "Nous utilisons un pixel publicitaire (Meta) pour mesurer nos campagnes sur Facebook et Instagram. Rien n'est activé sans ton accord.",
+    "accept": "Accepter",
+    "decline": "Refuser"
   },
   "intro": {
     "skip": "Passer",

@@ -1,10 +1,33 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash } from '@tabler/icons-react';
+import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash, IconGift, IconArrowRight } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
+import { supabase } from '../lib/supabase';
+
+// Le registre des ecrans que Finia peut ouvrir (migration
+// 0067_destinations_finia.sql). Chargee une fois par session client: c'est
+// une table publique en lecture, quasi jamais modifiee — pas besoin de la
+// redemander a chaque bulle de chat.
+let destinationsCache = null;
+let destinationsPromise = null;
+function loadDestinations() {
+  if (destinationsCache) return Promise.resolve(destinationsCache);
+  if (!destinationsPromise) {
+    destinationsPromise = supabase
+      .from('assistant_destinations')
+      .select('id,route,libelle_bouton,necessite_connexion,necessite_boutique')
+      .eq('actif', true)
+      .then(({ data }) => {
+        destinationsCache = data || [];
+        return destinationsCache;
+      });
+  }
+  return destinationsPromise;
+}
 
 // One-tap follow-through when Finou detects an intent ('login' | 'sell').
 // The destination is always decided from the REAL account state client-side
@@ -22,6 +45,13 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
   const { requireLogin } = useUI();
   const { status, shop } = useVendorStatus();
   const toast = useToast();
+  const [destinations, setDestinations] = useState(destinationsCache);
+
+  useEffect(() => {
+    if (action?.startsWith('goto:') && !destinations) {
+      loadDestinations().then(setDestinations);
+    }
+  }, [action, destinations]);
 
   async function shareShop() {
     const url = `${window.location.origin}/boutique/${shop.slug}`;
@@ -133,6 +163,77 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
         className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
       >
         <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+      </button>
+    );
+  }
+
+  if (action === 'referral') {
+    // Symetrique a 'sell': pas de boutique -> on ouvre la porte d'entree
+    // (le parrainage recompense une boutique, pas juste un compte), sinon
+    // direct vers l'ecran ou elle partage son lien.
+    if (!user) {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); requireLogin(); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconLogin2 size={14} /> {t('finou.actionLogin')}
+        </button>
+      );
+    }
+    if (status !== 'approved' || !shop) {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); navigate('/become-vendor'); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+        </button>
+      );
+    }
+    return (
+      <button
+        onClick={() => { onNavigate?.(); navigate('/profile/invite'); }}
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+      >
+        <IconGift size={14} /> {t('finou.actionReferral')}
+      </button>
+    );
+  }
+
+  if (action?.startsWith('goto:')) {
+    // Le generique: tout ce qui n'a pas sa propre logique (sell, referral...)
+    // passe par ici. Meme garde-fous connexion/boutique que les actions
+    // fixes, mais lus dans la table plutot que codes en dur pour chaque
+    // nouvel ecran — c'est tout le but du registre.
+    const dest = destinations?.find((d) => d.id === action.slice(5));
+    if (!dest) return null; // pas encore charge, ou id inconnu — pas de bouton casse
+    if (dest.necessite_connexion && !user) {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); requireLogin(); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconLogin2 size={14} /> {t('finou.actionLogin')}
+        </button>
+      );
+    }
+    if (dest.necessite_boutique && (status !== 'approved' || !shop)) {
+      return (
+        <button
+          onClick={() => { onNavigate?.(); navigate('/become-vendor'); }}
+          className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+        >
+          <IconBuildingStore size={14} /> {t('finou.actionBecomeVendor')}
+        </button>
+      );
+    }
+    return (
+      <button
+        onClick={() => { onNavigate?.(); navigate(dest.route); }}
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+      >
+        <IconArrowRight size={14} /> {dest.libelle_bouton}
       </button>
     );
   }

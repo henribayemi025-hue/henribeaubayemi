@@ -9,6 +9,7 @@ import { Spinner } from './components/Spinner';
 import { RequireAuth } from './components/RequireAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppIntro } from './components/AppIntro';
+import { CookieConsent } from './components/CookieConsent';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { BuyerLayout } from './screens/buyer/BuyerLayout';
 import { VendorLayout } from './screens/vendor/VendorLayout';
@@ -186,6 +187,7 @@ export default function App() {
                     doit s'afficher quelle que soit la page d'arrivée, et sans
                     attendre qu'un compte existe. */}
                 <ErrorBoundary silent><AppIntro /></ErrorBoundary>
+                <ErrorBoundary silent><CookieConsent /></ErrorBoundary>
                 <Suspense fallback={<Loading />}>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />

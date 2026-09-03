@@ -406,7 +406,8 @@
       "Add this to my cart"
     ],
     "actionVendorSpace": "Open my seller space",
-    "suggestGuide": "How does it work?"
+    "suggestGuide": "How does it work?",
+    "actionReferral": "Invite a seller"
   },
   "mirror": {
     "title": "Virtual try-on",
@@ -1443,6 +1444,11 @@
     "askBuy": "I'm new and I'm here to buy. Explain how it works.",
     "askSell": "I'm new and I want to sell on Finjaro. Explain how it works.",
     "skip": "Later"
+  },
+  "cookies": {
+    "body": "We use an advertising pixel (Meta) to measure our Facebook and Instagram campaigns. Nothing is enabled without your consent.",
+    "accept": "Accept",
+    "decline": "Decline"
   },
   "intro": {
     "skip": "Skip",
