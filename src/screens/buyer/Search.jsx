@@ -11,6 +11,7 @@ import { Skeleton, ErrorState } from '../../components/states';
 import { CATEGORIES } from '../../lib/categories';
 import { track } from '../../lib/track';
 import { nameMatches } from '../../lib/searchNorm';
+import { DemandeFinia } from '../../components/DemandeFinia';
 
 export default function Search() {
   const { t } = useTranslation();
@@ -117,7 +118,12 @@ export default function Search() {
         ) : error ? (
           <ErrorState onRetry={() => runSearch(q.trim())} />
         ) : isEmptyResult ? (
-          <p className="py-10 text-center text-body text-muted">{t('search.noResults', { q: q.trim() })}</p>
+          <div className="space-y-4 py-6">
+            <p className="text-center text-body text-muted">{t('search.noResults', { q: q.trim() })}</p>
+            {/* Une recherche vide n'est pas une impasse: c'est une demande
+                qu'on peut encore servir. */}
+            <DemandeFinia recherche={q.trim()} source="recherche" />
+          </div>
         ) : (
           <div className="space-y-6">
             {data.cats.length > 0 && (

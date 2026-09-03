@@ -1486,5 +1486,18 @@
     "answered": "You replied",
     "goPublish": "Add my items",
     "gone": "This message no longer exists."
+  },
+  "demande": {
+    "titre": "Tell us what you're looking for",
+    "sousTitre": "Finia will search our sellers and get back to you within 24h.",
+    "detailsLabel": "Add details (optional)",
+    "detailsPlaceholder": "Size, colour, budget, city…",
+    "contactLabel": "Where to reach you",
+    "contactHint": "WhatsApp or email — without it we can't reply.",
+    "envoyer": "Send my request",
+    "contactRequis": "Enter a WhatsApp number or an email.",
+    "erreur": "Couldn't send. Try again.",
+    "merciTitre": "Got it!",
+    "merciTexte": "Finia is searching and will reply within 24h."
   }
 }

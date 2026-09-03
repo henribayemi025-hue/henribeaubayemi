@@ -1486,5 +1486,18 @@
     "answered": "Vous avez répondu",
     "goPublish": "Ajouter mes articles",
     "gone": "Ce message n'existe plus."
+  },
+  "demande": {
+    "titre": "Dis-nous ce que tu cherches",
+    "sousTitre": "Finia cherche pour toi chez nos vendeuses et te répond sous 24 h.",
+    "detailsLabel": "Précise ta demande (facultatif)",
+    "detailsPlaceholder": "Taille, couleur, budget, ville…",
+    "contactLabel": "Où te répondre",
+    "contactHint": "WhatsApp ou e-mail — sans ça on ne peut pas te répondre.",
+    "envoyer": "Envoyer ma demande",
+    "contactRequis": "Indique un WhatsApp ou un e-mail.",
+    "erreur": "Envoi impossible. Réessaie.",
+    "merciTitre": "C'est noté !",
+    "merciTexte": "Finia cherche et te répond sous 24 h."
   }
 }
