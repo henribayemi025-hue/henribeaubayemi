@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconUsers, IconBan, IconCheck, IconShieldHalfFilled, IconBuildingStore, IconUserX, IconAlertTriangle, IconEyeOff, IconMovie, IconPackage } from '@tabler/icons-react';
+import { IconSearch, IconUsers, IconBan, IconCheck, IconShieldHalfFilled, IconBuildingStore, IconUserX, IconAlertTriangle, IconEyeOff, IconMovie, IconPackage, IconKey, IconRefresh, IconCopy } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -13,6 +13,16 @@ import { timeAgo } from '../../lib/format';
 
 function normalize(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Mot de passe temporaire lisible: on retire les caractères ambigus (0/O,
+// 1/l/I) parce qu'il sera dicté ou recopié à la main sur WhatsApp, pas
+// copié-collé par la vendeuse. 10 caractères tirés du hasard cryptographique.
+function genPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const arr = new Uint32Array(10);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (n) => chars[n % chars.length]).join('');
 }
 
 const FILTERS = [
@@ -193,6 +203,8 @@ function UserSheet({ user, onClose, onChanged, lang }) {
           {user.is_admin ? t('admin.revokeAdmin') : t('admin.makeAdmin')}
         </Button>
         {isSelf && <p className="text-[11px] text-muted">{t('admin.selfLocked')}</p>}
+
+        <ResetPasswordBlock userId={user.id} userName={user.name} />
       </div>
     </Modal>
   );
@@ -283,6 +295,104 @@ function Row({ label, value }) {
     <div className="flex justify-between gap-3 border-b border-hairline py-1 last:border-0">
       <dt className="shrink-0 text-muted">{label}</dt>
       <dd className="truncate text-right font-medium text-ink">{value || '—'}</dd>
+    </div>
+  );
+}
+
+// Réinitialiser le mot de passe d'un compte. Ce n'est PAS un simple update de
+// `profiles`: définir le mot de passe de quelqu'un d'autre passe par la clé de
+// service, côté serveur — d'où l'appel à la fonction edge `admin-reset-password`.
+// Le mot de passe est fabriqué ici, montré à l'admin AVANT et APRÈS l'envoi:
+// c'est lui qui devra le transmettre à la personne (un compte téléphone n'a pas
+// d'e-mail où recevoir un lien). On ne l'affiche donc jamais tout seul dans un
+// journal — il ne vit que dans cet écran.
+function ResetPasswordBlock({ userId, userName }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [pwd, setPwd] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  function start() {
+    setPwd(genPassword());
+    setDone(false);
+    setOpen(true);
+  }
+
+  async function confirm() {
+    if (pwd.trim().length < 6) return toast.error(t('admin.resetPasswordTooShort'));
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+      body: { user_id: userId, new_password: pwd.trim() },
+    });
+    setBusy(false);
+    if (error || data?.error) return toast.error(t('admin.resetPasswordError'));
+    setDone(true);
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(pwd);
+      toast.success(t('admin.copied'));
+    } catch {
+      toast.error(t('admin.copyFailed'));
+    }
+  }
+
+  if (!open) {
+    return (
+      <Button variant="secondary" onClick={start}>
+        <IconKey size={17} />
+        {t('admin.resetPassword')}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="rounded-card border border-hairline bg-base p-3">
+      <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
+        <IconKey size={16} className="shrink-0 text-brass" />
+        {t('admin.resetPasswordFor', { name: userName || t('admin.account') })}
+      </p>
+
+      {done ? (
+        <>
+          <p className="mt-2 text-caption text-muted">{t('admin.resetPasswordDoneHint')}</p>
+          <div className="mt-2 flex items-center gap-2 rounded-input border border-hairline bg-white p-2">
+            <code className="flex-1 select-all text-body font-semibold tracking-wide text-ink">{pwd}</code>
+            <button type="button" onClick={copy} className="btn-ghost inline-flex items-center gap-1 text-caption font-semibold text-teal">
+              <IconCopy size={15} /> {t('admin.copy')}
+            </button>
+          </div>
+          <Button variant="secondary" className="mt-3" onClick={() => setOpen(false)}>
+            {t('common.close')}
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-caption text-muted">{t('admin.resetPasswordIntro')}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <TextInput value={pwd} onChange={(e) => setPwd(e.target.value)} className="font-semibold tracking-wide" />
+            <button
+              type="button"
+              onClick={() => setPwd(genPassword())}
+              disabled={busy}
+              className="btn-ghost inline-flex shrink-0 items-center gap-1 text-caption font-semibold text-teal"
+            >
+              <IconRefresh size={15} /> {t('admin.regenerate')}
+            </button>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={confirm} loading={busy}>
+              {t('admin.resetPasswordConfirm')}
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
