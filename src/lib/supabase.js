@@ -17,6 +17,14 @@ export const supabase = createClient(url, anonKey, {
   },
 });
 
+// En production, les objets publics passent par /img/{bucket}/{chemin} — un
+// Worker Cloudflare (src/worker.js) les récupère chez Supabase la 1ʳᵉ fois puis
+// les sert depuis le POP le plus proche du visiteur. Avant ce détour, un LCP
+// mesuré à 13 s au Cameroun; les octets voyageaient de Frankfurt à chaque
+// affichage. En dev Vite (localhost:5173), pas de Worker, donc on retombe sur
+// l'URL Supabase directe.
+const USE_CDN_PROXY = import.meta.env.PROD;
+
 /** Public URL for a file stored in a Supabase Storage bucket. */
 export function storageUrl(bucket, path) {
   if (!path) return null;
@@ -27,6 +35,7 @@ export function storageUrl(bucket, path) {
   // Les articles de démonstration référençaient l'ancien domaine Cloudflare en
   // absolu; ils sont désormais en relatif pour suivre le site où qu'il soit.
   if (path.startsWith('/')) return path;
+  if (USE_CDN_PROXY) return `/img/${bucket}/${path}`;
   return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
 
@@ -43,5 +52,6 @@ export function storageThumbUrl(bucket, path) {
   if (path.startsWith('/')) return path;    // fichier de l'hébergeur: idem
   const dot = path.lastIndexOf('.');
   const thumbPath = dot === -1 ? `${path}_thumb` : `${path.slice(0, dot)}_thumb${path.slice(dot)}`;
+  if (USE_CDN_PROXY) return `/img/${bucket}/${thumbPath}`;
   return supabase.storage.from(bucket).getPublicUrl(thumbPath).data.publicUrl;
 }

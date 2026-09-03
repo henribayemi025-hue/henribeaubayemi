@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck } from '@tabler/icons-react';
 import { MirrorModal } from '../../components/MirrorModal';
-import { supabase, storageUrl } from '../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
@@ -81,7 +81,7 @@ export default function ProductDetail() {
       .eq('shop_id', product.shop_id)
       .order('created_at', { ascending: false });
     return { product, reviews: reviews || [] };
-  }, [id]);
+  }, [id], { cacheKey: `product:${id}` });
 
   async function startChat() {
     if (!user) return requireLogin();
@@ -135,6 +135,10 @@ export default function ProductDetail() {
   );
   const needsSize = p.sizes?.length > 0 && !size;
   const images = (p.images || []).map((im) => storageUrl('products', im));
+  // Vignettes légères associées: elles s'affichent floues sous la pleine
+  // taille pendant qu'elle télécharge — plus jamais de rectangle vide au
+  // premier octet, même sur une connexion mobile lente.
+  const thumbs = (p.images || []).map((im) => storageThumbUrl('products', im));
 
   function addToCart() {
     // Taille définie par la boutique = choix obligatoire avant l'ajout,
@@ -170,11 +174,21 @@ export default function ProductDetail() {
         {images.length ? (
           images.map((src, i) => (
             <div key={i} className="relative aspect-square w-full shrink-0 snap-center overflow-hidden bg-ink lg:aspect-[16/9]">
-              {/* Blurred same-photo backdrop fills the square; the real photo
-                  stays fully visible on top so nothing (like a face) is ever
-                  cropped off, regardless of how the source photo was framed. */}
-              <SmartImage src={src} alt="" className="absolute inset-0 h-full w-full scale-110 blur-lg" />
-              <SmartImage src={src} alt={`${p.name} ${i + 1}`} fit="contain" className="absolute inset-0 h-full w-full" />
+              {/* La vignette (thumbs[i]) sert de fond flou pendant que la
+                  pleine taille télécharge — placeholderSrc dans SmartImage
+                  fait la bascule. La photo pleine taille reste `contain`
+                  au premier plan pour ne rien cropper (visage compris).
+                  `priority` sur la 1ʳᵉ image = elle passe devant tout le
+                  reste dans la file de téléchargement du navigateur, c'est
+                  le LCP mesuré par Web Vitals. */}
+              <SmartImage
+                src={src}
+                placeholderSrc={thumbs[i]}
+                alt={`${p.name} ${i + 1}`}
+                fit="contain"
+                className="absolute inset-0 h-full w-full"
+                priority={i === 0}
+              />
             </div>
           ))
         ) : p.video_url ? null : (

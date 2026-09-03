@@ -87,7 +87,7 @@ export default function ShopProfile() {
     if (!shop) return null;
     if (pErr) throw pErr;
     return { shop, products: products || [], reviews: reviews || [], reels: reels || [] };
-  }, [slug]);
+  }, [slug], { cacheKey: `shop:${slug}` });
 
   useEffect(() => {
     if (!user || !data?.shop) return;

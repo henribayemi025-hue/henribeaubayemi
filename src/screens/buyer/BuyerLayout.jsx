@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { BuyerNav } from '../../components/BuyerNav';
@@ -12,6 +13,7 @@ import { SuspendedNotice } from '../../components/SuspendedNotice';
 import CartDrawer from '../../components/CartDrawer';
 import { useAuth } from '../../hooks/useAuth';
 import { useViewportHeight } from '../../hooks/useViewportHeight';
+import { useScrollRestore } from '../../hooks/useScrollRestore';
 
 // Mobile (unchanged): fixed full-bleed app-shell (TikTok-style), header +
 // bottom nav stay put, only <main> scrolls; --app-height keeps the keyboard
@@ -23,6 +25,11 @@ export function BuyerLayout() {
   const { profile } = useAuth();
   const { pathname } = useLocation();
   useViewportHeight();
+  // La barre principale est un <main> qui défile — la position de scroll
+  // vit sur cet élément, pas sur document. Le hook restaure la place quand
+  // on revient en arrière (voir hooks/useScrollRestore.js).
+  const mainRef = useRef(null);
+  useScrollRestore(mainRef);
   if (profile?.is_suspended) return <SuspendedNotice />;
   return (
     <div className="lg:flex lg:h-dvh lg:bg-[#FAF6F0]">
@@ -55,6 +62,7 @@ export function BuyerLayout() {
             barre est là — masquée dans un fil de discussion, qui gère sa
             propre hauteur. `/fin` est plein écran par nature. */}
         <main
+          ref={mainRef}
           className={`flex-1 overflow-y-auto overscroll-contain ${
             pathname.startsWith('/chat') || pathname.startsWith('/fin') ? '' : TAB_BAR_SPACE
           }`}
