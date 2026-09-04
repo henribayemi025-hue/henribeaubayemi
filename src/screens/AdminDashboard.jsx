@@ -22,6 +22,7 @@ const AdminModeration = lazy(() => import('./admin/AdminModeration'));
 const AdminContent = lazy(() => import('./admin/AdminContent'));
 const AdminSupport = lazy(() => import('./admin/AdminSupport'));
 const AdminDemandes = lazy(() => import('./admin/AdminDemandes'));
+const AdminAnnonce = lazy(() => import('./admin/AdminAnnonce'));
 const AdminRelances = lazy(() => import('./admin/AdminRelances'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
@@ -38,6 +39,7 @@ const SECTIONS = [
   { key: 'moderation', icon: IconFlag, Component: AdminModeration },
   { key: 'support', icon: IconLifebuoy, Component: AdminSupport },
   { key: 'demandes', icon: IconSearch, Component: AdminDemandes },
+  { key: 'annonce', icon: IconSpeakerphone, Component: AdminAnnonce },
   { key: 'relances', icon: IconMessage2, Component: AdminRelances },
   { key: 'content', icon: IconSpeakerphone, Component: AdminContent },
 ];
