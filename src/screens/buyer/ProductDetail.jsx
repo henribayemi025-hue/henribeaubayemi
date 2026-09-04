@@ -151,6 +151,8 @@ export default function ProductDetail() {
       return;
     }
     add({ ...p, shop_name: shop.name }, 1, { size: size || null, color: color || null });
+    // Le vrai signal d'intention d'achat, distinct du simple 'product_view'.
+    track('cart_add', p.id, { shop_id: p.shop_id, size: size || null, color: color || null });
   }
 
   return (

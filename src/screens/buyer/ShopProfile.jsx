@@ -106,6 +106,7 @@ export default function ShopProfile() {
 
   async function share() {
     const url = `${window.location.origin}/boutique/${slug}`;
+    if (data?.shop?.id) track('share_shop', data.shop.id);
     if (navigator.share) {
       try {
         await navigator.share({ title: data.shop.name, url });

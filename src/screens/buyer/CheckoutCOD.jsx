@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconCircleCheck, IconBuildingStore, IconTruckDelivery, IconCreditCard } from '@tabler/icons-react';
@@ -16,6 +16,7 @@ import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
 import { pushNotify } from '../../lib/notify';
 import { networkMessage } from '../../lib/netError';
+import { track } from '../../lib/track';
 
 export default function CheckoutCOD() {
   const { shopId } = useParams();
@@ -43,6 +44,10 @@ export default function CheckoutCOD() {
   });
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Ouverture du checkout : signal d'intention avant meme d'envoyer.
+  // Une seule fois par montage — pas a chaque re-render.
+  useEffect(() => { track('checkout_start', shopId, { count: shopItems.length, subtotal }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [payingCard, setPayingCard] = useState(false);
   const [placed, setPlaced] = useState(null);
 
@@ -161,6 +166,7 @@ export default function CheckoutCOD() {
     setSubmitting(true);
     try {
       const order = await placeOrder('cod');
+      track('order_placed', order.id, { shop_id: shopId, method, payment: 'cod', total: subtotal });
       await notifyOwner(order);
       clearShop(shopId);
       setPlaced(order.order_no);
@@ -177,6 +183,7 @@ export default function CheckoutCOD() {
     setPayingCard(true);
     try {
       const order = await placeOrder('unpaid');
+      track('order_placed', order.id, { shop_id: shopId, method, payment: 'card', total: subtotal });
       const { data, error } = await supabase.functions.invoke('create-checkout', { body: { order_id: order.id } });
       if (error || !data?.url) throw new Error(data?.error || t('errors.generic'));
       await notifyOwner(order);

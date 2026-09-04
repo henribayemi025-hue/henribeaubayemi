@@ -23,6 +23,16 @@ const ICON_SHADOW = { filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.6))' };
 
 // One full-screen reel. Autoplays when >60% visible; muted by default.
 export function ReelPlayer({ reel, muted, onToggleMute, active }) {
+  // reel_view : signal 'cette video a ete vraiment regardee'.
+  // Dedupliquee : 1 evenement par (montage, reel) au plus.
+  const viewLogged = useRef(false);
+  useEffect(() => {
+    if (active && !viewLogged.current) {
+      viewLogged.current = true;
+      track('reel_view', reel.id, { shop_id: reel.shop_id });
+    }
+  }, [active, reel.id, reel.shop_id]);
+
   const { t } = useTranslation();
   const { user } = useAuth();
   const { requireLogin } = useUI();
@@ -112,6 +122,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
 
   async function share() {
     const url = `${window.location.origin}/boutique/${reel.shops?.slug}`;
+    track('share_reel', reel.id, { shop_id: reel.shop_id });
     if (navigator.share) { try { await navigator.share({ title: reel.shops?.name, url }); await supabase.from('reels').update({ shares: (reel.shares || 0) + 1 }).eq('id', reel.id); return; } catch { /* fall through */ } }
     try { await navigator.clipboard.writeText(url); toast.success(t('common.shareCopied')); } catch { toast.error(t('errors.generic')); }
   }
