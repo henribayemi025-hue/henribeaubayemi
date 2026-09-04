@@ -69,6 +69,15 @@
       </array>
     </dict>
 	</dict>
+	<!-- Autorise l'app à se réveiller en arrière-plan pour une notification
+	     push — sans ça, iOS peut retarder ou ignorer un message reçu quand
+	     l'app n'est pas au premier plan. Va avec App.entitlements
+	     (aps-environment) et la capacité Push Notifications côté Apple
+	     Developer (identifiant net.finjaro.app). -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

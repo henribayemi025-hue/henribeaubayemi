@@ -16,13 +16,16 @@
 // jamais prévenue de rien. Les trois canaux sont tentés indépendamment: si
 // l'un échoue ou n'a rien à envoyer, les autres partent quand même.
 //
-// POURQUOI LE PUSH NATIF (FCM) EST UN CANAL À PART
+// POURQUOI LE PUSH NATIF (FCM/APNs) EST UN CANAL À PART
 // Le push web (VAPID, ci-dessous) ne fonctionne QUE dans un vrai navigateur.
-// L'app installée depuis le Play Store est une coque Capacitor: sans jeton
-// FCM (table native_push_tokens, distincte de push_subscriptions), l'OS
-// Android ne peut pas réveiller l'app fermée pour afficher une notification
-// — c'était la cause de « les gens ne reçoivent rien sur l'app » (Beau,
-// 04/09). Voir aussi migration 0073.
+// L'app installée depuis le Play Store / App Store est une coque Capacitor:
+// sans jeton natif (table native_push_tokens, distincte de
+// push_subscriptions), l'OS ne peut pas réveiller l'app fermée pour
+// afficher une notification — c'était la cause de « les gens ne reçoivent
+// rien sur l'app » (Beau, 04/09). Voir aussi migration 0073.
+// Android passe par Firebase (FCM). iOS n'a PAS de pont Firebase côté app
+// (@capacitor/push-notifications donne le jeton APNs brut) — on parle donc
+// directement à Apple avec la clé .p8 (app_config.apns_key).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import * as webpush from 'jsr:@negrel/webpush@0.3';
@@ -228,14 +231,15 @@ async function getFcmAccessToken(
   return { token: access_token, projectId: sa.project_id };
 }
 
-async function sendNativePush(
+async function sendFcmPush(
   sb: Admin,
   recipients: string[],
   payload: Record<string, unknown>,
 ): Promise<number> {
   const { data: tokens } = await sb
     .from('native_push_tokens')
-    .select('id, token, platform')
+    .select('id, token')
+    .eq('platform', 'android')
     .in('user_id', recipients);
   if (!tokens || tokens.length === 0) return 0;
 
@@ -281,6 +285,115 @@ async function sendNativePush(
         }
       } catch (e) {
         console.error('fcm send exception', e);
+      }
+    }),
+  );
+  return delivered;
+}
+
+// --- Push NATIF iOS (Apple Push Notification service, HTTP/2 direct) -------
+//
+// @capacitor/push-notifications donne sur iOS le jeton APNs BRUT (vérifié
+// dans son code source: didRegisterForRemoteNotificationsWithDeviceToken),
+// pas un jeton FCM — il n'y a pas de pont Firebase côté app. On parle donc
+// directement à Apple, avec un jeton d'autorité ES256 signé à partir de la
+// clé .p8 (app_config.apns_key — jamais dans un fichier versionné, même
+// principe que fcm_service_account).
+
+let cachedApnsToken: { token: string; exp: number } | null = null;
+
+async function getApnsAuth(
+  sb: Admin,
+): Promise<{ jwt: string; bundleId: string } | null> {
+  const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'apns_key').maybeSingle();
+  const k = cfg?.value as
+    | { key_id?: string; team_id?: string; bundle_id?: string; private_key?: string }
+    | null;
+  if (!k?.key_id || !k.team_id || !k.private_key) return null;
+  const bundleId = k.bundle_id ?? 'net.finjaro.app';
+
+  const now = Math.floor(Date.now() / 1000);
+  // Apple: jeton valable jusqu'à 60 min, ne pas en refabriquer trop souvent.
+  // On rafraîchit à 50 min pour rester large.
+  if (cachedApnsToken && cachedApnsToken.exp > now + 60) {
+    return { jwt: cachedApnsToken.token, bundleId };
+  }
+
+  const header = { alg: 'ES256', kid: k.key_id };
+  const claims = { iss: k.team_id, iat: now };
+  const enc = new TextEncoder();
+  const unsigned = `${base64url(enc.encode(JSON.stringify(header)))}.${base64url(enc.encode(JSON.stringify(claims)))}`;
+
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    pemToPkcs8(k.private_key),
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign'],
+  );
+  // Web Crypto rend directement la signature au format IEEE P1363 (r || s)
+  // attendu par JWS ES256 — pas de ré-encodage DER nécessaire ici,
+  // contrairement à RSA plus haut.
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, enc.encode(unsigned));
+  const jwt = `${unsigned}.${base64url(sig)}`;
+
+  cachedApnsToken = { token: jwt, exp: now + 3000 };
+  return { jwt, bundleId };
+}
+
+async function sendApnsPush(
+  sb: Admin,
+  recipients: string[],
+  payload: Record<string, unknown>,
+): Promise<number> {
+  const { data: tokens } = await sb
+    .from('native_push_tokens')
+    .select('id, token')
+    .eq('platform', 'ios')
+    .in('user_id', recipients);
+  if (!tokens || tokens.length === 0) return 0;
+
+  const auth = await getApnsAuth(sb);
+  if (!auth) return 0;
+
+  const title = String(payload.title ?? 'Finjaro');
+  const body = String(payload.body ?? '');
+  const url = String(payload.url ?? '/');
+
+  let delivered = 0;
+  await Promise.all(
+    tokens.map(async (t) => {
+      try {
+        const resp = await fetch(`https://api.push.apple.com/3/device/${t.token}`, {
+          method: 'POST',
+          headers: {
+            authorization: `bearer ${auth.jwt}`,
+            'apns-topic': auth.bundleId,
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            aps: { alert: { title, body }, sound: 'default' },
+            url,
+            tag: String(payload.tag ?? ''),
+          }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (resp.ok) {
+          delivered++;
+          return;
+        }
+        const errText = await resp.text();
+        // Jeton périmé/désinstallé: APNs répond 410 (Unregistered) ou 400
+        // (BadDeviceToken) — on le retire pour ne pas réessayer sur un mort.
+        if (resp.status === 410 || resp.status === 400) {
+          await sb.from('native_push_tokens').delete().eq('id', t.id);
+        } else {
+          console.error('apns send failed', resp.status, errText.slice(0, 300));
+        }
+      } catch (e) {
+        console.error('apns send exception', e);
       }
     }),
   );
@@ -396,15 +509,19 @@ Deno.serve(async (req: Request) => {
     const recipients = await resolveRecipients(sb, payload);
     if (recipients.length === 0) return json({ push: 0, email: 0, reason: 'no_recipients' });
 
-    // Les trois canaux en parallèle et indépendamment: l'échec de l'un ne
+    // Les quatre canaux en parallèle et indépendamment: l'échec de l'un ne
     // doit jamais empêcher les autres d'arriver.
-    const [push, native, email] = await Promise.all([
+    const [push, android, ios, email] = await Promise.all([
       sendPush(sb, recipients, payload).catch((e) => {
         console.error('push channel failed', e);
         return 0;
       }),
-      sendNativePush(sb, recipients, payload).catch((e) => {
-        console.error('native push channel failed', e);
+      sendFcmPush(sb, recipients, payload).catch((e) => {
+        console.error('fcm channel failed', e);
+        return 0;
+      }),
+      sendApnsPush(sb, recipients, payload).catch((e) => {
+        console.error('apns channel failed', e);
         return 0;
       }),
       sendEmails(sb, recipients, payload).catch((e) => {
@@ -413,7 +530,7 @@ Deno.serve(async (req: Request) => {
       }),
     ]);
 
-    return json({ push, native, email });
+    return json({ push, native: android + ios, email });
   } catch (err) {
     console.error('send-push exception', err);
     return json({ error: 'internal_error' }, 500);
