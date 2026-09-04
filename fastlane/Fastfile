@@ -57,9 +57,18 @@ platform :ios do
     # Ne pas nommer ces deux options: fastlane les déclare incompatibles et
     # refuse dès qu'on les mentionne, fussent-elles toutes deux à false
     # (« You can't enable both :development and :adhoc », run 7).
+    #
+    # force: true — sans lui, `sigh` réutilise un profil déjà enregistré chez
+    # Apple au lieu d'en refabriquer un qui reflète les capacités ACTUELLES
+    # de l'identifiant. Après l'ajout de Push Notifications sur net.finjaro.app
+    # (04/09, push natif), le profil existant restait l'ancien et le build
+    # échouait sur « doesn't include the Push Notifications capability » /
+    # « doesn't include the aps-environment entitlement » (run 12) — le
+    # profil, pas la configuration Apple, qui était correcte.
     get_provisioning_profile(
       api_key: api_key,
       app_identifier: APP_ID,
+      force: true,
     )
     profile = lane_context[SharedValues::SIGH_NAME]
 
