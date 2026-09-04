@@ -1200,7 +1200,22 @@
       "orders": "Commandes",
       "moderation": "Modération",
       "content": "Contenu",
+      "demandes": "Demandes",
       "relances": "Relances"
+    },
+    "demandesBanner": "{{count}} personne cherche quelque chose qu'on n'a pas",
+    "demandesBanner_other": "{{count}} personnes cherchent quelque chose qu'on n'a pas",
+    "demandesEmpty": "Aucune demande ici.",
+    "demandeTraitee": "Traitée",
+    "demandeClose": "Classer",
+    "demandeStatus": {
+      "ouverte": "À rappeler",
+      "traitee": "Traitées",
+      "close": "Classées"
+    },
+    "demandeSource": {
+      "recherche": "recherche vide",
+      "categorie": "rayon vide"
     },
     "searchShops": "Chercher une boutique, une ville, une propriétaire…",
     "searchUsers": "Chercher un nom, un téléphone, une ville…",

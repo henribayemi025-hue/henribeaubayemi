@@ -1397,23 +1397,12 @@ async function runTool(
         .single();
       if (errTicket) return { envoye: false, message: errTicket.message };
 
-      // Beau est prévenu tout de suite. Un ticket que personne ne voit ne vaut
-      // pas mieux que l'e-mail qu'il remplace.
-      const { data: admins } = await sb.from('profiles').select('id').eq('is_admin', true);
-      const titre = gravite === 'urgent'
-        ? `Urgent — ${sujet}`
-        : gravite === 'bug'
-          ? `Bug signalé — ${sujet}`
-          : `Demande d'aide — ${sujet}`;
-      for (const a of admins ?? []) {
-        await sb.from('notifications').insert({
-          user_id: (a as Json).id,
-          type: 'support',
-          title: titre,
-          body: resume.slice(0, 300),
-          data: { ticket_id: ticket?.id, gravite },
-        });
-      }
+      // L'alerte aux administrateurs n'est plus envoyée d'ici: le trigger SQL
+      // `trg_support_ticket` (migration 0074) s'en charge à l'insertion, et il
+      // ajoute le push et l'e-mail que cette boucle n'envoyait pas — la cloche
+      // seule obligeait Beau à ouvrir la console pour découvrir qu'il avait
+      // quelque chose à y voir. Passer par le trigger couvre aussi les tickets
+      // créés autrement que par Finia.
       return {
         envoye: true,
         gravite,
