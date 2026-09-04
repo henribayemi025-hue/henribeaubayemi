@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconChevronLeft, IconStarFilled } from '@tabler/icons-react';
+import { IconSearch, IconChevronLeft, IconStarFilled, IconBuildingStore, IconArrowRight } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ShopAvatar } from '../../components/ShopAvatar';
@@ -11,6 +11,14 @@ import { Skeleton, ErrorState } from '../../components/states';
 import { CATEGORIES } from '../../lib/categories';
 import { track } from '../../lib/track';
 import { nameMatches } from '../../lib/searchNorm';
+import { DemandeFinia } from '../../components/DemandeFinia';
+
+// Quelqu'un qui tape « devenir vendeur », « ma boutique » ou « vendre »
+// dans la BARRE DE RECHERCHE DE PRODUITS est deja dans l'app: il cherche
+// le bouton « Devenir vendeur », il ne cherche pas un article a acheter.
+// Meme expression que le rapport hebdo (voir migration 0066).
+const VEUT_VENDRE = /(vendre|vendeur|vendeuse|devenir|ma boutique|ouvrir.*boutique|inscri|compte)/i;
+function veutVendre(q) { return VEUT_VENDRE.test(q); }
 
 export default function Search() {
   const { t } = useTranslation();
@@ -117,9 +125,18 @@ export default function Search() {
         ) : error ? (
           <ErrorState onRetry={() => runSearch(q.trim())} />
         ) : isEmptyResult ? (
-          <p className="py-10 text-center text-body text-muted">{t('search.noResults', { q: q.trim() })}</p>
+          <div className="space-y-4 py-6">
+            {veutVendre(q) && <DevenirVendeurCard />}
+            <p className="text-center text-body text-muted">{t('search.noResults', { q: q.trim() })}</p>
+            {/* Une recherche vide n'est pas une impasse: c'est une demande
+                qu'on peut encore servir. Sauf quand la personne cherche a
+                VENDRE (pas un article) — dans ce cas la carte au-dessus
+                suffit et le formulaire d'achat serait hors sujet. */}
+            {!veutVendre(q) && <DemandeFinia recherche={q.trim()} source="recherche" />}
+          </div>
         ) : (
           <div className="space-y-6">
+            {veutVendre(q) && <DevenirVendeurCard />}
             {data.cats.length > 0 && (
               <Section title={t('categories.title')}>
                 <div className="flex flex-wrap gap-2">
@@ -184,5 +201,31 @@ function ShopRows({ shops }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+// Carte affichee quand quelqu'un tape « devenir vendeur », « ma boutique »,
+// « vendre »... dans la recherche. Le rapport hebdo a montre que ces gens
+// sont deja dans l'app: ce n'est pas une demande d'article a servir, c'est un
+// bouton a rendre visible. Un clic = ils atterrissent directement sur le
+// formulaire « Devenir vendeur ». Sans ca, ils repartent, et Finjaro perd
+// des vendeuses qui etaient venues d'elles-memes.
+function DevenirVendeurCard() {
+  const { t } = useTranslation();
+  return (
+    <Link
+      to="/become-vendor"
+      onClick={() => track('search_devenir_vendeur_click')}
+      className="flex items-center gap-3 rounded-card border border-teal/30 bg-teal-light/40 p-4 text-left transition active:scale-[0.99]"
+    >
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white">
+        <IconBuildingStore size={22} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-body font-semibold text-ink">{t('search.becomeVendorCta')}</span>
+        <span className="mt-0.5 block text-caption text-muted">{t('search.becomeVendorHint')}</span>
+      </span>
+      <IconArrowRight size={20} className="shrink-0 text-teal" />
+    </Link>
   );
 }

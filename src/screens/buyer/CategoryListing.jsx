@@ -8,6 +8,7 @@ import { ProductGridSkeleton, EmptyState, ErrorState } from '../../components/st
 import { categoryBanner } from '../../lib/categories';
 import { getCachedCategory, loadCategory } from '../../lib/categoryCache';
 import { track } from '../../lib/track';
+import { DemandeFinia } from '../../components/DemandeFinia';
 
 export default function CategoryListing() {
   const { categoryId } = useParams();
@@ -67,7 +68,11 @@ export default function CategoryListing() {
           ) : loading || !data ? (
             <ProductGridSkeleton />
           ) : data.length === 0 ? (
-            <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
+            <div className="space-y-4">
+              <EmptyState icon={IconMoodSmile} title={t('home.noProducts')} />
+              {/* Un rayon vide est une demande non servie, pas une fin. */}
+              <DemandeFinia recherche={t(`categories.${categoryId}`, categoryId)} source="categorie" />
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {data.map((p) => (

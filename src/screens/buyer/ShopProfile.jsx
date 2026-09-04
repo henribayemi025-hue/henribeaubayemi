@@ -343,6 +343,7 @@ export default function ShopProfile() {
                 href={`https://wa.me/${shop.whatsapp.replace(/[^\d]/g, '')}?text=${encodeURIComponent(sk('waGreeting', { name: shop.name }))}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => track('whatsapp_click', shop.id, { source: 'shop_header' })}
                 className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-success-bg text-caption font-semibold text-success"
               >
                 <IconBrandWhatsapp size={17} /> WhatsApp
@@ -351,6 +352,7 @@ export default function ShopProfile() {
             {shop.phone && (
               <a
                 href={`tel:${shop.phone.replace(/[^+\d]/g, '')}`}
+                onClick={() => track('phone_click', shop.id, { source: 'shop_header' })}
                 className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
               >
                 <IconPhone size={17} /> {t('shop.call')}
@@ -361,6 +363,7 @@ export default function ShopProfile() {
                 href={`https://instagram.com/${shop.instagram.replace(/^@/, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => track('instagram_click', shop.id, { source: 'shop_header' })}
                 className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border border-hairline text-caption font-semibold text-ink"
               >
                 <IconBrandInstagram size={17} /> Instagram
@@ -584,7 +587,13 @@ export default function ShopProfile() {
                 <p className="text-caption text-muted">{t('shop.location')}: {[shop.city, shop.country].filter(Boolean).join(', ')}</p>
               )}
               {shop.whatsapp && (
-                <a href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="btn-secondary">
+                <a
+                  href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => track('whatsapp_click', shop.id, { source: 'shop_about' })}
+                  className="btn-secondary"
+                >
                   {t('shop.whatsapp')}
                 </a>
               )}
