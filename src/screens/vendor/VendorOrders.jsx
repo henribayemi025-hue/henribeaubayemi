@@ -15,7 +15,6 @@ import { Modal } from '../../components/Modal';
 import { Field, TextArea } from '../../components/Field';
 import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatusBadge';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
-import { pushNotify } from '../../lib/notify';
 import { timeAgo } from '../../lib/format';
 
 // Le VRAI flux marketplace (avant, un seul bouton sautait de « nouvelle » à
@@ -59,19 +58,16 @@ export default function VendorOrders() {
     return orders || [];
   }, [shop.id]);
 
-  // Toutes les transitions passent ici: patch + horodatage + notification
-  // acheteuse. La commande ne peut avancer QUE dans l'ordre du flux.
-  async function transition(order, patch, notifKey) {
+  // Toutes les transitions passent ici: patch + horodatage. La commande ne
+  // peut avancer QUE dans l'ordre du flux. La notification acheteuse
+  // (cloche + push + e-mail) part desormais du SERVEUR, sur le changement
+  // de statut (trigger trg_order_status) — fiable meme si cette page se
+  // ferme juste apres.
+  async function transition(order, patch) {
     setBusyId(order.id);
     try {
       const { error: err } = await supabase.from('orders').update(patch).eq('id', order.id);
       if (err) throw err;
-      pushNotify({
-        user_id: order.buyer_id,
-        title: t(notifKey),
-        body: `#${order.order_no}${patch.cancel_reason ? ` — ${patch.cancel_reason}` : ''}`,
-        url: '/profile/orders',
-      });
       retry();
     } catch (e) {
       toast.error(e.message || t('errors.generic'));
@@ -81,15 +77,11 @@ export default function VendorOrders() {
   }
 
   const accept = (o) =>
-    transition(o, { status: 'confirmed', confirmed_at: new Date().toISOString() }, 'notifications.orderValidated');
+    transition(o, { status: 'confirmed', confirmed_at: new Date().toISOString() });
   const ship = (o) =>
-    transition(
-      o,
-      { status: 'shipped', shipped_at: new Date().toISOString() },
-      o.delivery_method === 'pickup' ? 'notifications.orderReady' : 'notifications.orderShipped'
-    );
+    transition(o, { status: 'shipped', shipped_at: new Date().toISOString() });
   const deliver = (o) =>
-    transition(o, { status: 'delivered', delivered_at: new Date().toISOString() }, 'notifications.orderDelivered');
+    transition(o, { status: 'delivered', delivered_at: new Date().toISOString() });
 
   // Refus (commande jamais acceptée) ET annulation (commande déjà validée ou
   // en livraison) partagent le même geste — seul le libellé change, parce
@@ -101,7 +93,6 @@ export default function VendorOrders() {
     await transition(
       o,
       { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: cancelReason.trim() || null },
-      wasAccepted ? 'notifications.orderCancelledAfterConfirm' : 'notifications.orderDeclined'
     );
     setCancelReason('');
   }

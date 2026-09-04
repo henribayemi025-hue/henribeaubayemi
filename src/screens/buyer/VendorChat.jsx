@@ -14,7 +14,6 @@ import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { MessagesShell } from './Inbox';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
-import { pushNotify } from '../../lib/notify';
 import { currencyForCountry, convertFromFcfa } from '../../lib/currency';
 import { FinouAction } from '../../components/FinouAction';
 
@@ -169,13 +168,9 @@ export default function VendorChat({ vendor = false }) {
         .single();
       if (sErr) throw sErr;
       setMessages((m) => m.map((x) => (x.id === tempId ? data : x)));
-      // Notify the other participant.
-      const otherId = vendor ? meta.buyer_id : null;
-      if (vendor && otherId) pushNotify({ user_id: otherId, title: t('notifications.newMessage'), body: payload.body || '📷', url: `/chat/${conversationId}` });
-      if (!vendor) {
-        const { data: ownerRow } = await supabase.from('shops').select('owner_id').eq('id', meta.shop_id).maybeSingle();
-        if (ownerRow?.owner_id) pushNotify({ user_id: ownerRow.owner_id, title: t('notifications.newMessage'), body: payload.body || '📷', url: `/vendor/messages/${conversationId}` });
-      }
+      // La notification (push+e-mail) part desormais du SERVEUR, sur
+      // l'insertion du message (trigger trg_chat_message) — fiable meme si
+      // ce navigateur se ferme juste apres l'envoi.
     } catch {
       setMessages((m) => m.map((x) => (x.id === tempId ? { ...x, failed: true } : x)));
     }

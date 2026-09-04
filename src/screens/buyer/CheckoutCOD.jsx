@@ -14,7 +14,6 @@ import { Price } from '../../components/Price';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
-import { pushNotify } from '../../lib/notify';
 import { networkMessage } from '../../lib/netError';
 import { track } from '../../lib/track';
 
@@ -153,13 +152,6 @@ export default function CheckoutCOD() {
     return networkMessage(e, t);
   }
 
-  async function notifyOwner(order) {
-    const { data: ownerRow } = await supabase.from('shops').select('owner_id').eq('id', shopId).maybeSingle();
-    if (ownerRow?.owner_id) {
-      pushNotify({ user_id: ownerRow.owner_id, title: t('notifications.orderReceived'), body: `#${order.order_no}`, url: '/vendor/orders' });
-    }
-  }
-
   async function submit() {
     setTouched({ name: true, phone: true, address: true, city: true, country: true });
     if (!valid) return;
@@ -167,7 +159,9 @@ export default function CheckoutCOD() {
     try {
       const order = await placeOrder('cod');
       track('order_placed', order.id, { shop_id: shopId, method, payment: 'cod', total: subtotal });
-      await notifyOwner(order);
+      // La notification vendeuse (push+e-mail) part desormais du SERVEUR
+      // (trigger trg_order_created), plus fiable qu'un appel depuis ce
+      // navigateur juste apres l'ecriture.
       clearShop(shopId);
       setPlaced(order.order_no);
     } catch (e) {
@@ -186,7 +180,6 @@ export default function CheckoutCOD() {
       track('order_placed', order.id, { shop_id: shopId, method, payment: 'card', total: subtotal });
       const { data, error } = await supabase.functions.invoke('create-checkout', { body: { order_id: order.id } });
       if (error || !data?.url) throw new Error(data?.error || t('errors.generic'));
-      await notifyOwner(order);
       clearShop(shopId);
       window.location.href = data.url; // Stripe hosted checkout
     } catch (e) {
