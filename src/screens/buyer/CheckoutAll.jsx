@@ -13,7 +13,7 @@ import { Price } from '../../components/Price';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
-import { pushNotify } from '../../lib/notify';
+import { track } from '../../lib/track';
 import { networkMessage } from '../../lib/netError';
 
 // Commander chez PLUSIEURS boutiques en un seul passage.
@@ -191,10 +191,10 @@ export default function CheckoutAll() {
     for (const shopId of shopIds) {
       try {
         const order = await placeFor(shopId);
-        const { data: ownerRow } = await supabase.from('shops').select('owner_id').eq('id', shopId).maybeSingle();
-        if (ownerRow?.owner_id) {
-          pushNotify({ user_id: ownerRow.owner_id, title: t('notifications.orderReceived'), body: `#${order.order_no}`, url: '/vendor/orders' });
-        }
+        // La notification vendeuse (push+e-mail) part du SERVEUR (trigger
+        // trg_order_created) — fiable, independante de ce navigateur.
+        const shopTotal = byShop[shopId].items.reduce((n, it) => n + it.price_fcfa * it.qty, 0);
+        track('order_placed', order.id, { shop_id: shopId, total: shopTotal });
         clearShop(shopId);
         placed.push({ shop: byShop[shopId].name, no: order.order_no });
       } catch (e) {
