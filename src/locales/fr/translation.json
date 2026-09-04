@@ -278,7 +278,9 @@
     "hint": "Commence à taper pour rechercher.",
     "noResults": "Aucun résultat pour « {{q}} »",
     "followed": "Tu suis",
-    "items": "Articles"
+    "items": "Articles",
+    "becomeVendorCta": "Devenir vendeur sur Finjaro",
+    "becomeVendorHint": "Ouvre ta boutique, mets tes articles en ligne. Gratuit."
   },
   "help": {
     "contactCta": "Nous écrire",

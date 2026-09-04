@@ -278,7 +278,9 @@
     "hint": "Start typing to search.",
     "noResults": "No results for « {{q}} »",
     "followed": "You follow",
-    "items": "Items"
+    "items": "Items",
+    "becomeVendorCta": "Become a Finjaro seller",
+    "becomeVendorHint": "Open your shop and list your items. Free."
   },
   "help": {
     "contactCta": "Email us",
