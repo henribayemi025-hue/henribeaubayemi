@@ -41,4 +41,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         config.delegateClass = SceneDelegate.self
         return config
     }
+
+    // Relaie l'enregistrement APNs au plugin @capacitor/push-notifications
+    // (qui écoute ces deux notifications précises côté Capacitor) — sans ces
+    // deux méthodes, l'app demande bien la permission mais ne reçoit jamais
+    // de jeton côté JS (l'événement 'registration' ne se déclenche jamais).
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
 }
