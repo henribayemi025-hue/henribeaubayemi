@@ -1537,5 +1537,11 @@
     "erreur": "Envoi impossible. Réessaie.",
     "merciTitre": "C'est noté !",
     "merciTexte": "Finia cherche et te répond sous 24 h."
+  },
+  "stores": {
+    "title": "Installe l'application",
+    "hint": "Elle revient d'un geste, et c'est le seul moyen de recevoir les notifications quand elle est fermée.",
+    "google": "Google Play",
+    "apple": "App Store"
   }
 }
