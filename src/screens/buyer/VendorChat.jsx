@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
+import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -250,6 +251,7 @@ export default function VendorChat({ vendor = false }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="WhatsApp"
+            onClick={() => meta?.shop_id && track('whatsapp_click', meta.shop_id, { source: 'chat_header', conversation_id: conversationId })}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success-bg text-success"
           >
             <IconBrandWhatsapp size={19} />
@@ -259,6 +261,7 @@ export default function VendorChat({ vendor = false }) {
           <a
             href={`tel:${telNumber}`}
             aria-label={t('shop.call')}
+            onClick={() => meta?.shop_id && track('phone_click', meta.shop_id, { source: 'chat_header', conversation_id: conversationId })}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal"
           >
             <IconPhone size={18} />
