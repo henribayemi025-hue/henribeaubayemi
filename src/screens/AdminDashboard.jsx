@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
   IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy, IconMessage2,
+  IconSearch,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -20,6 +21,7 @@ const AdminOrders = lazy(() => import('./admin/AdminOrders'));
 const AdminModeration = lazy(() => import('./admin/AdminModeration'));
 const AdminContent = lazy(() => import('./admin/AdminContent'));
 const AdminSupport = lazy(() => import('./admin/AdminSupport'));
+const AdminDemandes = lazy(() => import('./admin/AdminDemandes'));
 const AdminRelances = lazy(() => import('./admin/AdminRelances'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
@@ -35,6 +37,7 @@ const SECTIONS = [
   { key: 'orders', icon: IconShoppingBag, Component: AdminOrders },
   { key: 'moderation', icon: IconFlag, Component: AdminModeration },
   { key: 'support', icon: IconLifebuoy, Component: AdminSupport },
+  { key: 'demandes', icon: IconSearch, Component: AdminDemandes },
   { key: 'relances', icon: IconMessage2, Component: AdminRelances },
   { key: 'content', icon: IconSpeakerphone, Component: AdminContent },
 ];
@@ -105,7 +108,7 @@ function Overview({ goTo }) {
     const [
       visitsTotal, visits7d, usersTotal, users7d, vendorsTotal,
       ordersTotal, orders7d, revenueRes, topProducts, eventCounts, recentVisitorsRes, aiUsageRes,
-      pendingReports, ticketsOuverts, pendingApps,
+      pendingReports, ticketsOuverts, pendingApps, demandesOuvertes,
     ] = await Promise.all([
       countSince('events', null, (q) => q.eq('type', 'visit')),
       countSince('events', 7, (q) => q.eq('type', 'visit')),
@@ -131,6 +134,7 @@ function Overview({ goTo }) {
       countSince('reports', null, (q) => q.eq('status', 'pending')),
       countSince('support_tickets', null, (q) => q.eq('statut', 'ouvert')),
       countSince('vendor_applications', null, (q) => q.eq('status', 'pending')),
+      countSince('demandes_acheteurs', null, (q) => q.eq('statut', 'ouverte')),
     ]);
     const revenueFcfa = (revenueRes.data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
     const aiSpendEur = (aiUsageRes.data || []).reduce((s, r) => s + Number(r.cost_eur), 0);
@@ -139,7 +143,7 @@ function Overview({ goTo }) {
       topProducts: topProducts.data || [],
       events: EVENT_TYPES.map((type, i) => ({ type, count: eventCounts[i] })),
       recentVisitors: recentVisitorsRes.data || [],
-      aiSpendEur, pendingReports, ticketsOuverts, pendingApps,
+      aiSpendEur, pendingReports, ticketsOuverts, pendingApps, demandesOuvertes,
     };
   }, []);
 
@@ -154,8 +158,22 @@ function Overview({ goTo }) {
           peut dormir des jours sans que personne ne le voie. Ce sont des
           BOUTONS qui changent d'onglet, pas des liens vers une adresse — la
           console n'a qu'une seule page. */}
-      {(data.pendingReports > 0 || data.ticketsOuverts > 0 || data.pendingApps > 0) && (
+      {(data.pendingReports > 0 || data.ticketsOuverts > 0 || data.pendingApps > 0 || data.demandesOuvertes > 0) && (
         <div className="space-y-2">
+          {/* En tête des bandeaux: c'est le seul qui porte une promesse
+              datée (« réponse sous 24 h ») faite à quelqu'un qui voulait
+              acheter. Le retard s'y paie plus cher qu'ailleurs. */}
+          {data.demandesOuvertes > 0 && (
+            <button
+              type="button"
+              onClick={() => goTo('demandes')}
+              className="flex w-full items-center gap-2 rounded-card border border-brass/40 bg-brass/10 p-3 text-left text-body font-semibold text-brass transition active:scale-[0.99]"
+            >
+              <IconSearch size={18} className="shrink-0" />
+              <span className="flex-1">{t('admin.demandesBanner', { count: data.demandesOuvertes })}</span>
+              <IconChevronRight size={18} className="shrink-0" />
+            </button>
+          )}
           {data.ticketsOuverts > 0 && (
             <button
               type="button"

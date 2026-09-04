@@ -1200,7 +1200,22 @@
       "orders": "Orders",
       "moderation": "Moderation",
       "content": "Content",
+      "demandes": "Requests",
       "relances": "Follow-ups"
+    },
+    "demandesBanner": "{{count}} person is looking for something we don't have",
+    "demandesBanner_other": "{{count}} people are looking for something we don't have",
+    "demandesEmpty": "No requests here.",
+    "demandeTraitee": "Handled",
+    "demandeClose": "Archive",
+    "demandeStatus": {
+      "ouverte": "To contact",
+      "traitee": "Handled",
+      "close": "Archived"
+    },
+    "demandeSource": {
+      "recherche": "empty search",
+      "categorie": "empty category"
     },
     "searchShops": "Search a shop, a city, an owner…",
     "searchUsers": "Search a name, a phone, a city…",
