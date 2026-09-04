@@ -1,8 +1,9 @@
-// Finjaro — envoi des notifications: push navigateur ET e-mail.
+// Finjaro — envoi des notifications: push navigateur, push NATIF (app
+// installée) et e-mail.
 //
-// Le nom "send-push" est conservé pour ne pas casser les trois appelants
-// existants (CheckoutCOD, VendorChat, VendorOrders via src/lib/notify.js),
-// mais la fonction fait désormais les deux canaux.
+// Le nom "send-push" est conservé pour ne pas casser les appelants existants
+// (triggers SQL via pg_net, VendorChat, VendorOrders via src/lib/notify.js),
+// mais la fonction fait désormais les trois canaux.
 //
 // Accepte:
 //   { user_id, title, body, url?, tag? }                        -> une personne
@@ -12,10 +13,16 @@
 // POURQUOI L'E-MAIL EST INDISPENSABLE
 // Sur iPhone, le push web ne fonctionne QUE si le site a été ajouté à l'écran
 // d'accueil. Sans e-mail, une grande partie des utilisatrices n'était donc
-// jamais prévenue de rien. Les deux canaux sont tentés indépendamment: si le
-// push échoue ou n'existe pas, l'e-mail part quand même — c'était le vrai
-// défaut de la version précédente, qui abandonnait dès qu'aucun abonnement
-// push n'était trouvé.
+// jamais prévenue de rien. Les trois canaux sont tentés indépendamment: si
+// l'un échoue ou n'a rien à envoyer, les autres partent quand même.
+//
+// POURQUOI LE PUSH NATIF (FCM) EST UN CANAL À PART
+// Le push web (VAPID, ci-dessous) ne fonctionne QUE dans un vrai navigateur.
+// L'app installée depuis le Play Store est une coque Capacitor: sans jeton
+// FCM (table native_push_tokens, distincte de push_subscriptions), l'OS
+// Android ne peut pas réveiller l'app fermée pour afficher une notification
+// — c'était la cause de « les gens ne reçoivent rien sur l'app » (Beau,
+// 04/09). Voir aussi migration 0073.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import * as webpush from 'jsr:@negrel/webpush@0.3';
@@ -142,6 +149,144 @@ async function sendPush(
   return delivered;
 }
 
+// --- Push NATIF (Firebase Cloud Messaging, HTTP v1) -------------------------
+//
+// Contrairement au Web Push (clés VAPID publiques), envoyer via FCM exige un
+// jeton OAuth2 obtenu en signant un JWT avec la clé privée du compte de
+// service Firebase (app_config.fcm_service_account — jamais dans un fichier
+// versionné, voir le commentaire de la migration 0073). On le fait à la main
+// avec Web Crypto plutôt que d'ajouter une dépendance: c'est ~30 lignes et
+// évite un SDK Node lourd, mal adapté à Deno Edge.
+
+let cachedFcmToken: { token: string; exp: number } | null = null;
+
+function base64url(bytes: ArrayBuffer | Uint8Array): string {
+  const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let str = '';
+  for (const b of arr) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function pemToPkcs8(pem: string): ArrayBuffer {
+  const b64 = pem
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s+/g, '');
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function getFcmAccessToken(
+  sb: Admin,
+): Promise<{ token: string; projectId: string } | null> {
+  const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'fcm_service_account').maybeSingle();
+  const sa = cfg?.value as
+    | { project_id?: string; client_email?: string; private_key?: string; token_uri?: string }
+    | null;
+  if (!sa?.project_id || !sa.client_email || !sa.private_key) return null;
+
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedFcmToken && cachedFcmToken.exp > now + 60) {
+    return { token: cachedFcmToken.token, projectId: sa.project_id };
+  }
+
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claims = {
+    iss: sa.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: sa.token_uri ?? 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  };
+  const enc = new TextEncoder();
+  const unsigned = `${base64url(enc.encode(JSON.stringify(header)))}.${base64url(enc.encode(JSON.stringify(claims)))}`;
+
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    pemToPkcs8(sa.private_key),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, enc.encode(unsigned));
+  const jwt = `${unsigned}.${base64url(sig)}`;
+
+  const resp = await fetch(sa.token_uri ?? 'https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=${encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer')}&assertion=${encodeURIComponent(jwt)}`,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!resp.ok) {
+    console.error('fcm oauth failed', resp.status, (await resp.text()).slice(0, 300));
+    return null;
+  }
+  const { access_token, expires_in } = (await resp.json()) as { access_token: string; expires_in: number };
+  cachedFcmToken = { token: access_token, exp: now + (expires_in ?? 3600) };
+  return { token: access_token, projectId: sa.project_id };
+}
+
+async function sendNativePush(
+  sb: Admin,
+  recipients: string[],
+  payload: Record<string, unknown>,
+): Promise<number> {
+  const { data: tokens } = await sb
+    .from('native_push_tokens')
+    .select('id, token, platform')
+    .in('user_id', recipients);
+  if (!tokens || tokens.length === 0) return 0;
+
+  const auth = await getFcmAccessToken(sb);
+  if (!auth) return 0;
+
+  const title = String(payload.title ?? 'Finjaro');
+  const body = String(payload.body ?? '');
+  const url = String(payload.url ?? '/');
+
+  let delivered = 0;
+  await Promise.all(
+    tokens.map(async (t) => {
+      try {
+        const resp = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${auth.projectId}/messages:send`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: {
+                token: t.token,
+                notification: { title, body },
+                data: { url, tag: String(payload.tag ?? '') },
+                android: { priority: 'high' },
+                apns: { headers: { 'apns-priority': '10' } },
+              },
+            }),
+            signal: AbortSignal.timeout(10_000),
+          },
+        );
+        if (resp.ok) {
+          delivered++;
+          return;
+        }
+        const errText = await resp.text();
+        // Jeton périmé/désinstallé: FCM répond UNREGISTERED ou NOT_FOUND —
+        // on le retire pour ne pas réessayer indéfiniment sur un mort.
+        if (resp.status === 404 || /UNREGISTERED|NOT_FOUND|INVALID_ARGUMENT/.test(errText)) {
+          await sb.from('native_push_tokens').delete().eq('id', t.id);
+        } else {
+          console.error('fcm send failed', resp.status, errText.slice(0, 300));
+        }
+      } catch (e) {
+        console.error('fcm send exception', e);
+      }
+    }),
+  );
+  return delivered;
+}
+
 // --- E-mail (Resend) -------------------------------------------------------
 
 function escapeHtml(s: string): string {
@@ -251,11 +396,15 @@ Deno.serve(async (req: Request) => {
     const recipients = await resolveRecipients(sb, payload);
     if (recipients.length === 0) return json({ push: 0, email: 0, reason: 'no_recipients' });
 
-    // Les deux canaux en parallèle et indépendamment: l'échec de l'un ne doit
-    // jamais empêcher l'autre d'arriver.
-    const [push, email] = await Promise.all([
+    // Les trois canaux en parallèle et indépendamment: l'échec de l'un ne
+    // doit jamais empêcher les autres d'arriver.
+    const [push, native, email] = await Promise.all([
       sendPush(sb, recipients, payload).catch((e) => {
         console.error('push channel failed', e);
+        return 0;
+      }),
+      sendNativePush(sb, recipients, payload).catch((e) => {
+        console.error('native push channel failed', e);
         return 0;
       }),
       sendEmails(sb, recipients, payload).catch((e) => {
@@ -264,7 +413,7 @@ Deno.serve(async (req: Request) => {
       }),
     ]);
 
-    return json({ push, email });
+    return json({ push, native, email });
   } catch (err) {
     console.error('send-push exception', err);
     return json({ error: 'internal_error' }, 500);

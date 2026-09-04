@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconBell, IconX } from '@tabler/icons-react';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { enablePush } from '../lib/push';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
@@ -32,8 +34,19 @@ export function PushPrompt({ reason }) {
   useEffect(() => {
     if (!user) return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
-    // `Notification` n'existe pas dans la fenêtre web d'une appli Android/iOS:
-    // on ne montre rien plutôt que d'ouvrir une porte qui ne mène nulle part.
+    if (Capacitor.isNativePlatform()) {
+      // App installée: le canal est FCM/APNs (voir lib/push.js), pas le
+      // Notification API du navigateur — `Notification` n'existe d'ailleurs
+      // pas dans cette fenêtre. checkPermissions() est l'équivalent natif
+      // de `Notification.permission`: on ne redemande pas si déjà tranché.
+      PushNotifications.checkPermissions().then((perm) => {
+        if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') setShow(true);
+      });
+      return;
+    }
+    // Web: `Notification` n'existe pas dans certains contextes (ancien
+    // navigateur) — on ne montre rien plutôt que d'ouvrir une porte qui ne
+    // mène nulle part.
     if (typeof Notification === 'undefined' || !('PushManager' in window)) return;
     if (Notification.permission !== 'default') return; // déjà accordé ou déjà refusé
     setShow(true);

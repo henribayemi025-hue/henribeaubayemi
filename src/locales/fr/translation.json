@@ -1113,6 +1113,7 @@
     "promptTitle": "Active les alertes",
     "promptHint": "Sois prévenu·e dès qu'il se passe quelque chose.",
     "promptHintVendor": "Une commande peut tomber à tout moment. Sans alerte, tu l'apprends trop tard — et la cliente attend.",
+    "promptHintBuyer": "Sois prévenu·e dès qu'une vendeuse te répond ou que ta commande avance.",
     "promptCta": "Activer"
   },
   "productAttrs": {

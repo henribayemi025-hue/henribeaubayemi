@@ -1113,6 +1113,7 @@
     "promptTitle": "Turn on alerts",
     "promptHint": "Get notified as soon as something happens.",
     "promptHintVendor": "An order can arrive any time. Without alerts you find out too late — and the customer is waiting.",
+    "promptHintBuyer": "Get notified as soon as a seller replies or your order moves forward.",
     "promptCta": "Turn on"
   },
   "productAttrs": {

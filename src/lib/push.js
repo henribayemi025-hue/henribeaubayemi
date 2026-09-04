@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from './supabase';
 
 // Public VAPID application-server key (public by design). Hardcoded default so
@@ -13,9 +15,73 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
+// ─── Push NATIF (app installée depuis le Play Store / App Store) ───────────
+//
+// Le Web Push ci-dessous ne fonctionne QUE dans un vrai navigateur — pas
+// dans la coque Capacitor de l'app: sans jeton FCM (Android) ou APNs (iOS),
+// le système d'exploitation n'a aucun moyen de réveiller l'app fermée pour
+// afficher une notification. C'est la vraie raison derrière « les gens ne
+// reçoivent rien sur l'app » (Beau, 04/09) — un trou d'architecture, pas un
+// bug ponctuel. Voir aussi la migration 0073 (table native_push_tokens,
+// séparée de push_subscriptions qui reste le canal web).
+async function enableNativePush(userId) {
+  const perm = await PushNotifications.requestPermissions();
+  if (perm.receive !== 'granted') return { ok: false, reason: 'denied' };
+
+  // `register()` ne renvoie pas le jeton directement: il déclenche un
+  // événement 'registration' (ou 'registrationError') écouté ci-dessous.
+  // On enveloppe ça dans une promesse pour garder la même signature
+  // { ok, reason } que le web, sans rien changer côté appelants
+  // (PushPrompt.jsx, Settings.jsx).
+  return new Promise((resolve) => {
+    let settled = false;
+    let regHandle = null;
+    let errHandle = null;
+    const cleanup = () => {
+      regHandle?.remove();
+      errHandle?.remove();
+    };
+    const done = (result) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+
+    PushNotifications.addListener('registration', async (token) => {
+      try {
+        await supabase.from('native_push_tokens').upsert(
+          { user_id: userId, platform: Capacitor.getPlatform(), token: token.value },
+          { onConflict: 'token' }
+        );
+        done({ ok: true });
+      } catch {
+        done({ ok: false, reason: 'save_failed' });
+      }
+    }).then((h) => {
+      regHandle = h;
+      if (settled) h.remove(); // la réponse est déjà partie (timeout) — nettoyer quand même
+    });
+
+    PushNotifications.addListener('registrationError', () => {
+      done({ ok: false, reason: 'registration_failed' });
+    }).then((h) => {
+      errHandle = h;
+      if (settled) h.remove();
+    });
+
+    // Filet de sécurité: un réseau capricieux ne doit jamais laisser
+    // l'appelant (le bouton "Activer") tourner indéfiniment.
+    setTimeout(() => done({ ok: false, reason: 'timeout' }), 15000);
+
+    PushNotifications.register();
+  });
+}
+
+// ─── Web Push (navigateur uniquement) ───────────────────────────────────────
 // Subscribe the browser to Web Push and persist the subscription.
 // Returns { ok, reason }. Degrades cleanly when VAPID isn't configured yet.
-export async function enablePush(userId) {
+async function enableWebPush(userId) {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     return { ok: false, reason: 'unsupported' };
   }
@@ -40,4 +106,11 @@ export async function enablePush(userId) {
     { onConflict: 'endpoint' }
   );
   return { ok: true };
+}
+
+// Point d'entrée unique, appelé par PushPrompt.jsx et Settings.jsx — le
+// bon canal (natif ou web) est choisi ici, sans rien changer côté appelants.
+export async function enablePush(userId) {
+  if (Capacitor.isNativePlatform()) return enableNativePush(userId);
+  return enableWebPush(userId);
 }
