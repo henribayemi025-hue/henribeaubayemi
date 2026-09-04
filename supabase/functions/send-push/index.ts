@@ -9,6 +9,15 @@
 //   { user_id, title, body, url?, tag? }                        -> une personne
 //   { audience: 'shop_followers', shop_id, title, body, url? }  -> abonnés d'une boutique
 //   { audience: 'country', country, except_user_id?, ... }      -> tout un pays
+//   { audience: 'all' | 'vendors' | 'buyers', title, body, ... } -> diffusion
+//
+// QUI A LE DROIT D'ENVOYER
+// Un envoi à UNE personne reste ouvert: c'est ce dont se servent les triggers
+// SQL, appelés par pg_net sans jeton à présenter. Tout envoi COLLECTIF exige
+// en revanche une preuve (jeton d'un compte administrateur, ou de la
+// propriétaire de la boutique pour ses propres abonnés) — sans quoi cette
+// fonction serait un relais ouvert: quiconque connaît son adresse pourrait
+// écrire à tous les comptes d'un pays sous le nom de Finjaro.
 //
 // POURQUOI L'E-MAIL EST INDISPENSABLE
 // Sur iPhone, le push web ne fonctionne QUE si le site a été ajouté à l'écran
@@ -79,17 +88,66 @@ function admin() {
   );
 }
 
+// Envois qui touchent PLUSIEURS personnes d'un coup. Ils exigent une preuve
+// d'identité (voir callerRights): sans elle, cette fonction serait un relais
+// ouvert — n'importe qui connaissant l'adresse pourrait écrire à tous les
+// comptes d'un pays sous le nom de Finjaro.
+const DIFFUSIONS = new Set(['all', 'vendors', 'buyers', 'country', 'shop_followers']);
+
+// Qui appelle, et a-t-il le droit de diffuser ?
+//
+// La fonction est appelée de deux façons: par les triggers SQL (pg_net, sans
+// en-tête d'autorisation, toujours vers UNE personne) et par le navigateur
+// via supabase.functions.invoke, qui transmet le jeton de la personne
+// connectée. `verify_jwt` est à false pour laisser passer les premiers — la
+// vérification se fait donc ici, à la main, pour les seconds.
+async function callerRights(sb: Admin, req: Request) {
+  const auth = req.headers.get('Authorization') ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (!token) return { userId: null as string | null, isAdmin: false };
+  // La clé anonyme est elle aussi un JWT: getUser la rejette, ce qui est
+  // exactement ce qu'on veut (elle ne prouve l'identité de personne).
+  const { data, error } = await sb.auth.getUser(token);
+  if (error || !data?.user) return { userId: null, isAdmin: false };
+  const { data: prof } = await sb
+    .from('profiles').select('is_admin').eq('id', data.user.id).maybeSingle();
+  return { userId: data.user.id, isAdmin: prof?.is_admin === true };
+}
+
 async function resolveRecipients(sb: Admin, payload: Record<string, unknown>) {
   if (payload.user_id) return [payload.user_id as string];
+
+  const except = payload.except_user_id;
+  const sansExpediteur = (rows: { id: string }[] | null) =>
+    (rows ?? []).map((r) => r.id).filter((id) => id !== except);
+
   if (payload.audience === 'shop_followers' && payload.shop_id) {
     const { data } = await sb.from('shop_follows').select('follower_id').eq('shop_id', payload.shop_id);
-    return (data ?? []).map((r) => r.follower_id);
+    return (data ?? []).map((r) => r.follower_id).filter((id) => id !== except);
   }
   if (payload.audience === 'country' && payload.country) {
     const { data } = await sb.from('profiles').select('id').eq('country', payload.country);
-    return (data ?? [])
-      .map((r) => r.id)
-      .filter((id) => id !== payload.except_user_id);
+    return sansExpediteur(data);
+  }
+  // Tout le monde.
+  if (payload.audience === 'all') {
+    const { data } = await sb.from('profiles').select('id');
+    return sansExpediteur(data);
+  }
+  // Les vendeuses = les personnes qui tiennent une boutique. On passe par
+  // `shops.owner_id` plutôt que par `profiles.is_vendor`: le drapeau peut
+  // rester à true après la fermeture d'une boutique, la table des boutiques
+  // est la seule source qui dise qui en tient une aujourd'hui.
+  if (payload.audience === 'vendors') {
+    const { data } = await sb.from('shops').select('owner_id').not('owner_id', 'is', null);
+    const ids = [...new Set((data ?? []).map((r) => r.owner_id))];
+    return ids.filter((id) => id !== except);
+  }
+  if (payload.audience === 'buyers') {
+    const { data: shops } = await sb.from('shops').select('owner_id').not('owner_id', 'is', null);
+    const proprietaires = new Set((shops ?? []).map((r) => r.owner_id));
+    const { data } = await sb.from('profiles').select('id');
+    return sansExpediteur(data).filter((id) => !proprietaires.has(id));
   }
   return [];
 }
@@ -506,6 +564,23 @@ Deno.serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const sb = admin();
+
+    // Verrou des envois collectifs. Un envoi à UNE personne reste ouvert:
+    // c'est ce dont se servent les triggers SQL, qui n'ont pas de jeton à
+    // présenter. Un envoi collectif, lui, doit être prouvé.
+    if (DIFFUSIONS.has(payload.audience)) {
+      const { userId, isAdmin } = await callerRights(sb, req);
+      let autorise = isAdmin;
+      // Une vendeuse peut écrire aux abonnés de SA boutique — mais
+      // uniquement de la sienne.
+      if (!autorise && payload.audience === 'shop_followers' && payload.shop_id && userId) {
+        const { data: shop } = await sb
+          .from('shops').select('owner_id').eq('id', payload.shop_id).maybeSingle();
+        autorise = shop?.owner_id === userId;
+      }
+      if (!autorise) return json({ error: 'forbidden' }, 403);
+    }
+
     const recipients = await resolveRecipients(sb, payload);
     if (recipients.length === 0) return json({ push: 0, email: 0, reason: 'no_recipients' });
 
