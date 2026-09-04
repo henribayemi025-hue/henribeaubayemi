@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "6203733512",
+    "project_id": "finjaro-e112d",
+    "storage_bucket": "finjaro-e112d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:6203733512:android:ef9e17859c8f489cd603bd",
+        "android_client_info": {
+          "package_name": "net.finjaro.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDk42XBO6T5ImGNIzORpUspFVL7SCJFzjE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

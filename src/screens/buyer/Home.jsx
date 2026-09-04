@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { NotificationBell } from '../../components/NotificationBell';
+import { PushPrompt } from '../../components/PushPrompt';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
 import { ProductCard } from '../../components/ProductCard';
 import { ShopCard } from '../../components/ShopCard';
@@ -140,6 +141,16 @@ export default function Home() {
         <div className="pt-3">
           <CategoryStrip />
         </div>
+
+        {/* Proposée ici — pas seulement aux vendeuses sur leur tableau de
+            bord — parce qu'un acheteur qui commande veut aussi savoir où
+            en est sa commande, et une conversation qui n'obtient pas de
+            réponse est aussi frustrante côté achat que côté vente. */}
+        {user && (
+          <div className="mt-4 px-4">
+            <PushPrompt reason="notifications.promptHintBuyer" />
+          </div>
+        )}
 
         {/* Pivot: séparation lisible acheter un PRODUIT (bandeau catégories
             ci-dessus) vs réserver un SERVICE (cette bande -> onglet Services).
