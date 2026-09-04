@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconArrowRight, IconShieldCheck, IconTruckDelivery, IconSparkles, IconBrandGooglePlay } from '@tabler/icons-react';
+import { IconArrowRight, IconShieldCheck, IconTruckDelivery, IconSparkles } from '@tabler/icons-react';
 import { CATEGORIES } from '../src/lib/categories';
 import { useSettings } from '../src/hooks/useSettings';
+import { StoreBadges } from '../src/components/StoreBadges';
 
 // Marketing landing — same "Lagune & Encre" design system as the app.
 export default function Landing() {
@@ -42,20 +43,13 @@ export default function Landing() {
           {language === 'fr' ? 'Entrer dans Finjaro' : 'Enter Finjaro'} <IconArrowRight size={18} />
         </Link>
 
-        {/* Finjaro est en ligne sur le Play Store depuis fin aout, mais rien
-            sur le site n'en parlait — personne ne peut trouver ce lien sans
-            le connaitre deja. L'App Store, lui, est encore en examen: le
-            bouton n'a donc de sens QUE pour Android tant qu'Apple n'a pas
-            valide, sinon on renverrait vers une fiche qui n'existe pas. */}
-        <a
-          href="https://play.google.com/store/apps/details?id=net.finjaro.app"
-          target="_blank"
-          rel="noreferrer"
-          className="mx-auto mt-3 flex max-w-xs items-center justify-center gap-2 rounded-input border border-hairline py-2.5 text-caption font-semibold text-ink transition active:scale-[0.98]"
-        >
-          <IconBrandGooglePlay size={18} />
-          {language === 'fr' ? "Disponible sur Google Play" : 'Get it on Google Play'}
-        </a>
+        {/* Les adresses des deux magasins vivent maintenant dans un seul
+            endroit (StoreBadges), partagé avec l'écran Réglages: le lien
+            n'existait que sur cette page, que personne ne voit puisque
+            finjaro.net ouvre directement l'application. */}
+        <div className="mx-auto mt-3 max-w-xs">
+          <StoreBadges compact />
+        </div>
       </section>
 
       <section className="mt-10 px-4">

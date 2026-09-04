@@ -6,6 +6,7 @@ import { useSettings } from '../../hooks/useSettings';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
+import { StoreBadges } from '../../components/StoreBadges';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { TextArea } from '../../components/Field';
@@ -144,6 +145,12 @@ export default function Settings() {
             </label>
           </section>
         )}
+
+        {/* Juste sous les notifications, et ce n'est pas un hasard: quelqu'un
+            qui vient d'activer les alertes depuis un navigateur iPhone ne
+            recevra rien tant qu'il n'a pas l'app. C'est ici que l'invitation
+            à l'installer a le plus de sens. */}
+        <StoreBadges />
 
         {/* Seul accès aux CGU qui ne dépend ni d'un compte ni de l'écran de
             connexion — Réglages est la seule page publique commune à tout le

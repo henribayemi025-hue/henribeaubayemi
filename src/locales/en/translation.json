@@ -1537,5 +1537,11 @@
     "erreur": "Couldn't send. Try again.",
     "merciTitre": "Got it!",
     "merciTexte": "Finia is searching and will reply within 24h."
+  },
+  "stores": {
+    "title": "Install the app",
+    "hint": "One tap to come back, and the only way to get notifications when it's closed.",
+    "google": "Google Play",
+    "apple": "App Store"
   }
 }
