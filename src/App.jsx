@@ -10,6 +10,7 @@ import { RequireAuth } from './components/RequireAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppIntro } from './components/AppIntro';
 import { CookieConsent } from './components/CookieConsent';
+import { InstallAppBanner } from './components/InstallAppBanner';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { BuyerLayout } from './screens/buyer/BuyerLayout';
 import { VendorLayout } from './screens/vendor/VendorLayout';
@@ -188,6 +189,7 @@ export default function App() {
                     attendre qu'un compte existe. */}
                 <ErrorBoundary silent><AppIntro /></ErrorBoundary>
                 <ErrorBoundary silent><CookieConsent /></ErrorBoundary>
+                <ErrorBoundary silent><InstallAppBanner /></ErrorBoundary>
                 <Suspense fallback={<Loading />}>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />

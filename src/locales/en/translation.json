@@ -1543,5 +1543,10 @@
     "hint": "One tap to come back, and the only way to get notifications when it's closed.",
     "google": "Google Play",
     "apple": "App Store"
+  },
+  "installBanner": {
+    "title": "Finjaro is faster in the app",
+    "subtitle": "Notifications, one-tap access, free",
+    "cta": "Install"
   }
 }

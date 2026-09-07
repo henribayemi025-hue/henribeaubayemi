@@ -12,7 +12,9 @@ const CONSENT_KEY = 'finjaro_pixel_consent'; // '1' accepté, '0' refusé
 // le bandeau, comme demandé par Beau : « mets dans la politique et tout
 // c'est suffisant la bas ». Pour l'UE le pixel reste opt-in, sinon la CNIL
 // peut sanctionner.
-const PAYS_CONSENTEMENT_REQUIS = new Set([
+// Exporté: InstallAppBanner s'en sert pour ne pas se superposer à ce
+// bandeau-ci quand un choix pixel est encore en attente dans un pays RGPD.
+export const PAYS_CONSENTEMENT_REQUIS = new Set([
   // UE 27
   'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE',
   'IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE',
