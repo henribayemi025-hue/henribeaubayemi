@@ -16,7 +16,7 @@ import { networkMessage } from '../lib/netError';
 export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { requireLogin } = useUI();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,12 +25,24 @@ export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    // Depuis le correctif sécurité du 07/09, `profiles` ne se joint plus
+    // directement (la ligne d'un inconnu n'est plus lisible — le
+    // téléphone/l'adresse de tout le monde fuitaient sinon). Le nom, seule
+    // chose publique par nature ici, vient de `profiles_public`, jointe
+    // côté client sur les auteurs des commentaires affichés.
     const { data } = await supabase
       .from('reel_comments')
-      .select('id, body, created_at, user_id, profiles!reel_comments_profile_fk(name)')
+      .select('id, body, created_at, user_id')
       .eq('reel_id', reelId)
       .order('created_at', { ascending: false });
-    setComments(data || []);
+    const authorIds = [...new Set((data || []).map((c) => c.user_id).filter(Boolean))];
+    let withNames = data || [];
+    if (authorIds.length > 0) {
+      const { data: auteurs } = await supabase.from('profiles_public').select('id, name').in('id', authorIds);
+      const nomParId = new Map((auteurs || []).map((p) => [p.id, p.name]));
+      withNames = withNames.map((c) => ({ ...c, profiles: { name: nomParId.get(c.user_id) } }));
+    }
+    setComments(withNames);
     setLoading(false);
   }, [reelId]);
 
@@ -47,10 +59,13 @@ export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
       return;
     }
     setSending(true);
+    // Pas de jointure profiles ici non plus (voir load()) — inutile de
+    // toute façon: l'auteur, c'est la personne qui vient d'écrire, son nom
+    // est déjà connu localement via useAuth().
     const { data, error } = await supabase
       .from('reel_comments')
       .insert({ reel_id: reelId, user_id: user.id, body })
-      .select('id, body, created_at, user_id, profiles!reel_comments_profile_fk(name)')
+      .select('id, body, created_at, user_id')
       .single();
     setSending(false);
     // Un échec silencieux laissait croire que le commentaire était publié: le
@@ -59,7 +74,7 @@ export function ReelCommentsSheet({ open, onClose, reelId, onAdded }) {
       toast.error(networkMessage(error, t));
       return;
     }
-    setComments((c) => [data, ...c]);
+    setComments((c) => [{ ...data, profiles: { name: profile?.name } }, ...c]);
     setText('');
     onAdded?.();
   }

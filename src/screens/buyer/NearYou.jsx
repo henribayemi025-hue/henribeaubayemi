@@ -147,13 +147,17 @@ export default function NearYou() {
     const elsewhereQuery = radius === 'country' && country
       ? supabase.from('shops').select('categories').eq('status', 'active').neq('country', country).limit(200)
       : Promise.resolve({ data: null, error: null });
-    // Explicit FK join (near_you_listings.user_id -> profiles) so PostgREST can
-    // resolve the poster's name. The FK is added in migration 0007.
+    // PLUS de jointure directe sur `profiles`: depuis le correctif sécurité
+    // du 07/09, la table n'expose plus la ligne d'un inconnu (fuite du
+    // téléphone/adresse de tout le monde à tout compte connecté). Le nom
+    // de l'auteure d'une annonce reste public par nature — il vient donc
+    // de `profiles_public`, une vue qui ne recopie QUE ça, jointe ici côté
+    // client sur les quelques dizaines de user_id affichés.
     const [shopsRes, listingsRes, elsewhereRes] = await Promise.all([
       shopsQuery,
       supabase
         .from('near_you_listings')
-        .select('*, profiles!near_you_listings_profile_fk(name)')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(40),
       elsewhereQuery,
@@ -163,6 +167,14 @@ export default function NearYou() {
     if (listingsRes.error) console.error('[NearYou] listings query failed:', listingsRes.error.message);
     const shops = shopsRes.data || [];
     const providersElsewhere = (elsewhereRes.data || []).filter(isServiceShop).length;
+
+    const listingUserIds = [...new Set((listingsRes.data || []).map((l) => l.user_id).filter(Boolean))];
+    let listings = listingsRes.data || [];
+    if (listingUserIds.length > 0) {
+      const { data: posters } = await supabase.from('profiles_public').select('id, name').in('id', listingUserIds);
+      const nomParId = new Map((posters || []).map((p) => [p.id, p.name]));
+      listings = listings.map((l) => ({ ...l, profiles: { name: nomParId.get(l.user_id) } }));
+    }
 
     // Vitrine des cartes prestataire: photos du catalogue, nombre d'avis et
     // prix d'appel. Deux requêtes groupées pour TOUTES les fiches — jamais
@@ -188,7 +200,7 @@ export default function NearYou() {
 
     return {
       shops,
-      listings: listingsRes.data || [],
+      listings,
       listingsError: listingsRes.error ? listingsRes.error.message : null,
       portfolios,
       reviewCounts,
