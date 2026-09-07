@@ -208,7 +208,14 @@ TES OUTILS — utilise-les, ne devine jamais:
   que vous avez en…" -> appelle search_products. Ne cite JAMAIS un prix ou un stock
   de mémoire: ils viennent de l'outil ou tu n'en parles pas.
 - Besoin d'un PRESTATAIRE ou d'un service ("trouve-moi un plombier", "qui fait le
-  ménage à Douala", "traiteur pour samedi") -> search_services.
+  ménage à Douala", "traiteur pour samedi") -> search_services. Si sa réponse
+  contient \`sous_metiers\` non vide ET que la demande reste large (elle n'a
+  pas encore précisé LEQUEL), propose ces sous-métiers en une phrase courte
+  et termine par "METIERS: id1,id2,id3" avec les ids EXACTS de \`sous_metiers\`
+  — l'écran les affichera en boutons à toucher, comme un menu. N'invente
+  JAMAIS un id hors de cette liste, et ne mets PAS cette balise si
+  \`sous_metiers\` est vide (certains métiers, comme électricien, n'en ont
+  pas) ou si la demande était déjà précise.
 - "Qu'est-ce qui marche en ce moment", "les tendances", "le plus populaire" ->
   get_trending_products.
 - "Où en est ma commande", "mes achats", "j'ai commandé quoi" -> get_my_orders.
@@ -721,6 +728,7 @@ async function runTool(
   userId: string | null,
   cartActions: Json[],
   vitrine: Json[],
+  metiersDisponibles: string[],
   contexte: Json | null,
 ): Promise<Json> {
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
@@ -975,10 +983,19 @@ async function runTool(
       // résolus depuis la table categories, la même source que le client.
       const cat = typeof args.category === 'string' && SERVICE_CATEGORY_IDS.includes(args.category) ? args.category : null;
       let catIds: string[] = [];
+      // Les VRAIS sous-métiers de la tête choisie (ex: beaute_domicile ->
+      // coiffure/esthétique/maquillage/ongles) — utilisés plus bas pour
+      // proposer des boutons de précision, comme Senvato le fait sur ses
+      // fiches prestataire (Beau, capture à l'appui). Certaines têtes de
+      // métier (electricite_plomberie) sont plates: pas de sous-métiers,
+      // et donc pas de bouton — mieux vaut aucune option que d'en inventer.
+      let sousMetiers: string[] = [];
       if (cat) {
         const { data: kids } = await db.from('categories').select('id').or(`id.eq.${cat},parent_id.eq.${cat}`);
         catIds = (kids ?? []).map((k: { id: string }) => k.id);
         if (catIds.length === 0) catIds = [cat];
+        sousMetiers = catIds.filter((id) => id !== cat);
+        metiersDisponibles.push(...sousMetiers);
       }
 
       let lq = db
@@ -1010,6 +1027,7 @@ async function runTool(
         prestataires: (shopsRes.data ?? []).map((s: Json) => ({
           id: s.id, nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
         })),
+        sous_metiers: sousMetiers,
       };
     }
 
@@ -1598,6 +1616,12 @@ Deno.serve(async (req: Request) => {
     // Les articles que les outils ont vraiment ramenes, dans l'ordre ou Finia
     // les a decouverts — c'est ce que l'ecran affichera.
     const vitrine: Json[] = [];
+    // Sous-métiers réels proposés par search_services CE tour-ci (ex:
+    // "beaute_domicile" -> coiffure/esthétique/maquillage/ongles). Sert à
+    // valider la balise METIERS: plus bas — un id qui n'a pas été
+    // effectivement renvoyé par l'outil est rejeté avant d'atteindre le
+    // client, même s'il existe ailleurs dans la table.
+    const metiersDisponibles: string[] = [];
 
     outer:
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -1634,7 +1658,7 @@ Deno.serve(async (req: Request) => {
       const responseParts: Array<Json> = [];
       for (const p of fnCalls) {
         const fc = (p.functionCall ?? p.function_call) as { name: string; args?: Json };
-        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions, vitrine, context ?? null);
+        const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions, vitrine, metiersDisponibles, context ?? null);
         responseParts.push({ functionResponse: { name: fc.name, response: result } });
       }
       contents.push({ role: 'user', parts: responseParts });
@@ -1690,6 +1714,22 @@ Deno.serve(async (req: Request) => {
       reply = reply.replace(new RegExp(`\\n?${ACTION_TAG.source}`, 'i'), '').trim();
     }
 
+    // METIERS: sous-métiers proposés comme boutons de précision. Validés
+    // contre metiersDisponibles — ce que search_services a RÉELLEMENT
+    // renvoyé ce tour-ci — jamais contre la liste complète des catégories:
+    // un id réel mais hors sujet (renvoyé par une recherche précédente,
+    // par exemple) ne doit pas non plus se glisser dans les boutons.
+    let metiers: string[] = [];
+    const metiersMatch = reply.match(/METIERS:\s*([a-z_,\s]+)\s*$/i);
+    if (metiersMatch) {
+      const dispo = new Set(metiersDisponibles);
+      metiers = metiersMatch[1]
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter((id) => dispo.has(id));
+      reply = reply.replace(/\n?METIERS:\s*[a-z_,\s]+\s*$/i, '').trim();
+    }
+
     // Fusionne les doublons (même article ajouté deux fois dans le tour) en
     // sommant les quantités, pour un seul appel cart.add() côté client.
     const mergedCart = new Map<string, Json>();
@@ -1712,7 +1752,7 @@ Deno.serve(async (req: Request) => {
       if (products.length === 10) break;
     }
 
-    return json({ reply, category, action, cartActions: [...mergedCart.values()], products });
+    return json({ reply, category, action, metiers, cartActions: [...mergedCart.values()], products });
   } catch (err) {
     console.error('finou-chat exception', err);
     return json({ error: 'internal_error' }, 500);

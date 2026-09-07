@@ -169,7 +169,7 @@ export function FinouChou() {
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       const mid = Date.now();
-      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action }]);
+      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action, metiers: data.metiers }]);
       speak(data.reply);
       // Le panier vit côté client (localStorage) — Finou ne peut donc pas
       // l'écrire elle-même côté serveur. cartActions contient les lignes déjà
@@ -295,6 +295,25 @@ export function FinouChou() {
                       onStartWizard={m.action === 'sell' ? () => setWizardOpen(true) : undefined}
                       onStartDelete={m.action === 'delete_product' ? () => setDeleteOpen(true) : undefined}
                     />
+                  )}
+                  {/* Sous-métiers proposés par search_services (ex: sous
+                      "Beauté à domicile": Coiffure, Esthétique, Ongles…) —
+                      toucher un bouton revient à taper la phrase toi-même,
+                      donc aucun état ni pipeline supplémentaire à gérer ici.
+                      Beau, capture d'un concurrent à l'appui: « il y a un
+                      truc où il propose des boutons plutôt que du texte ». */}
+                  {m.metiers?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {m.metiers.map((id) => (
+                        <button
+                          key={id}
+                          onClick={() => send(t(`categories.${id}`))}
+                          className="chip text-ink"
+                        >
+                          {t(`categories.${id}`)}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
