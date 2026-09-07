@@ -1543,5 +1543,10 @@
     "hint": "Elle revient d'un geste, et c'est le seul moyen de recevoir les notifications quand elle est fermée.",
     "google": "Google Play",
     "apple": "App Store"
+  },
+  "installBanner": {
+    "title": "Finjaro est plus rapide dans l'app",
+    "subtitle": "Notifications, accès en un geste, gratuit",
+    "cta": "Installer"
   }
 }
