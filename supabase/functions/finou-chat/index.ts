@@ -265,6 +265,16 @@ ne prétends jamais qu'ils ont réussi si le résultat dit sent/followed/created
 Tu peux enchaîner plusieurs outils avant de répondre. Si un outil ne renvoie rien,
 dis-le franchement et propose une alternative — n'invente aucun produit.
 
+N'invente JAMAIS de raison à un échec — ni "l'orthographe est sensible", ni
+"le nom a peut-être changé", ni aucune autre excuse qui sonne juste sans
+l'être. Si find_shops ne trouve rien alors que la personne est sûre du nom,
+dis-le tel quel: "je ne la trouve pas avec ce nom exact, peux-tu vérifier
+l'orthographe ou me donner la ville ?" — jamais une explication inventée
+sur POURQUOI la recherche a échoué, tu ne le sais pas toi-même. Et si une
+boutique existe mais n'a AUCUN article publié, dis-le directement ("cette
+boutique n'a pas encore mis d'article en ligne") plutôt que de tourner
+autour ou de laisser croire que tu ne sais pas voir son catalogue.
+
 Quand tu cites des produits, donne le nom et le prix exactement tels que l'outil les
 a renvoyés, au maximum 3 ou 4, en une courte liste.
 
@@ -929,20 +939,31 @@ async function runTool(
     }
 
     case 'find_shops': {
-      let q = db
-        .from('shops')
-        .select('id,name,slug,city,country,rating,is_verified')
-        .eq('status', 'active')
-        .limit(6);
-      if (typeof args.query === 'string' && args.query.trim()) q = q.ilike('name', `%${args.query.trim()}%`);
-      if (typeof args.city === 'string' && args.city.trim()) q = q.ilike('city', `%${args.city.trim()}%`);
-      if (typeof args.country === 'string' && args.country.trim()) q = q.eq('country', args.country.trim().toUpperCase());
-      const { data, error } = await q;
+      // find_shops_search (migration 0075) tolère les espaces en trop
+      // ("Hegs Hair" retrouve bien "Hegshair") et les fautes plus larges via
+      // pg_trgm — un `ilike` de sous-chaîne stricte ratait ces deux cas,
+      // ce qui faisait dire à Finia qu'une boutique existante n'existait
+      // pas, une phrase après l'avoir pourtant trouvée.
+      const { data, error } = await db.rpc('find_shops_search', {
+        p_query: typeof args.query === 'string' && args.query.trim() ? args.query.trim() : null,
+        p_city: typeof args.city === 'string' && args.city.trim() ? args.city.trim() : null,
+        p_country: typeof args.country === 'string' && args.country.trim() ? args.country.trim() : null,
+      });
       if (error) return { error: error.message };
+      const ids = (data ?? []).map((s: Json) => s.id);
+      // Le nombre d'articles part avec chaque boutique: sans lui, Finia n'a
+      // aucun moyen de distinguer "je ne sais pas voir son catalogue" (faux)
+      // de "elle n'a rien publié" (souvent la vraie réponse, comme ici).
+      const compte = new Map<string, number>();
+      if (ids.length > 0) {
+        const { data: prods } = await db.from('products').select('shop_id').eq('is_active', true).in('shop_id', ids);
+        for (const p of prods ?? []) compte.set(p.shop_id as string, (compte.get(p.shop_id as string) ?? 0) + 1);
+      }
       return {
         count: data?.length ?? 0,
         boutiques: (data ?? []).map((s: Json) => ({
           id: s.id, nom: s.name, ville: s.city, pays: s.country, note: s.rating, verifiee: s.is_verified,
+          articles_publies: compte.get(s.id as string) ?? 0,
         })),
       };
     }
