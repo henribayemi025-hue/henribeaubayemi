@@ -11,6 +11,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppIntro } from './components/AppIntro';
 import { CookieConsent } from './components/CookieConsent';
 import { InstallAppBanner } from './components/InstallAppBanner';
+import { NativePushBootstrap } from './components/NativePushBootstrap';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { BuyerLayout } from './screens/buyer/BuyerLayout';
 import { VendorLayout } from './screens/vendor/VendorLayout';
@@ -190,6 +191,7 @@ export default function App() {
                 <ErrorBoundary silent><AppIntro /></ErrorBoundary>
                 <ErrorBoundary silent><CookieConsent /></ErrorBoundary>
                 <ErrorBoundary silent><InstallAppBanner /></ErrorBoundary>
+                <ErrorBoundary silent><NativePushBootstrap /></ErrorBoundary>
                 <Suspense fallback={<Loading />}>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />

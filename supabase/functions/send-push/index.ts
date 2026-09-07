@@ -289,16 +289,46 @@ async function getFcmAccessToken(
   return { token: access_token, projectId: sa.project_id };
 }
 
+// Jetons natifs à viser pour cet envoi.
+//
+// « all »: aussi les jetons ANONYMES (native_push_tokens.user_id null) —
+// enregistrés dès la première ouverture de l'app, avant tout compte (voir
+// NativePushBootstrap.jsx). Beau: « c'est moi qui décide à qui j'envoie
+// l'annonce du matin » — une diffusion à tout le monde n'a pas besoin de
+// savoir QUI est le téléphone, juste qu'il a dit oui aux notifications.
+// Les autres audiences restent liées à des comptes réels (shop_followers,
+// country, vendors, buyers): un anonyme n'a pas encore de boutique, de pays
+// connu ou de statut vendeur/acheteur, donc rien à cibler pour lui là.
+async function resolveNativeTokens(
+  sb: Admin,
+  platform: 'android' | 'ios',
+  recipients: string[],
+  payload: Record<string, unknown>,
+) {
+  const base = sb.from('native_push_tokens').select('id, token').eq('platform', platform);
+  const queries = [base.in('user_id', recipients)];
+  if (payload.audience === 'all') {
+    queries.push(sb.from('native_push_tokens').select('id, token').eq('platform', platform).is('user_id', null));
+  }
+  const results = await Promise.all(queries);
+  const vus = new Set<string>();
+  const tokens: Array<{ id: string; token: string }> = [];
+  for (const r of results) {
+    for (const t of (r.data ?? []) as Array<{ id: string; token: string }>) {
+      if (vus.has(t.id)) continue;
+      vus.add(t.id);
+      tokens.push(t);
+    }
+  }
+  return tokens;
+}
+
 async function sendFcmPush(
   sb: Admin,
   recipients: string[],
   payload: Record<string, unknown>,
 ): Promise<number> {
-  const { data: tokens } = await sb
-    .from('native_push_tokens')
-    .select('id, token')
-    .eq('platform', 'android')
-    .in('user_id', recipients);
+  const tokens = await resolveNativeTokens(sb, 'android', recipients, payload);
   if (!tokens || tokens.length === 0) return 0;
 
   const auth = await getFcmAccessToken(sb);
@@ -404,11 +434,7 @@ async function sendApnsPush(
   recipients: string[],
   payload: Record<string, unknown>,
 ): Promise<number> {
-  const { data: tokens } = await sb
-    .from('native_push_tokens')
-    .select('id, token')
-    .eq('platform', 'ios')
-    .in('user_id', recipients);
+  const tokens = await resolveNativeTokens(sb, 'ios', recipients, payload);
   if (!tokens || tokens.length === 0) return 0;
 
   const auth = await getApnsAuth(sb);
