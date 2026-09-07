@@ -12,12 +12,24 @@
 //   { audience: 'all' | 'vendors' | 'buyers', title, body, ... } -> diffusion
 //
 // QUI A LE DROIT D'ENVOYER
-// Un envoi à UNE personne reste ouvert: c'est ce dont se servent les triggers
-// SQL, appelés par pg_net sans jeton à présenter. Tout envoi COLLECTIF exige
-// en revanche une preuve (jeton d'un compte administrateur, ou de la
-// propriétaire de la boutique pour ses propres abonnés) — sans quoi cette
-// fonction serait un relais ouvert: quiconque connaît son adresse pourrait
-// écrire à tous les comptes d'un pays sous le nom de Finjaro.
+// Trouvé en audit sécurité du 07/09: un envoi à UNE personne n'exigeait
+// AUCUNE preuve — quiconque connaissait cette adresse pouvait écrire, au nom
+// de Finjaro, à n'importe quel compte désigné par son id. Corrigé: cette
+// voie exige désormais l'une des trois preuves ci-dessous.
+//   1. Le jeton partagé (app_secrets.send_push, en-tête x-finjaro-token) —
+//      c'est ce que porte push_notify() côté SQL pour les triggers appelés
+//      par pg_net, qui n'ont pas de jeton de session à présenter.
+//   2. La clé de service en Authorization — c'est ainsi que finou-chat et
+//      miroir-ia s'annoncent déjà (appel fonction-à-fonction, en place avant
+//      ce correctif); qui la détient a de toute façon un accès complet à la
+//      base, donc l'accepter ici n'ouvre rien de plus.
+//   3. Un compte administrateur authentifié — c'est AdminRelances (relance
+//      manuelle depuis la console).
+// Un envoi COLLECTIF (DIFFUSIONS) reste soumis à sa propre preuve (compte
+// administrateur, ou propriétaire de la boutique pour ses propres abonnés)
+// — sans quoi cette fonction serait un relais ouvert: quiconque connaît son
+// adresse pourrait écrire à tous les comptes d'un pays sous le nom de
+// Finjaro.
 //
 // POURQUOI L'E-MAIL EST INDISPENSABLE
 // Sur iPhone, le push web ne fonctionne QUE si le site a été ajouté à l'écran
@@ -93,6 +105,27 @@ function admin() {
 // ouvert — n'importe qui connaissant l'adresse pourrait écrire à tous les
 // comptes d'un pays sous le nom de Finjaro.
 const DIFFUSIONS = new Set(['all', 'vendors', 'buyers', 'country', 'shop_followers']);
+
+// La clé de service, présentée en Authorization par un appel
+// fonction-à-fonction (finou-chat, miroir-ia). Elle vaut preuve à elle
+// seule: qui la détient a déjà un accès complet à la base.
+function isServiceRole(req: Request): boolean {
+  const auth = req.headers.get('Authorization') ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const cle = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  return !!token && !!cle && token === cle;
+}
+
+// Le jeton partagé porté par les triggers SQL (via push_notify côté
+// Postgres, qui n'a pas de jeton de session à présenter). Même principe que
+// moderation-sweep/app_secrets, avec un nom de secret distinct: une fuite de
+// l'un ne compromet pas l'autre.
+async function hasSharedSecret(sb: Admin, req: Request): Promise<boolean> {
+  const presente = req.headers.get('x-finjaro-token');
+  if (!presente) return false;
+  const { data } = await sb.from('app_secrets').select('value').eq('name', 'send_push').maybeSingle();
+  return !!data?.value && presente === data.value;
+}
 
 // Qui appelle, et a-t-il le droit de diffuser ?
 //
@@ -591,10 +624,15 @@ Deno.serve(async (req: Request) => {
     const payload = await req.json();
     const sb = admin();
 
-    // Verrou des envois collectifs. Un envoi à UNE personne reste ouvert:
-    // c'est ce dont se servent les triggers SQL, qui n'ont pas de jeton à
-    // présenter. Un envoi collectif, lui, doit être prouvé.
-    if (DIFFUSIONS.has(payload.audience)) {
+    // Verrou d'accès — voir le commentaire "QUI A LE DROIT D'ENVOYER" en
+    // tête de fichier pour le détail des trois preuves acceptées côté
+    // envoi à une personne.
+    if (payload.user_id) {
+      if (!(await hasSharedSecret(sb, req)) && !isServiceRole(req)) {
+        const { isAdmin } = await callerRights(sb, req);
+        if (!isAdmin) return json({ error: 'forbidden' }, 403);
+      }
+    } else if (DIFFUSIONS.has(payload.audience)) {
       const { userId, isAdmin } = await callerRights(sb, req);
       let autorise = isAdmin;
       // Une vendeuse peut écrire aux abonnés de SA boutique — mais
