@@ -20,6 +20,30 @@ import { DemandeFinia } from '../../components/DemandeFinia';
 const VEUT_VENDRE = /(vendre|vendeur|vendeuse|devenir|ma boutique|ouvrir.*boutique|inscri|compte)/i;
 function veutVendre(q) { return VEUT_VENDRE.test(q); }
 
+// Même bug, même correctif que search_products côté Finia (finou-chat):
+// cette barre ne cherchait la PHRASE ENTIÈRE que dans le NOM de l'article.
+// « habit pour femme » exigeait un article nommé mot pour mot ainsi — zéro
+// résultat alors que la boutique déborde de robes. Beau a signalé le même
+// symptôme ici (« perruque » sans résultat): dans ce cas précis le mot
+// n'existe vraiment nulle part au catalogue, mais le mécanisme sous-jacent
+// était cassé pour toute recherche à plusieurs mots ou logée dans la
+// description plutôt que le titre — pas seulement celui-là.
+const SEARCH_STOP = new Set([
+  'pour', 'avec', 'sans', 'dans', 'des', 'les', 'une', 'un', 'le', 'la', 'de', 'du',
+  'et', 'ou', 'mon', 'ma', 'mes', 'ce', 'cette', 'que', 'qui', 'chez', 'sur',
+  'produit', 'produits', 'article', 'articles', 'cherche', 'voudrais', 'veux',
+]);
+function searchWords(term) {
+  return term
+    .toLowerCase()
+    // virgules/parenthèses servent de séparateurs à PostgREST dans un or():
+    // les laisser passer casserait la requête entière.
+    .split(/[\s,()%]+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}-]/gu, ''))
+    .filter((w) => w.length >= 3 && !SEARCH_STOP.has(w))
+    .slice(0, 4);
+}
+
 export default function Search() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -46,6 +70,11 @@ export default function Search() {
       try {
         const lower = term.toLowerCase();
         const cats = CATEGORIES.filter((c) => t(`categories.${c.id}`).toLowerCase().includes(lower));
+        // Chaque mot utile est cherché séparément, dans le NOM et la
+        // DESCRIPTION: une cliente ne connaît pas le titre exact choisi par
+        // la vendeuse. Si tous les mots sont trop courts ou vides (ex: "or"),
+        // on retombe sur la phrase entière plutôt que de ne rien chercher.
+        const words = searchWords(term);
         const [shopsRes, prodRes, followsRes] = await Promise.all([
           // PAS de ilike ici: il exige les accents exacts (« decoration » ne
           // trouvait pas « Décoration évents », vérifié en base) et bute sur
@@ -53,7 +82,17 @@ export default function Search() {
           // comptent en dizaines de lignes légères: on les rapatrie et on
           // compare en repliant accents et apostrophes des deux côtés.
           supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').limit(300).abortSignal(signal),
-          supabase.from('products').select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops(name)').eq('is_active', true).ilike('name', `%${term}%`).limit(12).abortSignal(signal),
+          (() => {
+            let pq = supabase
+              .from('products')
+              .select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops(name)')
+              .eq('is_active', true)
+              .limit(12)
+              .abortSignal(signal);
+            return words.length
+              ? pq.or(words.flatMap((w) => [`name.ilike.%${w}%`, `description.ilike.%${w}%`]).join(','))
+              : pq.ilike('name', `%${term}%`);
+          })(),
           user
             ? supabase.from('shop_follows').select('shops(id,slug,name,avatar_url,is_verified,rating)').eq('follower_id', user.id).abortSignal(signal)
             : Promise.resolve({ data: [] }),
