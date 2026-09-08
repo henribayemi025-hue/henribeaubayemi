@@ -327,6 +327,11 @@ export default function VendorChat({ vendor = false }) {
                         : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
                     }`}
                   >
+                    {m.auto_reply && (
+                      <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
+                        <IconSparkles size={12} /> {t('chat.autoReplyBadge')}
+                      </p>
+                    )}
                     {m.image_url && <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />}
                     {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
                     <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   IconSearch, IconBuildingStore, IconBan, IconCheck, IconRosetteDiscountCheck,
-  IconExternalLink, IconPackage, IconShoppingBag, IconClock,
+  IconExternalLink, IconPackage, IconShoppingBag, IconClock, IconCrown,
 } from '@tabler/icons-react';
 import { supabase, storageThumbUrl, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -15,6 +15,7 @@ import { TextInput } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { timeAgo, SITE_URL } from '../../lib/format';
+import { estPremium } from '../../lib/premium';
 
 // Recherche tolérante aux accents et à la casse: taper "douala" doit trouver
 // "Douala", et "beaute" doit trouver "Beauté".
@@ -38,7 +39,7 @@ export default function AdminShops() {
         // Jointure sur la clé étrangère NOMMÉE: `shops.owner_id` en a deux
         // (vers auth.users et vers profiles), et sans précision PostgREST
         // refuse la relation comme ambiguë — même motif que NearYou.
-        .select('id, slug, name, avatar_url, city, country, status, is_verified, followers_count, rating, reviews_count, created_at, owner_id, categories, phone, whatsapp, profiles!shops_owner_profile_fk(name, phone, is_suspended)')
+        .select('id, slug, name, avatar_url, city, country, status, is_verified, followers_count, rating, reviews_count, created_at, owner_id, categories, phone, whatsapp, premium_until, profiles!shops_owner_profile_fk(name, phone, is_suspended)')
         .order('created_at', { ascending: false }),
       supabase.rpc('admin_shop_stats'),
     ]);
@@ -138,6 +139,7 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
   if (!shop) return null;
   const st = shop.stats;
   const suspended = shop.status === 'suspended';
+  const premiumActive = estPremium(shop);
 
   async function patch(fields, successKey) {
     setBusy(true);
@@ -147,6 +149,21 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
     toast.success(t(successKey));
     onChanged();
     onClose();
+  }
+
+  // Activation MANUELLE (décision de Beau le 08/09) : la vendeuse paie
+  // 5000 FCFA/mois par Mobile Money directement à lui, il active ici — pas
+  // d'automatisation tant que Mobile Money n'est pas branché à l'app. Un
+  // mois se prolonge depuis la fin de l'abonnement en cours s'il est encore
+  // actif (pas depuis aujourd'hui), pour ne jamais faire perdre de jours
+  // payés à un renouvellement fait un peu en avance.
+  function activerPremium() {
+    const base = premiumActive ? new Date(shop.premium_until) : new Date();
+    const suivant = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+    patch({ premium_until: suivant.toISOString() }, 'admin.premiumActivated');
+  }
+  function desactiverPremium() {
+    patch({ premium_until: null }, 'admin.premiumDeactivated');
   }
 
   return (
@@ -162,6 +179,29 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
         <p className="text-caption text-muted">{t('admin.shopRevenue')}</p>
         <Price fcfa={st?.revenue_fcfa ?? 0} className="text-title font-semibold text-teal" />
         <p className="mt-0.5 text-[11px] text-muted">{t('admin.shopRevenueHint')}</p>
+      </div>
+
+      <div className={`mt-2 flex items-center justify-between gap-2 rounded-card border p-3 ${premiumActive ? 'border-brass/40 bg-brass/8' : 'border-hairline'}`}>
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
+            <IconCrown size={17} className={premiumActive ? 'text-brass' : 'text-muted'} /> Finia Premium
+          </p>
+          <p className="text-caption text-muted">
+            {premiumActive
+              ? t('admin.premiumUntil', { when: new Date(shop.premium_until).toLocaleDateString(lang) })
+              : t('admin.premiumInactive')}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-1.5">
+          <Button variant="secondary" disabled={busy} onClick={activerPremium} className="!px-2.5 !py-1.5 text-caption">
+            {premiumActive ? t('admin.premiumExtend') : t('admin.premiumActivate')}
+          </Button>
+          {premiumActive && (
+            <Button variant="secondary" disabled={busy} onClick={desactiverPremium} className="!border-danger/50 !px-2.5 !py-1.5 !text-danger text-caption">
+              {t('admin.premiumDeactivate')}
+            </Button>
+          )}
+        </div>
       </div>
 
       <dl className="mt-3 space-y-1 text-body">

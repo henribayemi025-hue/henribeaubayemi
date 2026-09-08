@@ -17,6 +17,7 @@ import { ProductVideo } from '../../components/ProductVideo';
 import { StarRating } from '../../components/StarRating';
 import { ReportButton } from '../../components/ReportButton';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { estPremium } from '../../lib/premium';
 import { Skeleton, ErrorState } from '../../components/states';
 import { isPriceOnRequest, MIRROR_CATEGORIES } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
@@ -64,7 +65,7 @@ export default function ProductDetail() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: product, error: err } = await supabase
       .from('products')
-      .select('*, shops(id, name, slug, is_verified, rating)')
+      .select('*, shops(id, name, slug, is_verified, rating, premium_until)')
       .eq('id', id)
       .maybeSingle();
     if (err) throw err;
@@ -245,7 +246,7 @@ export default function ProductDetail() {
           </span>
         )}
 
-        {!quote && MIRROR_CATEGORIES.includes(p.category) && (
+        {!quote && MIRROR_CATEGORIES.includes(p.category) && estPremium(p.shops) && (
           <button
             onClick={() => (user ? setMirrorOpen(true) : requireLogin())}
             className="mt-3 inline-flex items-center gap-1.5 rounded-pill border border-brass/50 bg-brass/5 px-3 py-1.5 text-caption font-semibold text-brass"

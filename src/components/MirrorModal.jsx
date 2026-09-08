@@ -67,7 +67,7 @@ export function MirrorModal({ open, onClose, product }) {
       // own photo has to go in the request too, not just its name in text.
       const productImageUrl = product.images?.[0] ? storageUrl('products', product.images[0]) : null;
       const { data, error: fnErr } = await supabase.functions.invoke('miroir-ia', {
-        body: { selfieBase64: selfie.base64, prompt, category: product.category, productImageUrl },
+        body: { selfieBase64: selfie.base64, prompt, category: product.category, productImageUrl, productId: product.id },
       });
       if (fnErr) {
         // supabase-js only gives us the HTTP status by default on a non-2xx
@@ -89,6 +89,8 @@ export function MirrorModal({ open, onClose, product }) {
           setError('tooFast');
         } else if (body?.error === 'photo_too_large') {
           setError('photoTooLarge');
+        } else if (body?.error === 'not_premium') {
+          setError('notPremium');
         } else {
           setError('generic');
           // body.detail is Gemini's own refusal text/finishReason when we
@@ -106,6 +108,8 @@ export function MirrorModal({ open, onClose, product }) {
           setError('tooFast');
         } else if (data.error === 'photo_too_large') {
           setError('photoTooLarge');
+        } else if (data.error === 'not_premium') {
+          setError('notPremium');
         } else {
           setError('generic');
           setErrorDetail(data.detail || data.error);
@@ -184,7 +188,9 @@ export function MirrorModal({ open, onClose, product }) {
                   ? t('mirror.tooFast')
                   : error === 'photoTooLarge'
                     ? t('mirror.photoTooLarge')
-                    : t('mirror.error')}
+                    : error === 'notPremium'
+                      ? t('mirror.notPremium')
+                      : t('mirror.error')}
           </p>
           {/* Raw server/Gemini message — helps diagnose (e.g. billing/quota)
               instead of a dead-end generic error. */}
