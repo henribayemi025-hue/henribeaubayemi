@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconBell, IconMessage, IconShoppingBag, IconTruckDelivery, IconCheck,
   IconStar, IconBuildingStore, IconMovie, IconMapPin, IconBellOff, IconSparkles,
+  IconX, IconRefresh, IconPhoto,
 } from '@tabler/icons-react';
 import { useNotifications, notificationHref } from '../hooks/useNotifications';
 import { Modal } from './Modal';
@@ -16,12 +17,15 @@ const TYPE_ICON = {
   order_confirmed: IconCheck,
   order_shipped: IconTruckDelivery,
   order_delivered: IconCheck,
+  order_cancelled: IconX,
   review_unlocked: IconStar,
   shop_approved: IconBuildingStore,
   shop_rejected: IconBuildingStore,
   new_reel: IconMovie,
   new_listing: IconMapPin,
   referral_reward: IconSparkles,
+  rotation: IconRefresh,
+  photos_orphelines: IconPhoto,
 };
 
 // Icône clochette + panneau, posée là où l'app est ouverte le plus souvent

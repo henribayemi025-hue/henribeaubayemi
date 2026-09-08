@@ -103,8 +103,14 @@ export function notificationHref(n) {
     case 'order_confirmed':
     case 'order_shipped':
     case 'order_delivered':
+    case 'order_cancelled':
     case 'review_unlocked':
       return '/profile/orders';
+    // Trouvé en audit du 08/09: ces deux types disaient déjà "mets ton
+    // arrivage/tes photos en ligne" dans leur texte, sans jamais y mener.
+    case 'rotation':
+    case 'photos_orphelines':
+      return '/vendor/products/bulk';
     case 'shop_approved':
       return '/switch/to-vendor';
     case 'shop_rejected':
