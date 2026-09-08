@@ -8,6 +8,15 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 
 const DISMISSED_KEY = 'finjaro:push-prompt-dismissed';
+// Trouvé en audit du 08/09 : l'ancien drapeau (juste "1", pour toujours)
+// bloquait le réaffichage même quand la carte avait seulement été fermée
+// (X) sans jamais toucher au vrai dialogue système — et si la personne
+// changeait d'avis plus tard dans les réglages, la carte ne revenait
+// jamais la relancer. Le drapeau ne sert plus qu'à ne pas insister tout de
+// suite après un "plus tard": un vrai refus système ("denied") se relit à
+// chaque montage via checkPermissions()/Notification.permission, qui EST
+// déjà la mémoire permanente du système — inutile de la dupliquer ici.
+const DISMISS_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
 
 // Demande d'activer les alertes — AU BON MOMENT, pas à l'ouverture.
 //
@@ -31,14 +40,21 @@ export function PushPrompt({ reason }) {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  function recentlyDismissed() {
+    const last = Number(localStorage.getItem(DISMISSED_KEY) || 0);
+    return last > 0 && Date.now() - last < DISMISS_COOLDOWN_MS;
+  }
+
   useEffect(() => {
     if (!user) return;
-    if (localStorage.getItem(DISMISSED_KEY)) return;
+    if (recentlyDismissed()) return;
     if (Capacitor.isNativePlatform()) {
       // App installée: le canal est FCM/APNs (voir lib/push.js), pas le
       // Notification API du navigateur — `Notification` n'existe d'ailleurs
       // pas dans cette fenêtre. checkPermissions() est l'équivalent natif
-      // de `Notification.permission`: on ne redemande pas si déjà tranché.
+      // de `Notification.permission`: on ne redemande pas si déjà tranché
+      // — et si la personne l'a changé dans les réglages depuis, c'est ICI
+      // qu'on le voit, à chaque montage, sans dépendre d'un drapeau local.
       PushNotifications.checkPermissions().then((perm) => {
         if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') setShow(true);
       });
@@ -48,12 +64,14 @@ export function PushPrompt({ reason }) {
     // navigateur) — on ne montre rien plutôt que d'ouvrir une porte qui ne
     // mène nulle part.
     if (typeof Notification === 'undefined' || !('PushManager' in window)) return;
-    if (Notification.permission !== 'default') return; // déjà accordé ou déjà refusé
+    if (Notification.permission !== 'default') return; // déjà accordé ou déjà refusé au niveau système
     setShow(true);
   }, [user]);
 
   function dismiss() {
-    localStorage.setItem(DISMISSED_KEY, '1');
+    // "Plus tard", pas "jamais" : le dialogue système n'a pas été touché,
+    // rien ne justifie d'attendre indéfiniment avant de reproposer.
+    localStorage.setItem(DISMISSED_KEY, String(Date.now()));
     setShow(false);
   }
 
@@ -61,9 +79,11 @@ export function PushPrompt({ reason }) {
     setBusy(true);
     const res = await enablePush(user?.id);
     setBusy(false);
-    localStorage.setItem(DISMISSED_KEY, '1');
     setShow(false);
     if (res.ok) toast.success(t('notifications.enabled'));
+    // Un vrai refus système ('denied') n'a pas besoin d'être mémorisé ici:
+    // Notification.permission / checkPermissions() s'en souvient déjà pour
+    // toujours, et c'est relu à chaque montage ci-dessus.
     else if (res.reason === 'denied') toast.error(t('notifications.blocked'));
   }
 
