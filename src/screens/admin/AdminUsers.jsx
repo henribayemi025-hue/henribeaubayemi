@@ -9,7 +9,7 @@ import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { TextInput } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
-import { timeAgo } from '../../lib/format';
+import { timeAgo, SITE_URL } from '../../lib/format';
 
 function normalize(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -266,7 +266,7 @@ function ContenuDuCompte({ userId }) {
             </span>
           </p>
           {s.slug && (
-            <a href={`/boutique/${s.slug}`} target="_blank" rel="noreferrer" className="mt-1 inline-block text-caption font-semibold text-teal">
+            <a href={`${SITE_URL}/boutique/${s.slug}`} target="_blank" rel="noreferrer" className="mt-1 inline-block text-caption font-semibold text-teal">
               {t('admin.openTarget')}
             </a>
           )}
