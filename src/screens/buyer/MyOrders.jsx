@@ -48,10 +48,13 @@ export default function MyOrders() {
   async function markReceived(order) {
     // « J'ai bien reçu » clôt VRAIMENT la commande: statut livré + horodatage,
     // pas juste un drapeau interne — la timeline se remplit des deux côtés.
-    await supabase
+    // Trouvé en audit du 08/09: l'erreur n'était jamais vérifiée — un échec
+    // (RLS, coupure réseau) laissait l'écran identique, sans un mot.
+    const { error } = await supabase
       .from('orders')
       .update({ buyer_received: true, status: 'delivered', delivered_at: new Date().toISOString() })
       .eq('id', order.id);
+    if (error) return toast.error(error.message || t('errors.generic'));
     retry();
   }
 
