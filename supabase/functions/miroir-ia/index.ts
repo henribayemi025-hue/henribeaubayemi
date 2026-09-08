@@ -49,6 +49,22 @@ function isAllowedOrigin(origin: string | null): boolean {
   return false;
 }
 
+// productImageUrl vient du client (voir MirrorModal.jsx) — jamais fait
+// confiance sans vérification : trouvé en audit du 08/09, un compte
+// connecté pouvait faire fetcher au SERVEUR n'importe quelle URL de son
+// choix (sonde réseau interne, relais anonyme, gaspillage du budget Gemini
+// sur un contenu arbitraire). On n'accepte que le stockage Supabase de ce
+// projet lui-même, jamais une URL externe.
+function isOwnStorageUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const base = new URL(Deno.env.get('SUPABASE_URL') ?? '');
+    return u.protocol === 'https:' && u.hostname === base.hostname && u.pathname.startsWith('/storage/v1/object/public/');
+  } catch {
+    return false;
+  }
+}
+
 function getCorsHeaders(origin: string | null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin! : `https://${PROD_HOST}`,
@@ -179,7 +195,7 @@ Deno.serve(async (req) => {
     // in text and has nothing to actually render ("I can't visualize
     // '<name>', describe it for me" was the exact refusal this fixes).
     let productImagePart: { inline_data: { mime_type: string; data: string } } | null = null;
-    if (productImageUrl && typeof productImageUrl === 'string') {
+    if (productImageUrl && typeof productImageUrl === 'string' && isOwnStorageUrl(productImageUrl)) {
       try {
         const imgResp = await fetch(productImageUrl, { signal: AbortSignal.timeout(PRODUCT_IMG_TIMEOUT_MS) });
         if (imgResp.ok) {

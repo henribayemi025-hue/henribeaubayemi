@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
-import { timeAgo } from '../../lib/format';
+import { timeAgo, SITE_URL } from '../../lib/format';
 
 // « rangement » est une pile A PART, et pas un caprice de presentation.
 //
@@ -61,7 +61,7 @@ export default function AdminModeration() {
     // Résoudre la cible de chaque signalement en un nom cliquable: un
     // identifiant brut ne dit rien de ce qui est reproché à quoi.
     const parType = (type) => rows.filter((r) => r.target_type === type).map((r) => r.target_id);
-    const [shopsRes, productsRes, reelsRes] = await Promise.all([
+    const [shopsRes, productsRes, reelsRes, commentsRes] = await Promise.all([
       parType('shop').length
         ? supabase.from('shops').select('id, name, slug, moderation_hidden_at').in('id', parType('shop'))
         : { data: [] },
@@ -71,10 +71,20 @@ export default function AdminModeration() {
       parType('reel').length
         ? supabase.from('reels').select('id, caption, moderation_hidden_at').in('id', parType('reel'))
         : { data: [] },
+      // Trouvé en audit du 08/09 : reel_comment est un type signalable
+      // (ReelCommentsSheet.jsx) depuis la migration 0047, mais n'avait jamais
+      // été ajouté ici — la fiche restait vide et aucune action ne
+      // supprimait vraiment le commentaire (contrairement à
+      // reel_comments_admin_delete, la policy RLS existe déjà, juste jamais
+      // appelée).
+      parType('reel_comment').length
+        ? supabase.from('reel_comments').select('id, body').in('id', parType('reel_comment'))
+        : { data: [] },
     ]);
     const shops = Object.fromEntries((shopsRes.data || []).map((s) => [s.id, s]));
     const products = Object.fromEntries((productsRes.data || []).map((p) => [p.id, p]));
     const reels = Object.fromEntries((reelsRes.data || []).map((r) => [r.id, r]));
+    const comments = Object.fromEntries((commentsRes.data || []).map((c) => [c.id, c]));
 
     // Ce que des vendeuses ont cherche sans le trouver: c'est cette liste
     // qui dit quel rayon creer ensuite. Elle vit dans la pile « Rangement »,
@@ -88,14 +98,15 @@ export default function AdminModeration() {
     const signalements = rows.map((r) => {
       const cible = r.target_type === 'shop' ? shops[r.target_id]
         : r.target_type === 'product' ? products[r.target_id]
-          : reels[r.target_id];
+          : r.target_type === 'reel_comment' ? comments[r.target_id]
+            : reels[r.target_id];
       return {
         ...r,
-        targetName: cible?.name || cible?.caption,
+        targetName: cible?.name || cible?.caption || cible?.body,
         hiddenAt: cible?.moderation_hidden_at || null,
         targetHref: r.target_type === 'shop'
-          ? (cible?.slug ? `/boutique/${cible.slug}` : null)
-          : r.target_type === 'product' && cible ? `/product/${r.target_id}` : null,
+          ? (cible?.slug ? `${SITE_URL}/boutique/${cible.slug}` : null)
+          : r.target_type === 'product' && cible ? `${SITE_URL}/product/${r.target_id}` : null,
       };
     });
     return { signalements, manquants: manquants || [] };
@@ -151,6 +162,23 @@ export default function AdminModeration() {
       .eq('id', report.id);
     setBusyId(null);
     toast.success(t('admin.productMoved', { rayon: t(`categories.${report.suggested_category}`) }));
+    retry();
+  }
+
+  // Un commentaire signalé n'a pas d'équivalent "masquer/republier": il n'a
+  // pas de colonne moderation_hidden_at (voir CIBLES). La seule action qui
+  // ait un effet réel est de le supprimer — corrigé le 08/09, ce bouton
+  // n'existait pas et "marquer résolu" ne touchait jamais reel_comments.
+  async function supprimerCommentaire(report) {
+    setBusyId(report.id);
+    const { error: err } = await supabase.from('reel_comments').delete().eq('id', report.target_id);
+    if (err) { setBusyId(null); return toast.error(err.message); }
+    await supabase
+      .from('reports')
+      .update({ status: 'resolved', resolved_at: new Date().toISOString(), resolved_by: user.id })
+      .eq('id', report.id);
+    setBusyId(null);
+    toast.success(t('admin.commentDeleted'));
     retry();
   }
 
@@ -272,7 +300,16 @@ export default function AdminModeration() {
                   </div>
                 ) : tab === 'pending' ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {r.hiddenAt ? (
+                    {r.target_type === 'reel_comment' ? (
+                      <>
+                        <Button variant="secondary" disabled={busyId === r.id} className="flex-1 !border-danger/50 !text-danger" onClick={() => supprimerCommentaire(r)}>
+                          <IconTrash size={17} /> {t('admin.deleteComment')}
+                        </Button>
+                        <Button variant="secondary" disabled={busyId === r.id} className="flex-1" onClick={() => decide(r, 'dismissed')}>
+                          <IconX size={17} /> {t('admin.dismiss')}
+                        </Button>
+                      </>
+                    ) : r.hiddenAt ? (
                       <>
                         <Button variant="secondary" disabled={busyId === r.id} className="flex-1" onClick={() => decide(r, 'resolved')}>
                           <IconCheck size={17} /> {t('admin.confirmRemoval')}

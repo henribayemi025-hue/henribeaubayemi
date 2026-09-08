@@ -1,3 +1,9 @@
+// La console admin est un déploiement Cloudflare Worker à part
+// (admin.finjaro.net) dont le routeur ne connaît que l'accueil et l'auth —
+// un lien relatif comme /boutique/slug y retombe silencieusement sur le
+// tableau de bord au lieu d'ouvrir la fiche. Trouvé en audit du 08/09.
+export const SITE_URL = 'https://finjaro.net';
+
 // Relative/short timestamp formatting for chat, inbox, orders.
 export function timeAgo(iso, locale = 'fr') {
   if (!iso) return '';

@@ -14,7 +14,7 @@ import { Button } from '../../components/Button';
 import { TextInput } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
-import { timeAgo } from '../../lib/format';
+import { timeAgo, SITE_URL } from '../../lib/format';
 
 // Recherche tolérante aux accents et à la casse: taper "douala" doit trouver
 // "Douala", et "beaute" doit trouver "Beauté".
@@ -196,7 +196,7 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
 
       <div className="mt-4 space-y-2">
         <a
-          href={`/boutique/${shop.slug}`}
+          href={`${SITE_URL}/boutique/${shop.slug}`}
           target="_blank"
           rel="noreferrer"
           className="flex items-center justify-center gap-2 rounded-input border border-hairline py-2.5 text-body font-semibold text-ink"

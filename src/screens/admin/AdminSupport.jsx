@@ -9,6 +9,7 @@ import { Button } from '../../components/Button';
 import { TextArea } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { pushNotify } from '../../lib/notify';
 
 const ONGLETS = ['ouvert', 'repondu', 'clos'];
 
@@ -52,9 +53,10 @@ export default function AdminSupport() {
       .eq('id', ticket.id);
     if (err) { setBusy(null); return toast.error(err.message); }
 
-    // La personne doit RECEVOIR la réponse, sinon on a juste écrit dans une
-    // base de données. La cloche de notification est le seul canal qui
-    // atteint tout le monde, y compris les comptes sans e-mail.
+    // La personne doit RECEVOIR la réponse, pas juste la trouver si elle
+    // rouvre l'app par hasard. Trouvé en audit du 08/09 : seule la cloche
+    // partait, jamais le push ni l'e-mail — contrairement à AdminRelances,
+    // qui fait déjà les deux. Même correctif ici.
     if (ticket.user_id) {
       await supabase.from('notifications').insert({
         user_id: ticket.user_id,
@@ -63,6 +65,7 @@ export default function AdminSupport() {
         body: texte.slice(0, 300),
         data: { ticket_id: ticket.id },
       });
+      pushNotify({ user_id: ticket.user_id, title: t('admin.supportAnswerTitle'), body: texte.slice(0, 300), url: '/' });
     }
     setBusy(null);
     setBrouillons((b) => ({ ...b, [ticket.id]: '' }));

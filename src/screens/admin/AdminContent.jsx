@@ -5,7 +5,8 @@ import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
-import { Field, TextInput } from '../../components/Field';
+import { Field, TextInput, TextArea } from '../../components/Field';
+import { Modal } from '../../components/Modal';
 import { ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 
@@ -147,6 +148,8 @@ function ApplicationCard({ app, onChanged }) {
   const [ocrLoading, setOcrLoading] = useState(null); // 'front' | 'back' | null
   const [ocrError, setOcrError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   async function analyze(side) {
     const path = side === 'front' ? app.id_front_url : app.id_back_url;
@@ -164,12 +167,15 @@ function ApplicationCard({ app, onChanged }) {
     }
   }
 
-  async function decide(status) {
+  async function decide(status, reason = null) {
     setBusy(true);
-    const { error } = await supabase.from('vendor_applications').update({ status }).eq('id', app.id);
+    const patch = reason != null ? { status, rejection_reason: reason || null } : { status };
+    const { error } = await supabase.from('vendor_applications').update(patch).eq('id', app.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(t(status === 'approved' ? 'admin.appApproved' : 'admin.appRejected'));
+    setRejecting(false);
+    setRejectReason('');
     onChanged?.();
   }
 
@@ -240,11 +246,31 @@ function ApplicationCard({ app, onChanged }) {
           <Button variant="secondary" disabled={busy} className="flex-1" onClick={() => decide('approved')}>
             <IconCheck size={17} /> {t('admin.approve')}
           </Button>
-          <Button variant="secondary" disabled={busy} className="flex-1 !border-danger/50 !text-danger" onClick={() => decide('rejected')}>
+          <Button variant="secondary" disabled={busy} className="flex-1 !border-danger/50 !text-danger" onClick={() => setRejecting(true)}>
             <IconX size={17} /> {t('admin.reject')}
           </Button>
         </div>
       )}
+
+      <Modal open={rejecting} onClose={() => setRejecting(false)} title={t('admin.rejectTitle')}>
+        <p className="mb-3 text-caption text-muted">{t('admin.rejectHint')}</p>
+        <Field label={t('admin.rejectReasonLabel')}>
+          {(id) => (
+            <TextArea
+              id={id}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder={t('admin.rejectReasonPlaceholder')}
+            />
+          )}
+        </Field>
+        <div className="mt-3 flex gap-2">
+          <Button variant="secondary" onClick={() => setRejecting(false)} className="flex-1">{t('common.cancel')}</Button>
+          <Button disabled={busy} onClick={() => decide('rejected', rejectReason.trim())} className="flex-1">
+            <IconX size={18} /> {t('admin.rejectConfirm')}
+          </Button>
+        </div>
+      </Modal>
     </li>
   );
 }
