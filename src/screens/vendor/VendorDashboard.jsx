@@ -4,7 +4,7 @@ import {
   IconSwitchHorizontal, IconChartBar, IconAlertCircle, IconChevronRight,
   IconArrowUpRight, IconArrowDownRight, IconWallet, IconPlus, IconShare2,
   IconMovie, IconTrophy, IconAward, IconBuildingStore, IconCircleCheck, IconSparkles,
-  IconPhotoPlus,
+  IconPhotoPlus, IconCrown,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -16,6 +16,8 @@ import { Skeleton, ErrorState } from '../../components/states';
 import { PushPrompt } from '../../components/PushPrompt';
 import { timeAgo } from '../../lib/format';
 import { estEnAvant } from '../../lib/featured';
+import { estPremium } from '../../lib/premium';
+import { currencyForCountry, formatPrice } from '../../lib/currency';
 
 function pct(cur, prev) {
   if (!prev) return cur > 0 ? 100 : 0;
@@ -284,6 +286,37 @@ export default function VendorDashboard() {
                   : t('vendor.inviteCta')}
               </p>
               <p className="mt-0.5 text-caption text-muted">{t('referral.rewardRule')}</p>
+            </div>
+            <IconChevronRight size={18} className="shrink-0 text-muted" />
+          </Link>
+
+          {/* Finia Premium (08/09) — activation manuelle, Beau collecte le
+              paiement lui-même (Mobile Money) et l'active depuis l'admin. Le
+              CTA passe par Finia (support déjà relié à push/e-mail vers
+              Beau) plutôt qu'un numéro WhatsApp en dur: on ne recopie jamais
+              un contact qu'on n'a pas vérifié. */}
+          <Link
+            to="/fin"
+            className={`flex items-center gap-3 rounded-card border p-3.5 transition active:scale-[0.99] ${
+              estPremium(shop) ? 'border-brass/40 bg-brass/8' : 'border-hairline'
+            }`}
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass">
+              <IconCrown size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-body font-semibold text-ink">
+                {estPremium(shop)
+                  ? t('vendor.premiumActiveUntil', { when: new Date(shop.premium_until).toLocaleDateString(i18n.language) })
+                  // Beau, en testant depuis l'Europe: « ça me dit 5000 FCFA
+                  // alors que je suis en Europe » — le prix était écrit en
+                  // dur dans le texte traduit, jamais converti dans la
+                  // devise de LA BOUTIQUE (même règle que VendorPrice
+                  // partout ailleurs dans cet écran: la vendeuse a saisi ses
+                  // propres prix dans sa devise, celui-ci doit s'y tenir).
+                  : t('vendor.premiumCta', { price: formatPrice(5000, currencyForCountry(shop.country), i18n.language) })}
+              </p>
+              <p className="mt-0.5 text-caption text-muted">{t('vendor.premiumHint')}</p>
             </div>
             <IconChevronRight size={18} className="shrink-0 text-muted" />
           </Link>

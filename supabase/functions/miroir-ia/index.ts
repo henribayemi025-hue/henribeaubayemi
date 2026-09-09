@@ -183,12 +183,28 @@ Deno.serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     if (!GEMINI_API_KEY) return json({ error: 'GEMINI_API_KEY manquant dans les secrets' }, 500);
 
-    const { selfieBase64, prompt, category, productImageUrl } = await req.json();
+    const { selfieBase64, prompt, category, productImageUrl, productId } = await req.json();
     if (!selfieBase64 || !prompt) {
       return json({ error: 'selfieBase64 et prompt requis' }, 400);
     }
     if (typeof selfieBase64 !== 'string' || selfieBase64.length > MAX_SELFIE_B64) {
       return json({ error: 'photo_too_large' }, 413);
+    }
+
+    // Finia Premium (08/09) : réservé aux boutiques abonnées. Le bouton est
+    // déjà caché côté client pour les autres (ProductDetail.jsx), mais un
+    // appel direct à cette fonction contournerait ça sans cette vérification
+    // — jamais faire confiance à l'UI seule pour un avantage payant.
+    if (typeof productId !== 'string') {
+      return json({ error: 'productId requis' }, 400);
+    }
+    const { data: prod } = await sb.from('products').select('shop_id').eq('id', productId).maybeSingle();
+    const { data: shop } = prod
+      ? await sb.from('shops').select('premium_until').eq('id', prod.shop_id).maybeSingle()
+      : { data: null };
+    const estPremium = !!shop?.premium_until && new Date(shop.premium_until) > new Date();
+    if (!estPremium) {
+      return json({ error: 'not_premium' }, 403);
     }
 
     // The product's own photo — without it Gemini only has the product NAME

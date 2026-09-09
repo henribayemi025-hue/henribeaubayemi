@@ -89,7 +89,14 @@ export default function VendorStats() {
 
   return (
     <div className="pb-6">
-      <AppHeader title={t('nav.stats')} right={<button onClick={() => toast.info(t('stats.exportSoon'))} aria-label={t('stats.export')} className="p-1 text-teal"><IconFileExport size={20} /></button>} />
+      {/* Même bug que Finances, corrigé en même temps: pas un onglet
+          (VendorNav), toujours atteint par un lien — sans retour on y
+          restait coincé. */}
+      <AppHeader
+        title={t('nav.stats')}
+        back
+        right={<button onClick={() => toast.info(t('stats.exportSoon'))} aria-label={t('stats.export')} className="p-1 text-teal"><IconFileExport size={20} /></button>}
+      />
       <div className="flex gap-2 border-b border-hairline px-4 pb-2 pt-1">
         {PERIODS.map((p) => (
           <button key={p.key} onClick={() => setPeriod(p.key)} className={`chip flex-1 justify-center ${period === p.key ? 'chip-active' : 'text-ink'}`}>{t(p.label)}</button>

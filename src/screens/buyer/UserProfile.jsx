@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout, IconFileText,
   IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal,
-  IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift,
+  IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift, IconMessageCircle,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,6 +28,17 @@ export default function UserProfile() {
       supabase.from('shop_follows').select('follower_id', { count: 'exact', head: true }).eq('follower_id', user.id),
     ]);
     return { orders: ordersRes.count || 0, favorites: favRes.count || 0 };
+  }, [user]);
+
+  // Badge non-lus sur "Messages personnels" — additionne les deux colonnes
+  // possibles selon le côté de la conversation où on se trouve.
+  const { data: dmUnread } = useAsync(async () => {
+    if (!user) return 0;
+    const { data } = await supabase
+      .from('direct_conversations')
+      .select('user_a_id, a_unread, b_unread')
+      .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`);
+    return (data || []).reduce((s, c) => s + (c.user_a_id === user.id ? c.a_unread : c.b_unread), 0);
   }, [user]);
 
   if (!user) {
@@ -57,6 +68,9 @@ export default function UserProfile() {
   const rows = [
     { icon: IconShoppingBag, label: t('profile.myOrders'), to: '/profile/orders' },
     { icon: IconHeart, label: t('profile.myFavorites'), to: '/profile/favorites' },
+    // Distinct de "Messages" (barre du bas): là, c'est acheteuse↔boutique;
+    // ici, un compte peut écrire à un autre compte (voir dm.mustFollowHint).
+    { icon: IconMessageCircle, label: t('dm.title'), to: '/profile/messages', badge: dmUnread },
     { icon: IconGift, label: t('referral.navLabel'), to: '/profile/invite' },
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
     { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
@@ -157,6 +171,11 @@ export default function UserProfile() {
             <Link to={r.to} className="flex items-center gap-3 border-b border-hairline px-4 py-3.5 text-body text-ink">
               <r.icon size={22} className="text-muted" />
               <span className="flex-1">{r.label}</span>
+              {!!r.badge && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
+                  {r.badge}
+                </span>
+              )}
               <IconChevronRight size={18} className="text-hairline" />
             </Link>
           </li>

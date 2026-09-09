@@ -59,7 +59,24 @@ function lazyWithReload(factory) {
       // n'a pas fonctionné ».
       sessionStorage.removeItem(CHUNK_RELOAD_KEY);
       return mod;
-    } catch (err) {
+    } catch (premierEchec) {
+      // Une SECONDE tentative avant d'envisager le rechargement.
+      //
+      // Beau, en testant le 09/09: « dès que je sors d'une conversation, ça
+      // reload seulement ». Un morceau de code qui manque, c'est le plus
+      // souvent une coupure réseau d'une seconde (3G camerounaise), pas une
+      // vieille version — et dans ce cas recharger toute l'app pour rien est
+      // la pire réponse possible: on perd la page, le défilement, la frappe
+      // en cours. On retente donc une fois, et l'immense majorité passe.
+      try {
+        await new Promise((r) => setTimeout(r, 450));
+        const mod = await factory();
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        return mod;
+      } catch {
+        /* vraiment absent: on tombe dans le rechargement ci-dessous */
+      }
+      const err = premierEchec;
       // Le garde-fou reste: un module réellement cassé ne doit pas faire
       // boucler la page indéfiniment. Il est simplement remis à zéro à
       // chaque chargement réussi.
@@ -88,6 +105,10 @@ const NearYou = lazyWithReload(() => import('./screens/buyer/NearYou'));
 const Fin = lazyWithReload(() => import('./screens/buyer/Fin'));
 const Inbox = lazyWithReload(() => import('./screens/buyer/Inbox'));
 const VendorChat = lazyWithReload(() => import('./screens/buyer/VendorChat'));
+const FindPeople = lazyWithReload(() => import('./screens/buyer/FindPeople'));
+const PublicProfile = lazyWithReload(() => import('./screens/buyer/PublicProfile'));
+const DirectInbox = lazyWithReload(() => import('./screens/buyer/DirectInbox'));
+const DirectChat = lazyWithReload(() => import('./screens/buyer/DirectChat'));
 const UserProfile = lazyWithReload(() => import('./screens/buyer/UserProfile'));
 const Settings = lazyWithReload(() => import('./screens/buyer/Settings'));
 const EditProfile = lazyWithReload(() => import('./screens/buyer/EditProfile'));
@@ -232,6 +253,10 @@ export default function App() {
                       <Route path="inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
                       <Route path="chat/:conversationId" element={<RequireAuth><VendorChat /></RequireAuth>} />
                       <Route path="profile" element={<UserProfile />} />
+                      <Route path="profile/people" element={<RequireAuth><FindPeople /></RequireAuth>} />
+                      <Route path="profile/u/:id" element={<RequireAuth><PublicProfile /></RequireAuth>} />
+                      <Route path="profile/messages" element={<RequireAuth><DirectInbox /></RequireAuth>} />
+                      <Route path="profile/messages/:conversationId" element={<RequireAuth><DirectChat /></RequireAuth>} />
                       <Route path="profile/settings" element={<Settings />} />
                       <Route path="profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
                       <Route path="profile/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />

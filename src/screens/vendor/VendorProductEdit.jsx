@@ -17,7 +17,11 @@ import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadF
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
-const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: 'femme_robes', stock: '1', images: [], video_url: null, price_on_request: false, sizes: [], colors: [], is_permanent: false, attributes: {} };
+// Beau, en testant: « pourquoi par défaut le rayon est sur Mode Femme ? ».
+// Un rayon vide au démarrage n'est pas une régression à corriger, c'est le
+// bug — une boutique d'électronique ou un artisan n'a aucune raison de
+// partir de "Mode Femme". Personne ne choisit à sa place.
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: '', stock: '1', images: [], video_url: null, price_on_request: false, sizes: [], colors: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 // Tailles proposées en un clic selon le rayon: lettres pour les vêtements,
@@ -230,6 +234,7 @@ export default function VendorProductEdit() {
   function validate() {
     const e = {};
     if (!form.name.trim()) e.name = t('common.required');
+    if (!form.category) e.category = t('common.required');
     // Un article « sur demande » n'a par définition pas de prix à saisir.
     if (!form.price_on_request && (form.price_fcfa === '' || Number(form.price_fcfa) < 0)) {
       e.price = t('common.required');
@@ -549,17 +554,19 @@ export default function VendorProductEdit() {
           const subcats = SELECTABLE_SUBCATEGORIES[head];
           return (
             <>
-              <Field label={t('vendor.productCategory')}>
+              <Field label={t('vendor.productCategory')} required error={errors.category}>
                 {(fid) => (
                   <Select
                     id={fid}
                     value={head}
+                    error={errors.category}
                     onChange={(e) => {
                       const newHead = e.target.value;
                       const newSubcats = SELECTABLE_SUBCATEGORIES[newHead];
                       setForm({ ...form, category: newSubcats ? newSubcats[0] : newHead, attributes: {} });
                     }}
                   >
+                    <option value="" disabled>{t('vendor.categoryPlaceholder')}</option>
                     {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
                   </Select>
                 )}

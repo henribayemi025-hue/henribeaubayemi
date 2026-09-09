@@ -1,21 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconArrowBackUp, IconCopy, IconMoodSmile, IconMicrophone, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useToast } from '../../hooks/useToast';
 import { SmartImage } from '../../components/SmartImage';
-import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
+import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
+import { ChatHeaderMenu } from '../../components/chat/ChatHeaderMenu';
+import { ActionSheet } from '../../components/chat/ActionSheet';
+import { MessageGesture } from '../../components/chat/MessageGesture';
+import { QuotedMessage } from '../../components/chat/QuotedMessage';
+import { VoiceMessage } from '../../components/chat/VoiceMessage';
+import { ChatImage } from '../../components/chat/ChatImage';
+import { StoryViewer } from '../../components/StoryViewer';
+import { useShopStories } from '../../hooks/useShopStories';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { MessagesShell } from './Inbox';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { currencyForCountry, convertFromFcfa } from '../../lib/currency';
+import { estPremium } from '../../lib/premium';
 import { FinouAction } from '../../components/FinouAction';
 
 // Mentioning @finouchou (or @finou) inside a buyer<->vendor chat pulls in the
@@ -27,11 +38,25 @@ import { FinouAction } from '../../components/FinouAction';
 // which is also session-only) gets the feature live with zero schema risk.
 const FINOU_MENTION_RE = /@finou(chou)?\b/i;
 
+// Stickers: pas d'illustrations à fabriquer (aucune image « article » de
+// toute façon, voir CLAUDE.md §3), un emoji envoyé seul EST déjà le sticker
+// que WhatsApp affiche en grand sans bulle — même effet, zéro asset.
+const STICKERS = ['😀', '😂', '😍', '🥰', '😢', '😮', '👍', '🙏', '👏', '🔥', '❤️', '🎉', '💯', '😅', '🤝', '✅', '❌', '⏰'];
+
+// Un message "sticker" = uniquement un ou deux emoji, rien d'autre — pour
+// l'afficher en grand sans bulle, comme WhatsApp. Un texte normal qui
+// contient un emoji au milieu d'une phrase reste un message normal.
+function isStickerBody(body) {
+  if (!body) return false;
+  return /^(\p{Extended_Pictographic}️?‍?){1,2}$/u.test(body.trim());
+}
+
 export default function VendorChat({ vendor = false }) {
   const { conversationId } = useParams();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const role = vendor ? 'vendor' : 'buyer';
 
@@ -50,6 +75,33 @@ export default function VendorChat({ vendor = false }) {
   // restait coincée dans sa petite bulle. Plein écran au tap, comme
   // n'importe quelle appli de messagerie.
   const [viewerUrl, setViewerUrl] = useState(null);
+  // Gestes façon WhatsApp sur une bulle: appui long = feuille d'actions,
+  // glissement latéral = répondre en citant.
+  const [actionMsg, setActionMsg] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
+  // Transférer un message vers une autre de mes conversations, comme WhatsApp.
+  const [forwardMsg, setForwardMsg] = useState(null);
+  const [forwardTargets, setForwardTargets] = useState([]);
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [forwardSending, setForwardSending] = useState(null);
+  // Finia Premium: suggestions de réponse toutes faites pour le dernier
+  // message client — elle choisit, édite ou tape la sienne, rien ne part
+  // sans qu'elle appuie sur Envoyer (contrairement à l'agent auto-réponse).
+  const [replySuggestions, setReplySuggestions] = useState(null);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
+  // Message vocal — Beau: « tu peux pas aussi mettre les vocaux ? ».
+  // Appui maintenu façon WhatsApp: on enregistre tant que le doigt reste
+  // posé, on envoie au relâchement, on annule si le doigt sort du bouton.
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const recordCancelledRef = useRef(false);
+  const recordSecondsRef = useRef(0);
+  const [storyOpen, setStoryOpen] = useState(false);
+  const { stories: shopStories } = useShopStories(!vendor ? meta?.shop_id : null);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -57,6 +109,13 @@ export default function VendorChat({ vendor = false }) {
   const endRef = useRef(null);
   const fileRef = useRef(null);
   const inputRef = useRef(null);
+  // « Il n'y a pas le truc typing quand quelqu'un écrit » — indicateur
+  // éphémère (broadcast Realtime, jamais écrit en base): personne ne doit
+  // pouvoir consulter après coup qui était en train de taper quoi.
+  const [otherTyping, setOtherTyping] = useState(false);
+  const chatChannelRef = useRef(null);
+  const typingHideTimer = useRef(null);
+  const typingSentAt = useRef(0);
 
   // Live "@" mention suggestion (Twitter/Slack-style): while the trailing
   // token being typed is a prefix of "finouchou", offer a one-tap completion
@@ -69,13 +128,26 @@ export default function VendorChat({ vendor = false }) {
     inputRef.current?.focus();
   }
 
+  // Accusé de lecture: tout message de l'autre partie encore marqué
+  // "delivered" passe à "read" — l'expéditeur voit son "Vu" apparaître via
+  // l'écoute realtime. Appelé à l'ouverture ET à chaque message reçu.
+  const markAsRead = useCallback(async () => {
+    if (!user?.id || document.visibilityState === 'hidden') return;
+    await supabase
+      .from('chat_messages')
+      .update({ status: 'read' })
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', user.id)
+      .neq('status', 'read');
+  }, [conversationId, user?.id]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
       const { data: conv, error: cErr } = await supabase
         .from('conversations')
-        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country, is_verified, whatsapp, phone)')
+        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country, is_verified, whatsapp, phone, premium_until)')
         .eq('id', conversationId)
         .maybeSingle();
       if (cErr || !conv) throw cErr || new Error('not found');
@@ -91,12 +163,13 @@ export default function VendorChat({ vendor = false }) {
         .from('conversations')
         .update(vendor ? { vendor_unread: 0 } : { buyer_unread: 0 })
         .eq('id', conversationId);
+      await markAsRead();
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [conversationId, vendor]);
+  }, [conversationId, vendor, user?.id, markAsRead]);
 
   useEffect(() => {
     load();
@@ -111,19 +184,71 @@ export default function VendorChat({ vendor = false }) {
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           setMessages((m) => (m.some((x) => x.id === payload.new.id) ? m : [...m, payload.new]));
+          if (payload.new.sender_id !== user?.id) {
+            setOtherTyping(false);
+            // LE bug du "Vu": le passage en "lu" ne se faisait qu'au montage
+            // de l'écran. Quand les deux personnes discutent en direct, le
+            // chat est DÉJÀ ouvert: les messages qui arrivaient ensuite ne
+            // repassaient donc jamais en "lu", et l'expéditeur restait sur
+            // les coches à vie. C'est exactement ce que Beau a constaté en
+            // testant à deux (ses messages: tous "delivered" en base).
+            markAsRead();
+          }
         }
       )
+      .on(
+        // Un message supprimé chez l'autre doit disparaître ici aussi.
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          setMessages((m) => m.filter((x) => x.id !== payload.old?.id));
+        }
+      )
+      .on(
+        // Accusé de lecture: quand l'autre partie lit, son statut passe à
+        // 'read' côté base — on répercute ça dans les coches en direct.
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
+        }
+      )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.userId === user?.id) return;
+        setOtherTyping(true);
+        clearTimeout(typingHideTimer.current);
+        typingHideTimer.current = setTimeout(() => setOtherTyping(false), 3000);
+      })
       .subscribe();
+    chatChannelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
+      clearTimeout(typingHideTimer.current);
+      setOtherTyping(false);
     };
-  }, [conversationId]);
+  }, [conversationId, user?.id, markAsRead]);
+
+  // Diffuse "j'écris" au fil de la frappe — jamais plus d'une fois toutes
+  // les 2s, et rien de tout ça n'est jamais écrit en base.
+  function notifyTyping() {
+    const now = Date.now();
+    if (now - typingSentAt.current < 2000) return;
+    typingSentAt.current = now;
+    chatChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: user?.id } });
+  }
 
   useEffect(() => {
     // Anchor-based scroll is more reliable than scrollTop math when the
     // keyboard resizes the viewport (WhatsApp behaviour).
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, finouThinking]);
+
+  // Des suggestions valables pour "le dernier message" deviennent fausses
+  // dès qu'un nouveau message arrive (réponse envoyée, ou la cliente qui
+  // relance) — on les efface plutôt que de laisser un choix périmé affiché.
+  useEffect(() => {
+    setReplySuggestions(null);
+  }, [messages.length]);
 
   async function askFinou(query) {
     setFinouError(false);
@@ -182,19 +307,184 @@ export default function VendorChat({ vendor = false }) {
     }
   }
 
-  async function send(body, imageUrl = null) {
+  async function send(body, imageUrl = null, audioUrl = null, audioSeconds = null) {
     const text = body?.trim();
-    if (!text && !imageUrl) return;
+    if (!text && !imageUrl && !audioUrl) return;
     const tempId = `temp-${Date.now()}`;
-    const payload = { conversation_id: conversationId, sender_id: user.id, sender_role: role, body: text || null, image_url: imageUrl };
+    const payload = {
+      conversation_id: conversationId,
+      sender_id: user.id,
+      sender_role: role,
+      body: text || null,
+      image_url: imageUrl,
+      audio_url: audioUrl,
+      audio_seconds: audioSeconds,
+      reply_to_id: replyTo?.id || null,
+    };
     setMessages((m) => [...m, { ...payload, id: tempId, created_at: new Date().toISOString() }]);
     setInput('');
+    setReplyTo(null);
     await deliver(payload, tempId);
   }
 
   function retryMessage(msg) {
     setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, failed: false } : x)));
-    deliver({ conversation_id: conversationId, sender_id: user.id, sender_role: role, body: msg.body, image_url: msg.image_url }, msg.id);
+    deliver({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      sender_role: role,
+      body: msg.body,
+      image_url: msg.image_url,
+      audio_url: msg.audio_url,
+      audio_seconds: msg.audio_seconds ?? null,
+      reply_to_id: msg.reply_to_id || null,
+    }, msg.id);
+  }
+
+  // Supprimer SON message, comme WhatsApp: il part pour tout le monde (la
+  // policy en base n'autorise que ses propres messages). Les réponses qui le
+  // citaient restent, avec "message supprimé" à la place de l'extrait.
+  async function deleteMessage(msg) {
+    const avant = messages;
+    setMessages((m) => m.filter((x) => x.id !== msg.id));
+    const { error: dErr } = await supabase.from('chat_messages').delete().eq('id', msg.id);
+    if (dErr) {
+      setMessages(avant);
+      toast.error(dErr.message || t('errors.generic'));
+    }
+  }
+
+  async function copyMessage(msg) {
+    try {
+      await navigator.clipboard.writeText(msg.body || '');
+      toast.success(t('chat.copied'));
+    } catch {
+      toast.error(t('errors.generic'));
+    }
+  }
+
+  async function fetchSuggestions() {
+    setSuggestLoading(true);
+    setReplySuggestions(null);
+    try {
+      const { data, error: sErr } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'suggest_replies', conversationId, lang: i18n.language },
+      });
+      if (sErr) throw sErr;
+      setReplySuggestions(data?.suggestions || []);
+    } catch {
+      toast.error(t('errors.generic'));
+      setReplySuggestions([]);
+    } finally {
+      setSuggestLoading(false);
+    }
+  }
+
+  async function openForward(msg) {
+    setForwardMsg(msg);
+    setForwardLoading(true);
+    try {
+      // Mes propres fils, hors celui-ci: on ne transfère que vers une
+      // conversation où je suis déjà la même partie (acheteuse ou boutique) —
+      // exactement ce que la policy RLS d'insertion autorise.
+      let query = supabase
+        .from('conversations')
+        .select('id, shop_id, buyer_id, last_message, shops(name, avatar_url, is_verified)')
+        .neq('id', conversationId)
+        .order('last_message_at', { ascending: false })
+        .limit(30);
+      query = vendor ? query.eq('shop_id', meta?.shop_id) : query.eq('buyer_id', user.id);
+      const { data } = await query;
+      setForwardTargets(data || []);
+    } finally {
+      setForwardLoading(false);
+    }
+  }
+
+  async function sendForward(targetConversationId) {
+    if (!forwardMsg || forwardSending) return;
+    setForwardSending(targetConversationId);
+    try {
+      const { error: fErr } = await supabase.from('chat_messages').insert({
+        conversation_id: targetConversationId,
+        sender_id: user.id,
+        sender_role: role,
+        body: forwardMsg.body || null,
+        image_url: forwardMsg.image_url || null,
+        audio_url: forwardMsg.audio_url || null,
+      });
+      if (fErr) throw fErr;
+      toast.success(t('chat.forwarded'));
+      setForwardMsg(null);
+    } catch (e) {
+      toast.error(e?.message || t('errors.generic'));
+    } finally {
+      setForwardSending(null);
+    }
+  }
+
+  async function deleteConversation() {
+    const { error: dErr } = await supabase
+      .from('conversations')
+      .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
+      .eq('id', conversationId);
+    if (dErr) {
+      toast.error(dErr.message || t('errors.generic'));
+      return;
+    }
+    navigate(vendor ? '/vendor/messages' : '/inbox', { replace: true });
+  }
+
+  async function startRecording() {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recordCancelledRef.current = false;
+      recorder.ondataavailable = (e) => e.data.size > 0 && audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        clearInterval(recordTimerRef.current);
+        const duree = recordSecondsRef.current;
+        const cancelled = recordCancelledRef.current || duree < 1;
+        setRecording(false);
+        setRecordSeconds(0);
+        if (cancelled || audioChunksRef.current.length === 0) return;
+        const ext = (recorder.mimeType || 'audio/webm').includes('mp4') ? 'm4a' : 'webm';
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        setUploading(true);
+        try {
+          const path = `${user.id}/${uid()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from('chat').upload(path, blob, { contentType: recorder.mimeType || 'audio/webm' });
+          if (upErr) throw upErr;
+          // La durée mesurée ici est la SEULE fiable: le fichier WebM produit
+          // par le navigateur n'en contient aucune (voir VoiceMessage).
+          await send(null, null, path, duree);
+        } catch (e) {
+          toast.error(e.message || t('errors.generic'));
+        } finally {
+          setUploading(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordSecondsRef.current = 0;
+      recordTimerRef.current = setInterval(() => {
+        recordSecondsRef.current += 1;
+        setRecordSeconds(recordSecondsRef.current);
+      }, 1000);
+    } catch {
+      toast.error(t('chat.micDenied'));
+    }
+  }
+
+  function stopRecording(cancel = false) {
+    recordCancelledRef.current = cancel;
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
   }
 
   async function onFile(e) {
@@ -230,22 +520,37 @@ export default function VendorChat({ vendor = false }) {
             <IconChevronLeft size={22} />
           </button>
         )}
-        <Link to={shop?.slug ? `/boutique/${shop.slug}` : '#'} className="flex min-w-0 flex-1 items-center gap-2.5">
-          <ShopAvatar
-            src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
-            fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null}
-            name={shop?.name}
-            seed={meta?.shop_id}
-            className="h-9 w-9 shrink-0"
-          />
-          <span className="min-w-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {/* Beau: « dans le chat tu peux voir direct le story d'une
+              boutique, comme dans WhatsApp ». L'avatar seul ouvre le
+              lecteur de stories s'il y en a une en cours; sinon (ou côté
+              vendeuse, qui verrait toujours SA propre boutique ici) il mène
+              à la fiche boutique comme avant. */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!vendor && shopStories.length > 0) setStoryOpen(true);
+              else navigate(shop?.slug ? `/boutique/${shop.slug}` : '#');
+            }}
+            className="shrink-0"
+            aria-label={!vendor && shopStories.length > 0 ? t('shop.viewStory') : t('chat.viewShop')}
+          >
+            <ShopAvatar
+              src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
+              fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null}
+              name={shop?.name}
+              seed={meta?.shop_id}
+              className={`h-9 w-9 shrink-0 ${!vendor && shopStories.length > 0 ? 'ring-2 ring-teal ring-offset-2 ring-offset-white' : ''}`}
+            />
+          </button>
+          <Link to={shop?.slug ? `/boutique/${shop.slug}` : '#'} className="min-w-0 flex-1">
             <span className="flex items-center gap-1">
               <span className="line-clamp-1 text-body font-semibold text-ink">{shop?.name || t('nav.messages')}</span>
               {shop?.is_verified && <VerifiedBadge size={14} />}
             </span>
             <span className="block text-[11px] text-muted">{t('chat.viewShop')}</span>
-          </span>
-        </Link>
+          </Link>
+        </div>
         {waNumber && (
           <a
             href={`https://wa.me/${waNumber}`}
@@ -268,32 +573,22 @@ export default function VendorChat({ vendor = false }) {
             <IconPhone size={18} />
           </a>
         )}
-        {/* Signaler existait déjà partout ailleurs (boutique, article, reel)
-            mais pas ici — Beau, en testant: « j'ai vu bloquer mais pas
-            signaler ». Même bouton compact que Bloquer juste à côté, même
-            sens acheteuse/vendeuse. */}
-        <button
-          type="button"
-          onClick={() => setReportOpen(true)}
-          aria-label={t('report.report')}
-          title={t('report.report')}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
-        >
-          <IconFlag size={18} />
-        </button>
+        {/* Signaler, Bloquer (règle 1.2 de l'App Store) et Supprimer la
+            conversation vivent maintenant derrière un seul ⋮ — Beau: « en
+            haut il y a delete, signaler, bloquer alors que ça devait être
+            sur un truc ». */}
+        <ChatHeaderMenu
+          shopId={vendor ? null : meta?.shop_id}
+          userId={vendor ? meta?.buyer_id : null}
+          onBlockChange={setBlocked}
+          onReport={() => setReportOpen(true)}
+          onDelete={deleteConversation}
+        />
         <ReportModal
           open={reportOpen}
           onClose={() => setReportOpen(false)}
           targetType={vendor ? 'user' : 'shop'}
           targetId={vendor ? meta?.buyer_id : meta?.shop_id}
-        />
-        {/* Bloquer: l'acheteuse bloque la boutique, la vendeuse bloque
-            l'acheteuse. Exigé par la règle 1.2 de l'App Store, et c'est le
-            premier bouton que cherche une examinatrice dans un fil. */}
-        <BlockButton
-          shopId={vendor ? null : meta?.shop_id}
-          userId={vendor ? meta?.buyer_id : null}
-          onChange={setBlocked}
         />
       </header>
       {loading ? (
@@ -340,37 +635,112 @@ export default function VendorChat({ vendor = false }) {
               // Guard against `user` being momentarily null (auth state can
               // flip mid-render on token refresh) so a render never throws.
               const mine = !!user && m.sender_id === user.id;
-              return (
-                <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  {/* Mes messages en terracotta plein (texte blanc), ceux d'en
-                      face en carte blanche: la conversation se lit d'un coup
-                      d'œil sans avoir à repérer de quel côté est la bulle. */}
-                  <div
-                    className={`max-w-[80%] px-3.5 py-2.5 shadow-sm ${
-                      mine
-                        ? 'rounded-2xl rounded-br-md bg-teal text-white'
-                        : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
-                    }`}
-                  >
-                    {m.image_url && (
-                      <button type="button" onClick={() => setViewerUrl(storageUrl('chat', m.image_url))} className="block">
-                        <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
+              const canForward = !m.failed && (m.body || m.image_url || m.audio_url);
+              const cite = m.reply_to_id ? messages.find((x) => x.id === m.reply_to_id) : null;
+              // Sticker: un emoji seul s'affiche en grand SANS bulle, comme
+              // WhatsApp — un vrai texte garde sa bulle normale.
+              const sticker = !m.image_url && isStickerBody(m.body);
+              const bubble = (
+                // Mes messages en terracotta plein (texte blanc), ceux d'en
+                // face en carte blanche: la conversation se lit d'un coup
+                // d'œil sans avoir à repérer de quel côté est la bulle.
+                <div
+                  className={
+                    sticker
+                      ? 'max-w-full px-1 select-none'
+                      : `max-w-full select-none px-3.5 py-2.5 shadow-sm ${
+                          mine
+                            ? 'rounded-2xl rounded-br-md bg-teal text-white'
+                            : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
+                        }`
+                  }
+                >
+                  {m.auto_reply && (
+                    <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
+                      <IconSparkles size={12} /> {t('chat.autoReplyBadge')}
+                    </p>
+                  )}
+                  {m.reply_to_id && (
+                    <div className="mb-1.5">
+                      <QuotedMessage
+                        message={cite}
+                        mine={mine}
+                        t={t}
+                        auteur={
+                          cite
+                            ? (!!user && cite.sender_id === user.id ? t('chat.you') : (vendor ? meta?.buyer_name || t('chat.theBuyer') : shop?.name || ''))
+                            : ''
+                        }
+                        onClick={cite ? () => {
+                          document.getElementById(`msg-${cite.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } : null}
+                      />
+                    </div>
+                  )}
+                  {m.image_url && (
+                    <ChatImage
+                      src={storageUrl('chat', m.image_url)}
+                      onClick={() => setViewerUrl(storageUrl('chat', m.image_url))}
+                    />
+                  )}
+                  {m.audio_url && (
+                    <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
+                  )}
+                  {m.body && (
+                    sticker
+                      ? <p className="text-[52px] leading-none">{m.body}</p>
+                      : <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>
+                  )}
+                  <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${sticker ? 'text-muted' : mine ? 'text-white/75' : 'text-muted'}`}>
+                    <span>{clockTime(m.created_at, i18n.language)}</span>
+                    {/* Beau: la coche dorée passait inaperçue — "au pire on
+                        met Vu". Le mot est sans ambiguïté, la coche seule. */}
+                    {mine && !m.failed && (
+                      m.id.toString().startsWith('temp') ? (
+                        <IconCheck size={13} />
+                      ) : m.status === 'read' ? (
+                        <span className="font-semibold text-brass">{t('chat.seen')}</span>
+                      ) : (
+                        <IconChecks size={13} />
+                      )
+                    )}
+                    {m.failed && (
+                      <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
+                        <IconAlertCircle size={14} /> {t('common.retry')}
                       </button>
                     )}
-                    {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
-                    <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
-                      <span>{clockTime(m.created_at, i18n.language)}</span>
-                      {mine && !m.failed && (m.id.toString().startsWith('temp') ? <IconCheck size={13} /> : <IconChecks size={13} />)}
-                      {m.failed && (
-                        <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
-                          <IconAlertCircle size={14} /> {t('common.retry')}
-                        </button>
-                      )}
-                    </div>
                   </div>
                 </div>
               );
+              // Plus de flèche "transférer" collée en permanence à chaque
+              // bulle: Beau (« c'est pas propre, fais comme WhatsApp »).
+              // Tout passe par les deux gestes — appui long pour le menu,
+              // glissement pour répondre.
+              return (
+                <div key={m.id} id={`msg-${m.id}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <MessageGesture
+                    className="max-w-[80%]"
+                    disabled={!canForward}
+                    onLongPress={() => setActionMsg(m)}
+                    onReply={() => {
+                      setReplyTo(m);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {bubble}
+                  </MessageGesture>
+                </div>
+              );
             })}
+            {otherTyping && (
+              <div className="flex justify-start" aria-label={t('chat.typing')}>
+                <div className="flex items-center gap-1 rounded-2xl border border-hairline bg-white px-3 py-3">
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: '150ms' }} />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            )}
             {finouThinking && (
               <div className="flex justify-start" aria-label={t('finou.typing')}>
                 <div className="flex items-center gap-1 rounded-2xl border border-teal/30 bg-teal/5 px-3 py-3">
@@ -402,6 +772,70 @@ export default function VendorChat({ vendor = false }) {
               </button>
             </div>
           )}
+          {vendor && !blocked && estPremium(shop) && messages.length > 0 && messages[messages.length - 1].sender_role === 'buyer' && (
+            <div className="border-t border-hairline bg-white px-3 pt-2">
+              {suggestLoading ? (
+                <p className="pb-2 flex items-center gap-1.5 text-caption text-muted">
+                  <IconSparkles size={14} className="animate-pulse text-teal" /> {t('chat.suggestLoading')}
+                </p>
+              ) : replySuggestions?.length > 0 ? (
+                <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto pb-2">
+                  {replySuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { setInput(s); setReplySuggestions([]); inputRef.current?.focus(); }}
+                      className="shrink-0 rounded-pill border border-teal/40 bg-teal/5 px-3 py-1.5 text-left text-caption text-teal"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={fetchSuggestions}
+                  className="mb-2 inline-flex items-center gap-1.5 rounded-pill border border-teal/40 bg-teal/5 px-3 py-1.5 text-caption font-semibold text-teal"
+                >
+                  <IconSparkles size={14} /> {t('chat.suggestReplies')}
+                </button>
+              )}
+            </div>
+          )}
+          {stickerOpen && !blocked && (
+            <div className="border-t border-hairline bg-white p-3">
+              <div className="grid grid-cols-9 gap-1.5">
+                {STICKERS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => { send(s); setStickerOpen(false); }}
+                    className="flex h-9 items-center justify-center rounded-input text-[22px] transition-colors hover:bg-base"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Réponse en cours: l'extrait cité reste sous les yeux tant qu'on
+              rédige, exactement comme WhatsApp. */}
+          {replyTo && !blocked && (
+            <div className="border-t border-hairline bg-white px-3 pt-2">
+              <QuotedMessage
+                message={replyTo}
+                t={t}
+                auteur={
+                  !!user && replyTo.sender_id === user.id
+                    ? t('chat.you')
+                    : vendor
+                      ? meta?.buyer_name || t('chat.theBuyer')
+                      : shop?.name || ''
+                }
+                onClose={() => setReplyTo(null)}
+              />
+            </div>
+          )}
           {blocked ? (
             <div className="shrink-0 border-t border-hairline bg-white p-4 text-center text-caption text-muted">
               {t('report.blockedNotice')}
@@ -415,23 +849,69 @@ export default function VendorChat({ vendor = false }) {
               send(text);
               if (mentioned) askFinou(text.replace(FINOU_MENTION_RE, '').trim() || text);
             }}
-            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion ? '' : 'border-t border-hairline'}`}
+            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion || stickerOpen || replyTo ? '' : 'border-t border-hairline'}`}
           >
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
-              <IconPhoto size={24} />
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-            <input
-              ref={inputRef}
-              className="input flex-1"
-              placeholder={t('chat.placeholder')}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              aria-label={t('chat.placeholder')}
-            />
-            <button type="submit" disabled={!input.trim() && !uploading} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]" aria-label={t('common.send')}>
-              <IconSend2 size={20} />
-            </button>
+            {recording ? (
+              <div className="flex flex-1 items-center gap-2 rounded-input bg-base px-3 py-2.5">
+                <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-danger" />
+                <span className="flex-1 text-body text-ink">
+                  {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:{String(recordSeconds % 60).padStart(2, '0')} — {t('chat.recordingHint')}
+                </span>
+                <button type="button" onClick={() => stopRecording(true)} className="shrink-0 text-danger" aria-label={t('common.cancel')}>
+                  <IconTrash size={20} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
+                  <IconPhoto size={24} />
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+                <button type="button" onClick={() => setStickerOpen((v) => !v)} className={stickerOpen ? 'text-teal' : 'text-muted'} aria-label={t('chat.stickers')}>
+                  <IconMoodSmile size={24} />
+                </button>
+                <input
+                  ref={inputRef}
+                  className="input flex-1"
+                  placeholder={t('chat.placeholder')}
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); notifyTyping(); }}
+                  onFocus={() => setStickerOpen(false)}
+                  aria-label={t('chat.placeholder')}
+                />
+              </>
+            )}
+            {!input.trim() ? (
+              // Appui maintenu = enregistrer, relâcher = envoyer, glisser
+              // hors du bouton = annuler — même geste que WhatsApp. Le
+              // bouton reste le MÊME élément du début à la fin de l'appui
+              // (capture de pointeur): le retirer du DOM pendant l'appui
+              // empêchait le relâchement d'être détecté, et l'enregistrement
+              // restait bloqué indéfiniment.
+              <button
+                type="button"
+                disabled={uploading}
+                onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startRecording(); }}
+                onPointerUp={() => stopRecording(false)}
+                onPointerCancel={() => stopRecording(true)}
+                onContextMenu={(e) => e.preventDefault()}
+                className={`flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-full text-white disabled:bg-hairline disabled:text-[#A0A0A0] ${
+                  recording ? 'bg-danger' : 'bg-teal'
+                }`}
+                aria-label={t('chat.holdToRecord')}
+              >
+                <IconMicrophone size={20} />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim() && !uploading}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]"
+                aria-label={t('common.send')}
+              >
+                <IconSend2 size={20} />
+              </button>
+            )}
           </form>
           )}
         </>
@@ -451,6 +931,99 @@ export default function VendorChat({ vendor = false }) {
           </button>
           <img src={viewerUrl} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
+      )}
+      {/* Appui long sur une bulle: les actions de WhatsApp, dans l'ordre où
+          il les propose. "Supprimer" n'apparaît que sur ses propres
+          messages — la base refuserait de toute façon les autres. */}
+      <ActionSheet
+        open={!!actionMsg}
+        onClose={() => setActionMsg(null)}
+        actions={[
+          {
+            key: 'reply',
+            icon: IconArrowBackUp,
+            label: t('chat.reply'),
+            onClick: () => { setReplyTo(actionMsg); inputRef.current?.focus(); },
+          },
+          {
+            key: 'forward',
+            icon: IconArrowForward,
+            label: t('chat.forward'),
+            onClick: () => openForward(actionMsg),
+          },
+          actionMsg?.body && {
+            key: 'copy',
+            icon: IconCopy,
+            label: t('chat.copy'),
+            onClick: () => copyMessage(actionMsg),
+          },
+          !!user && actionMsg?.sender_id === user.id && {
+            key: 'delete',
+            icon: IconTrash,
+            label: t('chat.deleteMessage'),
+            danger: true,
+            onClick: () => deleteMessage(actionMsg),
+          },
+          !!user && actionMsg?.sender_id !== user.id && {
+            key: 'report',
+            icon: IconFlag,
+            label: t('report.report'),
+            onClick: () => setReportOpen(true),
+          },
+        ]}
+      />
+      <Modal open={!!forwardMsg} onClose={() => setForwardMsg(null)} title={t('chat.forwardTo')}>
+        {forwardLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+          </div>
+        ) : forwardTargets.length === 0 ? (
+          <p className="py-6 text-center text-body text-muted">{t('chat.forwardNoTargets')}</p>
+        ) : (
+          <ul className="-mx-4 max-h-[50vh] overflow-y-auto">
+            {forwardTargets.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  disabled={forwardSending === c.id}
+                  onClick={() => sendForward(c.id)}
+                  className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3 text-left transition-colors hover:bg-base disabled:opacity-60"
+                >
+                  {vendor ? (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-light text-body font-semibold text-teal">
+                      {t('chat.forwardBuyer')[0]}
+                    </div>
+                  ) : (
+                    <ShopAvatar
+                      src={c.shops?.avatar_url ? storageThumbUrl('shops', c.shops.avatar_url) : null}
+                      fallbackSrc={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null}
+                      name={c.shops?.name}
+                      seed={c.shop_id}
+                      className="h-11 w-11"
+                    />
+                  )}
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="flex items-center gap-1 text-body font-semibold text-ink">
+                      <span className="line-clamp-1">{vendor ? t('chat.forwardBuyer') : c.shops?.name}</span>
+                      {!vendor && c.shops?.is_verified && <VerifiedBadge size={13} />}
+                    </span>
+                    {c.last_message && <span className="line-clamp-1 block text-caption text-muted">{c.last_message}</span>}
+                  </span>
+                  {forwardSending === c.id && <span className="text-caption text-muted">{t('common.sending')}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
+      {storyOpen && shopStories.length > 0 && (
+        <StoryViewer
+          stories={shopStories}
+          shopName={shop?.name}
+          shopAvatarSrc={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
+          shopSeed={meta?.shop_id}
+          onClose={() => setStoryOpen(false)}
+        />
       )}
     </div>
   );

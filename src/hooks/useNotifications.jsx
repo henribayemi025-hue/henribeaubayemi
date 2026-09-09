@@ -117,6 +117,10 @@ export function notificationHref(n) {
       return '/become-vendor';
     case 'shop_verified':
       return '/vendor/shop';
+    case 'premium_pitch':
+      return '/vendor';
+    case 'new_direct_message':
+      return `/profile/messages/${d.conversation_id}`;
     // Une relance s'ouvre sur son propre ecran: on y lit le message ET on
     // y repond. La marquer lue dans la cloche ne suffit pas — Beau a besoin
     // de savoir si elle a ete OUVERTE.

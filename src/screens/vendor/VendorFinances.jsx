@@ -8,6 +8,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
+import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { VendorPrice } from '../../components/Price';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -34,6 +35,7 @@ const isPending = (o) => o.status !== 'delivered' && o.status !== 'cancelled';
 export default function VendorFinances() {
   const { shop } = useOutletContext();
   const { t, i18n } = useTranslation();
+  const toast = useToast();
   const [period, setPeriod] = useState('7d');
   const days = PERIODS.find((p) => p.key === period).days;
   const lang = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
@@ -58,7 +60,7 @@ export default function VendorFinances() {
       const from = new Date(Date.now() - days * 864e5).toISOString();
       const { data: rows, error: err } = await supabase
         .from('orders')
-        .select('order_no, created_at, buyer_name, status, method, total_fcfa, order_items(name, qty, price_fcfa)')
+        .select('order_no, created_at, buyer_name, status, total_fcfa, order_items(name, qty, price_fcfa)')
         .eq('shop_id', shop.id)
         .gte('created_at', from)
         .order('created_at', { ascending: true });
@@ -112,6 +114,12 @@ export default function VendorFinances() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+    } catch (e) {
+      // Beau, en testant: « j'ai cliqué, rien ne s'est passé » — la requête
+      // pouvait échouer sans qu'aucun message ne le dise, seul le bouton
+      // arrêtait de tourner. Un relevé qui échoue en silence donne
+      // l'impression que le bouton ne marche pas du tout.
+      toast.error(e?.message || t('errors.generic'));
     } finally {
       setExporting(false);
     }
@@ -173,7 +181,11 @@ export default function VendorFinances() {
 
   return (
     <div className="pb-6">
-      <AppHeader title={t('finances.title')} />
+      {/* Beau, en testant: pas de moyen de revenir en arrière ici. Cet écran
+          n'est pas un onglet (voir VendorNav) — on y arrive toujours par un
+          lien depuis le tableau de bord, donc sans bouton retour on y reste
+          coincé. */}
+      <AppHeader title={t('finances.title')} back />
       <div className="flex gap-2 border-b border-hairline px-4 pb-2 pt-1">
         {PERIODS.map((p) => (
           <button key={p.key} onClick={() => setPeriod(p.key)} className={`chip flex-1 justify-center ${period === p.key ? 'chip-active' : 'text-ink'}`}>{t(p.label)}</button>

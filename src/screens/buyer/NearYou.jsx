@@ -98,6 +98,24 @@ export default function NearYou() {
     }
   }
 
+  // Beau: « Autour de moi » devrait être activé PAR DÉFAUT à l'arrivée sur
+  // l'écran, pas un clic de plus. Silencieux si refusé — un toast d'erreur
+  // pour une action que la personne n'a pas elle-même déclenchée serait
+  // déroutant. Le navigateur se souvient déjà d'un refus définitif et ne
+  // réaffiche pas son invite à chaque visite dans ce cas.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pos = await getPosition();
+      if (!cancelled && pos) {
+        setUserPos(pos);
+        setRadius('all');
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // « Autour de moi », vérifié contre le vrai catalogue (28/08): 35 boutiques
   // camerounaises dont 11 seulement ont un GPS. L'ancien tri gardait les
   // fiches à moins de radiusKm, SUPPRIMAIT les boutiques du pays qui ont un
