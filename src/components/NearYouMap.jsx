@@ -6,9 +6,50 @@ import { useTranslation } from 'react-i18next';
 import { IconStarFilled } from '@tabler/icons-react';
 import { SmartImage } from './SmartImage';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
+import { shopGradient } from '../lib/shopColor';
 
-// Branded teal map-pin as a divIcon — avoids Leaflet's broken default-icon
-// asset paths under Vite and keeps us on the "Lagune & Encre" palette.
+// Beau, en comparant à Snap Map: « on devrait voir les boutiques, un truc
+// propre comme un Bitmoji ». La carte affichait un pion terracotta anonyme
+// identique pour tout le monde — impossible de reconnaître une boutique sans
+// taper sur chaque pion un par un. Chaque bulle porte maintenant la vraie
+// photo de la boutique (même repli dégradé + initiale que ShopAvatar
+// ailleurs dans l'app — jamais une couleur inventée hors charte), posée bien
+// ronde sur sa position plutôt qu'au bout d'une goutte d'eau.
+const AVATAR_SIZE = 46;
+const shopIconCache = new Map();
+
+function shopIcon(shop) {
+  const key = `${shop.id}:${shop.avatar_url || ''}`;
+  const cached = shopIconCache.get(key);
+  if (cached) return cached;
+
+  const g = shopGradient(shop.id || shop.name);
+  const initial = (shop.name || '?').trim().charAt(0).toUpperCase();
+  const src = shop.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null;
+
+  const icon = L.divIcon({
+    className: 'finjaro-shop-pin',
+    html: `
+      <div style="
+        width:${AVATAR_SIZE}px;height:${AVATAR_SIZE}px;border-radius:9999px;
+        background-image:linear-gradient(135deg, ${g.from}, ${g.to});
+        border:3px solid #fff;box-shadow:0 2px 8px rgba(23,27,38,0.35);
+        display:flex;align-items:center;justify-content:center;overflow:hidden;
+        font:700 17px 'Fraunces', Georgia, serif;color:#fff;
+      ">
+        ${src ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9999px" onerror="this.remove()" />` : initial}
+      </div>`,
+    iconSize: [AVATAR_SIZE, AVATAR_SIZE],
+    iconAnchor: [AVATAR_SIZE / 2, AVATAR_SIZE / 2],
+    popupAnchor: [0, -AVATAR_SIZE / 2],
+  });
+  shopIconCache.set(key, icon);
+  return icon;
+}
+
+// Repli pour les ANNONCES (near_you_listings): pas de boutique, pas de nom,
+// pas de logo — juste la description d'une personne. La bulle-avatar n'a
+// alors rien à montrer; le pion d'origine reste le bon repère ici.
 const pinIcon = L.divIcon({
   className: 'finjaro-pin',
   html:
@@ -75,7 +116,7 @@ export default function NearYouMap({ items, userPos, onSelect }) {
         <FitBounds points={points} />
         {userPos && <Marker position={[userPos.lat, userPos.lng]} icon={userIcon} />}
         {geo.map((x) => (
-          <Marker key={x.id} position={[x.lat, x.lng]} icon={pinIcon}>
+          <Marker key={x.id} position={[x.lat, x.lng]} icon={x.slug ? shopIcon(x) : pinIcon}>
             <Popup>
               <button onClick={() => onSelect(x)} className="flex items-center gap-2 text-left">
                 {x.avatar_url && (

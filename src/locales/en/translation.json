@@ -497,7 +497,7 @@
     "checkoutAll": "Order everything"
   },
   "nearYou": {
-    "shops": "Providers",
+    "shops": "Shops",
     "listings": "Listings",
     "publishListing": "Post a listing",
     "distance": "{{km}} km",
@@ -534,7 +534,7 @@
     "searchTrade": "Search a trade…",
     "allTrades": "All trades",
     "noTradeMatch": "No trade matches.",
-    "noProviders": "No providers registered in this area yet.",
+    "noProviders": "No shops registered in this area yet.",
     "noProviderInTrade": "No provider in « {{trade}} » yet.",
     "becomeProvider": "Offer my services",
     "demandAll": "All",
@@ -552,7 +552,7 @@
     },
     "nearYouBadge": "Near you",
     "directoryTitle": "Directory & Map",
-    "directorySubtitle": "Find and contact the best providers around you.",
+    "directorySubtitle": "Find and contact shops and providers around you.",
     "directoryTab": "Trade directory",
     "mapTab": "Map view",
     "filterByTrade": "Filter by trade",
@@ -1445,6 +1445,7 @@
   "provider": {
     "details": "Details",
     "book": "Book",
+    "contact": "Contact",
     "fromPrice": "From",
     "reviewCount_one": "{{count}} review",
     "reviewCount_other": "{{count}} reviews",
