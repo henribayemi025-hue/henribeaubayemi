@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore } from '@tabler/icons-react';
+import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore, IconMapPin } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
@@ -120,13 +120,30 @@ export default function Home() {
             </Link>
           </div>
         </div>
-        <Link
-          to="/search"
-          className="mx-4 mb-3 flex h-10 items-center gap-2 rounded-pill border border-hairline bg-base px-3.5 text-muted transition-colors active:bg-hairline/40"
-        >
-          <IconSearch size={17} className="shrink-0" />
-          <span className="truncate text-body">{t('common.searchPlaceholder')}</span>
-        </Link>
+        {/* « Autour de moi » juste à côté de la recherche: Beau, en testant
+            le nouveau contenu de cet écran (toutes les boutiques, pas
+            seulement les prestataires), a demandé où c'était visible depuis
+            l'accueil — la seule porte existante (plus bas, "Services à
+            domicile") ne parle QUE des services et se perd après le carrousel.
+            Celle-ci reste sous les yeux en permanence (en-tête collant), à
+            l'endroit où l'œil va déjà se poser pour chercher. */}
+        <div className="mx-4 mb-3 flex items-center gap-2">
+          <Link
+            to="/search"
+            className="flex h-10 flex-1 items-center gap-2 rounded-pill border border-hairline bg-base px-3.5 text-muted transition-colors active:bg-hairline/40"
+          >
+            <IconSearch size={17} className="shrink-0" />
+            <span className="truncate text-body">{t('common.searchPlaceholder')}</span>
+          </Link>
+          <Link
+            to="/services"
+            aria-label={t('nearYou.aroundMe')}
+            title={t('nearYou.aroundMe')}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-teal/30 bg-teal-light text-teal transition-transform active:scale-90"
+          >
+            <IconMapPin size={19} />
+          </Link>
+        </div>
       </header>
 
       {/* On desktop the sidebar layout leaves this column very wide (no cap),
