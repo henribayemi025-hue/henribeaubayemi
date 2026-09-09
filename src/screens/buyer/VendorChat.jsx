@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconMoodSmile } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
@@ -29,6 +29,19 @@ import { FinouAction } from '../../components/FinouAction';
 // change; showing it client-side only (same as the standalone Finou overlay,
 // which is also session-only) gets the feature live with zero schema risk.
 const FINOU_MENTION_RE = /@finou(chou)?\b/i;
+
+// Stickers: pas d'illustrations à fabriquer (aucune image « article » de
+// toute façon, voir CLAUDE.md §3), un emoji envoyé seul EST déjà le sticker
+// que WhatsApp affiche en grand sans bulle — même effet, zéro asset.
+const STICKERS = ['😀', '😂', '😍', '🥰', '😢', '😮', '👍', '🙏', '👏', '🔥', '❤️', '🎉', '💯', '😅', '🤝', '✅', '❌', '⏰'];
+
+// Un message "sticker" = uniquement un ou deux emoji, rien d'autre — pour
+// l'afficher en grand sans bulle, comme WhatsApp. Un texte normal qui
+// contient un emoji au milieu d'une phrase reste un message normal.
+function isStickerBody(body) {
+  if (!body) return false;
+  return /^(\p{Extended_Pictographic}️?‍?){1,2}$/u.test(body.trim());
+}
 
 export default function VendorChat({ vendor = false }) {
   const { conversationId } = useParams();
@@ -64,6 +77,7 @@ export default function VendorChat({ vendor = false }) {
   // sans qu'elle appuie sur Envoyer (contrairement à l'agent auto-réponse).
   const [replySuggestions, setReplySuggestions] = useState(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -441,16 +455,23 @@ export default function VendorChat({ vendor = false }) {
               // flip mid-render on token refresh) so a render never throws.
               const mine = !!user && m.sender_id === user.id;
               const canForward = !m.failed && (m.body || m.image_url);
+              // Sticker: un emoji seul s'affiche en grand SANS bulle, comme
+              // WhatsApp — un vrai texte garde sa bulle normale.
+              const sticker = !m.image_url && isStickerBody(m.body);
               const bubble = (
                 // Mes messages en terracotta plein (texte blanc), ceux d'en
                 // face en carte blanche: la conversation se lit d'un coup
                 // d'œil sans avoir à repérer de quel côté est la bulle.
                 <div
-                  className={`max-w-[80%] px-3.5 py-2.5 shadow-sm ${
-                    mine
-                      ? 'rounded-2xl rounded-br-md bg-teal text-white'
-                      : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
-                  }`}
+                  className={
+                    sticker
+                      ? 'max-w-[80%] px-1'
+                      : `max-w-[80%] px-3.5 py-2.5 shadow-sm ${
+                          mine
+                            ? 'rounded-2xl rounded-br-md bg-teal text-white'
+                            : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
+                        }`
+                  }
                 >
                   {m.auto_reply && (
                     <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
@@ -462,8 +483,12 @@ export default function VendorChat({ vendor = false }) {
                       <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
                     </button>
                   )}
-                  {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
-                  <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
+                  {m.body && (
+                    sticker
+                      ? <p className="text-[52px] leading-none">{m.body}</p>
+                      : <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>
+                  )}
+                  <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${sticker ? 'text-muted' : mine ? 'text-white/75' : 'text-muted'}`}>
                     <span>{clockTime(m.created_at, i18n.language)}</span>
                     {mine && !m.failed && (
                       m.id.toString().startsWith('temp')
@@ -560,6 +585,22 @@ export default function VendorChat({ vendor = false }) {
               )}
             </div>
           )}
+          {stickerOpen && !blocked && (
+            <div className="border-t border-hairline bg-white p-3">
+              <div className="grid grid-cols-9 gap-1.5">
+                {STICKERS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => { send(s); setStickerOpen(false); }}
+                    className="flex h-9 items-center justify-center rounded-input text-[22px] transition-colors hover:bg-base"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {blocked ? (
             <div className="shrink-0 border-t border-hairline bg-white p-4 text-center text-caption text-muted">
               {t('report.blockedNotice')}
@@ -573,18 +614,22 @@ export default function VendorChat({ vendor = false }) {
               send(text);
               if (mentioned) askFinou(text.replace(FINOU_MENTION_RE, '').trim() || text);
             }}
-            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion ? '' : 'border-t border-hairline'}`}
+            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion || stickerOpen ? '' : 'border-t border-hairline'}`}
           >
             <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
               <IconPhoto size={24} />
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+            <button type="button" onClick={() => setStickerOpen((v) => !v)} className={stickerOpen ? 'text-teal' : 'text-muted'} aria-label={t('chat.stickers')}>
+              <IconMoodSmile size={24} />
+            </button>
             <input
               ref={inputRef}
               className="input flex-1"
               placeholder={t('chat.placeholder')}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={() => setStickerOpen(false)}
               aria-label={t('chat.placeholder')}
             />
             <button type="submit" disabled={!input.trim() && !uploading} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]" aria-label={t('common.send')}>

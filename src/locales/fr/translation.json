@@ -486,7 +486,8 @@
     "forwardBuyer": "Acheteuse",
     "forwarded": "Message transféré",
     "suggestReplies": "Suggestions de réponse",
-    "suggestLoading": "Finia prépare des suggestions…"
+    "suggestLoading": "Finia prépare des suggestions…",
+    "stickers": "Stickers"
   },
   "cart": {
     "title": "Panier",

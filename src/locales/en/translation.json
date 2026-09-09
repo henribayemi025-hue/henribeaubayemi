@@ -486,7 +486,8 @@
     "forwardBuyer": "Buyer",
     "forwarded": "Message forwarded",
     "suggestReplies": "Suggested replies",
-    "suggestLoading": "Finia is preparing suggestions…"
+    "suggestLoading": "Finia is preparing suggestions…",
+    "stickers": "Stickers"
   },
   "cart": {
     "title": "Cart",
