@@ -774,6 +774,7 @@
     "productSubcategory": "Subcategory",
     "productDescription": "Description",
     "copilotGenerate": "Generate with AI",
+    "copilotPolish": "Fix wording",
     "copilotSuggestion": "Finia's suggestion — edit it if needed",
     "copilotUse": "Use",
     "copilotRegenerate": "Regenerate",

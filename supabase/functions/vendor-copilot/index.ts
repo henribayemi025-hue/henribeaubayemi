@@ -1,9 +1,11 @@
-// Finjaro — Vendor Copilot. Trois modes, même sécurité pour les trois :
+// Finjaro — Vendor Copilot. Quatre modes, même sécurité pour tous :
 //   (défaut) 'description'  { name, category?, price?, currency?, lang? } -> { description }
 //   'listing'               { image_path, lang? } -> fiche complète depuis la photo
 //                           { title, description, keywords[], category, price_hint_fcfa?, price_samples }
 //   'reel_script'           { name, description?, lang? } -> script vidéo
 //                           { hook, scenes[{shot,text}], cta, hashtags[] }
+//   'polish'                { text, lang? } -> { text } — corrige l'orthographe
+//                           et raccourcit un texte déjà écrit, sans le réécrire
 //
 // 'listing' est l'Auto-Listing du pilier 3 (capacité 12, partie texte) : la
 // photo est lue DEPUIS le bucket public `products` (le vendeur l'a déjà
@@ -343,6 +345,44 @@ Deno.serve(async (req: Request) => {
       } catch {
         return json({ error: 'bad_ai_response' }, 502);
       }
+    }
+
+    // ------------------------------------------------------------------ polish
+    // Corrige l'orthographe/la grammaire et raccourcit une description déjà
+    // écrite par la vendeuse — jamais une réécriture depuis rien (mode
+    // 'description' ci-dessous) et jamais l'ajout d'un fait qui n'y est pas
+    // déjà (prix, stock, promesse...). Beau: une vendeuse tape vite sur son
+    // téléphone, souvent en une seule phrase sans relire; ça reste SON texte,
+    // juste plus propre et plus court s'il traînait en longueur.
+    if (mode === 'polish') {
+      const text = typeof body.text === 'string' ? body.text.trim() : '';
+      if (!text) return json({ error: 'missing_text' }, 400);
+      const prompt = isFr
+        ? `Corrige UNIQUEMENT l'orthographe et la grammaire de cette description ` +
+          `d'article (marketplace africaine Finjaro). Si elle dépasse 3 phrases ` +
+          `ou 60 mots, raccourcis-la à l'essentiel SANS perdre d'information ` +
+          `réelle (aucun fait — prix, taille, matière, quantité — ne doit ` +
+          `disparaître ni être inventé). Garde le ton et les mots de la ` +
+          `vendeuse autant que possible — ce n'est pas une réécriture. ` +
+          `Réponds UNIQUEMENT avec le texte corrigé, sans guillemets ni ` +
+          `commentaire.\n\nTexte: "${text}"`
+        : `Fix ONLY the spelling and grammar of this product description ` +
+          `(Finjaro, an African marketplace). If it's longer than 3 sentences ` +
+          `or 60 words, tighten it to the essentials WITHOUT losing any real ` +
+          `information (no fact — price, size, material, quantity — should ` +
+          `disappear or be invented). Keep the seller's tone and words as much ` +
+          `as possible — this is not a rewrite. Reply ONLY with the corrected ` +
+          `text, no quotes or comment.\n\nText: "${text}"`;
+
+      const data = await gemini(apiKey, {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } },
+      });
+      if (!data) return json({ error: 'gemini_error' }, 502);
+      const polished = textOf(data).replace(/^["']|["']$/g, '');
+      if (!polished) return json({ error: 'empty' }, 502);
+      sb.from('ai_usage').insert({ fn: 'vendor_copilot', cost_eur: COPILOT_CALL_COST_EUR }).then(() => {}, () => {});
+      return json({ text: polished });
     }
 
     // ----------------------------------------------- description (mode défaut)

@@ -100,6 +100,10 @@ export default function VendorProductEdit() {
   const [errors, setErrors] = useState({});
   const [genLoading, setGenLoading] = useState(false);
   const [suggestion, setSuggestion] = useState(null); // AI draft, editable before use
+  // Le bouton "Régénérer" doit rejouer la BONNE action ('generate' depuis
+  // rien, ou 'polish' sur le texte déjà tapé) — sans ça il régénérait
+  // toujours depuis rien, écrasant une correction demandée par « Corriger ».
+  const [suggestionSource, setSuggestionSource] = useState('generate');
   const [listingLoading, setListingLoading] = useState(false);
   const [priceHint, setPriceHint] = useState(null); // { fcfa, samples } — médiane catalogue
   const [scriptLoading, setScriptLoading] = useState(false);
@@ -163,6 +167,7 @@ export default function VendorProductEdit() {
       return;
     }
     setGenLoading(true);
+    setSuggestionSource('generate');
     try {
       const { data, error } = await supabase.functions.invoke('vendor-copilot', {
         body: {
@@ -175,6 +180,25 @@ export default function VendorProductEdit() {
       });
       if (error || !data?.description) throw error || new Error('empty');
       setSuggestion(data.description);
+    } catch {
+      toast.error(t('vendor.copilotError'));
+    } finally {
+      setGenLoading(false);
+    }
+  }
+
+  // Corrige l'orthographe et raccourcit ce que la vendeuse a DÉJÀ écrit —
+  // contrairement à generateDescription() ci-dessus, qui part de rien.
+  async function polishDescription() {
+    if (!form.description.trim()) return;
+    setGenLoading(true);
+    setSuggestionSource('polish');
+    try {
+      const { data, error } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'polish', text: form.description, lang: i18n.language },
+      });
+      if (error || !data?.text) throw error || new Error('empty');
+      setSuggestion(data.text);
     } catch {
       toast.error(t('vendor.copilotError'));
     } finally {
@@ -611,17 +635,33 @@ export default function VendorProductEdit() {
           </label>
         )}
         <div>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <span className="label mb-0">{t('vendor.productDescription')}</span>
-            <button
-              type="button"
-              onClick={generateDescription}
-              disabled={genLoading}
-              className="btn-ghost text-caption text-teal disabled:opacity-50"
-            >
-              {genLoading ? <IconLoader2 size={16} className="animate-spin" /> : <IconSparkles size={16} />}
-              {t('vendor.copilotGenerate')}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Corrige CE QUI EST DÉJÀ TAPÉ (orthographe + raccourci si trop
+                  long) — n'a de sens que si la vendeuse a écrit quelque chose;
+                  "Générer" ci-contre part de rien et reste toujours possible. */}
+              {form.description.trim() && (
+                <button
+                  type="button"
+                  onClick={polishDescription}
+                  disabled={genLoading}
+                  className="btn-ghost text-caption text-teal disabled:opacity-50"
+                >
+                  {genLoading && suggestionSource === 'polish' ? <IconLoader2 size={16} className="animate-spin" /> : <IconSparkles size={16} />}
+                  {t('vendor.copilotPolish')}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={generateDescription}
+                disabled={genLoading}
+                className="btn-ghost text-caption text-teal disabled:opacity-50"
+              >
+                {genLoading && suggestionSource === 'generate' ? <IconLoader2 size={16} className="animate-spin" /> : <IconSparkles size={16} />}
+                {t('vendor.copilotGenerate')}
+              </button>
+            </div>
           </div>
           <TextArea id="product-description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
 
@@ -641,7 +681,7 @@ export default function VendorProductEdit() {
                 </button>
                 <button
                   type="button"
-                  onClick={generateDescription}
+                  onClick={suggestionSource === 'polish' ? polishDescription : generateDescription}
                   disabled={genLoading}
                   className="rounded-input border border-hairline px-3 py-1.5 text-caption font-semibold text-ink disabled:opacity-50"
                 >
