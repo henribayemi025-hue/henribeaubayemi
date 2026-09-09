@@ -5,7 +5,7 @@ import {
   IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh,
   IconBrandWhatsapp, IconPhone, IconBrandInstagram, IconSearch, IconMovie,
   IconShieldCheck, IconRosetteDiscountCheck, IconTruckDelivery, IconHeadset,
-  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore,
+  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore, IconBolt,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -204,6 +204,9 @@ export default function ShopProfile() {
     shop.is_verified && { icon: IconRosetteDiscountCheck, label: t('shop.trustCertified') },
     (shop.offers_delivery || zones.length > 0) && { icon: IconTruckDelivery, label: t('shop.trustDelivery') },
     (shop.whatsapp || shop.phone) && { icon: IconHeadset, label: t('shop.trustContact') },
+    // Calculé à partir des vrais délais de réponse (chat_messages), recalculé
+    // par lot toutes les 30 min — jamais un chiffre affiché de mémoire.
+    shop.responds_fast && { icon: IconBolt, label: t('shop.trustFastReply') },
   ].filter(Boolean);
 
   const tabs = [
