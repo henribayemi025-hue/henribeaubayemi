@@ -499,7 +499,7 @@
     "checkoutAll": "Tout commander"
   },
   "nearYou": {
-    "shops": "Prestataires",
+    "shops": "Boutiques",
     "listings": "Annonces",
     "publishListing": "Publier une annonce",
     "distance": "{{km}} km",
@@ -536,7 +536,7 @@
     "searchTrade": "Chercher un métier…",
     "allTrades": "Tous les métiers",
     "noTradeMatch": "Aucun métier ne correspond.",
-    "noProviders": "Aucun prestataire inscrit pour l'instant dans cette zone.",
+    "noProviders": "Aucune boutique inscrite pour l'instant dans cette zone.",
     "noProviderInTrade": "Aucun prestataire en « {{trade}} » pour l'instant.",
     "becomeProvider": "Proposer mes services",
     "demandAll": "Tout",
@@ -554,7 +554,7 @@
     },
     "nearYouBadge": "Près de vous",
     "directoryTitle": "Annuaire & Carte géolocalisée",
-    "directorySubtitle": "Trouvez et contactez les meilleurs prestataires autour de vous.",
+    "directorySubtitle": "Trouvez et contactez les boutiques et prestataires autour de vous.",
     "directoryTab": "Annuaire des métiers",
     "mapTab": "Carte géolocalisée",
     "filterByTrade": "Filtrer par métier",
@@ -1457,6 +1457,7 @@
   "provider": {
     "details": "Détails",
     "book": "Réserver",
+    "contact": "Contacter",
     "fromPrice": "À partir de",
     "reviewCount_one": "{{count}} avis",
     "reviewCount_other": "{{count}} avis",

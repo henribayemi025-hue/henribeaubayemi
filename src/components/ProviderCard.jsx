@@ -6,7 +6,7 @@ import { ShopAvatar } from './ShopAvatar';
 import { ShopBanner } from './ShopBanner';
 import { Price } from './Price';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
-import { isServiceCategory } from '../lib/categories';
+import { isServiceCategory, isServiceShop } from '../lib/categories';
 
 // Carte prestataire riche: couverture + métier + portfolio + note + prix
 // d'appel. Remplace la ligne de liste plate (avatar + nom + note), qui ne
@@ -110,7 +110,10 @@ export function ProviderCard({ shop, portfolio = [], reviewCount = 0, fromPriceF
               onClick={() => onBook?.(shop)}
               className="rounded-input bg-teal px-3 py-1.5 text-caption font-semibold text-white transition active:scale-95"
             >
-              {t('provider.book')}
+              {/* « Réserver » n'a de sens que pour un vrai prestataire — cette
+                  carte affiche maintenant aussi de simples boutiques
+                  d'articles, à qui on écrit plutôt qu'on ne réserve. */}
+              {isServiceShop(shop) ? t('provider.book') : t('provider.contact')}
             </button>
           </div>
         </div>

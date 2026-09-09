@@ -20,7 +20,7 @@ import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { formatPrice } from '../../lib/currency';
 import { getPosition, distanceKm } from '../../lib/geo';
-import { isServiceCategory, isServiceShop, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
+import { isServiceCategory, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
 
 // Leaflet is heavy — only pull it in when the user opens the map view.
 const NearYouMap = lazy(() => import('../../components/NearYouMap'));
@@ -137,7 +137,11 @@ export default function NearYou() {
   }
 
   const { data, loading, error, retry } = useAsync(async () => {
-    const shopsQuery = supabase.from('shops').select('*').eq('status', 'active').order('followers_count', { ascending: false }).limit(40);
+    // 40 suffisait quand seuls les prestataires comptaient; ouvert à TOUTE
+    // boutique (voir plus bas), le vrai total (50 actives ce jour) le
+    // dépassait déjà — la limite recréait artificiellement le problème
+    // qu'on vient de corriger. Marge large pour absorber la croissance.
+    const shopsQuery = supabase.from('shops').select('*').eq('status', 'active').order('followers_count', { ascending: false }).limit(150);
     if (radius === 'country' && country) shopsQuery.eq('country', country);
     // Ce qui est CACHÉ par le filtre pays. Depuis la France, l'annuaire
     // n'affichait qu'un seul prestataire alors qu'il y en a sept ailleurs —
@@ -166,7 +170,10 @@ export default function NearYou() {
     // Surface (don't silently swallow) a listings error, but keep Boutiques usable.
     if (listingsRes.error) console.error('[NearYou] listings query failed:', listingsRes.error.message);
     const shops = shopsRes.data || [];
-    const providersElsewhere = (elsewhereRes.data || []).filter(isServiceShop).length;
+    // Toutes boutiques confondues désormais (voir plus bas): le chiffre
+    // d'« élargir » doit annoncer TOUT ce qui est caché par le filtre pays,
+    // pas seulement les prestataires.
+    const providersElsewhere = (elsewhereRes.data || []).length;
 
     const listingUserIds = [...new Set((listingsRes.data || []).map((l) => l.user_id).filter(Boolean))];
     let listings = listingsRes.data || [];
@@ -176,10 +183,11 @@ export default function NearYou() {
       listings = listings.map((l) => ({ ...l, profiles: { name: nomParId.get(l.user_id) } }));
     }
 
-    // Vitrine des cartes prestataire: photos du catalogue, nombre d'avis et
-    // prix d'appel. Deux requêtes groupées pour TOUTES les fiches — jamais
+    // Vitrine des cartes: photos du catalogue, nombre d'avis et prix
+    // d'appel — pour TOUTE boutique affichée ici, pas seulement les
+    // prestataires. Deux requêtes groupées pour TOUTES les fiches — jamais
     // une requête par carte.
-    const providerIds = shops.filter(isServiceShop).map((s) => s.id);
+    const providerIds = shops.map((s) => s.id);
     const portfolios = {};
     const reviewCounts = {};
     const minPrices = {};
@@ -244,13 +252,16 @@ export default function NearYou() {
     return kindFilter === 'service' ? isServiceCategory(l.category) : !isServiceCategory(l.category);
   });
 
-  // L'onglet Services ne liste que les PRESTATAIRES. Avant, il affichait
-  // toutes les boutiques actives — une boutique de vêtements se retrouvait
-  // dans l'annuaire des services, et le filtre par métier ne l'affectait
-  // même pas. Une boutique est prestataire dès qu'elle a un métier de
-  // service dans ses catégories.
+  // Beau: « il y a déjà 45 boutiques, autour de moi devrait TOUTES les
+  // montrer ». Avant, cet onglet ne gardait que les PRESTATAIRES (une
+  // boutique de vêtements ne s'y affichait jamais), ce qui vidait la carte
+  // et la liste d'un coup — comparé à un concurrent qui montre tout le monde,
+  // Finjaro paraissait avoir moins de boutiques qu'il n'en a réellement.
+  // Toute boutique active compte désormais; le filtre par métier (chips
+  // ci-dessous) reste utile pour qui cherche spécifiquement un service — il
+  // laisse alors naturellement de côté les boutiques dont aucune catégorie
+  // ne correspond, sans qu'il faille les exclure par avance.
   const filteredShops = (data?.shops || []).filter((s) => {
-    if (!isServiceShop(s)) return false;
     if (!serviceCat) return true;
     const wanted = categoryQueryIds(serviceCat);
     return (s.categories ?? []).some((c) => wanted.includes(c));
