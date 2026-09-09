@@ -677,6 +677,7 @@
     "emptyHint": "Contact a shop to start a conversation.",
     "pickConversation": "Pick a conversation on the left to open it.",
     "searchPlaceholder": "Search a shop, message someone…",
+    "peopleFound": "People",
     "newConversation": "New conversation",
     "searchNoMatch": "No shop matches \"{{query}}\"."
   },
