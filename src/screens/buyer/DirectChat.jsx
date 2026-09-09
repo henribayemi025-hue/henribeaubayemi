@@ -8,7 +8,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useToast } from '../../hooks/useToast';
 import { getPublicProfile, sendDirectMessage, markDirectConversationRead, hideDirectConversation, directErrorKey } from '../../lib/directMessages';
-import { SmartImage } from '../../components/SmartImage';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { ReportModal } from '../../components/ReportModal';
 import { ChatHeaderMenu } from '../../components/chat/ChatHeaderMenu';
@@ -16,6 +15,7 @@ import { ActionSheet } from '../../components/chat/ActionSheet';
 import { MessageGesture } from '../../components/chat/MessageGesture';
 import { QuotedMessage } from '../../components/chat/QuotedMessage';
 import { VoiceMessage } from '../../components/chat/VoiceMessage';
+import { ChatImage } from '../../components/chat/ChatImage';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 
@@ -310,11 +310,12 @@ export default function DirectChat() {
           return (
             <div key={m.id} id={`msg-${m.id}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <MessageGesture
+                className="max-w-[80%]"
                 onLongPress={() => setActionMsg(m)}
                 onReply={() => setReplyTo(m)}
               >
                 <div
-                  className={`max-w-[80%] select-none px-3.5 py-2.5 shadow-sm ${
+                  className={`max-w-full select-none px-3.5 py-2.5 shadow-sm ${
                     mine ? 'rounded-2xl rounded-br-md bg-teal text-white' : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
                   }`}
                 >
@@ -331,9 +332,7 @@ export default function DirectChat() {
                       />
                     </div>
                   )}
-                  {m.image_url && (
-                    <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
-                  )}
+                  {m.image_url && <ChatImage src={storageUrl('chat', m.image_url)} />}
                   {m.audio_url && (
                     <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
                   )}

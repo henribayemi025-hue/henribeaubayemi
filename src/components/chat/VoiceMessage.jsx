@@ -50,8 +50,29 @@ export function VoiceMessage({ src, seconds = null, mine = false }) {
       setCurrent(0);
       a.currentTime = 0;
     };
+    const relever = () => {
+      if (Number.isFinite(a.duration) && a.duration > 0) {
+        setDureeFichier(a.duration);
+        return true;
+      }
+      return false;
+    };
     const onMeta = () => {
-      if (Number.isFinite(a.duration) && a.duration > 0) setDureeFichier(a.duration);
+      if (relever()) return;
+      // Vocaux envoyés AVANT qu'on enregistre la durée en base: le fichier
+      // annonce une durée infinie (flux WebM). Le seul moyen de la connaître
+      // est de demander au navigateur de se placer très loin: il parcourt le
+      // fichier, découvre la vraie fin, et publie enfin la durée. On revient
+      // aussitôt au début. Sans ça, ces vocaux affichent 00:00 à vie —
+      // exactement ce que Beau voit sur ses deux vocaux de 21h19 et 21h20.
+      const onDuree = () => {
+        if (relever()) {
+          a.removeEventListener('durationchange', onDuree);
+          try { a.currentTime = 0; } catch { /* pas encore cherchable */ }
+        }
+      };
+      a.addEventListener('durationchange', onDuree);
+      try { a.currentTime = 1e101; } catch { /* flux non cherchable */ }
     };
     a.addEventListener('timeupdate', onTime);
     a.addEventListener('ended', onEnd);
@@ -89,7 +110,9 @@ export function VoiceMessage({ src, seconds = null, mine = false }) {
 
   return (
     <div className="flex w-56 max-w-full items-center gap-2.5 py-0.5">
-      <audio ref={audioRef} src={src} preload="none" className="hidden" />
+      {/* preload="metadata" seulement quand la durée manque en base: c'est le
+          seul cas où il faut interroger le fichier. */}
+      <audio ref={audioRef} src={src} preload={seconds ? 'none' : 'metadata'} className="hidden" />
       <button
         type="button"
         onClick={basculer}
@@ -110,8 +133,10 @@ export function VoiceMessage({ src, seconds = null, mine = false }) {
             />
           ))}
         </div>
+        {/* Tant que la durée reste inconnue, on n'affiche pas « 00:00 »: un
+            zéro affiché ferait croire à un vocal vide. */}
         <span className={`text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
-          {mmss(playing || current > 0 ? current : duree)}
+          {playing || current > 0 ? mmss(current) : duree > 0 ? mmss(duree) : '·'}
         </span>
       </div>
     </div>

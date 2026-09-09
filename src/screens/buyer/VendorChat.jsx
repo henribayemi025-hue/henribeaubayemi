@@ -17,6 +17,7 @@ import { ActionSheet } from '../../components/chat/ActionSheet';
 import { MessageGesture } from '../../components/chat/MessageGesture';
 import { QuotedMessage } from '../../components/chat/QuotedMessage';
 import { VoiceMessage } from '../../components/chat/VoiceMessage';
+import { ChatImage } from '../../components/chat/ChatImage';
 import { StoryViewer } from '../../components/StoryViewer';
 import { useShopStories } from '../../hooks/useShopStories';
 import { ShopAvatar } from '../../components/ShopAvatar';
@@ -646,8 +647,8 @@ export default function VendorChat({ vendor = false }) {
                 <div
                   className={
                     sticker
-                      ? 'max-w-[80%] px-1 select-none'
-                      : `max-w-[80%] select-none px-3.5 py-2.5 shadow-sm ${
+                      ? 'max-w-full px-1 select-none'
+                      : `max-w-full select-none px-3.5 py-2.5 shadow-sm ${
                           mine
                             ? 'rounded-2xl rounded-br-md bg-teal text-white'
                             : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
@@ -677,9 +678,10 @@ export default function VendorChat({ vendor = false }) {
                     </div>
                   )}
                   {m.image_url && (
-                    <button type="button" onClick={() => setViewerUrl(storageUrl('chat', m.image_url))} className="block">
-                      <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
-                    </button>
+                    <ChatImage
+                      src={storageUrl('chat', m.image_url)}
+                      onClick={() => setViewerUrl(storageUrl('chat', m.image_url))}
+                    />
                   )}
                   {m.audio_url && (
                     <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
@@ -717,6 +719,7 @@ export default function VendorChat({ vendor = false }) {
               return (
                 <div key={m.id} id={`msg-${m.id}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                   <MessageGesture
+                    className="max-w-[80%]"
                     disabled={!canForward}
                     onLongPress={() => setActionMsg(m)}
                     onReply={() => {

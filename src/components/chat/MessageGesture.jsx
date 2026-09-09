@@ -16,7 +16,7 @@ import { IconArrowBackUp } from '@tabler/icons-react';
 const SEUIL_REPONSE = 52;
 const DELAI_APPUI_LONG = 420;
 
-export function MessageGesture({ onLongPress, onReply, disabled = false, children }) {
+export function MessageGesture({ onLongPress, onReply, disabled = false, className = '', children }) {
   const [dx, setDx] = useState(0);
   const depart = useRef(null);
   const engage = useRef(false);
@@ -93,8 +93,12 @@ export function MessageGesture({ onLongPress, onReply, disabled = false, childre
 
   const pret = dx >= SEUIL_REPONSE * 0.72;
 
+  // La largeur maximale de la bulle se pose ICI, pas sur la bulle: sinon son
+  // « max-w-80% » se calcule contre ce conteneur, qui se calcule lui-même
+  // contre la bulle — la bulle finissait étranglée et coupait les mots en
+  // deux (Beau, capture du 09/09: « Chan / ce »).
   return (
-    <div className="relative flex min-w-0 items-center">
+    <div className={`relative flex items-center ${className}`}>
       {dx > 0 && (
         <span
           className={`pointer-events-none absolute left-0 flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
@@ -113,7 +117,7 @@ export function MessageGesture({ onLongPress, onReply, disabled = false, childre
         onClickCapture={onClickCapture}
         onContextMenu={(e) => e.preventDefault()}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined, touchAction: 'pan-y' }}
-        className={`flex min-w-0 ${dx ? '' : 'transition-transform duration-150'}`}
+        className={`flex w-full ${dx ? '' : 'transition-transform duration-150'}`}
       >
         {children}
       </div>

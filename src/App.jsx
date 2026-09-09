@@ -59,7 +59,24 @@ function lazyWithReload(factory) {
       // n'a pas fonctionné ».
       sessionStorage.removeItem(CHUNK_RELOAD_KEY);
       return mod;
-    } catch (err) {
+    } catch (premierEchec) {
+      // Une SECONDE tentative avant d'envisager le rechargement.
+      //
+      // Beau, en testant le 09/09: « dès que je sors d'une conversation, ça
+      // reload seulement ». Un morceau de code qui manque, c'est le plus
+      // souvent une coupure réseau d'une seconde (3G camerounaise), pas une
+      // vieille version — et dans ce cas recharger toute l'app pour rien est
+      // la pire réponse possible: on perd la page, le défilement, la frappe
+      // en cours. On retente donc une fois, et l'immense majorité passe.
+      try {
+        await new Promise((r) => setTimeout(r, 450));
+        const mod = await factory();
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+        return mod;
+      } catch {
+        /* vraiment absent: on tombe dans le rechargement ci-dessous */
+      }
+      const err = premierEchec;
       // Le garde-fou reste: un module réellement cassé ne doit pas faire
       // boucler la page indéfiniment. Il est simplement remis à zéro à
       // chaque chargement réussi.
