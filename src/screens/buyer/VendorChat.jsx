@@ -104,6 +104,13 @@ export default function VendorChat({ vendor = false }) {
   // naturel (WhatsApp) — on l'ajoute EN PLUS, sans retirer la flèche.
   const longPressTimer = useRef(null);
   const longPressFired = useRef(false);
+  // « Il n'y a pas le truc typing quand quelqu'un écrit » — indicateur
+  // éphémère (broadcast Realtime, jamais écrit en base): personne ne doit
+  // pouvoir consulter après coup qui était en train de taper quoi.
+  const [otherTyping, setOtherTyping] = useState(false);
+  const chatChannelRef = useRef(null);
+  const typingHideTimer = useRef(null);
+  const typingSentAt = useRef(0);
 
   // Live "@" mention suggestion (Twitter/Slack-style): while the trailing
   // token being typed is a prefix of "finouchou", offer a one-tap completion
@@ -169,6 +176,7 @@ export default function VendorChat({ vendor = false }) {
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           setMessages((m) => (m.some((x) => x.id === payload.new.id) ? m : [...m, payload.new]));
+          if (payload.new.sender_id !== user?.id) setOtherTyping(false);
         }
       )
       .on(
@@ -180,11 +188,29 @@ export default function VendorChat({ vendor = false }) {
           setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
         }
       )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.userId === user?.id) return;
+        setOtherTyping(true);
+        clearTimeout(typingHideTimer.current);
+        typingHideTimer.current = setTimeout(() => setOtherTyping(false), 3000);
+      })
       .subscribe();
+    chatChannelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
+      clearTimeout(typingHideTimer.current);
+      setOtherTyping(false);
     };
-  }, [conversationId]);
+  }, [conversationId, user?.id]);
+
+  // Diffuse "j'écris" au fil de la frappe — jamais plus d'une fois toutes
+  // les 2s, et rien de tout ça n'est jamais écrit en base.
+  function notifyTyping() {
+    const now = Date.now();
+    if (now - typingSentAt.current < 2000) return;
+    typingSentAt.current = now;
+    chatChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: user?.id } });
+  }
 
   useEffect(() => {
     // Anchor-based scroll is more reliable than scrollTop math when the
@@ -646,6 +672,15 @@ export default function VendorChat({ vendor = false }) {
                 </div>
               );
             })}
+            {otherTyping && (
+              <div className="flex justify-start" aria-label={t('chat.typing')}>
+                <div className="flex items-center gap-1 rounded-2xl border border-hairline bg-white px-3 py-3">
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: '150ms' }} />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            )}
             {finouThinking && (
               <div className="flex justify-start" aria-label={t('finou.typing')}>
                 <div className="flex items-center gap-1 rounded-2xl border border-teal/30 bg-teal/5 px-3 py-3">
@@ -762,7 +797,7 @@ export default function VendorChat({ vendor = false }) {
                   className="input flex-1"
                   placeholder={t('chat.placeholder')}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => { setInput(e.target.value); notifyTyping(); }}
                   onFocus={() => setStickerOpen(false)}
                   aria-label={t('chat.placeholder')}
                 />

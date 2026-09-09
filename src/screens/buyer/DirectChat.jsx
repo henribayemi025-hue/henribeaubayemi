@@ -47,6 +47,10 @@ export default function DirectChat() {
   const recordTimerRef = useRef(null);
   const recordCancelledRef = useRef(false);
   const recordSecondsRef = useRef(0);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const dmChannelRef = useRef(null);
+  const typingHideTimer = useRef(null);
+  const typingSentAt = useRef(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,7 +90,10 @@ export default function DirectChat() {
         { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           setMessages((m) => (m.some((x) => x.id === payload.new.id) ? m : [...m, payload.new]));
-          if (payload.new.sender_id !== user?.id) markDirectConversationRead(conversationId).catch(() => {});
+          if (payload.new.sender_id !== user?.id) {
+            markDirectConversationRead(conversationId).catch(() => {});
+            setOtherTyping(false);
+          }
         }
       )
       .on(
@@ -96,11 +103,27 @@ export default function DirectChat() {
           setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
         }
       )
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.userId === user?.id) return;
+        setOtherTyping(true);
+        clearTimeout(typingHideTimer.current);
+        typingHideTimer.current = setTimeout(() => setOtherTyping(false), 3000);
+      })
       .subscribe();
+    dmChannelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
+      clearTimeout(typingHideTimer.current);
+      setOtherTyping(false);
     };
   }, [conversationId, user?.id]);
+
+  function notifyTyping() {
+    const now = Date.now();
+    if (now - typingSentAt.current < 2000) return;
+    typingSentAt.current = now;
+    dmChannelRef.current?.send({ type: 'broadcast', event: 'typing', payload: { userId: user?.id } });
+  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -258,6 +281,15 @@ export default function DirectChat() {
             </div>
           );
         })}
+        {otherTyping && (
+          <div className="flex justify-start" aria-label={t('chat.typing')}>
+            <div className="flex items-center gap-1 rounded-2xl border border-hairline bg-white px-3 py-3">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-muted" />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: '150ms' }} />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-muted" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
         <div ref={endRef} />
       </div>
 
@@ -299,7 +331,7 @@ export default function DirectChat() {
                 className="input flex-1"
                 placeholder={t('chat.placeholder')}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); notifyTyping(); }}
                 aria-label={t('chat.placeholder')}
               />
             </>

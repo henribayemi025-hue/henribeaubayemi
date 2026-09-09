@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconMessageOff, IconUserPlus } from '@tabler/icons-react';
@@ -37,6 +37,18 @@ export default function DirectInbox() {
       return { ...c, other: byId[otherId] || { id: otherId, name: '—', avatar_url: null }, unread };
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    const channel = supabase
+      .channel(`dm-inbox-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'direct_conversations', filter: `user_a_id=eq.${user.id}` }, () => retry())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'direct_conversations', filter: `user_b_id=eq.${user.id}` }, () => retry())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, retry]);
 
   if (loading) {
     return (
