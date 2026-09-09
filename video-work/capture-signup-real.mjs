@@ -1,15 +1,22 @@
-// Vidéo « comment créer un compte » — 09/09.
+// Vidéo « comment créer un compte (et sa boutique) » — 09/09.
 //
-// Différence avec les captures précédentes: le fil d'accueil et la bande de
-// boutiques montrent de VRAIES fiches (nom, prix, boutique — lus en base il y
-// a quelques minutes), pas des données inventées. Seules les PHOTOS restent
-// des visuels de démonstration (public/demo-products): la connexion réseau
-// directe vers finjaro.net/Supabase est bloquée depuis ce bac à sable, donc
-// pas moyen de récupérer les vraies photos des vendeuses pour cet
-// enregistrement — et CLAUDE.md interdit de toute façon toute photo prise
-// ailleurs que chez la vendeuse elle-même. Le compte créé pendant
-// l'enregistrement est un mannequin (Aïcha K.) — jamais persisté nulle part,
-// tout le réseau est intercepté par Playwright.
+// v2: Beau, après la première coupe — « trop court, trop rapide, ça ne
+// montre pas comment créer sa boutique ». La vidéo va donc du tout début
+// (accueil anonyme) jusqu'à l'arrivée dans l'espace vendeur: inscription,
+// choix produits/services, catégories, photos de la boutique, et le vrai
+// tableau de bord vide d'une boutique toute neuve. Pays: Cameroun — c'est là
+// qu'il y a le plus de vraies fiches à montrer.
+//
+// Le fil d'accueil et la bande de boutiques montrent de VRAIES fiches (nom,
+// prix, boutique — lus en base ce matin), pas des données inventées. Seules
+// les PHOTOS restent des visuels de démonstration (public/demo-products): la
+// connexion réseau directe vers finjaro.net/Supabase est bloquée depuis ce
+// bac à sable, donc pas moyen de récupérer les vraies photos des vendeuses
+// pour cet enregistrement — et CLAUDE.md interdit de toute façon toute photo
+// prise ailleurs que chez la vendeuse elle-même. Le compte ET la boutique
+// créés pendant l'enregistrement sont un mannequin (Aïcha K. / « Chez
+// Aïcha ») — jamais persistés nulle part, tout le réseau est intercepté par
+// Playwright.
 import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
@@ -79,6 +86,13 @@ const FEED_ITEMS = [
   shop_slug: FEED_SHOPS[x.shop].slug, shop_country: FEED_SHOPS[x.shop].country,
 }));
 
+// La boutique n'existe qu'APRÈS l'étape 4 de « Devenir vendeuse » — avant
+// ça, `myShop` reste `null` et toute requête « ma boutique » (owner_id)
+// revient vide, exactement comme pour un compte tout neuf.
+let myShop = null;
+const DEMO = '/home/user/henribeaubayemi/public/demo-products';
+let imgServed = 0;
+
 function mockRoutes(page) {
   page.route('**/realtime/v1/**', (r) => r.abort());
   page.route('**/auth/v1/**', (r) => {
@@ -88,23 +102,54 @@ function mockRoutes(page) {
     return r.fulfill({ json: {} });
   });
   page.route('**/functions/v1/**', (r) => r.fulfill({ json: {} }));
+  // Upload des photos de boutique (bannière + logo): accepté sans écrire
+  // nulle part.
+  page.route('**/storage/v1/object/shops/**', (r) => r.fulfill({ status: 200, json: { Key: 'ok' } }));
+  // Lecture des photos envoyées: 1er appel = bannière, 2e = logo — l'ordre
+  // exact dans lequel le formulaire les envoie.
+  page.route('**/img/shops/**', (r) => {
+    const file = imgServed++ === 0 ? 'wd-01.jpg' : 'turban-01.jpg';
+    return r.fulfill({ status: 200, contentType: 'image/jpeg', body: readFileSync(join(DEMO, file)) });
+  });
+  // Rappel des photos orphelines sur le tableau de bord: aucune boutique
+  // toute neuve n'en a, mais la liste doit répondre pour ne pas laisser
+  // useAsync en erreur silencieuse.
+  page.route('**/storage/v1/object/list/**', (r) => r.fulfill({ json: [] }));
   page.route('**/rest/v1/**', (route) => {
     const req = route.request();
     const url = new URL(req.url());
     const table = url.pathname.split('/rest/v1/')[1].split('?')[0];
     const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
     const method = req.method();
-    if (method === 'POST') return route.fulfill({ status: 201, headers: { 'content-type': 'application/json' }, body: '[]' });
+    if (method === 'POST') {
+      // La candidature ET la boutique s'insèrent ici (BecomeVendor.submit) —
+      // c'est CE point qui fait exister `myShop` pour tout ce qui suit
+      // (tableau de bord, bascule acheteuse/vendeuse…).
+      if (table === 'shops') {
+        const body = req.postDataJSON();
+        myShop = {
+          id: 'shop-aicha', owner_id: U, slug: `${(body.name || 'boutique').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-demo`,
+          name: body.name, bio: body.bio || null, country: body.country, city: body.city || null,
+          categories: body.categories || [], avatar_url: body.avatar_url || null, banner_url: body.banner_url || null,
+          rating: 0, reviews_count: 0, followers_count: 0, is_verified: false, id_verified: false, phone_confirmed: false,
+          status: 'active', seller_points: 0, offers_delivery: false, delivery_fee_fcfa: null,
+          rotation_enabled: false, featured_until: null, whatsapp: body.whatsapp || null,
+          phone: PHONE, instagram: null, created_at: iso(0),
+        };
+      }
+      return route.fulfill({ status: 201, headers: { 'content-type': 'application/json' }, body: '[]' });
+    }
     if (method === 'PATCH') return route.fulfill({ status: 204, body: '' });
     let rows = [];
     if (table === 'shops') {
       const qs = url.searchParams.toString();
-      // Compte tout neuf: aucune boutique à lui — le bandeau « Devenir
-      // vendeuse » du profil ne s'affiche que si cette requête revient vide.
-      if (qs.includes('owner_id')) rows = [];
+      if (qs.includes('owner_id')) rows = myShop ? [myShop] : [];
       else if (qs.includes('slug=eq.')) {
         const slug = url.searchParams.get('slug').slice(3);
         rows = FEED_SHOPS.filter((s) => s.slug === slug);
+      } else if (qs.includes('id=eq.') && myShop) {
+        const id = url.searchParams.get('id').slice(3);
+        rows = id === myShop.id ? [myShop] : [];
       } else rows = FEED_SHOPS;
     } else if (table === 'profiles') rows = [profile];
     else if (table === 'products') {
@@ -129,6 +174,12 @@ const ctx = await browser.newContext({
   recordVideo: { dir: RECDIR, size: { width: 540, height: 960 } },
   locale: 'fr-FR', timezoneId: 'Africa/Douala',
 });
+// Sans ça, `getCurrentPosition()` reste parfois bloqué indéfiniment en
+// headless (ni succès ni erreur) — « Devenir vendeuse » restait alors
+// coincé sur son bouton qui tourne, à l'étape 4.
+await ctx.addInitScript(() => {
+  navigator.geolocation.getCurrentPosition = (_ok, err) => err && err({ code: 1, message: 'denied' });
+});
 const page = await ctx.newPage();
 mockRoutes(page);
 page.on('pageerror', (e) => console.log('PAGEERROR', String(e).slice(0, 150)));
@@ -139,6 +190,11 @@ await page.waitForTimeout(1200);
 // La visite guidée (premier passage) bloque tout le reste tant qu'on ne l'a
 // pas fermée.
 await page.locator('button', { hasText: 'Passer' }).click({ timeout: 3000 }).catch(() => {});
+await page.waitForTimeout(600);
+// Le bandeau « installer l'app » partage le même z-index que la modale
+// Bienvenue plus tard dans le parcours et cache son bouton « Plus tard » —
+// on l'écarte une fois pour toutes ici (le choix reste en mémoire 14 jours).
+await page.locator('.bg-ink button[aria-label="Fermer"]').click({ timeout: 3000 }).catch(() => {});
 await page.waitForTimeout(1000);
 await page.evaluate(() => document.querySelector('main')?.scrollTo({ top: 500, behavior: 'smooth' }));
 await page.waitForTimeout(1600);
@@ -171,10 +227,82 @@ await page.locator('button[type="submit"]').click();
 await page.waitForTimeout(2200);
 console.log('ok compte créé, arrivée sur le profil');
 
-// ---------- 4. Profil authentifié — teaser « Devenir vendeuse » ----------
-await page.waitForTimeout(1800);
+// ---------- 4. Profil authentifié — ouvrir sa boutique ----------
+await page.waitForTimeout(1600);
+// La modale « Bienvenue » (achat/vente) envoie vers Finia — pas le parcours
+// qu'on veut montrer ici. On la ferme, comme le ferait quelqu'un qui va
+// directement à la carte « Vendre » en dessous.
+await page.locator('.z-50 button', { hasText: 'Plus tard' }).click({ timeout: 5000 }).catch(() => {});
+await page.waitForTimeout(600);
 await page.evaluate(() => document.querySelector('main')?.scrollTo({ top: 120, behavior: 'smooth' }));
-await page.waitForTimeout(2600);
+await page.waitForTimeout(1400);
+await page.locator('button, a', { hasText: 'Ouvrir ma boutique gratuite' }).click();
+await page.waitForTimeout(1400);
+console.log('ok entrée dans « Devenir vendeuse »');
+
+// ---------- 5. Devenir vendeuse — étape 1: identité de la boutique ----------
+const SHOP_NAME = 'Chez Aïcha';
+await page.locator('input').nth(0).type(SHOP_NAME, { delay: 55 });
+await page.waitForTimeout(500);
+// Le Cameroun est déjà le pays détecté par défaut — on le confirme à
+// l'écran plutôt que de le changer, exactement ce qu'une vendeuse y ferait.
+await page.locator('select').selectOption('CM');
+await page.waitForTimeout(500);
+await page.locator('input').nth(1).type('Douala', { delay: 55 });
+await page.waitForTimeout(700);
+// Elle regarde les trois choix avant de trancher — « Des services » puis
+// « Des articles », dans cet ordre, pour bien montrer que le choix existe.
+await page.locator('button', { hasText: 'Des services' }).click();
+await page.waitForTimeout(700);
+await page.locator('button', { hasText: 'Des articles' }).click();
+await page.waitForTimeout(900);
+const chips = page.locator('.chip');
+await chips.nth(0).click();
+await page.waitForTimeout(400);
+await chips.nth(2).click();
+await page.waitForTimeout(900);
+await page.locator('button', { hasText: 'Continuer' }).click();
+await page.waitForTimeout(1200);
+console.log('ok étape 1 (identité + catégories)');
+
+// ---------- 6. Étape 2: qui elle est ----------
+await page.locator('input').nth(0).type('Aïcha', { delay: 55 });
+await page.waitForTimeout(300);
+await page.locator('input').nth(1).type('K.', { delay: 55 });
+await page.waitForTimeout(300);
+await page.locator('input[type="tel"]').type('+237 651 23 45 67', { delay: 45 });
+await page.waitForTimeout(900);
+await page.locator('button', { hasText: 'Continuer' }).click();
+await page.waitForTimeout(1200);
+console.log('ok étape 2 (identité vendeuse)');
+
+// ---------- 7. Étape 3: les photos de la boutique ----------
+await page.locator('input[type="file"]').nth(0).setInputFiles(join(DEMO, 'wd-01.jpg'));
+await page.waitForTimeout(1800);
+await page.locator('input[type="file"]').nth(1).setInputFiles(join(DEMO, 'turban-01.jpg'));
+await page.waitForTimeout(1800);
+await page.locator('textarea').type('Mode & beauté, livraison à Douala.', { delay: 30 });
+await page.waitForTimeout(900);
+await page.locator('button', { hasText: 'Continuer' }).click();
+await page.waitForTimeout(1200);
+console.log('ok étape 3 (photos + description)');
+
+// ---------- 8. Étape 4: récapitulatif + validation ----------
+await page.waitForTimeout(1400);
+await page.locator('input[type="checkbox"]').check();
+await page.waitForTimeout(700);
+await page.locator('button', { hasText: 'Envoyer ma demande' }).click();
+await page.waitForTimeout(2000);
+console.log('ok boutique créée');
+
+// ---------- 9. Entrer dans l'espace vendeur ----------
+await page.locator('button', { hasText: 'Aller à mon espace vendeur' }).click();
+await page.waitForTimeout(2400); // écran de bienvenue « Mode vendeuse », transition automatique
+await page.waitForTimeout(1400);
+console.log('ok arrivée dans l’espace vendeur');
+
+// ---------- 10. Tableau de bord — boutique toute neuve ----------
+await page.waitForTimeout(2400);
 
 await page.close();
 await ctx.close();
