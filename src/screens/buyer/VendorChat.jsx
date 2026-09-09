@@ -12,6 +12,8 @@ import { SmartImage } from '../../components/SmartImage';
 import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
 import { Modal } from '../../components/Modal';
+import { StoryViewer } from '../../components/StoryViewer';
+import { useShopStories } from '../../hooks/useShopStories';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { MessagesShell } from './Inbox';
@@ -78,6 +80,8 @@ export default function VendorChat({ vendor = false }) {
   const [replySuggestions, setReplySuggestions] = useState(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
+  const { stories: shopStories } = useShopStories(!vendor ? meta?.shop_id : null);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -344,22 +348,37 @@ export default function VendorChat({ vendor = false }) {
             <IconChevronLeft size={22} />
           </button>
         )}
-        <Link to={shop?.slug ? `/boutique/${shop.slug}` : '#'} className="flex min-w-0 flex-1 items-center gap-2.5">
-          <ShopAvatar
-            src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
-            fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null}
-            name={shop?.name}
-            seed={meta?.shop_id}
-            className="h-9 w-9 shrink-0"
-          />
-          <span className="min-w-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {/* Beau: « dans le chat tu peux voir direct le story d'une
+              boutique, comme dans WhatsApp ». L'avatar seul ouvre le
+              lecteur de stories s'il y en a une en cours; sinon (ou côté
+              vendeuse, qui verrait toujours SA propre boutique ici) il mène
+              à la fiche boutique comme avant. */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!vendor && shopStories.length > 0) setStoryOpen(true);
+              else navigate(shop?.slug ? `/boutique/${shop.slug}` : '#');
+            }}
+            className="shrink-0"
+            aria-label={!vendor && shopStories.length > 0 ? t('shop.viewStory') : t('chat.viewShop')}
+          >
+            <ShopAvatar
+              src={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
+              fallbackSrc={shop?.avatar_url ? storageUrl('shops', shop.avatar_url) : null}
+              name={shop?.name}
+              seed={meta?.shop_id}
+              className={`h-9 w-9 shrink-0 ${!vendor && shopStories.length > 0 ? 'ring-2 ring-teal ring-offset-2 ring-offset-white' : ''}`}
+            />
+          </button>
+          <Link to={shop?.slug ? `/boutique/${shop.slug}` : '#'} className="min-w-0 flex-1">
             <span className="flex items-center gap-1">
               <span className="line-clamp-1 text-body font-semibold text-ink">{shop?.name || t('nav.messages')}</span>
               {shop?.is_verified && <VerifiedBadge size={14} />}
             </span>
             <span className="block text-[11px] text-muted">{t('chat.viewShop')}</span>
-          </span>
-        </Link>
+          </Link>
+        </div>
         {waNumber && (
           <a
             href={`https://wa.me/${waNumber}`}
@@ -699,6 +718,15 @@ export default function VendorChat({ vendor = false }) {
           </ul>
         )}
       </Modal>
+      {storyOpen && shopStories.length > 0 && (
+        <StoryViewer
+          stories={shopStories}
+          shopName={shop?.name}
+          shopAvatarSrc={shop?.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
+          shopSeed={meta?.shop_id}
+          onClose={() => setStoryOpen(false)}
+        />
+      )}
     </div>
   );
 

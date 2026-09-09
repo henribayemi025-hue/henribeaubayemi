@@ -25,6 +25,8 @@ import { isServiceShop, isServiceCategory } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
+import { StoryViewer } from '../../components/StoryViewer';
+import { useShopStories } from '../../hooks/useShopStories';
 
 // « Ouvert / Fermé » en direct depuis les horaires déclarés par la boutique:
 // { open: '08:00', close: '18:00', closed_days: [0] } (0 = dimanche).
@@ -58,6 +60,7 @@ export default function ShopProfile() {
   const [reportOpen, setReportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [allZones, setAllZones] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
 
   const { data, loading, error, retry } = useAsync(async () => {
     // All four filter directly by slug (products/reviews/reels via an inner
@@ -88,6 +91,8 @@ export default function ShopProfile() {
     if (pErr) throw pErr;
     return { shop, products: products || [], reviews: reviews || [], reels: reels || [] };
   }, [slug], { cacheKey: `shop:${slug}` });
+
+  const { stories: shopStories } = useShopStories(data?.shop?.id);
 
   useEffect(() => {
     if (!user || !data?.shop) return;
@@ -253,7 +258,19 @@ export default function ShopProfile() {
             l'icône vers leurs vidéos, à côté de la photo de l'entreprise).
             Le bouton n'apparaît que si la boutique A des reels. */}
         <div className="-mt-10 flex items-end justify-between">
-          <ShopAvatar src={avatar} name={shop.name} seed={shop.id} className="h-20 w-20 border-2 border-white lg:h-24 lg:w-24" />
+          <button
+            type="button"
+            onClick={() => shopStories.length > 0 && setStoryOpen(true)}
+            aria-label={shopStories.length > 0 ? t('shop.viewStory') : shop.name}
+            className={shopStories.length === 0 ? 'cursor-default' : ''}
+          >
+            <ShopAvatar
+              src={avatar}
+              name={shop.name}
+              seed={shop.id}
+              className={`h-20 w-20 border-2 border-white lg:h-24 lg:w-24 ${shopStories.length > 0 ? 'ring-2 ring-teal ring-offset-2' : ''}`}
+            />
+          </button>
           {data.reels.length > 0 && (
             <Link
               to={`/fin?shop=${shop.id}`}
@@ -607,6 +624,15 @@ export default function ShopProfile() {
       </div>
 
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} targetType="shop" targetId={shop.id} />
+      {storyOpen && shopStories.length > 0 && (
+        <StoryViewer
+          stories={shopStories}
+          shopName={shop.name}
+          shopAvatarSrc={avatar}
+          shopSeed={shop.id}
+          onClose={() => setStoryOpen(false)}
+        />
+      )}
     </div>
   );
 }
