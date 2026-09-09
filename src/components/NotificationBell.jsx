@@ -27,6 +27,7 @@ const TYPE_ICON = {
   referral_reward: IconSparkles,
   rotation: IconRefresh,
   photos_orphelines: IconPhoto,
+  premium_pitch: IconSparkles,
 };
 
 // Icône clochette + panneau, posée là où l'app est ouverte le plus souvent
