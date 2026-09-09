@@ -834,7 +834,7 @@
     "sellerPoints": "Points vendeur",
     "sellerPointsHint": "+10 par commande livrée",
     "inviteCta": "Fais passer ta boutique en avant",
-    "premiumCta": "Passe à Finia Premium — 5 000 FCFA/mois",
+    "premiumCta": "Passe à Finia Premium — {{price}}/mois",
     "premiumHint": "Essayage virtuel pour tes clientes + Finia répond à ta place quand tu es débordée. Écris à Finia (onglet Fin) pour l'activer.",
     "premiumActiveUntil": "Finia Premium actif jusqu'au {{when}}",
     "actionAddProduct": "Ajouter",

@@ -17,6 +17,7 @@ import { PushPrompt } from '../../components/PushPrompt';
 import { timeAgo } from '../../lib/format';
 import { estEnAvant } from '../../lib/featured';
 import { estPremium } from '../../lib/premium';
+import { currencyForCountry, formatPrice } from '../../lib/currency';
 
 function pct(cur, prev) {
   if (!prev) return cur > 0 ? 100 : 0;
@@ -307,7 +308,13 @@ export default function VendorDashboard() {
               <p className="text-body font-semibold text-ink">
                 {estPremium(shop)
                   ? t('vendor.premiumActiveUntil', { when: new Date(shop.premium_until).toLocaleDateString(i18n.language) })
-                  : t('vendor.premiumCta')}
+                  // Beau, en testant depuis l'Europe: « ça me dit 5000 FCFA
+                  // alors que je suis en Europe » — le prix était écrit en
+                  // dur dans le texte traduit, jamais converti dans la
+                  // devise de LA BOUTIQUE (même règle que VendorPrice
+                  // partout ailleurs dans cet écran: la vendeuse a saisi ses
+                  // propres prix dans sa devise, celui-ci doit s'y tenir).
+                  : t('vendor.premiumCta', { price: formatPrice(5000, currencyForCountry(shop.country), i18n.language) })}
               </p>
               <p className="mt-0.5 text-caption text-muted">{t('vendor.premiumHint')}</p>
             </div>

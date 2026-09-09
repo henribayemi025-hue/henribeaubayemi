@@ -834,7 +834,7 @@
     "sellerPoints": "Seller points",
     "sellerPointsHint": "+10 per delivered order",
     "inviteCta": "Move your shop up the home screen",
-    "premiumCta": "Upgrade to Finia Premium — 5,000 FCFA/month",
+    "premiumCta": "Upgrade to Finia Premium — {{price}}/month",
     "premiumHint": "Virtual try-on for your customers + Finia replies for you when you're swamped. Message Finia (the Fin tab) to activate it.",
     "premiumActiveUntil": "Finia Premium active until {{when}}",
     "leaderboard": "Leaderboard",
