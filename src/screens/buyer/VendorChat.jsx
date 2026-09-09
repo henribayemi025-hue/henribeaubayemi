@@ -91,12 +91,23 @@ export default function VendorChat({ vendor = false }) {
         .from('conversations')
         .update(vendor ? { vendor_unread: 0 } : { buyer_unread: 0 })
         .eq('id', conversationId);
+      // Accusé de lecture: tout message de l'autre partie encore marqué
+      // "delivered" passe à "read" — l'expéditeur voit ses coches changer
+      // via l'écoute realtime ci-dessous.
+      if (user?.id) {
+        await supabase
+          .from('chat_messages')
+          .update({ status: 'read' })
+          .eq('conversation_id', conversationId)
+          .neq('sender_id', user.id)
+          .neq('status', 'read');
+      }
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [conversationId, vendor]);
+  }, [conversationId, vendor, user?.id]);
 
   useEffect(() => {
     load();
@@ -111,6 +122,15 @@ export default function VendorChat({ vendor = false }) {
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           setMessages((m) => (m.some((x) => x.id === payload.new.id) ? m : [...m, payload.new]));
+        }
+      )
+      .on(
+        // Accusé de lecture: quand l'autre partie lit, son statut passe à
+        // 'read' côté base — on répercute ça dans les coches en direct.
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
         }
       )
       .subscribe();
@@ -365,7 +385,11 @@ export default function VendorChat({ vendor = false }) {
                     {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
                     <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
                       <span>{clockTime(m.created_at, i18n.language)}</span>
-                      {mine && !m.failed && (m.id.toString().startsWith('temp') ? <IconCheck size={13} /> : <IconChecks size={13} />)}
+                      {mine && !m.failed && (
+                        m.id.toString().startsWith('temp')
+                          ? <IconCheck size={13} />
+                          : <IconChecks size={13} className={m.status === 'read' ? 'text-brass' : ''} />
+                      )}
                       {m.failed && (
                         <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
                           <IconAlertCircle size={14} /> {t('common.retry')}
