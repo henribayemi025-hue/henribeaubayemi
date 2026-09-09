@@ -1,81 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconBan } from '@tabler/icons-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
+import { useBlock } from '../hooks/useBlock';
 import { useToast } from '../hooks/useToast';
 import { Modal } from './Modal';
 import { Button } from './Button';
 
-// Bloquer l'autre partie d'une conversation.
+// Bouton "Bloquer" autonome (fiche publique d'une personne).
 //
 // Exigé par la règle 1.2 de l'App Store: une app avec messagerie doit
-// permettre de bloquer quelqu'un d'abusif. C'est la première chose que cherche
-// une examinatrice Apple quand elle ouvre un fil de discussion.
-//
-// La messagerie relie une PERSONNE à une BOUTIQUE, donc le blocage a deux
-// sens (voir migration 0047): l'acheteuse bloque la boutique (`shopId`), la
-// vendeuse bloque l'acheteuse (`userId`). On en passe exactement un.
-//
-// Le blocage est appliqué EN BASE par un déclencheur sur chat_messages: cacher
-// les messages ici ne ferait qu'une illusion, la personne bloquée pourrait
-// continuer à écrire.
+// permettre de bloquer quelqu'un d'abusif. Dans les fils de discussion, la
+// même action vit maintenant dans le menu ⋮ de l'en-tête (ChatHeaderMenu) —
+// les deux passent par le hook useBlock, donc par la même logique.
 export function BlockButton({ shopId = null, userId = null, onChange }) {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const toast = useToast();
-  const [blocked, setBlocked] = useState(false);
+  const { blocked, busy, toggle, disponible } = useBlock({ shopId, userId, onChange });
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
 
-  const column = shopId ? 'shop_id' : 'blocked_user_id';
-  const value = shopId || userId;
-
-  useEffect(() => {
-    if (!user || !value) return;
-    let alive = true;
-    supabase
-      .from('blocks')
-      .select('id')
-      .eq('blocker_id', user.id)
-      .eq(column, value)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!alive) return;
-        setBlocked(!!data);
-        onChange?.(!!data);
-      });
-    return () => { alive = false; };
-    // onChange est recréé à chaque rendu du parent: l'inclure relancerait la
-    // requête en boucle.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, value, column]);
-
-  async function toggle() {
-    if (!user || !value) return;
-    setBusy(true);
-    const { error } = blocked
-      ? await supabase.from('blocks').delete().eq('blocker_id', user.id).eq(column, value)
-      : await supabase.from('blocks').insert({ blocker_id: user.id, [column]: value });
-    setBusy(false);
+  async function appliquer() {
+    const { error, blocked: next } = await toggle();
     if (error) {
       toast.error(error.message);
       return;
     }
-    const next = !blocked;
-    setBlocked(next);
-    onChange?.(next);
     setOpen(false);
     toast.success(t(next ? 'report.blocked' : 'report.unblocked'));
   }
 
-  if (!user || !value) return null;
+  if (!disponible) return null;
 
   return (
     <>
       <button
         type="button"
-        onClick={() => (blocked ? toggle() : setOpen(true))}
+        onClick={() => (blocked ? appliquer() : setOpen(true))}
         aria-label={t(blocked ? 'report.unblock' : 'report.block')}
         title={t(blocked ? 'report.unblock' : 'report.block')}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
@@ -93,7 +52,7 @@ export function BlockButton({ shopId = null, userId = null, onChange }) {
           {/* Button ne connaît que primary/secondary/ghost: la teinte
               d'avertissement passe par className, pas par une variante qui
               n'existe pas et laisserait le bouton sans aucun style. */}
-          <Button onClick={toggle} loading={busy} className="!bg-danger">
+          <Button onClick={appliquer} loading={busy} className="!bg-danger">
             {t('report.block')}
           </Button>
         </div>

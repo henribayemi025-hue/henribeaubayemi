@@ -45,11 +45,14 @@ export async function startDirectConversation(otherUserId) {
 
 // Lève 'request_pending' si l'initiatrice a déjà envoyé son unique message
 // d'attente, ou 'blocked'.
-export async function sendDirectMessage(conversationId, body, imageUrl = null) {
+export async function sendDirectMessage(conversationId, body, imageUrl = null, audioUrl = null, replyToId = null, audioSeconds = null) {
   const { data, error } = await supabase.rpc('send_direct_message', {
     p_conversation_id: conversationId,
     p_body: body,
     p_image_url: imageUrl,
+    p_audio_url: audioUrl,
+    p_reply_to_id: replyToId,
+    p_audio_seconds: audioSeconds,
   });
   if (error) throw error;
   return data;

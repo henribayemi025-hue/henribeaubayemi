@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessageOff, IconUserPlus, IconTrash } from '@tabler/icons-react';
+import { IconMessageOff, IconUserPlus } from '@tabler/icons-react';
 import { supabase, storageThumbUrl, storageUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
@@ -11,6 +11,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
+import { SwipeRow } from '../../components/chat/SwipeRow';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 
@@ -114,10 +115,11 @@ export default function DirectInbox() {
       ) : (
         <ul>
           {list.map((c) => (
-            <li key={c.id} className="group relative">
+            <li key={c.id}>
+              <SwipeRow onDelete={() => setToDelete(c.id)} label={t('common.delete')}>
               <Link
                 to={`/profile/messages/${c.id}`}
-                className="flex items-center gap-3 border-b border-hairline px-4 py-3 pr-11 transition-colors hover:bg-base"
+                className="flex items-center gap-3 border-b border-hairline px-4 py-3 transition-colors hover:bg-base"
               >
                 <ShopAvatar
                   src={c.other.avatar_url ? storageThumbUrl('shops', c.other.avatar_url) : null}
@@ -141,17 +143,7 @@ export default function DirectInbox() {
                   </span>
                 )}
               </Link>
-              {/* Supprimer une conversation ("il ya pas eu delete") — masque
-                  seulement de mon côté, l'autre personne garde son fil. */}
-              <button
-                type="button"
-                onClick={() => setToDelete(c.id)}
-                aria-label={t('dm.deleteConversation')}
-                title={t('dm.deleteConversation')}
-                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-danger-bg hover:text-danger"
-              >
-                <IconTrash size={16} />
-              </button>
+              </SwipeRow>
             </li>
           ))}
         </ul>

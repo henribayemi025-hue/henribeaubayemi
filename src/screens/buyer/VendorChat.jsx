@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconMoodSmile, IconMicrophone, IconTrash } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconArrowBackUp, IconCopy, IconMoodSmile, IconMicrophone, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
@@ -9,10 +9,14 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useToast } from '../../hooks/useToast';
 import { SmartImage } from '../../components/SmartImage';
-import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
+import { ChatHeaderMenu } from '../../components/chat/ChatHeaderMenu';
+import { ActionSheet } from '../../components/chat/ActionSheet';
+import { MessageGesture } from '../../components/chat/MessageGesture';
+import { QuotedMessage } from '../../components/chat/QuotedMessage';
+import { VoiceMessage } from '../../components/chat/VoiceMessage';
 import { StoryViewer } from '../../components/StoryViewer';
 import { useShopStories } from '../../hooks/useShopStories';
 import { ShopAvatar } from '../../components/ShopAvatar';
@@ -66,15 +70,14 @@ export default function VendorChat({ vendor = false }) {
   // base refuserait ensuite, sans que personne comprenne pourquoi.
   const [blocked, setBlocked] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  // Beau (deux fois): « il ya pas eu delete UNE conversation ». Masque
-  // uniquement de mon côté (buyer_hidden/vendor_hidden) — l'autre partie
-  // garde son fil, et un nouveau message le refait réapparaître chez moi.
-  const [deleteConvOpen, setDeleteConvOpen] = useState(false);
-  const [deletingConv, setDeletingConv] = useState(false);
   // Beau, en testant: taper une photo envoyée ne faisait rien — elle
   // restait coincée dans sa petite bulle. Plein écran au tap, comme
   // n'importe quelle appli de messagerie.
   const [viewerUrl, setViewerUrl] = useState(null);
+  // Gestes façon WhatsApp sur une bulle: appui long = feuille d'actions,
+  // glissement latéral = répondre en citant.
+  const [actionMsg, setActionMsg] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
   // Transférer un message vers une autre de mes conversations, comme WhatsApp.
   const [forwardMsg, setForwardMsg] = useState(null);
   const [forwardTargets, setForwardTargets] = useState([]);
@@ -105,11 +108,6 @@ export default function VendorChat({ vendor = false }) {
   const endRef = useRef(null);
   const fileRef = useRef(null);
   const inputRef = useRef(null);
-  // Beau, en testant: « j'ai appuyé longtemps pour transférer, ça n'a rien
-  // fait ». La petite flèche existait déjà, mais l'appui long est le geste
-  // naturel (WhatsApp) — on l'ajoute EN PLUS, sans retirer la flèche.
-  const longPressTimer = useRef(null);
-  const longPressFired = useRef(false);
   // « Il n'y a pas le truc typing quand quelqu'un écrit » — indicateur
   // éphémère (broadcast Realtime, jamais écrit en base): personne ne doit
   // pouvoir consulter après coup qui était en train de taper quoi.
@@ -128,6 +126,19 @@ export default function VendorChat({ vendor = false }) {
     setInput((v) => v.replace(/@(\w*)$/i, '@finouchou '));
     inputRef.current?.focus();
   }
+
+  // Accusé de lecture: tout message de l'autre partie encore marqué
+  // "delivered" passe à "read" — l'expéditeur voit son "Vu" apparaître via
+  // l'écoute realtime. Appelé à l'ouverture ET à chaque message reçu.
+  const markAsRead = useCallback(async () => {
+    if (!user?.id || document.visibilityState === 'hidden') return;
+    await supabase
+      .from('chat_messages')
+      .update({ status: 'read' })
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', user.id)
+      .neq('status', 'read');
+  }, [conversationId, user?.id]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,23 +162,13 @@ export default function VendorChat({ vendor = false }) {
         .from('conversations')
         .update(vendor ? { vendor_unread: 0 } : { buyer_unread: 0 })
         .eq('id', conversationId);
-      // Accusé de lecture: tout message de l'autre partie encore marqué
-      // "delivered" passe à "read" — l'expéditeur voit ses coches changer
-      // via l'écoute realtime ci-dessous.
-      if (user?.id) {
-        await supabase
-          .from('chat_messages')
-          .update({ status: 'read' })
-          .eq('conversation_id', conversationId)
-          .neq('sender_id', user.id)
-          .neq('status', 'read');
-      }
+      await markAsRead();
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [conversationId, vendor, user?.id]);
+  }, [conversationId, vendor, user?.id, markAsRead]);
 
   useEffect(() => {
     load();
@@ -182,7 +183,24 @@ export default function VendorChat({ vendor = false }) {
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
           setMessages((m) => (m.some((x) => x.id === payload.new.id) ? m : [...m, payload.new]));
-          if (payload.new.sender_id !== user?.id) setOtherTyping(false);
+          if (payload.new.sender_id !== user?.id) {
+            setOtherTyping(false);
+            // LE bug du "Vu": le passage en "lu" ne se faisait qu'au montage
+            // de l'écran. Quand les deux personnes discutent en direct, le
+            // chat est DÉJÀ ouvert: les messages qui arrivaient ensuite ne
+            // repassaient donc jamais en "lu", et l'expéditeur restait sur
+            // les coches à vie. C'est exactement ce que Beau a constaté en
+            // testant à deux (ses messages: tous "delivered" en base).
+            markAsRead();
+          }
+        }
+      )
+      .on(
+        // Un message supprimé chez l'autre doit disparaître ici aussi.
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          setMessages((m) => m.filter((x) => x.id !== payload.old?.id));
         }
       )
       .on(
@@ -207,7 +225,7 @@ export default function VendorChat({ vendor = false }) {
       clearTimeout(typingHideTimer.current);
       setOtherTyping(false);
     };
-  }, [conversationId, user?.id]);
+  }, [conversationId, user?.id, markAsRead]);
 
   // Diffuse "j'écris" au fil de la frappe — jamais plus d'une fois toutes
   // les 2s, et rien de tout ça n'est jamais écrit en base.
@@ -288,19 +306,60 @@ export default function VendorChat({ vendor = false }) {
     }
   }
 
-  async function send(body, imageUrl = null, audioUrl = null) {
+  async function send(body, imageUrl = null, audioUrl = null, audioSeconds = null) {
     const text = body?.trim();
     if (!text && !imageUrl && !audioUrl) return;
     const tempId = `temp-${Date.now()}`;
-    const payload = { conversation_id: conversationId, sender_id: user.id, sender_role: role, body: text || null, image_url: imageUrl, audio_url: audioUrl };
+    const payload = {
+      conversation_id: conversationId,
+      sender_id: user.id,
+      sender_role: role,
+      body: text || null,
+      image_url: imageUrl,
+      audio_url: audioUrl,
+      audio_seconds: audioSeconds,
+      reply_to_id: replyTo?.id || null,
+    };
     setMessages((m) => [...m, { ...payload, id: tempId, created_at: new Date().toISOString() }]);
     setInput('');
+    setReplyTo(null);
     await deliver(payload, tempId);
   }
 
   function retryMessage(msg) {
     setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, failed: false } : x)));
-    deliver({ conversation_id: conversationId, sender_id: user.id, sender_role: role, body: msg.body, image_url: msg.image_url, audio_url: msg.audio_url }, msg.id);
+    deliver({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      sender_role: role,
+      body: msg.body,
+      image_url: msg.image_url,
+      audio_url: msg.audio_url,
+      audio_seconds: msg.audio_seconds ?? null,
+      reply_to_id: msg.reply_to_id || null,
+    }, msg.id);
+  }
+
+  // Supprimer SON message, comme WhatsApp: il part pour tout le monde (la
+  // policy en base n'autorise que ses propres messages). Les réponses qui le
+  // citaient restent, avec "message supprimé" à la place de l'extrait.
+  async function deleteMessage(msg) {
+    const avant = messages;
+    setMessages((m) => m.filter((x) => x.id !== msg.id));
+    const { error: dErr } = await supabase.from('chat_messages').delete().eq('id', msg.id);
+    if (dErr) {
+      setMessages(avant);
+      toast.error(dErr.message || t('errors.generic'));
+    }
+  }
+
+  async function copyMessage(msg) {
+    try {
+      await navigator.clipboard.writeText(msg.body || '');
+      toast.success(t('chat.copied'));
+    } catch {
+      toast.error(t('errors.generic'));
+    }
   }
 
   async function fetchSuggestions() {
@@ -317,29 +376,6 @@ export default function VendorChat({ vendor = false }) {
       setReplySuggestions([]);
     } finally {
       setSuggestLoading(false);
-    }
-  }
-
-  function startLongPress(msg) {
-    longPressFired.current = false;
-    clearTimeout(longPressTimer.current);
-    longPressTimer.current = setTimeout(() => {
-      longPressFired.current = true;
-      if (navigator.vibrate) navigator.vibrate(15);
-      openForward(msg);
-    }, 450);
-  }
-  function cancelLongPress() {
-    clearTimeout(longPressTimer.current);
-  }
-  // Un appui long qui se termine par un relâchement déclenche quand même le
-  // clic natif du bouton dessous (photo, réessayer) — on l'avale UNE fois
-  // via la phase de capture, avant qu'il n'atteigne ce bouton.
-  function swallowClickAfterLongPress(e) {
-    if (longPressFired.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      longPressFired.current = false;
     }
   }
 
@@ -387,20 +423,15 @@ export default function VendorChat({ vendor = false }) {
   }
 
   async function deleteConversation() {
-    setDeletingConv(true);
-    try {
-      const { error: dErr } = await supabase
-        .from('conversations')
-        .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
-        .eq('id', conversationId);
-      if (dErr) throw dErr;
-      navigate(vendor ? '/vendor/messages' : '/chat', { replace: true });
-    } catch (e) {
-      toast.error(e?.message || t('errors.generic'));
-    } finally {
-      setDeletingConv(false);
-      setDeleteConvOpen(false);
+    const { error: dErr } = await supabase
+      .from('conversations')
+      .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
+      .eq('id', conversationId);
+    if (dErr) {
+      toast.error(dErr.message || t('errors.generic'));
+      return;
     }
+    navigate(vendor ? '/vendor/messages' : '/inbox', { replace: true });
   }
 
   async function startRecording() {
@@ -415,7 +446,8 @@ export default function VendorChat({ vendor = false }) {
       recorder.onstop = async () => {
         stream.getTracks().forEach((tr) => tr.stop());
         clearInterval(recordTimerRef.current);
-        const cancelled = recordCancelledRef.current || recordSecondsRef.current < 1;
+        const duree = recordSecondsRef.current;
+        const cancelled = recordCancelledRef.current || duree < 1;
         setRecording(false);
         setRecordSeconds(0);
         if (cancelled || audioChunksRef.current.length === 0) return;
@@ -426,7 +458,9 @@ export default function VendorChat({ vendor = false }) {
           const path = `${user.id}/${uid()}.${ext}`;
           const { error: upErr } = await supabase.storage.from('chat').upload(path, blob, { contentType: recorder.mimeType || 'audio/webm' });
           if (upErr) throw upErr;
-          await send(null, null, path);
+          // La durée mesurée ici est la SEULE fiable: le fichier WebM produit
+          // par le navigateur n'en contient aucune (voir VoiceMessage).
+          await send(null, null, path, duree);
         } catch (e) {
           toast.error(e.message || t('errors.generic'));
         } finally {
@@ -538,51 +572,23 @@ export default function VendorChat({ vendor = false }) {
             <IconPhone size={18} />
           </a>
         )}
-        {/* Signaler existait déjà partout ailleurs (boutique, article, reel)
-            mais pas ici — Beau, en testant: « j'ai vu bloquer mais pas
-            signaler ». Même bouton compact que Bloquer juste à côté, même
-            sens acheteuse/vendeuse. */}
-        <button
-          type="button"
-          onClick={() => setReportOpen(true)}
-          aria-label={t('report.report')}
-          title={t('report.report')}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
-        >
-          <IconFlag size={18} />
-        </button>
+        {/* Signaler, Bloquer (règle 1.2 de l'App Store) et Supprimer la
+            conversation vivent maintenant derrière un seul ⋮ — Beau: « en
+            haut il y a delete, signaler, bloquer alors que ça devait être
+            sur un truc ». */}
+        <ChatHeaderMenu
+          shopId={vendor ? null : meta?.shop_id}
+          userId={vendor ? meta?.buyer_id : null}
+          onBlockChange={setBlocked}
+          onReport={() => setReportOpen(true)}
+          onDelete={deleteConversation}
+        />
         <ReportModal
           open={reportOpen}
           onClose={() => setReportOpen(false)}
           targetType={vendor ? 'user' : 'shop'}
           targetId={vendor ? meta?.buyer_id : meta?.shop_id}
         />
-        {/* Bloquer: l'acheteuse bloque la boutique, la vendeuse bloque
-            l'acheteuse. Exigé par la règle 1.2 de l'App Store, et c'est le
-            premier bouton que cherche une examinatrice dans un fil. */}
-        <BlockButton
-          shopId={vendor ? null : meta?.shop_id}
-          userId={vendor ? meta?.buyer_id : null}
-          onChange={setBlocked}
-        />
-        {/* Beau (deux fois): « il ya pas eu delete UNE conversation ». */}
-        <button
-          type="button"
-          onClick={() => setDeleteConvOpen(true)}
-          aria-label={t('chat.deleteConversation')}
-          title={t('chat.deleteConversation')}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-danger"
-        >
-          <IconTrash size={18} />
-        </button>
-        <Modal open={deleteConvOpen} onClose={() => setDeleteConvOpen(false)} title={t('chat.deleteConversation')}>
-          <div className="space-y-4">
-            <p className="text-body text-muted">{t('chat.deleteConversationConfirm')}</p>
-            <Button onClick={deleteConversation} loading={deletingConv} className="!bg-danger">
-              {t('common.delete')}
-            </Button>
-          </div>
-        </Modal>
       </header>
       {loading ? (
         <div className="flex-1 space-y-3 p-4">
@@ -629,6 +635,7 @@ export default function VendorChat({ vendor = false }) {
               // flip mid-render on token refresh) so a render never throws.
               const mine = !!user && m.sender_id === user.id;
               const canForward = !m.failed && (m.body || m.image_url || m.audio_url);
+              const cite = m.reply_to_id ? messages.find((x) => x.id === m.reply_to_id) : null;
               // Sticker: un emoji seul s'affiche en grand SANS bulle, comme
               // WhatsApp — un vrai texte garde sa bulle normale.
               const sticker = !m.image_url && isStickerBody(m.body);
@@ -646,17 +653,28 @@ export default function VendorChat({ vendor = false }) {
                             : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
                         }`
                   }
-                  onPointerDown={() => canForward && startLongPress(m)}
-                  onPointerUp={cancelLongPress}
-                  onPointerLeave={cancelLongPress}
-                  onPointerCancel={cancelLongPress}
-                  onClickCapture={swallowClickAfterLongPress}
-                  onContextMenu={(e) => canForward && e.preventDefault()}
                 >
                   {m.auto_reply && (
                     <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
                       <IconSparkles size={12} /> {t('chat.autoReplyBadge')}
                     </p>
+                  )}
+                  {m.reply_to_id && (
+                    <div className="mb-1.5">
+                      <QuotedMessage
+                        message={cite}
+                        mine={mine}
+                        t={t}
+                        auteur={
+                          cite
+                            ? (!!user && cite.sender_id === user.id ? t('chat.you') : (vendor ? meta?.buyer_name || t('chat.theBuyer') : shop?.name || ''))
+                            : ''
+                        }
+                        onClick={cite ? () => {
+                          document.getElementById(`msg-${cite.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } : null}
+                      />
+                    </div>
                   )}
                   {m.image_url && (
                     <button type="button" onClick={() => setViewerUrl(storageUrl('chat', m.image_url))} className="block">
@@ -664,7 +682,7 @@ export default function VendorChat({ vendor = false }) {
                     </button>
                   )}
                   {m.audio_url && (
-                    <audio controls preload="metadata" src={storageUrl('chat', m.audio_url)} className="mb-1 h-10 w-56 max-w-full rounded-input" />
+                    <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
                   )}
                   {m.body && (
                     sticker
@@ -692,24 +710,22 @@ export default function VendorChat({ vendor = false }) {
                   </div>
                 </div>
               );
-              // Transférer: petite flèche accolée du côté extérieur de la
-              // bulle, comme le "hover forward" de WhatsApp — sauf qu'ici
-              // elle reste visible en permanence (pas de survol sur mobile).
-              const forwardBtn = canForward && (
-                <button
-                  type="button"
-                  onClick={() => openForward(m)}
-                  aria-label={t('chat.forward')}
-                  className="mb-1 shrink-0 self-end rounded-full p-1.5 text-muted transition-colors hover:bg-base hover:text-ink"
-                >
-                  <IconArrowForward size={15} />
-                </button>
-              );
+              // Plus de flèche "transférer" collée en permanence à chaque
+              // bulle: Beau (« c'est pas propre, fais comme WhatsApp »).
+              // Tout passe par les deux gestes — appui long pour le menu,
+              // glissement pour répondre.
               return (
-                <div key={m.id} className={`flex items-end gap-0.5 ${mine ? 'justify-end' : 'justify-start'}`}>
-                  {!mine && bubble}
-                  {forwardBtn}
-                  {mine && bubble}
+                <div key={m.id} id={`msg-${m.id}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <MessageGesture
+                    disabled={!canForward}
+                    onLongPress={() => setActionMsg(m)}
+                    onReply={() => {
+                      setReplyTo(m);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {bubble}
+                  </MessageGesture>
                 </div>
               );
             })}
@@ -799,6 +815,24 @@ export default function VendorChat({ vendor = false }) {
               </div>
             </div>
           )}
+          {/* Réponse en cours: l'extrait cité reste sous les yeux tant qu'on
+              rédige, exactement comme WhatsApp. */}
+          {replyTo && !blocked && (
+            <div className="border-t border-hairline bg-white px-3 pt-2">
+              <QuotedMessage
+                message={replyTo}
+                t={t}
+                auteur={
+                  !!user && replyTo.sender_id === user.id
+                    ? t('chat.you')
+                    : vendor
+                      ? meta?.buyer_name || t('chat.theBuyer')
+                      : shop?.name || ''
+                }
+                onClose={() => setReplyTo(null)}
+              />
+            </div>
+          )}
           {blocked ? (
             <div className="shrink-0 border-t border-hairline bg-white p-4 text-center text-caption text-muted">
               {t('report.blockedNotice')}
@@ -812,7 +846,7 @@ export default function VendorChat({ vendor = false }) {
               send(text);
               if (mentioned) askFinou(text.replace(FINOU_MENTION_RE, '').trim() || text);
             }}
-            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion || stickerOpen ? '' : 'border-t border-hairline'}`}
+            className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion || stickerOpen || replyTo ? '' : 'border-t border-hairline'}`}
           >
             {recording ? (
               <div className="flex flex-1 items-center gap-2 rounded-input bg-base px-3 py-2.5">
@@ -895,6 +929,46 @@ export default function VendorChat({ vendor = false }) {
           <img src={viewerUrl} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
+      {/* Appui long sur une bulle: les actions de WhatsApp, dans l'ordre où
+          il les propose. "Supprimer" n'apparaît que sur ses propres
+          messages — la base refuserait de toute façon les autres. */}
+      <ActionSheet
+        open={!!actionMsg}
+        onClose={() => setActionMsg(null)}
+        actions={[
+          {
+            key: 'reply',
+            icon: IconArrowBackUp,
+            label: t('chat.reply'),
+            onClick: () => { setReplyTo(actionMsg); inputRef.current?.focus(); },
+          },
+          {
+            key: 'forward',
+            icon: IconArrowForward,
+            label: t('chat.forward'),
+            onClick: () => openForward(actionMsg),
+          },
+          actionMsg?.body && {
+            key: 'copy',
+            icon: IconCopy,
+            label: t('chat.copy'),
+            onClick: () => copyMessage(actionMsg),
+          },
+          !!user && actionMsg?.sender_id === user.id && {
+            key: 'delete',
+            icon: IconTrash,
+            label: t('chat.deleteMessage'),
+            danger: true,
+            onClick: () => deleteMessage(actionMsg),
+          },
+          !!user && actionMsg?.sender_id !== user.id && {
+            key: 'report',
+            icon: IconFlag,
+            label: t('report.report'),
+            onClick: () => setReportOpen(true),
+          },
+        ]}
+      />
       <Modal open={!!forwardMsg} onClose={() => setForwardMsg(null)} title={t('chat.forwardTo')}>
         {forwardLoading ? (
           <div className="space-y-3">

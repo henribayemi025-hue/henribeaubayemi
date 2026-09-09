@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessageOff, IconMessages, IconSearch, IconX, IconTrash } from '@tabler/icons-react';
+import { IconMessageOff, IconMessages, IconSearch, IconX } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -12,6 +12,7 @@ import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
+import { SwipeRow } from '../../components/chat/SwipeRow';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 import { nameMatches } from '../../lib/searchNorm';
@@ -221,10 +222,11 @@ export function ConversationList({ vendor = false, activeId = null }) {
         const unread = vendor ? c.vendor_unread : c.buyer_unread;
         const active = c.id === activeId;
         return (
-          <li key={c.id} className="group relative">
+          <li key={c.id}>
+            <SwipeRow onDelete={() => setToDelete(c.id)} label={t('common.delete')}>
             <Link
               to={`${base}/${c.id}`}
-              className={`flex items-center gap-3 border-b border-hairline px-4 py-3 pr-11 transition-colors ${
+              className={`flex items-center gap-3 border-b border-hairline px-4 py-3 transition-colors ${
                 active ? 'border-l-[3px] border-l-teal bg-teal-light pl-[13px]' : 'hover:bg-base'
               }`}
             >
@@ -247,15 +249,7 @@ export function ConversationList({ vendor = false, activeId = null }) {
                 <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">{unread}</span>
               )}
             </Link>
-            <button
-              type="button"
-              onClick={() => setToDelete(c.id)}
-              aria-label={t('chat.deleteConversation')}
-              title={t('chat.deleteConversation')}
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-danger-bg hover:text-danger"
-            >
-              <IconTrash size={16} />
-            </button>
+            </SwipeRow>
           </li>
         );
       })}

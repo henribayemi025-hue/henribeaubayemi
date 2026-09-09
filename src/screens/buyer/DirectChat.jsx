@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconChecks, IconFlag, IconChevronLeft, IconMicrophone, IconTrash } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconChecks, IconFlag, IconChevronLeft, IconMicrophone, IconTrash, IconArrowBackUp, IconCopy } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,10 +10,12 @@ import { useToast } from '../../hooks/useToast';
 import { getPublicProfile, sendDirectMessage, markDirectConversationRead, hideDirectConversation, directErrorKey } from '../../lib/directMessages';
 import { SmartImage } from '../../components/SmartImage';
 import { ShopAvatar } from '../../components/ShopAvatar';
-import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
-import { Modal } from '../../components/Modal';
-import { Button } from '../../components/Button';
+import { ChatHeaderMenu } from '../../components/chat/ChatHeaderMenu';
+import { ActionSheet } from '../../components/chat/ActionSheet';
+import { MessageGesture } from '../../components/chat/MessageGesture';
+import { QuotedMessage } from '../../components/chat/QuotedMessage';
+import { VoiceMessage } from '../../components/chat/VoiceMessage';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 
@@ -39,8 +41,10 @@ export default function DirectChat() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [deleteConvOpen, setDeleteConvOpen] = useState(false);
-  const [deletingConv, setDeletingConv] = useState(false);
+  // Gestes façon WhatsApp: appui long = feuille d'actions, glissement =
+  // répondre en citant.
+  const [actionMsg, setActionMsg] = useState(null);
+  const [replyTo, setReplyTo] = useState(null);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const scroller = useRef(null);
@@ -107,6 +111,13 @@ export default function DirectChat() {
           setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'direct_messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          setMessages((m) => m.filter((x) => x.id !== payload.old?.id));
+        }
+      )
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload?.userId === user?.id) return;
         setOtherTyping(true);
@@ -139,15 +150,16 @@ export default function DirectChat() {
   // attend; l'autre peut toujours répondre (sa réponse débloque tout).
   const requestLocked = conv && !conv.unlocked && isInitiator && myPriorCount >= 1;
 
-  async function send(body, imageUrl = null, audioUrl = null) {
+  async function send(body, imageUrl = null, audioUrl = null, audioSeconds = null) {
     const text = body?.trim();
     if (!text && !imageUrl && !audioUrl) return;
     setSending(true);
     try {
-      const msg = await sendDirectMessage(conversationId, text || null, imageUrl, audioUrl);
+      const msg = await sendDirectMessage(conversationId, text || null, imageUrl, audioUrl, replyTo?.id || null, audioSeconds);
       setMessages((m) => (m.some((x) => x.id === msg.id) ? m : [...m, msg]));
       setConv((c) => (c ? { ...c, unlocked: c.unlocked || !isInitiator } : c));
       setInput('');
+      setReplyTo(null);
     } catch (e) {
       toast.error(t(directErrorKey(e)));
     } finally {
@@ -155,16 +167,31 @@ export default function DirectChat() {
     }
   }
 
+  async function deleteMessage(msg) {
+    const avant = messages;
+    setMessages((m) => m.filter((x) => x.id !== msg.id));
+    const { error: dErr } = await supabase.from('direct_messages').delete().eq('id', msg.id);
+    if (dErr) {
+      setMessages(avant);
+      toast.error(dErr.message || t('errors.generic'));
+    }
+  }
+
+  async function copyMessage(msg) {
+    try {
+      await navigator.clipboard.writeText(msg.body || '');
+      toast.success(t('chat.copied'));
+    } catch {
+      toast.error(t('errors.generic'));
+    }
+  }
+
   async function deleteConversation() {
-    setDeletingConv(true);
     try {
       await hideDirectConversation(conversationId);
       navigate('/profile/messages', { replace: true });
     } catch (e) {
       toast.error(e.message || t('errors.generic'));
-    } finally {
-      setDeletingConv(false);
-      setDeleteConvOpen(false);
     }
   }
 
@@ -180,7 +207,8 @@ export default function DirectChat() {
       recorder.onstop = async () => {
         stream.getTracks().forEach((tr) => tr.stop());
         clearInterval(recordTimerRef.current);
-        const cancelled = recordCancelledRef.current || recordSecondsRef.current < 1;
+        const duree = recordSecondsRef.current;
+        const cancelled = recordCancelledRef.current || duree < 1;
         setRecording(false);
         setRecordSeconds(0);
         if (cancelled || audioChunksRef.current.length === 0) return;
@@ -191,7 +219,7 @@ export default function DirectChat() {
           const path = `${user.id}/${uid()}.${ext}`;
           const { error: upErr } = await supabase.storage.from('chat').upload(path, blob, { contentType: recorder.mimeType || 'audio/webm' });
           if (upErr) throw upErr;
-          await send(null, null, path);
+          await send(null, null, path, duree);
         } catch (e) {
           toast.error(e.message || t('errors.generic'));
         } finally {
@@ -264,22 +292,12 @@ export default function DirectChat() {
           />
           <span className="line-clamp-1 text-body font-semibold text-ink">{other?.name || '—'}</span>
         </Link>
-        <BlockButton userId={other?.id} />
-        <button onClick={() => setReportOpen(true)} aria-label={t('report.report')} className="p-1.5 text-muted">
-          <IconFlag size={18} />
-        </button>
-        {/* Beau (deux fois): « il ya pas eu delete UNE conversation ». */}
-        <button onClick={() => setDeleteConvOpen(true)} aria-label={t('chat.deleteConversation')} title={t('chat.deleteConversation')} className="p-1.5 text-muted hover:text-danger">
-          <IconTrash size={18} />
-        </button>
-        <Modal open={deleteConvOpen} onClose={() => setDeleteConvOpen(false)} title={t('chat.deleteConversation')}>
-          <div className="space-y-4">
-            <p className="text-body text-muted">{t('chat.deleteConversationConfirm')}</p>
-            <Button onClick={deleteConversation} loading={deletingConv} className="!bg-danger">
-              {t('common.delete')}
-            </Button>
-          </div>
-        </Modal>
+        {/* Signaler / Bloquer / Supprimer derrière un seul ⋮, comme WhatsApp. */}
+        <ChatHeaderMenu
+          userId={other?.id}
+          onReport={() => setReportOpen(true)}
+          onDelete={deleteConversation}
+        />
       </header>
 
       <div ref={scroller} className="flex-1 space-y-2 overflow-y-auto p-3">
@@ -288,25 +306,44 @@ export default function DirectChat() {
         )}
         {messages.map((m) => {
           const mine = !!user && m.sender_id === user.id;
+          const cite = m.reply_to_id ? messages.find((x) => x.id === m.reply_to_id) : null;
           return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] px-3.5 py-2.5 shadow-sm ${
-                  mine ? 'rounded-2xl rounded-br-md bg-teal text-white' : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
-                }`}
+            <div key={m.id} id={`msg-${m.id}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+              <MessageGesture
+                onLongPress={() => setActionMsg(m)}
+                onReply={() => setReplyTo(m)}
               >
-                {m.image_url && (
-                  <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
-                )}
-                {m.audio_url && (
-                  <audio controls preload="metadata" src={storageUrl('chat', m.audio_url)} className="mb-1 h-10 w-56 max-w-full rounded-input" />
-                )}
-                {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
-                <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
-                  <span>{clockTime(m.created_at, i18n.language)}</span>
-                  {mine && (m.status === 'read' ? <span className="font-semibold text-brass">{t('chat.seen')}</span> : <IconChecks size={13} />)}
+                <div
+                  className={`max-w-[80%] select-none px-3.5 py-2.5 shadow-sm ${
+                    mine ? 'rounded-2xl rounded-br-md bg-teal text-white' : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
+                  }`}
+                >
+                  {m.reply_to_id && (
+                    <div className="mb-1.5">
+                      <QuotedMessage
+                        message={cite}
+                        mine={mine}
+                        t={t}
+                        auteur={cite ? (!!user && cite.sender_id === user.id ? t('chat.you') : other?.name || '') : ''}
+                        onClick={cite ? () => {
+                          document.getElementById(`msg-${cite.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } : null}
+                      />
+                    </div>
+                  )}
+                  {m.image_url && (
+                    <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
+                  )}
+                  {m.audio_url && (
+                    <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
+                  )}
+                  {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
+                  <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
+                    <span>{clockTime(m.created_at, i18n.language)}</span>
+                    {mine && (m.status === 'read' ? <span className="font-semibold text-brass">{t('chat.seen')}</span> : <IconChecks size={13} />)}
+                  </div>
                 </div>
-              </div>
+              </MessageGesture>
             </div>
           );
         })}
@@ -325,6 +362,17 @@ export default function DirectChat() {
       {!conv.unlocked && (
         <div className="border-t border-hairline bg-base px-3 py-2 text-center text-caption text-muted">
           {isInitiator ? t('dm.requestPendingBanner') : t('dm.requestBanner', { name: other?.name })}
+        </div>
+      )}
+
+      {replyTo && !requestLocked && (
+        <div className="border-t border-hairline bg-white px-3 pt-2">
+          <QuotedMessage
+            message={replyTo}
+            t={t}
+            auteur={!!user && replyTo.sender_id === user.id ? t('chat.you') : other?.name || ''}
+            onClose={() => setReplyTo(null)}
+          />
         </div>
       )}
 
@@ -397,6 +445,27 @@ export default function DirectChat() {
         </form>
       )}
 
+      <ActionSheet
+        open={!!actionMsg}
+        onClose={() => setActionMsg(null)}
+        actions={[
+          { key: 'reply', icon: IconArrowBackUp, label: t('chat.reply'), onClick: () => setReplyTo(actionMsg) },
+          actionMsg?.body && { key: 'copy', icon: IconCopy, label: t('chat.copy'), onClick: () => copyMessage(actionMsg) },
+          !!user && actionMsg?.sender_id === user.id && {
+            key: 'delete',
+            icon: IconTrash,
+            label: t('chat.deleteMessage'),
+            danger: true,
+            onClick: () => deleteMessage(actionMsg),
+          },
+          !!user && actionMsg?.sender_id !== user.id && {
+            key: 'report',
+            icon: IconFlag,
+            label: t('report.report'),
+            onClick: () => setReportOpen(true),
+          },
+        ]}
+      />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} targetType="user" targetId={other?.id} />
     </div>
   );
