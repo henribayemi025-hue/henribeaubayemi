@@ -647,7 +647,10 @@
     "title": "Messages",
     "empty": "Aucun message.",
     "emptyHint": "Contacte une boutique pour démarrer une conversation.",
-    "pickConversation": "Choisis une conversation à gauche pour l'ouvrir."
+    "pickConversation": "Choisis une conversation à gauche pour l'ouvrir.",
+    "searchPlaceholder": "Chercher une boutique, écrire à quelqu'un…",
+    "newConversation": "Nouvelle conversation",
+    "searchNoMatch": "Aucune boutique ne correspond à « {{query}} »."
   },
   "checkout": {
     "title": "Commande",

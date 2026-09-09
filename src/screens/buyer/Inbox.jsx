@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessageOff, IconMessages } from '@tabler/icons-react';
+import { IconMessageOff, IconMessages, IconSearch, IconX } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { nameMatches } from '../../lib/searchNorm';
+import { getOrCreateConversation } from '../../lib/chat';
 
 // Shared conversation list. `vendor` flag switches perspective + link base.
 // `activeId` surligne la conversation ouverte — indispensable en deux
@@ -18,6 +21,17 @@ import { timeAgo } from '../../lib/format';
 export function ConversationList({ vendor = false, activeId = null }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
+  // Beau: « il doit y avoir un truc pour rechercher directement une boutique,
+  // taper un nom directement en haut, pour écrire à une boutique même sans
+  // avoir déjà de conversation avec elle ». Recherche locale sur les fils
+  // déjà ouverts + recherche en base sur TOUTES les boutiques actives dès
+  // qu'on tape — deux listes, jamais confondues (voir plus bas).
+  const [searchQuery, setSearchQuery] = useState('');
+  const [shopResults, setShopResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [starting, setStarting] = useState(null);
 
   const { data, loading, error, retry } = useAsync(async () => {
     let query = supabase
@@ -47,21 +61,138 @@ export function ConversationList({ vendor = false, activeId = null }) {
     };
   }, [user, vendor, retry]);
 
+  // Recherche de boutiques à qui écrire pour la première fois — seulement
+  // côté acheteuse: une vendeuse cherchant une PERSONNE, c'est la messagerie
+  // de personne à personne, un chantier à part (pas encore construit).
+  useEffect(() => {
+    if (vendor || !searchQuery.trim()) {
+      setShopResults([]);
+      return undefined;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const id = setTimeout(async () => {
+      const { data: shops } = await supabase
+        .from('shops')
+        .select('id, slug, name, avatar_url, is_verified, city')
+        .eq('status', 'active')
+        .ilike('name', `%${searchQuery.trim()}%`)
+        .limit(20);
+      if (!cancelled) {
+        setShopResults(shops || []);
+        setSearching(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [searchQuery, vendor]);
+
+  async function startConversation(shop) {
+    if (!user || starting) return;
+    setStarting(shop.id);
+    try {
+      const convId = await getOrCreateConversation(user.id, shop.id);
+      setSearchQuery('');
+      navigate(`/chat/${convId}`);
+    } catch (e) {
+      if (e.code === 'own_shop') toast.info(t('chat.ownShop'));
+      else toast.error(e.message || t('errors.generic'));
+    } finally {
+      setStarting(null);
+    }
+  }
+
   const base = vendor ? '/vendor/messages' : '/chat';
+  // Les boutiques déjà en conversation ne se répètent pas dans « Nouvelle
+  // conversation » — elles apparaissent en filtrant simplement le fil ouvert.
+  const openShopIds = new Set((data || []).map((c) => c.shop_id));
+  const newShopResults = shopResults.filter((s) => !openShopIds.has(s.id));
+  const filteredConvs = searchQuery.trim()
+    ? (data || []).filter((c) => nameMatches(c.shops?.name, searchQuery))
+    : data || [];
+
+  // La recherche reste visible même sans conversation: c'est justement ce
+  // qui manquait pour écrire à une boutique la toute première fois.
+  const searchBar = !vendor && (
+    <div className="border-b border-hairline p-3">
+      <div className="relative">
+        <IconSearch size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t('inbox.searchPlaceholder')}
+          className="input h-10 w-full bg-base pl-9 pr-9 text-[16px]"
+          aria-label={t('inbox.searchPlaceholder')}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            aria-label={t('common.close')}
+            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted"
+          >
+            <IconX size={15} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
-      <div className="space-y-3 p-4">
-        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+      <div>
+        {searchBar}
+        <div className="space-y-3 p-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+        </div>
       </div>
     );
   }
   if (error) return <ErrorState onRetry={retry} />;
-  if (data.length === 0) return <EmptyState icon={IconMessageOff} title={t('inbox.empty')} hint={t('inbox.emptyHint')} />;
+
+  const nothingAtAll = filteredConvs.length === 0 && newShopResults.length === 0 && !searching;
 
   return (
+    <div>
+      {searchBar}
+      {nothingAtAll && !searchQuery.trim() && (
+        <EmptyState icon={IconMessageOff} title={t('inbox.empty')} hint={t('inbox.emptyHint')} />
+      )}
+      {nothingAtAll && searchQuery.trim() && (
+        <p className="p-4 text-center text-caption text-muted">{t('inbox.searchNoMatch', { query: searchQuery })}</p>
+      )}
+      {newShopResults.length > 0 && (
+        <div>
+          <p className="px-4 pb-1 pt-3 text-caption font-semibold text-muted">{t('inbox.newConversation')}</p>
+          <ul>
+            {newShopResults.map((s) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  disabled={starting === s.id}
+                  onClick={() => startConversation(s)}
+                  className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3 text-left transition-colors hover:bg-base disabled:opacity-60"
+                >
+                  <ShopAvatar src={s.avatar_url ? storageThumbUrl('shops', s.avatar_url) : null} fallbackSrc={s.avatar_url ? storageUrl('shops', s.avatar_url) : null} name={s.name} seed={s.id} className="h-12 w-12" />
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1 text-body font-semibold text-ink">
+                      <span className="line-clamp-1">{s.name}</span>
+                      {s.is_verified && <VerifiedBadge size={13} />}
+                    </p>
+                    {s.city && <p className="text-caption text-muted">{s.city}</p>}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {filteredConvs.length > 0 && searchQuery.trim() && newShopResults.length > 0 && (
+        <p className="px-4 pb-1 pt-3 text-caption font-semibold text-muted">{t('inbox.title')}</p>
+      )}
     <ul>
-      {data.map((c) => {
+      {filteredConvs.map((c) => {
         const unread = vendor ? c.vendor_unread : c.buyer_unread;
         const active = c.id === activeId;
         return (
@@ -95,6 +226,7 @@ export function ConversationList({ vendor = false, activeId = null }) {
         );
       })}
     </ul>
+    </div>
   );
 }
 

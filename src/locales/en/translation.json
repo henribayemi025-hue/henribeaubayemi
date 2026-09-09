@@ -647,7 +647,10 @@
     "title": "Messages",
     "empty": "No messages yet.",
     "emptyHint": "Contact a shop to start a conversation.",
-    "pickConversation": "Pick a conversation on the left to open it."
+    "pickConversation": "Pick a conversation on the left to open it.",
+    "searchPlaceholder": "Search a shop, message someone…",
+    "newConversation": "New conversation",
+    "searchNoMatch": "No shop matches \"{{query}}\"."
   },
   "checkout": {
     "title": "Checkout",
