@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconPlus, IconBuildingStore, IconCurrentLocation, IconList, IconMap2, IconTool, IconSearch, IconX, IconFilter, IconMapPin } from '@tabler/icons-react';
@@ -268,6 +268,22 @@ export default function NearYou() {
   });
 
   const shownShops = withinRadius(byDistance(filteredShops));
+
+  // Beau, en testant l'annuaire élargi à TOUTES les boutiques: certaines
+  // photos restaient bloquées en chargement, visibles sur certaines fiches
+  // et pas d'autres. Avec 12 prestataires ça ne se voyait jamais — avec 40 à
+  // 50 boutiques, chacune avec sa bannière + son logo + jusqu'à 3 photos de
+  // catalogue, ça fait d'un coup des centaines d'images à charger en même
+  // temps. On révèle donc les fiches par paquets plutôt que tout d'un bloc:
+  // moins de photos se disputent la connexion à l'instant T, et le tableau
+  // de bord réel de la personne (pas juste 12) reste entièrement accessible
+  // via « Voir plus ».
+  const SHOPS_PAGE = 12;
+  const [visibleShopCount, setVisibleShopCount] = useState(SHOPS_PAGE);
+  useEffect(() => {
+    setVisibleShopCount(SHOPS_PAGE);
+  }, [tab, serviceCat, userPos, radius, country]);
+  const pagedShops = shownShops.slice(0, visibleShopCount);
 
   // Métiers affichés = ceux qui correspondent à la recherche.
   const visibleTrades = SERVICE_CATEGORIES.filter(
@@ -553,18 +569,29 @@ export default function NearYou() {
               }
             />
           ) : (
-            <div className="grid gap-4 p-4 pb-24 sm:grid-cols-2 xl:grid-cols-3">
-              {shownShops.map((s) => (
-                <ProviderCard
-                  key={s.id}
-                  shop={s}
-                  portfolio={data.portfolios[s.id] || []}
-                  reviewCount={data.reviewCounts[s.id] || 0}
-                  fromPriceFcfa={data.minPrices[s.id] ?? null}
-                  km={s._km ?? null}
-                  onBook={bookProvider}
-                />
-              ))}
+            <div className="p-4 pb-24">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {pagedShops.map((s) => (
+                  <ProviderCard
+                    key={s.id}
+                    shop={s}
+                    portfolio={data.portfolios[s.id] || []}
+                    reviewCount={data.reviewCounts[s.id] || 0}
+                    fromPriceFcfa={data.minPrices[s.id] ?? null}
+                    km={s._km ?? null}
+                    onBook={bookProvider}
+                  />
+                ))}
+              </div>
+              {/* Révéler par paquets plutôt que tout charger d'un coup — voir
+                  le commentaire au-dessus de `pagedShops`. */}
+              {shownShops.length > visibleShopCount && (
+                <div className="mt-4 flex justify-center">
+                  <Button variant="secondary" onClick={() => setVisibleShopCount((n) => n + SHOPS_PAGE)}>
+                    {t('nearYou.seeMoreShops', { count: shownShops.length - visibleShopCount })}
+                  </Button>
+                </div>
+              )}
             </div>
           )
         ) : data.listingsError ? (
