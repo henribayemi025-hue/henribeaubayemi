@@ -486,6 +486,10 @@
     "forwardNoTargets": "Aucune autre conversation pour l'instant.",
     "forwardBuyer": "Acheteuse",
     "forwarded": "Message transféré",
+    "seen": "Vu",
+    "holdToRecord": "Maintenir pour enregistrer un vocal",
+    "recordingHint": "relâche pour envoyer",
+    "micDenied": "Impossible d'accéder au micro. Vérifie l'autorisation dans les réglages.",
     "suggestReplies": "Suggestions de réponse",
     "suggestLoading": "Finia prépare des suggestions…",
     "stickers": "Stickers"

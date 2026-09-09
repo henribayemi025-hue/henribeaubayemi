@@ -60,7 +60,7 @@ export default function VendorFinances() {
       const from = new Date(Date.now() - days * 864e5).toISOString();
       const { data: rows, error: err } = await supabase
         .from('orders')
-        .select('order_no, created_at, buyer_name, status, method, total_fcfa, order_items(name, qty, price_fcfa)')
+        .select('order_no, created_at, buyer_name, status, total_fcfa, order_items(name, qty, price_fcfa)')
         .eq('shop_id', shop.id)
         .gte('created_at', from)
         .order('created_at', { ascending: true });

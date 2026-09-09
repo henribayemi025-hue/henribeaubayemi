@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconChecks, IconFlag, IconChevronLeft } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconChecks, IconFlag, IconChevronLeft, IconMicrophone, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,9 +37,16 @@ export default function DirectChat() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
   const scroller = useRef(null);
   const endRef = useRef(null);
   const fileRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const recordCancelledRef = useRef(false);
+  const recordSecondsRef = useRef(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,12 +112,12 @@ export default function DirectChat() {
   // attend; l'autre peut toujours répondre (sa réponse débloque tout).
   const requestLocked = conv && !conv.unlocked && isInitiator && myPriorCount >= 1;
 
-  async function send(body, imageUrl = null) {
+  async function send(body, imageUrl = null, audioUrl = null) {
     const text = body?.trim();
-    if (!text && !imageUrl) return;
+    if (!text && !imageUrl && !audioUrl) return;
     setSending(true);
     try {
-      const msg = await sendDirectMessage(conversationId, text || null, imageUrl);
+      const msg = await sendDirectMessage(conversationId, text || null, imageUrl, audioUrl);
       setMessages((m) => (m.some((x) => x.id === msg.id) ? m : [...m, msg]));
       setConv((c) => (c ? { ...c, unlocked: c.unlocked || !isInitiator } : c));
       setInput('');
@@ -119,6 +126,55 @@ export default function DirectChat() {
     } finally {
       setSending(false);
     }
+  }
+
+  async function startRecording() {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recordCancelledRef.current = false;
+      recorder.ondataavailable = (e) => e.data.size > 0 && audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        clearInterval(recordTimerRef.current);
+        const cancelled = recordCancelledRef.current || recordSecondsRef.current < 1;
+        setRecording(false);
+        setRecordSeconds(0);
+        if (cancelled || audioChunksRef.current.length === 0) return;
+        const ext = (recorder.mimeType || 'audio/webm').includes('mp4') ? 'm4a' : 'webm';
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        setUploading(true);
+        try {
+          const path = `${user.id}/${uid()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from('chat').upload(path, blob, { contentType: recorder.mimeType || 'audio/webm' });
+          if (upErr) throw upErr;
+          await send(null, null, path);
+        } catch (e) {
+          toast.error(e.message || t('errors.generic'));
+        } finally {
+          setUploading(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordSecondsRef.current = 0;
+      recordTimerRef.current = setInterval(() => {
+        recordSecondsRef.current += 1;
+        setRecordSeconds(recordSecondsRef.current);
+      }, 1000);
+    } catch {
+      toast.error(t('chat.micDenied'));
+    }
+  }
+
+  function stopRecording(cancel = false) {
+    recordCancelledRef.current = cancel;
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
   }
 
   async function onFile(e) {
@@ -190,10 +246,13 @@ export default function DirectChat() {
                 {m.image_url && (
                   <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
                 )}
+                {m.audio_url && (
+                  <audio controls preload="metadata" src={storageUrl('chat', m.audio_url)} className="mb-1 h-10 w-56 max-w-full rounded-input" />
+                )}
                 {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
                 <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
                   <span>{clockTime(m.created_at, i18n.language)}</span>
-                  {mine && (m.status === 'read' ? <IconChecks size={13} className="text-brass" /> : <IconChecks size={13} />)}
+                  {mine && (m.status === 'read' ? <span className="font-semibold text-brass">{t('chat.seen')}</span> : <IconChecks size={13} />)}
                 </div>
               </div>
             </div>
@@ -220,25 +279,60 @@ export default function DirectChat() {
           }}
           className="flex shrink-0 items-center gap-2 border-t border-hairline bg-white p-3"
         >
-          <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
-            <IconPhoto size={24} />
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-          <input
-            className="input flex-1"
-            placeholder={t('chat.placeholder')}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            aria-label={t('chat.placeholder')}
-          />
-          <button
-            type="submit"
-            disabled={sending || uploading || !input.trim()}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]"
-            aria-label={t('common.send')}
-          >
-            <IconSend2 size={20} />
-          </button>
+          {recording ? (
+            <div className="flex flex-1 items-center gap-2 rounded-input bg-base px-3 py-2.5">
+              <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-danger" />
+              <span className="flex-1 text-body text-ink">
+                {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:{String(recordSeconds % 60).padStart(2, '0')} — {t('chat.recordingHint')}
+              </span>
+              <button type="button" onClick={() => stopRecording(true)} className="shrink-0 text-danger" aria-label={t('common.cancel')}>
+                <IconTrash size={20} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
+                <IconPhoto size={24} />
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+              <input
+                className="input flex-1"
+                placeholder={t('chat.placeholder')}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                aria-label={t('chat.placeholder')}
+              />
+            </>
+          )}
+          {!input.trim() ? (
+            // Le bouton reste le MÊME élément pendant tout l'appui (capture
+            // de pointeur): le retirer du DOM au premier changement d'état
+            // empêchait le relâchement d'être détecté, et l'enregistrement
+            // restait bloqué indéfiniment.
+            <button
+              type="button"
+              disabled={sending || uploading}
+              onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startRecording(); }}
+              onPointerUp={() => stopRecording(false)}
+              onPointerCancel={() => stopRecording(true)}
+              onContextMenu={(e) => e.preventDefault()}
+              className={`flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-full text-white disabled:bg-hairline disabled:text-[#A0A0A0] ${
+                recording ? 'bg-danger' : 'bg-teal'
+              }`}
+              aria-label={t('chat.holdToRecord')}
+            >
+              <IconMicrophone size={20} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={sending || uploading || !input.trim()}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]"
+              aria-label={t('common.send')}
+            >
+              <IconSend2 size={20} />
+            </button>
+          )}
         </form>
       )}
 

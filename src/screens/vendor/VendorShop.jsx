@@ -202,9 +202,13 @@ export default function VendorShop() {
           <span className="flex-1 font-semibold">{t('vendor.switchToBuyer')}</span>
           <IconChevronRight size={18} className="text-hairline" />
         </Link>
+        {/* Beau n'a pas trouvé les stories: en bas d'un long formulaire, le
+            petit carré "Ajouter une story" se noyait parmi les champs. Une
+            carte à part, tout en HAUT, avant même la bannière — comme la
+            sortie ci-dessus, ce qui compte se trouve sans faire défiler. */}
+        <VendorStoryManager shopId={shop.id} />
         <ImageUpload bucket="shops" value={form.banner_url} onChange={(p) => saveImage('banner_url', p)} label={t('vendor.shopBanner')} shape="wide" />
         <ImageUpload bucket="shops" value={form.avatar_url} onChange={(p) => saveImage('avatar_url', p)} label={t('vendor.shopAvatar')} shape="round" />
-        <VendorStoryManager shopId={shop.id} />
         <Field label={t('vendor.shopName')}>
           {(id) => <TextInput id={id} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
         </Field>

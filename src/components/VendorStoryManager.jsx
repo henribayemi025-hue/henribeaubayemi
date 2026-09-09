@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconClockHour4 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../lib/supabase';
 import { useToast } from '../hooks/useToast';
 import { useShopStories } from '../hooks/useShopStories';
@@ -35,10 +35,14 @@ export function VendorStoryManager({ shopId }) {
   }
 
   return (
-    <div>
-      <span className="label">{t('vendor.storiesLabel')}</span>
-      <p className="mb-2 text-caption text-muted">{t('vendor.storiesHint')}</p>
-      <ImageUpload bucket="shops" value={null} onChange={postStory} shape="square" label={t('vendor.storyAdd')} />
+    <div className="rounded-card border border-teal/30 bg-teal-light/40 p-4">
+      <p className="flex items-center gap-1.5 text-body font-semibold text-teal">
+        <IconClockHour4 size={18} /> {t('vendor.storiesLabel')}
+      </p>
+      <p className="mb-3 text-caption text-muted">{t('vendor.storiesHint')}</p>
+      <div className="max-w-[120px]">
+        <ImageUpload bucket="shops" value={null} onChange={postStory} shape="square" label={t('vendor.storyAdd')} />
+      </div>
       {!loading && stories.length > 0 && (
         <ul className="mt-3 flex gap-2 overflow-x-auto">
           {stories.map((s) => (

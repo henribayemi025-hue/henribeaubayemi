@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconMoodSmile } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconMoodSmile, IconMicrophone, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
@@ -80,6 +80,16 @@ export default function VendorChat({ vendor = false }) {
   const [replySuggestions, setReplySuggestions] = useState(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
+  // Message vocal — Beau: « tu peux pas aussi mettre les vocaux ? ».
+  // Appui maintenu façon WhatsApp: on enregistre tant que le doigt reste
+  // posé, on envoie au relâchement, on annule si le doigt sort du bouton.
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const recordCancelledRef = useRef(false);
+  const recordSecondsRef = useRef(0);
   const [storyOpen, setStoryOpen] = useState(false);
   const { stories: shopStories } = useShopStories(!vendor ? meta?.shop_id : null);
   const [finouThinking, setFinouThinking] = useState(false);
@@ -89,6 +99,11 @@ export default function VendorChat({ vendor = false }) {
   const endRef = useRef(null);
   const fileRef = useRef(null);
   const inputRef = useRef(null);
+  // Beau, en testant: « j'ai appuyé longtemps pour transférer, ça n'a rien
+  // fait ». La petite flèche existait déjà, mais l'appui long est le geste
+  // naturel (WhatsApp) — on l'ajoute EN PLUS, sans retirer la flèche.
+  const longPressTimer = useRef(null);
+  const longPressFired = useRef(false);
 
   // Live "@" mention suggestion (Twitter/Slack-style): while the trailing
   // token being typed is a prefix of "finouchou", offer a one-tap completion
@@ -241,11 +256,11 @@ export default function VendorChat({ vendor = false }) {
     }
   }
 
-  async function send(body, imageUrl = null) {
+  async function send(body, imageUrl = null, audioUrl = null) {
     const text = body?.trim();
-    if (!text && !imageUrl) return;
+    if (!text && !imageUrl && !audioUrl) return;
     const tempId = `temp-${Date.now()}`;
-    const payload = { conversation_id: conversationId, sender_id: user.id, sender_role: role, body: text || null, image_url: imageUrl };
+    const payload = { conversation_id: conversationId, sender_id: user.id, sender_role: role, body: text || null, image_url: imageUrl, audio_url: audioUrl };
     setMessages((m) => [...m, { ...payload, id: tempId, created_at: new Date().toISOString() }]);
     setInput('');
     await deliver(payload, tempId);
@@ -253,7 +268,7 @@ export default function VendorChat({ vendor = false }) {
 
   function retryMessage(msg) {
     setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, failed: false } : x)));
-    deliver({ conversation_id: conversationId, sender_id: user.id, sender_role: role, body: msg.body, image_url: msg.image_url }, msg.id);
+    deliver({ conversation_id: conversationId, sender_id: user.id, sender_role: role, body: msg.body, image_url: msg.image_url, audio_url: msg.audio_url }, msg.id);
   }
 
   async function fetchSuggestions() {
@@ -270,6 +285,29 @@ export default function VendorChat({ vendor = false }) {
       setReplySuggestions([]);
     } finally {
       setSuggestLoading(false);
+    }
+  }
+
+  function startLongPress(msg) {
+    longPressFired.current = false;
+    clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      if (navigator.vibrate) navigator.vibrate(15);
+      openForward(msg);
+    }, 450);
+  }
+  function cancelLongPress() {
+    clearTimeout(longPressTimer.current);
+  }
+  // Un appui long qui se termine par un relâchement déclenche quand même le
+  // clic natif du bouton dessous (photo, réessayer) — on l'avale UNE fois
+  // via la phase de capture, avant qu'il n'atteigne ce bouton.
+  function swallowClickAfterLongPress(e) {
+    if (longPressFired.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      longPressFired.current = false;
     }
   }
 
@@ -304,6 +342,7 @@ export default function VendorChat({ vendor = false }) {
         sender_role: role,
         body: forwardMsg.body || null,
         image_url: forwardMsg.image_url || null,
+        audio_url: forwardMsg.audio_url || null,
       });
       if (fErr) throw fErr;
       toast.success(t('chat.forwarded'));
@@ -313,6 +352,55 @@ export default function VendorChat({ vendor = false }) {
     } finally {
       setForwardSending(null);
     }
+  }
+
+  async function startRecording() {
+    if (recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recordCancelledRef.current = false;
+      recorder.ondataavailable = (e) => e.data.size > 0 && audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        clearInterval(recordTimerRef.current);
+        const cancelled = recordCancelledRef.current || recordSecondsRef.current < 1;
+        setRecording(false);
+        setRecordSeconds(0);
+        if (cancelled || audioChunksRef.current.length === 0) return;
+        const ext = (recorder.mimeType || 'audio/webm').includes('mp4') ? 'm4a' : 'webm';
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        setUploading(true);
+        try {
+          const path = `${user.id}/${uid()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from('chat').upload(path, blob, { contentType: recorder.mimeType || 'audio/webm' });
+          if (upErr) throw upErr;
+          await send(null, null, path);
+        } catch (e) {
+          toast.error(e.message || t('errors.generic'));
+        } finally {
+          setUploading(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordSecondsRef.current = 0;
+      recordTimerRef.current = setInterval(() => {
+        recordSecondsRef.current += 1;
+        setRecordSeconds(recordSecondsRef.current);
+      }, 1000);
+    } catch {
+      toast.error(t('chat.micDenied'));
+    }
+  }
+
+  function stopRecording(cancel = false) {
+    recordCancelledRef.current = cancel;
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
   }
 
   async function onFile(e) {
@@ -473,7 +561,7 @@ export default function VendorChat({ vendor = false }) {
               // Guard against `user` being momentarily null (auth state can
               // flip mid-render on token refresh) so a render never throws.
               const mine = !!user && m.sender_id === user.id;
-              const canForward = !m.failed && (m.body || m.image_url);
+              const canForward = !m.failed && (m.body || m.image_url || m.audio_url);
               // Sticker: un emoji seul s'affiche en grand SANS bulle, comme
               // WhatsApp — un vrai texte garde sa bulle normale.
               const sticker = !m.image_url && isStickerBody(m.body);
@@ -484,13 +572,19 @@ export default function VendorChat({ vendor = false }) {
                 <div
                   className={
                     sticker
-                      ? 'max-w-[80%] px-1'
-                      : `max-w-[80%] px-3.5 py-2.5 shadow-sm ${
+                      ? 'max-w-[80%] px-1 select-none'
+                      : `max-w-[80%] select-none px-3.5 py-2.5 shadow-sm ${
                           mine
                             ? 'rounded-2xl rounded-br-md bg-teal text-white'
                             : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
                         }`
                   }
+                  onPointerDown={() => canForward && startLongPress(m)}
+                  onPointerUp={cancelLongPress}
+                  onPointerLeave={cancelLongPress}
+                  onPointerCancel={cancelLongPress}
+                  onClickCapture={swallowClickAfterLongPress}
+                  onContextMenu={(e) => canForward && e.preventDefault()}
                 >
                   {m.auto_reply && (
                     <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
@@ -502,6 +596,9 @@ export default function VendorChat({ vendor = false }) {
                       <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
                     </button>
                   )}
+                  {m.audio_url && (
+                    <audio controls preload="metadata" src={storageUrl('chat', m.audio_url)} className="mb-1 h-10 w-56 max-w-full rounded-input" />
+                  )}
                   {m.body && (
                     sticker
                       ? <p className="text-[52px] leading-none">{m.body}</p>
@@ -509,10 +606,16 @@ export default function VendorChat({ vendor = false }) {
                   )}
                   <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${sticker ? 'text-muted' : mine ? 'text-white/75' : 'text-muted'}`}>
                     <span>{clockTime(m.created_at, i18n.language)}</span>
+                    {/* Beau: la coche dorée passait inaperçue — "au pire on
+                        met Vu". Le mot est sans ambiguïté, la coche seule. */}
                     {mine && !m.failed && (
-                      m.id.toString().startsWith('temp')
-                        ? <IconCheck size={13} />
-                        : <IconChecks size={13} className={m.status === 'read' ? 'text-brass' : ''} />
+                      m.id.toString().startsWith('temp') ? (
+                        <IconCheck size={13} />
+                      ) : m.status === 'read' ? (
+                        <span className="font-semibold text-brass">{t('chat.seen')}</span>
+                      ) : (
+                        <IconChecks size={13} />
+                      )
                     )}
                     {m.failed && (
                       <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
@@ -635,25 +738,67 @@ export default function VendorChat({ vendor = false }) {
             }}
             className={`flex shrink-0 items-center gap-2 bg-white p-3 ${showMentionSuggestion || stickerOpen ? '' : 'border-t border-hairline'}`}
           >
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
-              <IconPhoto size={24} />
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
-            <button type="button" onClick={() => setStickerOpen((v) => !v)} className={stickerOpen ? 'text-teal' : 'text-muted'} aria-label={t('chat.stickers')}>
-              <IconMoodSmile size={24} />
-            </button>
-            <input
-              ref={inputRef}
-              className="input flex-1"
-              placeholder={t('chat.placeholder')}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onFocus={() => setStickerOpen(false)}
-              aria-label={t('chat.placeholder')}
-            />
-            <button type="submit" disabled={!input.trim() && !uploading} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]" aria-label={t('common.send')}>
-              <IconSend2 size={20} />
-            </button>
+            {recording ? (
+              <div className="flex flex-1 items-center gap-2 rounded-input bg-base px-3 py-2.5">
+                <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-danger" />
+                <span className="flex-1 text-body text-ink">
+                  {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:{String(recordSeconds % 60).padStart(2, '0')} — {t('chat.recordingHint')}
+                </span>
+                <button type="button" onClick={() => stopRecording(true)} className="shrink-0 text-danger" aria-label={t('common.cancel')}>
+                  <IconTrash size={20} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="text-muted" aria-label={t('chat.attachImage')}>
+                  <IconPhoto size={24} />
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+                <button type="button" onClick={() => setStickerOpen((v) => !v)} className={stickerOpen ? 'text-teal' : 'text-muted'} aria-label={t('chat.stickers')}>
+                  <IconMoodSmile size={24} />
+                </button>
+                <input
+                  ref={inputRef}
+                  className="input flex-1"
+                  placeholder={t('chat.placeholder')}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onFocus={() => setStickerOpen(false)}
+                  aria-label={t('chat.placeholder')}
+                />
+              </>
+            )}
+            {!input.trim() ? (
+              // Appui maintenu = enregistrer, relâcher = envoyer, glisser
+              // hors du bouton = annuler — même geste que WhatsApp. Le
+              // bouton reste le MÊME élément du début à la fin de l'appui
+              // (capture de pointeur): le retirer du DOM pendant l'appui
+              // empêchait le relâchement d'être détecté, et l'enregistrement
+              // restait bloqué indéfiniment.
+              <button
+                type="button"
+                disabled={uploading}
+                onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startRecording(); }}
+                onPointerUp={() => stopRecording(false)}
+                onPointerCancel={() => stopRecording(true)}
+                onContextMenu={(e) => e.preventDefault()}
+                className={`flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-full text-white disabled:bg-hairline disabled:text-[#A0A0A0] ${
+                  recording ? 'bg-danger' : 'bg-teal'
+                }`}
+                aria-label={t('chat.holdToRecord')}
+              >
+                <IconMicrophone size={20} />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim() && !uploading}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]"
+                aria-label={t('common.send')}
+              >
+                <IconSend2 size={20} />
+              </button>
+            )}
           </form>
           )}
         </>
