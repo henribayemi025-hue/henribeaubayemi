@@ -160,7 +160,16 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
-function systemPrompt(): string {
+function systemPrompt(memoire?: string | null): string {
+  // Beau: la concurrence (Marketu, Sevanto) a aussi de l'IA — ce qui manquait
+  // à Finia n'était pas la conversation (elle adapte déjà langue et registre,
+  // voir plus bas) mais la CONTINUITÉ: chaque discussion repartait de zéro,
+  // sans rien retenir d'une fois sur l'autre. Cette mémoire reste courte et
+  // FACTUELLE (jamais le style d'écriture lui-même, qui doit s'adapter en
+  // direct, pas se figer) et n'existe que pour une personne connectée.
+  const blocMemoire = memoire?.trim()
+    ? `\n\nMÉMOIRE SUR CETTE PERSONNE (mise à jour au fil du temps par toi-même via update_memory — utilise-la naturellement, ne la récite jamais mot pour mot, ne dis jamais "je me souviens que..."):\n${memoire.trim()}`
+    : '';
   return `Tu es Finia, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
 (produits ET services) pour l'Afrique et sa diaspora, ouverte à l'international:
 mode, high-tech, alimentaire, véhicules, immobilier, et des prestataires à domicile
@@ -197,7 +206,16 @@ Jamais de chiffre précis présenté comme un devis ferme.
 
 BESOIN MIXTE (orchestrateur): pour un événement complet ("mariage: robe + traiteur
 + déco"), enchaîne plusieurs outils (search_products puis search_services) et
-présente un mini-plan groupé, jamais un seul résultat isolé.`;
+présente un mini-plan groupé, jamais un seul résultat isolé.
+
+MÉMOIRE (update_memory): quand la personne est connectée et révèle un fait STABLE
+et RÉUTILISABLE (ce qu'elle vend habituellement, ce qu'elle cherche souvent, sa
+ville, une préférence durable), appelle update_memory avec la mémoire ENTIÈRE mise
+à jour (4 lignes maximum — reprends ce qui est déjà utile ci-dessous avant de
+l'écraser, laisse tomber ce qui est devenu inutile). N'appelle JAMAIS cet outil
+pour un détail ponctuel de cette seule conversation ("elle cherche une robe
+aujourd'hui" n'est pas stable; "elle vend des vêtements enfants à Douala" l'est).
+Silencieux pour la personne — ne dis jamais que tu mémorises quoi que ce soit.${blocMemoire}`;
 }
 
 function systemPromptTools(): string {
@@ -651,6 +669,18 @@ function toolDeclarations() {
       },
     },
   },
+  {
+    name: 'update_memory',
+    description:
+      "Met à jour la mémoire durable que tu gardes de cette personne, pour les PROCHAINES conversations. 4 lignes maximum, uniquement des faits stables et réutilisables (ce qu'elle vend/cherche habituellement, sa ville, une préférence durable) — jamais un détail propre à cette seule discussion. Le texte remplace ENTIÈREMENT l'ancienne mémoire: relis celle donnée dans [MÉMOIRE SUR CETTE PERSONNE] et garde ce qui reste vrai avant de l'écraser.",
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        memoire: { type: 'STRING', description: 'Le texte complet de la mémoire mise à jour (pas juste ce qui change), 4 lignes maximum, en français neutre.' },
+      },
+      required: ['memoire'],
+    },
+  },
   ];
 }
 
@@ -734,7 +764,7 @@ async function runTool(
   // Outils personnels: sans compte, on le dit au modèle au lieu de deviner.
   const NEEDS_AUTH = [
     'get_my_orders', 'get_my_shop_stats', 'message_shop', 'follow_shop', 'create_product', 'set_rotation',
-    'list_my_products', 'update_product', 'list_shop_orders', 'update_order_status',
+    'list_my_products', 'update_product', 'list_shop_orders', 'update_order_status', 'update_memory',
   ];
   if (!userId && NEEDS_AUTH.includes(name)) {
     return { signed_in: false, message: "L'utilisateur n'est pas connecté: invite-le à se connecter pour faire ça." };
@@ -1136,6 +1166,18 @@ async function runTool(
       return { followed: true, boutique: shop.name };
     }
 
+    case 'update_memory': {
+      // RLS ("own profile"): `db` est le client de L'UTILISATEUR, pas la clé
+      // de service — il ne peut écrire que sa propre ligne, jamais celle de
+      // quelqu'un d'autre. Plafonné à ~600 caractères: c'est une mémoire
+      // courte à relire à chaque appel, pas un journal.
+      const memoire = String(args.memoire ?? '').trim().slice(0, 600);
+      if (!memoire) return { updated: false, message: 'memoire vide' };
+      const { error } = await db.from('profiles').update({ finia_memory: memoire }).eq('id', userId);
+      if (error) return { updated: false, message: error.message };
+      return { updated: true };
+    }
+
     case 'create_product': {
       const { data: shop } = await db.from('shops').select('id,name').eq('owner_id', userId).maybeSingle();
       if (!shop) {
@@ -1508,6 +1550,16 @@ Deno.serve(async (req: Request) => {
     });
     const { data: { user } } = await userClient.auth.getUser();
 
+    // Ce qui donne l'impression que Finia "connaît" la personne d'une
+    // conversation à l'autre — voir le commentaire dans systemPrompt().
+    // Best-effort: une mémoire absente ou en erreur ne doit jamais empêcher
+    // la conversation de démarrer.
+    let memoire: string | null = null;
+    if (user) {
+      const { data: prof } = await userClient.from('profiles').select('finia_memory').eq('id', user.id).maybeSingle();
+      memoire = prof?.finia_memory ?? null;
+    }
+
     const { message, image, context, history } = await req.json();
     if ((!message || typeof message !== 'string') && !image) {
       return json({ error: 'invalid_message' }, 400);
@@ -1568,7 +1620,7 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey!, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt() + systemPromptTools() + destinationsPromptSection() }] },
+            systemInstruction: { parts: [{ text: systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() }] },
             contents,
             tools: [{ functionDeclarations: toolDeclarations() }],
             generationConfig: {
