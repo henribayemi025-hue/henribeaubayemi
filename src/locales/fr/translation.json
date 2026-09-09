@@ -285,6 +285,7 @@
   },
   "help": {
     "contactCta": "Nous écrire",
+    "contactWhatsapp": "Nous écrire sur WhatsApp",
     "faqTitle": "Questions fréquentes",
     "q1": "Comment passer une commande ?",
     "a1": "Ajoute des articles au panier puis valide avec le paiement à la livraison (COD). Tu paies à la réception.",
@@ -347,7 +348,7 @@
     },
     "tabHome": "Accueil",
     "tabPromos": "Promos",
-    "reelsButton": "Nos Reels",
+    "reelsButton": "Nos Fins",
     "statNote": "Note",
     "statFollowers": "Abonnés",
     "statProducts": "Produits",
