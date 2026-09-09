@@ -17,6 +17,7 @@ import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 import { nameMatches } from '../../lib/searchNorm';
 import { getOrCreateConversation } from '../../lib/chat';
+import { searchPeople } from '../../lib/directMessages';
 
 // Shared conversation list. `vendor` flag switches perspective + link base.
 // `activeId` surligne la conversation ouverte — indispensable en deux
@@ -33,6 +34,11 @@ export function ConversationList({ vendor = false, activeId = null }) {
   // qu'on tape — deux listes, jamais confondues (voir plus bas).
   const [searchQuery, setSearchQuery] = useState('');
   const [shopResults, setShopResults] = useState([]);
+  // Beau, en testant: « je tape Astrid Louce, ça ne me présente personne,
+  // pourtant il y a bien une personne avec ce compte ». La barre promettait
+  // « écrire à quelqu'un » mais n'interrogeait que les BOUTIQUES — une
+  // personne n'y apparaissait jamais. Elle cherche désormais les deux.
+  const [peopleResults, setPeopleResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [starting, setStarting] = useState(null);
   const [toDelete, setToDelete] = useState(null);
@@ -87,25 +93,35 @@ export function ConversationList({ vendor = false, activeId = null }) {
     };
   }, [user, vendor, retry]);
 
-  // Recherche de boutiques à qui écrire pour la première fois — seulement
-  // côté acheteuse: une vendeuse cherchant une PERSONNE, c'est la messagerie
-  // de personne à personne, un chantier à part (pas encore construit).
+  // Une seule frappe, deux recherches: les BOUTIQUES à qui écrire pour la
+  // première fois, et les PERSONNES (search_people n'expose que nom + avatar,
+  // jamais téléphone ni e-mail — voir migration 0099). Les deux listes
+  // restent séparées à l'affichage: écrire à une boutique et écrire à
+  // quelqu'un ne sont pas la même chose.
   useEffect(() => {
-    if (vendor || !searchQuery.trim()) {
+    const q = searchQuery.trim();
+    if (vendor || !q) {
       setShopResults([]);
+      setPeopleResults([]);
       return undefined;
     }
     let cancelled = false;
     setSearching(true);
     const id = setTimeout(async () => {
-      const { data: shops } = await supabase
-        .from('shops')
-        .select('id, slug, name, avatar_url, is_verified, city')
-        .eq('status', 'active')
-        .ilike('name', `%${searchQuery.trim()}%`)
-        .limit(20);
+      const [shopsRes, gens] = await Promise.all([
+        supabase
+          .from('shops')
+          .select('id, slug, name, avatar_url, is_verified, city')
+          .eq('status', 'active')
+          .ilike('name', `%${q}%`)
+          .limit(20),
+        // Une recherche de personnes qui échoue ne doit pas emporter avec
+        // elle la recherche de boutiques: on renvoie une liste vide.
+        q.length >= 2 ? searchPeople(q).catch(() => []) : Promise.resolve([]),
+      ]);
       if (!cancelled) {
-        setShopResults(shops || []);
+        setShopResults(shopsRes.data || []);
+        setPeopleResults(user ? (gens || []).filter((p) => p.id !== user.id) : gens || []);
         setSearching(false);
       }
     }, 300);
@@ -113,7 +129,7 @@ export function ConversationList({ vendor = false, activeId = null }) {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [searchQuery, vendor]);
+  }, [searchQuery, vendor, user]);
 
   async function startConversation(shop) {
     if (!user || starting) return;
@@ -177,7 +193,8 @@ export function ConversationList({ vendor = false, activeId = null }) {
   }
   if (error) return <ErrorState onRetry={retry} />;
 
-  const nothingAtAll = filteredConvs.length === 0 && newShopResults.length === 0 && !searching;
+  const nothingAtAll =
+    filteredConvs.length === 0 && newShopResults.length === 0 && peopleResults.length === 0 && !searching;
 
   return (
     <div>
@@ -214,7 +231,35 @@ export function ConversationList({ vendor = false, activeId = null }) {
           </ul>
         </div>
       )}
-      {filteredConvs.length > 0 && searchQuery.trim() && newShopResults.length > 0 && (
+      {/* Les PERSONNES, dans leur propre section: on ouvre leur profil, d'où
+          l'on suit et écrit — même chemin que « Trouver quelqu'un », plutôt
+          qu'un raccourci qui échouerait sur « il faut d'abord la suivre ». */}
+      {peopleResults.length > 0 && (
+        <div>
+          <p className="px-4 pb-1 pt-3 text-caption font-semibold text-muted">{t('inbox.peopleFound')}</p>
+          <ul>
+            {peopleResults.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/profile/u/${p.id}`)}
+                  className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3 text-left transition-colors hover:bg-base"
+                >
+                  <ShopAvatar
+                    src={p.avatar_url ? storageThumbUrl('shops', p.avatar_url) : null}
+                    fallbackSrc={p.avatar_url ? storageUrl('shops', p.avatar_url) : null}
+                    name={p.name}
+                    seed={p.id}
+                    className="h-12 w-12"
+                  />
+                  <span className="line-clamp-1 text-body font-semibold text-ink">{p.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {filteredConvs.length > 0 && searchQuery.trim() && (newShopResults.length > 0 || peopleResults.length > 0) && (
         <p className="px-4 pb-1 pt-3 text-caption font-semibold text-muted">{t('inbox.title')}</p>
       )}
     <ul>
