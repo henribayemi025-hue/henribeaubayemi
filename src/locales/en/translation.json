@@ -277,6 +277,7 @@
     "placeholder": "Search categories, shops, items…",
     "hint": "Start typing to search.",
     "noResults": "No results for « {{q}} »",
+    "maybeInterested": "Maybe in \"{{rayon}}\"",
     "followed": "You follow",
     "items": "Items",
     "becomeVendorCta": "Become a Finjaro seller",
