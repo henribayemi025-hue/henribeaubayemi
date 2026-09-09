@@ -32,9 +32,14 @@ export function BuyerNav() {
   const { openFinou } = useUI();
   const { pathname } = useLocation();
   const isChat = pathname.startsWith('/chat');
-  // Hide Finou where it would overlap another control: Near You (+ Publier),
-  // the reels feed (right-side actions), and chat threads (send button).
-  const showFinou = pathname !== '/near-you' && pathname !== '/services' && pathname !== '/fin' && !isChat;
+  const isServices = pathname === '/near-you' || pathname === '/services';
+  // Beau, en testant: « dans Services j'ai pas vu la partie IA » — Finia
+  // était cachée là exactement comme sur la fiche produit ou l'accueil,
+  // alors que "Services" est justement l'écran où chercher un prestataire
+  // à l'aide de mots-clés vagues profite le plus d'un coup de main. Seuls
+  // le fil Fin (barre d'actions à droite, plein écran) et un fil de
+  // discussion restent exclus — Finia y interférerait vraiment.
+  const showFinou = pathname !== '/fin' && !isChat;
   // A chat thread is a focused screen (like WhatsApp/TikTok DMs): hide the tab
   // bar so only the message input sits above the keyboard.
   const showNav = !isChat;
@@ -69,7 +74,13 @@ export function BuyerNav() {
           ~86 px: la bulle Finia doit passer AU-DESSUS d'elle, sinon elle se
           retrouve à cheval sur les onglets. */}
       {showFinou && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[104px] z-40 flex flex-col items-end gap-2 px-4 lg:bottom-6 lg:px-6">
+        <div
+          className={`pointer-events-none absolute inset-x-0 z-40 flex flex-col items-end gap-2 px-4 lg:px-6 ${
+            // Services a SON PROPRE bouton flottant ("Publier une annonce") au
+            // même endroit — Finia se pose au-dessus plutôt que dessus.
+            isServices ? 'bottom-[168px] lg:bottom-24' : 'bottom-[104px] lg:bottom-6'
+          }`}
+        >
           {showHint && (
             <div className="pointer-events-auto flex max-w-[75vw] items-center gap-1.5 rounded-card bg-white py-2 pl-3 pr-1.5 shadow-lg ring-1 ring-hairline">
               <button

@@ -268,10 +268,27 @@ export default function NearYou() {
   // ci-dessous) reste utile pour qui cherche spécifiquement un service — il
   // laisse alors naturellement de côté les boutiques dont aucune catégorie
   // ne correspond, sans qu'il faille les exclure par avance.
+  // Beau, en testant: « je tape "heg", ça doit déjà connaître ou proposer, je
+  // tape "Stuttgart" ça cherche, je tape "France" ça devient déjà [pertinent]
+  // » — le champ ne filtrait QUE la liste de puces métier ci-dessous
+  // (`visibleTrades`), jamais les boutiques elles-mêmes: taper un nom de
+  // boutique, une ville ou un pays ne faisait donc RIEN sur la liste. Il
+  // fait maintenant les deux à la fois — même champ, une recherche vraiment
+  // large plutôt qu'un simple filtre de puces.
   const filteredShops = (data?.shops || []).filter((s) => {
-    if (!serviceCat) return true;
-    const wanted = categoryQueryIds(serviceCat);
-    return (s.categories ?? []).some((c) => wanted.includes(c));
+    if (serviceCat) {
+      const wanted = categoryQueryIds(serviceCat);
+      if (!(s.categories ?? []).some((c) => wanted.includes(c))) return false;
+    }
+    const q = normalize(tradeQuery);
+    if (!q) return true;
+    const haystacks = [
+      s.name,
+      s.city,
+      countryLabel(s.country, i18n.language),
+      ...(s.categories ?? []).map((c) => t(`categories.${c}`)),
+    ];
+    return haystacks.some((h) => normalize(h).includes(q));
   });
 
   const shownShops = withinRadius(byDistance(filteredShops));

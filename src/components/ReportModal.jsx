@@ -47,7 +47,11 @@ export function ReportModal({ open, onClose, targetType, targetId }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t(targetType === 'shop' ? 'report.reportShop' : 'report.reportContent')}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t(targetType === 'shop' ? 'report.reportShop' : targetType === 'user' ? 'report.reportUser' : 'report.reportContent')}
+    >
       <div className="space-y-3">
         <Field label={t('report.reason')}>
           {(id) => (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { SmartImage } from '../../components/SmartImage';
 import { BlockButton } from '../../components/BlockButton';
+import { ReportModal } from '../../components/ReportModal';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { MessagesShell } from './Inbox';
@@ -44,6 +45,11 @@ export default function VendorChat({ vendor = false }) {
   // laisse la place a un rappel. Sans ca, on taperait un message que la
   // base refuserait ensuite, sans que personne comprenne pourquoi.
   const [blocked, setBlocked] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  // Beau, en testant: taper une photo envoyée ne faisait rien — elle
+  // restait coincée dans sa petite bulle. Plein écran au tap, comme
+  // n'importe quelle appli de messagerie.
+  const [viewerUrl, setViewerUrl] = useState(null);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -262,6 +268,25 @@ export default function VendorChat({ vendor = false }) {
             <IconPhone size={18} />
           </a>
         )}
+        {/* Signaler existait déjà partout ailleurs (boutique, article, reel)
+            mais pas ici — Beau, en testant: « j'ai vu bloquer mais pas
+            signaler ». Même bouton compact que Bloquer juste à côté, même
+            sens acheteuse/vendeuse. */}
+        <button
+          type="button"
+          onClick={() => setReportOpen(true)}
+          aria-label={t('report.report')}
+          title={t('report.report')}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
+        >
+          <IconFlag size={18} />
+        </button>
+        <ReportModal
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          targetType={vendor ? 'user' : 'shop'}
+          targetId={vendor ? meta?.buyer_id : meta?.shop_id}
+        />
         {/* Bloquer: l'acheteuse bloque la boutique, la vendeuse bloque
             l'acheteuse. Exigé par la règle 1.2 de l'App Store, et c'est le
             premier bouton que cherche une examinatrice dans un fil. */}
@@ -332,7 +357,11 @@ export default function VendorChat({ vendor = false }) {
                         <IconSparkles size={12} /> {t('chat.autoReplyBadge')}
                       </p>
                     )}
-                    {m.image_url && <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />}
+                    {m.image_url && (
+                      <button type="button" onClick={() => setViewerUrl(storageUrl('chat', m.image_url))} className="block">
+                        <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
+                      </button>
+                    )}
                     {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
                     <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
                       <span>{clockTime(m.created_at, i18n.language)}</span>
@@ -411,6 +440,22 @@ export default function VendorChat({ vendor = false }) {
           </form>
           )}
         </>
+      )}
+      {viewerUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setViewerUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setViewerUrl(null)}
+            aria-label={t('common.close')}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+          >
+            <IconClose size={22} />
+          </button>
+          <img src={viewerUrl} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
       )}
     </div>
   );

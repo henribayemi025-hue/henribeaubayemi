@@ -1073,6 +1073,7 @@
   "report": {
     "report": "Report",
     "reportShop": "Report this shop",
+    "reportUser": "Report this person",
     "reason": "Reason for the report",
     "reasonPlaceholder": "Briefly explain the problem…",
     "submit": "Send report",
