@@ -28,6 +28,7 @@ const TYPE_ICON = {
   rotation: IconRefresh,
   photos_orphelines: IconPhoto,
   premium_pitch: IconSparkles,
+  new_direct_message: IconMessage,
 };
 
 // Icône clochette + panneau, posée là où l'app est ouverte le plus souvent

@@ -88,6 +88,10 @@ const NearYou = lazyWithReload(() => import('./screens/buyer/NearYou'));
 const Fin = lazyWithReload(() => import('./screens/buyer/Fin'));
 const Inbox = lazyWithReload(() => import('./screens/buyer/Inbox'));
 const VendorChat = lazyWithReload(() => import('./screens/buyer/VendorChat'));
+const FindPeople = lazyWithReload(() => import('./screens/buyer/FindPeople'));
+const PublicProfile = lazyWithReload(() => import('./screens/buyer/PublicProfile'));
+const DirectInbox = lazyWithReload(() => import('./screens/buyer/DirectInbox'));
+const DirectChat = lazyWithReload(() => import('./screens/buyer/DirectChat'));
 const UserProfile = lazyWithReload(() => import('./screens/buyer/UserProfile'));
 const Settings = lazyWithReload(() => import('./screens/buyer/Settings'));
 const EditProfile = lazyWithReload(() => import('./screens/buyer/EditProfile'));
@@ -232,6 +236,10 @@ export default function App() {
                       <Route path="inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
                       <Route path="chat/:conversationId" element={<RequireAuth><VendorChat /></RequireAuth>} />
                       <Route path="profile" element={<UserProfile />} />
+                      <Route path="profile/people" element={<RequireAuth><FindPeople /></RequireAuth>} />
+                      <Route path="profile/u/:id" element={<RequireAuth><PublicProfile /></RequireAuth>} />
+                      <Route path="profile/messages" element={<RequireAuth><DirectInbox /></RequireAuth>} />
+                      <Route path="profile/messages/:conversationId" element={<RequireAuth><DirectChat /></RequireAuth>} />
                       <Route path="profile/settings" element={<Settings />} />
                       <Route path="profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
                       <Route path="profile/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
