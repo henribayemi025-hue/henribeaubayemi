@@ -7,11 +7,13 @@ import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useToast } from '../../hooks/useToast';
-import { getPublicProfile, sendDirectMessage, markDirectConversationRead, directErrorKey } from '../../lib/directMessages';
+import { getPublicProfile, sendDirectMessage, markDirectConversationRead, hideDirectConversation, directErrorKey } from '../../lib/directMessages';
 import { SmartImage } from '../../components/SmartImage';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
+import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 
@@ -37,6 +39,8 @@ export default function DirectChat() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [deleteConvOpen, setDeleteConvOpen] = useState(false);
+  const [deletingConv, setDeletingConv] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const scroller = useRef(null);
@@ -151,6 +155,19 @@ export default function DirectChat() {
     }
   }
 
+  async function deleteConversation() {
+    setDeletingConv(true);
+    try {
+      await hideDirectConversation(conversationId);
+      navigate('/profile/messages', { replace: true });
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+    } finally {
+      setDeletingConv(false);
+      setDeleteConvOpen(false);
+    }
+  }
+
   async function startRecording() {
     if (recording) return;
     try {
@@ -251,6 +268,18 @@ export default function DirectChat() {
         <button onClick={() => setReportOpen(true)} aria-label={t('report.report')} className="p-1.5 text-muted">
           <IconFlag size={18} />
         </button>
+        {/* Beau (deux fois): « il ya pas eu delete UNE conversation ». */}
+        <button onClick={() => setDeleteConvOpen(true)} aria-label={t('chat.deleteConversation')} title={t('chat.deleteConversation')} className="p-1.5 text-muted hover:text-danger">
+          <IconTrash size={18} />
+        </button>
+        <Modal open={deleteConvOpen} onClose={() => setDeleteConvOpen(false)} title={t('chat.deleteConversation')}>
+          <div className="space-y-4">
+            <p className="text-body text-muted">{t('chat.deleteConversationConfirm')}</p>
+            <Button onClick={deleteConversation} loading={deletingConv} className="!bg-danger">
+              {t('common.delete')}
+            </Button>
+          </div>
+        </Modal>
       </header>
 
       <div ref={scroller} className="flex-1 space-y-2 overflow-y-auto p-3">

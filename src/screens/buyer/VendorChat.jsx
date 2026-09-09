@@ -12,6 +12,7 @@ import { SmartImage } from '../../components/SmartImage';
 import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
 import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
 import { StoryViewer } from '../../components/StoryViewer';
 import { useShopStories } from '../../hooks/useShopStories';
 import { ShopAvatar } from '../../components/ShopAvatar';
@@ -65,6 +66,11 @@ export default function VendorChat({ vendor = false }) {
   // base refuserait ensuite, sans que personne comprenne pourquoi.
   const [blocked, setBlocked] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  // Beau (deux fois): « il ya pas eu delete UNE conversation ». Masque
+  // uniquement de mon côté (buyer_hidden/vendor_hidden) — l'autre partie
+  // garde son fil, et un nouveau message le refait réapparaître chez moi.
+  const [deleteConvOpen, setDeleteConvOpen] = useState(false);
+  const [deletingConv, setDeletingConv] = useState(false);
   // Beau, en testant: taper une photo envoyée ne faisait rien — elle
   // restait coincée dans sa petite bulle. Plein écran au tap, comme
   // n'importe quelle appli de messagerie.
@@ -380,6 +386,23 @@ export default function VendorChat({ vendor = false }) {
     }
   }
 
+  async function deleteConversation() {
+    setDeletingConv(true);
+    try {
+      const { error: dErr } = await supabase
+        .from('conversations')
+        .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
+        .eq('id', conversationId);
+      if (dErr) throw dErr;
+      navigate(vendor ? '/vendor/messages' : '/chat', { replace: true });
+    } catch (e) {
+      toast.error(e?.message || t('errors.generic'));
+    } finally {
+      setDeletingConv(false);
+      setDeleteConvOpen(false);
+    }
+  }
+
   async function startRecording() {
     if (recording) return;
     try {
@@ -542,6 +565,24 @@ export default function VendorChat({ vendor = false }) {
           userId={vendor ? meta?.buyer_id : null}
           onChange={setBlocked}
         />
+        {/* Beau (deux fois): « il ya pas eu delete UNE conversation ». */}
+        <button
+          type="button"
+          onClick={() => setDeleteConvOpen(true)}
+          aria-label={t('chat.deleteConversation')}
+          title={t('chat.deleteConversation')}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted hover:text-danger"
+        >
+          <IconTrash size={18} />
+        </button>
+        <Modal open={deleteConvOpen} onClose={() => setDeleteConvOpen(false)} title={t('chat.deleteConversation')}>
+          <div className="space-y-4">
+            <p className="text-body text-muted">{t('chat.deleteConversationConfirm')}</p>
+            <Button onClick={deleteConversation} loading={deletingConv} className="!bg-danger">
+              {t('common.delete')}
+            </Button>
+          </div>
+        </Modal>
       </header>
       {loading ? (
         <div className="flex-1 space-y-3 p-4">

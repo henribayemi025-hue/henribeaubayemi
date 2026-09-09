@@ -469,6 +469,8 @@
   },
   "chat": {
     "placeholder": "Écris un message…",
+    "deleteConversation": "Supprimer la conversation",
+    "deleteConversationConfirm": "Cette conversation disparaît de ta liste. Si l'autre partie écrit à nouveau, elle réapparaîtra.",
     "chattingWith": "Vous discutez avec {{name}}",
     "finouHint": "Astuce : tape @ pour demander à l'IA",
     "finouSuggestionHint": "Demander à l'IA",
@@ -671,6 +673,8 @@
   "dm": {
     "title": "Messages personnels",
     "findPeople": "Trouver quelqu'un",
+    "deleteConversation": "Supprimer la conversation",
+    "deleteConversationConfirm": "Cette conversation disparaît de ta liste. Si la personne t'écrit à nouveau, elle réapparaîtra.",
     "searchPlaceholder": "Chercher un nom…",
     "searchHint": "Tape au moins 2 lettres.",
     "noResults": "Personne ne correspond.",

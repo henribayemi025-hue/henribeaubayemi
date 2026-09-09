@@ -469,6 +469,8 @@
   },
   "chat": {
     "placeholder": "Write a message…",
+    "deleteConversation": "Delete conversation",
+    "deleteConversationConfirm": "This conversation disappears from your list. If the other side writes again, it will come back.",
     "chattingWith": "You're chatting with {{name}}",
     "finouHint": "Tip: type @ to ask the AI",
     "finouSuggestionHint": "Ask the AI",
@@ -671,6 +673,8 @@
   "dm": {
     "title": "Personal messages",
     "findPeople": "Find someone",
+    "deleteConversation": "Delete conversation",
+    "deleteConversationConfirm": "This conversation disappears from your list. If the person messages you again, it will come back.",
     "searchPlaceholder": "Search a name…",
     "searchHint": "Type at least 2 letters.",
     "noResults": "No match.",

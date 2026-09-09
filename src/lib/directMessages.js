@@ -60,6 +60,13 @@ export async function markDirectConversationRead(conversationId) {
   if (error) throw error;
 }
 
+// Masque la conversation de MON côté uniquement (l'autre personne la garde) —
+// voir migration 0106. Un nouveau message de sa part la fait réapparaître.
+export async function hideDirectConversation(conversationId) {
+  const { error } = await supabase.rpc('hide_direct_conversation', { p_conversation_id: conversationId });
+  if (error) throw error;
+}
+
 // Les erreurs RPC arrivent en `error.message` sous la forme brute levée par
 // `raise exception` (ex: "must_follow"). On les traduit en clé i18n plutôt
 // que d'afficher le texte technique tel quel.

@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessageOff, IconUserPlus } from '@tabler/icons-react';
+import { IconMessageOff, IconUserPlus, IconTrash } from '@tabler/icons-react';
 import { supabase, storageThumbUrl, storageUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
-import { getPublicProfiles } from '../../lib/directMessages';
+import { useToast } from '../../hooks/useToast';
+import { getPublicProfiles, hideDirectConversation } from '../../lib/directMessages';
 import { AppHeader } from '../../components/AppHeader';
 import { ShopAvatar } from '../../components/ShopAvatar';
+import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 
@@ -19,24 +22,43 @@ export default function DirectInbox() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const [tab, setTab] = useState('chats');
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: convs, error: err } = await supabase
       .from('direct_conversations')
-      .select('id, user_a_id, user_b_id, initiator_id, unlocked, last_message, last_message_at, a_unread, b_unread')
+      .select('id, user_a_id, user_b_id, initiator_id, unlocked, last_message, last_message_at, a_unread, b_unread, a_hidden, b_hidden')
       .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
       .order('last_message_at', { ascending: false });
     if (err) throw err;
     const otherIds = (convs || []).map((c) => (c.user_a_id === user.id ? c.user_b_id : c.user_a_id));
     const profiles = await getPublicProfiles([...new Set(otherIds)]);
     const byId = Object.fromEntries(profiles.map((p) => [p.id, p]));
-    return (convs || []).map((c) => {
-      const otherId = c.user_a_id === user.id ? c.user_b_id : c.user_a_id;
-      const unread = c.user_a_id === user.id ? c.a_unread : c.b_unread;
-      return { ...c, other: byId[otherId] || { id: otherId, name: '—', avatar_url: null }, unread };
-    });
+    return (convs || [])
+      .filter((c) => (c.user_a_id === user.id ? !c.a_hidden : !c.b_hidden))
+      .map((c) => {
+        const otherId = c.user_a_id === user.id ? c.user_b_id : c.user_a_id;
+        const unread = c.user_a_id === user.id ? c.a_unread : c.b_unread;
+        return { ...c, other: byId[otherId] || { id: otherId, name: '—', avatar_url: null }, unread };
+      });
   }, [user]);
+
+  async function confirmDelete() {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      await hideDirectConversation(toDelete);
+      setToDelete(null);
+      retry();
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     if (!user) return undefined;
@@ -92,10 +114,10 @@ export default function DirectInbox() {
       ) : (
         <ul>
           {list.map((c) => (
-            <li key={c.id}>
+            <li key={c.id} className="group relative">
               <Link
                 to={`/profile/messages/${c.id}`}
-                className="flex items-center gap-3 border-b border-hairline px-4 py-3 transition-colors hover:bg-base"
+                className="flex items-center gap-3 border-b border-hairline px-4 py-3 pr-11 transition-colors hover:bg-base"
               >
                 <ShopAvatar
                   src={c.other.avatar_url ? storageThumbUrl('shops', c.other.avatar_url) : null}
@@ -119,10 +141,29 @@ export default function DirectInbox() {
                   </span>
                 )}
               </Link>
+              {/* Supprimer une conversation ("il ya pas eu delete") — masque
+                  seulement de mon côté, l'autre personne garde son fil. */}
+              <button
+                type="button"
+                onClick={() => setToDelete(c.id)}
+                aria-label={t('dm.deleteConversation')}
+                title={t('dm.deleteConversation')}
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-danger-bg hover:text-danger"
+              >
+                <IconTrash size={16} />
+              </button>
             </li>
           ))}
         </ul>
       )}
+      <Modal open={!!toDelete} onClose={() => setToDelete(null)} title={t('dm.deleteConversation')}>
+        <div className="space-y-4">
+          <p className="text-body text-muted">{t('dm.deleteConversationConfirm')}</p>
+          <Button onClick={confirmDelete} loading={deleting} className="!bg-danger">
+            {t('common.delete')}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

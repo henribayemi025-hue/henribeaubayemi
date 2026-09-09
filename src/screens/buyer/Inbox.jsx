@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessageOff, IconMessages, IconSearch, IconX } from '@tabler/icons-react';
+import { IconMessageOff, IconMessages, IconSearch, IconX, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,6 +10,8 @@ import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 import { nameMatches } from '../../lib/searchNorm';
@@ -32,11 +34,13 @@ export function ConversationList({ vendor = false, activeId = null }) {
   const [shopResults, setShopResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [starting, setStarting] = useState(null);
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data, loading, error, retry } = useAsync(async () => {
     let query = supabase
       .from('conversations')
-      .select('id, last_message, last_message_at, buyer_unread, vendor_unread, shop_id, shops(name, avatar_url, is_verified)')
+      .select('id, last_message, last_message_at, buyer_unread, vendor_unread, buyer_hidden, vendor_hidden, shop_id, shops(name, avatar_url, is_verified)')
       .order('last_message_at', { ascending: false });
     if (vendor) {
       const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', user.id).maybeSingle();
@@ -46,8 +50,29 @@ export function ConversationList({ vendor = false, activeId = null }) {
     }
     const { data: convs, error: err } = await query;
     if (err) throw err;
-    return convs || [];
+    return (convs || []).filter((c) => !(vendor ? c.vendor_hidden : c.buyer_hidden));
   }, [user, vendor]);
+
+  // Beau (deux fois): « il ya pas eu delete UNE conversation ». Masque
+  // seulement de mon côté; un nouveau message de l'autre partie la refait
+  // réapparaître (voir migration 0106 / on_chat_message).
+  async function confirmDelete() {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      const { error: dErr } = await supabase
+        .from('conversations')
+        .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
+        .eq('id', toDelete);
+      if (dErr) throw dErr;
+      setToDelete(null);
+      retry();
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   // Live-refresh the list when a conversation changes (new/updated message).
   useEffect(() => {
@@ -196,10 +221,10 @@ export function ConversationList({ vendor = false, activeId = null }) {
         const unread = vendor ? c.vendor_unread : c.buyer_unread;
         const active = c.id === activeId;
         return (
-          <li key={c.id}>
+          <li key={c.id} className="group relative">
             <Link
               to={`${base}/${c.id}`}
-              className={`flex items-center gap-3 border-b border-hairline px-4 py-3 transition-colors ${
+              className={`flex items-center gap-3 border-b border-hairline px-4 py-3 pr-11 transition-colors ${
                 active ? 'border-l-[3px] border-l-teal bg-teal-light pl-[13px]' : 'hover:bg-base'
               }`}
             >
@@ -222,10 +247,27 @@ export function ConversationList({ vendor = false, activeId = null }) {
                 <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">{unread}</span>
               )}
             </Link>
+            <button
+              type="button"
+              onClick={() => setToDelete(c.id)}
+              aria-label={t('chat.deleteConversation')}
+              title={t('chat.deleteConversation')}
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-danger-bg hover:text-danger"
+            >
+              <IconTrash size={16} />
+            </button>
           </li>
         );
       })}
     </ul>
+      <Modal open={!!toDelete} onClose={() => setToDelete(null)} title={t('chat.deleteConversation')}>
+        <div className="space-y-4">
+          <p className="text-body text-muted">{t('chat.deleteConversationConfirm')}</p>
+          <Button onClick={confirmDelete} loading={deleting} className="!bg-danger">
+            {t('common.delete')}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
