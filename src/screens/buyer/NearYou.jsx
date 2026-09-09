@@ -106,12 +106,18 @@ export default function NearYou() {
   // Constaté par Beau, au Cameroun: « ça ne m'a pas proposé les choses au
   // Cameroun ». Son propre pays disparaissait, l'étranger restait.
   //
-  // Ordre désormais: 1) ce qui est vraiment autour (GPS ≤ rayon), du plus
-  // proche au plus loin; 2) TON pays sans GPS (l'immense majorité des
-  // fiches); 3) ton pays plus loin que le rayon — jamais supprimé; 4) le
-  // reste du monde sans GPS (ne jamais vider l'annuaire de qui n'a pas
-  // renseigné son GPS); 5) le reste du monde au-delà du rayon, seul cas
-  // encore écarté — comme avant.
+  // Un second correctif (09/09) a fini le travail: la dernière catégorie
+  // encore écartée (étranger + GPS + hors rayon) partait du principe que
+  // `country` (le pays deviné/réglé de la personne) est fiable. Or CLAUDE.md
+  // le dit noir sur blanc — cette détection se trompe facilement — et
+  // Beau en a fait la preuve en testant: son `country` valait « Inde »
+  // (mauvaise détection), ce qui faisait passer TOUTES les boutiques
+  // camerounaises pour « étrangères » et purement et simplement disparaître
+  // 18 fiches ayant un GPS dès qu'il activait « Autour de moi » — la liste
+  // passait de 50 à 34 boutiques sans qu'il ait rien demandé de tel.
+  // Plus aucune catégorie n'est donc écartée: le tri seul fait le travail,
+  // une détection erronée dégrade au pire l'ordre, jamais le nombre de
+  // boutiques visibles.
   function rangAutourDeMoi(x) {
     if (x._km != null && x._km <= radiusKm) return 0;
     if (x.country === country) return x._km != null ? 2 : 1;
@@ -131,9 +137,10 @@ export default function NearYou() {
       });
   }
 
+  // Ancien filtre retiré (voir le commentaire ci-dessus): plus aucune fiche
+  // n'est masquée par "Autour de moi", quel que soit le pays deviné.
   function withinRadius(items) {
-    if (!userPos) return items;
-    return items.filter((x) => rangAutourDeMoi(x) < 4);
+    return items;
   }
 
   const { data, loading, error, retry } = useAsync(async () => {
