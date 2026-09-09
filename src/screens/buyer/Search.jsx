@@ -33,6 +33,24 @@ const SEARCH_STOP = new Set([
   'et', 'ou', 'mon', 'ma', 'mes', 'ce', 'cette', 'que', 'qui', 'chez', 'sur',
   'produit', 'produits', 'article', 'articles', 'cherche', 'voudrais', 'veux',
 ]);
+// Repli quand la recherche exacte ne trouve rien: certains articles sont
+// bien de la bonne famille mais nommés autrement par la vendeuse (« Boho
+// braids » ne contient ni « perruque » ni « cheveux ») — un mot-clé ne les
+// trouvera jamais, un rayon probable si. Volontairement une liste courte et
+// mesurée: chaque entrée correspond à un vrai trou constaté (recherches
+// sans résultat du 08/09), pas une supposition.
+const RAYON_PROBABLE = [
+  { motifs: /perruque|m[eè]che|tissage|tress|wig|cheveux/i, rayon: 'cheveux' },
+  { motifs: /talon|chaussure|sandale|escarpin|basket/i, rayon: 'chaussures' },
+  { motifs: /frigo|r[eé]frig[eé]rateur|cong[eé]lateur|cuisini[eè]re/i, rayon: 'electromenager' },
+  { motifs: /ordinateur|laptop|\bpc\b/i, rayon: 'informatique_digital' },
+  { motifs: /t[eé]l[eé]phone|smartphone|\bgsm\b/i, rayon: 'hightech_telephones' },
+];
+function rayonProbable(term) {
+  const found = RAYON_PROBABLE.find((r) => r.motifs.test(term));
+  return found?.rayon ?? null;
+}
+
 function searchWords(term) {
   return term
     .toLowerCase()
@@ -104,7 +122,24 @@ export default function Search() {
           .filter((s) => s && s.name.toLowerCase().includes(lower));
         const products = (prodRes.data || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
         const shops = (shopsRes.data || []).filter((sh) => nameMatches(sh.name, term)).slice(0, 10);
-        setState({ loading: false, error: false, data: { cats, shops, products, followed } });
+
+        // Repli: aucun article ne correspond au mot tapé, mais le rayon
+        // probable en a peut-être — voir RAYON_PROBABLE plus haut.
+        let suggestions = [];
+        const suggestionsCat = products.length === 0 ? rayonProbable(term) : null;
+        if (suggestionsCat) {
+          const { data: sugRes } = await supabase
+            .from('products')
+            .select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops(name)')
+            .eq('is_active', true)
+            .eq('category', suggestionsCat)
+            .limit(8)
+            .abortSignal(signal);
+          if (signal.aborted) return;
+          suggestions = (sugRes || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
+        }
+
+        setState({ loading: false, error: false, data: { cats, shops, products, followed, suggestions, suggestionsCat } });
         // `n` = nombre de résultats. Sans lui, on sait ce que les gens
         // cherchent mais pas ce qu'ils n'ont pas trouvé — or c'est exactement
         // ça qui dit quelles vendeuses il faut aller recruter.
@@ -167,6 +202,17 @@ export default function Search() {
           <div className="space-y-4 py-6">
             {veutVendre(q) && <DevenirVendeurCard />}
             <p className="text-center text-body text-muted">{t('search.noResults', { q: q.trim() })}</p>
+            {/* Repli: rien ne correspond au mot tapé, mais le rayon probable
+                a peut-être ce qu'il faut — un article mal nommé/classé par
+                la vendeuse (« Boho braids » pour une recherche « perruque »)
+                ne remontera jamais par mot-clé, seul le rayon le peut. */}
+            {data.suggestions?.length > 0 && (
+              <Section title={t('search.maybeInterested', { rayon: t(`categories.${data.suggestionsCat}`) })}>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {data.suggestions.map((p) => <ProductCard key={p.id} product={p} />)}
+                </div>
+              </Section>
+            )}
             {/* Une recherche vide n'est pas une impasse: c'est une demande
                 qu'on peut encore servir. Sauf quand la personne cherche a
                 VENDRE (pas un article) — dans ce cas la carte au-dessus
