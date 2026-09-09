@@ -18,6 +18,7 @@ import { MessagesShell } from './Inbox';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { currencyForCountry, convertFromFcfa } from '../../lib/currency';
+import { estPremium } from '../../lib/premium';
 import { FinouAction } from '../../components/FinouAction';
 
 // Mentioning @finouchou (or @finou) inside a buyer<->vendor chat pulls in the
@@ -58,6 +59,11 @@ export default function VendorChat({ vendor = false }) {
   const [forwardTargets, setForwardTargets] = useState([]);
   const [forwardLoading, setForwardLoading] = useState(false);
   const [forwardSending, setForwardSending] = useState(null);
+  // Finia Premium: suggestions de réponse toutes faites pour le dernier
+  // message client — elle choisit, édite ou tape la sienne, rien ne part
+  // sans qu'elle appuie sur Envoyer (contrairement à l'agent auto-réponse).
+  const [replySuggestions, setReplySuggestions] = useState(null);
+  const [suggestLoading, setSuggestLoading] = useState(false);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -83,7 +89,7 @@ export default function VendorChat({ vendor = false }) {
     try {
       const { data: conv, error: cErr } = await supabase
         .from('conversations')
-        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country, is_verified, whatsapp, phone)')
+        .select('id, buyer_id, shop_id, shops(name, slug, avatar_url, country, is_verified, whatsapp, phone, premium_until)')
         .eq('id', conversationId)
         .maybeSingle();
       if (cErr || !conv) throw cErr || new Error('not found');
@@ -152,6 +158,13 @@ export default function VendorChat({ vendor = false }) {
     // keyboard resizes the viewport (WhatsApp behaviour).
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, finouThinking]);
+
+  // Des suggestions valables pour "le dernier message" deviennent fausses
+  // dès qu'un nouveau message arrive (réponse envoyée, ou la cliente qui
+  // relance) — on les efface plutôt que de laisser un choix périmé affiché.
+  useEffect(() => {
+    setReplySuggestions(null);
+  }, [messages.length]);
 
   async function askFinou(query) {
     setFinouError(false);
@@ -223,6 +236,23 @@ export default function VendorChat({ vendor = false }) {
   function retryMessage(msg) {
     setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, failed: false } : x)));
     deliver({ conversation_id: conversationId, sender_id: user.id, sender_role: role, body: msg.body, image_url: msg.image_url }, msg.id);
+  }
+
+  async function fetchSuggestions() {
+    setSuggestLoading(true);
+    setReplySuggestions(null);
+    try {
+      const { data, error: sErr } = await supabase.functions.invoke('vendor-copilot', {
+        body: { mode: 'suggest_replies', conversationId, lang: i18n.language },
+      });
+      if (sErr) throw sErr;
+      setReplySuggestions(data?.suggestions || []);
+    } catch {
+      toast.error(t('errors.generic'));
+      setReplySuggestions([]);
+    } finally {
+      setSuggestLoading(false);
+    }
   }
 
   async function openForward(msg) {
@@ -498,6 +528,36 @@ export default function VendorChat({ vendor = false }) {
               >
                 <IconSparkles size={14} /> @finouchou — {t('chat.finouSuggestionHint')}
               </button>
+            </div>
+          )}
+          {vendor && !blocked && estPremium(shop) && messages.length > 0 && messages[messages.length - 1].sender_role === 'buyer' && (
+            <div className="border-t border-hairline bg-white px-3 pt-2">
+              {suggestLoading ? (
+                <p className="pb-2 flex items-center gap-1.5 text-caption text-muted">
+                  <IconSparkles size={14} className="animate-pulse text-teal" /> {t('chat.suggestLoading')}
+                </p>
+              ) : replySuggestions?.length > 0 ? (
+                <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto pb-2">
+                  {replySuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => { setInput(s); setReplySuggestions([]); inputRef.current?.focus(); }}
+                      className="shrink-0 rounded-pill border border-teal/40 bg-teal/5 px-3 py-1.5 text-left text-caption text-teal"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={fetchSuggestions}
+                  className="mb-2 inline-flex items-center gap-1.5 rounded-pill border border-teal/40 bg-teal/5 px-3 py-1.5 text-caption font-semibold text-teal"
+                >
+                  <IconSparkles size={14} /> {t('chat.suggestReplies')}
+                </button>
+              )}
             </div>
           )}
           {blocked ? (

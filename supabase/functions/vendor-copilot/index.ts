@@ -6,6 +6,9 @@
 //                           { hook, scenes[{shot,text}], cta, hashtags[] }
 //   'polish'                { text, lang? } -> { text } — corrige l'orthographe
 //                           et raccourcit un texte déjà écrit, sans le réécrire
+//   'suggest_replies'       { conversationId, lang? } -> { suggestions: string[] }
+//                           3 réponses courtes toutes faites, à partir du
+//                           dernier message client — Finia Premium uniquement
 //
 // 'listing' est l'Auto-Listing du pilier 3 (capacité 12, partie texte) : la
 // photo est lue DEPUIS le bucket public `products` (le vendeur l'a déjà
@@ -383,6 +386,95 @@ Deno.serve(async (req: Request) => {
       if (!polished) return json({ error: 'empty' }, 502);
       sb.from('ai_usage').insert({ fn: 'vendor_copilot', cost_eur: COPILOT_CALL_COST_EUR }).then(() => {}, () => {});
       return json({ text: polished });
+    }
+
+    // ------------------------------------------------------- suggest_replies
+    // Finia Premium: 3 réponses courtes proposées à la vendeuse pour le
+    // dernier message client — elle choisit, édite ou tape la sienne. Ce
+    // n'est PAS l'agent auto-réponse (chat-autoreply), qui lui envoie
+    // directement après 2h de silence: ici rien ne part sans qu'elle tape
+    // "Envoyer" elle-même.
+    if (mode === 'suggest_replies') {
+      const conversationId = body.conversationId;
+      if (!conversationId || typeof conversationId !== 'string') return json({ error: 'missing_conversation' }, 400);
+
+      const { data: conv } = await sb
+        .from('conversations')
+        .select('id, shop_id, shops(owner_id, premium_until)')
+        .eq('id', conversationId)
+        .maybeSingle();
+      const shopMeta = conv?.shops as { owner_id?: string; premium_until?: string } | null;
+      if (!conv || shopMeta?.owner_id !== user.id) return json({ error: 'forbidden' }, 403);
+      const estPremium = !!shopMeta?.premium_until && new Date(shopMeta.premium_until) > new Date();
+      if (!estPremium) return json({ error: 'not_premium' }, 403);
+
+      const [{ data: produits }, { data: messages }] = await Promise.all([
+        sb.from('products')
+          .select('name, price_fcfa, stock, description')
+          .eq('shop_id', conv.shop_id).eq('is_active', true)
+          .order('created_at', { ascending: false }).limit(40),
+        sb.from('chat_messages')
+          .select('sender_role, body, image_url')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: false }).limit(10),
+      ]);
+
+      const recent = (messages ?? []).slice().reverse();
+      // Rien à suggérer si le dernier mot vient déjà de la boutique.
+      if (recent.length === 0 || recent[recent.length - 1].sender_role !== 'buyer') {
+        return json({ suggestions: [] });
+      }
+
+      const catalogue = (produits ?? [])
+        .map((p: { name: string; price_fcfa: number; stock: number; description?: string }) =>
+          `- ${p.name}: ${p.price_fcfa} FCFA, stock ${p.stock}${p.description ? ` — ${String(p.description).slice(0, 140)}` : ''}`)
+        .join('\n') || (isFr ? '(aucun article actif)' : '(no active product)');
+      const historique = recent
+        .map((m: { sender_role: string; body?: string; image_url?: string }) =>
+          `${m.sender_role === 'buyer' ? (isFr ? 'Cliente' : 'Customer') : (isFr ? 'Boutique' : 'Shop')}: ${m.body || (m.image_url ? '[photo]' : '')}`)
+        .join('\n');
+
+      const prompt = isFr
+        ? `Tu aides une vendeuse sur la marketplace Finjaro à répondre vite à sa cliente. ` +
+          `Propose 3 réponses courtes (1-2 phrases chacune), DIFFÉRENTES entre elles ` +
+          `(ex: une qui confirme, une qui pose une question, une plus commerciale), ` +
+          `que la vendeuse pourra envoyer telles quelles ou modifier. Écris à la première ` +
+          `personne, comme si c'était elle qui parlait.\n\n` +
+          `INTERDITS: n'invente aucun prix, stock, couleur/taille, délai ou politique qui ` +
+          `n'est pas dans les articles ci-dessous. Ne promets aucune remise ni remboursement. ` +
+          `Ne confirme aucune commande.\n\n` +
+          `ARTICLES DE LA BOUTIQUE:\n${catalogue}\n\nCONVERSATION (dernière ligne = à quoi répondre):\n${historique}`
+        : `You're helping a seller on the Finjaro marketplace reply quickly to her customer. ` +
+          `Suggest 3 short replies (1-2 sentences each), DIFFERENT from one another ` +
+          `(e.g. one confirming, one asking a question, one more sales-oriented), ` +
+          `that she can send as-is or edit. Write in first person, as if she were speaking.\n\n` +
+          `FORBIDDEN: never invent a price, stock, color/size, delay or policy not in the ` +
+          `products below. Never promise a discount or refund. Never confirm an order.\n\n` +
+          `SHOP PRODUCTS:\n${catalogue}\n\nCONVERSATION (last line = what to reply to):\n${historique}`;
+
+      const data = await gemini(apiKey, {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.5,
+          maxOutputTokens: 1024,
+          thinkingConfig: { thinkingBudget: 0 },
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            required: ['suggestions'],
+            properties: { suggestions: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 3, maxItems: 3 } },
+          },
+        },
+      });
+      if (!data) return json({ error: 'gemini_error' }, 502);
+      try {
+        const parsed = JSON.parse(textOf(data));
+        const suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 3).map((s: string) => String(s).slice(0, 300)) : [];
+        sb.from('ai_usage').insert({ fn: 'vendor_copilot', cost_eur: COPILOT_CALL_COST_EUR }).then(() => {}, () => {});
+        return json({ suggestions });
+      } catch {
+        return json({ error: 'bad_ai_response' }, 502);
+      }
     }
 
     // ----------------------------------------------- description (mode défaut)

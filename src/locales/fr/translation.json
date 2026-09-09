@@ -484,7 +484,9 @@
     "forwardTo": "Transférer vers…",
     "forwardNoTargets": "Aucune autre conversation pour l'instant.",
     "forwardBuyer": "Acheteuse",
-    "forwarded": "Message transféré"
+    "forwarded": "Message transféré",
+    "suggestReplies": "Suggestions de réponse",
+    "suggestLoading": "Finia prépare des suggestions…"
   },
   "cart": {
     "title": "Panier",

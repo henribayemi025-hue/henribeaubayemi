@@ -484,7 +484,9 @@
     "forwardTo": "Forward to…",
     "forwardNoTargets": "No other conversation yet.",
     "forwardBuyer": "Buyer",
-    "forwarded": "Message forwarded"
+    "forwarded": "Message forwarded",
+    "suggestReplies": "Suggested replies",
+    "suggestLoading": "Finia is preparing suggestions…"
   },
   "cart": {
     "title": "Cart",
