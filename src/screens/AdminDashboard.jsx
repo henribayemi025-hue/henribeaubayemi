@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
   IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy, IconMessage2,
-  IconSearch,
+  IconSearch, IconArrowUpRight, IconArrowDownRight,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -53,6 +53,38 @@ async function countSince(table, days, extra) {
   if (extra) q = extra(q);
   const { count } = await q;
   return count || 0;
+}
+
+const daysAgo = (n) => new Date(Date.now() - n * 24 * 3600 * 1000).toISOString();
+
+// Semaine précédente (J-14 à J-7), pour comparer plutôt qu'annoncer un
+// chiffre nu — "12 commandes" ne dit rien seul, "12 commandes, contre 8 la
+// semaine dernière" si.
+async function countPrevWeek(table, extra) {
+  let q = supabase.from(table).select('id', { count: 'exact', head: true }).gte('created_at', daysAgo(14)).lt('created_at', daysAgo(7));
+  if (extra) q = extra(q);
+  const { count } = await q;
+  return count || 0;
+}
+
+// Argent réellement encaissé: sur `delivered_at`, pas `created_at` — une
+// commande passée cette semaine mais pas encore livrée n'a rien rapporté
+// ENCORE, et une livrée cette semaine mais commandée avant a bien payé cette
+// semaine-ci.
+async function revenueDelivered(fromDaysAgo, toDaysAgo) {
+  let q = supabase.from('orders').select('total_fcfa').eq('status', 'delivered');
+  if (fromDaysAgo != null) q = q.gte('delivered_at', daysAgo(fromDaysAgo));
+  if (toDaysAgo != null) q = q.lt('delivered_at', daysAgo(toDaysAgo));
+  const { data } = await q;
+  return (data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
+}
+
+// Variation en %, en évitant le piège du "de 0 à 3" qui donnerait +∞%.
+function variation(cur, prev) {
+  if (prev === 0) return cur > 0 ? { nouveau: true } : null;
+  const pct = Math.round(((cur - prev) / prev) * 100);
+  if (pct === 0) return null;
+  return { pct };
 }
 
 export default function AdminDashboard() {
@@ -108,21 +140,27 @@ function Overview({ goTo }) {
 
   const { data, loading, error, retry } = useAsync(async () => {
     const [
-      visitsTotal, visits7d, usersTotal, users7d, vendorsTotal,
-      ordersTotal, orders7d, revenueRes, topProducts, eventCounts, recentVisitorsRes, aiUsageRes,
+      visitsTotal, visits7d, visitsPrev7d, usersTotal, users7d, usersPrev7d, vendorsTotal,
+      ordersTotal, orders7d, ordersPrev7d, revenueRes, revenue7d, revenuePrev7d,
+      topProducts, eventCounts, recentVisitorsRes, aiUsageRes,
       pendingReports, ticketsOuverts, pendingApps, demandesOuvertes,
     ] = await Promise.all([
       countSince('events', null, (q) => q.eq('type', 'visit')),
       countSince('events', 7, (q) => q.eq('type', 'visit')),
+      countPrevWeek('events', (q) => q.eq('type', 'visit')),
       countSince('profiles', null),
       countSince('profiles', 7),
+      countPrevWeek('profiles'),
       countSince('shops', null, (q) => q.eq('status', 'active')),
       countSince('orders', null),
       countSince('orders', 7),
+      countPrevWeek('orders'),
       // Chiffre d'affaires RÉELLEMENT réalisé = commandes livrées. Se fier à
       // `paid_at` ne mesurerait que le paiement en ligne, alors que
       // l'écrasante majorité des commandes se règlent à la livraison.
       supabase.from('orders').select('total_fcfa').eq('status', 'delivered'),
+      revenueDelivered(7, null),
+      revenueDelivered(14, 7),
       supabase.from('products').select('id, name, images, price_fcfa, views').eq('is_active', true).order('views', { ascending: false }).limit(8),
       Promise.all(EVENT_TYPES.map((type) => countSince('events', null, (q) => q.eq('type', type)))),
       supabase
@@ -141,7 +179,8 @@ function Overview({ goTo }) {
     const revenueFcfa = (revenueRes.data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
     const aiSpendEur = (aiUsageRes.data || []).reduce((s, r) => s + Number(r.cost_eur), 0);
     return {
-      visitsTotal, visits7d, usersTotal, users7d, vendorsTotal, ordersTotal, orders7d, revenueFcfa,
+      visitsTotal, visits7d, visitsPrev7d, usersTotal, users7d, usersPrev7d, vendorsTotal,
+      ordersTotal, orders7d, ordersPrev7d, revenueFcfa, revenue7d, revenuePrev7d,
       topProducts: topProducts.data || [],
       events: EVENT_TYPES.map((type, i) => ({ type, count: eventCounts[i] })),
       recentVisitors: recentVisitorsRes.data || [],
@@ -156,6 +195,33 @@ function Overview({ goTo }) {
 
   return (
     <div className="space-y-6 p-4">
+      {/* Beau: « un résumé narratif de tes stats au lieu de chiffres bruts ».
+          Une phrase lue d'un coup, comparée à la semaine d'avant plutôt que
+          des compteurs nus qui ne disent rien seuls — les chiffres exacts
+          restent juste en dessous pour qui veut vérifier. Pas d'IA ici: ce
+          sont des montants réels, jamais reformulés par un modèle qui
+          pourrait se tromper de chiffre. */}
+      <div className="rounded-card border border-teal/25 bg-teal-light/40 p-4">
+        <p className="mb-1.5 flex items-center gap-1.5 text-caption font-semibold text-teal">
+          <IconSparkles size={14} /> {t('admin.weeklySummary')}
+        </p>
+        <p className="text-body text-ink">
+          {t('admin.summaryIntro')}{' '}
+          {t('admin.summaryVisits', { count: data.visits7d })} <Trend cur={data.visits7d} prev={data.visitsPrev7d} />
+          {', '}
+          {t('admin.summaryUsers', { count: data.users7d })} <Trend cur={data.users7d} prev={data.usersPrev7d} />
+          {', '}
+          {t('admin.summaryOrders', { count: data.orders7d })} <Trend cur={data.orders7d} prev={data.ordersPrev7d} />
+          {data.revenue7d > 0 && (
+            <>
+              {' '}{t('admin.summaryRevenueFor')} <Price fcfa={data.revenue7d} className="font-semibold" /> <Trend cur={data.revenue7d} prev={data.revenuePrev7d} />
+            </>
+          )}
+          {'. '}
+          {t('admin.summaryVendorsTotal', { count: data.vendorsTotal })}
+        </p>
+      </div>
+
       {/* Ce qui attend une décision passe en tête: sans ça, un signalement
           peut dormir des jours sans que personne ne le voie. Ce sont des
           BOUTONS qui changent d'onglet, pas des liens vers une adresse — la
@@ -278,6 +344,22 @@ function Overview({ goTo }) {
         <p className="mt-1.5 text-[11px] text-muted">{t('admin.anonymousNote')}</p>
       </div>
     </div>
+  );
+}
+
+// "+18%" ou "nouveau" par rapport à la semaine d'avant — jamais affiché
+// quand la comparaison ne dit rien (0 des deux côtés, ou stable).
+function Trend({ cur, prev }) {
+  const { t } = useTranslation();
+  const v = variation(cur, prev);
+  if (!v) return null;
+  if (v.nouveau) return <span className="text-caption font-semibold text-success">({t('admin.trendNew')})</span>;
+  const up = v.pct > 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 whitespace-nowrap text-caption font-semibold ${up ? 'text-success' : 'text-danger'}`}>
+      {up ? <IconArrowUpRight size={13} /> : <IconArrowDownRight size={13} />}
+      {Math.abs(v.pct)}%
+    </span>
   );
 }
 
