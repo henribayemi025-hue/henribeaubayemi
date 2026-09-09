@@ -3,6 +3,7 @@
     "appName": "Finjaro",
     "tagline": "Au-delà des rêves",
     "loading": "Chargement…",
+    "sending": "Envoi…",
     "retry": "Réessayer",
     "increase": "Augmenter",
     "decrease": "Diminuer",
@@ -477,7 +478,12 @@
     "empty": "Démarre la conversation avec un premier message.",
     "quoteIntro": "Bonjour, je souhaite demander un devis.",
     "ownShop": "C'est ta propre boutique.",
-    "viewShop": "Voir la boutique"
+    "viewShop": "Voir la boutique",
+    "forward": "Transférer",
+    "forwardTo": "Transférer vers…",
+    "forwardNoTargets": "Aucune autre conversation pour l'instant.",
+    "forwardBuyer": "Acheteuse",
+    "forwarded": "Message transféré"
   },
   "cart": {
     "title": "Panier",

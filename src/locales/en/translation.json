@@ -3,6 +3,7 @@
     "appName": "Finjaro",
     "tagline": "Beyond dreams",
     "loading": "Loading…",
+    "sending": "Sending…",
     "retry": "Retry",
     "increase": "Increase",
     "decrease": "Decrease",
@@ -477,7 +478,12 @@
     "empty": "Start the conversation with a first message.",
     "quoteIntro": "Hello, I'd like to request a quote.",
     "ownShop": "This is your own shop.",
-    "viewShop": "View shop"
+    "viewShop": "View shop",
+    "forward": "Forward",
+    "forwardTo": "Forward to…",
+    "forwardNoTargets": "No other conversation yet.",
+    "forwardBuyer": "Buyer",
+    "forwarded": "Message forwarded"
   },
   "cart": {
     "title": "Cart",

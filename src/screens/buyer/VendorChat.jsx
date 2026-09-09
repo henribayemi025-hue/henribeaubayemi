@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../../lib/supabase';
 import { track } from '../../lib/track';
 import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useToast } from '../../hooks/useToast';
 import { SmartImage } from '../../components/SmartImage';
 import { BlockButton } from '../../components/BlockButton';
 import { ReportModal } from '../../components/ReportModal';
+import { Modal } from '../../components/Modal';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { MessagesShell } from './Inbox';
@@ -32,6 +34,7 @@ export default function VendorChat({ vendor = false }) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const role = vendor ? 'vendor' : 'buyer';
 
@@ -50,6 +53,11 @@ export default function VendorChat({ vendor = false }) {
   // restait coincée dans sa petite bulle. Plein écran au tap, comme
   // n'importe quelle appli de messagerie.
   const [viewerUrl, setViewerUrl] = useState(null);
+  // Transférer un message vers une autre de mes conversations, comme WhatsApp.
+  const [forwardMsg, setForwardMsg] = useState(null);
+  const [forwardTargets, setForwardTargets] = useState([]);
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [forwardSending, setForwardSending] = useState(null);
   const [finouThinking, setFinouThinking] = useState(false);
   const [finouError, setFinouError] = useState(false);
   const [finouRetryQuery, setFinouRetryQuery] = useState('');
@@ -217,6 +225,48 @@ export default function VendorChat({ vendor = false }) {
     deliver({ conversation_id: conversationId, sender_id: user.id, sender_role: role, body: msg.body, image_url: msg.image_url }, msg.id);
   }
 
+  async function openForward(msg) {
+    setForwardMsg(msg);
+    setForwardLoading(true);
+    try {
+      // Mes propres fils, hors celui-ci: on ne transfère que vers une
+      // conversation où je suis déjà la même partie (acheteuse ou boutique) —
+      // exactement ce que la policy RLS d'insertion autorise.
+      let query = supabase
+        .from('conversations')
+        .select('id, shop_id, buyer_id, last_message, shops(name, avatar_url, is_verified)')
+        .neq('id', conversationId)
+        .order('last_message_at', { ascending: false })
+        .limit(30);
+      query = vendor ? query.eq('shop_id', meta?.shop_id) : query.eq('buyer_id', user.id);
+      const { data } = await query;
+      setForwardTargets(data || []);
+    } finally {
+      setForwardLoading(false);
+    }
+  }
+
+  async function sendForward(targetConversationId) {
+    if (!forwardMsg || forwardSending) return;
+    setForwardSending(targetConversationId);
+    try {
+      const { error: fErr } = await supabase.from('chat_messages').insert({
+        conversation_id: targetConversationId,
+        sender_id: user.id,
+        sender_role: role,
+        body: forwardMsg.body || null,
+        image_url: forwardMsg.image_url || null,
+      });
+      if (fErr) throw fErr;
+      toast.success(t('chat.forwarded'));
+      setForwardMsg(null);
+    } catch (e) {
+      toast.error(e?.message || t('errors.generic'));
+    } finally {
+      setForwardSending(null);
+    }
+  }
+
   async function onFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -360,43 +410,62 @@ export default function VendorChat({ vendor = false }) {
               // Guard against `user` being momentarily null (auth state can
               // flip mid-render on token refresh) so a render never throws.
               const mine = !!user && m.sender_id === user.id;
-              return (
-                <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                  {/* Mes messages en terracotta plein (texte blanc), ceux d'en
-                      face en carte blanche: la conversation se lit d'un coup
-                      d'œil sans avoir à repérer de quel côté est la bulle. */}
-                  <div
-                    className={`max-w-[80%] px-3.5 py-2.5 shadow-sm ${
-                      mine
-                        ? 'rounded-2xl rounded-br-md bg-teal text-white'
-                        : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
-                    }`}
-                  >
-                    {m.auto_reply && (
-                      <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
-                        <IconSparkles size={12} /> {t('chat.autoReplyBadge')}
-                      </p>
+              const canForward = !m.failed && (m.body || m.image_url);
+              const bubble = (
+                // Mes messages en terracotta plein (texte blanc), ceux d'en
+                // face en carte blanche: la conversation se lit d'un coup
+                // d'œil sans avoir à repérer de quel côté est la bulle.
+                <div
+                  className={`max-w-[80%] px-3.5 py-2.5 shadow-sm ${
+                    mine
+                      ? 'rounded-2xl rounded-br-md bg-teal text-white'
+                      : 'rounded-2xl rounded-bl-md border border-hairline bg-white text-ink'
+                  }`}
+                >
+                  {m.auto_reply && (
+                    <p className={`mb-1 flex items-center gap-1 text-[11px] font-semibold ${mine ? 'text-white/85' : 'text-teal'}`}>
+                      <IconSparkles size={12} /> {t('chat.autoReplyBadge')}
+                    </p>
+                  )}
+                  {m.image_url && (
+                    <button type="button" onClick={() => setViewerUrl(storageUrl('chat', m.image_url))} className="block">
+                      <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
+                    </button>
+                  )}
+                  {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
+                  <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
+                    <span>{clockTime(m.created_at, i18n.language)}</span>
+                    {mine && !m.failed && (
+                      m.id.toString().startsWith('temp')
+                        ? <IconCheck size={13} />
+                        : <IconChecks size={13} className={m.status === 'read' ? 'text-brass' : ''} />
                     )}
-                    {m.image_url && (
-                      <button type="button" onClick={() => setViewerUrl(storageUrl('chat', m.image_url))} className="block">
-                        <SmartImage src={storageUrl('chat', m.image_url)} alt="" className="mb-1 h-40 w-40 rounded-input" />
+                    {m.failed && (
+                      <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
+                        <IconAlertCircle size={14} /> {t('common.retry')}
                       </button>
                     )}
-                    {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
-                    <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
-                      <span>{clockTime(m.created_at, i18n.language)}</span>
-                      {mine && !m.failed && (
-                        m.id.toString().startsWith('temp')
-                          ? <IconCheck size={13} />
-                          : <IconChecks size={13} className={m.status === 'read' ? 'text-brass' : ''} />
-                      )}
-                      {m.failed && (
-                        <button onClick={() => retryMessage(m)} className={`flex items-center gap-0.5 ${mine ? 'text-white' : 'text-danger'}`} aria-label={t('chat.sendFailed')}>
-                          <IconAlertCircle size={14} /> {t('common.retry')}
-                        </button>
-                      )}
-                    </div>
                   </div>
+                </div>
+              );
+              // Transférer: petite flèche accolée du côté extérieur de la
+              // bulle, comme le "hover forward" de WhatsApp — sauf qu'ici
+              // elle reste visible en permanence (pas de survol sur mobile).
+              const forwardBtn = canForward && (
+                <button
+                  type="button"
+                  onClick={() => openForward(m)}
+                  aria-label={t('chat.forward')}
+                  className="mb-1 shrink-0 self-end rounded-full p-1.5 text-muted transition-colors hover:bg-base hover:text-ink"
+                >
+                  <IconArrowForward size={15} />
+                </button>
+              );
+              return (
+                <div key={m.id} className={`flex items-end gap-0.5 ${mine ? 'justify-end' : 'justify-start'}`}>
+                  {!mine && bubble}
+                  {forwardBtn}
+                  {mine && bubble}
                 </div>
               );
             })}
@@ -481,6 +550,50 @@ export default function VendorChat({ vendor = false }) {
           <img src={viewerUrl} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
+      <Modal open={!!forwardMsg} onClose={() => setForwardMsg(null)} title={t('chat.forwardTo')}>
+        {forwardLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+          </div>
+        ) : forwardTargets.length === 0 ? (
+          <p className="py-6 text-center text-body text-muted">{t('chat.forwardNoTargets')}</p>
+        ) : (
+          <ul className="-mx-4 max-h-[50vh] overflow-y-auto">
+            {forwardTargets.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  disabled={forwardSending === c.id}
+                  onClick={() => sendForward(c.id)}
+                  className="flex w-full items-center gap-3 border-b border-hairline px-4 py-3 text-left transition-colors hover:bg-base disabled:opacity-60"
+                >
+                  {vendor ? (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-light text-body font-semibold text-teal">
+                      {t('chat.forwardBuyer')[0]}
+                    </div>
+                  ) : (
+                    <ShopAvatar
+                      src={c.shops?.avatar_url ? storageThumbUrl('shops', c.shops.avatar_url) : null}
+                      fallbackSrc={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null}
+                      name={c.shops?.name}
+                      seed={c.shop_id}
+                      className="h-11 w-11"
+                    />
+                  )}
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="flex items-center gap-1 text-body font-semibold text-ink">
+                      <span className="line-clamp-1">{vendor ? t('chat.forwardBuyer') : c.shops?.name}</span>
+                      {!vendor && c.shops?.is_verified && <VerifiedBadge size={13} />}
+                    </span>
+                    {c.last_message && <span className="line-clamp-1 block text-caption text-muted">{c.last_message}</span>}
+                  </span>
+                  {forwardSending === c.id && <span className="text-caption text-muted">{t('common.sending')}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
     </div>
   );
 
