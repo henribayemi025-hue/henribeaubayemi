@@ -1,6 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { IconMail, IconChevronDown } from '@tabler/icons-react';
+import { IconMail, IconChevronDown, IconBrandWhatsapp } from '@tabler/icons-react';
 import { AppHeader } from '../../components/AppHeader';
+
+// Numéro de Beau, donné explicitement pour figurer ici (09/09): l'e-mail
+// seul restait sans réponse trop longtemps, WhatsApp est ce que tout le
+// monde utilise déjà au Cameroun.
+const SUPPORT_WHATSAPP = '+33751026448';
 
 // Dedicated Help screen (FIX 7) — clear contact path + a short FAQ.
 export default function Help() {
@@ -17,9 +22,19 @@ export default function Help() {
       <div className="space-y-6 p-4">
         <p className="text-body text-muted">{t('profile.helpText')}</p>
 
-        <a href="mailto:fin.finjaro@gmail.com" className="btn-primary">
-          <IconMail size={20} /> {t('help.contactCta')}
-        </a>
+        <div className="flex flex-col gap-2">
+          <a
+            href={`https://wa.me/${SUPPORT_WHATSAPP.replace(/\D/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary"
+          >
+            <IconBrandWhatsapp size={20} /> {t('help.contactWhatsapp')}
+          </a>
+          <a href="mailto:fin.finjaro@gmail.com" className="btn-secondary">
+            <IconMail size={20} /> {t('help.contactCta')}
+          </a>
+        </div>
 
         <section>
           <h2 className="mb-2 text-section text-ink">{t('help.faqTitle')}</h2>

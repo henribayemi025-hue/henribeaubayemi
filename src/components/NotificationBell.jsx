@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconBell, IconMessage, IconShoppingBag, IconTruckDelivery, IconCheck,
   IconStar, IconBuildingStore, IconMovie, IconMapPin, IconBellOff, IconSparkles,
-  IconX, IconRefresh, IconPhoto,
+  IconX, IconRefresh, IconPhoto, IconRosetteDiscountCheck,
 } from '@tabler/icons-react';
 import { useNotifications, notificationHref } from '../hooks/useNotifications';
 import { Modal } from './Modal';
@@ -21,6 +21,7 @@ const TYPE_ICON = {
   review_unlocked: IconStar,
   shop_approved: IconBuildingStore,
   shop_rejected: IconBuildingStore,
+  shop_verified: IconRosetteDiscountCheck,
   new_reel: IconMovie,
   new_listing: IconMapPin,
   referral_reward: IconSparkles,
