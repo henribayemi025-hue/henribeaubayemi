@@ -54,6 +54,32 @@ export const SERVICE_HEADS = [
   "admin_juridique",
   "cours",
   "evenementiel_service",
+  "technicien",
+  "reparation_electronique",
+  "soins_capillaires",
+  "elevage_agriculture",
+  "medecin",
+  "nutritionniste",
+  "formateur",
+  "enseignant",
+  "cours_langues",
+  "design_graphique",
+  "community_manager",
+  "createur_contenu",
+  "videaste",
+  "studio_shooting",
+  "makeup_artist",
+  "artiste",
+  "peintre",
+  "ecrivain",
+  "musicien_dj",
+  "comptable",
+  "voyage_tourisme",
+  "loisirs_sport",
+  "massage_bienetre",
+  "pressing_blanchisserie",
+  "imprimerie",
+  "services_specialises",
   "autre_service"
 ];
 
@@ -77,6 +103,13 @@ export const CATEGORY_CHILDREN = {
     "homme_vestes_costumes",
     "homme_chaussures",
     "homme_accessoires"
+  ],
+  "mode_a_trier": [
+    "mode",
+    "chaussures",
+    "sacs",
+    "maroquinerie",
+    "accessoires"
   ],
   "enfants_bebe": [
     "enfant_bebe",
@@ -125,13 +158,6 @@ export const CATEGORY_CHILDREN = {
     "immo_appartement",
     "immo_terrain"
   ],
-  "mode_a_trier": [
-    "mode",
-    "chaussures",
-    "sacs",
-    "maroquinerie",
-    "accessoires"
-  ],
   "musique": [
     "musique_instruments",
     "musique_sono",
@@ -151,6 +177,12 @@ export const CATEGORY_CHILDREN = {
   "animaux": [
     "animaux_nourriture",
     "animaux_accessoires"
+  ],
+  "equipement_pro": [
+    "epi_protection",
+    "pro_vetements",
+    "pro_signalisation",
+    "pro_outillage"
   ],
   "beaute_domicile": [
     "beaute_coiffure",
@@ -179,11 +211,5 @@ export const CATEGORY_CHILDREN = {
     "photo_evenement",
     "photo_studio",
     "video_montage"
-  ],
-  "equipement_pro": [
-    "epi_protection",
-    "pro_vetements",
-    "pro_signalisation",
-    "pro_outillage"
   ]
 };

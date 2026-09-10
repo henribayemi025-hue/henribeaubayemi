@@ -11,6 +11,13 @@ export default defineConfig({
   define: {
     __BUILD_ID__: JSON.stringify(BUILD_ID),
   },
+  // MapLibre (la carte des Services) contient des littéraux BigInt, que la
+  // cible es2018 ne sait pas réécrire. On dit à esbuild de les laisser tels
+  // quels: le morceau « carte » est chargé à la demande, donc un très vieux
+  // téléphone sans BigInt perd la carte, pas l'application.
+  esbuild: {
+    supported: { bigint: true },
+  },
   build: {
     target: 'es2018',
     cssCodeSplit: true,
