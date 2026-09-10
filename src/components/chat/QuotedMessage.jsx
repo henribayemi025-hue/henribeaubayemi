@@ -3,7 +3,7 @@
 // pendant qu'on rédige la réponse, et à l'intérieur de la bulle une fois
 // envoyée. Même composant pour que les deux ne divergent jamais.
 export function apercuMessage(m, t) {
-  if (!m) return t('chat.deletedMessage');
+  if (!m || m.deleted_at) return t('chat.deletedMessage');
   if (m.body) return m.body;
   if (m.audio_url) return `🎤 ${t('chat.voiceMessage')}`;
   if (m.image_url) return `📷 ${t('chat.photo')}`;

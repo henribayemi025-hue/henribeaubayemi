@@ -78,6 +78,7 @@ export default function VendorChat({ vendor = false }) {
   // Gestes façon WhatsApp sur une bulle: appui long = feuille d'actions,
   // glissement latéral = répondre en citant.
   const [actionMsg, setActionMsg] = useState(null);
+  const [confirmDeleteMsg, setConfirmDeleteMsg] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   // Transférer un message vers une autre de mes conversations, comme WhatsApp.
   const [forwardMsg, setForwardMsg] = useState(null);
@@ -157,7 +158,9 @@ export default function VendorChat({ vendor = false }) {
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
       setMeta(conv);
-      setMessages(msgs || []);
+      // "Supprimé pour moi": masqué uniquement de mon côté, l'autre partie
+      // le voit toujours normalement.
+      setMessages((msgs || []).filter((m) => !(vendor ? m.vendor_deleted : m.buyer_deleted)));
       // Clear this viewer's unread counter.
       await supabase
         .from('conversations')
@@ -210,6 +213,13 @@ export default function VendorChat({ vendor = false }) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
+          // "Supprimé pour moi" par l'autre partie sur SES messages ne me
+          // concerne pas; par moi, ailleurs (autre onglet), doit disparaître
+          // ici aussi. Dans les deux cas: uniquement MON côté du drapeau.
+          if (vendor ? payload.new.vendor_deleted : payload.new.buyer_deleted) {
+            setMessages((m) => m.filter((x) => x.id !== payload.new.id));
+            return;
+          }
           setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
         }
       )
@@ -341,13 +351,23 @@ export default function VendorChat({ vendor = false }) {
     }, msg.id);
   }
 
-  // Supprimer SON message, comme WhatsApp: il part pour tout le monde (la
-  // policy en base n'autorise que ses propres messages). Les réponses qui le
-  // citaient restent, avec "message supprimé" à la place de l'extrait.
-  async function deleteMessage(msg) {
-    const avant = messages;
+  // Beau: « quand tu supprimes, tu supprimes pour toi ou pour plusieurs ? Il
+  // doit y avoir supprimer pour moi et supprimer pour tous ». Comme
+  // WhatsApp: "pour moi" le masque juste de mon côté (tout le monde peut le
+  // faire, sur n'importe quel message); "pour tout le monde" efface
+  // vraiment le contenu, mais seulement sur SES PROPRES messages — l'autre
+  // partie voit alors "message supprimé" à la place, jamais un trou muet.
+  async function deleteMessageForMe(msg) {
     setMessages((m) => m.filter((x) => x.id !== msg.id));
-    const { error: dErr } = await supabase.from('chat_messages').delete().eq('id', msg.id);
+    const { error: dErr } = await supabase.rpc('delete_chat_message_for_me', { p_message_id: msg.id });
+    if (dErr) toast.error(dErr.message || t('errors.generic'));
+  }
+
+  async function deleteMessageForEveryone(msg) {
+    const avant = messages;
+    const tombe = { ...msg, body: null, image_url: null, audio_url: null, audio_seconds: null, deleted_at: new Date().toISOString() };
+    setMessages((m) => m.map((x) => (x.id === msg.id ? tombe : x)));
+    const { error: dErr } = await supabase.rpc('delete_chat_message_for_everyone', { p_message_id: msg.id });
     if (dErr) {
       setMessages(avant);
       toast.error(dErr.message || t('errors.generic'));
@@ -677,19 +697,27 @@ export default function VendorChat({ vendor = false }) {
                       />
                     </div>
                   )}
-                  {m.image_url && (
-                    <ChatImage
-                      src={storageUrl('chat', m.image_url)}
-                      onClick={() => setViewerUrl(storageUrl('chat', m.image_url))}
-                    />
-                  )}
-                  {m.audio_url && (
-                    <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
-                  )}
-                  {m.body && (
-                    sticker
-                      ? <p className="text-[52px] leading-none">{m.body}</p>
-                      : <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>
+                  {m.deleted_at ? (
+                    <p className={`flex items-center gap-1.5 text-body italic ${mine ? 'text-white/70' : 'text-muted'}`}>
+                      <IconTrash size={14} /> {t('chat.messageDeleted')}
+                    </p>
+                  ) : (
+                    <>
+                      {m.image_url && (
+                        <ChatImage
+                          src={storageUrl('chat', m.image_url)}
+                          onClick={() => setViewerUrl(storageUrl('chat', m.image_url))}
+                        />
+                      )}
+                      {m.audio_url && (
+                        <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
+                      )}
+                      {m.body && (
+                        sticker
+                          ? <p className="text-[52px] leading-none">{m.body}</p>
+                          : <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>
+                      )}
+                    </>
                   )}
                   <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${sticker ? 'text-muted' : mine ? 'text-white/75' : 'text-muted'}`}>
                     <span>{clockTime(m.created_at, i18n.language)}</span>
@@ -957,12 +985,22 @@ export default function VendorChat({ vendor = false }) {
             label: t('chat.copy'),
             onClick: () => copyMessage(actionMsg),
           },
-          !!user && actionMsg?.sender_id === user.id && {
-            key: 'delete',
+          // "Pour moi": disponible sur n'importe quel message, n'importe
+          // qui — WhatsApp le propose même sur les messages reçus.
+          !actionMsg?.deleted_at && {
+            key: 'delete_me',
             icon: IconTrash,
-            label: t('chat.deleteMessage'),
+            label: t('chat.deleteForMe'),
+            onClick: () => deleteMessageForMe(actionMsg),
+          },
+          // "Pour tout le monde": SEULEMENT ses propres messages — la base
+          // refuserait de toute façon les autres.
+          !!user && actionMsg?.sender_id === user.id && !actionMsg?.deleted_at && {
+            key: 'delete_everyone',
+            icon: IconTrash,
+            label: t('chat.deleteForEveryone'),
             danger: true,
-            onClick: () => deleteMessage(actionMsg),
+            onClick: () => setConfirmDeleteMsg(actionMsg),
           },
           !!user && actionMsg?.sender_id !== user.id && {
             key: 'report',
@@ -972,6 +1010,17 @@ export default function VendorChat({ vendor = false }) {
           },
         ]}
       />
+      <Modal open={!!confirmDeleteMsg} onClose={() => setConfirmDeleteMsg(null)} title={t('chat.deleteForEveryone')}>
+        <div className="space-y-4">
+          <p className="text-body text-muted">{t('chat.deleteForEveryoneConfirm')}</p>
+          <Button
+            onClick={() => { deleteMessageForEveryone(confirmDeleteMsg); setConfirmDeleteMsg(null); }}
+            className="!bg-danger"
+          >
+            {t('chat.deleteForEveryone')}
+          </Button>
+        </div>
+      </Modal>
       <Modal open={!!forwardMsg} onClose={() => setForwardMsg(null)} title={t('chat.forwardTo')}>
         {forwardLoading ? (
           <div className="space-y-3">
