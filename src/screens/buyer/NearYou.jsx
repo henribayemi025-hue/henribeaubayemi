@@ -389,7 +389,7 @@ export default function NearYou() {
           </div>
 
           {userPos && (
-            <label className="mt-3 flex items-center gap-3 text-caption text-muted">
+            <label className={`mt-3 items-center gap-3 text-caption text-muted ${view === 'map' ? 'hidden lg:flex' : 'flex'}`}>
               <span className="whitespace-nowrap">{t('nearYou.radiusLabel')} <b className="text-ink">{radiusKm} km</b></span>
               <input
                 type="range"
@@ -410,7 +410,9 @@ export default function NearYou() {
         <button
           type="button"
           onClick={demanderAFinia}
-          className="mx-4 mt-3 flex w-[calc(100%-2rem)] items-center gap-3 rounded-input border border-hairline bg-white px-3 py-2.5 text-left transition hover:bg-base lg:mx-0 lg:w-auto lg:px-4"
+          className={`mx-4 mt-3 w-[calc(100%-2rem)] items-center gap-3 rounded-input border border-hairline bg-white px-3 py-2.5 text-left transition hover:bg-base lg:mx-0 lg:flex lg:w-auto lg:px-4 ${
+            view === 'map' ? 'hidden' : 'flex'
+          }`}
         >
           <IconSparkles size={18} className="shrink-0 text-brass" />
           <span className="min-w-0 flex-1 truncate text-body text-ink">
