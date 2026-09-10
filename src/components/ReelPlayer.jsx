@@ -30,6 +30,10 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     if (active && !viewLogged.current) {
       viewLogged.current = true;
       track('reel_view', reel.id, { shop_id: reel.shop_id });
+      // Et le compteur affiché à la vendeuse (« Mes vidéos », statistiques).
+      // Il ne bougeait jamais: rien ne l'incrémentait, l'événement ci-dessus
+      // ne servait qu'aux analyses internes (migration 0119).
+      supabase.rpc('increment_reel_view', { p_reel_id: reel.id }).then(() => {}, () => {});
     }
   }, [active, reel.id, reel.shop_id]);
 
@@ -123,8 +127,22 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
   async function share() {
     const url = `${window.location.origin}/boutique/${reel.shops?.slug}`;
     track('share_reel', reel.id, { shop_id: reel.shop_id });
-    if (navigator.share) { try { await navigator.share({ title: reel.shops?.name, url }); await supabase.from('reels').update({ shares: (reel.shares || 0) + 1 }).eq('id', reel.id); return; } catch { /* fall through */ } }
-    try { await navigator.clipboard.writeText(url); toast.success(t('common.shareCopied')); } catch { toast.error(t('errors.generic')); }
+    // Le compteur passe par une fonction serveur: l'UPDATE direct d'avant
+    // était refusé en silence par la RLS pour toute personne autre que la
+    // propriétaire de la boutique — seuls ses propres partages comptaient.
+    const compter = () => supabase.rpc('increment_reel_share', { p_reel_id: reel.id }).then(() => {}, () => {});
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: reel.shops?.name, url });
+        compter();
+        return;
+      } catch { /* partage refusé ou annulé: on retombe sur la copie */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      compter();
+      toast.success(t('common.shareCopied'));
+    } catch { toast.error(t('errors.generic')); }
   }
 
   function openComments() {
