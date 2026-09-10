@@ -12,7 +12,6 @@ import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
 import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
-import { tradeEmoji } from '../../lib/trades';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
 import { getPosition } from '../../lib/geo';
 
@@ -248,7 +247,7 @@ export default function BecomeVendor() {
               <div>
                 <span className="label">{t('vendor.shopServiceCategories')}</span>
                 <div className="flex flex-wrap gap-2">
-                  {SERVICE_CATEGORIES.map((c) => <button key={c.id} type="button" onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{tradeEmoji(c.id)} {t(`categories.${c.id}`)}</button>)}
+                  {SERVICE_CATEGORIES.map((c) => <button key={c.id} type="button" onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>{t(`categories.${c.id}`)}</button>)}
                 </div>
               </div>
             )}

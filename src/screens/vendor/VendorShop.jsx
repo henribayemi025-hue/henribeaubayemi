@@ -10,7 +10,6 @@ import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { VendorStoryManager } from '../../components/VendorStoryManager';
 import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
-import { tradeEmoji } from '../../lib/trades';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
 import { currencyForCountry } from '../../lib/currency';
 import { getPositionWithReason } from '../../lib/geo';
@@ -242,7 +241,7 @@ export default function VendorShop() {
           <div className="flex flex-wrap gap-2">
             {SERVICE_CATEGORIES.map((c) => (
               <button key={c.id} onClick={() => toggleCat(c.id)} className={`chip ${form.categories.includes(c.id) ? 'chip-active' : 'text-ink'}`}>
-                {tradeEmoji(c.id)} {t(`categories.${c.id}`)}
+                {t(`categories.${c.id}`)}
               </button>
             ))}
           </div>

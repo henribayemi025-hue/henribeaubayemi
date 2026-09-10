@@ -7,7 +7,6 @@ import { SmartImage } from './SmartImage';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
 import { shopGradient } from '../lib/shopColor';
 import { isServiceCategory } from '../lib/categories';
-import { tradeEmoji } from '../lib/trades';
 
 // La carte des Services, refaite.
 //
@@ -278,13 +277,13 @@ export default function NearYouMap({ items, userPos, onSelect }) {
                   rounded="rounded-full"
                 />
               ) : (
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-base text-[22px]">
-                  {tradeEmoji(trade)}
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-base text-title font-semibold text-teal">
+                  {(selection.name || '?').trim().charAt(0).toUpperCase()}
                 </span>
               )
             ) : (
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-base text-[22px]">
-                {tradeEmoji(selection.category)}
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-base text-teal">
+                <IconMapPin size={22} />
               </span>
             )}
             <div className="min-w-0 flex-1">
