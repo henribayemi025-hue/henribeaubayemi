@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconMessage2, IconGauge, IconDatabase, IconBrandWhatsapp, IconPhone,
-  IconBellRinging, IconCircleCheck, IconRefresh,
+  IconBellRinging, IconCircleCheck, IconRefresh, IconUserHeart,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -123,6 +123,7 @@ export default function AdminVeille() {
   if (error) return <ErrorState onRetry={retry} />;
 
   const commandes = data?.commandes_bloquees || [];
+  const clientes = data?.clientes_reelles || [];
   const convs = data?.conversations_sans_reponse || [];
   const vitesse = data?.vitesse || {};
   const stock = data?.stockage || {};
@@ -130,7 +131,10 @@ export default function AdminVeille() {
   const lcp = vitesse.lcp_median_ms != null ? Math.round(vitesse.lcp_median_ms) : null;
   const verdict = lcp == null ? null : lcp < 2500 ? 'good' : lcp < 4000 ? 'medium' : 'slow';
   const verdictClass = { good: 'text-success', medium: 'text-brass', slow: 'text-danger' };
-  const rienATraiter = commandes.length === 0 && convs.length === 0;
+  // Une vraie cliente sans réponse, ce n'est PAS « rien à traiter »: c'est
+  // même la chose la plus urgente de l'écran.
+  const clientesSansReponse = clientes.filter((c) => !Number(c.reponses_humaines || 0)).length;
+  const rienATraiter = commandes.length === 0 && convs.length === 0 && clientesSansReponse === 0;
 
   return (
     <div className="space-y-7 p-4">
@@ -146,6 +150,51 @@ export default function AdminVeille() {
           <IconCircleCheck size={20} /> {t('admin.veille.allGood')}
         </div>
       )}
+
+      {/* EN PREMIER, et pas par hasard: tant que le trafic est ce qu'il est,
+          une vraie cliente qui écrit est l'événement le plus important de la
+          semaine. Les comptes de test et l'équipe sont écartés côté serveur
+          (compte_reel), donc ce bloc ne ment pas — contrairement au chiffre
+          que j'avais donné à Beau le 10/09. */}
+      <Section icon={IconUserHeart} title={t('admin.veille.realBuyers')} count={clientesSansReponse} tone={clientes.length ? 'teal' : 'ink'}>
+        {clientes.length === 0 ? (
+          <p className="text-caption text-muted">{t('admin.veille.realBuyersEmpty')}</p>
+        ) : (
+          <ul className="space-y-2">
+            {clientes.map((c) => {
+              const repondu = Number(c.reponses_humaines || 0) > 0;
+              return (
+                <li key={c.conversation_id} className={`rounded-card border bg-white p-3 ${repondu ? 'border-hairline' : 'border-danger/30'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-body font-semibold text-ink">{c.cliente}</p>
+                      <p className="truncate text-caption text-muted">
+                        {t('admin.veille.wroteTo', { boutique: c.boutique })} · {timeAgo(c.derniere, i18n.language)}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-pill px-2 py-0.5 text-[11px] font-semibold ${
+                        repondu ? 'bg-success-bg text-success' : 'bg-danger-bg text-danger'
+                      }`}
+                    >
+                      {repondu ? t('admin.veille.answered') : t('admin.veille.notAnswered')}
+                    </span>
+                  </div>
+                  {c.premier_message && <p className="mt-1.5 line-clamp-2 text-caption italic text-ink">« {c.premier_message} »</p>}
+                  <p className="mt-1 text-[11px] text-muted">
+                    {t('admin.veille.messageCount', { n: c.messages })}
+                    {c.cliente_email ? ` · ${c.cliente_email}` : ''}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Contacts t={t} tel={c.cliente_tel} waLabel={t('admin.veille.buyerWhatsapp')} />
+                    <Contacts t={t} tel={c.vendeuse_tel} waLabel={t('admin.veille.vendorWhatsapp')} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Section>
 
       <Section icon={IconShoppingBag} title={t('admin.veille.stuckOrders')} count={commandes.length} tone={commandes.length ? 'danger' : 'ink'}>
         {commandes.length === 0 ? (

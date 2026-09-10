@@ -1565,7 +1565,14 @@
       "storageWeek": "+{{size}} cette semaine",
       "storageAlert": "Presque plein : passer Supabase en Pro (~25 $/mois) ou alléger les vidéos.",
       "remindAgain": "Relancer à nouveau",
-      "escalated": "cliente orientée ailleurs {{when}}"
+      "escalated": "cliente orientée ailleurs {{when}}",
+      "realBuyers": "Vraies clientes",
+      "realBuyersEmpty": "Aucune vraie cliente n'a encore écrit à une boutique. Les comptes de test ne comptent pas ici.",
+      "wroteTo": "a écrit à {{boutique}}",
+      "answered": "Répondu",
+      "notAnswered": "Sans réponse",
+      "messageCount": "{{n}} message(s)",
+      "buyerWhatsapp": "WhatsApp cliente"
     },
     "stuckOrdersBanner": "{{count}} commande(s) attendent la vendeuse depuis plus de 24 h",
     "apps": {
