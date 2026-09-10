@@ -1565,7 +1565,14 @@
       "storageWeek": "+{{size}} this week",
       "storageAlert": "Almost full: upgrade Supabase to Pro (~$25/mo) or trim videos.",
       "remindAgain": "Remind again",
-      "escalated": "buyer redirected {{when}}"
+      "escalated": "buyer redirected {{when}}",
+      "realBuyers": "Real buyers",
+      "realBuyersEmpty": "No real buyer has written to a shop yet. Test accounts don't count here.",
+      "wroteTo": "wrote to {{boutique}}",
+      "answered": "Answered",
+      "notAnswered": "No reply",
+      "messageCount": "{{n}} message(s)",
+      "buyerWhatsapp": "Buyer on WhatsApp"
     },
     "stuckOrdersBanner": "{{count}} order(s) waiting on the seller for over 24 h",
     "apps": {
