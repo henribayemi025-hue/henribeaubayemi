@@ -459,7 +459,13 @@ export default function VendorChat({ vendor = false }) {
     if (recording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+      // MP4/AAC EN PREMIER, pas WebM. Retour d'une vendeuse (Crea Lab, le
+      // 09/09): « je vois les micros uniquement dans les notifications,
+      // dans les messages c'est vide ». Beau enregistre depuis Android,
+      // qui produit du WebM — qu'un iPhone un peu ancien ne sait pas lire
+      // du tout. Le MP4/AAC, lui, se lit sur tous les téléphones; on ne
+      // retombe sur WebM que si l'appareil ne sait pas produire de MP4.
+      const mime = ['audio/mp4', 'audio/webm', 'audio/ogg'].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
       const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       audioChunksRef.current = [];
       recordCancelledRef.current = false;
@@ -472,7 +478,8 @@ export default function VendorChat({ vendor = false }) {
         setRecording(false);
         setRecordSeconds(0);
         if (cancelled || audioChunksRef.current.length === 0) return;
-        const ext = (recorder.mimeType || 'audio/webm').includes('mp4') ? 'm4a' : 'webm';
+        const typeReel = recorder.mimeType || 'audio/webm';
+        const ext = typeReel.includes('mp4') ? 'm4a' : typeReel.includes('ogg') ? 'ogg' : 'webm';
         const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
         setUploading(true);
         try {

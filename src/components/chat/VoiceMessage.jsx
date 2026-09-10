@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconPlayerPlayFilled, IconPlayerPauseFilled } from '@tabler/icons-react';
 
 // Lecteur vocal façon WhatsApp.
@@ -30,10 +31,12 @@ function mmss(s) {
 }
 
 export function VoiceMessage({ src, seconds = null, mine = false }) {
+  const { t } = useTranslation();
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [dureeFichier, setDureeFichier] = useState(null);
+  const [illisible, setIllisible] = useState(false);
 
   // Durée affichée: celle mesurée à l'enregistrement d'abord (fiable), sinon
   // celle du fichier quand le navigateur arrive à la lire (mp4/ogg).
@@ -74,13 +77,21 @@ export function VoiceMessage({ src, seconds = null, mine = false }) {
       a.addEventListener('durationchange', onDuree);
       try { a.currentTime = 1e101; } catch { /* flux non cherchable */ }
     };
+    // Le téléphone n'arrive pas à lire ce fichier (un WebM enregistré depuis
+    // Android sur un iPhone un peu ancien, par exemple): on le DIT, avec un
+    // lien pour l'ouvrir quand même. Une vendeuse a signalé le 09/09 des
+    // bulles totalement vides — un vocal reçu ne doit jamais être un
+    // cul-de-sac silencieux.
+    const onErreur = () => setIllisible(true);
     a.addEventListener('timeupdate', onTime);
     a.addEventListener('ended', onEnd);
     a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('error', onErreur);
     return () => {
       a.removeEventListener('timeupdate', onTime);
       a.removeEventListener('ended', onEnd);
       a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('error', onErreur);
     };
   }, []);
 
@@ -101,12 +112,32 @@ export function VoiceMessage({ src, seconds = null, mine = false }) {
       setPlaying(true);
     } catch {
       setPlaying(false);
+      setIllisible(true);
     }
   }
 
   const teinte = mine ? 'text-white' : 'text-teal';
   const plein = mine ? 'bg-white' : 'bg-teal';
   const vide = mine ? 'bg-white/35' : 'bg-hairline';
+
+  // Format que ce téléphone ne sait pas lire: on ne laisse pas un bouton
+  // muet, on propose de l'ouvrir hors de la page (le système, lui, y
+  // arrive souvent).
+  if (illisible) {
+    return (
+      <a
+        href={src}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`flex w-56 max-w-full items-center gap-2 rounded-input px-2 py-2 text-caption underline ${
+          mine ? 'text-white/90' : 'text-teal'
+        }`}
+      >
+        <IconPlayerPlayFilled size={14} className="shrink-0" />
+        {t('chat.voiceOpenExternally')}
+      </a>
+    );
+  }
 
   return (
     <div className="flex w-56 max-w-full items-center gap-2.5 py-0.5">
