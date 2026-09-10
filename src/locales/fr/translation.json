@@ -296,6 +296,13 @@
     "q3": "Comment obtenir le badge vérifié ?",
     "a3": "Le badge apparaît quand ton identité est validée, ton téléphone confirmé, ta photo de boutique ajoutée et au moins un produit publié."
   },
+  "apps": {
+    "title": "Applications Finjaro",
+    "subtitle": "Un seul compte, tous les outils Finjaro.",
+    "current": "Ouvert",
+    "intro": "Finjaro, ce n'est pas qu'une place de marché. Voici les applications qui marchent avec le même compte.",
+    "sameAccount": "Ton compte Finjaro ouvre toutes ces applications. La connexion se fait une fois par application."
+  },
   "product": {
     "addToCart": "Ajouter au panier",
     "added": "Ajouté",
@@ -1305,7 +1312,8 @@
       "demandes": "Demandes",
       "annonce": "Annonce",
       "relances": "Relances",
-      "veille": "Veille"
+      "veille": "Veille",
+      "apps": "Applications"
     },
     "annonceCible": "À qui ?",
     "annonceCibles": {
@@ -1557,7 +1565,36 @@
       "storageWeek": "+{{size}} cette semaine",
       "storageAlert": "Presque plein : passer Supabase en Pro (~25 $/mois) ou alléger les vidéos."
     },
-    "stuckOrdersBanner": "{{count}} commande(s) attendent la vendeuse depuis plus de 24 h"
+    "stuckOrdersBanner": "{{count}} commande(s) attendent la vendeuse depuis plus de 24 h",
+    "apps": {
+      "intro": "Les applications de l'environnement Finjaro. Ce que tu écris ici s'affiche aussitôt dans le sélecteur de toutes les applications, sans mise en ligne.",
+      "add": "Inscrire une application",
+      "addTitle": "Nouvelle application",
+      "name": "Nom",
+      "key": "Identifiant",
+      "keyHint": "Court, sans espace. Sert à repérer l'application ouverte. Non modifiable ensuite.",
+      "url": "Adresse",
+      "tagline": "Phrase de présentation",
+      "emoji": "Émoji",
+      "order": "Ordre",
+      "color": "Couleur",
+      "colors": {
+        "teal": "Terracotta",
+        "brass": "Laiton",
+        "ink": "Encre"
+      },
+      "audienceLabel": "Qui la voit",
+      "audience": {
+        "tous": "Tout le monde",
+        "vendeuse": "Les boutiques",
+        "admin": "L'équipe seulement"
+      },
+      "hide": "Masquer",
+      "show": "Afficher",
+      "saved": "Enregistré.",
+      "missing": "Nom, identifiant et adresse sont obligatoires.",
+      "badUrl": "L'adresse doit commencer par https://"
+    }
   },
   "troc": {
     "title": "Évaluer un troc",

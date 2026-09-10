@@ -11,6 +11,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { VendorPrice } from '../../components/Price';
 import { NotificationBell } from '../../components/NotificationBell';
+import { AppLauncher } from '../../components/AppLauncher';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { Skeleton, ErrorState } from '../../components/states';
 import { PushPrompt } from '../../components/PushPrompt';
@@ -115,6 +116,10 @@ export default function VendorDashboard() {
             à droite, la politesse coûtait le nom — « Bonjour, Ma b… ».
             Entre saluer et dire de quelle boutique il s'agit, le nom gagne. */}
         <h1 className="flex-1 truncate text-section text-ink">{shop.name}</h1>
+        {/* La grille des applications Finjaro: c'est ici qu'elle sert le
+            plus — la comptabilité et la caisse s'adressent d'abord aux
+            boutiques. */}
+        <AppLauncher currentKey="marketplace" />
         <NotificationBell />
         <Link to="/vendor/stats" aria-label={t('nav.stats')} className="p-1 text-ink"><IconChartBar size={22} /></Link>
         {/* Le retour vers l'acheteur portait sur une icône SEULE — deux

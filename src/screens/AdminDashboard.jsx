@@ -1,11 +1,11 @@
 import { lazy, Suspense } from 'react';
+import { AppLauncher } from '../components/AppLauncher';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
   IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy, IconMessage2,
-  IconSearch, IconArrowUpRight, IconArrowDownRight, IconActivity,
-} from '@tabler/icons-react';
+  IconSearch, IconArrowUpRight, IconArrowDownRight, IconActivity, IconGridDots } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useAsync } from '../hooks/useAsync';
@@ -25,6 +25,7 @@ const AdminDemandes = lazy(() => import('./admin/AdminDemandes'));
 const AdminAnnonce = lazy(() => import('./admin/AdminAnnonce'));
 const AdminRelances = lazy(() => import('./admin/AdminRelances'));
 const AdminVeille = lazy(() => import('./admin/AdminVeille'));
+const AdminApps = lazy(() => import('./admin/AdminApps'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
 const AI_BUDGET_EUR = 20;
@@ -44,6 +45,7 @@ const SECTIONS = [
   { key: 'annonce', icon: IconSpeakerphone, Component: AdminAnnonce },
   { key: 'relances', icon: IconMessage2, Component: AdminRelances },
   { key: 'content', icon: IconSpeakerphone, Component: AdminContent },
+  { key: 'apps', icon: IconGridDots, Component: AdminApps },
 ];
 
 async function countSince(table, days, extra) {
@@ -105,6 +107,9 @@ export default function AdminDashboard() {
       <header className="sticky top-0 z-30 border-b border-hairline bg-white">
         <div className="flex h-14 items-center px-4">
           <h1 className="text-section text-ink">{t('admin.title')}</h1>
+          <div className="ml-auto">
+            <AppLauncher currentKey="admin" />
+          </div>
         </div>
         <div className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2">
           {SECTIONS.map((s) => {

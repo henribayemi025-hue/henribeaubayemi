@@ -296,6 +296,13 @@
     "q3": "How do I get the verified badge?",
     "a3": "The badge appears once your identity is verified, your phone confirmed, your shop photo added and at least one product posted."
   },
+  "apps": {
+    "title": "Finjaro apps",
+    "subtitle": "One account, every Finjaro tool.",
+    "current": "Open",
+    "intro": "Finjaro is more than a marketplace. These apps all work with the same account.",
+    "sameAccount": "Your Finjaro account opens every app here. You sign in once per app."
+  },
   "product": {
     "addToCart": "Add to cart",
     "added": "Added",
@@ -1305,7 +1312,8 @@
       "demandes": "Requests",
       "annonce": "Broadcast",
       "relances": "Follow-ups",
-      "veille": "Watch"
+      "veille": "Watch",
+      "apps": "Apps"
     },
     "annonceCible": "Who to?",
     "annonceCibles": {
@@ -1557,7 +1565,36 @@
       "storageWeek": "+{{size}} this week",
       "storageAlert": "Almost full: upgrade Supabase to Pro (~$25/mo) or trim videos."
     },
-    "stuckOrdersBanner": "{{count}} order(s) waiting on the seller for over 24 h"
+    "stuckOrdersBanner": "{{count}} order(s) waiting on the seller for over 24 h",
+    "apps": {
+      "intro": "The apps in the Finjaro environment. What you write here shows up in every app's switcher right away, with no deploy.",
+      "add": "Add an app",
+      "addTitle": "New app",
+      "name": "Name",
+      "key": "Identifier",
+      "keyHint": "Short, no spaces. Used to mark the app you are in. Cannot be changed later.",
+      "url": "Address",
+      "tagline": "One-line description",
+      "emoji": "Emoji",
+      "order": "Order",
+      "color": "Colour",
+      "colors": {
+        "teal": "Terracotta",
+        "brass": "Brass",
+        "ink": "Ink"
+      },
+      "audienceLabel": "Who sees it",
+      "audience": {
+        "tous": "Everyone",
+        "vendeuse": "Shops",
+        "admin": "Team only"
+      },
+      "hide": "Hide",
+      "show": "Show",
+      "saved": "Saved.",
+      "missing": "Name, identifier and address are required.",
+      "badUrl": "The address must start with https://"
+    }
   },
   "troc": {
     "title": "Evaluate a trade",

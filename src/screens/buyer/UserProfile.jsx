@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout, IconFileText,
-  IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal,
+  IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal, IconGridDots,
   IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift, IconMessageCircle,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
@@ -72,6 +72,8 @@ export default function UserProfile() {
     // ici, un compte peut écrire à un autre compte (voir dm.mustFollowHint).
     { icon: IconMessageCircle, label: t('dm.title'), to: '/profile/messages', badge: dmUnread },
     { icon: IconGift, label: t('referral.navLabel'), to: '/profile/invite' },
+    // L'environnement Finjaro: les autres applications du même compte.
+    { icon: IconGridDots, label: t('apps.title'), to: '/apps' },
     { icon: IconSettings, label: t('profile.settings'), to: '/profile/settings' },
     { icon: IconHelpCircle, label: t('profile.help'), to: '/profile/help' },
     { icon: IconFileText, label: t('legal.termsTitle'), to: '/legal/terms' },

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX } from '@tabler/icons-react';
 
 // Bottom-sheet modal on mobile, centered on desktop.
@@ -15,7 +16,13 @@ export function Modal({ open, onClose, title, children }) {
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
+  // Rendu sur <body> plutôt que dans l'arbre de la page: sinon le
+  // `z-index` de la feuille ne se compare qu'à ses voisines, à l'intérieur
+  // du contexte d'empilement créé par l'écran — et la bannière
+  // « installer l'app » comme la bulle Finia, elles posées à la racine,
+  // passaient PAR-DESSUS la fenêtre ouverte (constaté le 10/09 en ouvrant
+  // le sélecteur d'applications).
+  return createPortal(
     <div
       className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center"
       style={{ paddingBottom: 'var(--kb, 0px)' }}
@@ -37,5 +44,5 @@ export function Modal({ open, onClose, title, children }) {
         {children}
       </div>
     </div>
-  );
+  , document.body);
 }
