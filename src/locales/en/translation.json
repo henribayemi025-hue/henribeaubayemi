@@ -654,7 +654,8 @@
     },
     "directions": "Directions",
     "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out"
+    "zoomOut": "Zoom out",
+    "askFinia": "Ask Finia"
   },
   "profile": {
     "title": "Profile",

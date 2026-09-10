@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBuildingStore, IconCurrentLocation, IconList, IconMap2, IconTool, IconSearch, IconX, IconMapPin, IconChevronRight, IconSparkles } from '@tabler/icons-react';
+import { IconPlus, IconBuildingStore, IconCurrentLocation, IconList, IconMap2, IconTool, IconSearch, IconX, IconMapPin, IconSparkles } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -301,11 +301,12 @@ export default function NearYou() {
       <AppHeader title={t('nav.services')} />
 
       <div className="lg:mx-auto lg:max-w-6xl lg:px-4">
-        {/* En-tête sobre, façon moteur de recherche: une barre, un menu
-            « métier » qui liste TOUT d'un clic, la zone, la vue. Rien à faire
-            défiler de côté — Beau (10/09): « ça prend l'espace pour rien,
-            un truc pro, comme Google ». */}
-        <section className="border-b border-hairline bg-white px-4 pb-3 pt-3 lg:pb-4 lg:pt-5">
+        {/* Deux lignes, pas plus: la recherche (Finia dedans, à droite), puis
+            une rangée de commandes compactes. Beau (10/09): « c'est trop
+            congestionné, c'est étouffé ». Tout ce qui empilait des blocs
+            avant le premier contenu — encadrés, ligne Finia, curseur —
+            disparaît ou se replie. */}
+        <section className="bg-white px-4 pb-3 pt-3 lg:pb-4 lg:pt-5">
           <div className="hidden lg:block lg:pb-3">
             <h1 className="text-title text-ink">{t('nearYou.directoryTitle')}</h1>
             <p className="mt-0.5 text-caption text-muted">{t('nearYou.directorySubtitle')}</p>
@@ -317,33 +318,45 @@ export default function NearYou() {
               value={tradeQuery}
               onChange={(e) => setTradeQuery(e.target.value)}
               placeholder={t('nearYou.searchAll')}
-              className="h-12 w-full rounded-pill border border-hairline bg-white pl-11 pr-10 text-[16px] text-ink shadow-sm placeholder:text-muted focus:border-teal focus:outline-none"
+              className="h-12 w-full rounded-pill border border-hairline bg-white pl-11 pr-20 text-[16px] text-ink shadow-sm placeholder:text-muted focus:border-teal focus:outline-none"
               aria-label={t('nearYou.searchAll')}
             />
-            {tradeQuery && (
+            <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center">
+              {tradeQuery && (
+                <button
+                  onClick={() => setTradeQuery('')}
+                  aria-label={t('common.close')}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-base"
+                >
+                  <IconX size={16} />
+                </button>
+              )}
+              {/* Finia, dans la barre: « tu ne sais pas qui appeler ? » */}
               <button
-                onClick={() => setTradeQuery('')}
-                aria-label={t('common.close')}
-                className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-base"
+                type="button"
+                onClick={demanderAFinia}
+                aria-label={t('nearYou.askFinia')}
+                title={t('nearYou.finiaTitle')}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-brass transition hover:bg-base active:scale-95"
               >
-                <IconX size={16} />
+                <IconSparkles size={20} />
               </button>
-            )}
+            </div>
           </div>
 
-          <div className="mt-2.5 grid grid-cols-2 gap-2 lg:flex lg:items-center">
+          <div className="mt-2.5 flex items-center gap-2">
             <TradePicker
               trades={SERVICE_CATEGORIES}
               value={serviceCat}
               onChange={setServiceCat}
               counts={tradeCounts}
-              className="col-span-2 lg:w-72"
+              className="min-w-0 flex-1 lg:w-72 lg:flex-none"
             />
             <select
               value={country || ''}
               onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
               disabled={!!userPos}
-              className="input h-11 bg-white lg:w-48 disabled:opacity-50"
+              className="input h-11 w-[6.5rem] shrink-0 bg-white disabled:opacity-50 lg:w-48"
               aria-label={t('nearYou.overrideLocation')}
             >
               {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
@@ -351,45 +364,40 @@ export default function NearYou() {
             <button
               onClick={locateMe}
               aria-pressed={!!userPos}
-              className={`flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-input border px-3 text-body font-medium transition ${
+              aria-label={t('nearYou.aroundMe')}
+              title={t('nearYou.aroundMe')}
+              className={`flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-input border px-0 text-body font-medium transition lg:px-3 ${
                 userPos ? 'border-teal bg-teal text-white' : 'border-hairline bg-white text-ink hover:bg-base'
+              } w-11 lg:w-auto`}
+            >
+              <IconCurrentLocation size={18} className={locating ? 'animate-spin' : ''} />
+              <span className="hidden lg:inline">{t('nearYou.aroundMe')}</span>
+            </button>
+            <button
+              onClick={() => setView((v) => (v === 'map' ? 'list' : 'map'))}
+              aria-pressed={view === 'map'}
+              aria-label={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
+              title={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-input border transition lg:ml-auto lg:w-auto lg:gap-1.5 lg:px-3 ${
+                view === 'map' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink hover:bg-base'
               }`}
             >
-              <IconCurrentLocation size={16} className={locating ? 'animate-spin' : ''} />
-              {t('nearYou.aroundMe')}
+              {view === 'map' ? <IconList size={18} /> : <IconMap2 size={18} />}
+              <span className="hidden text-caption font-medium lg:inline">{view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}</span>
             </button>
-            {tab === 'shops' && !userPos && (
-              <button
-                onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))}
-                className="col-span-2 h-9 justify-self-start whitespace-nowrap text-caption font-medium text-teal lg:col-span-1 lg:h-11"
-              >
-                {radius === 'country'
-                  ? (data?.providersElsewhere > 0
-                      ? t('nearYou.broadenCount', { count: data.providersElsewhere })
-                      : t('nearYou.broaden'))
-                  : t('nearYou.onlyCountry', { country: countryLabel(country, i18n.language) })}
-              </button>
-            )}
-            <div className="col-span-2 flex justify-end lg:ml-auto">
-              <div className="inline-flex rounded-input border border-hairline bg-white p-0.5">
-                {[['list', IconList, t('nearYou.directoryTab')], ['map', IconMap2, t('nearYou.mapTab')]].map(([v, Icon, label]) => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    aria-pressed={view === v}
-                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-[6px] px-3 py-1.5 text-caption font-medium transition ${
-                      view === v ? 'bg-ink text-white' : 'text-muted hover:text-ink'
-                    }`}
-                  >
-                    <Icon size={15} /> {label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {userPos && (
-            <label className={`mt-3 items-center gap-3 text-caption text-muted ${view === 'map' ? 'hidden lg:flex' : 'flex'}`}>
+          {tab === 'shops' && !userPos && radius === 'country' && data?.providersElsewhere > 0 && (
+            <button
+              onClick={() => setRadius('all')}
+              className="mt-2 text-caption font-medium text-teal"
+            >
+              {t('nearYou.broadenCount', { count: data.providersElsewhere })}
+            </button>
+          )}
+
+          {userPos && view !== 'map' && (
+            <label className="mt-3 flex items-center gap-3 text-caption text-muted">
               <span className="whitespace-nowrap">{t('nearYou.radiusLabel')} <b className="text-ink">{radiusKm} km</b></span>
               <input
                 type="range"
@@ -404,23 +412,6 @@ export default function NearYou() {
             </label>
           )}
         </section>
-
-        {/* Finia, en une ligne discrète: pour qui ne sait pas quel métier
-            chercher. */}
-        <button
-          type="button"
-          onClick={demanderAFinia}
-          className={`mx-4 mt-3 w-[calc(100%-2rem)] items-center gap-3 rounded-input border border-hairline bg-white px-3 py-2.5 text-left transition hover:bg-base lg:mx-0 lg:flex lg:w-auto lg:px-4 ${
-            view === 'map' ? 'hidden' : 'flex'
-          }`}
-        >
-          <IconSparkles size={18} className="shrink-0 text-brass" />
-          <span className="min-w-0 flex-1 truncate text-body text-ink">
-            <span className="font-medium">{t('nearYou.finiaTitle')}</span>
-            <span className="text-muted"> · {t('nearYou.finiaSubtitle')}</span>
-          </span>
-          <IconChevronRight size={16} className="shrink-0 text-muted" />
-        </button>
 
         {/* Onglets + filtres d'annonces COLLÉS sous l'en-tête pendant le
             défilement: sans ça, changer « Je propose / Je cherche » ou de

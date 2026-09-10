@@ -654,7 +654,8 @@
     },
     "directions": "Itinéraire",
     "zoomIn": "Zoomer",
-    "zoomOut": "Dézoomer"
+    "zoomOut": "Dézoomer",
+    "askFinia": "Demander à Finia"
   },
   "profile": {
     "title": "Profil",
