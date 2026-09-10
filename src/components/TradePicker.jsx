@@ -9,12 +9,16 @@ import { normalizeText } from '../lib/trades';
 // Beau (10/09): « il doit y avoir un truc où quand tu cliques, tous les
 // métiers apparaissent et tu choisis. Pas que je doive aller à gauche pour
 // voir. Un truc pro, comme Google. » Donc: un seul bouton, une liste
-// complète, sobre — du texte, un compteur discret, une coche. Pas de tuiles,
-// pas d'emojis.
+// complète, sobre — du texte, un compteur discret, une coche.
 //
 // Sur grand écran, la liste s'ouvre sous le bouton comme un vrai menu
-// déroulant; sur téléphone, elle monte du bas, plein écran, là où le pouce
-// l'attend.
+// déroulant; sur téléphone, elle monte du bas, là où le pouce l'attend.
+//
+// Deux leçons de l'iPhone de Beau (« ça bouge, les mots ne finissent
+// pas »): pas de clavier ouvert d'office sur téléphone — il poussait toute
+// la feuille et la faisait sauter; un champ à 16 px, sinon iOS zoome la
+// page à la saisie; et la liste garde ses marges, sinon le compteur de
+// droite sort de l'écran.
 function useLarge() {
   const [large, setLarge] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches);
   useEffect(() => {
@@ -45,10 +49,10 @@ function Liste({ trades, value, counts, q, onPick, t }) {
           <button
             type="button"
             onClick={() => onPick(null)}
-            className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-body transition hover:bg-base ${value == null ? 'font-semibold text-teal' : 'text-ink'}`}
+            className={`flex w-full items-center gap-3 rounded-input px-3 py-3 text-left text-[16px] transition hover:bg-base ${value == null ? 'font-semibold text-teal' : 'text-ink'}`}
           >
             <span className="flex-1">{t('nearYou.allTrades')}</span>
-            {value == null && <IconCheck size={18} className="text-teal" />}
+            {value == null && <IconCheck size={18} className="shrink-0 text-teal" />}
           </button>
         </li>
       )}
@@ -59,7 +63,7 @@ function Liste({ trades, value, counts, q, onPick, t }) {
             <button
               type="button"
               onClick={() => onPick(c.id)}
-              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-body transition hover:bg-base ${actif ? 'font-semibold text-teal' : 'text-ink'}`}
+              className={`flex w-full items-center gap-3 rounded-input px-3 py-3 text-left text-[16px] transition hover:bg-base ${actif ? 'font-semibold text-teal' : 'text-ink'}`}
             >
               <span className="min-w-0 flex-1 truncate">{c.label}</span>
               {c.n > 0 && <span className="shrink-0 text-caption tabular-nums text-muted">{c.n}</span>}
@@ -72,16 +76,16 @@ function Liste({ trades, value, counts, q, onPick, t }) {
   );
 }
 
-function Recherche({ q, setQ, t }) {
+function Recherche({ q, setQ, t, autoFocus = false }) {
   return (
     <div className="relative">
       <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
       <input
-        autoFocus
+        autoFocus={autoFocus}
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder={t('nearYou.searchTrade')}
-        className="input h-10 pl-9 pr-9 text-[15px]"
+        className="input h-11 pl-9 pr-9 text-[16px]"
         aria-label={t('nearYou.searchTrade')}
       />
       {q && (
@@ -145,9 +149,9 @@ export function TradePicker({ trades, value, onChange, counts = {}, className = 
       {open && large && (
         <div className="absolute left-0 right-0 top-full z-40 mt-1 min-w-[18rem] overflow-hidden rounded-card border border-hairline bg-white shadow-lg">
           <div className="border-b border-hairline p-2">
-            <Recherche q={q} setQ={setQ} t={t} />
+            <Recherche q={q} setQ={setQ} t={t} autoFocus />
           </div>
-          <div className="max-h-[22rem] overflow-y-auto py-1">
+          <div className="max-h-[22rem] overflow-y-auto p-1">
             <Liste trades={trades} value={value} counts={counts} q={q} onPick={pick} t={t} />
           </div>
         </div>
@@ -156,7 +160,7 @@ export function TradePicker({ trades, value, onChange, counts = {}, className = 
       {!large && (
         <Modal open={open} onClose={() => { setOpen(false); setQ(''); }} title={t('nearYou.pickTrade')}>
           <Recherche q={q} setQ={setQ} t={t} />
-          <div className="-mx-4 mt-2 max-h-[65vh] overflow-y-auto border-t border-hairline pb-[env(safe-area-inset-bottom)]">
+          <div className="mt-3 h-[60vh] overflow-y-auto overscroll-contain rounded-card border border-hairline p-1 pb-[env(safe-area-inset-bottom)]">
             <Liste trades={trades} value={value} counts={counts} q={q} onPick={pick} t={t} />
           </div>
         </Modal>

@@ -645,7 +645,14 @@
     "mapStyleFailed": "The map background could not load. Shops are still shown.",
     "mapUnsupported": "Your browser cannot display this map. The list is still available.",
     "openShop": "View shop",
-    "tradeShort": "Trade"
+    "tradeShort": "Trade",
+    "mapStyle": "Map style",
+    "mode": {
+      "plan": "Map",
+      "satellite": "Satellite",
+      "sombre": "Dark"
+    },
+    "directions": "Directions"
   },
   "profile": {
     "title": "Profile",

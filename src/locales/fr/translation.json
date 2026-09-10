@@ -645,7 +645,14 @@
     "mapStyleFailed": "Le fond de carte n'a pas pu se charger. Les boutiques restent affichées.",
     "mapUnsupported": "Ton navigateur ne peut pas afficher cette carte. La liste reste disponible.",
     "openShop": "Voir la boutique",
-    "tradeShort": "Métier"
+    "tradeShort": "Métier",
+    "mapStyle": "Style de carte",
+    "mode": {
+      "plan": "Plan",
+      "satellite": "Satellite",
+      "sombre": "Sombre"
+    },
+    "directions": "Itinéraire"
   },
   "profile": {
     "title": "Profil",

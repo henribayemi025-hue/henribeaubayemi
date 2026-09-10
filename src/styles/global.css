@@ -156,3 +156,9 @@
   .animate-hint-in { animation: none; }
   * { transition: none !important; }
 }
+
+/* Halo du point bleu « ma position » sur la carte des Services. */
+@keyframes finjaro-pulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}

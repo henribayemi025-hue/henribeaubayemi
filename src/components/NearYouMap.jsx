@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTranslation } from 'react-i18next';
-import { IconStarFilled, IconMapPin, IconX, IconCurrentLocation, IconBuildingSkyscraper, IconMessage } from '@tabler/icons-react';
+import { IconStarFilled, IconMapPin, IconX, IconCurrentLocation, IconBuildingSkyscraper, IconMessage, IconMap, IconSatellite, IconMoon, IconRoute } from '@tabler/icons-react';
+import { Modal } from './Modal';
 import { SmartImage } from './SmartImage';
 import { storageUrl, storageThumbUrl } from '../lib/supabase';
 import { shopGradient } from '../lib/shopColor';
@@ -28,6 +29,40 @@ import { isServiceCategory } from '../lib/categories';
 // minuscule à viser du pouce.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 const AVATAR_SIZE = 46;
+
+// Les trois styles, comme le sélecteur « Map Modes » d'Apple Plans que Beau
+// a montré: plan, satellite, sombre. Plan et sombre sont vectoriels
+// (OpenFreeMap). Le satellite est l'imagerie mondiale d'Esri, servie
+// gratuitement avec attribution — c'est ce qu'utilisent la plupart des
+// applications libres pour cette vue.
+const STYLES = {
+  plan: STYLE_URL,
+  sombre: 'https://tiles.openfreemap.org/styles/dark',
+  satellite: {
+    version: 8,
+    sources: {
+      satellite: {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: 'Esri, Maxar, Earthstar Geographics, GIS User Community',
+      },
+    },
+    layers: [{ id: 'satellite', type: 'raster', source: 'satellite' }],
+  },
+};
+
+// « Itinéraire »: on confie le guidage à l'application de cartes du
+// téléphone — Plans sur iPhone, Google Maps ailleurs. C'est là que le trafic
+// et le guidage vocal existent déjà; les refaire n'aurait aucun sens.
+function lienItineraire(x) {
+  const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const nom = encodeURIComponent(x.name || '');
+  return ios
+    ? `https://maps.apple.com/?daddr=${x.lat},${x.lng}&q=${nom}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}`;
+}
 
 function bulleBoutique(x) {
   const el = document.createElement('div');
@@ -61,10 +96,16 @@ function bulleAnnonce() {
   return el;
 }
 
+// Ma position: le point bleu que tout le monde connaît, avec son halo qui
+// respire. La position est SUIVIE tant que la carte est ouverte, pas lue une
+// seule fois — on se déplace, le point suit.
 function bulleMoi() {
   const el = document.createElement('div');
   el.innerHTML =
-    '<div style="width:18px;height:18px;border-radius:9999px;background:#E09F3E;border:3px solid #fff;box-shadow:0 0 0 3px rgba(224,159,62,.35)"></div>';
+    '<div style="position:relative;width:22px;height:22px">' +
+    '<div style="position:absolute;inset:-14px;border-radius:9999px;background:rgba(26,115,232,.18);animation:finjaro-pulse 2s ease-out infinite"></div>' +
+    '<div style="position:absolute;inset:0;border-radius:9999px;background:#1A73E8;border:3px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.35)"></div>' +
+    '</div>';
   return el;
 }
 
@@ -105,6 +146,9 @@ export default function NearYouMap({ items, userPos, onSelect }) {
   const marqueurMoi = useRef(null);
   const [selection, setSelection] = useState(null);
   const [relief, setRelief] = useState(true);
+  const [mode, setMode] = useState('plan');
+  const [modesOuverts, setModesOuverts] = useState(false);
+  const [positionLive, setPositionLive] = useState(null);
   const [fondIndisponible, setFondIndisponible] = useState(false);
   const [sansWebgl, setSansWebgl] = useState(false);
 
@@ -137,7 +181,7 @@ export default function NearYouMap({ items, userPos, onSelect }) {
     }
     carte.current = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true }), 'top-right');
-    map.on('load', () => poserBatiments3D(map));
+    map.on('style.load', () => poserBatiments3D(map));
     // Un fond qui ne charge pas (hors ligne, réseau filtré) ne doit pas
     // faire disparaître les boutiques: les bulles restent posées, on prévient.
     map.on('error', (e) => {
@@ -145,13 +189,31 @@ export default function NearYouMap({ items, userPos, onSelect }) {
       if (/style|tiles|fetch|network|Failed/i.test(msg)) setFondIndisponible(true);
     });
     map.on('click', () => setSelection(null));
+
+    let watchId = null;
+    if ('geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => setPositionLive({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+      );
+    }
     return () => {
+      if (watchId != null) navigator.geolocation.clearWatch(watchId);
       marqueurs.current.forEach((m) => m.remove());
       marqueurs.current = [];
       map.remove();
       carte.current = null;
     };
   }, []);
+
+  // Changement de style: le fond change, les bulles restent (ce sont des
+  // éléments HTML, pas des couches du style).
+  useEffect(() => {
+    const map = carte.current;
+    if (!map) return;
+    map.setStyle(STYLES[mode]);
+  }, [mode]);
 
   // Les bulles suivent la liste filtrée.
   useEffect(() => {
@@ -170,22 +232,29 @@ export default function NearYouMap({ items, userPos, onSelect }) {
         .addTo(map);
     });
 
+    const moi = positionLive || userPos;
     if (marqueurMoi.current) { marqueurMoi.current.remove(); marqueurMoi.current = null; }
-    if (userPos) {
+    if (moi) {
       marqueurMoi.current = new maplibregl.Marker({ element: bulleMoi(), anchor: 'center' })
-        .setLngLat([userPos.lng, userPos.lat])
+        .setLngLat([moi.lng, moi.lat])
         .addTo(map);
     }
 
     const pts = geo.map((x) => [x.lng, x.lat]);
-    if (userPos) pts.push([userPos.lng, userPos.lat]);
+    if (moi) pts.push([moi.lng, moi.lat]);
     if (pts.length === 1) {
       map.jumpTo({ center: pts[0], zoom: 14 });
     } else if (pts.length > 1) {
       const b = pts.reduce((acc, p) => acc.extend(p), new maplibregl.LngLatBounds(pts[0], pts[0]));
       map.fitBounds(b, { padding: { top: 60, bottom: 140, left: 40, right: 40 }, maxZoom: 15, duration: 0 });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geo, userPos]);
+
+  useEffect(() => {
+    if (!positionLive || !marqueurMoi.current) return;
+    marqueurMoi.current.setLngLat([positionLive.lng, positionLive.lat]);
+  }, [positionLive]);
 
   function basculerRelief() {
     const map = carte.current;
@@ -197,8 +266,9 @@ export default function NearYouMap({ items, userPos, onSelect }) {
 
   function recentrerSurMoi() {
     const map = carte.current;
-    if (!map || !userPos) return;
-    map.flyTo({ center: [userPos.lng, userPos.lat], zoom: 15, duration: 800 });
+    const moi = positionLive || userPos;
+    if (!map || !moi) return;
+    map.flyTo({ center: [moi.lng, moi.lat], zoom: 16, duration: 800 });
   }
 
   if (sansWebgl) {
@@ -235,17 +305,48 @@ export default function NearYouMap({ items, userPos, onSelect }) {
         >
           <IconBuildingSkyscraper size={16} /> {t('nearYou.map3d')}
         </button>
-        {userPos && (
+        <button
+          type="button"
+          onClick={() => setModesOuverts(true)}
+          className="flex h-10 items-center gap-1.5 rounded-pill bg-white px-3 text-caption font-semibold text-ink shadow-md"
+        >
+          {mode === 'satellite' ? <IconSatellite size={16} /> : mode === 'sombre' ? <IconMoon size={16} /> : <IconMap size={16} />}
+          {t(`nearYou.mode.${mode}`)}
+        </button>
+        {(positionLive || userPos) && (
           <button
             type="button"
             onClick={recentrerSurMoi}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-brass shadow-md"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1A73E8] shadow-md"
             aria-label={t('nearYou.myPosition')}
           >
             <IconCurrentLocation size={18} />
           </button>
         )}
       </div>
+
+      <Modal open={modesOuverts} onClose={() => setModesOuverts(false)} title={t('nearYou.mapStyle')}>
+        <div className="grid grid-cols-3 gap-2">
+          {[['plan', IconMap], ['satellite', IconSatellite], ['sombre', IconMoon]].map(([k, Icon]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => { setMode(k); setModesOuverts(false); }}
+              aria-pressed={mode === k}
+              className={`flex flex-col items-center gap-2 rounded-card border p-3 text-caption font-medium transition ${
+                mode === k ? 'border-teal bg-teal/5 text-teal' : 'border-hairline text-ink hover:bg-base'
+              }`}
+            >
+              <span className={`flex h-14 w-full items-center justify-center rounded-input ${
+                k === 'satellite' ? 'bg-[#2F4A3A]' : k === 'sombre' ? 'bg-[#1E2233]' : 'bg-[#EEE7DA]'
+              }`}>
+                <Icon size={24} className={k === 'plan' ? 'text-ink' : 'text-white'} />
+              </span>
+              {t(`nearYou.mode.${k}`)}
+            </button>
+          ))}
+        </div>
+      </Modal>
 
       {fondIndisponible && (
         <div className="pointer-events-none absolute inset-x-3 top-16 rounded-card bg-white/95 px-3 py-2 text-center text-caption text-muted shadow">
@@ -310,13 +411,23 @@ export default function NearYouMap({ items, userPos, onSelect }) {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => onSelect(selection)}
-            className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-input bg-teal text-body font-semibold text-white transition active:scale-[0.98]"
-          >
-            {selection.slug ? t('nearYou.openShop') : <><IconMessage size={18} /> {t('nearYou.openChat')}</>}
-          </button>
+          <div className="mt-3 flex gap-2">
+            <a
+              href={lienItineraire(selection)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-input border border-hairline bg-white text-body font-semibold text-ink transition active:scale-[0.98]"
+            >
+              <IconRoute size={18} className="text-[#1A73E8]" /> {t('nearYou.directions')}
+            </a>
+            <button
+              type="button"
+              onClick={() => onSelect(selection)}
+              className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-input bg-teal text-body font-semibold text-white transition active:scale-[0.98]"
+            >
+              {selection.slug ? t('nearYou.openShop') : <><IconMessage size={18} /> {t('nearYou.openChat')}</>}
+            </button>
+          </div>
         </div>
       )}
     </div>
