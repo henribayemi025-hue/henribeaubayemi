@@ -129,7 +129,10 @@ export function TradePicker({ trades, value, onChange, counts = {}, className = 
     setOpen(false);
   }
 
-  const label = value ? t(`categories.${value}`) : t('nearYou.allTrades');
+  // Bouton fermé: un mot court quand rien n'est choisi (« Métiers »), le
+  // libellé complet sinon — sur deux lignes s'il le faut, jamais coupé.
+  // Beau (10/09): « les mots ne sont pas tous écrits ».
+  const label = value ? t(`categories.${value}`) : t('nearYou.allTradesShort');
 
   return (
     <div ref={racine} className={`relative ${className}`}>
@@ -138,11 +141,11 @@ export function TradePicker({ trades, value, onChange, counts = {}, className = 
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex h-11 w-full items-center gap-2 rounded-input border bg-white px-3 text-left text-body transition ${
+        className={`flex min-h-11 w-full items-center gap-2 rounded-input border bg-white px-3 py-1.5 text-left transition ${
           value ? 'border-teal text-teal' : 'border-hairline text-ink'
         }`}
       >
-        <span className="min-w-0 flex-1 truncate font-medium">{label}</span>
+        <span className={`line-clamp-3 min-w-0 flex-1 font-medium leading-tight ${!value ? 'text-body' : label.length > 30 ? 'text-[13px]' : 'text-[14px]'}`}>{label}</span>
         <IconChevronDown size={17} className={`shrink-0 text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 

@@ -352,15 +352,19 @@ export default function NearYou() {
               counts={tradeCounts}
               className="min-w-0 flex-1 lg:w-72 lg:flex-none"
             />
-            <select
-              value={country || ''}
-              onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
-              disabled={!!userPos}
-              className="input h-11 w-[6.5rem] shrink-0 bg-white disabled:opacity-50 lg:w-48"
-              aria-label={t('nearYou.overrideLocation')}
-            >
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
-            </select>
+            {/* Le pays disparaît dès qu'on est « autour de moi »: la position
+                fait foi, et un menu grisé qui affiche un pays faux (« Inde »
+                sur le téléphone de Beau) n'apporte rien. */}
+            {!userPos && (
+              <select
+                value={country || ''}
+                onChange={(e) => setCountry(e.target.value)}
+                className="input h-11 w-[6rem] shrink-0 bg-white text-[14px] lg:w-48 lg:text-[16px]"
+                aria-label={t('nearYou.overrideLocation')}
+              >
+                {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
+              </select>
+            )}
             <button
               onClick={locateMe}
               aria-pressed={!!userPos}
@@ -372,18 +376,6 @@ export default function NearYou() {
             >
               <IconCurrentLocation size={18} className={locating ? 'animate-spin' : ''} />
               <span className="hidden lg:inline">{t('nearYou.aroundMe')}</span>
-            </button>
-            <button
-              onClick={() => setView((v) => (v === 'map' ? 'list' : 'map'))}
-              aria-pressed={view === 'map'}
-              aria-label={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
-              title={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-input border transition lg:ml-auto lg:w-auto lg:gap-1.5 lg:px-3 ${
-                view === 'map' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink hover:bg-base'
-              }`}
-            >
-              {view === 'map' ? <IconList size={18} /> : <IconMap2 size={18} />}
-              <span className="hidden text-caption font-medium lg:inline">{view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}</span>
             </button>
           </div>
 
@@ -420,13 +412,30 @@ export default function NearYou() {
             les deux se superposeraient. z-20 pour passer SOUS l'en-tête
             (z-30) et au-dessus du contenu. */}
         <div className="sticky top-14 z-20 mt-2 bg-white">
-          <div className="flex border-b border-hairline">
+          {/* Les onglets à gauche, le passage liste ⇄ carte à droite: la
+              rangée des commandes garde ainsi la place pour un métier écrit
+              en entier (Beau: « les mots ne sont pas tous écrits »). */}
+          <div className="flex items-stretch border-b border-hairline">
             {['shops', 'listings'].map((tb) => (
               <button key={tb} onClick={() => setTab(tb)} className={`flex-1 border-b-2 py-2 text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}>
                 {t(`nearYou.${tb}`)}
                 {tb === 'shops' && shownShops.length > 0 && <span className="ml-1 text-caption">({shownShops.length})</span>}
               </button>
             ))}
+            <div className="flex items-center px-3">
+              <button
+                onClick={() => setView((v) => (v === 'map' ? 'list' : 'map'))}
+                aria-pressed={view === 'map'}
+                aria-label={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
+                title={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
+                className={`flex h-9 items-center justify-center gap-1.5 rounded-input border px-2.5 text-caption font-medium transition ${
+                  view === 'map' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink hover:bg-base'
+                }`}
+              >
+                {view === 'map' ? <IconList size={17} /> : <IconMap2 size={17} />}
+                <span>{view === 'map' ? t('nearYou.listShort') : t('nearYou.mapShort')}</span>
+              </button>
+            </div>
           </div>
 
         {tab === 'listings' && (

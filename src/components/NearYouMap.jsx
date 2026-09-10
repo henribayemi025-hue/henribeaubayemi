@@ -64,6 +64,9 @@ function lienItineraire(x) {
     : `https://www.google.com/maps/dir/?api=1&destination=${x.lat},${x.lng}`;
 }
 
+// Une boutique: sa photo (ou son initiale) dans un rond, posé sur une
+// petite pointe — une vraie épingle de carte, ancrée en bas, pas un rond
+// flottant. Beau (10/09): « les icônes doivent être propres ».
 function elementBoutique(x) {
   const el = document.createElement('button');
   el.type = 'button';
@@ -72,24 +75,30 @@ function elementBoutique(x) {
   const g = shopGradient(x.id || x.name);
   const initial = (x.name || '?').trim().charAt(0).toUpperCase();
   const src = x.avatar_url ? storageThumbUrl('shops', x.avatar_url) : null;
-  el.style.cssText = `width:${AVATAR}px;height:${AVATAR}px;border-radius:9999px;padding:0;border:3px solid #fff;
-    background-image:linear-gradient(135deg, ${g.from}, ${g.to});box-shadow:0 1px 4px rgba(0,0,0,.3);
-    display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;
-    font:700 16px 'Fraunces', Georgia, serif;color:#fff`;
-  el.innerHTML = src
-    ? `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9999px" onerror="this.remove()" />`
-    : initial;
+  el.style.cssText = `position:relative;width:${AVATAR}px;height:${AVATAR + 8}px;padding:0;border:0;background:none;cursor:pointer;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))`;
+  // L'initiale est toujours là, sous la photo: si l'image ne charge pas,
+  // elle se retire et l'initiale reste.
+  const visuel = initial + (src
+    ? `<img src="${src}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9999px" onerror="this.remove()" />`
+    : '');
+  el.innerHTML =
+    `<span style="position:absolute;left:50%;bottom:0;width:12px;height:12px;margin-left:-6px;background:#fff;transform:translateY(-4px) rotate(45deg);border-radius:2px"></span>` +
+    `<span style="position:absolute;inset:0 0 8px 0;border-radius:9999px;border:2.5px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;
+      background-image:linear-gradient(135deg, ${g.from}, ${g.to});font:700 16px 'Fraunces', Georgia, serif;color:#fff">${visuel}</span>`;
   return el;
 }
 
+// Un groupe: petit disque terracotta, chiffre blanc, liseré blanc. Discret
+// — le grand rond blanc à halo prenait toute la place (capture de Beau).
 function elementGroupe(n) {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'finjaro-cluster';
-  const taille = n < 10 ? 40 : n < 100 ? 48 : 56;
-  el.style.cssText = `width:${taille}px;height:${taille}px;border-radius:9999px;padding:0;border:0;cursor:pointer;
-    background:#fff;color:#171B26;box-shadow:0 1px 4px rgba(0,0,0,.3), 0 0 0 6px rgba(255,255,255,.55);
-    display:flex;align-items:center;justify-content:center;font:600 14px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif`;
+  const taille = n < 10 ? 30 : n < 100 ? 36 : 42;
+  el.style.cssText = `width:${taille}px;height:${taille}px;border-radius:9999px;padding:0;border:2px solid #fff;cursor:pointer;
+    background:#C25E38;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);
+    display:flex;align-items:center;justify-content:center;font:700 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif`;
   el.textContent = String(n);
   return el;
 }
@@ -208,7 +217,11 @@ export default function NearYouMap({ items, userPos, onSelect }) {
   // dépendance au fond de carte — les bulles s'affichent même si le fond
   // met du temps ou ne vient jamais (la capture noire de Beau).
   function rafraichirMarqueurs(map) {
-    const RAYON = 48;
+    // De près (zoom ≥ 16, l'échelle d'un quartier), plus aucun groupe: on
+    // veut voir chaque boutique. Deux boutiques à la même adresse sont
+    // alors écartées de quelques pixels pour rester toutes deux tapables.
+    const zoomProche = map.getZoom() >= 16;
+    const RAYON = zoomProche ? 1 : 48;
     const groupes = [];
     for (const x of donnees.current) {
       const pt = map.project([x.lng, x.lat]);
@@ -222,9 +235,24 @@ export default function NearYouMap({ items, userPos, onSelect }) {
       }
     }
     const vus = new Set();
+    // Même adresse, vue de près: on éclate le groupe en éventail.
+    const eclates = [];
     for (const g of groupes) {
+      if (zoomProche && g.membres.length > 1) {
+        g.membres.forEach((m, i) => {
+          const a = (2 * Math.PI * i) / g.membres.length - Math.PI / 2;
+          eclates.push({ membres: [m], decalage: [Math.round(Math.cos(a) * 26), Math.round(Math.sin(a) * 26)] });
+        });
+      } else {
+        eclates.push(g);
+      }
+    }
+    for (const g of eclates) {
       const seul = g.membres.length === 1;
-      const cle = seul ? `b:${g.membres[0].id}` : `g:${g.membres.map((m) => m.id).sort().join('|')}`;
+      const decalage = g.decalage || [0, 0];
+      const cle = seul
+        ? `b:${g.membres[0].id}:${decalage.join(',')}`
+        : `g:${g.membres.map((m) => m.id).sort().join('|')}`;
       vus.add(cle);
       if (marqueurs.current.has(cle)) continue;
       let el;
@@ -248,10 +276,12 @@ export default function NearYouMap({ items, userPos, onSelect }) {
         // chaque mouvement, donc le groupe se défait tout seul en zoomant.
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          map.easeTo({ center: lngLat, zoom: Math.min(map.getZoom() + 3, 18), duration: 500 });
+          // Au moins jusqu'au zoom 16: c'est là que les groupes se défont
+          // pour de bon, même à la même adresse.
+          map.easeTo({ center: lngLat, zoom: Math.min(Math.max(map.getZoom() + 3, 16), 18), duration: 500 });
         });
       }
-      const m = new maplibregl.Marker({ element: el, anchor: seul && !g.membres[0].slug ? 'bottom' : 'center' })
+      const m = new maplibregl.Marker({ element: el, anchor: seul ? 'bottom' : 'center', offset: decalage })
         .setLngLat(lngLat)
         .addTo(map);
       marqueurs.current.set(cle, m);
@@ -272,9 +302,12 @@ export default function NearYouMap({ items, userPos, onSelect }) {
         center: [9.7, 4.05],
         zoom: 11,
         pitch: 45,
-        attributionControl: { compact: true },
+        attributionControl: false,
         cooperativeGestures: false,
       });
+      // Le « i » des crédits en bas à gauche: à droite, il se collait sous
+      // le bouton de position et la bulle Finia.
+      map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
     } catch {
       setSansWebgl(true);
       return undefined;
@@ -445,21 +478,14 @@ export default function NearYouMap({ items, userPos, onSelect }) {
             <IconBuildingSkyscraper size={18} />
           </BoutonCarte>
         )}
+        {/* Ma position — dans la même colonne, comme Apple Plans. En bas à
+            droite, il se battait avec la bulle Finia et les crédits. */}
+        {moiConnu && (
+          <BoutonCarte onClick={recentrerSurMoi} label={t('nearYou.myPosition')} className="rounded-input shadow-md !text-[#1A73E8]">
+            <IconCurrentLocation size={18} />
+          </BoutonCarte>
+        )}
       </div>
-
-      {/* Ma position — en bas à droite, comme partout ailleurs. */}
-      {moiConnu && (
-        <button
-          type="button"
-          onClick={recentrerSurMoi}
-          aria-label={t('nearYou.myPosition')}
-          className={`absolute right-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#1A73E8] shadow-md transition active:scale-95 ${
-            selection ? 'bottom-[9.5rem]' : 'bottom-10'
-          }`}
-        >
-          <IconCurrentLocation size={20} />
-        </button>
-      )}
 
       {/* La fiche, quand on tape une bulle. */}
       {selection && (
