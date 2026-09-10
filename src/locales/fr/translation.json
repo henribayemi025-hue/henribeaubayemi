@@ -652,7 +652,9 @@
       "satellite": "Satellite",
       "sombre": "Sombre"
     },
-    "directions": "Itinéraire"
+    "directions": "Itinéraire",
+    "zoomIn": "Zoomer",
+    "zoomOut": "Dézoomer"
   },
   "profile": {
     "title": "Profil",

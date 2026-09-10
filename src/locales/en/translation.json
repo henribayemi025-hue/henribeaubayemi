@@ -652,7 +652,9 @@
       "satellite": "Satellite",
       "sombre": "Dark"
     },
-    "directions": "Directions"
+    "directions": "Directions",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "profile": {
     "title": "Profile",
