@@ -401,9 +401,6 @@
     "suggestSell": "Become a vendor",
     "suggestSales": "My sales this week",
     "actionShareShop": "Share my shop",
-    "voiceStart": "Speak to Finou",
-    "voiceStop": "Stop dictation",
-    "voiceListening": "I'm listening…",
     "hint": "Chat with Finou",
     "hints": [
       "Find me a wax dress",
@@ -681,7 +678,7 @@
     "empty": "No messages yet.",
     "emptyHint": "Contact a shop to start a conversation.",
     "pickConversation": "Pick a conversation on the left to open it.",
-    "searchPlaceholder": "Search a shop, message someone…",
+    "searchPlaceholder": "Search or message a shop…",
     "peopleFound": "People",
     "newConversation": "New conversation",
     "searchNoMatch": "No shop matches \"{{query}}\"."
@@ -1301,7 +1298,8 @@
       "content": "Content",
       "demandes": "Requests",
       "annonce": "Broadcast",
-      "relances": "Follow-ups"
+      "relances": "Follow-ups",
+      "veille": "Watch"
     },
     "annonceCible": "Who to?",
     "annonceCibles": {
@@ -1519,7 +1517,41 @@
     "relanceUnread": "Not read yet",
     "relanceNoTargets": "Nobody to follow up — everyone has published.",
     "relanceNoneSent": "No follow-up waiting for a reply.",
-    "relanceNoReplies": "Nobody has replied yet."
+    "relanceNoReplies": "Nobody has replied yet.",
+    "veille": {
+      "title": "Watch",
+      "intro": "Everything waiting for an action, in one place. Automations already nudged once; you decide what happens next.",
+      "allGood": "Nothing to handle — all clear.",
+      "stuckOrders": "Orders waiting on the seller",
+      "stuckOrdersEmpty": "No order waiting for more than 24 h.",
+      "unanswered": "Customers without a reply",
+      "unansweredEmpty": "Every customer got a reply within 24 h.",
+      "buyer": "Customer",
+      "waitingHours": "{{h}} h waiting",
+      "waitingDays": "{{d}} d waiting",
+      "remindVendor": "Nudge the seller",
+      "reminded": "Reminder sent to the seller.",
+      "lastReminded": "Nudged {{when}}",
+      "neverReminded": "Never nudged",
+      "vendorWhatsapp": "Seller WhatsApp",
+      "call": "Call",
+      "speed": "Real site speed",
+      "noSpeed": "No measurement yet — they arrive with every visit.",
+      "speedMeasures": "{{n}} measurements over 7 days, from real visitors",
+      "lcpMedian": "before the page shows (median)",
+      "lcpP90": "9 visitors out of 10 see the page in under {{s}} s",
+      "verdict_good": "Good: under 2.5 s, the site feels fast.",
+      "verdict_medium": "Average: between 2.5 and 4 s, the wait is felt.",
+      "verdict_slow": "Slow: over 4 s, people give up.",
+      "byConnection": "By connection type",
+      "slowPages": "Slowest pages to load",
+      "storage": "Storage",
+      "storageUsed": "{{used}} of {{limit}}",
+      "storageVideos": "{{n}} videos · {{size}}",
+      "storageWeek": "+{{size}} this week",
+      "storageAlert": "Almost full: upgrade Supabase to Pro (~$25/mo) or trim videos."
+    },
+    "stuckOrdersBanner": "{{count}} order(s) waiting on the seller for over 24 h"
   },
   "troc": {
     "title": "Evaluate a trade",

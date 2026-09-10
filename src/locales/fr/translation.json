@@ -401,9 +401,6 @@
     "suggestSell": "Devenir vendeur",
     "suggestSales": "Mes ventes cette semaine",
     "actionShareShop": "Partager ma boutique",
-    "voiceStart": "Dicter à Finou",
-    "voiceStop": "Arrêter la dictée",
-    "voiceListening": "Je t'écoute…",
     "hint": "Discuter avec Finou",
     "hints": [
       "Trouve-moi une robe wax",
@@ -681,7 +678,7 @@
     "empty": "Aucun message.",
     "emptyHint": "Contacte une boutique pour démarrer une conversation.",
     "pickConversation": "Choisis une conversation à gauche pour l'ouvrir.",
-    "searchPlaceholder": "Chercher une boutique, écrire à quelqu'un…",
+    "searchPlaceholder": "Chercher ou écrire à une boutique…",
     "peopleFound": "Personnes",
     "newConversation": "Nouvelle conversation",
     "searchNoMatch": "Aucune boutique ne correspond à « {{query}} »."
@@ -1301,7 +1298,8 @@
       "content": "Contenu",
       "demandes": "Demandes",
       "annonce": "Annonce",
-      "relances": "Relances"
+      "relances": "Relances",
+      "veille": "Veille"
     },
     "annonceCible": "À qui ?",
     "annonceCibles": {
@@ -1519,7 +1517,41 @@
     "relanceUnread": "Pas encore lu",
     "relanceNoTargets": "Personne à relancer — tout le monde a publié.",
     "relanceNoneSent": "Aucune relance en attente de réponse.",
-    "relanceNoReplies": "Personne n’a encore répondu."
+    "relanceNoReplies": "Personne n’a encore répondu.",
+    "veille": {
+      "title": "Veille",
+      "intro": "Ce qui attend une action, rassemblé ici. Les automates ont déjà relancé une fois; à toi de décider de la suite.",
+      "allGood": "Rien à traiter — tout est en ordre.",
+      "stuckOrders": "Commandes en attente de la vendeuse",
+      "stuckOrdersEmpty": "Aucune commande en attente depuis plus de 24 h.",
+      "unanswered": "Clientes sans réponse",
+      "unansweredEmpty": "Toutes les clientes ont eu une réponse en moins de 24 h.",
+      "buyer": "Cliente",
+      "waitingHours": "{{h}} h d'attente",
+      "waitingDays": "{{d}} j d'attente",
+      "remindVendor": "Relancer la vendeuse",
+      "reminded": "Relance envoyée à la vendeuse.",
+      "lastReminded": "Relancée {{when}}",
+      "neverReminded": "Jamais relancée",
+      "vendorWhatsapp": "WhatsApp vendeuse",
+      "call": "Appeler",
+      "speed": "Vitesse réelle du site",
+      "noSpeed": "Pas encore de mesure — elles arrivent à chaque visite.",
+      "speedMeasures": "{{n}} mesures sur 7 jours, chez de vrais visiteurs",
+      "lcpMedian": "avant que la page s'affiche (médiane)",
+      "lcpP90": "9 visiteurs sur 10 voient la page en moins de {{s}} s",
+      "verdict_good": "Bien : sous 2,5 s, le site paraît rapide.",
+      "verdict_medium": "Moyen : entre 2,5 et 4 s, on sent l'attente.",
+      "verdict_slow": "Lent : plus de 4 s, les gens décrochent.",
+      "byConnection": "Par type de connexion",
+      "slowPages": "Pages les plus longues à charger",
+      "storage": "Stockage",
+      "storageUsed": "{{used}} sur {{limit}}",
+      "storageVideos": "{{n}} vidéos · {{size}}",
+      "storageWeek": "+{{size}} cette semaine",
+      "storageAlert": "Presque plein : passer Supabase en Pro (~25 $/mois) ou alléger les vidéos."
+    },
+    "stuckOrdersBanner": "{{count}} commande(s) attendent la vendeuse depuis plus de 24 h"
   },
   "troc": {
     "title": "Évaluer un troc",

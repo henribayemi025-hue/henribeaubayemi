@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
   IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy, IconMessage2,
-  IconSearch, IconArrowUpRight, IconArrowDownRight,
+  IconSearch, IconArrowUpRight, IconArrowDownRight, IconActivity,
 } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -24,6 +24,7 @@ const AdminSupport = lazy(() => import('./admin/AdminSupport'));
 const AdminDemandes = lazy(() => import('./admin/AdminDemandes'));
 const AdminAnnonce = lazy(() => import('./admin/AdminAnnonce'));
 const AdminRelances = lazy(() => import('./admin/AdminRelances'));
+const AdminVeille = lazy(() => import('./admin/AdminVeille'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
 const AI_BUDGET_EUR = 20;
@@ -33,6 +34,7 @@ const AI_BUDGET_EUR = 20;
 // précis se partage/rouvre tel quel.
 const SECTIONS = [
   { key: 'overview', icon: IconLayoutDashboard },
+  { key: 'veille', icon: IconActivity, Component: AdminVeille },
   { key: 'shops', icon: IconBuildingStore, Component: AdminShops },
   { key: 'users', icon: IconUsers, Component: AdminUsers },
   { key: 'orders', icon: IconShoppingBag, Component: AdminOrders },
@@ -143,7 +145,7 @@ function Overview({ goTo }) {
       visitsTotal, visits7d, visitsPrev7d, usersTotal, users7d, usersPrev7d, vendorsTotal,
       ordersTotal, orders7d, ordersPrev7d, revenueRes, revenue7d, revenuePrev7d,
       topProducts, eventCounts, recentVisitorsRes, aiUsageRes,
-      pendingReports, ticketsOuverts, pendingApps, demandesOuvertes,
+      pendingReports, ticketsOuverts, pendingApps, demandesOuvertes, commandesBloquees,
     ] = await Promise.all([
       countSince('events', null, (q) => q.eq('type', 'visit')),
       countSince('events', 7, (q) => q.eq('type', 'visit')),
@@ -175,6 +177,7 @@ function Overview({ goTo }) {
       countSince('support_tickets', null, (q) => q.eq('statut', 'ouvert')),
       countSince('vendor_applications', null, (q) => q.eq('status', 'pending')),
       countSince('demandes_acheteurs', null, (q) => q.eq('statut', 'ouverte')),
+      countSince('orders', null, (q) => q.eq('status', 'new').lt('created_at', daysAgo(1))),
     ]);
     const revenueFcfa = (revenueRes.data || []).reduce((s, o) => s + (o.total_fcfa || 0), 0);
     const aiSpendEur = (aiUsageRes.data || []).reduce((s, r) => s + Number(r.cost_eur), 0);
@@ -184,7 +187,7 @@ function Overview({ goTo }) {
       topProducts: topProducts.data || [],
       events: EVENT_TYPES.map((type, i) => ({ type, count: eventCounts[i] })),
       recentVisitors: recentVisitorsRes.data || [],
-      aiSpendEur, pendingReports, ticketsOuverts, pendingApps, demandesOuvertes,
+      aiSpendEur, pendingReports, ticketsOuverts, pendingApps, demandesOuvertes, commandesBloquees,
     };
   }, []);
 
@@ -226,8 +229,21 @@ function Overview({ goTo }) {
           peut dormir des jours sans que personne ne le voie. Ce sont des
           BOUTONS qui changent d'onglet, pas des liens vers une adresse — la
           console n'a qu'une seule page. */}
-      {(data.pendingReports > 0 || data.ticketsOuverts > 0 || data.pendingApps > 0 || data.demandesOuvertes > 0) && (
+      {(data.pendingReports > 0 || data.ticketsOuverts > 0 || data.pendingApps > 0 || data.demandesOuvertes > 0 || data.commandesBloquees > 0) && (
         <div className="space-y-2">
+          {/* Une commande sans réponse de la vendeuse depuis plus d'un jour:
+              c'est une cliente en train de partir. En tête, avant tout. */}
+          {data.commandesBloquees > 0 && (
+            <button
+              type="button"
+              onClick={() => goTo('veille')}
+              className="flex w-full items-center gap-2 rounded-card border border-danger/40 bg-danger-bg p-3 text-left text-body font-semibold text-danger transition active:scale-[0.99]"
+            >
+              <IconActivity size={18} className="shrink-0" />
+              <span className="flex-1">{t('admin.stuckOrdersBanner', { count: data.commandesBloquees })}</span>
+              <IconChevronRight size={18} className="shrink-0" />
+            </button>
+          )}
           {/* En tête des bandeaux: c'est le seul qui porte une promesse
               datée (« réponse sous 24 h ») faite à quelqu'un qui voulait
               acheter. Le retard s'y paie plus cher qu'ailleurs. */}
