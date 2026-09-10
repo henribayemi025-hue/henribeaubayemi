@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { phoneExample } from '../lib/phone';
+import { useSettings } from '../hooks/useSettings';
 import { IconSparkles, IconCheck } from '@tabler/icons-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -20,6 +22,7 @@ import { Field, TextInput } from './Field';
 // perdre exactement la personne qu'on veut retenir.
 export function DemandeFinia({ recherche, source = 'recherche' }) {
   const { t } = useTranslation();
+  const { country } = useSettings();
   const { user } = useAuth();
   const toast = useToast();
   const [details, setDetails] = useState('');
@@ -80,7 +83,7 @@ export function DemandeFinia({ recherche, source = 'recherche' }) {
               id={id}
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="+237 6XX XXX XXX"
+              placeholder={phoneExample(country)}
               maxLength={120}
               required
             />

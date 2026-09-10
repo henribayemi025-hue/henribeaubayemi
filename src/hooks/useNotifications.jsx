@@ -134,6 +134,18 @@ export function notificationHref(n) {
     // rejoue: sa date de fin, et le lien à repartager.
     case 'referral_reward':
       return '/profile/invite';
+    // Escalade d'une commande ignorée (migration 0113): le chemin est calculé
+    // côté serveur — la première boutique de remplacement, sinon les
+    // commandes.
+    case 'order_escalated':
+      return d.path || '/profile/orders';
+    // « Me prévenir » (0114): retour en stock ou baisse de prix d'un article.
+    case 'product_alert':
+      return d.product_id ? `/product/${d.product_id}` : null;
+    // Bilan hebdo (0115): le tableau de bord, où les chiffres sont dans la
+    // devise de la boutique.
+    case 'vendor_digest':
+      return '/vendor';
     default:
       return null;
   }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck } from '@tabler/icons-react';
+import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck, IconBell, IconBellRinging } from '@tabler/icons-react';
 import { MirrorModal } from '../../components/MirrorModal';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -39,6 +39,49 @@ export default function ProductDetail() {
   const [mirrorOpen, setMirrorOpen] = useState(false);
 
   const [similar, setSimilar] = useState([]);
+  // « Me prévenir » (migration 0114): une ligne dans product_alerts par
+  // personne et par article. Le serveur prévient au retour en stock, à la
+  // remise en ligne ou à la baisse de prix, puis efface la ligne.
+  const [alerte, setAlerte] = useState(false);
+  const [alerteBusy, setAlerteBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setAlerte(false);
+    if (!user) return undefined;
+    supabase
+      .from('product_alerts')
+      .select('id')
+      .eq('product_id', id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data: row }) => { if (active) setAlerte(!!row); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [id, user]);
+
+  async function toggleAlerte(prixActuel) {
+    if (!user) return requireLogin();
+    if (alerteBusy) return;
+    setAlerteBusy(true);
+    try {
+      if (alerte) {
+        const { error: e } = await supabase.from('product_alerts').delete().eq('product_id', id).eq('user_id', user.id);
+        if (e) throw e;
+        setAlerte(false);
+        toast.info(t('product.alertRemoved'));
+      } else {
+        const { error: e } = await supabase.from('product_alerts').insert({ user_id: user.id, product_id: id, price_fcfa_at: prixActuel ?? null });
+        if (e && e.code !== '23505') throw e;
+        setAlerte(true);
+        toast.success(t('product.alertSaved'));
+      }
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAlerteBusy(false);
+    }
+  }
 
   useEffect(() => {
     track('product_view', id);
@@ -70,8 +113,11 @@ export default function ProductDetail() {
       .maybeSingle();
     if (err) throw err;
     if (!product) return null;
-    // Increment view count (best-effort; ignore failures on flaky connections).
-    await supabase.from('products').update({ views: (product.views || 0) + 1 }).eq('id', id);
+    // Compteur de vues, en tâche de fond (jamais bloquant). Via RPC: l'UPDATE
+    // direct d'avant était refusé en silence par la RLS pour toute personne
+    // qui n'est pas la propriétaire — seules ses propres visites comptaient
+    // (migration 0116).
+    supabase.rpc('increment_product_views', { p_product_id: id }).then(() => {}, () => {});
     // Les avis se laissent par commande, pas par article (voir ReviewModal):
     // une commande peut contenir plusieurs produits d'une même boutique, donc
     // rien ne les rattache à UN article précis. On affiche ici les avis de la
@@ -213,6 +259,17 @@ export default function ProductDetail() {
         ) : (
           <div className="mt-1 flex items-center gap-2">
             <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
+            {!outOfStock && (
+              <button
+                type="button"
+                onClick={() => toggleAlerte(p.price_fcfa)}
+                disabled={alerteBusy}
+                className={`mt-1 flex items-center gap-1 text-caption font-semibold ${alerte ? 'text-brass' : 'text-teal'}`}
+              >
+                {alerte ? <IconBellRinging size={14} /> : <IconBell size={14} />}
+                {alerte ? t('product.priceAlertOn') : t('product.priceAlert')}
+              </button>
+            )}
             {pct && <PromoBadge percent={pct} />}
           </div>
         )}
@@ -351,9 +408,16 @@ export default function ProductDetail() {
             </button>
           </div>
         ) : (
-          <Button disabled={outOfStock} onClick={addToCart}>
-            {outOfStock ? t('product.outOfStock') : t('product.addToCart')}
-          </Button>
+          outOfStock ? (
+            // Rupture: au lieu d'un bouton mort, « Me prévenir du retour ».
+            // L'article rappelle la cliente tout seul quand il revient.
+            <Button variant={alerte ? 'secondary' : 'primary'} loading={alerteBusy} onClick={() => toggleAlerte(p.price_fcfa)}>
+              {alerte ? <IconBellRinging size={18} /> : <IconBell size={18} />}
+              {alerte ? t('product.alertOn') : t('product.notifyMe')}
+            </Button>
+          ) : (
+            <Button onClick={addToCart}>{t('product.addToCart')}</Button>
+          )
         )}
       </div>
 
