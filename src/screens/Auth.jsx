@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { phoneExample } from '../lib/phone';
+import { useSettings } from '../hooks/useSettings';
 import { IconEye, IconEyeOff, IconMail, IconPhone, IconBrandGoogleFilled, IconBrandApple } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
@@ -38,6 +40,7 @@ const APPLE_SIGNIN_ENABLED = true;
 // passe — reste offerte.
 export default function Auth({ consoleMode = false }) {
   const { t } = useTranslation();
+  const { country } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -237,7 +240,7 @@ export default function Auth({ consoleMode = false }) {
                 id={id}
                 type="tel"
                 inputMode="tel"
-                placeholder="+237 6XX XXX XXX"
+                placeholder={phoneExample(country)}
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 required

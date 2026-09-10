@@ -8,9 +8,16 @@
 #   Build command                          : npm run build:admin
 name = "finjaro-admin"
 compatibility_date = "2026-07-23"
+# Le MÊME Worker que la boutique (src/worker.js): il sert la route /img/*
+# (proxy cache devant Supabase Storage) et laisse tout le reste au binding
+# ASSETS. Sans lui, `/img/shops/…` retombait sur index.html — c'est pourquoi
+# AUCUNE photo de boutique ne s'affichait dans la console (constaté par Beau
+# le 10/09), alors que les mêmes photos s'affichaient sur finjaro.net.
+main = "src/worker.js"
 
 [assets]
 directory = "./dist-admin"
+binding = "ASSETS"
 # Application monopage: une adresse inconnue retombe sur index.html pour que
 # le routage côté client fonctionne (et qu'un lien profond ne renvoie pas une
 # page blanche).

@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone, IconVolume, IconVolumeOff } from '@tabler/icons-react';
+import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone, IconVolume, IconVolumeOff, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
+import { useToast } from '../hooks/useToast';
 import { useUI } from '../hooks/useUI';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
-import { useSpeechInput } from '../hooks/useSpeechInput';
+import { VoiceMessage } from './chat/VoiceMessage';
+import { blobToWavDataUrl } from '../lib/audioWav';
 import { useCart } from '../hooks/useCart';
 import { useSettings } from '../hooks/useSettings';
 import { SmartImage } from './SmartImage';
@@ -66,8 +68,19 @@ export function FinouChou() {
   const [mirrorProduct, setMirrorProduct] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const toast = useToast();
   const scroller = useRef(null);
   const fileRef = useRef(null);
+  // Vocal maintenu, comme dans le chat: on enregistre tant que le doigt reste
+  // posé, on envoie au relâchement — et l'audio part tel quel à Finia.
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimerRef = useRef(null);
+  const recordCancelledRef = useRef(false);
+  const recordSecondsRef = useRef(0);
+  const micSupported = typeof window !== 'undefined' && !!window.MediaRecorder && !!navigator.mediaDevices?.getUserMedia;
 
   // Voix bidirectionnelle (Finou 2.0): la dictée existait déjà; ceci ajoute
   // la LECTURE des réponses via speechSynthesis — 100 % navigateur, aucune
@@ -92,12 +105,58 @@ export function FinouChou() {
     window.speechSynthesis.speak(u);
   }
 
-  // Dictée vocale: le texte reconnu s'ajoute au champ (il ne l'écrase pas),
-  // pour qu'on puisse dicter puis corriger au clavier avant d'envoyer.
-  const speech = useSpeechInput({
-    lang: i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR',
-    onResult: (text) => setInput((prev) => (prev ? `${prev} ${text}` : text)),
-  });
+  // Beau: « que quelqu'un puisse faire un voice à Finia ». Avant, c'était une
+  // dictée par le navigateur — qui échouait EN SILENCE sur une mauvaise
+  // connexion: on appuyait sur le micro, rien ne se passait. Maintenant c'est
+  // un vrai vocal, maintenu comme dans le chat, que Finia écoute elle-même:
+  // le camfranglais et les accents passent bien mieux qu'avec la
+  // reconnaissance du navigateur.
+  async function startRecording() {
+    if (recording || sending) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((m) => window.MediaRecorder.isTypeSupported?.(m)) || '';
+      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recordCancelledRef.current = false;
+      recorder.ondataavailable = (e) => e.data.size > 0 && audioChunksRef.current.push(e.data);
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((tr) => tr.stop());
+        clearInterval(recordTimerRef.current);
+        const duree = recordSecondsRef.current;
+        const cancelled = recordCancelledRef.current || duree < 1;
+        setRecording(false);
+        setRecordSeconds(0);
+        if (cancelled || audioChunksRef.current.length === 0) return;
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        try {
+          // WAV pour Gemini (format documenté), l'original pour la relecture
+          // locale — le téléphone lit toujours ce qu'il vient d'enregistrer.
+          const dataUrl = await blobToWavDataUrl(blob);
+          send('', null, { dataUrl, localUrl: URL.createObjectURL(blob), seconds: duree });
+        } catch {
+          setError(true);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setRecordSeconds(0);
+      recordSecondsRef.current = 0;
+      recordTimerRef.current = setInterval(() => {
+        recordSecondsRef.current += 1;
+        setRecordSeconds(recordSecondsRef.current);
+        if (recordSecondsRef.current >= 45) stopRecording(false);
+      }, 1000);
+    } catch {
+      toast.error(t('chat.micDenied'));
+    }
+  }
+
+  function stopRecording(cancel = false) {
+    recordCancelledRef.current = cancel;
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+  }
 
   useEffect(() => {
     if (finouOpen && messages.length === 0) {
@@ -132,20 +191,20 @@ export function FinouChou() {
     if (fileRef.current) fileRef.current.value = '';
   }
 
-  async function send(text, image) {
+  async function send(text, image, audio = null) {
     const content = (text ?? input).trim();
     const img = image !== undefined ? image : pendingImage;
-    if ((!content && !img) || sending) return;
+    if ((!content && !img && !audio) || sending) return;
     setError(false);
     setInput('');
     setPendingImage(null);
     // History BEFORE appending this turn — gives Gemini real conversational
     // memory (previously only the current message was ever sent).
     const history = messages
-      .filter((m) => m.text)
+      .filter((m) => m.text || m.audio)
       .slice(-8)
-      .map((m) => ({ role: m.role, text: m.text }));
-    setMessages((m) => [...m, { role: 'user', text: content, image: img }]);
+      .map((m) => ({ role: m.role, text: m.text || '🎤 (message vocal)' }));
+    setMessages((m) => [...m, { role: 'user', text: content, image: img, audio }]);
     setSending(true);
     try {
       // Real sales numbers for an approved vendor, so Finou can answer
@@ -163,6 +222,7 @@ export function FinouChou() {
         body: {
           message: content,
           image: img || undefined,
+          audio: audio?.dataUrl || undefined,
           history,
           context: { screen: location.pathname, buyerCurrency, ...(vendorStats ? { vendorStats } : {}), ...(shopUrl ? { shopUrl } : {}) },
         },
@@ -213,7 +273,7 @@ export function FinouChou() {
 
   function retryLast() {
     const last = [...messages].reverse().find((m) => m.role === 'user');
-    send(last?.text || '', last?.image || null);
+    send(last?.text || '', last?.image || null, last?.audio || null);
   }
 
   function goCategory(cat) {
@@ -276,6 +336,7 @@ export function FinouChou() {
                   }`}
                 >
                   {m.image && <img src={m.image} alt="" className="mb-1 max-h-40 rounded-input object-cover" />}
+                  {m.audio?.localUrl && <VoiceMessage src={m.audio.localUrl} seconds={m.audio.seconds} />}
                   {/* Finia écrit en Markdown: on le rend au lieu de l'imprimer.
                       Le message de la personne, lui, reste tel qu'elle l'a tapé. */}
                   {m.role === 'user' ? m.text : <RichText text={m.text} />}
@@ -475,36 +536,53 @@ export function FinouChou() {
             <IconPhoto size={24} />
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
-          {/* Micro affiché uniquement si le navigateur sait vraiment dicter —
-              mieux vaut pas de bouton qu'un bouton sans effet (Firefox). */}
-          {speech.supported && (
+          {recording ? (
+            <div className="flex flex-1 items-center gap-2 rounded-input bg-base px-3 py-2.5">
+              <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-danger" />
+              <span className="flex-1 text-body text-ink">
+                {String(Math.floor(recordSeconds / 60)).padStart(2, '0')}:{String(recordSeconds % 60).padStart(2, '0')} — {t('chat.recordingHint')}
+              </span>
+              <button type="button" onClick={() => stopRecording(true)} className="shrink-0 text-danger" aria-label={t('common.cancel')}>
+                <IconTrash size={20} />
+              </button>
+            </div>
+          ) : (
+            <input
+              className="input flex-1"
+              placeholder={t('finou.placeholder')}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              aria-label={t('finou.placeholder')}
+            />
+          )}
+          {/* Même règle que le chat: champ vide = micro (maintenu), sinon
+              envoyer. Le bouton reste le MÊME élément pendant tout l'appui,
+              sinon le relâchement se perd et l'enregistrement reste bloqué. */}
+          {micSupported && !input.trim() && !pendingImage ? (
             <button
               type="button"
-              onClick={speech.toggle}
-              aria-label={speech.listening ? t('finou.voiceStop') : t('finou.voiceStart')}
-              aria-pressed={speech.listening}
-              className={`shrink-0 transition-colors ${
-                speech.listening ? 'animate-pulse text-teal' : 'text-muted hover:text-teal'
+              disabled={sending}
+              onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startRecording(); }}
+              onPointerUp={() => stopRecording(false)}
+              onPointerCancel={() => stopRecording(true)}
+              onContextMenu={(e) => e.preventDefault()}
+              className={`flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-full text-white disabled:bg-hairline disabled:text-[#A0A0A0] ${
+                recording ? 'bg-danger' : 'bg-teal'
               }`}
+              aria-label={t('chat.holdToRecord')}
             >
-              <IconMicrophone size={24} />
+              <IconMicrophone size={20} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={(!input.trim() && !pendingImage) || sending}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]"
+              aria-label={t('common.send')}
+            >
+              <IconSend2 size={20} />
             </button>
           )}
-          <input
-            className="input flex-1"
-            placeholder={speech.listening ? t('finou.voiceListening') : t('finou.placeholder')}
-            value={speech.interim ? `${input}${input ? ' ' : ''}${speech.interim}` : input}
-            onChange={(e) => setInput(e.target.value)}
-            aria-label={t('finou.placeholder')}
-          />
-          <button
-            type="submit"
-            disabled={(!input.trim() && !pendingImage) || sending}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal text-white disabled:bg-hairline disabled:text-[#A0A0A0]"
-            aria-label={t('common.send')}
-          >
-            <IconSend2 size={20} />
-          </button>
         </form>
       </div>
 

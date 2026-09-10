@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
 import { CategoryStrip } from '../../components/CategoryStrip';
 import { NotificationBell } from '../../components/NotificationBell';
+import { AppLauncher } from '../../components/AppLauncher';
 import { PushPrompt } from '../../components/PushPrompt';
 import { HomeHeroCarousel } from '../../components/HomeHeroCarousel';
 import { ProductCard } from '../../components/ProductCard';
@@ -105,6 +106,10 @@ export default function Home() {
             <span className="text-title font-semibold text-teal">Finjaro</span>
           </Link>
           <div className="ml-auto flex items-center gap-4">
+            {/* La grille des applications Finjaro, comme celle de Google:
+                visible sans compte, elle fait exister l'environnement au
+                lieu de le cacher dans un menu. */}
+            <AppLauncher currentKey="marketplace" />
             {/* Le SEUL canal de notification qui atteint tous les comptes:
                 un push exige une permission, un e-mail suppose d'en avoir un
                 — faux pour un compte créé par téléphone. Invisible pour les

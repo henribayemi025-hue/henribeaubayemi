@@ -161,86 +161,36 @@ export default function NearYou() {
     return items;
   }
 
+  // UN seul aller-retour: `services_page` (migration 0111) renvoie les
+  // boutiques (colonnes utiles seulement), leurs 3 photos de vitrine, le
+  // prix d'appel, le nombre d'avis et les annonces avec le nom de leur
+  // auteure. Avant: cinq requêtes en trois vagues successives — mesuré à
+  // 11 s de médiane, 20 s en 3G (événement perf_page_load). Sur un réseau
+  // lent, chaque vague coûte une latence entière; en une seule, la page
+  // n'en paie qu'une.
+  //
+  // cacheKey: rendu instantané au retour arrière (stale-while-revalidate,
+  // voir useAsync) — Beau: « dès que je sors d'une conversation, ça
+  // recharge ». La liste s'affiche depuis la mémoire puis se rafraîchit
+  // en tâche de fond.
   const { data, loading, error, retry } = useAsync(async () => {
-    // 40 suffisait quand seuls les prestataires comptaient; ouvert à TOUTE
-    // boutique (voir plus bas), le vrai total (50 actives ce jour) le
-    // dépassait déjà — la limite recréait artificiellement le problème
-    // qu'on vient de corriger. Marge large pour absorber la croissance.
-    const shopsQuery = supabase.from('shops').select('*').eq('status', 'active').order('followers_count', { ascending: false }).limit(150);
-    if (radius === 'country' && country) shopsQuery.eq('country', country);
-    // Ce qui est CACHÉ par le filtre pays. Depuis la France, l'annuaire
-    // n'affichait qu'un seul prestataire alors qu'il y en a sept ailleurs —
-    // et « Élargir la recherche » ne disait pas ce qu'on manquait, donc
-    // personne ne cliquait. On compte les prestataires des autres pays pour
-    // l'annoncer avec un vrai chiffre.
-    const elsewhereQuery = radius === 'country' && country
-      ? supabase.from('shops').select('categories').eq('status', 'active').neq('country', country).limit(200)
-      : Promise.resolve({ data: null, error: null });
-    // PLUS de jointure directe sur `profiles`: depuis le correctif sécurité
-    // du 07/09, la table n'expose plus la ligne d'un inconnu (fuite du
-    // téléphone/adresse de tout le monde à tout compte connecté). Le nom
-    // de l'auteure d'une annonce reste public par nature — il vient donc
-    // de `profiles_public`, une vue qui ne recopie QUE ça, jointe ici côté
-    // client sur les quelques dizaines de user_id affichés.
-    const [shopsRes, listingsRes, elsewhereRes] = await Promise.all([
-      shopsQuery,
-      supabase
-        .from('near_you_listings')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(40),
-      elsewhereQuery,
-    ]);
-    if (shopsRes.error) throw shopsRes.error;
-    // Surface (don't silently swallow) a listings error, but keep Boutiques usable.
-    if (listingsRes.error) console.error('[NearYou] listings query failed:', listingsRes.error.message);
-    const shops = shopsRes.data || [];
-    // Toutes boutiques confondues désormais (voir plus bas): le chiffre
-    // d'« élargir » doit annoncer TOUT ce qui est caché par le filtre pays,
-    // pas seulement les prestataires.
-    const providersElsewhere = (elsewhereRes.data || []).length;
-
-    const listingUserIds = [...new Set((listingsRes.data || []).map((l) => l.user_id).filter(Boolean))];
-    let listings = listingsRes.data || [];
-    if (listingUserIds.length > 0) {
-      const { data: posters } = await supabase.from('profiles_public').select('id, name').in('id', listingUserIds);
-      const nomParId = new Map((posters || []).map((p) => [p.id, p.name]));
-      listings = listings.map((l) => ({ ...l, profiles: { name: nomParId.get(l.user_id) } }));
-    }
-
-    // Vitrine des cartes: photos du catalogue, nombre d'avis et prix
-    // d'appel — pour TOUTE boutique affichée ici, pas seulement les
-    // prestataires. Deux requêtes groupées pour TOUTES les fiches — jamais
-    // une requête par carte.
-    const providerIds = shops.map((s) => s.id);
-    const portfolios = {};
-    const reviewCounts = {};
-    const minPrices = {};
-    if (providerIds.length > 0) {
-      const [prodRes, revRes] = await Promise.all([
-        supabase.from('products').select('shop_id, price_fcfa, images').eq('is_active', true).in('shop_id', providerIds),
-        supabase.from('reviews').select('shop_id').in('shop_id', providerIds),
-      ]);
-      for (const p of prodRes.data || []) {
-        const shots = (portfolios[p.shop_id] ||= []);
-        if (p.images?.[0] && shots.length < 3) shots.push(p.images[0]);
-        if (p.price_fcfa != null && p.price_fcfa > 0 && (minPrices[p.shop_id] == null || p.price_fcfa < minPrices[p.shop_id])) {
-          minPrices[p.shop_id] = p.price_fcfa;
-        }
-      }
-      for (const r of revRes.data || []) reviewCounts[r.shop_id] = (reviewCounts[r.shop_id] || 0) + 1;
-    }
-
+    const pays = radius === 'country' && country ? country : null;
+    const { data: page, error: rpcError } = await supabase.rpc('services_page', { p_country: pays });
+    if (rpcError) throw rpcError;
     return {
-      shops,
-      listings,
-      listingsError: listingsRes.error ? listingsRes.error.message : null,
-      portfolios,
-      reviewCounts,
-      minPrices,
-      providersElsewhere,
+      shops: page?.shops || [],
+      listings: page?.listings || [],
+      listingsError: null,
+      portfolios: page?.portfolios || {},
+      reviewCounts: page?.review_counts || {},
+      minPrices: page?.min_prices || {},
+      // Ce qui est CACHÉ par le filtre pays. Depuis la France, l'annuaire
+      // n'affichait qu'un seul prestataire alors qu'il y en a sept ailleurs —
+      // et « Élargir la recherche » ne disait pas ce qu'on manquait, donc
+      // personne ne cliquait. On l'annonce avec un vrai chiffre.
+      providersElsewhere: page?.providers_elsewhere || 0,
     };
-  }, [country, radius]);
+  }, [country, radius], { cacheKey: `services:${radius === 'country' && country ? country : 'all'}`, ttlMs: 5 * 60 * 1000 });
 
   async function openListingChat(listing) {
     if (!user) return requireLogin();

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 // Feuille d'actions qui monte du bas, comme l'appui long de WhatsApp.
 // Volontairement sans titre ni croix: la liste d'actions se suffit, et une
@@ -12,7 +13,13 @@ export function ActionSheet({ open, onClose, actions = [] }) {
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
+  // Rendu sur <body> plutôt que dans l'arbre de la page: sinon le
+  // `z-index` de la feuille ne se compare qu'à ses voisines, à l'intérieur
+  // du contexte d'empilement créé par l'écran — et la bannière
+  // « installer l'app » comme la bulle Finia, elles posées à la racine,
+  // passaient PAR-DESSUS la fenêtre ouverte (constaté le 10/09 en ouvrant
+  // le sélecteur d'applications).
+  return createPortal(
     <div className="fixed inset-0 z-[95] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true">
       <button className="animate-fade-in absolute inset-0 bg-black/40" aria-label="Fermer" onClick={onClose} />
       <div
@@ -37,5 +44,5 @@ export function ActionSheet({ open, onClose, actions = [] }) {
         ))}
       </div>
     </div>
-  );
+  , document.body);
 }

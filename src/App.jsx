@@ -122,6 +122,7 @@ const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazyWithReload(() => import('./screens/Auth'));
 const Terms = lazyWithReload(() => import('./screens/Terms'));
 const About = lazyWithReload(() => import('./screens/About'));
+const Apps = lazyWithReload(() => import('./screens/Apps'));
 const Privacy = lazyWithReload(() => import('./screens/Privacy'));
 const AccountDeletion = lazyWithReload(() => import('./screens/AccountDeletion'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
@@ -225,6 +226,9 @@ export default function App() {
                         connexion, l'espace acheteur et l'espace vendeur. */}
                     <Route path="/legal/terms" element={<Terms />} />
                     <Route path="/a-propos" element={<About />} />
+                    {/* L'environnement Finjaro: la liste des applications, publique
+                        et partageable par un lien. */}
+                    <Route path="/apps" element={<Apps />} />
                     {/* URL exigée telle quelle par Google Play et l'App Store:
                         publique, sans connexion, hors de tout layout privé. */}
                     <Route path="/legal/confidentialite" element={<Privacy />} />

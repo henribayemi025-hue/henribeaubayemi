@@ -1603,8 +1603,8 @@ Deno.serve(async (req: Request) => {
       memoire = prof?.finia_memory ?? null;
     }
 
-    const { message, image, context, history } = await req.json();
-    if ((!message || typeof message !== 'string') && !image) {
+    const { message, image, audio, context, history } = await req.json();
+    if ((!message || typeof message !== 'string') && !image && !audio) {
       return json({ error: 'invalid_message' }, 400);
     }
 
@@ -1635,10 +1635,26 @@ Deno.serve(async (req: Request) => {
       ? `\n[Contexte écran: ${JSON.stringify(context).slice(0, 800)}]`
       : '';
 
-    const userParts: Array<Json> = [{ text: (message || 'Aide-moi avec cette image.') + ctxLine }];
+    // Vocal (Beau: « que quelqu'un puisse faire un voice à Finia »): l'audio
+    // part TEL QUEL à Gemini, qui l'écoute lui-même — pas de dictée
+    // intermédiaire qui échoue en silence sur une mauvaise connexion, et le
+    // camfranglais ou un accent passent bien mieux qu'avec la reconnaissance
+    // du navigateur. Le codec est retiré du type MIME (« ;codecs=opus »),
+    // Gemini n'en veut pas.
+    const audioMatch = typeof audio === 'string' && audio.startsWith('data:')
+      ? audio.match(/^data:(.+?);base64,(.*)$/)
+      : null;
+    const texteUtilisateur = message
+      || (audioMatch ? "Voici un message vocal: écoute-le et réponds à ce qui est dit, dans la langue et le registre entendus. Si tu n'entends rien d'exploitable, dis-le simplement."
+      : 'Aide-moi avec cette image.');
+    const userParts: Array<Json> = [{ text: texteUtilisateur + ctxLine }];
     if (typeof image === 'string' && image.startsWith('data:')) {
       const match = image.match(/^data:(.+?);base64,(.*)$/);
       if (match) userParts.push({ inline_data: { mime_type: match[1], data: match[2] } });
+    }
+    if (audioMatch) {
+      const mime = audioMatch[1].split(';')[0].trim().toLowerCase();
+      userParts.push({ inline_data: { mime_type: mime, data: audioMatch[2] } });
     }
 
     const contents: Array<Json> = [];
