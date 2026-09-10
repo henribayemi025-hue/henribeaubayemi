@@ -463,7 +463,10 @@ export default function NearYouMap({ items, userPos, onSelect }) {
 
       {/* La fiche, quand on tape une bulle. */}
       {selection && (
-        <div className="absolute bottom-3 left-3 right-3 animate-slide-up rounded-card bg-white p-3 shadow-xl lg:left-auto lg:w-80">
+        // z-10: au-dessus des contrôles MapLibre (attribution comprise).
+        // right-16 sur téléphone: la colonne de droite reste libre pour la
+        // bulle Finia, qui flotte par-dessus toutes les pages.
+        <div className="absolute bottom-3 left-3 right-16 z-10 animate-slide-up rounded-card bg-white p-3 shadow-xl lg:left-auto lg:right-3 lg:w-80">
           <button
             type="button"
             onClick={() => setSelection(null)}
