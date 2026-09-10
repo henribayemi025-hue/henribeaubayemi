@@ -5,6 +5,7 @@ import './styles/global.css';
 import App from './App';
 import { prefetchHome } from './lib/homeCache';
 import { track } from './lib/track';
+import { reportPageLoad } from './lib/perf';
 import { creerGardienRechargement } from './lib/swUpdate';
 
 // Kick off Home's data request the instant the app boots — before routing,
@@ -24,6 +25,10 @@ try {
 } catch {
   /* sessionStorage unavailable (private mode) — skip, non-critical */
 }
+
+// Beau: « le site prend trop de temps pour charger » — mesure du VRAI
+// temps de premier affichage (LCP) et des images, au lieu de deviner.
+reportPageLoad();
 
 // Register the service worker (auto-update + Web Push). The user should never
 // have to delete/reinstall the app to get a new version. We check for updates
