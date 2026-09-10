@@ -482,6 +482,7 @@
     "messageDeleted": "Message supprimé",
     "deletedMessage": "Message supprimé",
     "voiceMessage": "Message vocal",
+    "voiceOpenExternally": "Ouvrir le vocal",
     "photo": "Photo",
     "you": "Vous",
     "theBuyer": "La cliente",
