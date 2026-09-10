@@ -1563,7 +1563,9 @@
       "storageUsed": "{{used}} of {{limit}}",
       "storageVideos": "{{n}} videos · {{size}}",
       "storageWeek": "+{{size}} this week",
-      "storageAlert": "Almost full: upgrade Supabase to Pro (~$25/mo) or trim videos."
+      "storageAlert": "Almost full: upgrade Supabase to Pro (~$25/mo) or trim videos.",
+      "remindAgain": "Remind again",
+      "escalated": "buyer redirected {{when}}"
     },
     "stuckOrdersBanner": "{{count}} order(s) waiting on the seller for over 24 h",
     "apps": {
@@ -1594,7 +1596,8 @@
       "saved": "Saved.",
       "missing": "Name, identifier and address are required.",
       "badUrl": "The address must start with https://"
-    }
+    },
+    "noBanner": "No banner"
   },
   "troc": {
     "title": "Evaluate a trade",

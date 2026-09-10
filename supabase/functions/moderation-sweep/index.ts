@@ -306,6 +306,46 @@ Deno.serve(async (req) => {
     const lots: Array<Array<{ id: string; texte: string }>> = [];
     for (let i = 0; i < items.length; i += 40) lots.push(items.slice(i, i + 40));
 
+    // UNE DÉCISION HUMAINE EST DÉFINITIVE POUR LE ROBOT.
+    //
+    // Beau, 10/09: « les signalements que je traite, il ne faut pas que le
+    // lendemain les mêmes reviennent encore ». Le garde-fou d'en dessous ne
+    // regardait que les signalements ENCORE EN ATTENTE: dès qu'il en avait
+    // traité un, l'inspection suivante n'en trouvait plus trace et en
+    // recréait un à l'identique. Pire, un contenu qu'il avait REPUBLIÉ
+    // (moderation_hidden_at remis à null) redevenait éligible et se faisait
+    // re-masquer tout seul.
+    //
+    // Un seul cas exceptionnel autorise à repasser derrière lui:
+    // l'AGGRAVATION — le contenu était « à vérifier », il devient
+    // « interdit ». Un signalement déposé par une vraie personne, lui, passe
+    // par un autre chemin et n'est pas concerné.
+    const idsInspectes = [...cibles.keys()];
+    const dejaTranche = new Map<string, Set<string>>();
+    // Par paquets de 100: `in(...)` part dans l'URL, et quatre cents
+    // identifiants d'un coup la font dépasser la taille acceptée — la
+    // requête échouerait en silence, et la protection avec elle.
+    for (let i = 0; i < idsInspectes.length; i += 100) {
+      const { data: tranches } = await db.from('reports')
+        .select('target_type, target_id, severity')
+        .in('target_id', idsInspectes.slice(i, i + 100))
+        .neq('status', 'pending');
+      for (const r of (tranches ?? []) as Json[]) {
+        const cle = `${r.target_type}:${r.target_id}`;
+        const vu = dejaTranche.get(cle) ?? new Set<string>();
+        vu.add(String(r.severity ?? ''));
+        dejaTranche.set(cle, vu);
+      }
+    }
+    function humainADejaTranche(type: string, id: string, severite: string) {
+      const vu = dejaTranche.get(`${type}:${id}`);
+      if (!vu) return false;
+      // Aggravation: on ne se tait que si l'interdiction avait déjà été
+      // examinée et écartée.
+      if (severite === 'block') return vu.has('block');
+      return true;
+    }
+
     const resultats = await Promise.allSettled(lots.map((lot) => classify(apiKey, lot)));
 
     for (const r of resultats) {
@@ -323,6 +363,8 @@ Deno.serve(async (req) => {
         const raison = String(v.raison ?? '').slice(0, 500);
         const cible = cibles.get(id);
         if (!cible || verdict === 'ok') continue;
+        // Déjà tranché par un humain: ni masquage, ni nouveau signalement.
+        if (humainADejaTranche(cible.type, id, verdict === 'block' ? 'block' : 'review')) continue;
 
         if (verdict === 'block') {
           // Retiré de la vue TOUT DE SUITE, jamais supprimé.
@@ -457,10 +499,13 @@ Deno.serve(async (req) => {
             const actuel = String(p.category);
             if ((tete.get(propose) ?? propose) === (tete.get(actuel) ?? actuel)) continue;
 
+            // Même règle que ci-dessus: un rangement déjà tranché par un
+            // humain ne revient pas le lendemain. `status` n'est plus filtré
+            // sur « en attente » — c'était précisément la faille.
             const { data: deja } = await db.from('reports')
               .select('id').is('reporter_id', null)
               .eq('target_type', 'product').eq('target_id', id)
-              .eq('severity', 'rayon').eq('status', 'pending').maybeSingle();
+              .eq('severity', 'rayon').limit(1).maybeSingle();
             if (deja) continue;
 
             await db.from('reports').insert({

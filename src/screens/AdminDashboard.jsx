@@ -111,7 +111,11 @@ export default function AdminDashboard() {
             <AppLauncher currentKey="admin" />
           </div>
         </div>
-        <div className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2">
+        {/* Douze onglets: sur un portable, la barre défilante les coupait en
+            plein mot — Beau (10/09): « ça s'arrête à D, on ne voit même pas
+            la fin du D ». Elle passe donc à la ligne dès qu'il y a de la
+            place; le défilement reste pour le téléphone. */}
+        <div className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2 sm:flex-wrap sm:overflow-visible">
           {SECTIONS.map((s) => {
             const Icon = s.icon;
             const active = s.key === section;

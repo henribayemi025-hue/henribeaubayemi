@@ -63,6 +63,36 @@ function Contacts({ t, tel, waLabel }) {
   );
 }
 
+// Le bouton de relance connaît son état. Avant, il proposait indéfiniment
+// « Relancer la vendeuse », même juste après un envoi réussi: Beau (10/09)
+// « ça dit relance envoyée mais le message reste sur relancer la vendeuse ».
+// Une relance de moins de six heures est donc affichée comme telle, et le
+// bouton se referme — reprendre la même vendeuse dix fois d'affilée, de son
+// côté, c'est du harcèlement.
+const DELAI_RELANCE_H = 6;
+
+function BoutonRelance({ t, lang, relanceeLe, busy, onClick }) {
+  const heures = relanceeLe ? (Date.now() - new Date(relanceeLe).getTime()) / 3600000 : null;
+  const recente = heures != null && heures < DELAI_RELANCE_H;
+  if (recente) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-pill bg-success-bg px-3 py-1.5 text-caption font-semibold text-success">
+        <IconCircleCheck size={14} /> {t('admin.veille.lastReminded', { when: timeAgo(relanceeLe, lang) })}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      className="inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white disabled:opacity-60"
+    >
+      <IconBellRinging size={14} /> {t(relanceeLe ? 'admin.veille.remindAgain' : 'admin.veille.remindVendor')}
+    </button>
+  );
+}
+
 export default function AdminVeille() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
@@ -74,15 +104,19 @@ export default function AdminVeille() {
     return v;
   }, []);
 
+  // `relancees` marque la ligne À L'INSTANT, sans attendre que le serveur
+  // réponde à nouveau: le retour visuel doit suivre le clic, pas le réseau.
+  // Le rechargement derrière confirme avec la vraie date.
+  const [relancees, setRelancees] = useState({});
+
   async function relancer(fn, id, key) {
     setBusy(key);
     const { error: err } = await supabase.rpc(fn, id);
     setBusy(null);
-    if (err) toast.error(err.message);
-    else {
-      toast.success(t('admin.veille.reminded'));
-      retry();
-    }
+    if (err) return toast.error(err.message);
+    setRelancees((r) => ({ ...r, [key]: new Date().toISOString() }));
+    toast.success(t('admin.veille.reminded'));
+    retry();
   }
 
   if (loading) return <div className="space-y-3 p-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>;
@@ -132,17 +166,19 @@ export default function AdminVeille() {
                   {c.acheteur_tel ? ` · ${c.acheteur_tel}` : ''}{c.acheteur_email ? ` · ${c.acheteur_email}` : ''}
                 </p>
                 <p className="text-[11px] text-muted">
-                  {c.relancee_le ? t('admin.veille.lastReminded', { when: timeAgo(c.relancee_le, i18n.language) }) : t('admin.veille.neverReminded')}
+                  {relancees[c.id] || c.relancee_le
+                    ? t('admin.veille.lastReminded', { when: timeAgo(relancees[c.id] || c.relancee_le, i18n.language) })
+                    : t('admin.veille.neverReminded')}
+                  {c.escaladee_le && ` · ${t('admin.veille.escalated', { when: timeAgo(c.escaladee_le, i18n.language) })}`}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={busy === c.id}
+                  <BoutonRelance
+                    t={t}
+                    lang={i18n.language}
+                    relanceeLe={relancees[c.id] || c.relancee_le}
+                    busy={busy === c.id}
                     onClick={() => relancer('admin_relancer_commande', { p_order_id: c.id }, c.id)}
-                    className="inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white disabled:opacity-60"
-                  >
-                    <IconBellRinging size={14} /> {t('admin.veille.remindVendor')}
-                  </button>
+                  />
                   <Contacts t={t} tel={c.vendeuse_tel} waLabel={t('admin.veille.vendorWhatsapp')} />
                 </div>
               </li>
@@ -166,15 +202,19 @@ export default function AdminVeille() {
                   <span className="shrink-0 rounded-pill bg-brass/15 px-2 py-0.5 text-[11px] font-semibold text-brass">{attente(t, c.heures)}</span>
                 </div>
                 {c.dernier_message && <p className="mt-1.5 line-clamp-2 text-caption italic text-ink">« {c.dernier_message} »</p>}
+                <p className="mt-1 text-[11px] text-muted">
+                  {relancees[c.conversation_id] || c.relancee_le
+                    ? t('admin.veille.lastReminded', { when: timeAgo(relancees[c.conversation_id] || c.relancee_le, i18n.language) })
+                    : t('admin.veille.neverReminded')}
+                </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={busy === c.conversation_id}
+                  <BoutonRelance
+                    t={t}
+                    lang={i18n.language}
+                    relanceeLe={relancees[c.conversation_id] || c.relancee_le}
+                    busy={busy === c.conversation_id}
                     onClick={() => relancer('admin_relancer_conversation', { p_conversation_id: c.conversation_id }, c.conversation_id)}
-                    className="inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white disabled:opacity-60"
-                  >
-                    <IconBellRinging size={14} /> {t('admin.veille.remindVendor')}
-                  </button>
+                  />
                   <Contacts t={t} tel={c.vendeuse_tel} waLabel={t('admin.veille.vendorWhatsapp')} />
                 </div>
               </li>

@@ -8,7 +8,9 @@ import { supabase, storageThumbUrl, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { ShopAvatar } from '../../components/ShopAvatar';
+import { SmartImage } from '../../components/SmartImage';
 import { Price } from '../../components/Price';
+import { currencyForCountry } from '../../lib/currency';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { TextInput } from '../../components/Field';
@@ -39,7 +41,7 @@ export default function AdminShops() {
         // Jointure sur la clé étrangère NOMMÉE: `shops.owner_id` en a deux
         // (vers auth.users et vers profiles), et sans précision PostgREST
         // refuse la relation comme ambiguë — même motif que NearYou.
-        .select('id, slug, name, avatar_url, city, country, status, is_verified, followers_count, rating, reviews_count, created_at, owner_id, categories, phone, whatsapp, premium_until, profiles!shops_owner_profile_fk(name, phone, is_suspended)')
+        .select('id, slug, name, avatar_url, banner_url, city, country, status, is_verified, followers_count, rating, reviews_count, created_at, owner_id, categories, phone, whatsapp, premium_until, profiles!shops_owner_profile_fk(name, phone, is_suspended)')
         .order('created_at', { ascending: false }),
       supabase.rpc('admin_shop_stats'),
     ]);
@@ -138,6 +140,7 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
 
   if (!shop) return null;
   const st = shop.stats;
+  const devise = shop.country ? currencyForCountry(shop.country) : undefined;
   const suspended = shop.status === 'suspended';
   const premiumActive = estPremium(shop);
 
@@ -168,6 +171,33 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
 
   return (
     <Modal open onClose={onClose} title={shop.name}>
+      {/* La vitrine de la boutique, telle que la voient les clientes: la
+          console n'en montrait aucune image — impossible de juger d'une
+          boutique sans voir sa bannière. */}
+      <div className="mb-3 overflow-hidden rounded-card border border-hairline">
+        {shop.banner_url ? (
+          <SmartImage
+            src={storageUrl('shops', shop.banner_url)}
+            alt=""
+            className="h-28 w-full object-cover sm:h-36"
+          />
+        ) : (
+          <div className="flex h-16 items-center justify-center bg-base text-caption text-muted">
+            {t('admin.noBanner')}
+          </div>
+        )}
+        <div className="flex items-center gap-2 p-2">
+          <ShopAvatar
+            src={shop.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null}
+            fallbackSrc={shop.avatar_url ? storageUrl('shops', shop.avatar_url) : null}
+            name={shop.name}
+            seed={shop.id}
+            className="h-10 w-10 shrink-0"
+          />
+          <p className="truncate text-caption text-muted">{shop.slug}</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Metric icon={IconShoppingBag} label={t('admin.ordersShort')} value={st?.orders_total ?? 0} />
         <Metric icon={IconClock} label={t('admin.pendingShort')} value={st?.orders_pending ?? 0} />
@@ -177,7 +207,11 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
 
       <div className="mt-2 rounded-card bg-base p-3">
         <p className="text-caption text-muted">{t('admin.shopRevenue')}</p>
-        <Price fcfa={st?.revenue_fcfa ?? 0} className="text-title font-semibold text-teal" />
+        {/* Dans LA devise de la boutique (CLAUDE.md §2): la console
+            affichait le chiffre d'affaires d'une boutique camerounaise
+            converti dans la devise devinée pour l'admin — un chiffre que
+            personne, ni Beau ni la vendeuse, ne reconnaît. */}
+        <Price fcfa={st?.revenue_fcfa ?? 0} currency={devise} className="text-title font-semibold text-teal" />
         <p className="mt-0.5 text-[11px] text-muted">{t('admin.shopRevenueHint')}</p>
       </div>
 
@@ -225,7 +259,7 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
                   <p className="text-[11px] text-muted">{timeAgo(o.created_at, lang)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Price fcfa={o.total_fcfa} className="text-caption font-semibold text-ink" />
+                  <Price fcfa={o.total_fcfa} currency={devise} className="text-caption font-semibold text-ink" />
                   <OrderStatusBadge status={o.status} method={o.delivery_method} />
                 </div>
               </li>

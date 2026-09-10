@@ -20,9 +20,9 @@ export const APPS_FALLBACK = [
   },
   {
     key: 'accounting',
-    name: 'Finia Accounting',
+    name: 'Finjaro Accounting',
     tagline: 'Caisse, stock, factures et comptabilité pour ta boutique.',
-    url: 'https://finia-accounting.finjaro.workers.dev',
+    url: 'https://automatisation-des-candidatures.finjaro.workers.dev',
     emoji: '📒',
     accent: 'brass',
     audience: 'tous',

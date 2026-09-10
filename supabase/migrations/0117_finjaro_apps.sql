@@ -46,9 +46,9 @@ values
   ('marketplace', 'Finjaro',
    'La place de marché: acheter, vendre, se faire livrer.',
    'https://finjaro.net', '🛍️', 'teal', 'tous', 10),
-  ('accounting', 'Finia Accounting',
+  ('accounting', 'Finjaro Accounting',
    'Caisse, stock, factures et comptabilité pour ta boutique.',
-   'https://finia-accounting.finjaro.workers.dev', '📒', 'brass', 'tous', 20),
+   'https://automatisation-des-candidatures.finjaro.workers.dev', '📒', 'brass', 'tous', 20),
   ('admin', 'Console Finjaro',
    'Pilotage de la plateforme, réservé à l''équipe.',
    'https://finjaro-admin.finjaro.workers.dev', '🛠️', 'ink', 'admin', 90)

@@ -1563,7 +1563,9 @@
       "storageUsed": "{{used}} sur {{limit}}",
       "storageVideos": "{{n}} vidéos · {{size}}",
       "storageWeek": "+{{size}} cette semaine",
-      "storageAlert": "Presque plein : passer Supabase en Pro (~25 $/mois) ou alléger les vidéos."
+      "storageAlert": "Presque plein : passer Supabase en Pro (~25 $/mois) ou alléger les vidéos.",
+      "remindAgain": "Relancer à nouveau",
+      "escalated": "cliente orientée ailleurs {{when}}"
     },
     "stuckOrdersBanner": "{{count}} commande(s) attendent la vendeuse depuis plus de 24 h",
     "apps": {
@@ -1594,7 +1596,8 @@
       "saved": "Enregistré.",
       "missing": "Nom, identifiant et adresse sont obligatoires.",
       "badUrl": "L'adresse doit commencer par https://"
-    }
+    },
+    "noBanner": "Pas de bannière"
   },
   "troc": {
     "title": "Évaluer un troc",
