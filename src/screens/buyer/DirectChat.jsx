@@ -10,6 +10,8 @@ import { useToast } from '../../hooks/useToast';
 import { getPublicProfile, sendDirectMessage, markDirectConversationRead, hideDirectConversation, directErrorKey } from '../../lib/directMessages';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { ReportModal } from '../../components/ReportModal';
+import { Modal } from '../../components/Modal';
+import { Button } from '../../components/Button';
 import { ChatHeaderMenu } from '../../components/chat/ChatHeaderMenu';
 import { ActionSheet } from '../../components/chat/ActionSheet';
 import { MessageGesture } from '../../components/chat/MessageGesture';
@@ -44,6 +46,7 @@ export default function DirectChat() {
   // Gestes façon WhatsApp: appui long = feuille d'actions, glissement =
   // répondre en citant.
   const [actionMsg, setActionMsg] = useState(null);
+  const [confirmDeleteMsg, setConfirmDeleteMsg] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -59,6 +62,7 @@ export default function DirectChat() {
   const dmChannelRef = useRef(null);
   const typingHideTimer = useRef(null);
   const typingSentAt = useRef(0);
+  const jeSuisARef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,7 +81,12 @@ export default function DirectChat() {
       ]);
       setConv(c);
       setOther(profile);
-      setMessages(msgs || []);
+      // Suis-je le "côté A" ou le "côté B" de cette conversation ? C'est ce
+      // qui dit lequel des deux drapeaux "supprimé pour moi" me concerne.
+      // Dans une ref, car l'écoute temps réel ci-dessous garderait sinon une
+      // valeur figée au premier rendu.
+      jeSuisARef.current = c.user_a_id === user.id;
+      setMessages((msgs || []).filter((m) => (jeSuisARef.current ? !m.a_deleted : !m.b_deleted)));
       await markDirectConversationRead(conversationId);
     } catch {
       setError(true);
@@ -108,6 +117,12 @@ export default function DirectChat() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'direct_messages', filter: `conversation_id=eq.${conversationId}` },
         (payload) => {
+          // Un "supprimé pour moi" ne doit retirer le message QUE de mon
+          // côté — l'autre personne continue de le voir normalement.
+          if (jeSuisARef.current ? payload.new.a_deleted : payload.new.b_deleted) {
+            setMessages((m) => m.filter((x) => x.id !== payload.new.id));
+            return;
+          }
           setMessages((m) => m.map((x) => (x.id === payload.new.id ? { ...x, ...payload.new } : x)));
         }
       )
@@ -167,10 +182,20 @@ export default function DirectChat() {
     }
   }
 
-  async function deleteMessage(msg) {
-    const avant = messages;
+  // Deux suppressions distinctes, comme WhatsApp — voir migration 0108.
+  // "Pour moi": masque de mon côté seulement. "Pour tout le monde": efface
+  // le contenu pour les deux, en laissant "message supprimé" à la place.
+  async function deleteMessageForMe(msg) {
     setMessages((m) => m.filter((x) => x.id !== msg.id));
-    const { error: dErr } = await supabase.from('direct_messages').delete().eq('id', msg.id);
+    const { error: dErr } = await supabase.rpc('delete_direct_message_for_me', { p_message_id: msg.id });
+    if (dErr) toast.error(dErr.message || t('errors.generic'));
+  }
+
+  async function deleteMessageForEveryone(msg) {
+    const avant = messages;
+    const tombe = { ...msg, body: null, image_url: null, audio_url: null, audio_seconds: null, deleted_at: new Date().toISOString() };
+    setMessages((m) => m.map((x) => (x.id === msg.id ? tombe : x)));
+    const { error: dErr } = await supabase.rpc('delete_direct_message_for_everyone', { p_message_id: msg.id });
     if (dErr) {
       setMessages(avant);
       toast.error(dErr.message || t('errors.generic'));
@@ -332,11 +357,19 @@ export default function DirectChat() {
                       />
                     </div>
                   )}
+                  {m.deleted_at ? (
+                    <p className={`flex items-center gap-1.5 text-body italic ${mine ? 'text-white/70' : 'text-muted'}`}>
+                      <IconTrash size={14} /> {t('chat.messageDeleted')}
+                    </p>
+                  ) : (
+                  <>
                   {m.image_url && <ChatImage src={storageUrl('chat', m.image_url)} />}
                   {m.audio_url && (
                     <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
                   )}
                   {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
+                  </>
+                  )}
                   <div className={`mt-0.5 flex items-center justify-end gap-1 text-[11px] ${mine ? 'text-white/75' : 'text-muted'}`}>
                     <span>{clockTime(m.created_at, i18n.language)}</span>
                     {mine && (m.status === 'read' ? <span className="font-semibold text-brass">{t('chat.seen')}</span> : <IconChecks size={13} />)}
@@ -450,12 +483,18 @@ export default function DirectChat() {
         actions={[
           { key: 'reply', icon: IconArrowBackUp, label: t('chat.reply'), onClick: () => setReplyTo(actionMsg) },
           actionMsg?.body && { key: 'copy', icon: IconCopy, label: t('chat.copy'), onClick: () => copyMessage(actionMsg) },
-          !!user && actionMsg?.sender_id === user.id && {
-            key: 'delete',
+          !actionMsg?.deleted_at && {
+            key: 'delete_me',
             icon: IconTrash,
-            label: t('chat.deleteMessage'),
+            label: t('chat.deleteForMe'),
+            onClick: () => deleteMessageForMe(actionMsg),
+          },
+          !!user && actionMsg?.sender_id === user.id && !actionMsg?.deleted_at && {
+            key: 'delete_everyone',
+            icon: IconTrash,
+            label: t('chat.deleteForEveryone'),
             danger: true,
-            onClick: () => deleteMessage(actionMsg),
+            onClick: () => setConfirmDeleteMsg(actionMsg),
           },
           !!user && actionMsg?.sender_id !== user.id && {
             key: 'report',
@@ -465,6 +504,17 @@ export default function DirectChat() {
           },
         ]}
       />
+      <Modal open={!!confirmDeleteMsg} onClose={() => setConfirmDeleteMsg(null)} title={t('chat.deleteForEveryone')}>
+        <div className="space-y-4">
+          <p className="text-body text-muted">{t('chat.deleteForEveryoneConfirm')}</p>
+          <Button
+            onClick={() => { deleteMessageForEveryone(confirmDeleteMsg); setConfirmDeleteMsg(null); }}
+            className="!bg-danger"
+          >
+            {t('chat.deleteForEveryone')}
+          </Button>
+        </div>
+      </Modal>
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} targetType="user" targetId={other?.id} />
     </div>
   );
