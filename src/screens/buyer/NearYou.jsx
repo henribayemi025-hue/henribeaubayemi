@@ -1,7 +1,7 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPlus, IconBuildingStore, IconCurrentLocation, IconList, IconMap2, IconTool, IconSearch, IconX, IconFilter, IconMapPin } from '@tabler/icons-react';
+import { IconPlus, IconBuildingStore, IconCurrentLocation, IconList, IconMap2, IconTool, IconSearch, IconX, IconMapPin, IconSparkles } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -21,41 +21,21 @@ import { timeAgo } from '../../lib/format';
 import { formatPrice } from '../../lib/currency';
 import { getPosition, distanceKm } from '../../lib/geo';
 import { isServiceCategory, SERVICE_CATEGORIES, categoryQueryIds } from '../../lib/categories';
+import { TradePicker } from '../../components/TradePicker';
+import { normalizeText } from '../../lib/trades';
 
 // Leaflet is heavy — only pull it in when the user opens the map view.
 const NearYouMap = lazy(() => import('../../components/NearYouMap'));
 
-// Un pictogramme par métier rend la liste lisible d'un coup d'œil (le
-// prototype le faisait). Purement décoratif: un métier sans emoji s'affiche
-// simplement sans, jamais de case vide.
-const TRADE_EMOJI = {
-  beaute_domicile: '💇',
-  menage: '🧹',
-  btp_bricolage: '🧱',
-  informatique_digital: '💻',
-  electricite_plomberie: '⚡',
-  livraison_demenagement: '🚚',
-  traiteur_chef: '🍳',
-  patisserie_service: '🎂',
-  location_immobiliere: '🏠',
-  location_vehicules: '🚗',
-  cours: '📚',
-  evenementiel_service: '🎉',
-  autre_service: '🛠️',
-};
 
-// Accents/casse ignorés pour la recherche de métier ("electricite" trouve
-// "Électricité"): sinon taper sans accent ne renvoie rien.
-function normalize(s) {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
+const normalize = normalizeText;
 
 export default function NearYou() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { country, setCountry, currency } = useSettings();
-  const { requireLogin } = useUI();
+  const { requireLogin, openFinou } = useUI();
   const toast = useToast();
   const [tab, setTab] = useState('shops');
   const [kindFilter, setKindFilter] = useState('all'); // 'all' | 'service' | 'article' — listings tab only
@@ -278,9 +258,22 @@ export default function NearYou() {
   const pagedShops = shownShops.slice(0, visibleShopCount);
 
   // Métiers affichés = ceux qui correspondent à la recherche.
-  const visibleTrades = SERVICE_CATEGORIES.filter(
-    (c) => !tradeQuery.trim() || normalize(t(`categories.${c.id}`)).includes(normalize(tradeQuery))
-  );
+  // Combien de boutiques par métier, sur la liste chargée. Sert au sélecteur
+  // (les métiers où il y a du monde passent devant) et à la rangée de tuiles.
+  const tradeCounts = useMemo(() => {
+    const counts = {};
+    const shops = data?.shops || [];
+    for (const c of SERVICE_CATEGORIES) {
+      const wanted = categoryQueryIds(c.id);
+      counts[c.id] = shops.filter((s) => (s.categories ?? []).some((k) => wanted.includes(k))).length;
+    }
+    return counts;
+  }, [data]);
+
+  function demanderAFinia() {
+    const metier = serviceCat ? t(`categories.${serviceCat}`) : null;
+    openFinou(metier ? t('nearYou.finiaSeedTrade', { trade: metier }) : t('nearYou.finiaSeed'));
+  }
 
   // Choisir un métier filtre l'onglet où on se trouve (prestataires OU
   // annonces) — il ne bascule plus d'office sur "Annonces", ce qui donnait
@@ -307,165 +300,110 @@ export default function NearYou() {
     <div className="pb-20">
       <AppHeader title={t('nav.services')} />
 
-      <div className="lg:mx-auto lg:max-w-6xl">
-        {/* Bandeau d'entrée: dit en une ligne CE QU'EST cet onglet (annuaire
-            de prestataires + carte), et porte le sélecteur Annuaire/Carte —
-            avant, ce choix était une petite bascule perdue au milieu des
-            filtres. */}
-        <section className="mx-4 mt-2 overflow-hidden rounded-card border border-hairline bg-white shadow-sm lg:mt-3">
-          <div className="flex flex-col gap-3 p-2 lg:flex-row lg:items-center lg:justify-between lg:p-4">
-            {/* Titre + accroche réservés au GRAND écran: sur téléphone, ce
-                bloc poussait les prestataires hors de l'écran (Beau: « ça
-                prend un peu trop de place »), alors que l'en-tête dit déjà
-                « Services ». Seul le sélecteur Annuaire/Carte reste. */}
-            <div className="hidden min-w-0 lg:block">
-              <span className="inline-block rounded-pill bg-teal px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-                {t('nearYou.nearYouBadge')}
-              </span>
-              <h1 className="mt-2 text-title text-ink">{t('nearYou.directoryTitle')}</h1>
-              <p className="mt-1 text-caption text-muted">{t('nearYou.directorySubtitle')}</p>
-            </div>
-            <div className="flex shrink-0 rounded-card bg-base p-1">
-              {[['list', IconList, t('nearYou.directoryTab')], ['map', IconMap2, t('nearYou.mapTab')]].map(([v, Icon, label]) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  aria-pressed={view === v}
-                  className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-input px-3 py-2 text-caption font-semibold transition ${
-                    view === v ? 'bg-teal text-white shadow-sm' : 'text-muted'
-                  }`}
-                >
-                  <Icon size={15} /> {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Bloc de filtres unifié: tout ce qui filtre vit DANS un même
-            encadré, au lieu d'être éparpillé sur trois rangées. */}
-        <div className="mx-4 mt-2 space-y-2.5 rounded-card border border-hairline bg-base p-3 lg:mt-3 lg:space-y-3">
-          {/* En-tête « Filtrer par métier » masqué sur téléphone: le champ de
-              recherche dit déjà « Chercher un métier… », la ligne ne faisait
-              que consommer de la hauteur. La rangée reste affichée dès qu'il
-              y a un rayon à régler. */}
-          <div className={`${userPos ? 'flex' : 'hidden lg:flex'} flex-wrap items-center justify-between gap-2`}>
-            <span className="hidden items-center gap-1.5 text-caption font-semibold text-ink lg:flex">
-              <IconFilter size={15} className="text-teal" /> {t('nearYou.filterByTrade')}
-            </span>
-            {/* Rayon en km: seulement quand une position réelle est connue. */}
-            {userPos && (
-              <label className="flex items-center gap-2 text-caption text-muted">
-                <span className="whitespace-nowrap">{t('nearYou.radiusLabel')} <b className="text-ink">{radiusKm} km</b></span>
-                <input
-                  type="range"
-                  min="1"
-                  max="100"
-                  step="1"
-                  value={radiusKm}
-                  onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  className="h-1.5 w-28 cursor-pointer appearance-none rounded-full bg-hairline accent-[#C25E38]"
-                  aria-label={t('nearYou.radiusLabel')}
-                />
-              </label>
-            )}
+      <div className="lg:mx-auto lg:max-w-6xl lg:px-4">
+        {/* Deux lignes, pas plus: la recherche (Finia dedans, à droite), puis
+            une rangée de commandes compactes. Beau (10/09): « c'est trop
+            congestionné, c'est étouffé ». Tout ce qui empilait des blocs
+            avant le premier contenu — encadrés, ligne Finia, curseur —
+            disparaît ou se replie. */}
+        <section className="bg-white px-4 pb-3 pt-3 lg:pb-4 lg:pt-5">
+          <div className="hidden lg:block lg:pb-3">
+            <h1 className="text-title text-ink">{t('nearYou.directoryTitle')}</h1>
+            <p className="mt-0.5 text-caption text-muted">{t('nearYou.directorySubtitle')}</p>
           </div>
 
-          {/* Recherche par métier — c'est ce qui manquait: avec 12 métiers, les
-              faire défiler à l'aveugle n'est pas utilisable. */}
           <div className="relative">
-            <IconSearch size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <IconSearch size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <input
               value={tradeQuery}
               onChange={(e) => setTradeQuery(e.target.value)}
-              placeholder={t('nearYou.searchTrade')}
-              className="input h-10 w-full bg-white pl-9 pr-9 text-[16px]"
-              aria-label={t('nearYou.searchTrade')}
+              placeholder={t('nearYou.searchAll')}
+              className="h-12 w-full rounded-pill border border-hairline bg-white pl-11 pr-20 text-[16px] text-ink shadow-sm placeholder:text-muted focus:border-teal focus:outline-none"
+              aria-label={t('nearYou.searchAll')}
             />
-            {tradeQuery && (
-              <button
-                onClick={() => setTradeQuery('')}
-                aria-label={t('common.close')}
-                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted"
-              >
-                <IconX size={15} />
-              </button>
-            )}
-          </div>
-
-          {/* Métiers: une seule ligne qui défile, libellés JAMAIS coupés
-              (whitespace-nowrap + shrink-0). Un fondu à droite signale qu'il
-              reste des métiers à faire défiler. */}
-          <div className="relative">
-            <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
-              <button
-                onClick={() => setServiceCat(null)}
-                className={`chip shrink-0 whitespace-nowrap ${!serviceCat ? 'chip-active' : 'bg-white text-ink'}`}
-              >
-                {t('nearYou.allTradesCount', { count: SERVICE_CATEGORIES.length })}
-              </button>
-              {visibleTrades.map((c) => (
+            <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center">
+              {tradeQuery && (
                 <button
-                  key={c.id}
-                  onClick={() => pickTrade(c.id)}
-                  className={`chip shrink-0 whitespace-nowrap ${serviceCat === c.id ? 'chip-active' : 'bg-white text-ink'}`}
+                  onClick={() => setTradeQuery('')}
+                  aria-label={t('common.close')}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-base"
                 >
-                  {TRADE_EMOJI[c.id] ? `${TRADE_EMOJI[c.id]} ` : ''}{t(`categories.${c.id}`)}
+                  <IconX size={16} />
                 </button>
-              ))}
-              {visibleTrades.length === 0 && (
-                <span className="py-1.5 text-caption text-muted">{t('nearYou.noTradeMatch')}</span>
               )}
+              {/* Finia, dans la barre: « tu ne sais pas qui appeler ? » */}
+              <button
+                type="button"
+                onClick={demanderAFinia}
+                aria-label={t('nearYou.askFinia')}
+                title={t('nearYou.finiaTitle')}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-brass transition hover:bg-base active:scale-95"
+              >
+                <IconSparkles size={20} />
+              </button>
             </div>
-            <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-base to-transparent" />
           </div>
 
-          {/* Zone. Le sélecteur de pays occupe SA PROPRE ligne: coincé entre
-              deux boutons, il était écrasé à un seul caractère ("F ⌄" au lieu
-              de "France") — illisible. */}
-          {/* Pays + « Autour de moi » + « Élargir » sur UNE seule rangée: en
-              trois rangées empilées, la zone de filtres à elle seule
-              repoussait le premier prestataire hors de l'écran. */}
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={country || ''}
-              onChange={(e) => { setUserPos(null); setCountry(e.target.value); }}
-              disabled={!!userPos}
-              className="input h-10 min-w-[9rem] flex-1 bg-white disabled:opacity-50"
-              aria-label={t('nearYou.overrideLocation')}
-            >
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
-            </select>
+          <div className="mt-2.5 flex items-center gap-2">
+            <TradePicker
+              trades={SERVICE_CATEGORIES}
+              value={serviceCat}
+              onChange={setServiceCat}
+              counts={tradeCounts}
+              className="min-w-0 flex-1 lg:w-72 lg:flex-none"
+            />
+            {/* Le pays disparaît dès qu'on est « autour de moi »: la position
+                fait foi, et un menu grisé qui affiche un pays faux (« Inde »
+                sur le téléphone de Beau) n'apporte rien. */}
+            {!userPos && (
+              <select
+                value={country || ''}
+                onChange={(e) => setCountry(e.target.value)}
+                className="input h-11 w-[6rem] shrink-0 bg-white text-[14px] lg:w-48 lg:text-[16px]"
+                aria-label={t('nearYou.overrideLocation')}
+              >
+                {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}
+              </select>
+            )}
             <button
               onClick={locateMe}
-              className={`chip h-10 shrink-0 whitespace-nowrap ${userPos ? 'chip-active' : 'border-teal bg-white text-teal'}`}
               aria-pressed={!!userPos}
+              aria-label={t('nearYou.aroundMe')}
+              title={t('nearYou.aroundMe')}
+              className={`flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-input border px-0 text-body font-medium transition lg:px-3 ${
+                userPos ? 'border-teal bg-teal text-white' : 'border-hairline bg-white text-ink hover:bg-base'
+              } w-11 lg:w-auto`}
             >
-              <IconCurrentLocation size={14} className={locating ? 'animate-spin' : ''} />
-              {t('nearYou.aroundMe')}
+              <IconCurrentLocation size={18} className={locating ? 'animate-spin' : ''} />
+              <span className="hidden lg:inline">{t('nearYou.aroundMe')}</span>
             </button>
-            {tab === 'shops' && !userPos && (
-              <button
-                onClick={() => setRadius((r) => (r === 'country' ? 'all' : 'country'))}
-                className="chip h-10 shrink-0 whitespace-nowrap bg-white text-teal"
-              >
-                {/* Le chiffre est le vrai décompte des prestataires des autres
-                    pays: « Élargir la recherche » tout seul ne donnait aucune
-                    raison de cliquer, et l'annuaire semblait vide alors qu'il
-                    ne l'était pas. */}
-                {/* En mode « tous les pays », le bouton affichait juste
-                    « France » — juste sous un sélecteur qui affichait déjà
-                    « France ». On ne pouvait pas deviner que c'était l'action
-                    « me limiter à ce pays ». Le libellé le dit maintenant. */}
-                {radius === 'country'
-                  ? (data?.providersElsewhere > 0
-                      ? t('nearYou.broadenCount', { count: data.providersElsewhere })
-                      : t('nearYou.broaden'))
-                  : t('nearYou.onlyCountry', { country: countryLabel(country, i18n.language) })}
-              </button>
-            )}
           </div>
-        </div>
+
+          {tab === 'shops' && !userPos && radius === 'country' && data?.providersElsewhere > 0 && (
+            <button
+              onClick={() => setRadius('all')}
+              className="mt-2 text-caption font-medium text-teal"
+            >
+              {t('nearYou.broadenCount', { count: data.providersElsewhere })}
+            </button>
+          )}
+
+          {userPos && view !== 'map' && (
+            <label className="mt-3 flex items-center gap-3 text-caption text-muted">
+              <span className="whitespace-nowrap">{t('nearYou.radiusLabel')} <b className="text-ink">{radiusKm} km</b></span>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                step="1"
+                value={radiusKm}
+                onChange={(e) => setRadiusKm(Number(e.target.value))}
+                className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-hairline accent-[#C25E38]"
+                aria-label={t('nearYou.radiusLabel')}
+              />
+            </label>
+          )}
+        </section>
 
         {/* Onglets + filtres d'annonces COLLÉS sous l'en-tête pendant le
             défilement: sans ça, changer « Je propose / Je cherche » ou de
@@ -474,13 +412,30 @@ export default function NearYou() {
             les deux se superposeraient. z-20 pour passer SOUS l'en-tête
             (z-30) et au-dessus du contenu. */}
         <div className="sticky top-14 z-20 mt-2 bg-white">
-          <div className="flex border-b border-hairline">
+          {/* Les onglets à gauche, le passage liste ⇄ carte à droite: la
+              rangée des commandes garde ainsi la place pour un métier écrit
+              en entier (Beau: « les mots ne sont pas tous écrits »). */}
+          <div className="flex items-stretch border-b border-hairline">
             {['shops', 'listings'].map((tb) => (
               <button key={tb} onClick={() => setTab(tb)} className={`flex-1 border-b-2 py-2 text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}>
                 {t(`nearYou.${tb}`)}
                 {tb === 'shops' && shownShops.length > 0 && <span className="ml-1 text-caption">({shownShops.length})</span>}
               </button>
             ))}
+            <div className="flex items-center px-3">
+              <button
+                onClick={() => setView((v) => (v === 'map' ? 'list' : 'map'))}
+                aria-pressed={view === 'map'}
+                aria-label={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
+                title={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
+                className={`flex h-9 items-center justify-center gap-1.5 rounded-input border px-2.5 text-caption font-medium transition ${
+                  view === 'map' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink hover:bg-base'
+                }`}
+              >
+                {view === 'map' ? <IconList size={17} /> : <IconMap2 size={17} />}
+                <span>{view === 'map' ? t('nearYou.listShort') : t('nearYou.mapShort')}</span>
+              </button>
+            </div>
           </div>
 
         {tab === 'listings' && (
@@ -532,7 +487,7 @@ export default function NearYou() {
         ) : error ? (
           <ErrorState onRetry={retry} />
         ) : view === 'map' ? (
-          <div className="mt-3">
+          <div className="mt-3 lg:px-4">
             <Suspense fallback={<div className="space-y-3 p-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>}>
               <NearYouMap
                 items={tab === 'shops' ? shownShops : byDistance(filteredListings)}
@@ -641,7 +596,7 @@ export default function NearYou() {
           "Proposer mes services". Remonté au-dessus de la barre d'onglets
           flottante: à bottom-20 il se posait dessus et chevauchait la
           première fiche prestataire. */}
-      {!listEmpty && (
+      {!listEmpty && view !== 'map' && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[104px] z-40 mx-auto flex max-w-app justify-end px-4 lg:bottom-6 lg:max-w-6xl">
           <button
             onClick={publish}
