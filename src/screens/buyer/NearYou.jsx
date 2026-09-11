@@ -502,15 +502,38 @@ export default function NearYou() {
             // s'inscrire vaut mieux qu'un "aucun résultat" sec.
             <EmptyState
               icon={IconTool}
-              title={serviceCat ? t('nearYou.noProviderInTrade', { trade: t(`categories.${serviceCat}`) }) : t('nearYou.noProviders')}
+              title={
+                // Avec des mots tapés, « aucune boutique dans cette zone »
+                // accuse le lieu alors que c'est le mot qui n'est pas un
+                // métier. On le dit tel quel.
+                tradeQuery.trim()
+                  ? t('nearYou.noMatchForQuery', { q: tradeQuery.trim() })
+                  : serviceCat
+                    ? t('nearYou.noProviderInTrade', { trade: t(`categories.${serviceCat}`) })
+                    : t('nearYou.noProviders')
+              }
               action={
                 <div className="flex flex-col items-center gap-2">
+                  {/* Beau (11/09): « j'ai tapé chaussures femme, on m'a rien
+                      proposé alors qu'il y en a bien ». Cette barre ne cherche
+                      QUE des métiers, des boutiques et des villes — pas le
+                      catalogue. Taper un article n'y trouve donc jamais rien,
+                      alors que la recherche générale, elle, le trouve. On y
+                      renvoie avec les mots déjà tapés. */}
+                  {tradeQuery.trim() && (
+                    <Button onClick={() => navigate(`/search?q=${encodeURIComponent(tradeQuery.trim())}`)}>
+                      {t('nearYou.searchInItems', { q: tradeQuery.trim() })}
+                    </Button>
+                  )}
                   {serviceCat && (
                     <Button variant="secondary" onClick={() => setServiceCat(null)}>{t('nearYou.allTrades')}</Button>
                   )}
                   {/* ?kind=services: le formulaire s'ouvre déjà réglé sur
                       "Services" et parle de prestataire, pas de boutique. */}
-                  <Button onClick={() => navigate('/become-vendor?kind=services')}>{t('nearYou.becomeProvider')}</Button>
+                  {/* Quand le pont vers le catalogue est là, c'est lui la
+                      seule action principale: la personne cherche à acheter,
+                      pas à s'inscrire comme prestataire. */}
+                  <Button variant={tradeQuery.trim() ? 'secondary' : 'primary'} onClick={() => navigate('/become-vendor?kind=services')}>{t('nearYou.becomeProvider')}</Button>
                   <Button variant="secondary" onClick={publish}>{t('nearYou.publishListing')}</Button>
                 </div>
               }

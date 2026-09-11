@@ -657,7 +657,9 @@
     "directions": "Directions",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "askFinia": "Ask Finia"
+    "askFinia": "Ask Finia",
+    "searchInItems": "Search “{{q}}” in items",
+    "noMatchForQuery": "No trade or shop matches “{{q}}”."
   },
   "profile": {
     "title": "Profile",

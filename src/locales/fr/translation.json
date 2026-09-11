@@ -657,7 +657,9 @@
     "directions": "Itinéraire",
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
-    "askFinia": "Demander à Finia"
+    "askFinia": "Demander à Finia",
+    "searchInItems": "Chercher « {{q}} » dans les articles",
+    "noMatchForQuery": "Aucun métier ni boutique ne correspond à « {{q}} »."
   },
   "profile": {
     "title": "Profil",
