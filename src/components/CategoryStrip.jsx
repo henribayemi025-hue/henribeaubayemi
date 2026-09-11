@@ -62,7 +62,7 @@ function gradientFor(id) {
   return GRADIENTS[h % GRADIENTS.length];
 }
 
-function CategoryTile({ id, banner, label }) {
+function CategoryTile({ id, tuile, label }) {
   const Icon = CATEGORY_ICON[id];
   return (
     <Link
@@ -70,9 +70,9 @@ function CategoryTile({ id, banner, label }) {
       className="flex w-[4.75rem] shrink-0 flex-col items-center transition-transform duration-150 active:scale-95"
     >
       <div className="h-[4.75rem] w-[4.75rem] overflow-hidden rounded-card border border-hairline shadow-sm">
-        {banner ? (
+        {tuile ? (
           <img
-            src={banner}
+            src={tuile}
             alt=""
             aria-hidden="true"
             loading="lazy"
@@ -132,13 +132,13 @@ export function CategoryStrip() {
       {expanded ? (
         <div className="grid grid-cols-4 justify-items-center gap-y-3 px-4 pb-1 sm:grid-cols-6 lg:grid-cols-8">
           {sorted.map((c) => (
-            <CategoryTile key={c.id} id={c.id} banner={c.banner} label={label(c.id)} />
+            <CategoryTile key={c.id} id={c.id} tuile={c.tuile} label={label(c.id)} />
           ))}
         </div>
       ) : (
         <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1">
           {sorted.map((c) => (
-            <CategoryTile key={c.id} id={c.id} banner={c.banner} label={label(c.id)} />
+            <CategoryTile key={c.id} id={c.id} tuile={c.tuile} label={label(c.id)} />
           ))}
         </div>
       )}
