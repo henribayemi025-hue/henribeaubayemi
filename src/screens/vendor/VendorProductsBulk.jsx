@@ -9,8 +9,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
-import { Field, TextInput, Select } from '../../components/Field';
-import { CATEGORIES, categoryHeadFor } from '../../lib/categories';
+import { Field, TextInput } from '../../components/Field';
+import { categoryHeadFor, defaultPublishCategory } from '../../lib/categories';
+import { CategoryPicker } from '../../components/CategoryPicker';
 import { currencyForCountry, toFcfa } from '../../lib/currency';
 
 // Ajout en masse. Beau (04/08): il avait 72 photos d'articles DIFFÉRENTS et
@@ -119,7 +120,7 @@ export default function VendorProductsBulk() {
   // Elle n'a pas mal range: un menu deja rempli ne se lit pas, il se
   // valide. Meme piege que les reels, corrige la pour la meme raison — un
   // rayon pre-rempli est accepte sans y penser.
-  const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkCategory, setBulkCategory] = useState(() => defaultPublishCategory(shop));
   const [bulkPrice, setBulkPrice] = useState('');
   // Nom commun: à 500 articles, personne ne tape 500 noms, et Finia peut
   // échouer ou se tromper. « Pyjama fille » donne « Pyjama fille 1, 2, 3… »
@@ -404,12 +405,13 @@ export default function VendorProductsBulk() {
               </Field>
               <Field label={t('vendor.productCategory')}>
                 {(id) => (
-                  <Select id={id} value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}>
-                    <option value="">{t('vendor.bulkCategoryPlaceholder')}</option>
-                    {CATEGORIES.map((c) => (
-                      <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>
-                    ))}
-                  </Select>
+                  <CategoryPicker
+                    id={id}
+                    shop={shop}
+                    value={bulkCategory}
+                    placeholder={t('vendor.bulkCategoryPlaceholder')}
+                    onChange={(e) => setBulkCategory(e.target.value)}
+                  />
                 )}
               </Field>
               {bulkCategory === 'autre_produit' && (
@@ -491,19 +493,16 @@ export default function VendorProductsBulk() {
                         tous » ne produit aucun changement à l'écran et passe
                         pour cassé. Et Finia se trompe parfois de rayon — il
                         faut pouvoir corriger une ligne sans tout reprendre. */}
-                    <Select
-                      // Finia renvoie une sous-catégorie précise (« Robes »),
-                      // la liste ne propose que les rayons: on affiche le
-                      // rayon PARENT, et changer ce choix retombe dessus.
+                    {/* Finia renvoie une sous-catégorie précise (« Robes »),
+                        la liste ne propose que les rayons: on affiche le rayon
+                        PARENT, et changer ce choix retombe dessus. */}
+                    <CategoryPicker
+                      shop={shop}
                       value={categoryHeadFor(r.category) || r.category}
+                      placeholder={t('vendor.bulkCategoryPlaceholder')}
                       onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, category: e.target.value } : x)))}
                       className={`text-caption ${r.category ? '' : 'border-terracotta text-terracotta'}`}
-                    >
-                      <option value="">{t('vendor.bulkCategoryPlaceholder')}</option>
-                      {CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>
-                      ))}
-                    </Select>
+                    />
                   </div>
                   <button
                     type="button"

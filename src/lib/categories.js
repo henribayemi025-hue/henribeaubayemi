@@ -207,6 +207,31 @@ export function isServiceCategory(categoryId) {
   return SERVICE_IDS.has(categoryId);
 }
 
+// Les rayons proposés à la publication, groupés.
+//
+// Beau (11/09): « les services que tu as mis hier, tu les as mis juste sur une
+// partie de l'appli. Une prestataire qui veut poster un service ne le retrouve
+// pas dans l'espace vendeur. » Exact: les écrans de publication n'offraient
+// que les 13 têtes PRODUIT, donc les 48 métiers n'existaient nulle part côté
+// vendeuse — seulement à l'inscription et dans l'annuaire. Résultat en base:
+// 14 boutiques de service, mais 3 fiches seulement classées dans un métier.
+//
+// Les deux familles sont désormais proposées partout où l'on publie, et
+// l'ordre suit la boutique: une prestataire voit ses métiers en premier.
+export function publishGroups(shop) {
+  const articles = { cle: 'articles', ids: PRODUCT_HEADS };
+  const services = { cle: 'services', ids: SERVICE_HEADS };
+  return isServiceShop(shop) ? [services, articles] : [articles, services];
+}
+
+// Rayon préselectionné pour une fiche neuve: le premier que la boutique a
+// déclaré à l'inscription. Sans ça, une prestataire tombait sur un menu vide
+// et devait deviner où chercher son métier.
+export function defaultPublishCategory(shop) {
+  const connues = new Set([...PRODUCT_HEADS, ...SERVICE_HEADS]);
+  return (shop?.categories ?? []).map(categoryHeadFor).find((id) => connues.has(id)) ?? '';
+}
+
 // Une boutique est PRESTATAIRE dès qu'elle affiche au moins un métier de
 // service. C'est ce qui décide de sa présence dans l'onglet Services: une
 // boutique purement produit n'y a rien à faire (elle y apparaissait avant).

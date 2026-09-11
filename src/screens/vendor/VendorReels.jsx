@@ -11,7 +11,8 @@ import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
 import { Field, TextArea, Select } from '../../components/Field';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
-import { CATEGORIES, SELECTABLE_SUBCATEGORIES } from '../../lib/categories';
+import { SELECTABLE_SUBCATEGORIES } from '../../lib/categories';
+import { CategoryPicker } from '../../components/CategoryPicker';
 
 // Limite RÉELLE d'un fichier chez Supabase (offre gratuite). Une vidéo de
 // téléphone la dépasse très vite: 40 secondes en 1080p suffisent. Sans
@@ -187,10 +188,13 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
             catégorie. Ici c'est l'arborescence entière du site. */}
         <Field label={t('vendor.reelCategory')} required>
           {(id) => (
-            <Select id={id} value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option value="">{t('vendor.reelCategoryPlaceholder')}</option>
-              {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
-            </Select>
+            <CategoryPicker
+              id={id}
+              shop={shop}
+              value={category}
+              placeholder={t('vendor.reelCategoryPlaceholder')}
+              onChange={(e) => setCategory(e.target.value)}
+            />
           )}
         </Field>
         {subcats && (
