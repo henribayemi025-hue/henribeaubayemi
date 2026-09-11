@@ -23,6 +23,30 @@ const BROWSER_CACHE = `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TT
 // route non authentifiée qui les rediffuserait.
 const PRIVATE_BUCKETS = new Set(['ids']);
 
+// Taille au-delà de laquelle on ne met PAS l'objet dans le cache programmable:
+// on le laisse couler tel quel vers le visiteur. Une photo d'article peut
+// peser 22 Mo (constaté en base) et il n'y a aucune raison de la garder en
+// mémoire le temps de la recopier.
+const TAILLE_MAX_CACHE = 5 * 1024 * 1024;
+
+// Le cache programmable (Cache API) ne fonctionne pas partout: la
+// documentation Cloudflare précise qu'il est « sans effet » dans les aperçus.
+// L'adresse de préproduction en est un (staging-finjaro.finjaro.workers.dev,
+// créée par `wrangler versions upload`).
+//
+// Ça compte, parce qu'on écrivait `cache.put(response.clone())`: cloner une
+// réponse crée DEUX flux, et tant que le second n'est pas lu, le premier se
+// bloque quand le tampon est plein. Si `cache.put` ne lit jamais rien, la
+// photo n'arrive jamais au navigateur — pas d'erreur, juste un carré gris qui
+// tourne. C'est exactement ce que Beau voit sur staging le 11/09, alors que
+// les mêmes photos s'affichent sur finjaro.net.
+//
+// On s'en passe donc sur ces adresses: `cf.cacheEverything` sur le fetch
+// couvre déjà la mise en cache côté Cloudflare, sans clone ni tampon.
+function cacheProgrammableUtilisable(url) {
+  return !url.hostname.endsWith('.workers.dev');
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -50,10 +74,14 @@ async function serveImage(request, url, ctx) {
     return new Response('method not allowed', { status: 405 });
   }
 
+  const cacheUtilisable = cacheProgrammableUtilisable(url);
   const cache = caches.default;
   const cacheKey = new Request(url.toString(), { method: 'GET' });
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  if (cacheUtilisable) {
+    // Un cache indisponible ne doit jamais faire échouer une photo.
+    const cached = await cache.match(cacheKey).catch(() => null);
+    if (cached) return cached;
+  }
 
   const upstreamUrl = `https://${SUPABASE_HOST}/storage/v1/object/public/${bucket}/${objectPath}`;
   const upstream = await fetch(upstreamUrl, {
@@ -82,7 +110,19 @@ async function serveImage(request, url, ctx) {
   // Vary sur Accept pour permettre AVIF/WebP négocié par le navigateur plus tard.
   headers.set('Vary', 'Accept');
 
-  const response = new Response(upstream.body, { status: 200, headers });
-  ctx.waitUntil(cache.put(cacheKey, response.clone()));
-  return response;
+  // Assez petit et cache disponible: on lit l'objet EN ENTIER, puis on sert
+  // et on range deux copies indépendantes. Plus de clone, donc plus de flux
+  // qui attend l'autre.
+  const taille = Number(upstream.headers.get('Content-Length') || 0);
+  if (cacheUtilisable && taille > 0 && taille <= TAILLE_MAX_CACHE) {
+    const octets = await upstream.arrayBuffer();
+    ctx.waitUntil(
+      cache.put(cacheKey, new Response(octets, { status: 200, headers })).catch(() => {})
+    );
+    return new Response(octets, { status: 200, headers });
+  }
+
+  // Sinon: on laisse couler, sans rien retenir. Cloudflare garde quand même
+  // l'objet au bord grâce à `cf.cacheEverything` posé sur le fetch ci-dessus.
+  return new Response(upstream.body, { status: 200, headers });
 }
