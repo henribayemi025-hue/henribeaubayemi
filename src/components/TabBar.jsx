@@ -57,8 +57,15 @@ export function TabBar({ items, badges = {} }) {
                 <>
                   <span className="relative shrink-0">
                     <Icon size={22} stroke={2.2} color={isActive ? color : '#6B6B6B'} />
+                    {/* Sur l'onglet actif le libellé se pose juste à droite
+                        de l'icône: une pastille qui déborde viendrait sur le
+                        texte. Elle passe donc au-dessus plutôt qu'à côté. */}
                     {badge > 0 && (
-                      <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+                      <span
+                        className={`absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white ${
+                          isActive ? '-top-2 left-1/2 -translate-x-1/2' : '-right-1.5 -top-1'
+                        }`}
+                      >
                         {badge > 99 ? '99+' : badge}
                       </span>
                     )}

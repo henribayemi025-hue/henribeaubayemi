@@ -17,7 +17,7 @@ import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 import { nameMatches } from '../../lib/searchNorm';
 import { getOrCreateConversation } from '../../lib/chat';
-import { searchPeople } from '../../lib/directMessages';
+import { searchPeople, getPublicProfiles, hideDirectConversation } from '../../lib/directMessages';
 
 // Shared conversation list. `vendor` flag switches perspective + link base.
 // `activeId` surligne la conversation ouverte — indispensable en deux
@@ -44,6 +44,16 @@ export function ConversationList({ vendor = false, activeId = null }) {
   const [toDelete, setToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Beau (11/09): « quand quelqu'un m'écrit, ça n'apparaît pas dans le chat,
+  // je reçois même pas la notification ». Les messages d'une PERSONNE
+  // vivaient dans une seconde boîte, sur un autre écran, que personne
+  // n'ouvre jamais. La notification partait bien (trigger on_direct_message)
+  // mais menait à une liste invisible depuis l'onglet Messages.
+  //
+  // Une seule liste désormais: boutiques et personnes, triées ensemble par
+  // date. Chaque ligne est normalisée ici — elle sait où elle mène, qui
+  // l'illustre et combien de messages attendent — pour que l'affichage plus
+  // bas n'ait plus à connaître les deux formes.
   const { data, loading, error, retry } = useAsync(async () => {
     let query = supabase
       .from('conversations')
@@ -57,13 +67,72 @@ export function ConversationList({ vendor = false, activeId = null }) {
     }
     const { data: convs, error: err } = await query;
     if (err) throw err;
-    return (convs || []).filter((c) => !(vendor ? c.vendor_hidden : c.buyer_hidden));
+    const boutiques = (convs || [])
+      .filter((c) => !(vendor ? c.vendor_hidden : c.buyer_hidden))
+      .map((c) => ({
+        cle: `s:${c.id}`,
+        lien: `${vendor ? '/vendor/messages' : '/chat'}/${c.id}`,
+        id: c.id,
+        genre: 'boutique',
+        nom: c.shops?.name,
+        avatar: c.shops?.avatar_url,
+        graine: c.shop_id,
+        verifie: !!c.shops?.is_verified,
+        apercu: c.last_message,
+        date: c.last_message_at,
+        nonLus: vendor ? c.vendor_unread : c.buyer_unread,
+        shop_id: c.shop_id,
+      }));
+
+    // L'espace vendeuse a sa propre boîte, liée à la boutique: on n'y mêle
+    // pas les messages personnels du compte.
+    if (vendor) return boutiques;
+
+    // Une boîte personnelle vide ou en erreur ne doit pas faire disparaître
+    // les conversations avec les boutiques.
+    let gens = [];
+    try {
+      const { data: dConvs } = await supabase
+        .from('direct_conversations')
+        .select('id, user_a_id, user_b_id, last_message, last_message_at, a_unread, b_unread, a_hidden, b_hidden')
+        .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
+        .order('last_message_at', { ascending: false });
+      const visibles = (dConvs || []).filter((c) => (c.user_a_id === user.id ? !c.a_hidden : !c.b_hidden));
+      const autresIds = [...new Set(visibles.map((c) => (c.user_a_id === user.id ? c.user_b_id : c.user_a_id)))];
+      const profils = autresIds.length ? await getPublicProfiles(autresIds) : [];
+      const parId = Object.fromEntries(profils.map((p) => [p.id, p]));
+      gens = visibles.map((c) => {
+        const autreId = c.user_a_id === user.id ? c.user_b_id : c.user_a_id;
+        const autre = parId[autreId] || { id: autreId, name: '—', avatar_url: null };
+        return {
+          cle: `d:${c.id}`,
+          lien: `/profile/messages/${c.id}`,
+          id: c.id,
+          genre: 'personne',
+          nom: autre.name,
+          avatar: autre.avatar_url,
+          graine: autreId,
+          verifie: false,
+          apercu: c.last_message,
+          date: c.last_message_at,
+          nonLus: c.user_a_id === user.id ? c.a_unread : c.b_unread,
+          shop_id: null,
+        };
+      });
+    } catch {
+      /* boîte personnelle indisponible: on affiche au moins les boutiques */
+    }
+
+    return [...boutiques, ...gens].sort(
+      (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+    );
   }, [user, vendor], {
     // Beau (11/09): « chaque fois que je change de page ça se recharge ».
     // Sans clé, ce chargeur repartait de zéro à chaque retour sur l'onglet:
     // écran vide, puis la liste. On réaffiche la dernière liste connue tout
     // de suite et on rafraîchit derrière (le temps réel corrige le reste).
-    cacheKey: `inbox:${vendor ? 'v' : 'b'}:${user?.id || 'anon'}`,
+    // v2: les lignes ont changé de forme (boutiques + personnes réunies).
+    cacheKey: `inbox2:${vendor ? 'v' : 'b'}:${user?.id || 'anon'}`,
     ttlMs: 60 * 1000,
   });
 
@@ -74,11 +143,17 @@ export function ConversationList({ vendor = false, activeId = null }) {
     if (!toDelete) return;
     setDeleting(true);
     try {
-      const { error: dErr } = await supabase
-        .from('conversations')
-        .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
-        .eq('id', toDelete);
-      if (dErr) throw dErr;
+      // Une conversation personnelle se masque par sa propre fonction: les
+      // deux tables n'ont ni les mêmes colonnes ni les mêmes règles d'accès.
+      if (toDelete.genre === 'personne') {
+        await hideDirectConversation(toDelete.id);
+      } else {
+        const { error: dErr } = await supabase
+          .from('conversations')
+          .update(vendor ? { vendor_hidden: true } : { buyer_hidden: true })
+          .eq('id', toDelete.id);
+        if (dErr) throw dErr;
+      }
       setToDelete(null);
       retry();
     } catch (e) {
@@ -95,8 +170,18 @@ export function ConversationList({ vendor = false, activeId = null }) {
       .channel(`inbox-${vendor ? 'v' : 'b'}-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => retry())
       .subscribe();
+    // Sans ceci, un message d'une personne n'apparaissait qu'au rechargement
+    // de l'écran — c'est une des raisons pour lesquelles Beau ne voyait rien
+    // arriver.
+    const canalPerso = vendor
+      ? null
+      : supabase
+          .channel(`inbox-dm-${user.id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'direct_conversations' }, () => retry())
+          .subscribe();
     return () => {
       supabase.removeChannel(channel);
+      if (canalPerso) supabase.removeChannel(canalPerso);
     };
   }, [user, vendor, retry]);
 
@@ -128,7 +213,7 @@ export function ConversationList({ vendor = false, activeId = null }) {
       ]);
       if (!cancelled) {
         setShopResults(shopsRes.data || []);
-        setPeopleResults(user ? (gens || []).filter((p) => p.id !== user.id) : gens || []);
+        setPeopleResults((gens || []).filter((p) => p.id !== user?.id));
         setSearching(false);
       }
     }, 300);
@@ -153,14 +238,16 @@ export function ConversationList({ vendor = false, activeId = null }) {
     }
   }
 
-  const base = vendor ? '/vendor/messages' : '/chat';
   // Les boutiques déjà en conversation ne se répètent pas dans « Nouvelle
   // conversation » — elles apparaissent en filtrant simplement le fil ouvert.
-  const openShopIds = new Set((data || []).map((c) => c.shop_id));
+  const openShopIds = new Set((data || []).map((c) => c.shop_id).filter(Boolean));
   const newShopResults = shopResults.filter((s) => !openShopIds.has(s.id));
   const filteredConvs = searchQuery.trim()
-    ? (data || []).filter((c) => nameMatches(c.shops?.name, searchQuery))
+    ? (data || []).filter((c) => nameMatches(c.nom, searchQuery))
     : data || [];
+  // Une personne déjà en conversation non plus: on ouvre le fil existant
+  // plutôt que de la reproposer comme une inconnue.
+  const openPeopleIds = new Set((data || []).filter((c) => c.genre === 'personne').map((c) => c.graine));
 
   // La recherche reste visible même sans conversation: c'est justement ce
   // qui manquait pour écrire à une boutique la toute première fois.
@@ -245,7 +332,7 @@ export function ConversationList({ vendor = false, activeId = null }) {
         <div>
           <p className="px-4 pb-1 pt-3 text-caption font-semibold text-muted">{t('inbox.peopleFound')}</p>
           <ul>
-            {peopleResults.map((p) => (
+            {peopleResults.filter((p) => !openPeopleIds.has(p.id)).map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
@@ -271,30 +358,30 @@ export function ConversationList({ vendor = false, activeId = null }) {
       )}
     <ul>
       {filteredConvs.map((c) => {
-        const unread = vendor ? c.vendor_unread : c.buyer_unread;
+        const unread = c.nonLus || 0;
         const active = c.id === activeId;
         return (
-          <li key={c.id}>
-            <SwipeRow onDelete={() => setToDelete(c.id)} label={t('common.delete')}>
+          <li key={c.cle}>
+            <SwipeRow onDelete={() => setToDelete(c)} label={t('common.delete')}>
             <Link
-              to={`${base}/${c.id}`}
+              to={c.lien}
               className={`flex items-center gap-3 border-b border-hairline px-4 py-3 transition-colors ${
                 active ? 'border-l-[3px] border-l-teal bg-teal-light pl-[13px]' : 'hover:bg-base'
               }`}
             >
-              <ShopAvatar src={c.shops?.avatar_url ? storageThumbUrl('shops', c.shops.avatar_url) : null} fallbackSrc={c.shops?.avatar_url ? storageUrl('shops', c.shops.avatar_url) : null} name={c.shops?.name} seed={c.shop_id} className="h-12 w-12" />
+              <ShopAvatar src={c.avatar ? storageThumbUrl('shops', c.avatar) : null} fallbackSrc={c.avatar ? storageUrl('shops', c.avatar) : null} name={c.nom} seed={c.graine} className="h-12 w-12" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="flex min-w-0 items-center gap-1 text-body font-semibold text-ink">
-                    <span className="line-clamp-1">{c.shops?.name}</span>
-                    {c.shops?.is_verified && <VerifiedBadge size={13} />}
+                    <span className="line-clamp-1">{c.nom}</span>
+                    {c.verifie && <VerifiedBadge size={13} />}
                   </p>
-                  <span className="shrink-0 text-caption text-muted">{timeAgo(c.last_message_at, i18n.language)}</span>
+                  <span className="shrink-0 text-caption text-muted">{timeAgo(c.date, i18n.language)}</span>
                 </div>
                 {/* Un message non lu se lit en gras: on repère d'un coup d'œil
                     ce qui attend une réponse, sans compter les pastilles. */}
                 <p className={`line-clamp-1 text-caption ${unread > 0 ? 'font-semibold text-ink' : 'text-muted'}`}>
-                  {c.last_message || '—'}
+                  {c.apercu || '—'}
                 </p>
               </div>
               {unread > 0 && (

@@ -9,6 +9,8 @@ import {
   IconSparkles, IconX,
 } from '@tabler/icons-react';
 import { useUI } from '../hooks/useUI';
+import { estFilDiscussion } from '../lib/routes';
+import { useUnreadMessages } from '../hooks/useUnreadMessages';
 import { TabBar } from './TabBar';
 import { useEffect, useState } from 'react';
 
@@ -31,7 +33,10 @@ export function BuyerNav() {
   const { t } = useTranslation();
   const { openFinou } = useUI();
   const { pathname } = useLocation();
-  const isChat = pathname.startsWith('/chat');
+  // Fil de boutique ET fil personnel: voir lib/routes. La LISTE
+  // (/profile/messages sans identifiant) reste un écran normal.
+  const isChat = estFilDiscussion(pathname);
+  const nonLus = useUnreadMessages();
   const isServices = pathname === '/near-you' || pathname === '/services';
   // Beau, en testant: « dans Services j'ai pas vu la partie IA » — Finia
   // était cachée là exactement comme sur la fiche produit ou l'accueil,
@@ -110,7 +115,7 @@ export function BuyerNav() {
           </button>
         </div>
       )}
-      {showNav && <TabBar items={items} />}
+      {showNav && <TabBar items={items} badges={{ messages: nonLus }} />}
     </>
   );
 }

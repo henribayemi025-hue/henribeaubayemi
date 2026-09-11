@@ -745,7 +745,7 @@
     "empty": "Aucun message.",
     "emptyHint": "Contacte une boutique pour démarrer une conversation.",
     "pickConversation": "Choisis une conversation à gauche pour l'ouvrir.",
-    "searchPlaceholder": "Chercher ou écrire à une boutique…",
+    "searchPlaceholder": "Chercher une boutique ou quelqu’un…",
     "peopleFound": "Personnes",
     "newConversation": "Nouvelle conversation",
     "searchNoMatch": "Aucune boutique ne correspond à « {{query}} »."

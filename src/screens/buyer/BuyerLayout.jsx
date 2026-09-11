@@ -4,6 +4,7 @@ import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { BuyerNav } from '../../components/BuyerNav';
 import { BuyerSidebarNav } from '../../components/BuyerSidebarNav';
 import { TAB_BAR_SPACE } from '../../components/TabBar';
+import { estFilDiscussion } from '../../lib/routes';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FinouChou } from '../../components/FinouChou';
 import { LoginPrompt } from '../../components/LoginPrompt';
@@ -64,7 +65,10 @@ export function BuyerLayout() {
         <main
           ref={mainRef}
           className={`flex-1 overflow-y-auto overscroll-contain ${
-            pathname.startsWith('/chat') || pathname.startsWith('/fin') ? '' : TAB_BAR_SPACE
+            // Un fil personnel (/profile/messages/<id>) est une discussion
+            // comme les autres: même règle que /chat, sinon la marge basse
+            // repousse sa zone de saisie sous le bord de l'écran.
+            estFilDiscussion(pathname) || pathname.startsWith('/fin') ? '' : TAB_BAR_SPACE
           }`}
         >
           <ErrorBoundary key={pathname}>
