@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Finjaro — La sélection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px}
+canvas{width:540px;height:960px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#etat{color:#C9B9A6;font:14px Inter,sans-serif;text-align:center;padding:10px}
+#go{display:none}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<button id="go" disabled></button>
+<p id="etat">chargement…</p>
+<script>
+// Finjaro — « La sélection ». Refonte du reel des boutiques, version haute.
+//
+// Beau (11/09): « prends les plus beaux articles, que ça fasse luxe, ultra
+// luxe, classe, l'excellence de Finjaro, pas un truc banalisé ». Et le retour
+// d'une personne extérieure le même jour: les photos froissées ou mal mises
+// en valeur, les bannières IA qui « ne font pas pro ».
+//
+// Donc: douze pièces, pas quarante. Choisies UNE PAR UNE sur planche-contact
+// parmi 140 candidates de la base — fond propre, lumière juste, pas de logo
+// d'une autre marque, pas de photo de fournisseur reconnaissable. Rien ne
+// vient du web. Chaque plan respire (2,7 s), un seul mouvement lent, beaucoup
+// de crème autour, la typo sert le produit.
+//
+// Écartées après aperçu: le tailleur (filigrane d'un fournisseur en travers de
+// la photo), la robe portefeuille (capture d'écran d'une autre application),
+// et les deux tenues d'Ange fashion beauty (signature « Nadine Shopping »
+// lisible en bas de l'image). Une pièce ne vaut que si sa photo est propre.
+//
+// AUCUN CHIFFRE INVENTÉ, AUCUN PAYS: seuls le nom de l'article, la boutique,
+// la ville et, quand la vendeuse en a mis un, le prix dans SA monnaie.
+const BASE = 'http://127.0.0.1:4790/';
+const W = 1080, H = 1920;
+const CREME='#FAF6F0', ENCRE='#171B26', TERRA='#C25E38',
+      LAITON='#9A7A3E', LAITON2='#C9A96A', BRUME='#8A7D6B';
+
+const F = (n) => n.toLocaleString('fr-FR').replace(/[  ]/g,' ') + ' FCFA';
+
+// anc = ancrage vertical du recadrage (0 haut, .5 centre). La robe drapée
+// porte une signature de photographe en bas à gauche: on cadre au-dessus.
+const CHAPITRES = [
+ { t:'Mode', s:'Tailleurs, robes, ensembles', items:[
+   {b:'SM Store & Beauty', v:'Yaoundé', a:'Ensemble crème', prix:F(18000), i:'720c4d78-c78d-49cd-9318-6daf72e7f865/150a58a9-a6ef-4885-a0de-709c4416ca60.jpg', anc:.3},
+   {b:'SM Store & Beauty', v:'Yaoundé', a:'Ensemble bordeaux', prix:F(18000), i:'720c4d78-c78d-49cd-9318-6daf72e7f865/04b53053-142b-419b-8100-427156ccbfa6.jpg', anc:.3},
+   {b:'MTGBA Market Place', v:'Yaoundé', a:'Chemisier fleuri', prix:null, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/664ce95b-1836-4d6c-b084-bcfa7f676d4d.webp', anc:.15},
+ ]},
+ { t:'Accessoires', s:'Sacs, souliers', items:[
+   {b:'Artisanat de rêve', v:'Yaoundé', a:'Sac en perles', prix:F(20000), i:'5b3fe859-aa00-4d83-be6d-54230b749d69/6944b3da-f931-4178-b154-be3bf9a0077c.webp', anc:.5},
+   {b:'MTGBA Market Place', v:'Yaoundé', a:'Mocassins noirs vernis', prix:null, i:'49d28698-1f14-4b4e-9276-62d1ca26c03e/68e21072-1f5e-4809-912c-857fac348c68.webp', anc:.5},
+ ]},
+ { t:'Beauté', s:'Soins, en studio', items:[
+   {b:'Nemalia cosmetics', v:'Paris', a:'Pop Lemon, gommage', prix:null, i:'111c5aeb-7ca2-44e2-bb67-7a30b41f92c7/9b509593-2721-45ba-97e3-4718bccc78e0.jpg', anc:.5},
+   {b:'Nemalia cosmetics', v:'Paris', a:'Huile végétale de carotte', prix:null, i:'111c5aeb-7ca2-44e2-bb67-7a30b41f92c7/1a3d228a-478f-4d7b-91d0-570ce9837376.jpg', anc:.5},
+   {b:'Nemalia cosmetics', v:'Paris', a:'Pink Rose, gommage', prix:null, i:'111c5aeb-7ca2-44e2-bb67-7a30b41f92c7/463b75f5-afe1-4e19-8eba-7250da2c17b2.jpg', anc:.5},
+   {b:'Luxus Beauty', v:'Lomé', a:'Sérums visage', prix:F(2000), i:'eb83d3df-0fc9-4254-8fd4-bd4f61b234ab/33368acf-167e-47a9-8886-42da7537eb50.webp', anc:.5},
+ ]},
+];
+
+const T_INTRO=4.2, T_CHAP=1.9, T_PH=2.7, T_FONDU=.5, T_FIN=5.2;
+
+// ---------- timeline ----------
+const plans = [{ type:'intro', d:T_INTRO }];
+let k = 0;
+for (const c of CHAPITRES) {
+  plans.push({ type:'chap', d:T_CHAP, c });
+  for (const it of c.items) plans.push({ type:'photo', d:T_PH, it, mv:k++ % 3 });
+}
+plans.push({ type:'fin', d:T_FIN });
+plans.forEach((p,i)=>p._i=i);
+const TOTAL = plans.reduce((t,p)=>t+p.d,0);
+const bornes=[]; { let a=0; for (const p of plans){ bornes.push([a,a+p.d,p]); a+=p.d; } }
+function planA(t){ for(const [a,b,p] of bornes) if(t>=a&&t<b) return [p,(t-a)/p.d]; return [plans[plans.length-1],1]; }
+
+// ---------- dessin ----------
+const cv=document.getElementById('c'), G=cv.getContext('2d');
+const off=document.createElement('canvas'); off.width=W; off.height=H; const GOFF=off.getContext('2d');
+const cache=new Map();
+const lisse=(x)=>x<0?0:x>1?1:x*x*(3-2*x);
+
+function fond(g){ g.fillStyle=CREME; g.fillRect(0,0,W,H); }
+
+// Trois mouvements lents, jamais brusques: zoom avant, zoom arrière, dérive.
+function couvre(g, im, it, mv, u){
+  const base=Math.max(W/im.width, H/im.height);
+  const z0 = it.zoom || 1;
+  let z, dx=0;
+  if(mv===0){ z=z0*(1.02+.07*u); }
+  else if(mv===1){ z=z0*(1.10-.07*u); }
+  else { z=z0*1.07; dx=(u-.5)*40; }
+  const r=base*z, w=im.width*r, h=im.height*r;
+  const anc = it.anc==null ? .5 : it.anc;
+  g.drawImage(im,(W-w)/2+dx,(H-h)*anc,w,h);
+}
+
+function espace(g, txt, police, esp, x, y, align){
+  g.font=police; let tw=0; for(const ch of txt) tw+=g.measureText(ch).width+esp; tw-=esp;
+  let cx = align==='center' ? x-tw/2 : x;
+  g.textAlign='left';
+  for(const ch of txt){ g.fillText(ch,cx,y); cx+=g.measureText(ch).width+esp; }
+}
+
+function lignes(g, txt, police, maxL){ g.font=police; const out=[]; let cur='';
+  for(const m of String(txt).split(' ')){ const e=cur?cur+' '+m:m;
+    if(g.measureText(e).width>maxL&&cur){ out.push(cur); cur=m; } else cur=e; }
+  if(cur) out.push(cur); return out; }
+
+function filet(g, x1,x2,y,alpha){ g.save(); g.strokeStyle=LAITON2; g.globalAlpha=alpha; g.lineWidth=2;
+  g.beginPath(); g.moveTo(x1,y); g.lineTo(x2,y); g.stroke(); g.restore(); }
+
+// Photo trop petite ou en paysage: on ne l'étire pas sur tout l'écran (elle
+// deviendrait floue, ou coupée n'importe où). On la pose comme une planche de
+// catalogue: cadrée, centrée en haut, ombre légère, la crème autour.
+function planche(g, im, mv, u){
+  const maxW=900, maxH=1180;
+  const r=Math.min(maxW/im.width, maxH/im.height)*(mv===1?1.0:1.0);
+  const z = mv===0 ? 1+.025*u : mv===1 ? 1.025-.025*u : 1.012;
+  const w=im.width*r*z, h=im.height*r*z;
+  const x=(W-w)/2, y=150+(maxH-h)/2;
+  g.save(); g.shadowColor='rgba(23,27,38,.22)'; g.shadowBlur=60; g.shadowOffsetY=28;
+  g.fillStyle='#fff'; g.fillRect(x,y,w,h); g.restore();
+  g.drawImage(im,x,y,w,h);
+}
+function dessinePhoto(g, p, u){
+  const im=cache.get(p.it.i);
+  fond(g);
+  const enCadre = p.it.cadre || (im && (im.width < 800 || im.width > im.height));
+  if(im){ if(enCadre) planche(g, im, p.mv, u); else couvre(g, im, p.it, p.mv, u); }
+  // Voile crème en bas, doux, pour asseoir le texte sans assombrir la pièce.
+  if(!enCadre){
+    const gr=g.createLinearGradient(0,H*.58,0,H);
+    gr.addColorStop(0,'rgba(250,246,240,0)'); gr.addColorStop(.55,'rgba(250,246,240,.86)'); gr.addColorStop(1,'rgba(250,246,240,.97)');
+    g.fillStyle=gr; g.fillRect(0,H*.58,W,H*.42);
+  }
+  const a1=lisse((u-.06)/.22), a2=lisse((u-.16)/.22), a3=lisse((u-.26)/.22);
+  g.textBaseline='alphabetic';
+  g.globalAlpha=a1; g.fillStyle=LAITON;
+  espace(g,(p.it.b+'  ·  '+p.it.v).toUpperCase(),'600 24px Inter, sans-serif',4.5,90,1545+(1-a1)*18,'left');
+  filet(g,90,190,1500,a1*.9);
+  g.globalAlpha=a2; g.fillStyle=ENCRE; g.textAlign='left';
+  const ls=lignes(g,p.it.a,'500 78px Fraunces, Georgia, serif',900);
+  g.font='500 78px Fraunces, Georgia, serif';
+  ls.forEach((l,i)=>g.fillText(l,88,1640+i*86+(1-a2)*18));
+  if(p.it.prix){ g.globalAlpha=a3; g.fillStyle=TERRA; g.font='500 40px Fraunces, Georgia, serif';
+    g.fillText(p.it.prix,90,1640+ls.length*86+22+(1-a3)*18); }
+  g.globalAlpha=.85; g.fillStyle=ENCRE;
+  espace(g,'FINJARO','600 22px Inter, sans-serif',7,90,120,'left');
+  g.globalAlpha=1;
+}
+
+function dessineCarte(g, p, u){
+  if(p.type==='intro'){
+    fond(g);
+    const a=lisse(u/.22), b=lisse((u-.18)/.26), c=lisse((u-.42)/.26), d=lisse((u-.62)/.22);
+    g.globalAlpha=a; g.fillStyle=LAITON;
+    espace(g,'FINJARO','600 28px Inter, sans-serif',9,W/2,720+(1-a)*14,'center');
+    filet(g,W/2-60,W/2+60,780,b);
+    g.textAlign='center';
+    g.globalAlpha=c; g.fillStyle=ENCRE; g.font='500 128px Fraunces, Georgia, serif';
+    g.fillText('La sélection',W/2,960+(1-c)*24);
+    g.globalAlpha=d; g.fillStyle=BRUME; g.font='400 40px Fraunces, Georgia, serif';
+    g.fillText('Les belles pièces de nos boutiques',W/2,1050+(1-d)*18);
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='chap'){
+    fond(g);
+    const a=lisse(u/.26), s=lisse((u-.9)/.1), al=a*(1-s);
+    g.globalAlpha=al; g.fillStyle=LAITON;
+    espace(g,'CHAPITRE','600 22px Inter, sans-serif',8,W/2,880,'center');
+    g.textAlign='center';
+    g.fillStyle=ENCRE; g.font='500 118px Fraunces, Georgia, serif'; g.fillText(p.c.t,W/2,1010+(1-a)*20);
+    g.fillStyle=BRUME; g.font='400 38px Fraunces, Georgia, serif'; g.fillText(p.c.s,W/2,1085+(1-a)*20);
+    filet(g,W/2-60,W/2+60,1130,al);
+    g.globalAlpha=1; return;
+  }
+  if(p.type==='fin'){
+    fond(g);
+    const a=lisse(u/.22), b=lisse((u-.2)/.24), c=lisse((u-.42)/.24), d=lisse((u-.62)/.24);
+    g.globalAlpha=a; g.fillStyle=LAITON; espace(g,'FINJARO','600 28px Inter, sans-serif',9,W/2,760,'center');
+    g.textAlign='center';
+    g.globalAlpha=b; g.fillStyle=ENCRE; g.font='500 96px Fraunces, Georgia, serif';
+    g.fillText('Trouvez la pièce.',W/2,930+(1-b)*22);
+    g.fillText('Écrivez à la boutique.',W/2,1046+(1-b)*22);
+    filet(g,W/2-60,W/2+60,1120,c);
+    g.globalAlpha=d; g.fillStyle=TERRA; g.font='500 54px Fraunces, Georgia, serif';
+    g.fillText('finjaro.net',W/2,1220+(1-d)*16);
+    g.fillStyle=BRUME; g.font='400 40px Fraunces, Georgia, serif';
+    g.fillText('Ouvrir sa boutique est gratuit.',W/2,1298+(1-d)*16);
+    g.globalAlpha=1; return;
+  }
+}
+
+function dessine(p,u){
+  if(p.type!=='photo'){ dessineCarte(G,p,u); return; }
+  dessinePhoto(G,p,u);
+  // Fondu enchaîné depuis le plan précédent s'il est une photo: l'ancien plan,
+  // figé sur sa dernière image, s'efface par-dessus le nouveau.
+  const tf=T_FONDU/p.d;
+  if(u<tf && p._i>0 && plans[p._i-1].type==='photo'){
+    dessinePhoto(GOFF, plans[p._i-1], 1);
+    G.save(); G.globalAlpha=1-lisse(u/tf); G.drawImage(off,0,0); G.restore();
+  }
+}
+
+// ---------- chargement ----------
+const etat=document.getElementById('etat');
+(async()=>{
+  const chemins=[...new Set(plans.filter(p=>p.type==='photo').map(p=>p.it.i))];
+  let n=0;
+  await Promise.all(chemins.map(c=>new Promise((res)=>{
+    const im=new Image(); im.crossOrigin='anonymous';
+    im.onload=()=>{cache.set(c,im);n++;res();};
+    im.onerror=()=>{console.warn('photo absente',c);res();};
+    im.src=BASE+c;
+  })));
+  await document.fonts.ready;
+  etat.textContent=`${n}/${chemins.length} photos — ${TOTAL.toFixed(1)} s`;
+  document.getElementById('go').disabled=false;
+  const [p,u]=planA(0); dessine(p,u);
+})();
+</script>
+</body>
+</html>
