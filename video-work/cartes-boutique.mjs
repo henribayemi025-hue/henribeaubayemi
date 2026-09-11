@@ -6,7 +6,16 @@
 // Même langage que « La sélection »: crème, Fraunces, un filet laiton, de
 // l'air. Tout est dessiné ici, rien n'est pris ailleurs.
 import { chromium } from 'playwright';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { createServer } from 'http';
+import { join } from 'path';
+
+// Les photos des boutiques, servies en local pour composer bannière et logo.
+const ASSETS = '/home/user/henribeaubayemi/video-work/assets';
+const srv = createServer((q, r) => { const p = join(ASSETS, decodeURIComponent(q.url.split('?')[0])); if (!existsSync(p)) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'access-control-allow-origin': '*' }); r.end(readFileSync(p)); });
+await new Promise((r) => srv.listen(4797, r));
+const PHOTO_BANNIERE = '720c4d78-c78d-49cd-9318-6daf72e7f865/150a58a9-a6ef-4885-a0de-709c4416ca60.jpg'; // SM Store, ensemble crème
+const PHOTO_LOGO = '5b3fe859-aa00-4d83-be6d-54230b749d69/6944b3da-f931-4178-b154-be3bf9a0077c.webp';      // Artisanat de rêve, sac en perles
 
 const SC = '/tmp/claude-0/-home-user-henribeaubayemi/46c5ddec-5d8e-5943-95aa-4e0c79f09944/scratchpad';
 const W = 1080, H = 1920;
@@ -103,21 +112,40 @@ await carte('carte-fin', ({ W, H }) => {
   return document.getElementById('c').toDataURL('image/png').split(',')[1];
 });
 
-// Bannière (1200x600) et logo (600x600) de la boutique fictive: un monogramme
-// sur crème — pas la photo d'une vraie boutique.
+// Bannière (1200x600) et logo (600x600) de la boutique fictive: composés à
+// partir de vraies photos des boutiques (créditées sur la carte de fin),
+// pas de rectangle crème avec un mot dessus. Beau (11/09): « tu dois prendre
+// une belle photo pour la bannière ».
+await pg.evaluate(async ({ b, l }) => {
+  const charge = (u) => new Promise((ok) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => ok(im); im.src = 'http://127.0.0.1:4797/' + u; });
+  window.__ban = await charge(b); window.__logo = await charge(l);
+}, { b: PHOTO_BANNIERE, l: PHOTO_LOGO });
 writeFileSync(`${SC}/boutique-banniere.png`, await png(() => {
   const cv = document.getElementById('c'); cv.width = 1200; cv.height = 600; const g = cv.getContext('2d');
-  g.fillStyle = '#F3ECE1'; g.fillRect(0, 0, 1200, 600);
-  g.strokeStyle = '#C9A96A'; g.lineWidth = 3; g.strokeRect(40, 40, 1120, 520);
-  g.fillStyle = '#171B26'; g.textAlign = 'center'; g.font = '500 150px Fraunces, Georgia, serif'; g.fillText('Chez Aïcha', 600, 350);
+  const im = window.__ban;
+  // Recadrage « couverture », ancré vers le haut (le visage), léger zoom.
+  const r = Math.max(1200 / im.width, 600 / im.height) * 1.02, w = im.width * r, h = im.height * r;
+  g.drawImage(im, (1200 - w) / 2, (600 - h) * 0.12, w, h);
+  const gr = g.createLinearGradient(0, 600, 0, 220);
+  gr.addColorStop(0, 'rgba(23,27,38,.78)'); gr.addColorStop(1, 'rgba(23,27,38,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 1200, 600);
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.fillStyle = '#C9A96A'; g.font = '600 22px Inter, sans-serif';
+  const esp = (txt, e, x, y) => { let cx = x; for (const c of txt) { g.fillText(c, cx, y); cx += g.measureText(c).width + e; } };
+  esp('MODE & BEAUTÉ  ·  DOUALA', 6, 64, 470);
+  g.fillStyle = '#FAF6F0'; g.font = '500 96px Fraunces, Georgia, serif'; g.fillText('Chez Aïcha', 60, 556);
   const out = cv.toDataURL('image/png').split(',')[1]; cv.width = 1080; cv.height = 1920; return out;
 }));
 writeFileSync(`${SC}/boutique-logo.png`, await png(() => {
   const cv = document.getElementById('c'); cv.width = 600; cv.height = 600; const g = cv.getContext('2d');
-  g.fillStyle = '#C25E38'; g.fillRect(0, 0, 600, 600);
-  g.fillStyle = '#FAF6F0'; g.textAlign = 'center'; g.font = '600 340px Fraunces, Georgia, serif'; g.fillText('A', 300, 420);
+  const im = window.__logo;
+  // Le sac en perles, serré sur la fleur de perles (bas de la photo): noir et
+  // or, lisible même en rond — et sans la plaque de marque de l'artisane,
+  // qui est en haut du sac et n'a rien à faire sur une boutique fictive.
+  const r = Math.max(600 / im.width, 600 / im.height) * 1.7, w = im.width * r, h = im.height * r;
+  g.drawImage(im, (600 - w) / 2, (600 - h) * 0.78, w, h);
   const out = cv.toDataURL('image/png').split(',')[1]; cv.width = 1080; cv.height = 1920; return out;
 }));
 
-await br.close();
+await br.close(); srv.close();
 console.log('cartes écrites dans', SC);

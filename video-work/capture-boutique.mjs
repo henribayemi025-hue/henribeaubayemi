@@ -106,10 +106,14 @@ function mockRoutes(page) {
   page.route('**/storage/v1/object/products/**', (r) => r.fulfill({ status: 200, json: { Key: 'ok' } }));
   // Photo d'article: un chemin connu est servi depuis assets (fil d'accueil);
   // le chemin généré à l'envoi (inconnu d'avance) reçoit le sac en perles.
+  // Les cartes demandent la vignette (« …_thumb.jpg »), qui n'existe pas ici:
+  // on sert l'original du même nom. Seul le chemin généré à l'envoi de la
+  // première pièce (inconnu d'avance) reçoit la photo du sac. Avant ce
+  // correctif, TOUTES les cartes du fil montraient le sac (Beau, 11/09).
   page.route('**/img/products/**', (r) => {
     const chemin = decodeURIComponent(new URL(r.request().url()).pathname.slice('/img/products/'.length));
-    const p = join(ASSETS, chemin);
-    const f = existsSync(p) ? p : join(ASSETS, SAC);
+    const candidats = [join(ASSETS, chemin), join(ASSETS, chemin.replace(/_thumb(\.[a-z]+)$/i, '$1'))];
+    const f = candidats.find((c) => existsSync(c)) || join(ASSETS, SAC);
     return r.fulfill({ status: 200, contentType: MIME[extname(f)] || 'image/jpeg', body: readFileSync(f) });
   });
   // Relecture des deux images envoyées: bannière puis logo, cartes neutres.
@@ -287,7 +291,7 @@ await page.locator('input[type="file"]').nth(0).setInputFiles(join(SC, 'boutique
 await page.waitForTimeout(1800);
 await page.locator('input[type="file"]').nth(1).setInputFiles(join(SC, 'boutique-logo.png'));
 await page.waitForTimeout(1800);
-await page.locator('textarea').type('Mode et beauté, pièces choisies.', { delay: 35 });
+await page.locator('textarea').type('Mode et beauté. Des pièces choisies, livrées avec soin.', { delay: 35 });
 await page.waitForTimeout(900);
 await page.locator('button', { hasText: 'Continuer' }).click();
 await page.waitForTimeout(1300);
