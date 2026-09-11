@@ -30,7 +30,10 @@ export const APPS_FALLBACK = [
   },
 ];
 
-const CACHE_KEY = 'finjaro:apps:v1';
+// v2: les caches v1 contiennent la ligne « Console Finjaro », que l'API
+// servait encore à tout le monde avant la migration 0123. On repart de zéro
+// plutôt que de faire confiance à ce qui traîne sur l'appareil.
+const CACHE_KEY = 'finjaro:apps:v2';
 
 export function appsFromCache() {
   try {
@@ -58,8 +61,11 @@ export async function fetchApps() {
   return data;
 }
 
-// Qui voit quoi. La console d'administration ne doit même pas se deviner
-// depuis un compte ordinaire (c'est la règle déjà appliquée au Profil).
+// Qui voit quoi — deuxième verrou.
+//
+// Le premier est en base (migration 0123): l'API ne renvoie même plus les
+// applications d'équipe à un visiteur ordinaire. Ce filtre reste pour le
+// cache local et pour un compte admin qui consulte la liste complète.
 export function visibleApps(apps, { isAdmin = false, isVendor = false } = {}) {
   return (apps || []).filter((a) => {
     if (a.audience === 'admin') return isAdmin;

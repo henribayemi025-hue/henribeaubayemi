@@ -58,7 +58,14 @@ export function ConversationList({ vendor = false, activeId = null }) {
     const { data: convs, error: err } = await query;
     if (err) throw err;
     return (convs || []).filter((c) => !(vendor ? c.vendor_hidden : c.buyer_hidden));
-  }, [user, vendor]);
+  }, [user, vendor], {
+    // Beau (11/09): « chaque fois que je change de page ça se recharge ».
+    // Sans clé, ce chargeur repartait de zéro à chaque retour sur l'onglet:
+    // écran vide, puis la liste. On réaffiche la dernière liste connue tout
+    // de suite et on rafraîchit derrière (le temps réel corrige le reste).
+    cacheKey: `inbox:${vendor ? 'v' : 'b'}:${user?.id || 'anon'}`,
+    ttlMs: 60 * 1000,
+  });
 
   // Beau (deux fois): « il ya pas eu delete UNE conversation ». Masque
   // seulement de mon côté; un nouveau message de l'autre partie la refait

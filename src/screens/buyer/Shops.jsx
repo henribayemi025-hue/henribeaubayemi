@@ -46,7 +46,7 @@ export default function Shops() {
     if (err) throw err;
     const garnies = new Set((withProducts || []).map((p) => p.shop_id));
     return (shops || []).map((s) => ({ ...s, hasProducts: garnies.has(s.id) }));
-  }, []);
+  }, [], { cacheKey: 'shops:all', ttlMs: 5 * 60 * 1000 });
 
   const shops = useMemo(() => {
     const rows = data || [];
