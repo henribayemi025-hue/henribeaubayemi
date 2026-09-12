@@ -5,7 +5,7 @@ import { IconTrash, IconPhotoPlus, IconSparkles, IconLoader2, IconX } from '@tab
 import { supabase, storageUrl } from '../../lib/supabase';
 import { uid } from '../../lib/uid';
 import { compressForUploadWithThumb } from '../../lib/image';
-import { isVideoFile, videoDuration, videoPoster, posterPathFor, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from '../../lib/video';
+import { isVideoFile, videoDuration, videoPoster, posterPathFor, compressVideo, peutCompresserVideo, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from '../../lib/video';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -327,15 +327,13 @@ export default function VendorProductEdit() {
   // Pick many photos at once from the gallery and upload them in parallel.
   // Uses allSettled so one bad file never blocks the others, and unique UUID
   // names so two uploads can't collide.
-  // Une vidéo par article (voir migration 0039). Refusée si trop lourde ou
-  // trop longue: le navigateur ne sait pas la ré-encoder, donc le seul
-  // garde-fou est à l'envoi. Une image de couverture est extraite au passage —
-  // c'est elle qui s'affiche tant que la vidéo n'est pas chargée.
+  // Une vidéo par article (voir migration 0039). L'ordre compte: on vérifie
+  // d'abord la DURÉE, puis on allège, et seulement ensuite on juge le poids —
+  // sinon une vidéo courte mais lourde était refusée alors que la compression
+  // l'aurait ramenée à un ou deux mégaoctets. Une image de couverture est
+  // extraite au passage: c'est elle qui s'affiche tant que la vidéo n'est pas
+  // chargée.
   async function uploadVideo(file) {
-    if (file.size > MAX_VIDEO_BYTES) {
-      toast.error(t('vendor.videoTooLarge', { mb: Math.round(MAX_VIDEO_BYTES / 1024 / 1024) }));
-      return;
-    }
     setUploads((n) => n + 1);
     try {
       const seconds = await videoDuration(file).catch(() => 0);
@@ -343,9 +341,23 @@ export default function VendorProductEdit() {
         toast.error(t('vendor.videoTooLong', { seconds: MAX_VIDEO_SECONDS }));
         return;
       }
-      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+      // Le ré-encodage se fait en temps réel: on le dit, sinon l'écran a
+      // l'air bloqué pendant toute la durée de la vidéo.
+      let aEnvoyer = file;
+      if (peutCompresserVideo() && file.size > 2 * 1024 * 1024) {
+        toast.info(t('vendor.videoCompressing'));
+        const allegee = await compressVideo(file);
+        if (allegee) aEnvoyer = allegee;
+      }
+      if (aEnvoyer.size > MAX_VIDEO_BYTES) {
+        toast.error(t('vendor.videoTooLarge', { mb: Math.round(MAX_VIDEO_BYTES / 1024 / 1024) }));
+        return;
+      }
+      // L'extension suit ce qu'on envoie VRAIMENT: une vidéo allégée est du
+      // MP4, même si l'original était un .mov.
+      const ext = aEnvoyer === file ? (file.name.split('.').pop() || 'mp4').toLowerCase() : 'mp4';
       const path = `${user.id}/${uid()}.${ext}`;
-      const { error } = await supabase.storage.from('products').upload(path, file, { upsert: false, contentType: file.type || 'video/mp4' });
+      const { error } = await supabase.storage.from('products').upload(path, aEnvoyer, { upsert: false, contentType: aEnvoyer.type || 'video/mp4' });
       if (error) throw error;
       // Meilleur effort: sans couverture la vidéo s'affiche quand même, elle
       // met juste un instant à apparaître.

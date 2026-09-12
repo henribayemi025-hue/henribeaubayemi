@@ -1093,7 +1093,8 @@
     "reelCategory": "Rayon",
     "reelCategoryPlaceholder": "Choisis un rayon…",
     "reelCategoryRequired": "Choisis un rayon: sans lui, ta vidéo n'apparaît dans aucun filtre.",
-    "draftsHelp": "Ces articles ne sont pas encore visibles par les clients. Publie-les pour qu'ils apparaissent dans la boutique."
+    "draftsHelp": "Ces articles ne sont pas encore visibles par les clients. Publie-les pour qu'ils apparaissent dans la boutique.",
+    "videoCompressing": "On allège ta vidéo, reste sur cet écran un instant…"
   },
   "orderStatus": {
     "new": "En attente de validation",
