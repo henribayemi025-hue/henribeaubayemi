@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconPlus, IconMovie, IconEye, IconHeart, IconTrash } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { uid } from '../../lib/uid';
+import { compressVideo, peutCompresserVideo, videoDuration, MAX_VIDEO_BYTES, MAX_VIDEO_SECONDS } from '../../lib/video';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -27,13 +28,11 @@ import { CategoryPicker } from '../../components/CategoryPicker';
 // seules 99 Mo — soit un dixième de tout l'espace disponible, pour trois
 // fichiers. Le stockage est passé de 32 Mo le 04/08 à 449 Mo le 16/08.
 //
-// 15 Mo laisse passer une vidéo de 30 à 60 secondes filmée normalement au
-// téléphone. Ce n'est pas la vraie réponse — la vraie réponse est de
-// compresser la vidéo AVANT l'envoi, pour que la vendeuse n'ait rien à
-// changer à sa façon de filmer. Mais tant que ce n'est pas fait, mieux vaut
-// un refus qui explique quoi faire qu'une plateforme qui se remplit en
-// silence jusqu'à refuser les photos de tout le monde.
-const MAX_VIDEO_BYTES = 15 * 1024 * 1024;
+// La limite vit dans lib/video.js, avec celle des vidéos d'article: elle était
+// redéfinie ici à une autre valeur, si bien qu'un même fichier passait ou non
+// selon l'écran. Et la vraie réponse annoncée par l'ancien commentaire — «
+// compresser la vidéo AVANT l'envoi, pour que la vendeuse n'ait rien à changer
+// à sa façon de filmer » — est maintenant faite: voir compressVideo.
 
 export default function VendorReels() {
   const { shop } = useOutletContext();
@@ -140,10 +139,6 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
       toast.error(t('vendor.reelVideo'));
       return;
     }
-    if (file.size > MAX_VIDEO_BYTES) {
-      toast.error(t('vendor.reelTooBig', { size: Math.round(file.size / 1024 / 1024) }));
-      return;
-    }
     // Sans rayon, la vidéo n'apparaît dans aucun filtre du fil Fin: elle est
     // publiée pour personne. On refuse plutôt que de publier en silence.
     if (!category) {
@@ -152,8 +147,27 @@ function UploadReel({ open, onClose, shop, products, onDone, toast }) {
     }
     setBusy(true);
     try {
-      const path = `${shop.owner_id}/${uid()}.${file.name.split('.').pop()}`;
-      const { error: upErr } = await supabase.storage.from('reels').upload(path, file);
+      // La DURÉE d'abord: inutile de passer une minute à ré-encoder une vidéo
+      // qu'on va refuser. Ce contrôle manquait ici alors qu'il existait pour
+      // les vidéos d'article.
+      const secondes = await videoDuration(file).catch(() => 0);
+      if (secondes > MAX_VIDEO_SECONDS) {
+        toast.error(t('vendor.videoTooLong', { seconds: MAX_VIDEO_SECONDS }));
+        return;
+      }
+      let aEnvoyer = file;
+      if (peutCompresserVideo() && file.size > 2 * 1024 * 1024) {
+        toast.info(t('vendor.videoCompressing'));
+        const allegee = await compressVideo(file);
+        if (allegee) aEnvoyer = allegee;
+      }
+      if (aEnvoyer.size > MAX_VIDEO_BYTES) {
+        toast.error(t('vendor.reelTooBig', { size: Math.round(aEnvoyer.size / 1024 / 1024) }));
+        return;
+      }
+      const ext = aEnvoyer === file ? (file.name.split('.').pop() || 'mp4') : 'mp4';
+      const path = `${shop.owner_id}/${uid()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('reels').upload(path, aEnvoyer, { contentType: aEnvoyer.type || 'video/mp4' });
       if (upErr) throw upErr;
       const { error } = await supabase.from('reels').insert({
         shop_id: shop.id,

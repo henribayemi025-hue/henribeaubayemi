@@ -1093,7 +1093,8 @@
     "reelCategory": "Category",
     "reelCategoryPlaceholder": "Pick a category…",
     "reelCategoryRequired": "Pick a category: without one, your video shows up in no filter.",
-    "draftsHelp": "These items aren't visible to customers yet. Publish them so they show up in the shop."
+    "draftsHelp": "These items aren't visible to customers yet. Publish them so they show up in the shop.",
+    "videoCompressing": "Shrinking your video, stay on this screen a moment…"
   },
   "orderStatus": {
     "new": "Awaiting validation",
