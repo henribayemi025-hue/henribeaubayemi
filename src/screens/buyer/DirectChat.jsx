@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSend2, IconPhoto, IconChecks, IconFlag, IconChevronLeft, IconMicrophone, IconTrash, IconArrowBackUp, IconCopy } from '@tabler/icons-react';
+import { IconSend2, IconPhoto, IconChecks, IconFlag, IconChevronLeft, IconMicrophone, IconTrash, IconArrowBackUp, IconCopy, IconArrowForward, IconX as IconClose } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { uid } from '../../lib/uid';
 import { useAuth } from '../../hooks/useAuth';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useToast } from '../../hooks/useToast';
-import { getPublicProfile, sendDirectMessage, markDirectConversationRead, hideDirectConversation, directErrorKey } from '../../lib/directMessages';
+import { getPublicProfile, getPublicProfiles, sendDirectMessage, markDirectConversationRead, hideDirectConversation, directErrorKey } from '../../lib/directMessages';
 import { ShopAvatar } from '../../components/ShopAvatar';
 import { ReportModal } from '../../components/ReportModal';
 import { Modal } from '../../components/Modal';
@@ -24,8 +24,15 @@ import { clockTime } from '../../lib/format';
 // Fil personne-à-personne — même look que le chat boutique (VendorChat),
 // mais avec l'état "demande" en plus: tant que unlocked=false, seule
 // l'initiatrice peut écrire, et une seule fois (voir send_direct_message,
-// migration 0099). Pas de stickers/transfert/suggestions IA ici: ce sont
-// des raffinements du chat commercial, pas le cœur de cette fonctionnalité.
+// migration 0099). Pas de stickers ni de suggestions IA ici: ce sont des
+// raffinements du chat commercial.
+//
+// Le TRANSFERT et l'ouverture d'une photo en plein écran, eux, avaient été
+// écartés pour la même raison — à tort. Beau (12/09), depuis un fil
+// personnel: « j'ai cliqué sur la photo, j'arrive pas à transférer, et même
+// quand je clique sur la photo ça n'ouvre pas ». Ce ne sont pas des
+// raffinements commerciaux: recevoir une photo et vouloir la voir en grand
+// ou la faire suivre, c'est le minimum d'une messagerie.
 export default function DirectChat() {
   const { conversationId } = useParams();
   const { t, i18n } = useTranslation();
@@ -41,6 +48,14 @@ export default function DirectChat() {
   const [error, setError] = useState(false);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState(null);
+  // Transfert: on propose MES autres fils, personnels comme boutiques —
+  // c'est ce que fait n'importe quelle messagerie, et depuis que les deux
+  // listes sont réunies dans Messages, les séparer ici n'aurait aucun sens.
+  const [forwardMsg, setForwardMsg] = useState(null);
+  const [forwardTargets, setForwardTargets] = useState([]);
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [forwardSending, setForwardSending] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   // Gestes façon WhatsApp: appui long = feuille d'actions, glissement =
@@ -164,6 +179,81 @@ export default function DirectChat() {
   // Tant que ce n'est pas débloqué: l'initiatrice a droit à UN message et
   // attend; l'autre peut toujours répondre (sa réponse débloque tout).
   const requestLocked = conv && !conv.unlocked && isInitiator && myPriorCount >= 1;
+
+  // Charge MES fils: les personnels (hors celui-ci) et ceux avec des
+  // boutiques. On n'expose que ce que les règles d'accès laisseraient
+  // écrire de toute façon.
+  async function openForward(msg) {
+    setForwardMsg(msg);
+    setForwardLoading(true);
+    try {
+      const [dm, boutiques] = await Promise.all([
+        supabase
+          .from('direct_conversations')
+          .select('id, user_a_id, user_b_id, a_hidden, b_hidden, last_message_at')
+          .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
+          .neq('id', conversationId)
+          .order('last_message_at', { ascending: false })
+          .limit(30),
+        supabase
+          .from('conversations')
+          .select('id, shop_id, last_message_at, shops(name, avatar_url)')
+          .eq('buyer_id', user.id)
+          .order('last_message_at', { ascending: false })
+          .limit(30),
+      ]);
+      const visibles = (dm.data || []).filter((c) => (c.user_a_id === user.id ? !c.a_hidden : !c.b_hidden));
+      const autresIds = [...new Set(visibles.map((c) => (c.user_a_id === user.id ? c.user_b_id : c.user_a_id)))];
+      const profils = autresIds.length ? await getPublicProfiles(autresIds) : [];
+      const parId = Object.fromEntries(profils.map((pr) => [pr.id, pr]));
+      const cibles = [
+        ...visibles.map((c) => {
+          const autreId = c.user_a_id === user.id ? c.user_b_id : c.user_a_id;
+          const autre = parId[autreId] || { id: autreId, name: '—', avatar_url: null };
+          return { cle: `d:${c.id}`, id: c.id, genre: 'personne', nom: autre.name, avatar: autre.avatar_url, graine: autreId, date: c.last_message_at };
+        }),
+        ...(boutiques.data || []).map((c) => ({
+          cle: `s:${c.id}`, id: c.id, genre: 'boutique', nom: c.shops?.name, avatar: c.shops?.avatar_url, graine: c.shop_id, date: c.last_message_at,
+        })),
+      ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      setForwardTargets(cibles);
+    } catch {
+      setForwardTargets([]);
+    } finally {
+      setForwardLoading(false);
+    }
+  }
+
+  // Les deux destinations n'écrivent pas dans la même table: un fil
+  // personnel passe par la fonction send_direct_message (qui vérifie le
+  // suivi mutuel et peut refuser), un fil boutique par une insertion
+  // directe. Un refus est dit à l'écran plutôt qu'avalé.
+  async function sendForward(cible) {
+    if (!forwardMsg || forwardSending) return;
+    setForwardSending(cible.cle);
+    try {
+      if (cible.genre === 'personne') {
+        await sendDirectMessage(cible.id, forwardMsg.body || null, forwardMsg.image_url || null, forwardMsg.audio_url || null, null, forwardMsg.audio_seconds ?? null);
+      } else {
+        const { error: fErr } = await supabase.from('chat_messages').insert({
+          conversation_id: cible.id,
+          sender_id: user.id,
+          sender_role: 'buyer',
+          body: forwardMsg.body || null,
+          image_url: forwardMsg.image_url || null,
+          audio_url: forwardMsg.audio_url || null,
+        });
+        if (fErr) throw fErr;
+      }
+      toast.success(t('chat.forwarded'));
+      setForwardMsg(null);
+    } catch (e) {
+      const cle = directErrorKey(e);
+      toast.error(cle ? t(cle) : e?.message || t('errors.generic'));
+    } finally {
+      setForwardSending(null);
+    }
+  }
 
   async function send(body, imageUrl = null, audioUrl = null, audioSeconds = null) {
     const text = body?.trim();
@@ -370,7 +460,12 @@ export default function DirectChat() {
                     </p>
                   ) : (
                   <>
-                  {m.image_url && <ChatImage src={storageUrl('chat', m.image_url)} />}
+                  {m.image_url && (
+                    <ChatImage
+                      src={storageUrl('chat', m.image_url)}
+                      onClick={() => setViewerUrl(storageUrl('chat', m.image_url))}
+                    />
+                  )}
                   {m.audio_url && (
                     <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
                   )}
@@ -491,6 +586,12 @@ export default function DirectChat() {
           { key: 'reply', icon: IconArrowBackUp, label: t('chat.reply'), onClick: () => setReplyTo(actionMsg) },
           actionMsg?.body && { key: 'copy', icon: IconCopy, label: t('chat.copy'), onClick: () => copyMessage(actionMsg) },
           !actionMsg?.deleted_at && {
+            key: 'forward',
+            icon: IconArrowForward,
+            label: t('chat.forward'),
+            onClick: () => openForward(actionMsg),
+          },
+          !actionMsg?.deleted_at && {
             key: 'delete_me',
             icon: IconTrash,
             label: t('chat.deleteForMe'),
@@ -521,6 +622,55 @@ export default function DirectChat() {
             {t('chat.deleteForEveryone')}
           </Button>
         </div>
+      </Modal>
+      {/* La photo en grand: fond noir, on referme en touchant à côté. */}
+      {viewerUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setViewerUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setViewerUrl(null)}
+            aria-label={t('common.close')}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+          >
+            <IconClose size={22} />
+          </button>
+          <img src={viewerUrl} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+      <Modal open={!!forwardMsg} onClose={() => setForwardMsg(null)} title={t('chat.forwardTo')}>
+        {forwardLoading ? (
+          <div className="space-y-3 py-2">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+          </div>
+        ) : forwardTargets.length === 0 ? (
+          <p className="py-6 text-center text-body text-muted">{t('chat.forwardNoTargets')}</p>
+        ) : (
+          <ul className="max-h-[60vh] overflow-y-auto">
+            {forwardTargets.map((c) => (
+              <li key={c.cle}>
+                <button
+                  type="button"
+                  disabled={!!forwardSending}
+                  onClick={() => sendForward(c)}
+                  className="flex w-full items-center gap-3 border-b border-hairline px-1 py-3 text-left transition-colors hover:bg-base disabled:opacity-60"
+                >
+                  <ShopAvatar
+                    src={c.avatar ? storageThumbUrl('shops', c.avatar) : null}
+                    fallbackSrc={c.avatar ? storageUrl('shops', c.avatar) : null}
+                    name={c.nom}
+                    seed={c.graine}
+                    className="h-10 w-10"
+                  />
+                  <span className="line-clamp-1 flex-1 text-body font-semibold text-ink">{c.nom}</span>
+                  {forwardSending === c.cle && <span className="text-caption text-muted">…</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal>
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} targetType="user" targetId={other?.id} />
     </div>
