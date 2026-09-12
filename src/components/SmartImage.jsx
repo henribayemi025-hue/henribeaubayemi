@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { IconPhoto } from '@tabler/icons-react';
 
 // Lazy, decoding-async image with a graceful placeholder for flaky connections.
@@ -22,9 +22,26 @@ import { IconPhoto } from '@tabler/icons-react';
 // en loading=eager + fetchpriority=high pour qu'elle démarre AVANT tout le
 // reste (elle DÉTERMINE le LCP mesuré par Google). Ne pas mettre partout,
 // sinon plus rien n'est prioritaire.
-export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = '', rounded = '', fit = 'cover', priority = false }) {
+// `fallback`: ce qu'on affiche à la place du cadre gris quand l'image
+// renonce — l'initiale colorée d'une boutique, par exemple. Sans lui, une
+// photo qui échoue laisse un rectangle gris muet.
+//
+// Une image qui ne répond NI succès NI erreur laissait l'animation de
+// chargement tourner sans fin: c'est le rond gris vide que Beau a vu le
+// 12/09 sur la liste des messages. Le navigateur ne déclenche `onError`
+// que si la requête échoue vraiment — pas si elle reste suspendue. On
+// pose donc notre propre limite de temps.
+const DELAI_MAX_MS = 10_000;
+
+export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = '', rounded = '', fit = 'cover', priority = false, fallback = null }) {
   const [stage, setStage] = useState('primary'); // 'primary' | 'fallback' | 'failed'
   const [loaded, setLoaded] = useState(false);
+  const stageRef = useRef(stage);
+  stageRef.current = stage;
+  // Lu par le compteur ci-dessous, qui ne doit pas se relancer à chaque
+  // changement d'état — seulement quand l'image visée change.
+  const loadedRef = useRef(false);
+  loadedRef.current = loaded;
 
   useEffect(() => {
     setStage('primary');
@@ -33,7 +50,21 @@ export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = 
 
   const current = stage === 'fallback' ? fallbackSrc : src;
 
+  // Budget TOTAL, pas par tentative: sinon la vignette prend son délai, puis
+  // la pleine taille le sien, et on fixe un rond gris deux fois plus
+  // longtemps. Un vrai 404 continue, lui, de passer au repli tout de suite
+  // par `handleError` — ce compteur n'est qu'un filet pour la requête qui
+  // ne répond jamais.
+  useEffect(() => {
+    if (!src) return undefined;
+    const id = setTimeout(() => {
+      if (!loadedRef.current) setStage('failed');
+    }, DELAI_MAX_MS);
+    return () => clearTimeout(id);
+  }, [src, fallbackSrc]);
+
   if (!current || stage === 'failed') {
+    if (fallback) return fallback;
     return (
       <div className={`flex items-center justify-center bg-[#F3F3F3] ${className} ${rounded}`} aria-label={alt} role="img">
         <IconPhoto size={28} className="text-hairline" stroke={1.5} />
@@ -42,7 +73,7 @@ export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = 
   }
 
   function handleError() {
-    if (stage === 'primary' && fallbackSrc && fallbackSrc !== src) setStage('fallback');
+    if (stageRef.current === 'primary' && fallbackSrc && fallbackSrc !== src) setStage('fallback');
     else setStage('failed');
   }
 
