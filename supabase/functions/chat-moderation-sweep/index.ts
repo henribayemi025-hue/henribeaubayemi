@@ -103,6 +103,44 @@ async function classify(apiKey: string, items: Array<{ id: string; texte: string
   throw new Error('aucun modèle disponible');
 }
 
+// Le jeton partagé, lu avec une deuxième chance.
+//
+// Beau (12/09), en cherchant pourquoi il n'avait pas été prévenu d'un
+// message: une fois sur deux environ, ce passage rendait « non autorisé »
+// (401) alors que le cron envoyait le BON jeton — vérifié en rejouant
+// l'appel à la main avec exactement le même. La cause n'est pas le jeton
+// mais la lecture: au démarrage à froid, la requête vers app_secrets
+// échoue parfois, `attendu` vaut null, et le code concluait « ce n'est pas
+// le bon appelant ». Le passage était donc sauté en silence.
+//
+// Deux corrections: on réessaie une fois, et on ne dit plus « non
+// autorisé » quand on n'a tout simplement PAS PU lire le secret — c'est un
+// 503, une panne passagère, pas un intrus. Les deux se distinguent enfin
+// dans les journaux.
+async function verifierJeton(
+  db: ReturnType<typeof admin>,
+  nomSecret: string,
+  recu: string | null
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  let attendu: string | null = null;
+  let echecLecture: unknown = null;
+  for (let essai = 0; essai < 2; essai++) {
+    const { data, error } = await db.from('app_secrets').select('value').eq('name', nomSecret).maybeSingle();
+    if (!error && data?.value) {
+      attendu = data.value;
+      break;
+    }
+    echecLecture = error ?? 'secret introuvable';
+    if (essai === 0) await new Promise((r) => setTimeout(r, 250));
+  }
+  if (!attendu) {
+    console.error(`secret ${nomSecret} illisible, passage abandonné:`, echecLecture);
+    return { ok: false, status: 503, error: 'secret indisponible' };
+  }
+  if (recu !== attendu) return { ok: false, status: 401, error: 'non autorisé' };
+  return { ok: true };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
@@ -110,10 +148,8 @@ Deno.serve(async (req: Request) => {
   const json = (b: unknown, status = 200) =>
     new Response(JSON.stringify(b), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-  const { data: attendu } = await db.from('app_secrets').select('value').eq('name', 'chat_moderation_sweep').maybeSingle();
-  if (!attendu?.value || req.headers.get('x-finjaro-token') !== attendu.value) {
-    return json({ error: 'non autorisé' }, 401);
-  }
+  const verdict = await verifierJeton(db, 'chat_moderation_sweep', req.headers.get('x-finjaro-token'));
+  if (!verdict.ok) return json({ error: verdict.error }, verdict.status);
 
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) return json({ error: 'GEMINI_API_KEY manquante' }, 500);
