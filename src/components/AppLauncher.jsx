@@ -7,9 +7,24 @@ import { useAsync } from '../hooks/useAsync';
 import { Modal } from './Modal';
 import { fetchApps, appsFromCache, visibleApps, accentClass } from '../lib/apps';
 
+// « Finjaro » → F, « Finjaro Accounting » → FA, « Console Finjaro » → CF.
+// Deux lettres au plus: au-delà, ça ne se lit plus dans un carré de 44 px.
+function monogramme(nom) {
+  const mots = String(nom || '').trim().split(/\s+/).filter(Boolean);
+  if (mots.length === 0) return '?';
+  if (mots.length === 1) return mots[0].charAt(0).toUpperCase();
+  return (mots[0].charAt(0) + mots[1].charAt(0)).toUpperCase();
+}
+
 // Le sélecteur d'applications Finjaro — la grille en haut à droite, comme
 // celle de Google. Une seule et même liste dans toutes les applications
 // (table finjaro_apps), l'application ouverte est marquée sur place.
+//
+// Pas d'emoji. Beau (11/09): « les emoji, le design pour cette partie-là est
+// à revoir ». Un emoji n'est pas dessiné par nous: il change de tête selon le
+// téléphone, il est enfantin sur certains, et il ne ressemble à rien de ce
+// qu'on fait ailleurs. On reprend donc le langage des avatars de boutiques —
+// un monogramme sérif dans un carré teinté de la couleur de l'application.
 //
 // `currentKey` est passé à la main plutôt que deviné depuis l'adresse: en
 // préproduction l'hôte n'est pas celui de la production, et l'application
@@ -62,8 +77,11 @@ export function AppsList({ currentKey }) {
         const ouverte = a.key === currentKey;
         const contenu = (
           <>
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-input text-[22px] ${accentClass(a.accent)}`}>
-              {a.emoji || (a.name || '?').trim().charAt(0)}
+            <span
+              aria-hidden="true"
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-input font-serif text-[19px] font-semibold ${accentClass(a.accent)}`}
+            >
+              {monogramme(a.name)}
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">

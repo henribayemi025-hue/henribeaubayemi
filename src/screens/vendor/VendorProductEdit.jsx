@@ -13,7 +13,8 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
-import { CATEGORIES, attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadFor } from '../../lib/categories';
+import { attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadFor, defaultPublishCategory } from '../../lib/categories';
+import { CategoryPicker } from '../../components/CategoryPicker';
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
 
@@ -97,7 +98,9 @@ export default function VendorProductEdit() {
   // Vendors enter prices in their shop's own currency (France → EUR, Cameroun →
   // FCFA…). We store canonically in FCFA and convert on the way in/out.
   const shopCurrency = currencyForCountry(shop.country);
-  const [form, setForm] = useState(blank);
+  // Fiche neuve: on part du rayon que la boutique a déclaré (son métier pour
+  // une prestataire), plutôt que d'un menu vide.
+  const [form, setForm] = useState(() => (isNew ? { ...blank, category: defaultPublishCategory(shop) } : blank));
   const [loading, setLoading] = useState(!isNew);
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState(0); // images still uploading
@@ -556,19 +559,18 @@ export default function VendorProductEdit() {
             <>
               <Field label={t('vendor.productCategory')} required error={errors.category}>
                 {(fid) => (
-                  <Select
+                  <CategoryPicker
                     id={fid}
+                    shop={shop}
                     value={head}
                     error={errors.category}
+                    placeholder={t('vendor.categoryPlaceholder')}
                     onChange={(e) => {
                       const newHead = e.target.value;
                       const newSubcats = SELECTABLE_SUBCATEGORIES[newHead];
                       setForm({ ...form, category: newSubcats ? newSubcats[0] : newHead, attributes: {} });
                     }}
-                  >
-                    <option value="" disabled>{t('vendor.categoryPlaceholder')}</option>
-                    {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{t(`categories.${c.id}`)}</option>)}
-                  </Select>
+                  />
                 )}
               </Field>
               {subcats && (

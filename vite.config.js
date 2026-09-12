@@ -23,10 +23,15 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          i18n: ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-          supabase: ['@supabase/supabase-js'],
+        // Un fichier par icône: 41 requêtes pour 20 ko en tout. Sur un
+        // téléphone, c'est l'aller-retour qui coûte, pas les octets. Toutes
+        // les icônes utilisées tiennent donc dans un seul morceau.
+        manualChunks(id) {
+          if (id.includes('node_modules/@tabler/icons-react')) return 'icones';
+          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'react';
+          if (/node_modules\/(i18next|react-i18next|i18next-browser-languagedetector)\//.test(id)) return 'i18n';
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+          return undefined;
         },
       },
     },

@@ -68,7 +68,11 @@ export default function Search() {
   const { user } = useAuth();
   const inputRef = useRef(null);
   const abortRef = useRef(null);
-  const [q, setQ] = useState('');
+  // ?q= : on arrive parfois d'un autre écran avec des mots déjà tapés
+  // (l'onglet Services quand il ne trouve aucun prestataire, par exemple).
+  const [q, setQ] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get('q') || ''; } catch { return ''; }
+  });
   const [state, setState] = useState({ loading: false, error: false, data: null });
 
   useEffect(() => {

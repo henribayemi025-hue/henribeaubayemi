@@ -50,6 +50,36 @@ import livresPapeterie from '../assets/categories/livres_papeterie.webp';
 import jardinExterieur from '../assets/categories/jardin_exterieur.webp';
 import animaux from '../assets/categories/animaux.webp';
 import immobilierVente from '../assets/categories/immobilier_vente.webp';
+
+// Les MÊMES rayons en 240 px, pour la rangée de vignettes de l'accueil.
+//
+// Beau (11/09): « ça prend beaucoup de temps de chargement ». Mesuré: les
+// 31 photos de rayons pesaient 929 ko sur l'accueil, en 480 px, pour être
+// affichées dans un carré de 76 px. 240 px = 76 x 3, la densité d'un
+// iPhone récent: l'œil ne voit aucune différence et l'accueil perd 596 ko.
+// La photo pleine taille reste la bannière des pages de rayon, où elle
+// s'affiche bien plus grande.
+import modeTuile from '../assets/categories/mode-tuile.webp';
+import bijouxTuile from '../assets/categories/bijoux-tuile.webp';
+import beauteTuile from '../assets/categories/beaute-tuile.webp';
+import decoTuile from '../assets/categories/deco-tuile.webp';
+import mariagesTuile from '../assets/categories/mariages-tuile.webp';
+import modeHommeTuile from '../assets/categories/mode_homme-tuile.webp';
+import modeATrierTuile from '../assets/categories/mode_a_trier-tuile.webp';
+import enfantsBebeTuile from '../assets/categories/enfants_bebe-tuile.webp';
+import hightechTuile from '../assets/categories/hightech-tuile.webp';
+import alimentaireTuile from '../assets/categories/alimentaire-tuile.webp';
+import electromenagerTuile from '../assets/categories/electromenager-tuile.webp';
+import sportLoisirsTuile from '../assets/categories/sport_loisirs-tuile.webp';
+import jusNaturelsTuile from '../assets/categories/jus_naturels-tuile.webp';
+import musiqueTuile from '../assets/categories/musique-tuile.webp';
+import secondeMainTuile from '../assets/categories/seconde_main-tuile.webp';
+import vehiculesTuile from '../assets/categories/vehicules-tuile.webp';
+import santeBienetreTuile from '../assets/categories/sante_bienetre-tuile.webp';
+import livresPapeterieTuile from '../assets/categories/livres_papeterie-tuile.webp';
+import jardinExterieurTuile from '../assets/categories/jardin_exterieur-tuile.webp';
+import animauxTuile from '../assets/categories/animaux-tuile.webp';
+import immobilierVenteTuile from '../assets/categories/immobilier_vente-tuile.webp';
 import { PRODUCT_HEADS, SERVICE_HEADS, CATEGORY_CHILDREN } from './categoryTree';
 
 export { CATEGORY_CHILDREN };
@@ -84,7 +114,35 @@ const HEAD_BANNER = {
 
 // Les rayons produits viennent de la BASE (categoryTree, généré) — plus de
 // liste tenue à la main qui divergeait de la table `categories`.
-export const CATEGORIES = PRODUCT_HEADS.map((id) => ({ id, banner: HEAD_BANNER[id] ?? null }));
+const HEAD_TUILE = {
+  mode_femme: modeTuile,
+  beaute_cosmetiques: beauteTuile,
+  bijoux_montres: bijouxTuile,
+  maison_deco: decoTuile,
+  evenementiel_mariages: mariagesTuile,
+  mode_homme: modeHommeTuile,
+  mode_a_trier: modeATrierTuile,
+  enfants_bebe: enfantsBebeTuile,
+  sport_loisirs: sportLoisirsTuile,
+  jus_naturels: jusNaturelsTuile,
+  seconde_main: secondeMainTuile,
+  sante_bienetre: santeBienetreTuile,
+  livres_papeterie: livresPapeterieTuile,
+  jardin_exterieur: jardinExterieurTuile,
+  hightech: hightechTuile,
+  alimentaire: alimentaireTuile,
+  electromenager: electromenagerTuile,
+  musique: musiqueTuile,
+  vehicules: vehiculesTuile,
+  animaux: animauxTuile,
+  immobilier_vente: immobilierVenteTuile,
+};
+
+export const CATEGORIES = PRODUCT_HEADS.map((id) => ({
+  id,
+  banner: HEAD_BANNER[id] ?? null,
+  tuile: HEAD_TUILE[id] ?? HEAD_BANNER[id] ?? null,
+}));
 
 // Anciennes catégories (bannières conservées pour les liens profonds
 // /category/<id> hérités, qui doivent continuer d'afficher leur bandeau).
@@ -147,6 +205,31 @@ const SERVICE_IDS = new Set(
 
 export function isServiceCategory(categoryId) {
   return SERVICE_IDS.has(categoryId);
+}
+
+// Les rayons proposés à la publication, groupés.
+//
+// Beau (11/09): « les services que tu as mis hier, tu les as mis juste sur une
+// partie de l'appli. Une prestataire qui veut poster un service ne le retrouve
+// pas dans l'espace vendeur. » Exact: les écrans de publication n'offraient
+// que les 13 têtes PRODUIT, donc les 48 métiers n'existaient nulle part côté
+// vendeuse — seulement à l'inscription et dans l'annuaire. Résultat en base:
+// 14 boutiques de service, mais 3 fiches seulement classées dans un métier.
+//
+// Les deux familles sont désormais proposées partout où l'on publie, et
+// l'ordre suit la boutique: une prestataire voit ses métiers en premier.
+export function publishGroups(shop) {
+  const articles = { cle: 'articles', ids: PRODUCT_HEADS };
+  const services = { cle: 'services', ids: SERVICE_HEADS };
+  return isServiceShop(shop) ? [services, articles] : [articles, services];
+}
+
+// Rayon préselectionné pour une fiche neuve: le premier que la boutique a
+// déclaré à l'inscription. Sans ça, une prestataire tombait sur un menu vide
+// et devait deviner où chercher son métier.
+export function defaultPublishCategory(shop) {
+  const connues = new Set([...PRODUCT_HEADS, ...SERVICE_HEADS]);
+  return (shop?.categories ?? []).map(categoryHeadFor).find((id) => connues.has(id)) ?? '';
 }
 
 // Une boutique est PRESTATAIRE dès qu'elle affiche au moins un métier de

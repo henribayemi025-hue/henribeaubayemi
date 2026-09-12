@@ -657,7 +657,9 @@
     "directions": "Directions",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "askFinia": "Ask Finia"
+    "askFinia": "Ask Finia",
+    "searchInItems": "Search “{{q}}” in items",
+    "noMatchForQuery": "No trade or shop matches “{{q}}”."
   },
   "profile": {
     "title": "Profile",
@@ -743,7 +745,7 @@
     "empty": "No messages yet.",
     "emptyHint": "Contact a shop to start a conversation.",
     "pickConversation": "Pick a conversation on the left to open it.",
-    "searchPlaceholder": "Search or message a shop…",
+    "searchPlaceholder": "Search a shop or someone…",
     "peopleFound": "People",
     "newConversation": "New conversation",
     "searchNoMatch": "No shop matches \"{{query}}\"."
