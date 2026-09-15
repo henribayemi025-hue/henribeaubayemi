@@ -22,7 +22,7 @@ export const APPS_FALLBACK = [
     key: 'accounting',
     name: 'Finjaro Accounting',
     tagline: 'Caisse, stock, factures et comptabilité pour ta boutique.',
-    url: 'https://automatisation-des-candidatures.finjaro.workers.dev',
+    url: 'https://accounting.finjaro.net',
     emoji: '📒',
     accent: 'brass',
     audience: 'tous',
@@ -30,10 +30,18 @@ export const APPS_FALLBACK = [
   },
 ];
 
+// v3: les caches v2 gardent l'ancienne adresse d'Accounting
+// (automatisation-des-candidatures.finjaro.workers.dev). fetchApps corrige
+// tout seul dès la première lecture en ligne, mais le sélecteur s'ouvre AVANT
+// cette lecture: sans ce changement de nom, quelqu'un pouvait encore toucher
+// l'ancienne adresse une fois. Or c'est précisément celle qui n'est pas dans
+// les redirections Supabase, et donc celle qui renvoyait les gens sur
+// finjaro.net au moment de se connecter.
+//
 // v2: les caches v1 contiennent la ligne « Console Finjaro », que l'API
 // servait encore à tout le monde avant la migration 0123. On repart de zéro
 // plutôt que de faire confiance à ce qui traîne sur l'appareil.
-const CACHE_KEY = 'finjaro:apps:v2';
+const CACHE_KEY = 'finjaro:apps:v3';
 
 export function appsFromCache() {
   try {
