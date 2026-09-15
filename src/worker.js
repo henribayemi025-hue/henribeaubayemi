@@ -229,18 +229,25 @@ async function servirPlanDuSite(url, ctx) {
     if (garde) return garde;
   }
 
+  // `created_at`, PAS `updated_at`: cette colonne n'existe sur aucune des deux
+  // tables. Écrite à tort le 15/09, la requête partait en erreur 400 et le
+  // plan de site se rabattait en silence sur les seules pages fixes — Google
+  // a répondu « Impossible de récupérer le sitemap ». Le banc d'essai ne l'a
+  // pas vu parce qu'il SIMULE la réponse de Supabase: un nom de colonne faux
+  // y passe très bien. D'où la vérification contre la vraie base, plus bas
+  // dans scripts/verifier-entetes.mjs.
   const [boutiques, articles] = await Promise.all([
-    lireSupabase('shops?status=eq.active&select=slug,updated_at&limit=1000'),
-    lireSupabase('products?is_active=eq.true&select=id,updated_at&limit=5000'),
+    lireSupabase('shops?status=eq.active&select=slug,created_at&limit=1000'),
+    lireSupabase('products?is_active=eq.true&select=id,created_at&limit=5000'),
   ]);
 
   const entrees = [
     ...PAGES_FIXES.map((p) => ({ loc: `${SITE}${p}`, priorite: p === '/' ? '1.0' : '0.6' })),
     ...(boutiques ?? []).filter((b) => b.slug).map((b) => ({
-      loc: `${SITE}/boutique/${encodeURIComponent(b.slug)}`, date: b.updated_at, priorite: '0.8',
+      loc: `${SITE}/boutique/${encodeURIComponent(b.slug)}`, date: b.created_at, priorite: '0.8',
     })),
     ...(articles ?? []).map((a) => ({
-      loc: `${SITE}/product/${encodeURIComponent(a.id)}`, date: a.updated_at, priorite: '0.7',
+      loc: `${SITE}/product/${encodeURIComponent(a.id)}`, date: a.created_at, priorite: '0.7',
     })),
   ];
 

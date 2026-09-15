@@ -11,6 +11,28 @@
 // alors que `setAttribute` non — passer du texte déjà échappé au premier
 // donnait « &amp;amp; » dans le titre d'une boutique nommée
 // « claferShop&perfum ». Invisible à l'œil, visible par un moteur.
+//
+// CE QU'IL NE PEUT PAS ATTRAPER, ET QUI EST DÉJÀ ARRIVÉ
+//
+// Supabase est SIMULÉ ici. Un nom de colonne inexistant passe donc le test
+// sans broncher, puis renvoie une erreur 400 en vrai. Le 15/09, le plan du
+// site demandait `updated_at` — colonne qui n'existe ni sur `shops` ni sur
+// `products` — et se rabattait en silence sur les 6 pages fixes. Google a
+// répondu « Impossible de récupérer le sitemap », et il a fallu interroger
+// la base pour comprendre.
+//
+// Donc: après toute modification d'une requête, la rejouer contre la VRAIE
+// API avant de déployer. Depuis un environnement qui n'atteint pas
+// supabase.co, on peut passer par la base elle-même:
+//
+//   select (r).status, jsonb_array_length((r).content::jsonb)
+//   from (select extensions.http((
+//     'GET',
+//     'https://<projet>.supabase.co/rest/v1/shops?status=eq.active&select=slug,created_at',
+//     array[extensions.http_header('apikey','<clé publique>')],
+//     null, null)::extensions.http_request) as r) t;
+//
+// Un statut 200 et un nombre de lignes non nul: la requête est bonne.
 import { Miniflare } from 'miniflare';
 import { readFileSync } from 'fs';
 
@@ -43,9 +65,9 @@ const mf = new Miniflare({
     if (u.includes('shops?slug=eq.')) return json(BOUTIQUE);
     if (u.includes('products?id=eq.')) return json(ARTICLE);
     if (u.includes('shops?status=eq.active')) return json([
-      { slug: 'clafershop', updated_at: '2026-09-12T08:33:10Z' }, { slug: 'sacs-perso', updated_at: null }]);
+      { slug: 'clafershop', created_at: '2026-09-12T08:33:10Z' }, { slug: 'sacs-perso', created_at: null }]);
     if (u.includes('products?is_active=eq.true')) return json([
-      { id: 'p-1', updated_at: '2026-09-14T22:18:14Z' }, { id: 'p-2', updated_at: null }]);
+      { id: 'p-1', created_at: '2026-09-14T22:18:14Z' }, { id: 'p-2', created_at: null }]);
     return json([]);
   },
 });
