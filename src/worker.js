@@ -221,10 +221,22 @@ async function servirAvecSonEnTete(request, url, env, fiche) {
 
 const PAGES_FIXES = ['/', '/search', '/services', '/a-propos', '/legal/terms', '/legal/confidentialite'];
 
+// La clé de cache porte un numéro de version. Le 15/09, une version fautive
+// du plan du site (six pages, aucune boutique) s'est retrouvée en cache pour
+// une heure: le correctif était déployé, et Cloudflare servait toujours
+// l'ancienne. Un cache qui épingle une mauvaise réponse sans moyen de la
+// chasser est un piège — on change ce numéro quand le contenu change de
+// forme, et l'ancienne entrée est ignorée aussitôt.
+const VERSION_PLAN_DU_SITE = 2;
+
 async function servirPlanDuSite(url, ctx) {
   const cache = caches.default;
-  const cleCache = new Request(`${SITE}/sitemap.xml`, { method: 'GET' });
-  if (cacheProgrammableUtilisable(url)) {
+  const cleCache = new Request(`${SITE}/sitemap.xml?v=${VERSION_PLAN_DU_SITE}`, { method: 'GET' });
+  // `?refresh` force la reconstruction sans attendre l'expiration. Sert à
+  // vérifier un correctif tout de suite, au lieu de regarder une heure une
+  // page qu'on vient de réparer.
+  const forcer = url.searchParams.has('refresh');
+  if (cacheProgrammableUtilisable(url) && !forcer) {
     const garde = await cache.match(cleCache).catch(() => null);
     if (garde) return garde;
   }
@@ -261,10 +273,10 @@ async function servirPlanDuSite(url, ctx) {
     status: 200,
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      // Une heure: assez pour ne pas interroger la base à chaque passage d'un
-      // robot, assez court pour qu'une boutique publiée le matin soit
-      // annoncée le jour même.
-      'Cache-Control': 'public, max-age=3600',
+      // Un quart d'heure: assez pour ne pas interroger la base à chaque
+      // passage d'un robot, assez court pour qu'une erreur ne reste pas
+      // affichée longtemps — la leçon du 15/09.
+      'Cache-Control': 'public, max-age=900',
     },
   });
   if (cacheProgrammableUtilisable(url)) {
