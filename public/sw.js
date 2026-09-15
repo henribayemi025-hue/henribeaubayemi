@@ -7,7 +7,15 @@
  *   index.html (and therefore the fresh, content-hashed JS). Falls back to the
  *   last cached shell only when offline.
  */
-const SHELL_CACHE = 'finjaro-shell-v2';
+// v3: la v2 pouvait contenir autre chose que la coque de l'application (voir
+// le gestionnaire `fetch`). Changer le nom jette l'ancien cache au lieu de
+// traîner une entrée douteuse chez les gens qui ont déjà l'application.
+const SHELL_CACHE = 'finjaro-shell-v3';
+
+// Adresses servies par le worker Cloudflare, PAS par l'application: le plan du
+// site, le fichier des robots, le manifeste. Elles ne doivent jamais être
+// détournées vers index.html.
+const HORS_APPLICATION = /^\/(sitemap\.xml|robots\.txt|manifest\.webmanifest|sw\.js|img\/)/;
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -34,12 +42,37 @@ self.addEventListener('fetch', (event) => {
   // Only manage top-level navigations; content-hashed assets and API calls
   // are left to the browser (assets are immutable, so they're safe to cache).
   if (req.mode !== 'navigate') return;
+
+  // Beau (15/09): il ouvre finjaro.net/sitemap.xml et l'ACCUEIL s'affiche,
+  // alors que l'adresse dans la barre dit bien sitemap.xml. Deux défauts se
+  // cumulaient ici.
+  //
+  // 1. Ce gestionnaire prenait TOUTE navigation, y compris les adresses qui
+  //    ne sont pas des pages de l'application — le plan du site, le fichier
+  //    des robots. Au moindre échec réseau, il rendait la coque de
+  //    l'application à leur place, et le routeur, ne connaissant pas
+  //    l'adresse, affichait l'accueil.
+  //
+  // 2. Plus grave: la réponse était mise en cache SOUS LE NOM index.html,
+  //    quelle qu'elle soit. Naviguer une seule fois vers /sitemap.xml
+  //    enregistrait donc du XML comme coque de l'application — et au
+  //    prochain lancement hors ligne, l'application affichait du XML brut.
+  //    Personne ne l'avait vu parce qu'il fallait justement ouvrir une de ces
+  //    adresses à la main.
+  const chemin = new URL(req.url).pathname;
+  if (HORS_APPLICATION.test(chemin)) return; // laissé au navigateur
+
   event.respondWith(
     (async () => {
       try {
         const fresh = await fetch(req);
-        const cache = await caches.open(SHELL_CACHE);
-        cache.put('/index.html', fresh.clone());
+        // On ne garde que du HTML: c'est la coque de l'application, pas
+        // n'importe quelle réponse qui passe par là.
+        const type = fresh.headers.get('Content-Type') || '';
+        if (fresh.ok && type.includes('text/html')) {
+          const cache = await caches.open(SHELL_CACHE);
+          cache.put('/index.html', fresh.clone());
+        }
         return fresh;
       } catch {
         return (await caches.match('/index.html')) || Response.error();
