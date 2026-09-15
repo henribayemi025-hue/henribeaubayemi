@@ -33,10 +33,38 @@ PARTAGÉ » du `CLAUDE.md` de chaque dépôt avant d'y toucher.
 | `profiles.is_test` / `compte_reel()` dans tout chiffre affiché | règle permanente | les deux |
 | Un seul compte utilisateur pour tout l'environnement | acquis | — |
 
+**Tranché le 15/09 — UNE SEULE application sur les magasins**
+
+Pas de `net.finjaro.accounting`. Accounting s'ouvre **dans l'application
+Finjaro existante**, via le sélecteur à six points.
+
+Ce n'est pas un compromis, c'est déjà l'état des lieux: `allowNavigation` de
+`capacitor.config.json` contient `*.finjaro.net`, donc
+`accounting.finjaro.net` s'affiche à l'intérieur de l'application **sans
+aucun nouveau build**.
+
+Les raisons, pour que personne ne rouvre le débat sans elles:
+
+- Une deuxième fiche = une deuxième validation Apple ET Google. On sait ce que
+  ça coûte: refus du 14/08, vidéo à filmer en une prise, compte de
+  démonstration à préparer. Ce temps est celui de Beau, pas celui d'une
+  session.
+- Une application à zéro téléchargement et zéro avis, sur un magasin, a l'air
+  abandonnée. C'est l'inverse de ce qu'on veut montrer.
+- Accounting n'est pas un produit étranger: c'est la caisse et le stock de la
+  vendeuse qui a **déjà** une boutique sur Finjaro. L'espace vendeur existe
+  déjà dans l'application.
+- Le sens du choix compte. Partir d'une application et en détacher une plus
+  tard est facile; partir de deux et fusionner ne l'est pas — on ne retire pas
+  proprement une fiche d'un magasin, et on a divisé ses téléchargements.
+
+**Quand rouvrir la question:** le jour où Accounting aura ses propres
+utilisateurs, des commerçants venus pour la comptabilité et indifférents à la
+place de marché. À ce moment-là une fiche dédiée se justifie, se fait en une
+journée, et le compte partagé fonctionne déjà.
+
 **À décider ensemble, pas encore tranché:**
 
-- Faut-il un `net.finjaro.accounting` distinct sur les magasins, ou une seule
-  application avec un sélecteur ? (voir prompt de lancement Claudinette)
 - Que se passe-t-il quand une vendeuse existe dans les deux outils: mêmes
   données de boutique, ou cloisonnées ?
 
