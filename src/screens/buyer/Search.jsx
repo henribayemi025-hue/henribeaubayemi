@@ -10,7 +10,7 @@ import { ProductCard } from '../../components/ProductCard';
 import { Skeleton, ErrorState } from '../../components/states';
 import { CATEGORIES } from '../../lib/categories';
 import { track } from '../../lib/track';
-import { nameMatches } from '../../lib/searchNorm';
+import { nameMatches, categoriesPourTerme } from '../../lib/searchNorm';
 import { DemandeFinia } from '../../components/DemandeFinia';
 
 // Quelqu'un qui tape « devenir vendeur », « ma boutique » ou « vendre »
@@ -91,7 +91,15 @@ export default function Search() {
       setState({ loading: true, error: false, data: null });
       try {
         const lower = term.toLowerCase();
-        const cats = CATEGORIES.filter((c) => t(`categories.${c.id}`).toLowerCase().includes(lower));
+        // Quels MÉTIERS ce mot désigne-t-il ? « coiffeuse » doit trouver
+        // « Coiffure », « plombier » doit trouver « Plomberie ». La
+        // comparaison se fait sur la racine, pas sur le libellé exact —
+        // voir categoriesPourTerme.
+        const idsMetiers = categoriesPourTerme(
+          term,
+          CATEGORIES.map((c) => ({ id: c.id, label: t(`categories.${c.id}`) }))
+        );
+        const cats = CATEGORIES.filter((c) => idsMetiers.includes(c.id));
         // Chaque mot utile est cherché séparément, dans le NOM et la
         // DESCRIPTION: une cliente ne connaît pas le titre exact choisi par
         // la vendeuse. Si tous les mots sont trop courts ou vides (ex: "or"),
@@ -103,7 +111,7 @@ export default function Search() {
           // les apostrophes (« kems » vs « Kem'S »). Les boutiques actives se
           // comptent en dizaines de lignes légères: on les rapatrie et on
           // compare en repliant accents et apostrophes des deux côtés.
-          supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating').eq('status', 'active').limit(300).abortSignal(signal),
+          supabase.from('shops').select('id,slug,name,avatar_url,is_verified,rating,categories').eq('status', 'active').limit(300).abortSignal(signal),
           (() => {
             let pq = supabase
               .from('products')
@@ -125,7 +133,16 @@ export default function Search() {
           .map((r) => r.shops)
           .filter((s) => s && s.name.toLowerCase().includes(lower));
         const products = (prodRes.data || []).map((p) => ({ ...p, shop_name: p.shops?.name }));
-        const shops = (shopsRes.data || []).filter((sh) => nameMatches(sh.name, term)).slice(0, 10);
+        // Une boutique correspond par son NOM ou par ce qu'elle FAIT.
+        //
+        // Avant, seul le nom comptait: taper « coiffeuse » ne pouvait pas
+        // trouver Joli'Hair, Didi_beauty56 ou Teug's, qui déclarent pourtant
+        // la coiffure dans leurs catégories. Sur une place de marché qui
+        // annonce 48 métiers, chercher un métier ne renvoyait rien.
+        const shops = (shopsRes.data || [])
+          .filter((sh) => nameMatches(sh.name, term)
+            || (sh.categories || []).some((c) => idsMetiers.includes(c)))
+          .slice(0, 10);
 
         // Repli: aucun article ne correspond au mot tapé, mais le rayon
         // probable en a peut-être — voir RAYON_PROBABLE plus haut.

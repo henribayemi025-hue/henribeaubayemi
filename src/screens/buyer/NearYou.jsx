@@ -17,6 +17,7 @@ import { PublishListingModal } from './PublishListingModal';
 import { TrocEvalModal } from '../../components/TrocEvalModal';
 import { countryLabel, COUNTRIES } from '../../lib/countries';
 import { getOrCreateConversation } from '../../lib/chat';
+import { startDirectConversation, directErrorKey } from '../../lib/directMessages';
 import { timeAgo } from '../../lib/format';
 import { formatPrice } from '../../lib/currency';
 import { getPosition, distanceKm } from '../../lib/geo';
@@ -172,17 +173,42 @@ export default function NearYou() {
     };
   }, [country, radius], { cacheKey: `services:${radius === 'country' && country ? country : 'all'}`, ttlMs: 5 * 60 * 1000 });
 
+  // Contacter quelqu'un qui publie une annonce.
+  //
+  // Astrid (cliente, 18/09, 00 h 31): « pourquoi quand je clique ça n'entre
+  // pas sur sa page ». Elle essayait de joindre Anaëlle Waffo, qui propose
+  // « Beauté & Coiffure à domicile » — et qui n'a PAS de boutique.
+  //
+  // Ce passage cherchait une boutique par owner_id et, s'il n'en trouvait
+  // pas, faisait `return` SANS RIEN DIRE. Le bouton était donc entièrement
+  // mort pour toute personne sans boutique: pas d'écran, pas de message, rien.
+  // Et c'est exactement la personne qu'on a le plus besoin de joindre — une
+  // prestataire qui propose un service ne tient pas forcément un magasin.
+  //
+  // Le commentaire d'origine disait que la discussion de personne à personne
+  // était « en attente ». Elle ne l'est plus: `start_direct_conversation`
+  // existe depuis, et c'est ce que fait déjà la fiche de profil public.
   async function openListingChat(listing) {
     if (!user) return requireLogin();
-    // Buyer-to-buyer chat is Parking Lot; contact routes through the poster's
-    // shop when they have one, otherwise there's no chat entry point.
-    const { data: shop } = await supabase.from('shops').select('id').eq('owner_id', listing.user_id).maybeSingle();
-    if (!shop) return;
     try {
-      const convId = await getOrCreateConversation(user.id, shop.id);
-      navigate(`/chat/${convId}`);
-    } catch {
-      /* own listing/shop — nothing to open */
+      const { data: shop } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('owner_id', listing.user_id)
+        .maybeSingle();
+      if (shop) {
+        const convId = await getOrCreateConversation(user.id, shop.id);
+        navigate(`/chat/${convId}`);
+        return;
+      }
+      // Pas de boutique: on écrit à la personne elle-même.
+      const convId = await startDirectConversation(listing.user_id);
+      navigate(`/profile/messages/${convId}`);
+    } catch (e) {
+      // Sa propre annonce, personne bloquée, demande déjà envoyée: dans tous
+      // les cas on DIT quelque chose. Un bouton silencieux est ce qui a fait
+      // écrire Astrid.
+      toast.error(t(directErrorKey(e)));
     }
   }
 
@@ -604,8 +630,25 @@ export default function NearYou() {
                 </p>
                 {l.photo_url && <SmartImage src={storageUrl('listings', l.photo_url)} alt="" className="mt-2 h-40 w-full rounded-input" />}
                 <p className="mt-2 text-body text-ink">{l.description}</p>
+                {/* Le nom mène à la fiche de la personne. Avant, RIEN n'était
+                    cliquable sur cette carte à part « Contacter »: ni le nom,
+                    ni la photo, ni la carte elle-même. Astrid a cliqué sur ce
+                    qui lui semblait naturel — le nom — et il ne s'est rien
+                    passé. « Pourquoi quand je clique ça n'entre pas sur sa
+                    page » était une description exacte de l'écran. */}
                 <p className="mt-1 flex items-center gap-1 text-caption text-muted">
-                  <IconMapPin size={12} /> {l.profiles?.name || t('profile.guest')} · {[l.city, countryLabel(l.country, i18n.language)].filter(Boolean).join(', ')}
+                  <IconMapPin size={12} />
+                  {l.user_id ? (
+                    <button
+                      onClick={() => (user ? navigate(`/profile/u/${l.user_id}`) : requireLogin())}
+                      className="font-semibold text-teal underline-offset-2 hover:underline"
+                    >
+                      {l.profiles?.name || t('profile.guest')}
+                    </button>
+                  ) : (
+                    l.profiles?.name || t('profile.guest')
+                  )}
+                  · {[l.city, countryLabel(l.country, i18n.language)].filter(Boolean).join(', ')}
                 </p>
                 <button onClick={() => openListingChat(l)} className="mt-2 text-caption font-semibold text-teal">{t('nearYou.openChat')}</button>
               </li>
