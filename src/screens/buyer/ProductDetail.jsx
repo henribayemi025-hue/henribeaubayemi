@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck, IconBell, IconBellRinging } from '@tabler/icons-react';
+import { IconBrandWhatsapp, IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck, IconBell, IconBellRinging } from '@tabler/icons-react';
 import { MirrorModal } from '../../components/MirrorModal';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -108,7 +108,7 @@ export default function ProductDetail() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: product, error: err } = await supabase
       .from('products')
-      .select('*, shops(id, name, slug, is_verified, rating, premium_until)')
+      .select('*, shops(id, name, slug, is_verified, rating, premium_until, whatsapp)')
       .eq('id', id)
       .maybeSingle();
     if (err) throw err;
@@ -131,6 +131,22 @@ export default function ProductDetail() {
   }, [id], { cacheKey: `product:${id}` });
 
   async function startChat() {
+    // On mesure l'INTENTION, avant le mur de connexion — c'est tout l'intérêt.
+    //
+    // Jusqu'ici, « clics de contact » ne comptait que la fiche boutique et
+    // l'en-tête du chat: le bouton de cette page, qui est le chemin principal,
+    // n'enregistrait rien. On lisait 3 clics depuis le début de Finjaro en
+    // croyant que personne ne voulait parler aux vendeuses, alors qu'on ne
+    // regardait pas au bon endroit.
+    //
+    // `connectee` distingue les deux populations: celle qui peut écrire, et
+    // celle qui se heurte à la demande de créer un compte. Sur 30 jours, 79 %
+    // des ouvertures de fiches viennent de gens non connectés.
+    track('contact_intent', data?.product?.id, {
+      shop_id: data?.product?.shop_id,
+      source: 'product',
+      connectee: !!user,
+    });
     if (!user) return requireLogin();
     setStarting(true);
     try {
@@ -172,6 +188,16 @@ export default function ProductDetail() {
   const p = data.product;
   const shop = p.shops;
   const quote = isPriceOnRequest(p);
+  // wa.me n'accepte que des chiffres: ni espaces, ni tirets, ni « + ».
+  // En dessous de 8 chiffres, ce n'est pas un numéro joignable — on préfère
+  // ne rien afficher plutôt qu'un bouton qui tombe dans le vide.
+  const numeroWhatsApp = String(shop?.whatsapp || '').replace(/\D/g, '');
+  const lienWhatsApp =
+    numeroWhatsApp.length >= 8
+      ? `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
+          t('product.askSellerMessage', { name: p.name, url: `${window.location.origin}/product/${p.id}` })
+        )}`
+      : null;
   const pct = quote ? null : discountPercent(p.price_fcfa, p.compare_at_price_fcfa);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
   // La ligne de panier correspond à la VARIANTE sélectionnée: la même robe en
@@ -374,6 +400,46 @@ export default function ProductDetail() {
           </section>
         )}
       </div>
+
+      {/* Parler à la vendeuse, sans compte.
+        *
+        * Jusqu'ici, le seul contact possible depuis cette page était le petit
+        * carré ci-dessous — une bulle sans texte, à côté du gros bouton
+        * coloré — ET il fallait créer un compte pour l'utiliser
+        * (`requireLogin` dans startChat). Sur 30 jours, 317 des 403
+        * ouvertures de fiches venaient de gens NON connectés: pour quatre
+        * visiteurs sur cinq, demander « est-ce que vous livrez chez moi ? »
+        * commençait par une inscription. Résultat depuis le début de
+        * Finjaro: UNE seule acheteuse réelle a écrit à une boutique.
+        *
+        * 55 des 59 boutiques actives ont un numéro WhatsApp. On l'utilise: le
+        * message part avec le nom de l'article et son adresse, la vendeuse
+        * sait donc de quoi on parle sans rien demander.
+        *
+        * Ce que ça coûte, et Beau l'a tranché le 17/09: la conversation sort
+        * de Finjaro, donc pas de trace, pas de relance à 72 h, pas de
+        * modération. Le chat interne reste juste à côté pour qui a un compte.
+        */}
+      {lienWhatsApp && (
+        <div className="sticky bottom-[64px] z-30 border-t border-hairline bg-cream px-3 pt-3">
+          <a
+            href={lienWhatsApp}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() =>
+              track('contact_intent', data?.product?.id, {
+                shop_id: data?.product?.shop_id,
+                source: 'product_whatsapp',
+                connectee: !!user,
+              })
+            }
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-terracotta text-body font-semibold text-white"
+          >
+            <IconBrandWhatsapp size={20} />
+            {t('product.askSeller')}
+          </a>
+        </div>
+      )}
 
       <div className="sticky bottom-0 z-30 flex gap-2 border-t border-hairline bg-white p-3">
         <button

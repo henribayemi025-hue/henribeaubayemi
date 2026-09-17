@@ -359,7 +359,9 @@
     "wasPrice": "Price before discount",
     "secondHandBadge": "Second-hand",
     "chooseSizeFirst": "Please pick a size first.",
-    "codReassurance": "Pay on delivery or at pickup — nothing to pay online."
+    "codReassurance": "Pay on delivery or at pickup — nothing to pay online.",
+    "askSeller": "Ask the seller a question",
+    "askSellerMessage": "Hello, I'm writing from Finjaro about \"{{name}}\". Is it available?\n{{url}}"
   },
   "shop": {
     "products": "Products",
