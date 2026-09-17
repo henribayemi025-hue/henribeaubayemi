@@ -359,7 +359,9 @@
     "wasPrice": "Prix avant promo",
     "secondHandBadge": "Seconde main",
     "chooseSizeFirst": "Choisis d'abord une taille.",
-    "codReassurance": "Paie à la livraison ou au retrait — rien à payer en ligne."
+    "codReassurance": "Paie à la livraison ou au retrait — rien à payer en ligne.",
+    "askSeller": "Poser une question à la vendeuse",
+    "askSellerMessage": "Bonjour, je vous écris depuis Finjaro au sujet de « {{name}} ». Est-il disponible ?\n{{url}}"
   },
   "shop": {
     "products": "Produits",
