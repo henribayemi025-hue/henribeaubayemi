@@ -131,6 +131,22 @@ export default function ProductDetail() {
   }, [id], { cacheKey: `product:${id}` });
 
   async function startChat() {
+    // On mesure l'INTENTION, avant le mur de connexion — c'est tout l'intérêt.
+    //
+    // Jusqu'ici, « clics de contact » ne comptait que la fiche boutique et
+    // l'en-tête du chat: le bouton de cette page, qui est le chemin principal,
+    // n'enregistrait rien. On lisait 3 clics depuis le début de Finjaro en
+    // croyant que personne ne voulait parler aux vendeuses, alors qu'on ne
+    // regardait pas au bon endroit.
+    //
+    // `connectee` distingue les deux populations: celle qui peut écrire, et
+    // celle qui se heurte à la demande de créer un compte. Sur 30 jours, 79 %
+    // des ouvertures de fiches viennent de gens non connectés.
+    track('contact_intent', data?.product?.id, {
+      shop_id: data?.product?.shop_id,
+      source: 'product',
+      connectee: !!user,
+    });
     if (!user) return requireLogin();
     setStarting(true);
     try {
