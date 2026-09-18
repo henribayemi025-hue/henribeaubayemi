@@ -316,7 +316,10 @@ export default function CheckoutCOD() {
             </div>
           ))}
           <div className="mt-2 flex justify-between border-t border-hairline pt-2 text-body">
-            <span className="text-muted">{t('cart.subtotal')}</span><Price fcfa={subtotal} />
+            <span className="text-muted">{t('cart.subtotal')}</span>
+            {subtotal === 0 && devis
+              ? <span className="font-semibold text-brass">{t('checkout.quoteTotalPending')}</span>
+              : <Price fcfa={subtotal} />}
           </div>
           <div className="flex justify-between text-body">
             <span className="text-muted">{t('checkout.deliveryFee')}</span>

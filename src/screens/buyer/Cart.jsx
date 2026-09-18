@@ -114,7 +114,14 @@ export default function Cart() {
             personne cherche à cet instant. */}
         <div className="flex items-center justify-between pr-16">
           <span className="text-body text-muted">{t('cart.subtotal')}</span>
-          <Price fcfa={subtotal} className="text-section font-semibold text-ink" />
+          {/* Quand RIEN dans le panier n'a de prix, « 0 » est trompeur: ce
+              n'est pas gratuit, c'est inconnu. Vérifié au navigateur, le
+              panier affichait « Sous-total 0,00 ». */}
+          {pendingCount === items.length ? (
+            <span className="text-section font-semibold text-brass">{t('checkout.quoteTotalPending')}</span>
+          ) : (
+            <Price fcfa={subtotal} className="text-section font-semibold text-ink" />
+          )}
         </div>
         {/* Le sous-total ne compte que les articles dont le prix est connu.
             Le dire, sinon le chiffre a l'air faux. */}
