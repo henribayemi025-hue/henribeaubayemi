@@ -74,7 +74,8 @@ Pour CHAQUE vendeur, l'un après l'autre :
    téléphone. S'il n'y a pas de numéro affiché, passe au suivant.
 2. Écris un message de 4 lignes maximum, qui commence par quelque chose de
    VRAI et de précis sur SA boutique — pris dans sa fiche, pas une formule
-   qui marcherait pour n'importe qui.
+   qui marcherait pour n'importe qui. Dis-y que c'est GRATUIT JUSQU'EN
+   NOVEMBRE, avec le mois écrit — jamais « gratuit » tout court.
 3. Ouvre https://wa.me/<son numéro sans espaces ni +> dans un onglet, colle
    le message, ENVOIE-LE.
 4. Note dans un tableau : Nom | Ville | Pays | Numéro | Message envoyé |
@@ -91,7 +92,9 @@ Règles :
   il ne s'écrit pas.
 - AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
   camerounaise », pas de « partout au pays ».
-- Pas de promesse de gain, pas de fausse urgence, pas d'« offre limitée ».
+- Pas de promesse de gain et pas de fausse urgence. La date de novembre n'en
+  est pas une : elle est vraie et c'est moi qui l'ai fixée. En revanche, pas
+  de « plus que 3 places », pas de compte à rebours inventé.
 - Si WhatsApp affiche une limite, un avertissement, ou refuse un envoi : tu
   ARRÊTES tout et tu me préviens. Tu ne contournes rien, tu ne changes pas de
   compte, tu ne recommences pas plus tard sans me le dire.
@@ -212,9 +215,13 @@ Le message doit :
 - commencer par quelque chose de VRAI et de précis sur SA boutique à lui,
   pris dans ce que j'ai relevé — pas une formule qui marcherait pour
   n'importe qui
-- dire ce que Finjaro lui apporte concrètement : une boutique en ligne
-  gratuite, ses articles visibles, ses clientes qui commandent sans qu'elle
-  ait à tout retaper dans une conversation
+- dire ce que Finjaro lui apporte concrètement : une boutique en ligne, ses
+  articles visibles, ses clientes qui commandent sans qu'elle ait à tout
+  retaper dans une conversation
+- dire que **c'est gratuit jusqu'en novembre**, avec le mois écrit. Pas
+  « gratuit » tout court : un service gratuit sans limite est lu comme un
+  service sans valeur. La date fait comprendre que ça vaut quelque chose et
+  qu'il y a une raison de s'y mettre maintenant. Décision de Beau.
 - finir par une question simple, à laquelle on répond par oui ou non
 
 Interdits absolus :
@@ -223,7 +230,9 @@ Interdits absolus :
   ne s'écrit pas.
 - AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
   camerounaise », pas de « partout au pays ». Finjaro est ouverte au monde.
-- Pas de promesse de gain, pas de fausse urgence, pas de « offre limitée ».
+- Pas de promesse de gain et pas de fausse urgence. La date de novembre n'en
+  est pas une : elle est vraie et c'est Beau qui l'a fixée. En revanche, pas
+  de « plus que 3 places », pas de compte à rebours inventé.
 - Tu écris le message. Tu ne l'envoies pas.
 ```
 

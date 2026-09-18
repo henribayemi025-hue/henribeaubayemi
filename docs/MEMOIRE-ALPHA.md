@@ -168,8 +168,17 @@ Finjaro… Finjaro est jeune ») — ça faisait amateur. Version retenue:
 - On dit qu'on a vu ses articles et qu'on les a aimés.
 - On mentionne **Finjaro Accounting** (gestion des stocks) en plus de la
   place de marché.
+- **Toujours « gratuit jusqu'en novembre », jamais « gratuit » tout court.**
+  Décision de Beau le 18/09: un service gratuit sans limite est lu comme un
+  service sans valeur. La date dit que ça vaut quelque chose et donne une
+  raison de s'y mettre maintenant. Elle est vraie, donc ce n'est pas de la
+  fausse urgence — mais rien d'inventé autour (pas de « plus que 3 places »).
+  Ceux qui ouvrent avant novembre gardent la gratuité; on ne se contredit pas.
 - **Ne plus jamais promettre « on publie vos premiers articles à votre
   place ».** Beau l'a retiré explicitement, et les PNJ ont été prévenus.
+  ⚠️ Nuance: l'écran de publication existe depuis le 18/09, donc c'est
+  devenu faisable. On le FAIT quand quelqu'un envoie ses photos; on ne le
+  PROMET pas dans un message d'approche.
 - Jamais « marketplace camerounaise ». J'ai trouvé cette formule dans une
   de mes propres routines et je l'ai corrigée.
 
