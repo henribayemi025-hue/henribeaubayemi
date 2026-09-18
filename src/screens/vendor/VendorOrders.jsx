@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,7 +12,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { VendorPrice } from '../../components/Price';
 import { Modal } from '../../components/Modal';
-import { Field, TextArea } from '../../components/Field';
+import { Field, TextArea, TextInput } from '../../components/Field';
 import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatusBadge';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
@@ -32,7 +32,17 @@ import { timeAgo } from '../../lib/format';
 // Chaque transition est horodatée (timeline côté acheteuse) et notifiée
 // (push + e-mail). Un rappel Finia automatique (pg_cron, toutes les 6 h)
 // relance les boutiques qui laissent des commandes « new » sans réponse.
+//
+// S'y ajoute, AVANT tout ça, la demande de prix: un article « prix sur
+// demande » se met maintenant au panier, et la commande arrive en attente du
+// chiffre de la vendeuse.
+//
+//   awaiting_price ──[Envoyer mon prix]──▶ priced ──[la cliente accepte]──▶ new
+//
+// Le stock ne bouge qu'à l'acceptation: une demande de prix laissée sans
+// suite ne doit immobiliser aucun article.
 const TABS = [
+  { key: 'quotes', statuses: ['awaiting_price', 'priced'], label: 'vendor.orderTabsQuotes' },
   { key: 'new', statuses: ['new'], label: 'vendor.orderTabsNew' },
   { key: 'inProgress', statuses: ['confirmed', 'shipped'], label: 'vendor.orderTabsInProgress' },
   { key: 'delivered', statuses: ['delivered'], label: 'vendor.orderTabsDelivered' },
@@ -44,6 +54,8 @@ export default function VendorOrders() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [tab, setTab] = useState('new');
+  const [pricing, setPricing] = useState(null);  // commande à chiffrer (modal)
+  const [prices, setPrices] = useState({});      // { item_id: '12000' }
   const [busyId, setBusyId] = useState(null);
   const [cancelling, setCancelling] = useState(null); // commande en cours de refus/annulation (modal)
   const [cancelReason, setCancelReason] = useState('');
@@ -51,7 +63,7 @@ export default function VendorOrders() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: orders, error: err } = await supabase
       .from('orders')
-      .select('*, order_items(name, qty, price_fcfa)')
+      .select('*, order_items(id, name, qty, price_fcfa, price_pending)')
       .eq('shop_id', shop.id)
       .order('created_at', { ascending: false });
     if (err) throw err;
@@ -86,7 +98,7 @@ export default function VendorOrders() {
   // Refus (commande jamais acceptée) ET annulation (commande déjà validée ou
   // en livraison) partagent le même geste — seul le libellé change, parce
   // que dire « refusée » d'une commande déjà validée serait faux.
-  const wasAccepted = cancelling?.status !== 'new';
+  const wasAccepted = !['new', 'awaiting_price', 'priced'].includes(cancelling?.status);
   async function confirmCancel() {
     const o = cancelling;
     setCancelling(null);
@@ -96,6 +108,48 @@ export default function VendorOrders() {
     );
     setCancelReason('');
   }
+
+  // Envoyer les prix. Le serveur recalcule le total lui-même (`set_order_prices`)
+  // — un montant venu du navigateur n'a pas à faire autorité.
+  async function sendPrices() {
+    const o = pricing;
+    const lignes = (o.order_items || [])
+      .filter((it) => it.price_pending)
+      .map((it) => ({ item_id: it.id, price_fcfa: Math.round(Number(prices[it.id]) || 0) }));
+    if (lignes.some((l) => !(l.price_fcfa > 0))) {
+      toast.error(t('vendor.quotePriceRequired'));
+      return;
+    }
+    setBusyId(o.id);
+    try {
+      const { error: err } = await supabase.rpc('set_order_prices', {
+        p_order_id: o.id,
+        p_prices: lignes,
+      });
+      if (err) throw err;
+      setPricing(null);
+      setPrices({});
+      toast.success(t('vendor.quoteSent'));
+      retry();
+    } catch (e) {
+      toast.error(e.message || t('errors.generic'));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Au premier chargement, si des clientes attendent un prix et qu'aucune
+  // commande neuve ne demande de validation, on ouvre directement sur elles:
+  // la notification pousse vers cet écran, et atterrir sur « Nouvelles (0) »
+  // ferait passer la demande à côté.
+  const tabChoisi = useRef(false);
+  useEffect(() => {
+    if (tabChoisi.current || !data) return;
+    tabChoisi.current = true;
+    const devis = data.filter((o) => ['awaiting_price', 'priced'].includes(o.status)).length;
+    const neuves = data.filter((o) => o.status === 'new').length;
+    if (devis > 0 && neuves === 0) setTab('quotes');
+  }, [data]);
 
   const current = TABS.find((x) => x.key === tab);
   const filtered = (data || []).filter((o) => current.statuses.includes(o.status));
@@ -161,7 +215,11 @@ export default function VendorOrders() {
                         <span className="truncate">{it.name}</span>
                         <span className="shrink-0 rounded-pill bg-white px-1.5 text-[11px] font-semibold text-muted">×{it.qty}</span>
                       </span>
-                      <VendorPrice fcfa={it.price_fcfa * it.qty} className="shrink-0 font-medium text-muted" />
+                      {it.price_pending ? (
+                        <span className="shrink-0 font-semibold text-brass">{t('vendor.quoteToPrice')}</span>
+                      ) : (
+                        <VendorPrice fcfa={it.price_fcfa * it.qty} className="shrink-0 font-medium text-muted" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -173,7 +231,11 @@ export default function VendorOrders() {
                     <span className="text-hairline">·</span>
                     {t('vendor.itemCount', { count: itemCount })}
                   </span>
-                  <VendorPrice fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                  {o.status === 'awaiting_price' ? (
+                    <span className="text-body font-semibold text-brass">{t('vendor.quoteToPrice')}</span>
+                  ) : (
+                    <VendorPrice fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                  )}
                 </div>
                 {o.delivery_method === 'delivery' && o.address && (
                   <p className="mt-1.5 flex items-start gap-1 text-caption text-muted">
@@ -188,6 +250,39 @@ export default function VendorOrders() {
 
                 {/* Actions selon l'étape — jamais de saut d'étape possible,
                     mais annulation toujours possible tant que ce n'est pas livré. */}
+                {o.status === 'awaiting_price' && (
+                  <div className="mt-3 border-t border-hairline pt-3">
+                    <p className="mb-2 text-caption text-muted">{t('vendor.quoteAskHint')}</p>
+                    <div className="flex gap-2">
+                      <Button
+                        loading={busyId === o.id}
+                        onClick={() => { setPricing(o); setPrices({}); }}
+                        className="flex-1"
+                      >
+                        <IconCheck size={18} /> {t('vendor.quoteSendCta')}
+                      </Button>
+                      <Button variant="secondary" disabled={busyId === o.id} onClick={() => setCancelling(o)} className="flex-1">
+                        <IconX size={18} /> {t('vendor.declineOrder')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {o.status === 'priced' && (
+                  <div className="mt-3 border-t border-hairline pt-3">
+                    <p className="text-caption text-muted">{t('vendor.quoteWaitingBuyer')}</p>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        variant="secondary"
+                        disabled={busyId === o.id}
+                        onClick={() => { setPricing(o); setPrices({}); }}
+                        className="flex-1"
+                      >
+                        {t('vendor.quoteEdit')}
+                      </Button>
+                      <CancelIconButton disabled={busyId === o.id} onClick={() => setCancelling(o)} label={t('vendor.cancelOrder')} />
+                    </div>
+                  </div>
+                )}
                 {o.status === 'new' && (
                   <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
                     <Button loading={busyId === o.id} onClick={() => accept(o)} className="flex-1">
@@ -229,6 +324,36 @@ export default function VendorOrders() {
           })}
         </ul>
       )}
+
+      {/* Chiffrer: un prix UNITAIRE par article, dans la devise de la boutique
+          — c'est elle qui a saisi son catalogue dans cette monnaie, la relire
+          dans celle de la cliente n'aurait aucun sens. */}
+      <Modal open={!!pricing} onClose={() => setPricing(null)} title={t('vendor.quoteModalTitle')}>
+        <p className="mb-3 text-caption text-muted">{t('vendor.quoteModalHint')}</p>
+        <div className="space-y-3">
+          {(pricing?.order_items || []).filter((it) => it.price_pending).map((it) => (
+            <Field key={it.id} label={`${it.name} × ${it.qty}`}>
+              {(id) => (
+                <TextInput
+                  id={id}
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  value={prices[it.id] || ''}
+                  onChange={(e) => setPrices({ ...prices, [it.id]: e.target.value })}
+                  placeholder={t('vendor.quoteUnitPrice')}
+                />
+              )}
+            </Field>
+          ))}
+        </div>
+        <div className="mt-4 flex gap-2">
+          <Button variant="secondary" onClick={() => setPricing(null)} className="flex-1">{t('common.cancel')}</Button>
+          <Button onClick={sendPrices} loading={busyId === pricing?.id} className="flex-1">
+            {t('vendor.quoteSendCta')}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Refus/annulation: le label du champ dit "(optionnel)" en toutes
           lettres — Beau: "il y a une raison optionnelle mais ça ne précise

@@ -253,7 +253,7 @@ export function FinouChou() {
         try {
           const { data: prods } = await supabase
             .from('products')
-            .select('id, name, price_fcfa, images, category, stock, shop_id, shops(name)')
+            .select('id, name, price_fcfa, price_on_request, images, category, stock, shop_id, shops(name)')
             .eq('is_active', true)
             .eq('category', data.category)
             .order('views', { ascending: false })

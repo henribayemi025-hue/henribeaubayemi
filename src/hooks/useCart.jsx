@@ -35,11 +35,16 @@ export function CartProvider({ children }) {
     const size = variant.size || null;
     const color = variant.color || null;
     const key = lineKey(product.id, size, color);
+    // Un article « prix sur demande » entre dans le panier SANS prix: c'est la
+    // vendeuse qui le chiffrera. On garde 0 plutôt que null pour que tous les
+    // calculs existants continuent de tomber juste.
+    const surDemande = !!product.price_on_request;
     const line = {
       key,
       id: product.id,
       name: product.name,
-      price_fcfa: product.price_fcfa,
+      price_on_request: surDemande,
+      price_fcfa: surDemande ? 0 : product.price_fcfa,
       image: product.images?.[0] || null,
       shop_id: product.shop_id,
       shop_name: product.shop_name || '',
@@ -69,9 +74,18 @@ export function CartProvider({ children }) {
   );
 
   const count = useMemo(() => items.reduce((n, i) => n + i.qty, 0), [items]);
-  const subtotal = useMemo(() => items.reduce((n, i) => n + i.price_fcfa * i.qty, 0), [items]);
+  // Le sous-total ne compte QUE ce dont on connaît le prix. Additionner des
+  // zéros donnerait un total qui a l'air vrai et qui est faux.
+  const subtotal = useMemo(
+    () => items.reduce((n, i) => (i.price_on_request ? n : n + i.price_fcfa * i.qty), 0),
+    [items]
+  );
+  const pendingCount = useMemo(() => items.filter((i) => i.price_on_request).length, [items]);
 
-  const value = { items, add, setQty, remove, clear, clearShop, count, subtotal, justAdded, dismissJustAdded };
+  const value = {
+    items, add, setQty, remove, clear, clearShop,
+    count, subtotal, pendingCount, justAdded, dismissJustAdded,
+  };
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
 

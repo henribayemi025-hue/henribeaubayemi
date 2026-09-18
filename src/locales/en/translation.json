@@ -361,7 +361,9 @@
     "chooseSizeFirst": "Please pick a size first.",
     "codReassurance": "Pay on delivery or at pickup — nothing to pay online.",
     "askSeller": "Ask the seller a question",
-    "askSellerMessage": "Hello, I'm writing from Finjaro about \"{{name}}\". Is it available?\n{{url}}"
+    "askSellerMessage": "Hello, I'm writing from Finjaro about \"{{name}}\". Is it available?\n{{url}}",
+    "addToCartOnRequest": "Ask for the price",
+    "priceOnRequestHow": "Add it to your cart: the shop sends you its price, you accept or not. Nothing is reserved before that."
   },
   "shop": {
     "products": "Products",
@@ -568,7 +570,10 @@
     "multiShopTitle_one": "Your items come from {{count}} shop",
     "multiShopTitle_other": "Your items come from {{count}} shops",
     "multiShopHelp": "Each shop prepares and delivers its own order, so you confirm one order per shop. Your details are already saved — the next ones take seconds.",
-    "checkoutAll": "Order everything"
+    "checkoutAll": "Order everything",
+    "priceToConfirm": "Price to be confirmed",
+    "pendingNote_one": "1 item without a price: the shop will send it before you confirm.",
+    "pendingNote_other": "{{count}} items without a price: the shop will send them before you confirm."
   },
   "nearYou": {
     "shops": "Shops",
@@ -839,7 +844,15 @@
     "allFailedTitle_other": "{{count}} shops could not be ordered",
     "allFailedHelp": "Those items stayed in your cart — nothing was lost. You can try again.",
     "allBackToCart": "Back to cart",
-    "total": "Total"
+    "total": "Total",
+    "askForPrice": "Send my price request",
+    "quoteTitle": "Price to be confirmed",
+    "quoteNote": "The shop will send you its price. You can accept or decline — you owe nothing until you accept.",
+    "quoteTotalPending": "To be confirmed",
+    "quoteSentTitle": "Request sent",
+    "quoteSentBody": "The shop will send you its price. You'll find it in “My orders”.",
+    "quoteShopNote": "This shop needs to send you its price first.",
+    "quoteAllNote": "The total leaves out items without a price."
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
@@ -1096,7 +1109,18 @@
     "reelCategoryPlaceholder": "Pick a category…",
     "reelCategoryRequired": "Pick a category: without one, your video shows up in no filter.",
     "draftsHelp": "These items aren't visible to customers yet. Publish them so they show up in the shop.",
-    "videoCompressing": "Shrinking your video, stay on this screen a moment…"
+    "videoCompressing": "Shrinking your video, stay on this screen a moment…",
+    "orderTabsQuotes": "Price requests",
+    "quoteToPrice": "To be priced",
+    "quoteAskHint": "A customer is waiting for your price. Until you answer, your stock is untouched.",
+    "quoteSendCta": "Send my price",
+    "quoteEdit": "Change my price",
+    "quoteWaitingBuyer": "Price sent — waiting for the customer's answer.",
+    "quoteModalTitle": "Price this order",
+    "quoteModalHint": "Price for ONE item, in your shop's currency. The total is worked out for you.",
+    "quoteUnitPrice": "Unit price",
+    "quotePriceRequired": "Every item needs a price above zero.",
+    "quoteSent": "Price sent to the customer."
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -1117,7 +1141,15 @@
     "readyPickup": "Ready for pickup",
     "declineReasonShown": "Declined by the shop: {{reason}}",
     "cancelledNoReason": "Order declined by the shop.",
-    "cancelReasonShown": "Cancelled by the shop: {{reason}}"
+    "cancelReasonShown": "Cancelled by the shop: {{reason}}",
+    "awaiting_price": "Waiting for the price",
+    "priced": "Price offered",
+    "awaitingPriceBody": "The shop is preparing its price. Nothing is reserved and you owe nothing until you accept.",
+    "quoteReadyTitle": "The shop has sent its price",
+    "quoteReadyBody": "Accept to start the order, or decline — it is then cancelled, at no cost.",
+    "quoteAccept": "Accept",
+    "quoteDecline": "Decline",
+    "quoteAccepted": "Order started."
   },
   "stats": {
     "period7d": "7d",
@@ -1492,7 +1524,8 @@
       "new": "New",
       "inProgress": "In progress",
       "delivered": "Delivered",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "quotes": "Price requests"
     },
     "selectionTotal": "{{count}} order(s)",
     "reportStatus": {

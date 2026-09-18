@@ -38,7 +38,7 @@ export default function MyOrders() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: orders, error: err } = await supabase
       .from('orders')
-      .select('*, shops(name), order_items(product_id, name, qty, price_fcfa), reviews(id)')
+      .select('*, shops(name), order_items(product_id, name, qty, price_fcfa, price_pending), reviews(id)')
       .eq('buyer_id', user.id)
       .order('created_at', { ascending: false });
     if (err) throw err;
@@ -58,6 +58,47 @@ export default function MyOrders() {
     retry();
   }
 
+  // Accepter le prix proposé par la vendeuse. C'est ICI, côté serveur, que le
+  // stock est enfin retiré — jamais avant, sinon une demande de prix sans
+  // suite immobiliserait l'article.
+  const [quoteBusy, setQuoteBusy] = useState(null);
+  async function acceptQuote(order) {
+    setQuoteBusy(order.id);
+    try {
+      const { error } = await supabase.rpc('accept_order_prices', { p_order_id: order.id });
+      if (error) throw error;
+      toast.success(t('orderStatus.quoteAccepted'));
+      retry();
+    } catch (e) {
+      const [code, name] = String(e?.message || '').split(':');
+      toast.error(
+        code?.trim() === 'insufficient_stock'
+          ? t('checkout.errOutOfStock', { name: (name || '').trim() })
+          : e?.message || t('errors.generic')
+      );
+    } finally {
+      setQuoteBusy(null);
+    }
+  }
+
+  // Refuser: la commande est annulée. Aucun stock n'a bougé, donc rien à
+  // recréditer et aucune écriture comptable n'a été faite.
+  async function declineQuote(order) {
+    setQuoteBusy(order.id);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+        .eq('id', order.id);
+      if (error) throw error;
+      retry();
+    } catch (e) {
+      toast.error(e?.message || t('errors.generic'));
+    } finally {
+      setQuoteBusy(null);
+    }
+  }
+
   // Racheter: repart des mêmes articles, mais avec le PRIX ET LE STOCK
   // ACTUELS — jamais l'ancien prix payé, qui peut avoir changé depuis. Un
   // article retiré du catalogue depuis (product_id perdu ou plus actif) est
@@ -72,7 +113,7 @@ export default function MyOrders() {
     try {
       const { data: products, error } = await supabase
         .from('products')
-        .select('id, name, price_fcfa, images, shop_id, stock, is_active')
+        .select('id, name, price_fcfa, images, shop_id, stock, is_active, price_on_request')
         .in('id', ids);
       if (error) throw error;
       const available = (products || []).filter((p) => p.is_active && p.stock > 0);
@@ -123,13 +164,49 @@ export default function MyOrders() {
 
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-caption text-muted">{t('vendor.itemCount', { count: itemCount })}</span>
-                  <Price fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                  {o.status === 'awaiting_price' ? (
+                    <span className="text-body font-semibold text-brass">{t('cart.priceToConfirm')}</span>
+                  ) : (
+                    <Price fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                  )}
                 </div>
+
+                {/* Le prix est arrivé: la cliente décide. Tant qu'elle n'a pas
+                    accepté, rien n'est réservé et rien n'est dû. */}
+                {o.status === 'priced' && (
+                  <div className="mt-3 rounded-card bg-brass/10 p-3">
+                    <p className="text-body font-semibold text-ink">{t('orderStatus.quoteReadyTitle')}</p>
+                    <p className="mt-1 text-caption text-muted">{t('orderStatus.quoteReadyBody')}</p>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        className="flex-1"
+                        loading={quoteBusy === o.id}
+                        onClick={() => acceptQuote(o)}
+                      >
+                        {t('orderStatus.quoteAccept')}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="flex-1"
+                        disabled={quoteBusy === o.id}
+                        onClick={() => declineQuote(o)}
+                      >
+                        {t('orderStatus.quoteDecline')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {o.status === 'awaiting_price' && (
+                  <p className="mt-3 rounded-card bg-brass/10 p-3 text-caption text-ink">
+                    {t('orderStatus.awaitingPriceBody')}
+                  </p>
+                )}
 
                 {/* Suivi visuel: on voit OÙ en est la commande, avec l'heure de
                     chaque étape — fini le mystère entre « commandé » et
                     « reçu ». Une commande refusée/annulée montre la raison. */}
-                {o.status === 'cancelled' ? (
+                {['awaiting_price', 'priced'].includes(o.status) ? null : o.status === 'cancelled' ? (
                   <p className="mt-3 rounded-card bg-danger-bg p-3 text-caption text-danger">
                     {o.cancel_reason
                       ? t(o.confirmed_at ? 'orderStatus.cancelReasonShown' : 'orderStatus.declineReasonShown', { reason: o.cancel_reason })

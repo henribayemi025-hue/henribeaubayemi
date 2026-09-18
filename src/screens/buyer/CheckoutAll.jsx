@@ -104,7 +104,12 @@ export default function CheckoutAll() {
     if (zones.length) return Number(zones[Math.min(c.zoneIdx, zones.length - 1)]?.fee_fcfa) || 0;
     return shopById[shopId]?.delivery_fee_fcfa || 0;
   }
-  const subtotalOf = (shopId) => byShop[shopId].items.reduce((n, i) => n + i.price_fcfa * i.qty, 0);
+  // Les articles sans prix ne s'additionnent pas: leur montant n'existe pas
+  // encore. Ils partiront en demande de prix chez leur boutique.
+  const subtotalOf = (shopId) =>
+    byShop[shopId].items.reduce((n, i) => (i.price_on_request ? n : n + i.price_fcfa * i.qty), 0);
+  const devisOf = (shopId) => byShop[shopId].items.some((i) => i.price_on_request);
+  const anyDevis = shopIds.some(devisOf);
 
   const articles = shopIds.reduce((n, id) => n + subtotalOf(id), 0);
   const fees = shopIds.reduce((n, id) => n + feeOf(id), 0);
@@ -193,7 +198,8 @@ export default function CheckoutAll() {
         const order = await placeFor(shopId);
         // La notification vendeuse (push+e-mail) part du SERVEUR (trigger
         // trg_order_created) — fiable, independante de ce navigateur.
-        const shopTotal = byShop[shopId].items.reduce((n, it) => n + it.price_fcfa * it.qty, 0);
+        const shopTotal = byShop[shopId].items.reduce(
+          (n, it) => (it.price_on_request ? n : n + it.price_fcfa * it.qty), 0);
         track('order_placed', order.id, { shop_id: shopId, total: shopTotal });
         clearShop(shopId);
         placed.push({ shop: byShop[shopId].name, no: order.order_no });
@@ -313,6 +319,9 @@ export default function CheckoutAll() {
                 <span className="text-muted">{t('cart.subtotal')}</span>
                 <Price fcfa={subtotalOf(id)} className="text-ink" />
               </div>
+              {devisOf(id) && (
+                <p className="text-caption font-semibold text-brass">{t('checkout.quoteShopNote')}</p>
+              )}
               {feeOf(id) > 0 && (
                 <div className="flex items-center justify-between text-body">
                   <span className="text-muted">{t('checkout.deliveryFee')}</span>
@@ -361,6 +370,9 @@ export default function CheckoutAll() {
           <span className="text-muted">{t('checkout.total')}</span>
           <Price fcfa={total} className="text-section font-semibold text-ink" />
         </div>
+        {anyDevis && (
+          <p className="mt-1 text-caption font-semibold text-brass">{t('checkout.quoteAllNote')}</p>
+        )}
         <Button className="mt-3" onClick={submit} loading={submitting} disabled={!valid}>
           {t('checkout.allCta', { count: shopIds.length })}
         </Button>

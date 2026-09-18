@@ -29,7 +29,11 @@ export default function CheckoutCOD() {
   const toast = useToast();
 
   const shopItems = items.filter((i) => i.shop_id === shopId);
-  const subtotal = shopItems.reduce((n, i) => n + i.price_fcfa * i.qty, 0);
+  // Une commande qui contient au moins un article sans prix est un DEVIS: elle
+  // part en attente du prix de la vendeuse, et il n'y a aucun total à
+  // afficher tant qu'elle n'a pas répondu.
+  const devis = shopItems.some((i) => i.price_on_request);
+  const subtotal = shopItems.reduce((n, i) => (i.price_on_request ? n : n + i.price_fcfa * i.qty), 0);
 
   const [method, setMethod] = useState('pickup');
   // Pré-rempli depuis l'adresse enregistrée du profil — rien n'empêche de la
@@ -49,6 +53,10 @@ export default function CheckoutCOD() {
   useEffect(() => { track('checkout_start', shopId, { count: shopItems.length, subtotal }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [payingCard, setPayingCard] = useState(false);
   const [placed, setPlaced] = useState(null);
+  // Retenu AU MOMENT de la commande: l'écran de confirmation s'affiche après
+  // `clearShop`, et le panier est alors vide — `devis` y vaudrait toujours
+  // faux, et une demande de prix afficherait « commande passée ».
+  const [placedDevis, setPlacedDevis] = useState(false);
 
   // La boutique suivante encore au panier, s'il en reste une. `items` est
   // relu APRÈS le vidage de la boutique commandée, donc ce qui reste ici est
@@ -65,6 +73,8 @@ export default function CheckoutCOD() {
   const CARD_PAYMENTS_ENABLED = false;
   const stripeEnabled =
     CARD_PAYMENTS_ENABLED &&
+    // On ne fait pas payer un montant que personne ne connaît encore.
+    !devis &&
     !!(
       import.meta.env.VITE_STRIPE_PK ||
       'pk_test_51TwH38PWe7shhIOrU0Yq13F8jLxvWF97JVsRi1u8FbuU1iF0o08h2cnqgg1xp5LhzqysUmouLTdtzcvgZ2FhdKGv00cUxChcFx'
@@ -162,6 +172,7 @@ export default function CheckoutCOD() {
       // La notification vendeuse (push+e-mail) part desormais du SERVEUR
       // (trigger trg_order_created), plus fiable qu'un appel depuis ce
       // navigateur juste apres l'ecriture.
+      setPlacedDevis(devis);
       clearShop(shopId);
       setPlaced(order.order_no);
     } catch (e) {
@@ -192,8 +203,8 @@ export default function CheckoutCOD() {
     return (
       <div className="flex min-h-full flex-col items-center justify-center px-6 text-center">
         <IconCircleCheck size={64} className="text-success" stroke={1.5} />
-        <h1 className="mt-4 text-title text-ink">{t('checkout.successTitle')}</h1>
-        <p className="mt-2 text-body text-muted">{t('checkout.successBody')}</p>
+        <h1 className="mt-4 text-title text-ink">{t(placedDevis ? 'checkout.quoteSentTitle' : 'checkout.successTitle')}</h1>
+        <p className="mt-2 text-body text-muted">{t(placedDevis ? 'checkout.quoteSentBody' : 'checkout.successBody')}</p>
         <p className="mt-4 rounded-pill bg-teal/5 px-4 py-2 text-body font-semibold text-teal">
           {t('checkout.orderNumber')}: #{placed}
         </p>
@@ -299,24 +310,34 @@ export default function CheckoutCOD() {
                 {it.name}
                 {(it.size || it.color) && <span className="text-muted"> ({[it.size, it.color].filter(Boolean).join(' · ')})</span>} × {it.qty}
               </span>
-              <Price fcfa={it.price_fcfa * it.qty} />
+              {it.price_on_request
+                ? <span className="shrink-0 font-semibold text-brass">{t('cart.priceToConfirm')}</span>
+                : <Price fcfa={it.price_fcfa * it.qty} />}
             </div>
           ))}
           <div className="mt-2 flex justify-between border-t border-hairline pt-2 text-body">
-            <span className="text-muted">{t('cart.subtotal')}</span><Price fcfa={subtotal} />
+            <span className="text-muted">{t('cart.subtotal')}</span>
+            {subtotal === 0 && devis
+              ? <span className="font-semibold text-brass">{t('checkout.quoteTotalPending')}</span>
+              : <Price fcfa={subtotal} />}
           </div>
           <div className="flex justify-between text-body">
             <span className="text-muted">{t('checkout.deliveryFee')}</span>
             {deliveryFee > 0 ? <Price fcfa={deliveryFee} /> : <span className="text-success">{t('common.free')}</span>}
           </div>
           <div className="mt-2 flex justify-between border-t border-hairline pt-2 text-section font-semibold">
-            <span>{t('vendor.orderTotal')}</span><Price fcfa={total} className="text-teal" />
+            <span>{t('vendor.orderTotal')}</span>
+            {devis
+              ? <span className="text-brass">{t('checkout.quoteTotalPending')}</span>
+              : <Price fcfa={total} className="text-teal" />}
           </div>
         </section>
 
-        <section className="rounded-card bg-warning-bg p-3 text-caption text-warning">
-          <p className="font-semibold">{t('checkout.cod')}</p>
-          <p>{t('checkout.codNote')}</p>
+        {/* « Paie à la livraison » n'a aucun sens tant que le montant est
+            inconnu: on explique le devis à la place. */}
+        <section className={`rounded-card p-3 text-caption ${devis ? 'bg-brass/10 text-ink' : 'bg-warning-bg text-warning'}`}>
+          <p className="font-semibold">{devis ? t('checkout.quoteTitle') : t('checkout.cod')}</p>
+          <p>{devis ? t('checkout.quoteNote') : t('checkout.codNote')}</p>
         </section>
       </div>
 
@@ -332,7 +353,7 @@ export default function CheckoutCOD() {
           loading={submitting}
           disabled={payingCard}
         >
-          {t('checkout.payOnDelivery')}
+          {devis ? t('checkout.askForPrice') : t('checkout.payOnDelivery')}
         </Button>
       </div>
     </div>

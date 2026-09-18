@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
+import { track } from '../lib/track';
 import { chargerPixelMeta } from '../lib/pixel';
 import { useSettings } from '../hooks/useSettings';
 
@@ -66,6 +67,7 @@ export function CookieConsent() {
   }, [pathname, country]);
 
   function repondre(accepte) {
+    track('cookie_answer', null, { accepte });
     try { localStorage.setItem(CONSENT_KEY, accepte ? '1' : '0'); } catch { /* noop */ }
     if (accepte) chargerPixelMeta();
     setShow(false);
