@@ -110,11 +110,28 @@ export function slugPays(nom) {
     .replace(/(^-|-$)/g, '');
 }
 
-/** Le lien qui poursuit la démonstration dans Finjaro Accounting, sur le même
- *  métier et le même pays — c'est ce qui fait « une seule solution » plutôt
- *  que deux produits posés l'un à côté de l'autre. */
+/**
+ * Le lien qui poursuit la démonstration dans Finjaro Accounting, sur le même
+ * métier et le même pays — c'est ce qui fait « une seule solution » plutôt que
+ * deux produits posés l'un à côté de l'autre.
+ *
+ * On atterrit sur le JOURNAL, pas sur l'accueil d'Accounting. La personne
+ * vient de provoquer une écriture chez nous: la poser devant la liste des
+ * écritures répond à la question qu'elle vient de se poser. L'envoyer sur un
+ * accueil l'obligerait à chercher, et chercher à ce moment-là, c'est perdre
+ * ce qu'on venait de lui montrer.
+ *
+ * La forme (`#/demo/<pays>/<métier>/<écran>`) et les mots acceptés viennent
+ * de Claudinette, qui les a mis en ligne et vérifiés à l'écran le 18/09. Deux
+ * garanties de sa part: un mot d'écran inconnu retombe sur l'accueil plutôt
+ * que sur une page vide, et le lien sans écran continue de fonctionner.
+ *
+ * ⚠️ Dépendance entre les deux applications: si cette forme change chez elle,
+ * ce bouton tombe dans le vide et personne ne le verra avant qu'un prospect
+ * clique. On se prévient avant, pas après.
+ */
 export function lienAccounting(boutique) {
-  return `https://accounting.finjaro.net/demo/${slugPays(boutique.paysNom)}/${boutique.metierComptable}`;
+  return `https://accounting.finjaro.net/#/demo/${slugPays(boutique.paysNom)}/${boutique.metierComptable}/journal`;
 }
 
 /**
