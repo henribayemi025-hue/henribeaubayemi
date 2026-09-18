@@ -189,6 +189,49 @@ aller le chercher plutôt que de le réinventer.
 
 ---
 
+## 4bis. Les vidéos — ce que Beau valide, ce qu'il rejette
+
+Le pipeline est dans `video-work/` (`capture-boutique.mjs`,
+`cartes-boutique.mjs`, `monter-boutique.mjs`). Playwright en screencast →
+ffmpeg. Réglages: **1080×1920, 30 i/s, crf 18**, fondus crème `0xFAF6F0`,
+carte d'intro + un chapitre par étape + carte de fin, capture posée dans un
+téléphone aux coins arrondis.
+
+**Ce qu'il a rejeté, à ne pas refaire:**
+
+- « **trop court, trop rapide** ». Viser ~1 min 15, pas 30 secondes.
+- « **ça n'a pas fait défiler les vidéos, c'est juste des images
+  statiques** ». Vrai screencast, jamais un diaporama de captures.
+- **Les emoji** (11/09).
+- **Le visuel de remplissage.** Il veut « une belle photo », pas un rectangle
+  crème avec un mot dessus. « Que ça fasse luxe, classe, l'excellence de
+  Finjaro, pas un truc banalisé ».
+- **Un écran périmé** (une vidéo montrait encore le code SMS).
+- **Les données inventées.** Les fiches montrées sont de vraies fiches.
+- ⚠️ **Montrer le résultat pour un tiers avant le travail de la personne.**
+  Trouvé par Claudinette le 18/09: sa vidéo Accounting allait droit à la
+  comptabilité, et Beau a répondu « tu n'as pas montré caisse, stock, vente
+  etc, t'es juste allé compta, faut être sérieux ». La règle: **le travail de
+  la personne d'abord, le résultat pour un tiers en dernier** — c'est ce qui
+  le rend impressionnant, il s'est fait pendant qu'on regardait autre chose.
+  « Ouvrir sa boutique » y échappe par chance (ouvrir sa boutique EST le
+  travail de la vendeuse); une vidéo sur les commandes ou les paiements
+  tomberait dedans.
+
+**La voix n'a JAMAIS été posée.** Le texte minuté existe
+(`SCRIPT-VOIX-OUVRIR-SA-BOUTIQUE.md`, 12/09), il n'y a aucun fichier audio
+dans le dépôt et les vidéos sont muettes. Ne pas présenter un chemin
+d'enregistrement comme établi. Piste proposée: message vocal WhatsApp, et
+c'est nous qui collons — il dicte déjà tout à la voix, il n'a rien à
+apprendre.
+
+**Détail technique utile (trouvé par Claudinette):** le screencast ne capte
+**que ce qui change à l'écran**. Un chapitre sur une page immobile dure un
+dixième de seconde au montage. Contournement: faire défiler de quelques
+pixels pour forcer une image.
+
+---
+
 ## 5. Le canal Alpha ↔ Claudinette ↔ PNJ
 
 Beau voulait « le genre de notif que quand l'un reçoit, l'autre répond ».
