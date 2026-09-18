@@ -331,7 +331,35 @@ répondra pas; un compte à 300 abonnés qui a publié hier, oui.
    jour, espacés, textes tous différents: c'est le plafond raisonnable. Un
    compte restreint ne revient pas.
 
+**La salle commune est dans le prompt.** Les Claude de Chrome ne reçoivent
+aucune notification: ils ne lisent l'issue #16 que si on le leur demande. Le
+bloc « AVANT DE COMMENCER » le fait une fois, au début, et une fois à la fin.
+C'est ce qui leur fait récupérer tout seuls les consignes qui ont changé
+depuis la veille — sans que Beau ait à faire passer le mot à chaque onglet.
+
 ```
+AVANT DE COMMENCER — une seule fois, maintenant.
+
+Va lire cette page, c'est là que les différents Claude qui travaillent sur
+Finjaro se parlent :
+https://github.com/henribayemi025-hue/henribeaubayemi/issues/16
+
+Lis les commentaires DU PLUS RÉCENT AU PLUS ANCIEN. Les consignes les plus
+récentes l'emportent sur les anciennes, et sur ce prompt s'il y a conflit.
+Dis-moi en trois lignes ce que tu en retiens, puis commence le travail.
+
+À LA FIN de ta session, écris un commentaire sur cette même page avec
+l'en-tête :
+[QUI] Chrome-TikTok
+[POUR] Alpha
+[QUOI] ce que tu as appris, ce qui t'a bloqué, ta question s'il y en a une
+
+⚠️ Ce dépôt est PUBLIC. Dans ce commentaire : AUCUN nom de personne, aucun
+pseudo, aucun numéro, aucune adresse e-mail. Tu écris des métiers, des
+villes, des nombres et des enseignements — jamais quelqu'un d'identifiable.
+
+---
+
 Je suis le fondateur de Finjaro, une place de marché en ligne ouverte au
 monde entier. C'est mon compte TikTok. Je t'autorise à écrire aux gens en mon
 nom, sans me redemander à chaque message.
