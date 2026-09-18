@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconX } from '@tabler/icons-react';
+import { track } from '../lib/track';
 import { PLAY_STORE_URL, APP_STORE_URL } from './StoreBadges';
 import { PAYS_CONSENTEMENT_REQUIS } from './CookieConsent';
 import { useSettings } from '../hooks/useSettings';
@@ -50,6 +51,7 @@ export function InstallAppBanner() {
   }, [pathname, country]);
 
   function fermer() {
+    track('install_banner_closed');
     try { localStorage.setItem(DISMISS_KEY, String(Date.now())); } catch { /* stockage indisponible */ }
     setShow(false);
   }

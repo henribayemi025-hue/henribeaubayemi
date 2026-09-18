@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { IconBuildingStore, IconShieldCheck, IconSparkles } from '@tabler/icons-react';
+import { track } from '../lib/track';
 
 const SEEN_KEY = 'finjaro:intro-seen';
 
@@ -68,16 +69,24 @@ export function AppIntro() {
       if (localStorage.getItem(SEEN_KEY)) return;
     } catch { /* stockage indisponible: on montre */ }
     setShow(true);
+    // Trois écrans se placent entre une visiteuse et Finjaro: celui-ci, le
+    // bandeau cookies et l'invitation à installer l'application. Aucun des
+    // trois n'enregistrait quoi que ce soit, donc on ignorait combien de gens
+    // s'arrêtent là — le tout premier pas du parcours était invisible.
+    track('intro_shown');
   }, [pathname, search]);
 
-  function close() {
+  // `ecran` dit OÙ la personne est sortie: passer au premier écran et finir
+  // les trois n'ont pas du tout le même sens.
+  function close(sortie = 'passer') {
     try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* noop */ }
+    track('intro_closed', null, { sortie, ecran: i + 1, total: SLIDES.length });
     setShow(false);
   }
 
   function next() {
     if (i < SLIDES.length - 1) setI(i + 1);
-    else close();
+    else close('termine');
   }
 
   if (!show) return null;
@@ -101,7 +110,7 @@ export function AppIntro() {
           a sa place, sinon on explique un service sans jamais le nommer. */}
       <div className="mx-auto flex w-full max-w-app items-center justify-between px-6 py-4">
         <span className="text-title font-semibold text-teal">Finjaro</span>
-        <button onClick={close} className="px-2 py-1 text-caption font-semibold text-muted">
+        <button onClick={() => close('passer')} className="px-2 py-1 text-caption font-semibold text-muted">
           {t('intro.skip')}
         </button>
       </div>
