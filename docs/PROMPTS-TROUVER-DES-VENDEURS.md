@@ -308,6 +308,111 @@ Interdits absolus :
 - Tu écris le message. Tu ne l'envoies pas.
 ```
 
+## Prompt 5 — TikTok: 15 messages par jour, ceux qui se lancent
+
+Demandé par Beau le 18/09. Cible: des prestataires de services **qui
+démarrent** — peu de vues, peu d'abonnés, mais qui ont publié récemment.
+Répartition voulue: **10 en Europe, 5 au pays**.
+
+**Pourquoi ceux qui démarrent.** Chrome-Paris l'a mesuré le matin même: les
+petits comptes actifs répondent mieux que les gros. Ce sont eux qui manquent
+de visibilité et qui en cherchent. Un gros compte n'a rien à gagner.
+
+**Le filtre qui compte n'est pas le nombre d'abonnés, c'est la date de la
+dernière publication.** Un compte à 20 000 abonnés muet depuis un an ne
+répondra pas; un compte à 300 abonnés qui a publié hier, oui.
+
+⚠️ **Deux limites réelles, elles sont dans le prompt.**
+
+1. **TikTok n'autorise souvent le message privé que si la personne vous
+   suit.** Une grande partie des profils seront injoignables en privé. Le
+   repli est le numéro affiché dans la bio, et on écrit sur WhatsApp.
+2. **TikTok restreint les comptes qui envoient beaucoup de messages.** 15 par
+   jour, espacés, textes tous différents: c'est le plafond raisonnable. Un
+   compte restreint ne revient pas.
+
+```
+Je suis le fondateur de Finjaro, une place de marché en ligne ouverte au
+monde entier. C'est mon compte TikTok. Je t'autorise à écrire aux gens en mon
+nom, sans me redemander à chaque message.
+
+OBJECTIF DU JOUR : 15 personnes maximum. Pas une de plus.
+  - 10 en Europe (France, Belgique, Royaume-Uni, Allemagne, Italie, Espagne)
+  - 5 au Cameroun (Douala et Yaoundé)
+
+QUI JE CHERCHE : des prestataires de services qui DÉMARRENT — coiffure et
+tresses, onglerie, maquillage, couture et retouches, traiteur et cuisine à
+domicile, esthétique, photographie, petits travaux.
+
+COMMENT LES TROUVER :
+1. Passe par les mots-dièses, pas par la recherche de comptes : la recherche
+   de comptes remonte surtout des comptes morts. Ouvre un mot-dièse du métier
+   et de la ville, et relève les AUTEURS des publications récentes.
+2. Garde un compte seulement s'il coche les trois :
+   - il a publié dans les 7 derniers jours ;
+   - ses vues sont faibles (quelques centaines, pas des dizaines de milliers) ;
+   - c'est bien un professionnel qui vend un service, pas un particulier.
+3. Le nombre d'abonnés n'est PAS un critère. Un petit compte actif vaut mieux
+   qu'un gros compte endormi.
+4. Tu ne juges l'origine ni la nationalité de personne. Tu ne te fondes que
+   sur ce que le compte dit de lui-même dans sa bio et ses publications
+   (par exemple « tresses », « couture », « traiteur »), et sur la ville
+   qu'il affiche.
+
+POUR CHAQUE PERSONNE, l'une après l'autre :
+1. Ouvre son profil. Note : pseudo, métier, ville, pays, date de la dernière
+   publication, abonnés, et le numéro s'il est affiché dans la bio.
+2. Essaie de lui envoyer un message privé.
+   - Si TikTok refuse parce qu'elle ne me suit pas : tu N'INSISTES PAS. Tu
+     notes « MP fermé » et tu relèves son numéro de bio pour que je lui écrive
+     sur WhatsApp. S'il n'y a pas de numéro, tu passes au suivant.
+3. Le message fait 3 à 4 lignes, et il COMMENCE par quelque chose de vrai et
+   de précis sur SA publication à elle — ce qu'elle a montré, pas une formule
+   qui marcherait pour n'importe qui.
+4. Attends 3 à 5 minutes entre deux envois. Jamais deux d'affilée.
+5. Note dans un tableau : Pseudo | Métier | Ville | Pays | Abonnés |
+   Dernière publi | MP envoyé oui/non/fermé | Numéro bio | Message envoyé.
+
+CE QUE LE MESSAGE DIT :
+- qu'on a vu son travail et ce qu'on y a aimé (précis) ;
+- qu'elle peut présenter son travail sur Finjaro : elle publie une fois, sa
+  page reste en ligne, et ses clientes retrouvent tout au même endroit — au
+  lieu de republier à chaque fois ;
+- que c'est GRATUIT JUSQU'EN NOVEMBRE. Le mois s'écrit. Jamais « gratuit »
+  tout court : un service gratuit sans limite est lu comme un service sans
+  valeur.
+- qu'il y a aussi Finjaro Accounting pour suivre son stock et ses ventes ;
+- et ça finit par une question simple, à laquelle on répond par oui ou non.
+
+INTERDITS, ils comptent plus que le nombre :
+- JAMAIS mon nom ni mon prénom. On écrit « nous faisons partie de Finjaro ».
+- Chaque message est DIFFÉRENT. Un texte identique répété fait restreindre le
+  compte en quelques heures.
+- AUCUN chiffre que je ne t'ai pas donné. Pas de « des milliers d'acheteurs »,
+  pas de « X vendeuses nous ont rejoints ».
+- AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
+  camerounaise », pas de « partout au pays ».
+- Ne promets PAS de publier ses articles à sa place.
+- Pas de fausse urgence autour de novembre : pas de « plus que 3 places », pas
+  de compte à rebours. La date est vraie, ça suffit.
+- Si TikTok affiche un avertissement, une limite, ou refuse un envoi : tu
+  ARRÊTES TOUT et tu me préviens. Tu ne contournes rien, tu ne changes pas de
+  compte, tu ne reprends pas plus tard sans me le dire.
+- Si quelqu'un répond pendant que tu travailles : tu me le signales et tu ne
+  réponds pas à sa place.
+- À 15 personnes, tu t'arrêtes. Même si ça marche bien.
+
+À LA FIN : le tableau complet, plus le compte des MP envoyés, des MP fermés,
+et des personnes sautées avec la raison.
+```
+
+**Ce qu'il faut me remonter le lendemain**, et qui vaut plus que le tableau:
+**ce que les gens ont répondu**, mot pour mot. « je n'ai pas compris », « ça
+coûte combien », « c'est où » sont trois problèmes différents, et aucun ne se
+devine depuis la base.
+
+---
+
 ## Prompt 4 — Trouver le bon site dans un pays que je ne connais pas
 
 ```
