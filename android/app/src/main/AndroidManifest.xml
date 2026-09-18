@@ -54,4 +54,15 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!--
+    Micro: la dictée vocale de Finou (bouton micro dans la barre de saisie).
+    Même mécanisme que la caméra ci-dessus, même oubli, même symptôme, constaté
+    par Beau le 11/09 sur l'app installée: « impossible d'accéder au micro,
+    vérifiez les réglages » au lieu de la fenêtre « Autoriser ». iOS, lui,
+    déclare déjà le micro dans Info.plist (NSMicrophoneUsageDescription).
+    MODIFY_AUDIO_SETTINGS accompagne RECORD_AUDIO: la capture audio du WebView
+    le demande pour régler l'entrée son.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 </manifest>
