@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconEye, IconUsers, IconBuildingStore, IconShoppingBag, IconTrendingUp, IconSparkles,
   IconLayoutDashboard, IconFlag, IconSpeakerphone, IconChevronRight, IconLifebuoy, IconMessage2,
-  IconSearch, IconArrowUpRight, IconArrowDownRight, IconActivity, IconGridDots } from '@tabler/icons-react';
+  IconSearch, IconArrowUpRight, IconArrowDownRight, IconActivity, IconGridDots, IconPhotoPlus } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useAsync } from '../hooks/useAsync';
@@ -26,6 +26,7 @@ const AdminAnnonce = lazy(() => import('./admin/AdminAnnonce'));
 const AdminRelances = lazy(() => import('./admin/AdminRelances'));
 const AdminVeille = lazy(() => import('./admin/AdminVeille'));
 const AdminApps = lazy(() => import('./admin/AdminApps'));
+const AdminPublier = lazy(() => import('./admin/AdminPublier'));
 
 const EVENT_TYPES = ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'follow', 'comment', 'mirror_try'];
 const AI_BUDGET_EUR = 20;
@@ -37,6 +38,8 @@ const SECTIONS = [
   { key: 'overview', icon: IconLayoutDashboard },
   { key: 'veille', icon: IconActivity, Component: AdminVeille },
   { key: 'shops', icon: IconBuildingStore, Component: AdminShops },
+  // Juste après les boutiques: c'est de là qu'on part quand on en voit une vide.
+  { key: 'publier', icon: IconPhotoPlus, Component: AdminPublier },
   { key: 'users', icon: IconUsers, Component: AdminUsers },
   { key: 'orders', icon: IconShoppingBag, Component: AdminOrders },
   { key: 'moderation', icon: IconFlag, Component: AdminModeration },
