@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { IconClock, IconRosetteDiscountCheck, IconCircleCheck, IconCircleX } from '@tabler/icons-react';
+import { IconClock, IconRosetteDiscountCheck, IconCircleCheck, IconCircleX, IconTag, IconCoin } from '@tabler/icons-react';
 
 // Statuts "en mouvement" (en livraison / prête à retirer): un petit point
 // vert PULSE au lieu d'une icône statique — le signal "ça bouge, suis ta
@@ -15,6 +15,9 @@ function LiveDot() {
 }
 
 const CONFIG = {
+  // Devis: laiton, la couleur que Finjaro réserve à « prix sur demande ».
+  awaiting_price: { style: 'bg-brass/15 text-brass', icon: IconTag },
+  priced: { style: 'bg-brass/15 text-brass', icon: IconCoin },
   new: { style: 'bg-warning-bg text-warning', icon: IconClock },
   confirmed: { style: 'bg-teal/10 text-teal', icon: IconRosetteDiscountCheck },
   shipped: { style: 'bg-success-bg text-success', live: true },
@@ -27,7 +30,7 @@ const CONFIG = {
 // part pour que VendorOrders/MyOrders l'utilisent sans dupliquer la logique.
 export function orderAccentColor(status, method) {
   const key = status === 'shipped' && method === 'pickup' ? 'readyPickup' : status;
-  return { new: 'border-l-warning', confirmed: 'border-l-teal', shipped: 'border-l-success', readyPickup: 'border-l-success', delivered: 'border-l-success', cancelled: 'border-l-danger' }[key] || 'border-l-hairline';
+  return { awaiting_price: 'border-l-brass', priced: 'border-l-brass', new: 'border-l-warning', confirmed: 'border-l-teal', shipped: 'border-l-success', readyPickup: 'border-l-success', delivered: 'border-l-success', cancelled: 'border-l-danger' }[key] || 'border-l-hairline';
 }
 
 // `method` (pickup/delivery) affine le libellé: une commande « shipped » en

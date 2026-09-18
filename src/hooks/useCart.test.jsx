@@ -62,6 +62,32 @@ describe('useCart', () => {
     expect(result.current.count).toBe(3);
   });
 
+  // Un article « prix sur demande » entre au panier SANS prix: c'est la
+  // vendeuse qui chiffrera. Il ne doit compter pour rien dans le sous-total —
+  // sinon l'écran affiche un montant qui a l'air vrai et qui est faux.
+  it('keeps a price-on-request item out of the subtotal', () => {
+    const surDemande = { id: 'p2', name: 'Robe sur mesure', price_fcfa: 0, price_on_request: true, shop_id: 's1', shop_name: 'Boutique Test' };
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => result.current.add(product, 2));
+    act(() => result.current.add(surDemande, 1));
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.count).toBe(3);
+    expect(result.current.subtotal).toBe(15000 * 2);
+    expect(result.current.pendingCount).toBe(1);
+    expect(result.current.items.find((i) => i.id === 'p2').price_on_request).toBe(true);
+  });
+
+  // Le prix affiché d'un article sur demande ne doit jamais venir de la fiche:
+  // un catalogue peut porter un price_fcfa résiduel alors que la boutique a
+  // coché « prix sur demande ».
+  it('ignores a leftover price on a price-on-request item', () => {
+    const residuel = { id: 'p3', name: 'Perruque', price_fcfa: 99000, price_on_request: true, shop_id: 's1' };
+    const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
+    act(() => result.current.add(residuel, 1));
+    expect(result.current.items[0].price_fcfa).toBe(0);
+    expect(result.current.subtotal).toBe(0);
+  });
+
   it('persists to localStorage so a guest keeps their cart on reload', () => {
     const { result } = renderHook(() => useCart(), { wrapper: CartProvider });
     act(() => result.current.add(product, 2));

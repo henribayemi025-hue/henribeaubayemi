@@ -12,7 +12,7 @@ import { storageUrl, storageThumbUrl} from '../../lib/supabase';
 export default function Cart() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { items, setQty, remove, subtotal, clearShop } = useCart();
+  const { items, setQty, remove, subtotal, pendingCount, clearShop } = useCart();
 
   // Group by shop so each order/checkout targets a single vendor.
   const byShop = items.reduce((acc, it) => {
@@ -78,7 +78,13 @@ export default function Cart() {
                         {[it.size, it.color].filter(Boolean).join(' · ')}
                       </p>
                     )}
-                    <Price fcfa={it.price_fcfa} className="text-body font-semibold text-teal" />
+                    {/* Un prix qu'on ne connaît pas ne s'écrit pas en chiffres.
+                        « 0 FCFA » ferait croire que c'est gratuit. */}
+                    {it.price_on_request ? (
+                      <p className="text-body font-semibold text-brass">{t('cart.priceToConfirm')}</p>
+                    ) : (
+                      <Price fcfa={it.price_fcfa} className="text-body font-semibold text-teal" />
+                    )}
                     <div className="mt-1 flex items-center gap-3">
                       <div className="flex items-center rounded-input border border-hairline">
                         <button onClick={() => setQty(it.key, it.qty - 1)} disabled={it.qty <= 1} className="p-1.5 text-ink disabled:opacity-30" aria-label="-"><IconMinus size={16} /></button>
@@ -110,6 +116,13 @@ export default function Cart() {
           <span className="text-body text-muted">{t('cart.subtotal')}</span>
           <Price fcfa={subtotal} className="text-section font-semibold text-ink" />
         </div>
+        {/* Le sous-total ne compte que les articles dont le prix est connu.
+            Le dire, sinon le chiffre a l'air faux. */}
+        {pendingCount > 0 && (
+          <p className="mt-1 pr-16 text-caption font-semibold text-brass">
+            {t('cart.pendingNote', { count: pendingCount })}
+          </p>
+        )}
         <p className="mt-1 pr-16 text-caption text-muted">{t('cart.deliveryNote')}</p>
         {/* Le bouton que le testeur cherchait: un seul passage pour toutes les
             boutiques. Il n'apparaît que s'il y en a plusieurs — avec une seule

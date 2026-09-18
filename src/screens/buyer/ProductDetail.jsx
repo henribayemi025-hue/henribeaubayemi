@@ -281,7 +281,10 @@ export default function ProductDetail() {
       <div className="p-4">
         <h1 className="text-title text-ink">{p.name}</h1>
         {quote ? (
-          <p className="mt-1 text-section font-semibold text-brass">{t('product.priceOnRequest')}</p>
+          <>
+            <p className="mt-1 text-section font-semibold text-brass">{t('product.priceOnRequest')}</p>
+            <p className="mt-1 text-caption text-muted">{t('product.priceOnRequestHow')}</p>
+          </>
         ) : (
           <div className="mt-1 flex items-center gap-2">
             <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
@@ -450,9 +453,13 @@ export default function ProductDetail() {
         >
           <IconMessage size={20} />
         </button>
-        {quote ? (
-          <Button onClick={startChat} loading={starting}>{t('product.requestQuote')}</Button>
-        ) : cartLine ? (
+        {/* Un article sans prix se met au panier COMME LES AUTRES. Avant, le
+            seul chemin était le chat: 211 des 438 articles actifs (48 %),
+            dans 20 boutiques, ne pouvaient pas être commandés du tout, et
+            aucune commande n'en a jamais contenu un seul. La vendeuse chiffre
+            après, la cliente accepte, et le stock ne bouge qu'à ce
+            moment-là. */}
+        {cartLine ? (
           // Already in the cart → a stepper reflecting the real cart quantity,
           // capped at available stock. No confusing transient "added" label.
           <div className="flex flex-1 items-center justify-between rounded-[10px] border-[1.5px] border-teal px-2">
@@ -482,7 +489,9 @@ export default function ProductDetail() {
               {alerte ? t('product.alertOn') : t('product.notifyMe')}
             </Button>
           ) : (
-            <Button onClick={addToCart}>{t('product.addToCart')}</Button>
+            <Button onClick={addToCart}>
+              {quote ? t('product.addToCartOnRequest') : t('product.addToCart')}
+            </Button>
           )
         )}
       </div>

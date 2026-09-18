@@ -10,6 +10,9 @@ import { timeAgo } from '../../lib/format';
 
 const TABS = [
   { key: 'all', statuses: null },
+  // Sans cet onglet, une commande en attente de prix n'apparaîtrait que dans
+  // « Toutes » — invisible là où l'équipe regarde.
+  { key: 'quotes', statuses: ['awaiting_price', 'priced'] },
   { key: 'new', statuses: ['new'] },
   { key: 'inProgress', statuses: ['confirmed', 'shipped'] },
   { key: 'delivered', statuses: ['delivered'] },
