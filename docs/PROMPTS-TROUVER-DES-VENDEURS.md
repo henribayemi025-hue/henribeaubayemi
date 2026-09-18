@@ -114,6 +114,59 @@ temps entre chaque: c'est ce qui fait passer la centaine.
 
 ---
 
+## Prompt 1 ter — Prestataires de services en Europe, avec l'e-mail
+
+C'est la version utilisée le 18/09 pour la première série. Elle change deux
+choses par rapport au Prompt 1: on vise des **prestataires de services**
+(coiffure, plomberie, couture, traiteur, esthétique, cordonnerie…) plutôt que
+des boutiques, et on relève **l'e-mail**, parce que c'est le seul canal
+qu'on peut automatiser de notre côté.
+
+Sur trente fiches, on obtient environ quinze e-mails. C'est normal: beaucoup
+de fiches Google Maps n'affichent qu'un téléphone.
+
+```
+Tu m'aides à constituer une liste de professionnels à contacter pour Finjaro,
+une place de marché en ligne ouverte au monde entier.
+
+SITE : https://www.google.com/maps
+ZONE : [Paris, France]
+CE QUE JE CHERCHE : des prestataires de services indépendants — coiffure et
+tresses, couture et retouches, plomberie, électricité, traiteur, esthétique,
+cordonnerie, petits travaux.
+
+Ce que tu fais :
+1. Cherche chacune de ces activités dans cette zone.
+2. Pour chaque fiche, ouvre-la et relève : nom du commerce, activité, ville,
+   pays, e-mail s'il est affiché, téléphone s'il est affiché, site web, et la
+   langue dans laquelle la fiche est rédigée.
+3. Si la fiche renvoie vers un site, ouvre la page « contact » du site : c'est
+   là que se trouve l'e-mail la plupart du temps.
+4. Rends-moi un tableau : Nom | Activité | Ville | Pays | E-mail | Téléphone |
+   Site | Langue.
+
+Règles, elles comptent plus que la quantité :
+- Tu N'ENVOIES AUCUN message et tu ne remplis aucun formulaire. Tu lis, tu
+  notes, tu t'arrêtes là.
+- Tu ne relèves QUE ce qui est affiché publiquement. Tu ne devines JAMAIS une
+  adresse e-mail à partir d'un nom de domaine.
+- Pas d'e-mail affiché : tu mets la ligne avec la case vide. Une case vide est
+  utile, une adresse inventée me coûte cher.
+- Tu ne juges pas l'origine ou la nationalité de qui que ce soit. Tu ne
+  relèves que ce que le commerce dit de lui-même dans sa propre description.
+- Captcha, connexion demandée, « trop de requêtes » : tu t'arrêtes et tu me le
+  dis. Tu ne contournes rien.
+- À la fin, dis-moi combien de fiches tu as ouvertes et combien d'e-mails tu
+  as trouvés.
+```
+
+**Pourquoi on ne cible pas une origine.** On cible ce que le commerce écrit
+lui-même de son activité (« salon afro », « tresses »). C'est plus juste, et
+ça évite la catégorie de données sensibles du RGPD. Le mot « diaspora »
+n'apparaît dans aucun texte visible — c'est une règle de `CLAUDE.md`.
+
+---
+
 ## Prompt 2 — Instagram et TikTok (bio seulement)
 
 Sur ces deux réseaux, le numéro WhatsApp est très souvent dans la bio. On ne
