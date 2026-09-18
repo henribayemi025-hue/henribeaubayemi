@@ -170,6 +170,78 @@ n'apparaît dans aucun texte visible — c'est une règle de `CLAUDE.md`.
 
 ---
 
+## Prompt 1 quater — Pages Jaunes (celui qui tourne sans Beau)
+
+Ajouté le 18/09. C'est la meilleure source d'**adresses e-mail** après Google
+Maps, et la seule chaîne complète qui ne demande rien à Beau: un Claude de
+Chrome collecte, je range en base, j'envoie.
+
+Pourquoi elle donne plus d'e-mails que Maps: une fiche Pages Jaunes affiche
+souvent le site du professionnel, et l'e-mail se trouve sur la page
+« contact » de ce site. Sur Maps, la moitié des fiches n'ont qu'un téléphone.
+
+```
+Tu m'aides à constituer une liste de professionnels à contacter pour Finjaro,
+une place de marché en ligne ouverte au monde entier.
+
+SITE : https://www.pagesjaunes.fr
+ZONE : [Paris et petite couronne]
+CE QUE JE CHERCHE : [coiffure] — puis tu recommences avec : couture et
+retouches, plomberie, électricité, traiteur, esthétique, cordonnerie.
+
+Ce que tu fais, métier par métier :
+1. Lance la recherche « [métier] » dans « [zone] » sur Pages Jaunes.
+2. Parcours les 30 premiers résultats. Ouvre chaque fiche.
+3. Relève : nom, activité, ville, code postal, téléphone, site web.
+4. S'il y a un site, OUVRE-LE et va sur sa page « contact » ou « mentions
+   légales » : c'est là qu'est l'e-mail. Relève-le.
+5. Note aussi la langue du site, et une phrase sur ce que fait le
+   professionnel, prise dans sa propre description.
+6. Rends un tableau : Nom | Activité | Ville | Code postal | E-mail |
+   Téléphone | Site | Langue | Ce qu'il fait.
+
+Règles, elles comptent plus que la quantité :
+- Tu N'ENVOIES AUCUN message et tu ne remplis aucun formulaire de contact. Tu
+  lis, tu notes, tu t'arrêtes là.
+- Tu ne relèves QUE ce qui est affiché publiquement. Tu ne DEVINES JAMAIS une
+  adresse e-mail à partir d'un nom de domaine.
+- Pas d'e-mail trouvé : tu mets quand même la ligne, case vide. Une case vide
+  est utile, une adresse inventée me coûte cher.
+- Tu ne juges l'origine ni la nationalité de personne. Tu ne relèves que ce
+  que le professionnel écrit lui-même de son activité.
+- Captcha, connexion demandée, « trop de requêtes » : tu t'arrêtes et tu me le
+  dis. Tu ne contournes rien.
+- À la fin: combien de fiches ouvertes, combien de sites visités, combien
+  d'e-mails trouvés.
+```
+
+## Les autres sources, classées par ce qu'elles rapportent
+
+| Source | Ce qu'on y trouve | E-mail ? |
+| --- | --- | --- |
+| Google Maps | Le socle. Toutes activités, toutes zones. | ~1 sur 2 |
+| **Pages Jaunes** | Le meilleur pour l'e-mail, parce qu'il mène au site. | Souvent |
+| `annuaire-entreprises.data.gouv.fr` | TOUTES les entreprises déclarées en France. Donnée publique, gratuite, en masse. | Non |
+| StarOfService, Wecasa, Yoojo | Des prestataires qui CHERCHENT des clients — donc réceptifs. | Non |
+| Planity, Kiute | Salons de coiffure sur réservation. | Non |
+| Instagram, TikTok (mots-dièses) | Le plus dense pour la beauté. Numéro dans la bio. | Non, WhatsApp |
+| Groupes Facebook communautaires | La plus forte densité. Les gens s'y annoncent eux-mêmes. | Non |
+
+**La règle qui explique ce tableau:** l'e-mail n'existe que si la personne a
+un **site**. Les annuaires de réservation et les réseaux sociaux donnent
+beaucoup de noms et presque aucun e-mail — pour ceux-là, c'est WhatsApp.
+
+**Les groupes Facebook ne passent pas à l'échelle.** Il faut demander à
+entrer dans chaque groupe et attendre qu'un administrateur accepte; il n'y a
+aucune API; et publier une annonce dedans fait bannir le compte. On y lit, on
+relève des numéros, on écrit en privé. Excellente qualité, faible volume, et
+ça demande du temps à Beau — c'est exactement ce qu'il n'a pas.
+
+**Pour un pays qu'on ne connaît pas**, ne pas inventer de noms de sites: le
+Prompt 4 est fait pour les faire trouver.
+
+---
+
 ## Prompt 2 — Instagram et TikTok (bio seulement)
 
 Sur ces deux réseaux, le numéro WhatsApp est très souvent dans la bio. On ne
