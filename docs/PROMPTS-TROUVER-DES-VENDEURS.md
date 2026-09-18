@@ -48,6 +48,72 @@ Règles, elles comptent plus que la quantité :
   affiché ». Une ligne fausse me coûte plus qu'une ligne manquante.
 ```
 
+## Prompt 1 bis — Trouver ET écrire dans la même passe
+
+C'est celui que Beau veut: Claude ne rend pas une liste, il contacte. Demandé
+explicitement le 18/09, après deux réserves de ma part. Sa décision.
+
+L'envoi se fait sur **WhatsApp**, vers le numéro que le vendeur a lui-même
+publié pour être appelé. C'est le seul canal où écrire à un inconnu n'est ni
+un détournement de l'outil ni un motif de blocage.
+
+```
+Je suis le fondateur de Finjaro, une place de marché en ligne ouverte au
+monde entier. Je t'autorise à écrire aux vendeurs en mon nom, sans me
+redemander à chaque message.
+
+SITE OÙ CHERCHER : [https://www.google.com/maps]
+ZONE : [Douala, Cameroun]
+CE QUE JE CHERCHE : [boutiques de vêtements et d'accessoires]
+LANGUE DES MESSAGES : [français]
+COMBIEN : [15] vendeurs maximum pour cette session
+
+Pour CHAQUE vendeur, l'un après l'autre :
+
+1. Ouvre sa fiche. Relève : nom, ce qu'il vend, ville, pays, numéro de
+   téléphone. S'il n'y a pas de numéro affiché, passe au suivant.
+2. Écris un message de 4 lignes maximum, qui commence par quelque chose de
+   VRAI et de précis sur SA boutique — pris dans sa fiche, pas une formule
+   qui marcherait pour n'importe qui.
+3. Ouvre https://wa.me/<son numéro sans espaces ni +> dans un onglet, colle
+   le message, ENVOIE-LE.
+4. Note dans un tableau : Nom | Ville | Pays | Numéro | Message envoyé |
+   Envoyé oui/non.
+5. Attends 30 à 60 secondes, puis passe au suivant.
+
+Règles :
+- Un message à la fois. Jamais deux fenêtres d'envoi ouvertes ensemble.
+- Chaque message est DIFFÉRENT. Un texte identique répété fait bloquer mon
+  numéro par WhatsApp en quelques dizaines d'envois — c'est la limite qui
+  m'arrêtera, pas toi.
+- AUCUN chiffre que je ne t'ai pas donné. Pas de « des milliers d'acheteurs »,
+  pas de « X vendeuses nous ont rejoints ». Si le chiffre n'est pas mesuré,
+  il ne s'écrit pas.
+- AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
+  camerounaise », pas de « partout au pays ».
+- Pas de promesse de gain, pas de fausse urgence, pas d'« offre limitée ».
+- Si WhatsApp affiche une limite, un avertissement, ou refuse un envoi : tu
+  ARRÊTES tout et tu me préviens. Tu ne contournes rien, tu ne changes pas de
+  compte, tu ne recommences pas plus tard sans me le dire.
+- Si un vendeur répond pendant que tu travailles, tu me le signales et tu ne
+  réponds pas à sa place.
+- À la fin, donne-moi le tableau complet, y compris les vendeurs sautés et
+  pourquoi.
+```
+
+**Pourquoi l'envoi ne passe pas par Instagram, TikTok ou Facebook.** Ce n'est
+pas une précaution: ces trois réseaux détectent l'envoi automatisé et
+restreignent le compte en quelques heures. On y trouve le numéro dans la bio,
+et on écrit sur WhatsApp. Le compte survit, et le message arrive là où le
+vendeur lit vraiment.
+
+**Ce qui arrêtera Beau, c'est WhatsApp, pas Claude.** Un même numéro qui
+envoie beaucoup de messages en peu de temps est signalé par les personnes qui
+ne répondent pas, puis limité. Quinze par session, des textes différents, du
+temps entre chaque: c'est ce qui fait passer la centaine.
+
+---
+
 ## Prompt 2 — Instagram et TikTok (bio seulement)
 
 Sur ces deux réseaux, le numéro WhatsApp est très souvent dans la bio. On ne
@@ -150,10 +216,10 @@ tous les pays, et le seul où Claude ne fait que lire une fiche publique.
 
 ## Ce qui n'est PAS dans ces prompts, et pourquoi
 
-- **Aucun envoi.** Les prompts collectent. L'envoi se fait à la main, sur
-  WhatsApp. Ce n'est pas une précaution morale: un compte Instagram ou
-  Facebook qui envoie en rafale est restreint en quelques heures, et on perd
-  l'outil.
+- **L'envoi ne passe que par WhatsApp** (prompt 1 bis), vers un numéro que le
+  vendeur a publié lui-même. Sur Instagram, TikTok et Facebook, les prompts
+  collectent seulement: un compte qui y envoie en rafale est restreint en
+  quelques heures, et on perd l'outil.
 - **Aucune récolte de masse.** Trente fiches lues à la main ressemblent à
   quelqu'un qui cherche. Trois mille ressemblent à un robot, et se traitent
   comme tel.
