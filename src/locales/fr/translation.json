@@ -1402,7 +1402,8 @@
       "annonce": "Annonce",
       "relances": "Relances",
       "veille": "Veille",
-      "apps": "Applications"
+      "apps": "Applications",
+      "publier": "Publier pour une boutique"
     },
     "annonceCible": "À qui ?",
     "annonceCibles": {
@@ -1694,7 +1695,36 @@
       "missing": "Nom, identifiant et adresse sont obligatoires.",
       "badUrl": "L'adresse doit commencer par https://"
     },
-    "noBanner": "Pas de bannière"
+    "noBanner": "Pas de bannière",
+    "publier": {
+      "intro": "{{vides}} boutiques n'ont aucun article. Elles n'apparaissent dans aucune recherche. Choisis-en une et mets ses photos en ligne.",
+      "chercher": "Chercher une boutique…",
+      "vide": "Vide",
+      "aucune": "Aucune boutique ne correspond.",
+      "changerBoutique": "Changer",
+      "photos": "Photos",
+      "ajouter": "Ajouter",
+      "photoIllisible": "Photo illisible : {{nom}}",
+      "nom": "Nom de l'article",
+      "nomExemple": "Perruque lace frontale 24 pouces",
+      "prix": "Prix",
+      "devise": "Devise",
+      "rayon": "Rayon",
+      "stock": "Quantité",
+      "description": "Description",
+      "descriptionExemple": "Matière, taille, couleur, ce qui la distingue…",
+      "rappelDevise": "Le prix est saisi en {{devise}} — la monnaie de cette boutique, pas la tienne.",
+      "cta": "Publier dans sa boutique",
+      "enLigne": "Article en ligne.",
+      "dejaPublies_one": "1 article publié dans cette boutique",
+      "dejaPublies_other": "{{count}} articles publiés dans cette boutique",
+      "voirBoutique": "Voir la boutique",
+      "errNonAdmin": "Ton compte n'a pas le droit de publier pour une boutique.",
+      "errBoutique": "Cette boutique n'existe plus.",
+      "errBoutiqueFermee": "Cette boutique est fermée : impossible d'y publier.",
+      "errNom": "L'article a besoin d'un nom.",
+      "errPrix": "Mets un prix, ou coche « prix sur demande »."
+    }
   },
   "troc": {
     "title": "Évaluer un troc",

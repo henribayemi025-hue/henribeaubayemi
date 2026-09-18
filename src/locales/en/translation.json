@@ -1402,7 +1402,8 @@
       "annonce": "Broadcast",
       "relances": "Follow-ups",
       "veille": "Watch",
-      "apps": "Apps"
+      "apps": "Apps",
+      "publier": "Publish for a shop"
     },
     "annonceCible": "Who to?",
     "annonceCibles": {
@@ -1694,7 +1695,36 @@
       "missing": "Name, identifier and address are required.",
       "badUrl": "The address must start with https://"
     },
-    "noBanner": "No banner"
+    "noBanner": "No banner",
+    "publier": {
+      "intro": "{{vides}} shops have no items at all. They show up in no search. Pick one and put its photos online.",
+      "chercher": "Search for a shop…",
+      "vide": "Empty",
+      "aucune": "No shop matches.",
+      "changerBoutique": "Change",
+      "photos": "Photos",
+      "ajouter": "Add",
+      "photoIllisible": "Unreadable photo: {{nom}}",
+      "nom": "Item name",
+      "nomExemple": "24-inch lace frontal wig",
+      "prix": "Price",
+      "devise": "Currency",
+      "rayon": "Category",
+      "stock": "Quantity",
+      "description": "Description",
+      "descriptionExemple": "Material, size, colour, what sets it apart…",
+      "rappelDevise": "The price is entered in {{devise}} — this shop's currency, not yours.",
+      "cta": "Publish in their shop",
+      "enLigne": "Item is live.",
+      "dejaPublies_one": "1 item published in this shop",
+      "dejaPublies_other": "{{count}} items published in this shop",
+      "voirBoutique": "View the shop",
+      "errNonAdmin": "Your account cannot publish on behalf of a shop.",
+      "errBoutique": "This shop no longer exists.",
+      "errBoutiqueFermee": "This shop is closed: nothing can be published there.",
+      "errNom": "The item needs a name.",
+      "errPrix": "Set a price, or tick “price on request”."
+    }
   },
   "troc": {
     "title": "Evaluate a trade",
