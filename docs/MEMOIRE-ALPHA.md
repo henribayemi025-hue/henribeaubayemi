@@ -164,6 +164,15 @@ les envoie à la main.
 Beau a rejeté la première version (« je m'appelle Henri Beau, je construis
 Finjaro… Finjaro est jeune ») — ça faisait amateur. Version retenue:
 
+- ⛔ **INTERDIT: écrire que Finjaro est jeune, petit, ou en construction.**
+  Jamais, dans aucun message à un vendeur ou à un prospect. Beau l'a rejeté
+  DEUX fois — la première dans le message d'approche, la seconde le 18/09
+  dans une réponse à une professionnelle: « enlève ton bête paragraphe de on
+  est jeune là, et que ce soit la dernière fois ». Je l'avais écrit en croyant
+  bien faire (prévenir plutôt que décevoir). Ce n'est pas le débat: il vend
+  son produit, et personne ne signe chez quelqu'un qui commence par s'excuser
+  d'exister. On ne ment pas — on ne donne aucun chiffre non mesuré — mais on
+  ne se dénigre pas non plus.
 - **Voix d'équipe**, pas de nom personnel: « nous faisons partie de Finjaro ».
 - On dit qu'on a vu ses articles et qu'on les a aimés.
 - On mentionne **Finjaro Accounting** (gestion des stocks) en plus de la
