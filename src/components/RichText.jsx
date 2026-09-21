@@ -10,12 +10,44 @@
 // celles que le modèle produit vraiment: le gras, les listes numérotées et
 // les listes à puces.
 
+// Une adresse écrite par Finia doit se cliquer.
+//
+// Beau, 21/09: il a demandé à Finia si elle connaissait Finjaro Accounting.
+// Même quand elle répond correctement, l'adresse restait du texte mort — la
+// personne devait la recopier à la main. « les liens, quand je demande il
+// envoie, je clique, j'entre. »
+//
+// On n'accepte que http(s) et on construit un élément React, jamais du HTML
+// brut: une adresse `javascript:` ne peut donc pas passer. `noopener` parce
+// que la page ouverte ne doit pas pouvoir revenir sur la nôtre.
+const LIEN = /(https?:\/\/[^\s<>()[\]{}"']+[^\s<>()[\]{}"'.,;:!?])/g;
+
+function liens(text, keyBase) {
+  return String(text).split(LIEN).map((part, i) => {
+    if (i % 2 === 0) return part;
+    // Affiché sans le « https:// » ni la barre finale: c'est une adresse qu'on
+    // lit, pas qu'on recopie.
+    const propre = part.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    return (
+      <a
+        key={`${keyBase}-l${i}`}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-teal underline underline-offset-2 break-words"
+      >
+        {propre}
+      </a>
+    );
+  });
+}
+
 // `**gras**` — on découpe sur le marqueur, une occurrence sur deux est en gras.
 function inline(text, keyBase) {
   return text.split(/\*\*(.+?)\*\*/g).map((part, i) =>
     i % 2 === 1
-      ? <strong key={`${keyBase}-b${i}`} className="font-semibold">{part}</strong>
-      : part,
+      ? <strong key={`${keyBase}-b${i}`} className="font-semibold">{liens(part, `${keyBase}-b${i}`)}</strong>
+      : <span key={`${keyBase}-t${i}`}>{liens(part, `${keyBase}-t${i}`)}</span>,
   );
 }
 
