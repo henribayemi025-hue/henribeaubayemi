@@ -455,7 +455,8 @@
     ],
     "actionVendorSpace": "Ouvrir mon espace vendeur",
     "suggestGuide": "Comment ça marche ?",
-    "actionReferral": "Inviter une vendeuse"
+    "actionReferral": "Inviter une vendeuse",
+    "actionOpenApp": "Ouvrir {{app}}"
   },
   "mirror": {
     "title": "Essayage virtuel",
@@ -1869,5 +1870,62 @@
     "title": "Finjaro est plus rapide dans l'app",
     "subtitle": "Notifications, accès en un geste, gratuit",
     "cta": "Installer"
+  },
+  "demo": {
+    "titre": "Démonstration",
+    "bandeau": "Boutiques, articles et montants sont inventés pour cette démonstration. Rien n'est enregistré, et aucune commande n'est envoyée à qui que ce soit.",
+    "etape": {
+      "choix": "La boutique",
+      "cliente": "Côté cliente",
+      "vendeuse": "Côté vendeuse",
+      "compta": "La comptabilité"
+    },
+    "choix": {
+      "titre": "Choisissez une boutique",
+      "intro": "Quatre métiers, quatre pays. Vous allez acheter, puis recevoir la commande, puis voir l'écriture se faire toute seule."
+    },
+    "cliente": {
+      "role": "Vous êtes la cliente",
+      "explication": "Les prix s'affichent dans VOTRE monnaie ({{devise}}) — c'est ce que ça vous coûte.",
+      "ajouter": "Ajouter",
+      "panier": "Votre panier",
+      "retirer": "Retirer",
+      "total": "Total",
+      "devisAVenir": "Le prix sur demande n'est pas compté : la vendeuse le chiffrera.",
+      "commander": "Commander",
+      "cod": "Paiement à la livraison. Rien ne vous est demandé maintenant."
+    },
+    "vendeuse": {
+      "role": "Vous êtes {{boutique}}",
+      "explication": "Vos écrans affichent la monnaie de VOTRE boutique ({{devise}}) — celle dans laquelle vous avez saisi vos prix.",
+      "deuxDevises": "C'est la même commande : la cliente l'a vue en {{devisePerso}}, vous la lisez en {{deviseBoutique}}.",
+      "commande": "Nouvelle commande",
+      "aEncaisser": "À encaisser",
+      "action": {
+        "acceptee": "Accepter la commande",
+        "livree": "Marquer comme livrée"
+      },
+      "voirCompta": "Voir ce que ça a écrit"
+    },
+    "statut": {
+      "recue": "Reçue",
+      "acceptee": "Acceptée",
+      "livree": "Livrée"
+    },
+    "compta": {
+      "role": "La comptabilité s'est écrite",
+      "explication": "Vous n'avez rien saisi. La livraison a suffi.",
+      "compte": "Compte",
+      "debit": "Débit",
+      "credit": "Crédit",
+      "hypothese": "Le coût d'achat est posé à 55 % du prix de vente pour cette démonstration. Dans votre boutique, c'est votre vrai prix d'achat qui est utilisé.",
+      "marge": "Votre marge sur cette vente",
+      "stockAussi": "Le stock a baissé en même temps : une vente sort les articles vendus, pas seulement de l'argent.",
+      "ouvrirAccounting": "Continuer dans Finjaro Accounting",
+      "rapports": "Journal, grand livre, balance et bilan s'y extraient, sur trois mois d'activité."
+    },
+    "surDemande": "Prix sur demande",
+    "changerBoutique": "Changer de boutique",
+    "recommencer": "Recommencer la démonstration"
   }
 }

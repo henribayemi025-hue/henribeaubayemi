@@ -455,7 +455,8 @@
     ],
     "actionVendorSpace": "Open my seller space",
     "suggestGuide": "How does it work?",
-    "actionReferral": "Invite a seller"
+    "actionReferral": "Invite a seller",
+    "actionOpenApp": "Open {{app}}"
   },
   "mirror": {
     "title": "Virtual try-on",
@@ -1869,5 +1870,62 @@
     "title": "Finjaro is faster in the app",
     "subtitle": "Notifications, one-tap access, free",
     "cta": "Install"
+  },
+  "demo": {
+    "titre": "Demo",
+    "bandeau": "Shops, items and amounts are made up for this demo. Nothing is saved, and no order is sent to anyone.",
+    "etape": {
+      "choix": "The shop",
+      "cliente": "As the buyer",
+      "vendeuse": "As the seller",
+      "compta": "The bookkeeping"
+    },
+    "choix": {
+      "titre": "Pick a shop",
+      "intro": "Four trades, four countries. You will buy, then receive the order, then watch the entry write itself."
+    },
+    "cliente": {
+      "role": "You are the buyer",
+      "explication": "Prices show in YOUR currency ({{devise}}) — what it costs you.",
+      "ajouter": "Add",
+      "panier": "Your cart",
+      "retirer": "Remove",
+      "total": "Total",
+      "devisAVenir": "Price on request is not counted: the seller will quote it.",
+      "commander": "Place the order",
+      "cod": "Cash on delivery. Nothing is asked of you now."
+    },
+    "vendeuse": {
+      "role": "You are {{boutique}}",
+      "explication": "Your screens show YOUR shop's currency ({{devise}}) — the one you entered your prices in.",
+      "deuxDevises": "Same order: the buyer saw it in {{devisePerso}}, you read it in {{deviseBoutique}}.",
+      "commande": "New order",
+      "aEncaisser": "To collect",
+      "action": {
+        "acceptee": "Accept the order",
+        "livree": "Mark as delivered"
+      },
+      "voirCompta": "See what it wrote"
+    },
+    "statut": {
+      "recue": "Received",
+      "acceptee": "Accepted",
+      "livree": "Delivered"
+    },
+    "compta": {
+      "role": "The bookkeeping wrote itself",
+      "explication": "You entered nothing. Delivering was enough.",
+      "compte": "Account",
+      "debit": "Debit",
+      "credit": "Credit",
+      "hypothese": "Cost of goods is set at 55% of the sale price for this demo. In your own shop, your real purchase price is used.",
+      "marge": "Your margin on this sale",
+      "stockAussi": "Stock went down at the same time: a sale takes out the goods sold, not just money.",
+      "ouvrirAccounting": "Continue in Finjaro Accounting",
+      "rapports": "Journal, general ledger, trial balance and balance sheet are all there, over three months of activity."
+    },
+    "surDemande": "Price on request",
+    "changerBoutique": "Change shop",
+    "recommencer": "Start the demo over"
   }
 }

@@ -74,7 +74,8 @@ Pour CHAQUE vendeur, l'un après l'autre :
    téléphone. S'il n'y a pas de numéro affiché, passe au suivant.
 2. Écris un message de 4 lignes maximum, qui commence par quelque chose de
    VRAI et de précis sur SA boutique — pris dans sa fiche, pas une formule
-   qui marcherait pour n'importe qui.
+   qui marcherait pour n'importe qui. Dis-y que c'est GRATUIT JUSQU'EN
+   NOVEMBRE, avec le mois écrit — jamais « gratuit » tout court.
 3. Ouvre https://wa.me/<son numéro sans espaces ni +> dans un onglet, colle
    le message, ENVOIE-LE.
 4. Note dans un tableau : Nom | Ville | Pays | Numéro | Message envoyé |
@@ -91,7 +92,9 @@ Règles :
   il ne s'écrit pas.
 - AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
   camerounaise », pas de « partout au pays ».
-- Pas de promesse de gain, pas de fausse urgence, pas d'« offre limitée ».
+- Pas de promesse de gain et pas de fausse urgence. La date de novembre n'en
+  est pas une : elle est vraie et c'est moi qui l'ai fixée. En revanche, pas
+  de « plus que 3 places », pas de compte à rebours inventé.
 - Si WhatsApp affiche une limite, un avertissement, ou refuse un envoi : tu
   ARRÊTES tout et tu me préviens. Tu ne contournes rien, tu ne changes pas de
   compte, tu ne recommences pas plus tard sans me le dire.
@@ -111,6 +114,131 @@ vendeur lit vraiment.
 envoie beaucoup de messages en peu de temps est signalé par les personnes qui
 ne répondent pas, puis limité. Quinze par session, des textes différents, du
 temps entre chaque: c'est ce qui fait passer la centaine.
+
+---
+
+## Prompt 1 ter — Prestataires de services en Europe, avec l'e-mail
+
+C'est la version utilisée le 18/09 pour la première série. Elle change deux
+choses par rapport au Prompt 1: on vise des **prestataires de services**
+(coiffure, plomberie, couture, traiteur, esthétique, cordonnerie…) plutôt que
+des boutiques, et on relève **l'e-mail**, parce que c'est le seul canal
+qu'on peut automatiser de notre côté.
+
+Sur trente fiches, on obtient environ quinze e-mails. C'est normal: beaucoup
+de fiches Google Maps n'affichent qu'un téléphone.
+
+```
+Tu m'aides à constituer une liste de professionnels à contacter pour Finjaro,
+une place de marché en ligne ouverte au monde entier.
+
+SITE : https://www.google.com/maps
+ZONE : [Paris, France]
+CE QUE JE CHERCHE : des prestataires de services indépendants — coiffure et
+tresses, couture et retouches, plomberie, électricité, traiteur, esthétique,
+cordonnerie, petits travaux.
+
+Ce que tu fais :
+1. Cherche chacune de ces activités dans cette zone.
+2. Pour chaque fiche, ouvre-la et relève : nom du commerce, activité, ville,
+   pays, e-mail s'il est affiché, téléphone s'il est affiché, site web, et la
+   langue dans laquelle la fiche est rédigée.
+3. Si la fiche renvoie vers un site, ouvre la page « contact » du site : c'est
+   là que se trouve l'e-mail la plupart du temps.
+4. Rends-moi un tableau : Nom | Activité | Ville | Pays | E-mail | Téléphone |
+   Site | Langue.
+
+Règles, elles comptent plus que la quantité :
+- Tu N'ENVOIES AUCUN message et tu ne remplis aucun formulaire. Tu lis, tu
+  notes, tu t'arrêtes là.
+- Tu ne relèves QUE ce qui est affiché publiquement. Tu ne devines JAMAIS une
+  adresse e-mail à partir d'un nom de domaine.
+- Pas d'e-mail affiché : tu mets la ligne avec la case vide. Une case vide est
+  utile, une adresse inventée me coûte cher.
+- Tu ne juges pas l'origine ou la nationalité de qui que ce soit. Tu ne
+  relèves que ce que le commerce dit de lui-même dans sa propre description.
+- Captcha, connexion demandée, « trop de requêtes » : tu t'arrêtes et tu me le
+  dis. Tu ne contournes rien.
+- À la fin, dis-moi combien de fiches tu as ouvertes et combien d'e-mails tu
+  as trouvés.
+```
+
+**Pourquoi on ne cible pas une origine.** On cible ce que le commerce écrit
+lui-même de son activité (« salon afro », « tresses »). C'est plus juste, et
+ça évite la catégorie de données sensibles du RGPD. Le mot « diaspora »
+n'apparaît dans aucun texte visible — c'est une règle de `CLAUDE.md`.
+
+---
+
+## Prompt 1 quater — Pages Jaunes (celui qui tourne sans Beau)
+
+Ajouté le 18/09. C'est la meilleure source d'**adresses e-mail** après Google
+Maps, et la seule chaîne complète qui ne demande rien à Beau: un Claude de
+Chrome collecte, je range en base, j'envoie.
+
+Pourquoi elle donne plus d'e-mails que Maps: une fiche Pages Jaunes affiche
+souvent le site du professionnel, et l'e-mail se trouve sur la page
+« contact » de ce site. Sur Maps, la moitié des fiches n'ont qu'un téléphone.
+
+```
+Tu m'aides à constituer une liste de professionnels à contacter pour Finjaro,
+une place de marché en ligne ouverte au monde entier.
+
+SITE : https://www.pagesjaunes.fr
+ZONE : [Paris et petite couronne]
+CE QUE JE CHERCHE : [coiffure] — puis tu recommences avec : couture et
+retouches, plomberie, électricité, traiteur, esthétique, cordonnerie.
+
+Ce que tu fais, métier par métier :
+1. Lance la recherche « [métier] » dans « [zone] » sur Pages Jaunes.
+2. Parcours les 30 premiers résultats. Ouvre chaque fiche.
+3. Relève : nom, activité, ville, code postal, téléphone, site web.
+4. S'il y a un site, OUVRE-LE et va sur sa page « contact » ou « mentions
+   légales » : c'est là qu'est l'e-mail. Relève-le.
+5. Note aussi la langue du site, et une phrase sur ce que fait le
+   professionnel, prise dans sa propre description.
+6. Rends un tableau : Nom | Activité | Ville | Code postal | E-mail |
+   Téléphone | Site | Langue | Ce qu'il fait.
+
+Règles, elles comptent plus que la quantité :
+- Tu N'ENVOIES AUCUN message et tu ne remplis aucun formulaire de contact. Tu
+  lis, tu notes, tu t'arrêtes là.
+- Tu ne relèves QUE ce qui est affiché publiquement. Tu ne DEVINES JAMAIS une
+  adresse e-mail à partir d'un nom de domaine.
+- Pas d'e-mail trouvé : tu mets quand même la ligne, case vide. Une case vide
+  est utile, une adresse inventée me coûte cher.
+- Tu ne juges l'origine ni la nationalité de personne. Tu ne relèves que ce
+  que le professionnel écrit lui-même de son activité.
+- Captcha, connexion demandée, « trop de requêtes » : tu t'arrêtes et tu me le
+  dis. Tu ne contournes rien.
+- À la fin: combien de fiches ouvertes, combien de sites visités, combien
+  d'e-mails trouvés.
+```
+
+## Les autres sources, classées par ce qu'elles rapportent
+
+| Source | Ce qu'on y trouve | E-mail ? |
+| --- | --- | --- |
+| Google Maps | Le socle. Toutes activités, toutes zones. | ~1 sur 2 |
+| **Pages Jaunes** | Le meilleur pour l'e-mail, parce qu'il mène au site. | Souvent |
+| `annuaire-entreprises.data.gouv.fr` | TOUTES les entreprises déclarées en France. Donnée publique, gratuite, en masse. | Non |
+| StarOfService, Wecasa, Yoojo | Des prestataires qui CHERCHENT des clients — donc réceptifs. | Non |
+| Planity, Kiute | Salons de coiffure sur réservation. | Non |
+| Instagram, TikTok (mots-dièses) | Le plus dense pour la beauté. Numéro dans la bio. | Non, WhatsApp |
+| Groupes Facebook communautaires | La plus forte densité. Les gens s'y annoncent eux-mêmes. | Non |
+
+**La règle qui explique ce tableau:** l'e-mail n'existe que si la personne a
+un **site**. Les annuaires de réservation et les réseaux sociaux donnent
+beaucoup de noms et presque aucun e-mail — pour ceux-là, c'est WhatsApp.
+
+**Les groupes Facebook ne passent pas à l'échelle.** Il faut demander à
+entrer dans chaque groupe et attendre qu'un administrateur accepte; il n'y a
+aucune API; et publier une annonce dedans fait bannir le compte. On y lit, on
+relève des numéros, on écrit en privé. Excellente qualité, faible volume, et
+ça demande du temps à Beau — c'est exactement ce qu'il n'a pas.
+
+**Pour un pays qu'on ne connaît pas**, ne pas inventer de noms de sites: le
+Prompt 4 est fait pour les faire trouver.
 
 ---
 
@@ -159,9 +287,13 @@ Le message doit :
 - commencer par quelque chose de VRAI et de précis sur SA boutique à lui,
   pris dans ce que j'ai relevé — pas une formule qui marcherait pour
   n'importe qui
-- dire ce que Finjaro lui apporte concrètement : une boutique en ligne
-  gratuite, ses articles visibles, ses clientes qui commandent sans qu'elle
-  ait à tout retaper dans une conversation
+- dire ce que Finjaro lui apporte concrètement : une boutique en ligne, ses
+  articles visibles, ses clientes qui commandent sans qu'elle ait à tout
+  retaper dans une conversation
+- dire que **c'est gratuit jusqu'en novembre**, avec le mois écrit. Pas
+  « gratuit » tout court : un service gratuit sans limite est lu comme un
+  service sans valeur. La date fait comprendre que ça vaut quelque chose et
+  qu'il y a une raison de s'y mettre maintenant. Décision de Beau.
 - finir par une question simple, à laquelle on répond par oui ou non
 
 Interdits absolus :
@@ -170,9 +302,144 @@ Interdits absolus :
   ne s'écrit pas.
 - AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
   camerounaise », pas de « partout au pays ». Finjaro est ouverte au monde.
-- Pas de promesse de gain, pas de fausse urgence, pas de « offre limitée ».
+- Pas de promesse de gain et pas de fausse urgence. La date de novembre n'en
+  est pas une : elle est vraie et c'est Beau qui l'a fixée. En revanche, pas
+  de « plus que 3 places », pas de compte à rebours inventé.
 - Tu écris le message. Tu ne l'envoies pas.
 ```
+
+## Prompt 5 — TikTok: 15 messages par jour, ceux qui se lancent
+
+Demandé par Beau le 18/09. Cible: des prestataires de services **qui
+démarrent** — peu de vues, peu d'abonnés, mais qui ont publié récemment.
+Répartition voulue: **10 en Europe, 5 au pays**.
+
+**Pourquoi ceux qui démarrent.** Chrome-Paris l'a mesuré le matin même: les
+petits comptes actifs répondent mieux que les gros. Ce sont eux qui manquent
+de visibilité et qui en cherchent. Un gros compte n'a rien à gagner.
+
+**Le filtre qui compte n'est pas le nombre d'abonnés, c'est la date de la
+dernière publication.** Un compte à 20 000 abonnés muet depuis un an ne
+répondra pas; un compte à 300 abonnés qui a publié hier, oui.
+
+⚠️ **Deux limites réelles, elles sont dans le prompt.**
+
+1. **TikTok n'autorise souvent le message privé que si la personne vous
+   suit.** Une grande partie des profils seront injoignables en privé. Le
+   repli est le numéro affiché dans la bio, et on écrit sur WhatsApp.
+2. **TikTok restreint les comptes qui envoient beaucoup de messages.** 15 par
+   jour, espacés, textes tous différents: c'est le plafond raisonnable. Un
+   compte restreint ne revient pas.
+
+**La salle commune est dans le prompt.** Les Claude de Chrome ne reçoivent
+aucune notification: ils ne lisent l'issue #16 que si on le leur demande. Le
+bloc « AVANT DE COMMENCER » le fait une fois, au début, et une fois à la fin.
+C'est ce qui leur fait récupérer tout seuls les consignes qui ont changé
+depuis la veille — sans que Beau ait à faire passer le mot à chaque onglet.
+
+```
+AVANT DE COMMENCER — une seule fois, maintenant.
+
+Va lire cette page, c'est là que les différents Claude qui travaillent sur
+Finjaro se parlent :
+https://github.com/henribayemi025-hue/henribeaubayemi/issues/16
+
+Lis les commentaires DU PLUS RÉCENT AU PLUS ANCIEN. Les consignes les plus
+récentes l'emportent sur les anciennes, et sur ce prompt s'il y a conflit.
+Dis-moi en trois lignes ce que tu en retiens, puis commence le travail.
+
+À LA FIN de ta session, écris un commentaire sur cette même page avec
+l'en-tête :
+[QUI] Chrome-TikTok
+[POUR] Alpha
+[QUOI] ce que tu as appris, ce qui t'a bloqué, ta question s'il y en a une
+
+⚠️ Ce dépôt est PUBLIC. Dans ce commentaire : AUCUN nom de personne, aucun
+pseudo, aucun numéro, aucune adresse e-mail. Tu écris des métiers, des
+villes, des nombres et des enseignements — jamais quelqu'un d'identifiable.
+
+---
+
+Je suis le fondateur de Finjaro, une place de marché en ligne ouverte au
+monde entier. C'est mon compte TikTok. Je t'autorise à écrire aux gens en mon
+nom, sans me redemander à chaque message.
+
+OBJECTIF DU JOUR : 15 personnes maximum. Pas une de plus.
+  - 10 en Europe (France, Belgique, Royaume-Uni, Allemagne, Italie, Espagne)
+  - 5 au Cameroun (Douala et Yaoundé)
+
+QUI JE CHERCHE : des prestataires de services qui DÉMARRENT — coiffure et
+tresses, onglerie, maquillage, couture et retouches, traiteur et cuisine à
+domicile, esthétique, photographie, petits travaux.
+
+COMMENT LES TROUVER :
+1. Passe par les mots-dièses, pas par la recherche de comptes : la recherche
+   de comptes remonte surtout des comptes morts. Ouvre un mot-dièse du métier
+   et de la ville, et relève les AUTEURS des publications récentes.
+2. Garde un compte seulement s'il coche les trois :
+   - il a publié dans les 7 derniers jours ;
+   - ses vues sont faibles (quelques centaines, pas des dizaines de milliers) ;
+   - c'est bien un professionnel qui vend un service, pas un particulier.
+3. Le nombre d'abonnés n'est PAS un critère. Un petit compte actif vaut mieux
+   qu'un gros compte endormi.
+4. Tu ne juges l'origine ni la nationalité de personne. Tu ne te fondes que
+   sur ce que le compte dit de lui-même dans sa bio et ses publications
+   (par exemple « tresses », « couture », « traiteur »), et sur la ville
+   qu'il affiche.
+
+POUR CHAQUE PERSONNE, l'une après l'autre :
+1. Ouvre son profil. Note : pseudo, métier, ville, pays, date de la dernière
+   publication, abonnés, et le numéro s'il est affiché dans la bio.
+2. Essaie de lui envoyer un message privé.
+   - Si TikTok refuse parce qu'elle ne me suit pas : tu N'INSISTES PAS. Tu
+     notes « MP fermé » et tu relèves son numéro de bio pour que je lui écrive
+     sur WhatsApp. S'il n'y a pas de numéro, tu passes au suivant.
+3. Le message fait 3 à 4 lignes, et il COMMENCE par quelque chose de vrai et
+   de précis sur SA publication à elle — ce qu'elle a montré, pas une formule
+   qui marcherait pour n'importe qui.
+4. Attends 3 à 5 minutes entre deux envois. Jamais deux d'affilée.
+5. Note dans un tableau : Pseudo | Métier | Ville | Pays | Abonnés |
+   Dernière publi | MP envoyé oui/non/fermé | Numéro bio | Message envoyé.
+
+CE QUE LE MESSAGE DIT :
+- qu'on a vu son travail et ce qu'on y a aimé (précis) ;
+- qu'elle peut présenter son travail sur Finjaro : elle publie une fois, sa
+  page reste en ligne, et ses clientes retrouvent tout au même endroit — au
+  lieu de republier à chaque fois ;
+- que c'est GRATUIT JUSQU'EN NOVEMBRE. Le mois s'écrit. Jamais « gratuit »
+  tout court : un service gratuit sans limite est lu comme un service sans
+  valeur.
+- qu'il y a aussi Finjaro Accounting pour suivre son stock et ses ventes ;
+- et ça finit par une question simple, à laquelle on répond par oui ou non.
+
+INTERDITS, ils comptent plus que le nombre :
+- JAMAIS mon nom ni mon prénom. On écrit « nous faisons partie de Finjaro ».
+- Chaque message est DIFFÉRENT. Un texte identique répété fait restreindre le
+  compte en quelques heures.
+- AUCUN chiffre que je ne t'ai pas donné. Pas de « des milliers d'acheteurs »,
+  pas de « X vendeuses nous ont rejoints ».
+- AUCUNE phrase qui enferme Finjaro dans un pays. Pas de « la place de marché
+  camerounaise », pas de « partout au pays ».
+- Ne promets PAS de publier ses articles à sa place.
+- Pas de fausse urgence autour de novembre : pas de « plus que 3 places », pas
+  de compte à rebours. La date est vraie, ça suffit.
+- Si TikTok affiche un avertissement, une limite, ou refuse un envoi : tu
+  ARRÊTES TOUT et tu me préviens. Tu ne contournes rien, tu ne changes pas de
+  compte, tu ne reprends pas plus tard sans me le dire.
+- Si quelqu'un répond pendant que tu travailles : tu me le signales et tu ne
+  réponds pas à sa place.
+- À 15 personnes, tu t'arrêtes. Même si ça marche bien.
+
+À LA FIN : le tableau complet, plus le compte des MP envoyés, des MP fermés,
+et des personnes sautées avec la raison.
+```
+
+**Ce qu'il faut me remonter le lendemain**, et qui vaut plus que le tableau:
+**ce que les gens ont répondu**, mot pour mot. « je n'ai pas compris », « ça
+coûte combien », « c'est où » sont trois problèmes différents, et aucun ne se
+devine depuis la base.
+
+---
 
 ## Prompt 4 — Trouver le bon site dans un pays que je ne connais pas
 

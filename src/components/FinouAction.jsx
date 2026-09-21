@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash, IconGift, IconArrowRight } from '@tabler/icons-react';
+import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash, IconGift, IconArrowRight, IconExternalLink } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useUI } from '../hooks/useUI';
 import { useToast } from '../hooks/useToast';
 import { supabase } from '../lib/supabase';
+import { appsFromCache, fetchApps } from '../lib/apps';
 
 // Le registre des ecrans que Finia peut ouvrir (migration
 // 0067_destinations_finia.sql). Chargee une fois par session client: c'est
@@ -46,12 +47,19 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
   const { status, shop } = useVendorStatus();
   const toast = useToast();
   const [destinations, setDestinations] = useState(destinationsCache);
+  // Le cache local d'abord: le bouton doit apparaitre avec la bulle, pas une
+  // seconde apres. fetchApps corrige ensuite si la table a change.
+  const [applications, setApplications] = useState(appsFromCache);
 
   useEffect(() => {
     if (action?.startsWith('goto:') && !destinations) {
       loadDestinations().then(setDestinations);
     }
   }, [action, destinations]);
+
+  useEffect(() => {
+    if (action?.startsWith('app:')) fetchApps().then(setApplications);
+  }, [action]);
 
   async function shareShop() {
     const url = `${window.location.origin}/boutique/${shop.slug}`;
@@ -235,6 +243,29 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
       >
         <IconArrowRight size={14} /> {dest.libelle_bouton}
       </button>
+    );
+  }
+
+  if (action?.startsWith('app:')) {
+    // Une AUTRE application Finjaro (finjaro_apps). Beau, capture a l'appui:
+    // Finia donnait l'adresse d'Accounting en texte au milieu d'un
+    // paragraphe. « pourquoi le lien ne vient pas genre en bouton que je
+    // switch simplement de page ». Un lien souligne se lit; un bouton se
+    // touche. Ce n'est pas la meme chose sur un telephone.
+    //
+    // Cle inconnue -> aucun bouton, jamais un bouton mort.
+    const app = applications?.find((a) => a.key === action.slice(4));
+    if (!app) return null;
+    return (
+      <a
+        href={app.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => onNavigate?.()}
+        className="mt-2 flex w-fit items-center gap-1 rounded-pill bg-teal px-3 py-1 text-caption font-semibold text-white"
+      >
+        <IconExternalLink size={14} /> {t('finou.actionOpenApp', { app: app.name })}
+      </a>
     );
   }
 

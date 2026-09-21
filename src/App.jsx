@@ -123,6 +123,7 @@ const Auth = lazyWithReload(() => import('./screens/Auth'));
 const Terms = lazyWithReload(() => import('./screens/Terms'));
 const About = lazyWithReload(() => import('./screens/About'));
 const Apps = lazyWithReload(() => import('./screens/Apps'));
+const Demo = lazyWithReload(() => import('./screens/Demo'));
 const Privacy = lazyWithReload(() => import('./screens/Privacy'));
 const AccountDeletion = lazyWithReload(() => import('./screens/AccountDeletion'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
@@ -229,6 +230,12 @@ export default function App() {
                     {/* L'environnement Finjaro: la liste des applications, publique
                         et partageable par un lien. */}
                     <Route path="/apps" element={<Apps />} />
+                    {/* La démonstration complète — acheter, vendre, voir
+                        l'écriture. Hors layout et hors base: les boutiques
+                        sont inventées et rien n'est enregistré. C'est le lien
+                        qu'on envoie à quelqu'un qui demande « comment ça
+                        marche » plutôt que de le lui décrire. */}
+                    <Route path="/demo" element={<Demo />} />
                     {/* URL exigée telle quelle par Google Play et l'App Store:
                         publique, sans connexion, hors de tout layout privé. */}
                     <Route path="/legal/confidentialite" element={<Privacy />} />

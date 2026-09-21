@@ -20,8 +20,16 @@ export const HOME_PAGE_SIZE = 24;
 // trentaine; le jour où les boutiques se comptent en centaines, c'est
 // l'annuaire /boutiques qui prend le relais, pas cette limite.
 const LIMIT_SHOPS = 30;
-// Finjaro est une place de marché CAMEROUNAISE avec une clientèle en diaspora.
-// La règle n'est donc pas symétrique, et c'est voulu:
+// Le fil d'accueil est asymétrique, et c'est voulu — pour une raison de
+// DENSITÉ, pas d'identité: Finjaro est en paiement à la livraison, donc une
+// annonce n'est utile que si l'acheteuse peut réellement la commander.
+//
+// ⚠️ Ce commentaire disait « Finjaro est une place de marché CAMEROUNAISE ».
+// C'est faux et c'est précisément la phrase que le §1 de CLAUDE.md interdit:
+// le Cameroun est une stratégie de démarrage, pas l'identité du produit. Une
+// idée fausse écrite dans le code finit par ressortir dans un texte visible.
+// Le CODE ci-dessous, lui, est inchangé: il cite encore le Cameroun en dur,
+// et ça, ça se décide avec Beau — pas dans un passage sur un commentaire.
 //
 //   • au Cameroun, on ne montre que le Cameroun — une robe vendue à Paris est
 //     inutile à une acheteuse de Douala, elle ne pourra jamais la commander;

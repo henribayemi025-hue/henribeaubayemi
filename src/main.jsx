@@ -13,7 +13,19 @@ import { creerGardienRechargement } from './lib/swUpdate';
 // downloaded. Home is the index route and the most common landing screen, so
 // by the time the user actually sees it, the network round-trip is often
 // already done instead of only starting once Home's chunk mounts.
-prefetchHome();
+//
+// Sauf sur les adresses qu'on ENVOIE à quelqu'un — la démonstration, les CGU,
+// la page de suppression de compte… Trouvé en pilotant /demo au navigateur:
+// on y tirait tout le fil d'accueil et la bande des boutiques, que la page
+// n'affiche jamais. Pour une prestataire à qui on répond « regardez la
+// démonstration », c'est du temps de chargement pris sur la seule chose qu'on
+// voulait lui montrer — et sur un forfait qu'elle paie.
+//
+// La liste reste courte et locale à ce fichier: l'accueil, lui, ne perd rien.
+const SANS_ACCUEIL = ['/demo', '/legal', '/suppression-compte', '/a-propos'];
+if (!SANS_ACCUEIL.some((p) => window.location.pathname.startsWith(p))) {
+  prefetchHome();
+}
 
 // One "visit" per browser tab session (not every reload) — feeds the admin
 // dashboard's visits count. Fire-and-forget, never blocks boot.

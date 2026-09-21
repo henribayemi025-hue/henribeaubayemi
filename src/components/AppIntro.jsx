@@ -31,7 +31,13 @@ const SLIDES = [
 // Écrans autonomes: la politique de confidentialité, les CGU, la page
 // d'inscription… Y superposer une présentation serait déplacé — et c'est
 // exactement là qu'atterrissent les relecteurs des magasins d'applications.
-const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte'];
+//
+// `/demo` et `/apps` s'y ajoutent pour la même raison, trouvée en pilotant la
+// démonstration au navigateur: ce sont des adresses qu'on ENVOIE à quelqu'un.
+// Une prestataire qui demande « comment ça marche » et à qui on répond par un
+// lien tombait sur la présentation du premier lancement, pas sur ce qu'on lui
+// avait promis — elle devait la passer avant de voir quoi que ce soit.
+const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/demo', '/apps'];
 
 export function AppIntro() {
   const { t } = useTranslation();
