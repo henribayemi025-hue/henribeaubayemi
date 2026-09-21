@@ -104,6 +104,54 @@ async function ensureDestinations(sb: SupabaseClient) {
   }
 }
 
+// Les AUTRES applications de l'environnement Finjaro (table `finjaro_apps`,
+// migration 0117). Même source que le sélecteur d'applications du client
+// (src/lib/apps.js): ajouter une application ou corriger son adresse ne
+// demande donc aucun déploiement de Finia.
+//
+// Beau, 21/09, capture à l'appui: Finia donnait bien l'adresse d'Accounting,
+// mais en texte. « pourquoi le lien ne vient pas genre en bouton que je
+// switch simplement de page ». Un lien souligné au milieu d'un paragraphe
+// n'est pas la même chose qu'un bouton: on le lit, on ne le touche pas.
+type Application = { key: string; name: string; url: string; tagline: string };
+let APPLICATIONS: Application[] = [];
+let applicationsLoaded = false;
+async function ensureApplications(sb: SupabaseClient) {
+  if (applicationsLoaded) return;
+  try {
+    const { data } = await sb
+      .from('finjaro_apps')
+      .select('key,name,url,tagline')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (data) {
+      APPLICATIONS = data as Application[];
+      applicationsLoaded = true;
+    }
+  } catch {
+    /* repli: aucun bouton d'application, l'adresse en clair reste dans le texte */
+  }
+}
+
+function applicationsPromptSection(): string {
+  // L'application courante n'est pas une destination: on ne propose pas à
+  // quelqu'un d'aller là où il est déjà.
+  const autres = APPLICATIONS.filter((a) => a.key !== 'marketplace');
+  if (autres.length === 0) return '';
+  const lignes = autres.map((a) => `- ${a.key}: ${a.name} — ${a.tagline} (${a.url})`).join('\n');
+  return `
+
+OUVRIR UNE AUTRE APPLICATION FINJARO — liste fermee, n'invente JAMAIS une
+cle hors de cette liste:
+${lignes}
+
+Quand la personne a clairement besoin de l'une d'elles, dis en une phrase ce
+que c'est, rappelle que c'est le MEME compte, puis termine par
+"ACTION: app:<cle>" avec la cle EXACTE ci-dessus. Un bouton s'affichera: tu
+n'as donc PAS besoin de recopier l'adresse dans ta phrase quand tu poses la
+balise. Une seule balise par reponse.`;
+}
+
 // Liste FERMEE, jamais inventee: le modele choisit un id EXACT parmi ceux-ci
 // ou ne met aucune balise. Un id hors liste est de toute facon rejete plus
 // bas, cote serveur, avant d'atteindre le client.
@@ -1646,6 +1694,7 @@ Deno.serve(async (req: Request) => {
     const sb = admin();
     await ensureCategories(sb);
     await ensureDestinations(sb);
+    await ensureApplications(sb);
 
     // Anti-abus: 20 messages / 5 min par compte, 6 / 5 min par IP anonyme.
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
@@ -1714,7 +1763,7 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey!, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() }] },
+            systemInstruction: { parts: [{ text: systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() + applicationsPromptSection() }] },
             contents,
             tools: [{ functionDeclarations: toolDeclarations() }],
             generationConfig: {
@@ -1848,12 +1897,18 @@ Deno.serve(async (req: Request) => {
       category = catMatch[1].toLowerCase();
       reply = reply.replace(/\n?CAT:\s*[a-z_]+\s*$/i, '').trim();
     }
-    const ACTION_TAG = /ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral|goto:[a-z_]+)\s*$/i;
+    // `app:<cle>` ouvre une AUTRE application de l'environnement Finjaro
+    // (finjaro_apps, migration 0117). Comme pour goto:, une clé inconnue est
+    // rejetée ici et jamais transmise au client: mieux vaut aucun bouton
+    // qu'un bouton mort sur une clé inventée par le modèle.
+    const ACTION_TAG = /ACTION:\s*(login|sell|share_shop|delete_product|vendor_space|referral|goto:[a-z_]+|app:[a-z_]+)\s*$/i;
     const actionMatch = reply.match(ACTION_TAG);
     if (actionMatch) {
       const raw = actionMatch[1].toLowerCase();
       if (raw.startsWith('goto:')) {
         if (DESTINATIONS.some((d) => d.id === raw.slice(5))) action = raw;
+      } else if (raw.startsWith('app:')) {
+        if (APPLICATIONS.some((a) => a.key === raw.slice(4))) action = raw;
       } else {
         action = raw;
       }

@@ -455,7 +455,8 @@
     ],
     "actionVendorSpace": "Open my seller space",
     "suggestGuide": "How does it work?",
-    "actionReferral": "Invite a seller"
+    "actionReferral": "Invite a seller",
+    "actionOpenApp": "Open {{app}}"
   },
   "mirror": {
     "title": "Virtual try-on",

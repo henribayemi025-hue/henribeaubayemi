@@ -455,7 +455,8 @@
     ],
     "actionVendorSpace": "Ouvrir mon espace vendeur",
     "suggestGuide": "Comment ça marche ?",
-    "actionReferral": "Inviter une vendeuse"
+    "actionReferral": "Inviter une vendeuse",
+    "actionOpenApp": "Ouvrir {{app}}"
   },
   "mirror": {
     "title": "Essayage virtuel",
