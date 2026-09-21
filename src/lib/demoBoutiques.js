@@ -59,9 +59,9 @@ export const BOUTIQUES_DEMO = [
     paysNom: 'France',
     banniere: '/demo-products/hb-02.jpg',
     articles: [
-      { id: 'b1', nom: 'Pose de tresses', prixFcfa: 45000, photo: '/demo-products/braids-01.jpg', stock: 0, surDemande: true },
+      { id: 'b1', nom: 'Pose de tresses', prixFcfa: 45000, photo: '/demo-products/braids-01.jpg', stock: 0, surDemande: true, service: true },
       { id: 'b2', nom: 'Perruque lace wave', prixFcfa: 62000, photo: '/demo-products/hb-03.jpg', stock: 4 },
-      { id: 'b3', nom: 'Soin du visage', prixFcfa: 22000, photo: '/demo-products/beaute-01.jpg', stock: 8 },
+      { id: 'b3', nom: 'Soin du visage', prixFcfa: 22000, photo: '/demo-products/beaute-01.jpg', stock: 8, service: true },
       { id: 'b4', nom: 'Huile capillaire', prixFcfa: 9000, photo: '/demo-products/cheveux-01.jpg', stock: 25 },
     ],
   },
@@ -149,12 +149,48 @@ export function lienAccounting(boutique) {
  */
 export const PART_COUT = 0.55;
 
-export function ecrituresDeLaVente(totalFcfa) {
-  const cout = Math.round(totalFcfa * PART_COUT);
-  return [
-    { libelle: 'Caisse', sens: 'debit', montantFcfa: totalFcfa },
-    { libelle: 'Ventes de marchandises', sens: 'credit', montantFcfa: totalFcfa },
-    { libelle: 'Coût des ventes', sens: 'debit', montantFcfa: cout },
-    { libelle: 'Stock de marchandises', sens: 'credit', montantFcfa: cout },
-  ];
+/**
+ * Un service n'est pas une marchandise.
+ *
+ * Cette fonction créditait « Ventes de marchandises » pour TOUT, y compris
+ * une pose de tresses — et sortait du stock pour une prestation qui n'en a
+ * aucun. C'est exactement le défaut qu'une comptable française a trouvé chez
+ * Claudinette le 21/09, sur une prothésiste ongulaire: le compte des
+ * prestations de services existait et n'était jamais appelé.
+ *
+ * Une démonstration montrée à une professionnelle doit tenir devant sa
+ * comptable. Deux natures, donc:
+ *   - un bien   → Ventes de marchandises, ET sortie de stock à son coût;
+ *   - un service → Prestations de services, et RIEN en stock.
+ *
+ * On prend les lignes du panier, plus un total: le panier peut mélanger les
+ * deux (une perruque et une pose), et c'est même le cas intéressant.
+ */
+export function ecrituresDeLaVente(lignes) {
+  const chiffre = (l) => (l.surDemande ? 0 : (l.prixFcfa || 0) * (l.qte || 1));
+  const biens = (lignes || []).filter((l) => !l.service).reduce((n, l) => n + chiffre(l), 0);
+  const services = (lignes || []).filter((l) => l.service).reduce((n, l) => n + chiffre(l), 0);
+  const encaisse = biens + services;
+  const cout = Math.round(biens * PART_COUT);
+
+  // Rien de chiffré (tout est « sur demande »): aucune écriture, pas une
+  // ligne « Caisse 0 » qui donnerait l'air d'un tableau cassé.
+  if (encaisse === 0) return [];
+
+  const ecritures = [{ libelle: 'Caisse', sens: 'debit', montantFcfa: encaisse }];
+  if (biens > 0) ecritures.push({ libelle: 'Ventes de marchandises', sens: 'credit', montantFcfa: biens });
+  if (services > 0) ecritures.push({ libelle: 'Prestations de services', sens: 'credit', montantFcfa: services });
+  if (cout > 0) {
+    ecritures.push({ libelle: 'Coût des ventes', sens: 'debit', montantFcfa: cout });
+    ecritures.push({ libelle: 'Stock de marchandises', sens: 'credit', montantFcfa: cout });
+  }
+  return ecritures;
+}
+
+/** La marge: tout le service, et ce qui reste du bien une fois son coût sorti. */
+export function margeDeLaVente(lignes) {
+  const chiffre = (l) => (l.surDemande ? 0 : (l.prixFcfa || 0) * (l.qte || 1));
+  const biens = (lignes || []).filter((l) => !l.service).reduce((n, l) => n + chiffre(l), 0);
+  const services = (lignes || []).filter((l) => l.service).reduce((n, l) => n + chiffre(l), 0);
+  return services + (biens - Math.round(biens * PART_COUT));
 }

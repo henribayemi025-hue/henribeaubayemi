@@ -4,7 +4,7 @@ import { AppHeader } from '../components/AppHeader';
 import { Price } from '../components/Price';
 import { useSettings } from '../hooks/useSettings';
 import { formatPrice, currencyForCountry } from '../lib/currency';
-import { BOUTIQUES_DEMO, ecrituresDeLaVente, lienAccounting, PART_COUT } from '../lib/demoBoutiques';
+import { BOUTIQUES_DEMO, ecrituresDeLaVente, lienAccounting, margeDeLaVente } from '../lib/demoBoutiques';
 
 // La démonstration complète: on achète, on vend, et on regarde la
 // comptabilité s'écrire.
@@ -120,7 +120,7 @@ export default function Demo() {
             language={language}
             boutique={boutique}
             deviseBoutique={deviseBoutique}
-            totalFcfa={totalFcfa}
+            panier={panier}
             onRecommencer={recommencer}
           />
         )}
@@ -375,9 +375,11 @@ function CoteVendeuse({
 
 /* ----------------------------- 4. compta ----------------------------- */
 
-function CoteCompta({ t, language, boutique, deviseBoutique, totalFcfa, onRecommencer }) {
-  const ecritures = ecrituresDeLaVente(totalFcfa);
-  const marge = totalFcfa - Math.round(totalFcfa * PART_COUT);
+function CoteCompta({ t, language, boutique, deviseBoutique, panier, onRecommencer }) {
+  // Les lignes, pas le total: un panier peut mélanger un bien et un service,
+  // et les deux ne vont pas dans le même compte.
+  const ecritures = ecrituresDeLaVente(panier);
+  const marge = margeDeLaVente(panier);
 
   return (
     <section className="mt-5">
