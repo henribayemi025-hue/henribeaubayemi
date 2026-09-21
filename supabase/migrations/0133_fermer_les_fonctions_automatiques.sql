@@ -66,6 +66,44 @@ begin
   end loop;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- Comment on vérifie qu'une fonction est VRAIMENT fermée
+-- ---------------------------------------------------------------------------
+-- Lire `has_function_privilege` ne suffit pas: c'est la même croyance qui a
+-- produit le défaut du départ. Méthode de Claudinette, reprise ici — on TENTE
+-- l'appel sous le rôle, et on lève une exception si l'appel RÉUSSIT, pour que
+-- le contrôle échoue au lieu de passer en silence.
+--
+--   do $ctrl$
+--   begin
+--     begin
+--       set local role authenticated;
+--       perform * from public.conversations_a_relancer_ia(2, 5);
+--       reset role;
+--       raise exception 'ECHEC: authenticated peut encore appeler';
+--     exception when insufficient_privilege then reset role;
+--     end;
+--   end $ctrl$;
+--
+-- Passé le 21/09 sur `bokwivwizghdlaedczbw` pour les quatorze, sous
+-- `authenticated` et sous `anon`.
+--
+-- Et le contrôle qui compte vraiment: la CHAÎNE réelle doit continuer de
+-- marcher. Une fonction `security definer` du même propriétaire, appelée
+-- depuis le rôle `authenticated`, atteint toujours
+-- `conversations_a_relancer_ia` — c'est exactement ce que fait la fonction
+-- edge. Vérifié, puis la fonction de preuve supprimée.
+--
+-- À mettre dans l'audit hebdomadaire des deux côtés: un droit qu'on n'a
+-- jamais retiré ne se voit nulle part dans un dépôt, il n'y a aucune ligne à
+-- relire. Il ne se voit qu'en interrogeant la base.
+--
+--   select p.proname
+--   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--   where n.nspname = 'public' and p.prosecdef
+--     and has_function_privilege('authenticated', p.oid, 'execute')
+--   order by 1;
+
 -- Ce qui N'EST PAS fermé ici, volontairement, pour qu'on ne croie pas le
 -- travail fini:
 --
