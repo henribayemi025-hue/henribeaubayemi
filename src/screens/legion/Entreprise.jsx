@@ -108,8 +108,9 @@ export default function Entreprise() {
   const taches = useMemo(() => (data?.messages || []).filter((m) => m.genre === 'tache'), [data?.messages]);
   const machines = useMemo(() => (data?.agents || []).filter((a) => !a.user_id), [data?.agents]);
   const allumes = machines.filter((a) => a.actif).length;
-  const aChoisir = machines.filter((a) => !a.choisi_par_lui).length;
-  const sansPhoto = machines.filter((a) => a.apparence?.famille !== 'photo').length;
+  // Claude (moteur « claude-code ») ne se fait pas faire de visage par Gemini.
+  const aChoisir = machines.filter((a) => !a.choisi_par_lui && a.moteur !== 'claude-code').length;
+  const sansPhoto = machines.filter((a) => a.apparence?.famille !== 'photo' && a.moteur !== 'claude-code').length;
 
   const choisirSalon = useCallback((id) => { setParams({ canal: id }); setVue('chat'); setTape(null); }, [setParams]);
   const entrer = useCallback((ou) => setVue(ou || 'chat'), []);
@@ -133,8 +134,12 @@ export default function Entreprise() {
 
   // Qui va répondre — la même règle que le serveur, pour afficher « écrit… »
   // tout de suite au lieu d'attendre la fin de sa réflexion.
-  function quiRepond(texte) {
+  function quiRepond(texte, meta) {
     if (agentPrive) return agentPrive;
+    // On répond à un message précis: c'est son auteur qui répond.
+    const cite = meta?.reponse_a?.id && (data?.messages || []).find((m) => m.id === meta.reponse_a.id);
+    const auteurCite = cite && machines.find((a) => a.id === cite.auteur_id);
+    if (auteurCite) return auteurCite;
     const tx = sansAccent(texte);
     const nomme = machines.find((a) => tx.includes('@' + sansAccent(a.nom)));
     if (nomme) return nomme;
@@ -154,14 +159,20 @@ export default function Entreprise() {
     setData((d) => (d && !d.messages.some((m) => m.id === ligne.id) ? { ...d, messages: [...d.messages, ligne] } : d));
     if (genre === 'tache') return;
 
-    const cible = quiRepond(texte);
+    const cible = quiRepond(texte, meta);
     if (!cible) return;
-    if (!cible.actif) { toast.info?.(t('legion.ilDort', { nom: cible.nom })) || toast.error(t('legion.ilDort', { nom: cible.nom })); return; }
+    // Claude ne répond pas sur le coup: il lit Legion à ses passages.
+    if (cible.moteur === 'claude-code') {
+      toast.info(t('legion.claudeRepondra', { nom: cible.nom }));
+      return;
+    }
+    if (!cible.actif) { toast.info(t('legion.ilDort', { nom: cible.nom })); return; }
     setTape(cible);
     try {
       const { data: r, error: e2 } = await supabase.functions.invoke('legion-repondre', { body: { message_id: ligne.id } });
       if (e2) throw e2;
-      if (r?.dort) toast.error(t('legion.ilDort', { nom: r.dort.nom }));
+      if (r?.attend) toast.info(t('legion.claudeRepondra', { nom: r.attend.nom }));
+      else if (r?.dort) toast.error(t('legion.ilDort', { nom: r.dort.nom }));
       else if (r?.erreur) toast.error(t('legion.personneNaPuRepondre', { raison: r.erreur }));
       // Plusieurs peuvent répondre à un « salut à tous »: le temps réel les
       // apporte aussi, on dédoublonne par identifiant.

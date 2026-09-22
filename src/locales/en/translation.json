@@ -129,6 +129,7 @@
     "arreter": "Stop",
     "vocal": "Voice message",
     "ilDort": "{{nom}} is off and won't answer. Turn them on.",
+    "claudeRepondra": "{{nom}} will reply in person on the next visit to Legion.",
     "ouEnEsTu": "@{{nom}}, where are you on “{{tache}}”?",
     "choisisUnSalon": "Pick a room.",
     "choisirAideCourt": "{{n}} haven't picked their face yet.",

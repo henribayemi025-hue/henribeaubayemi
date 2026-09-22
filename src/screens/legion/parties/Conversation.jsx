@@ -96,7 +96,7 @@ export function Conversation({
       </div>
 
       {/* Le fil */}
-      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-5">
+      <div className="flex-1 space-y-3 overflow-y-auto overflow-x-hidden px-3 pb-4 pt-6 sm:px-5">
         {messages.length === 0 && (
           <div className="mx-auto max-w-sm rounded-card border border-legion-line bg-legion-card p-4 text-center text-caption text-legion-muted">
             {agentPrive ? t('legion.videPrive', { nom: agentPrive.nom }) : t('legion.videSalon', 'Personne n’a encore écrit ici. Commence.')}
@@ -131,13 +131,14 @@ export function Conversation({
           return (
             <div key={m.id}>
               {sep && <Jour label={jour} />}
+              <Glissable onGlisse={() => { setReponseA(m); setOuvert(null); }}>
               <div className={`group relative flex items-start gap-2.5 ${mien ? 'flex-row-reverse' : ''}`}>
                 {!mien && (
                   <button type="button" onClick={() => a && !a.user_id && onFiche(a)} className="mt-5 shrink-0" title={a?.poste}>
                     <Visage a={a} taille={32} point={false} />
                   </button>
                 )}
-                <div className={`flex max-w-[86%] flex-col sm:max-w-[72%] ${mien ? 'items-end' : 'items-start'}`}>
+                <div className={`relative flex max-w-[86%] flex-col sm:max-w-[72%] ${mien ? 'items-end' : 'items-start'}`}>
                   {!mien && (
                     <div className="mb-1 flex items-center gap-2 px-1">
                       <span className="text-[12px] font-semibold text-legion-ink">{a?.nom || '?'}</span>
@@ -190,29 +191,30 @@ export function Conversation({
                       ))}
                     </div>
                   )}
+                  <div className={`absolute -top-4 z-10 flex items-center gap-0.5 rounded-input border border-legion-line bg-legion-card p-1 shadow-lg transition ${mien ? 'right-0' : 'left-0'} ${ouverte ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'} ${ouverte ? '' : 'pointer-events-none lg:pointer-events-auto'}`}>
+                    {RAPIDES.slice(0, 5).map((e) => (
+                      <button key={e} type="button" onClick={() => { onReagir(m.id, e); setOuvert(null); }} className="p-0.5 text-[14px] transition hover:scale-125">{e}</button>
+                    ))}
+                    <button type="button" onClick={() => setPicker(picker === m.id ? null : m.id)} title={t('legion.autreEmoji', 'Un autre emoji')} className="rounded p-1 text-legion-muted hover:bg-legion-bg"><IconMoodSmile size={14} /></button>
+                    <span className="mx-0.5 h-4 w-px bg-legion-line" />
+                    <button type="button" onClick={() => { setReponseA(m); setOuvert(null); }} title={t('legion.repondre', 'Répondre')} className="rounded p-1 text-legion-muted hover:bg-legion-bg"><IconArrowBackUp size={14} /></button>
+                    <button type="button" onClick={() => { onTacheDepuis(m); setOuvert(null); }} title={t('legion.enFaireUneTache', 'En faire une tâche')} className="rounded p-1 text-legion-muted hover:bg-legion-bg hover:text-legion-gold"><IconPlus size={14} /></button>
+                    <button type="button" onClick={() => copier(m)} title={t('legion.copier', 'Copier')} className="rounded p-1 text-legion-muted hover:bg-legion-bg">{copie === m.id ? <IconCheck size={14} className="text-legion-success" /> : <IconCopy size={14} />}</button>
+                  </div>
+                  {picker === m.id && (
+                    <div className={`absolute top-6 z-20 ${mien ? 'right-0' : 'left-0'}`}>
+                      <ChoixEmoji onChoisir={(e) => { onReagir(m.id, e); setPicker(null); setOuvert(null); }} onFermer={() => setPicker(null)} />
+                    </div>
+                  )}
                 </div>
-
-                {/* La barre d'actions: au survol sur ordinateur, sur « ⋯ » sur téléphone */}
+                {/* Sur téléphone: « ⋯ », ou glisser le message vers la droite pour répondre */}
                 <button type="button" onClick={() => setOuvert(ouverte ? null : m.id)} aria-label="…"
                   className={`mt-5 shrink-0 rounded-full p-1 text-legion-muted lg:hidden ${ouverte ? 'bg-legion-card' : ''}`}>
                   <IconDots size={14} />
                 </button>
-                <div className={`absolute -top-3 z-10 flex items-center gap-0.5 rounded-input border border-legion-line bg-legion-card p-1 shadow-lg transition ${mien ? 'left-2' : 'right-2'} ${ouverte ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'} ${ouverte ? '' : 'pointer-events-none lg:pointer-events-auto'}`}>
-                  {RAPIDES.slice(0, 5).map((e) => (
-                    <button key={e} type="button" onClick={() => { onReagir(m.id, e); setOuvert(null); }} className="p-0.5 text-[14px] transition hover:scale-125">{e}</button>
-                  ))}
-                  <button type="button" onClick={() => setPicker(picker === m.id ? null : m.id)} title={t('legion.autreEmoji', 'Un autre emoji')} className="rounded p-1 text-legion-muted hover:bg-legion-bg"><IconMoodSmile size={14} /></button>
-                  <span className="mx-0.5 h-4 w-px bg-legion-line" />
-                  <button type="button" onClick={() => { setReponseA(m); setOuvert(null); }} title={t('legion.repondre', 'Répondre')} className="rounded p-1 text-legion-muted hover:bg-legion-bg"><IconArrowBackUp size={14} /></button>
-                  <button type="button" onClick={() => { onTacheDepuis(m); setOuvert(null); }} title={t('legion.enFaireUneTache', 'En faire une tâche')} className="rounded p-1 text-legion-muted hover:bg-legion-bg hover:text-legion-gold"><IconPlus size={14} /></button>
-                  <button type="button" onClick={() => copier(m)} title={t('legion.copier', 'Copier')} className="rounded p-1 text-legion-muted hover:bg-legion-bg">{copie === m.id ? <IconCheck size={14} className="text-legion-success" /> : <IconCopy size={14} />}</button>
-                </div>
-                {picker === m.id && (
-                  <div className={`absolute top-6 z-20 ${mien ? 'left-2' : 'right-2'}`}>
-                    <ChoixEmoji onChoisir={(e) => { onReagir(m.id, e); setPicker(null); setOuvert(null); }} onFermer={() => setPicker(null)} />
-                  </div>
-                )}
+
               </div>
+              </Glissable>
             </div>
           );
         })}
@@ -242,6 +244,64 @@ export function Conversation({
   );
 }
 
+// Glisser un message vers la droite pour lui répondre, comme sur WhatsApp.
+// Beau, 22/09: « je n'arrive pas à tirer un message pour répondre, si je
+// veux répondre à Claudinette ». Au doigt seulement: la souris a la barre
+// d'actions au survol. Un geste plutôt vertical reste un défilement.
+const SEUIL_GLISSE = 56;
+function Glissable({ onGlisse, children }) {
+  const bloc = useRef(null);
+  const fleche = useRef(null);
+  const geste = useRef(null);
+
+  function poser(dx) {
+    if (bloc.current) bloc.current.style.transform = dx ? `translateX(${dx}px)` : '';
+    if (fleche.current) {
+      fleche.current.style.opacity = String(Math.min(dx / SEUIL_GLISSE, 1));
+      fleche.current.style.transform = `scale(${dx >= SEUIL_GLISSE ? 1.15 : 0.75})`;
+    }
+  }
+  function debut(e) {
+    const p = e.touches[0];
+    geste.current = { x: p.clientX, y: p.clientY, dx: 0, sens: null };
+    if (bloc.current) bloc.current.style.transition = 'none';
+  }
+  function bouge(e) {
+    const g = geste.current;
+    if (!g) return;
+    const p = e.touches[0];
+    const dx = p.clientX - g.x;
+    const dy = p.clientY - g.y;
+    if (!g.sens) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      g.sens = dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.5 ? 'h' : 'v';
+    }
+    if (g.sens !== 'h') return;
+    const avant = g.dx;
+    g.dx = Math.max(0, Math.min(dx, 88));
+    if (avant < SEUIL_GLISSE && g.dx >= SEUIL_GLISSE) navigator.vibrate?.(8);
+    poser(g.dx);
+  }
+  function fin() {
+    const g = geste.current;
+    geste.current = null;
+    if (bloc.current) bloc.current.style.transition = 'transform 180ms ease-out';
+    poser(0);
+    if (g?.sens === 'h' && g.dx >= SEUIL_GLISSE) onGlisse();
+  }
+
+  return (
+    <div className="relative" onTouchStart={debut} onTouchMove={bouge} onTouchEnd={fin} onTouchCancel={fin}>
+      <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
+        <span ref={fleche} className="flex h-8 w-8 items-center justify-center rounded-full bg-legion-card text-legion-gold opacity-0 shadow-md" style={{ transition: 'transform 120ms' }}>
+          <IconArrowBackUp size={16} />
+        </span>
+      </span>
+      <div ref={bloc} style={{ touchAction: 'pan-y' }}>{children}</div>
+    </div>
+  );
+}
+
 function Jour({ label }) {
   return (
     <div className="my-2 flex justify-center">
@@ -265,6 +325,9 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
   const enregistreur = useRef(null);
   const morceaux = useRef([]);
   const chrono = useRef(null);
+
+  // Répondre à quelqu'un ouvre le clavier tout de suite.
+  useEffect(() => { if (reponseA) zone.current?.focus(); }, [reponseA]);
 
   useEffect(() => {
     if (brouillon) { setTexte(brouillon); onBrouillonPris?.(); setTimeout(() => zone.current?.focus(), 50); }

@@ -221,7 +221,7 @@ Deno.serve(async (req: Request) => {
     .from('legion_agents')
     .select('id, nom, poste, departement, mandat')
     .eq('entreprise_id', entrepriseId)
-    .is('user_id', null)
+    .is('user_id', null).neq('moteur', 'claude-code')
     .eq('choisi_par_lui', false)
     .order('ordre')
     .limit(limite);
@@ -231,7 +231,7 @@ Deno.serve(async (req: Request) => {
     .from('legion_agents')
     .select('id', { count: 'exact', head: true })
     .eq('entreprise_id', entrepriseId)
-    .is('user_id', null).eq('choisi_par_lui', false);
+    .is('user_id', null).neq('moteur', 'claude-code').eq('choisi_par_lui', false);
 
   if (!agents || agents.length === 0) {
     return json({ faits: 0, restants: 0, message: 'Tout le monde a déjà choisi.' });

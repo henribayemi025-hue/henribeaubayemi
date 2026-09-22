@@ -165,7 +165,7 @@ Deno.serve(async (req: Request) => {
 
   let q = service.from('legion_agents')
     .select('id, nom, poste, departement, mandat, personnalite, apparence')
-    .eq('entreprise_id', entreprise.id).is('user_id', null);
+    .eq('entreprise_id', entreprise.id).is('user_id', null).neq('moteur', 'claude-code');
   if (corps.agent_id) q = q.eq('id', corps.agent_id);
   // Une photo par agent, jamais deux: ce qui est payé n'est pas repayé.
   else q = q.or('apparence->>famille.is.null,apparence->>famille.neq.photo');
@@ -202,7 +202,7 @@ Deno.serve(async (req: Request) => {
 
   const { count: restants } = await service.from('legion_agents')
     .select('id', { count: 'exact', head: true })
-    .eq('entreprise_id', entreprise.id).is('user_id', null)
+    .eq('entreprise_id', entreprise.id).is('user_id', null).neq('moteur', 'claude-code')
     .or('apparence->>famille.is.null,apparence->>famille.neq.photo');
 
   return json({ faits, restants: restants ?? 0, rates, ...(faits === 0 && pourquoi ? { pourquoi } : {}) });

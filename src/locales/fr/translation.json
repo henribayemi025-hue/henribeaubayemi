@@ -129,6 +129,7 @@
     "arreter": "Arrêter",
     "vocal": "Message vocal",
     "ilDort": "{{nom}} est éteint : il ne répond pas. Allume-le pour qu’il travaille.",
+    "claudeRepondra": "{{nom}} répond lui-même, à son prochain passage dans Legion.",
     "ouEnEsTu": "@{{nom}}, où en es-tu sur « {{tache}} » ?",
     "choisisUnSalon": "Choisis un salon.",
     "choisirAideCourt": "{{n}} n’ont pas encore choisi leur tête.",

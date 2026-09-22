@@ -60,7 +60,7 @@ const A_PLUSIEURS = /\b(tous|toutes|tout le monde|everyone|everybody|l'equipe|eq
 const LES_AUTRES = /\b(les autres|autres|d'autres|personne d'autre|le reste)\b/;
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
-  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; autonomie: string; ordre: number };
+  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; autonomie: string; ordre: number; moteur: string };
 
 const SCHEMA = {
   type: 'OBJECT',
@@ -81,6 +81,8 @@ Niveau d'autonomie: ${a.autonomie === 'autonome' ? 'tu agis et tu préviens' : a
 Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
 ${fil}
 ${collegues.length ? `\nTes collègues ${collegues.join(', ')} viennent de répondre juste au-dessus: ne répète pas ce qu'ils ont dit, apporte autre chose ou sois bref.\n` : ''}
+Claude (« Claude Code ») est le développeur de Legion: il passe lire les salons de temps en temps et répond lui-même. Ne parle jamais à sa place et ne promets rien en son nom.
+
 Réponds à ${auteur} comme un collègue, pas comme un assistant:
 - dans la langue de son message (français par défaut), avec TA façon d'écrire;
 - court: une à quatre phrases. Un simple salut appelle un salut court et vivant, pas un rapport;
@@ -158,7 +160,7 @@ Deno.serve(async (req: Request) => {
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
     service.from('legion_entreprises').select('nom, projet').eq('id', msg.entreprise_id).single(),
     service.from('legion_canaux').select('id, cle, nom, prive_entre').eq('id', msg.canal_id).single(),
-    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre')
+    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
   ]);
   if (!entreprise || !salon || !agents) return json({ erreur: 'Entreprise introuvable.' }, 404);
@@ -166,7 +168,10 @@ Deno.serve(async (req: Request) => {
   const auteur = (agents as Agent[]).find((a) => a.id === msg.auteur_id);
   if (!auteur || !auteur.user_id) return json({ ignore: 'pas un humain', messages: [] });
 
-  const machines = (agents as Agent[]).filter((a) => !a.user_id);
+  // Claude (moteur « claude-code ») répond lui-même, à ses passages: Gemini ne
+  // parle jamais à sa place.
+  const machines = (agents as Agent[]).filter((a) => !a.user_id && a.moteur !== 'claude-code');
+  const claude = (agents as Agent[]).find((a) => !a.user_id && a.moteur === 'claude-code') || null;
 
   const nomDe = (id: string) => (agents as Agent[]).find((a) => a.id === id)?.nom || 'Quelqu\'un';
   const { data: filBrut } = await service.from('legion_messages')
@@ -185,13 +190,29 @@ Deno.serve(async (req: Request) => {
   let cibles: Agent[] = [];
   let endormi: Agent | null = null;
 
+  // Beau, 22/09: « si je veux répondre à Claudinette ». Quand il répond à
+  // un message précis (glisser, ou la flèche), c'est son auteur qui répond.
+  const citeId = (msg.meta as { reponse_a?: { id?: string } } | null)?.reponse_a?.id;
+  let cite: Agent | null = null;
+  if (citeId) {
+    const { data: m } = await service.from('legion_messages').select('auteur_id').eq('id', citeId).maybeSingle();
+    cite = m ? (agents as Agent[]).find((a) => a.id === m.auteur_id && !a.user_id) || null : null;
+  }
+  const pourClaude = !!claude && (cite?.id === claude.id
+    || (prive && salon.prive_entre.includes(claude.cle))
+    || t.includes('@' + sansAccent(claude.nom)));
+
   if (prive) {
     const en_face = machines.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== auteur.cle);
     if (en_face) cibles = [en_face];
+  } else if (cite && cite.moteur !== 'claude-code') {
+    cibles = [cite];
   } else {
     const nommes = machines.filter((a) => t.includes('@' + sansAccent(a.nom)));
     if (nommes.length) {
       cibles = nommes.slice(0, MAX_REPONDANTS);
+    } else if (pourClaude) {
+      cibles = [];
     } else {
       const duSalon = machines.filter((a) => sansAccent(a.departement || '') === nomSalon);
       // Dans « Direction » on parle à toute l'entreprise: les responsables des
@@ -222,6 +243,10 @@ Deno.serve(async (req: Request) => {
   }
 
   const allumees = cibles.filter((a) => a.actif);
+  // Pour Claude seul: personne d'autre ne répond, il répondra à son passage.
+  if (!allumees.length && pourClaude && claude) {
+    return json({ attend: { id: claude.id, nom: claude.nom, actif: claude.actif }, messages: [] });
+  }
   if (!allumees.length) {
     const qui = cibles[0] || endormi;
     return json({ dort: qui ? { id: qui.id, nom: qui.nom, poste: qui.poste } : null, messages: [] });
