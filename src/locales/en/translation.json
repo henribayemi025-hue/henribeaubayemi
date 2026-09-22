@@ -1928,5 +1928,30 @@
     "surDemande": "Price on request",
     "changerBoutique": "Change shop",
     "recommencer": "Start the demo over"
+  },
+  "work": {
+    "title": "Finjaro Work",
+    "baseline": "WhatsApp to talk. Here, the proof.",
+    "newTask": "Assign a task",
+    "what": "What",
+    "who": "Who",
+    "when": "Due",
+    "assign": "Assign",
+    "ongoing": "Ongoing",
+    "noneOngoing": "Nothing ongoing.",
+    "register": "The record",
+    "registerNote": "What was done, timed by the server. Cannot be changed.",
+    "markDone": "It's done",
+    "confirmDone": "Confirm",
+    "proofNote": "What you did",
+    "proofHint": "The time comes from the server, not your phone. Location is asked for, never required.",
+    "located": "located",
+    "team": "The team",
+    "someone": "Someone",
+    "role": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "staff": "Team member"
+    }
   }
 }

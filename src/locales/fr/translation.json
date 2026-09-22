@@ -1928,5 +1928,30 @@
     "surDemande": "Prix sur demande",
     "changerBoutique": "Changer de boutique",
     "recommencer": "Recommencer la démonstration"
+  },
+  "work": {
+    "title": "Finjaro Work",
+    "baseline": "WhatsApp pour parler. Ici, la preuve.",
+    "newTask": "Assigner une tâche",
+    "what": "Quoi",
+    "who": "Qui",
+    "when": "Pour quand",
+    "assign": "Assigner",
+    "ongoing": "En cours",
+    "noneOngoing": "Rien en cours.",
+    "register": "Le registre",
+    "registerNote": "Ce qui a été fait, daté par le serveur. Ne se modifie plus.",
+    "markDone": "C'est fait",
+    "confirmDone": "Confirmer",
+    "proofNote": "Ce que tu as fait",
+    "proofHint": "L'heure vient du serveur, pas de ton téléphone. La position est demandée, jamais obligatoire.",
+    "located": "situé",
+    "team": "L'équipe",
+    "someone": "Quelqu'un",
+    "role": {
+      "owner": "Propriétaire",
+      "manager": "Responsable",
+      "staff": "Équipier"
+    }
   }
 }
