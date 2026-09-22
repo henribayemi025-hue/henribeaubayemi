@@ -318,3 +318,56 @@ semaines et un consultant pour faire — et il le fait depuis un téléphone,
 tout seul, à partir des ventes. »**
 
 **Rien n'est décidé ici. C'est Beau qui tranche.**
+
+---
+
+## 9. « Mode expert / mode simple » — la question de Beau, et ma réponse
+
+Beau, 22/09: « notre défi c'est de faire plusieurs choses à la fois, où les
+experts vont être à l'aise et d'autres qui n'ont rien. Je propose qu'on
+divise: celui qui choisit expert aura tout, l'autre qui veut le simple aura
+un truc plus simple. Qu'en penses-tu ? Mais ça peut diluer. »
+
+**Il a raison sur les deux points, y compris sur le danger.**
+
+### Pourquoi je ne ferais PAS deux modes
+
+**Ça demande à la personne de se classer avant de savoir de quoi on parle.**
+Personne ne coche « expert » le premier jour. Et celle qui en aurait besoin
+six mois plus tard ne retourne jamais changer le réglage. Résultat: deux
+produits à tenir, et la bonne moitié que personne ne voit.
+
+**Le chiffre qui le dit chez nous:** 19 boutiques sur 67 sont vides. Ces
+personnes ne sont jamais allées au-delà du premier écran. Un choix
+« simple ou expert » à l'inscription aurait été un mur de plus devant elles,
+pas une aide.
+
+### Ce que fait ERPNext, et qui est mieux
+
+Ses captures le montrent: la colonne de gauche liste Accounting, Assets,
+Buying, CRM, Healthcare, HR, Loans, Manufacturing, Payroll, Projects,
+Quality, Retail, Selling. **Ce ne sont pas des niveaux, ce sont des
+métiers.** Une boutique de vêtements ne voit jamais Healthcare — pas parce
+qu'elle s'est déclarée débutante, mais parce qu'elle ne fait pas de santé.
+
+Des modules qu'on allume, pas un niveau qu'on se donne.
+
+### Ce que je ferais, et c'est encore un cran plus loin
+
+**Ne rien demander du tout. Faire apparaître la chose au moment où elle
+sert.**
+
+- La boutique est seule → aucun écran d'équipe. Une deuxième personne arrive
+  → l'équipe apparaît.
+- Aucune vente à crédit → pas de carnet de crédit. La première vente à
+  crédit → le carnet apparaît.
+- Le cumul passe 10 M → l'avertissement comptable apparaît, parce qu'à ce
+  moment-là il est obligatoire.
+
+Le produit grandit avec le commerce, et personne ne choisit rien. C'est ça
+qu'un ERP ne peut pas faire: il ne voit pas les ventes arriver. Nous si.
+
+**Si un réglage est vraiment voulu**, alors une seule ligne dans les
+paramètres — « tout afficher » — et pas une fourche à l'inscription.
+
+**Rien n'est décidé. C'est Beau qui tranche.**
