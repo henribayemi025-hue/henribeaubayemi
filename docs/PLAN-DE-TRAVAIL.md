@@ -44,15 +44,22 @@ planning, d'agenda ou de créneaux. Seulement `events` (journal technique,
 8 695 lignes) et `finia_events` — ce ne sont pas ça. Donc contrairement à
 « Mon argent », il n'y a pas de données à récupérer: ce sera à construire.
 
-### « Mon argent » — ce qui manque encore
-Vu sur ses captures de l'ancienne application, absent de mon écran:
-- l'onglet **Analyste**;
+### « Mon argent » — l'écran est COMPLET
+Tout ce que ses captures de l'ancienne application montraient existe
+maintenant. Fait le 22/09, dans cet ordre:
+- le **solde d'un compte se calcule** au lieu de se lire (`accounts.balance`
+  est le solde de départ, pas celui du jour);
+- **modifier et retirer** un compte;
+- l'onglet **Analyste** — mois contre mois, où part l'argent, prévu contre
+  réel, six mois en barres;
 - le **chat** d'un espace partagé;
-- l'**épargne**: le total, modifier, supprimer;
-- les **boutons créer** pour un projet et un njangi.
+- l'**épargne**: le total mis de côté, modifier, retirer, et un montant
+  LIBRE à la place des « + 1 000 / + 5 000 » qui supposaient des FCFA;
+- **créer** son propre projet, njangi ou espace — avant on ne pouvait que
+  rejoindre celui d'un autre avec un code.
 
-Fait aujourd'hui: le solde se calcule au lieu de se lire, et chaque compte a
-son crayon et sa croix.
+Il reste **à le regarder à l'écran avec les vraies données** avant de dire
+qu'il marche. Et Beau doit trancher: application à part, ou onglet.
 
 ### Hors ligne
 Demandé par Beau le 22/09. Le service worker existe déjà et met la coque en
