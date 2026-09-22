@@ -2023,6 +2023,11 @@
     "prevMonth": "Mois précédent",
     "nextMonth": "Mois suivant",
     "carryOver": "Reprendre mes lignes du mois dernier",
-    "nothingToCarry": "Rien à reprendre le mois dernier."
+    "nothingToCarry": "Rien à reprendre le mois dernier.",
+    "chatTitle": "LA DISCUSSION",
+    "chatEmpty": "Rien encore.",
+    "chatEmptyHint": "Écris le premier message de cet espace.",
+    "chatPlaceholder": "Écrire un message",
+    "chatSend": "Envoyer le message"
   }
 }
