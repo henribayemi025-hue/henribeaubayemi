@@ -61,6 +61,29 @@ maintenant. Fait le 22/09, dans cet ordre:
 Il reste **à le regarder à l'écran avec les vraies données** avant de dire
 qu'il marche. Et Beau doit trancher: application à part, ou onglet.
 
+### « Mon argent » est une application À PART — tranché par Beau le 22/09
+Devant la première version en ligne: « c'est quoi cette merde, ça doit être
+un truc à part entière comme Finjaro Accounting, je t'ai envoyé les photos
+même les couleurs ». Puis: « comme Athlo, version ordi et téléphone ».
+
+**Fait le jour même, et regardé à l'écran avant de pousser cette fois:**
+- adresse `/argent`, hors de la place de marché — ni sa barre, ni Services,
+  ni son crème; la présentation du premier lancement et la bannière
+  d'installation n'y entrent plus;
+- ses couleurs à elle (`money.*`): noir, violet, les six pastilles de compte
+  qui étaient déjà en base; barre du bas sur téléphone, colonne à gauche sur
+  ordinateur;
+- la monnaie choisie à côté de chaque montant, sans conversion.
+
+**Leçon, écrite pour ne pas la refaire:** j'avais compilé et poussé sans
+regarder. Beau l'a vue avant moi. `video-work/voir-mon-argent.mjs` rend
+l'application aux deux largeurs avec de vraies formes de données — il a
+attrapé un plantage de l'onglet Analyste que la compilation ne voyait pas.
+
+**Reste, plus tard:** une adresse propre (`money.finjaro.net`) plutôt que
+`finjaro.net/argent`. Ça demande un enregistrement DNS et une route
+Cloudflare; rien ne casse en attendant.
+
 ### Retravailler le DESIGN des applications
 Demandé par Beau le 22/09.
 
@@ -85,9 +108,10 @@ Ce qui saute aux yeux aujourd'hui, et qui est vrai:
 le harnais ne rend que 390 px de large, et un recadrage qui passe sur mobile
 peut couper un visage en deux sur un écran large.
 
-**À cadrer avec Beau avant de toucher à quoi que ce soit:** est-ce qu'on veut
-que les applications se ressemblent (un seul air de famille), ou que chacune
-garde le sien ? Les deux se défendent et ça décide tout le reste.
+**Réponse de Beau, par l'exemple, le 22/09:** chaque application garde SON
+style. « Mon argent » est noir et violet comme le premier Finjaro, Athlo est
+noir et vert, la place de marché reste crème et terracotta. Ce qui est
+commun, c'est le compte et les six points — pas les couleurs.
 
 ### Hors ligne
 Demandé par Beau le 22/09. Le service worker existe déjà et met la coque en
