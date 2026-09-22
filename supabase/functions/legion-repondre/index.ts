@@ -72,7 +72,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[]): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -92,13 +92,89 @@ ${mesures ? `CHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (conne
 ${mesures}
 C'est TOI qui vois ces chiffres, à l'instant: ne renvoie jamais la question à un collègue ni à Claude. Donne-les tout de suite, avec leur période (« ces 7 jours », « aujourd'hui »). Pour « combien de visites / de personnes », donne d'abord les visiteurs engagés (de vraies personnes), puis les navigateurs, et dis en une phrase que la différence, ce sont surtout des robots qui parcourent le catalogue (voir « definitions »). Un chiffre qui n'est pas ici, tu ne l'as pas: dis-le.
 
+` : ''}${verifie.length ? `CE QUE L'ÉQUIPE VIENT DE VÉRIFIER ELLE-MÊME DANS LA BASE, à l'instant (outil appelé → résultat):
+${verifie.join('\n')}
+Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »). Donne les chiffres tels quels, avec leur période.
+
 ` : ''}RÈGLE ABSOLUE — l'honnêteté:
-- ${mesures ? "Tes seuls outils sont les chiffres ci-dessus. Tu n'as accès ni au code, ni aux e-mails, ni à Internet, et tu ne peux rien modifier." : "Tu n'as encore accès à AUCUN outil: ni au site, ni aux chiffres, ni aux e-mails, ni à Internet."} Tu ne peux donc RIEN avoir revu, analysé, envoyé ou changé.
-- Ne prétends JAMAIS avoir fait un travail (« j'ai revu », « j'ai analysé »). Dis ce que tu PROPOSES de faire, ou ce dont tu aurais besoin.
+- ${mesures ? "Tes outils: lire les chiffres de la place de marché (ci-dessus, et les vérifications ci-dessus s'il y en a). Tu n'as accès ni au code, ni aux e-mails, ni à Internet, et tu ne peux rien modifier." : "Tu n'as encore accès à AUCUN outil: ni au site, ni aux chiffres, ni aux e-mails, ni à Internet."} Tu ne peux donc rien avoir envoyé ni changé.
+- Ne prétends JAMAIS avoir fait un travail que tu n'as pas fait (« j'ai revu les écrans »). Une vérification listée ci-dessus, en revanche, a vraiment été faite.
 - Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné${mesures ? ' et qui ne figure pas dans les chiffres mesurés' : ''}.
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.`;
+}
+
+// Les outils de lecture (0144): l'agent VÉRIFIE lui-même dans la base avant
+// de répondre. Beau, 22/09: « il dit les chiffres, il ne peut pas vérifier,
+// pourtant il doit le faire ». Chaque outil est une requête fixe côté base
+// (legion_outil), aux paramètres bornés: pas de SQL libre.
+const JOURS = { type: 'INTEGER', description: 'Période en jours, de 1 à 90 (7 par défaut).' };
+const OUTILS = [{
+  functionDeclarations: [
+    { name: 'verifier_jour', description: "Vérifier un jour précis: navigateurs, visiteurs engagés, fiches vues, articles différents vus, heure de pointe, recherches, contacts, et un verdict calculé (robot qui parcourt le catalogue, ou trafic normal).",
+      parameters: { type: 'OBJECT', properties: { date: { type: 'STRING', description: 'Le jour, au format AAAA-MM-JJ.' } }, required: ['date'] } },
+    { name: 'compter_evenement', description: "Compter un type d'événement sur une période, avec le nombre de personnes distinctes et le détail jour par jour.",
+      parameters: { type: 'OBJECT', properties: {
+        type: { type: 'STRING', enum: ['visit', 'product_view', 'shop_view', 'category_view', 'search', 'whatsapp_click', 'phone_click', 'contact_intent', 'cart_add', 'checkout_start', 'follow', 'comment', 'reel_view', 'share_reel'] },
+        jours: JOURS }, required: ['type'] } },
+    { name: 'classer_boutiques', description: 'Les meilleures boutiques selon un critère (articles en ligne, commandes sur la période, abonnés, vues des articles).',
+      parameters: { type: 'OBJECT', properties: {
+        critere: { type: 'STRING', enum: ['articles', 'commandes', 'abonnes', 'vues'] },
+        n: { type: 'INTEGER', description: 'Combien de boutiques, de 1 à 20.' }, jours: JOURS }, required: ['critere'] } },
+    { name: 'articles', description: "Les articles en ligne, filtrés par catégorie et/ou prix plafond: leur nombre, le prix médian, les plus vus.",
+      parameters: { type: 'OBJECT', properties: {
+        categorie: { type: 'STRING', description: "Code de catégorie tel que donné par l'outil categories (ex. mode_femme)." },
+        prix_max_fcfa: { type: 'INTEGER' }, n: { type: 'INTEGER', description: 'Combien d’articles les plus vus, de 1 à 20.' } } } },
+    { name: 'categories', description: "Le nombre d'articles en ligne dans chaque catégorie." },
+    { name: 'commandes', description: 'Les commandes sur une période: nombre, montant total, répartition par statut.',
+      parameters: { type: 'OBJECT', properties: { jours: JOURS, statut: { type: 'STRING', description: 'Filtrer sur un statut (ex. new, delivered, cancelled).' } } } },
+    { name: 'pays', description: 'Les comptes et les boutiques, pays par pays.' },
+  ],
+}];
+const MAX_APPELS = 4;
+
+// Une enquête par message, faite une fois pour toute l'équipe: le modèle
+// choisit les outils, la base répond, et les résultats entrent dans la
+// consigne de chaque agent qui répond. Rien à vérifier → liste vide.
+async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string): Promise<string[]> {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const contents: unknown[] = [{ role: 'user', parts: [{ text:
+`Tu prépares la réponse d'une équipe à son fondateur, sur la place de marché Finjaro. Nous sommes le ${aujourdhui}.
+La conversation récente:
+${fil}
+
+Le dernier message, auquel il faut répondre: « ${question} »
+
+Si y répondre demande un chiffre ou une vérification dans la base de la place de marché, appelle les outils nécessaires (${MAX_APPELS} appels au plus). Sinon n'appelle rien et réponds seulement « rien ».` }] }];
+  const resultats: string[] = [];
+  for (let tour = 0; tour < 3 && resultats.length < MAX_APPELS; tour += 1) {
+    let parts: Array<{ functionCall?: { name: string; args?: Record<string, unknown> } }> = [];
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
+        method: 'POST',
+        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents, tools: OUTILS, generationConfig: { temperature: 0.1, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } } }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!resp.ok) { console.error('enquête:', resp.status, (await resp.text()).slice(0, 200)); break; }
+      parts = (await resp.json())?.candidates?.[0]?.content?.parts ?? [];
+    } catch (e) { console.error('enquête:', (e as Error).message); break; }
+    const appels = parts.filter((x) => x.functionCall).slice(0, MAX_APPELS - resultats.length);
+    if (!appels.length) break;
+    contents.push({ role: 'model', parts });
+    const reponses = [];
+    for (const { functionCall } of appels) {
+      const nom = functionCall!.name;
+      const args = functionCall!.args ?? {};
+      const { data, error } = await service.rpc('legion_outil', { p_nom: nom, p_params: args });
+      const resultat = error ? { erreur: error.message } : data;
+      resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
+      reponses.push({ functionResponse: { name: nom, response: { resultat } } });
+    }
+    contents.push({ role: 'user', parts: reponses });
+  }
+  return resultats;
 }
 
 async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
@@ -269,18 +345,20 @@ Deno.serve(async (req: Request) => {
     else if (m) mesures = JSON.stringify(m);
   }
 
+  const verifie = mesures ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte)) : [];
+
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
   let pourquoi = '';
 
   for (const cible of allumees) {
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     const texte = String(r.obj.texte).trim().slice(0, 1200);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id },
+      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     ecrits.push(ecrit);
