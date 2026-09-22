@@ -85,7 +85,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache', 'regle', 'action'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[]): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[]): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -95,7 +95,10 @@ Niveau d'autonomie: ${a.autonomie === 'autonome' ? 'tu agis et tu préviens' : a
 ${ailleurs.length ? `CE QUI S'EST DIT AILLEURS DANS L'ENTREPRISE — dans les autres salons, entre le fondateur et toi ou toute l'équipe, du plus ancien au plus récent. C'est TA mémoire: tu t'en souviens, tu ne dis jamais que tu n'y as pas accès.
 ${ailleurs.join('\n')}
 
-` : ''}Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
+` : ''}L'ÉQUIPE, à l'instant (qui est allumé ou éteint):
+${equipe.join('\n')}
+
+Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
 ${fil}
 ${collegues.length ? `\nTes collègues ${collegues.join(', ')} viennent de répondre juste au-dessus: ne répète pas ce qu'ils ont dit, apporte autre chose ou sois bref.\n` : ''}
 Claude (« Claude Code ») est le développeur de Legion: il passe lire les salons de temps en temps et répond lui-même. Ne parle jamais à sa place et ne promets rien en son nom.
@@ -120,7 +123,7 @@ Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
-"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la — elle ne partira qu'avec son clic, donc dis « je te propose… confirme ». « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
+"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la. Elle ne s'exécute QUE s'il touche le bouton « Confirmer » de la carte qui apparaîtra sous ton message: dis « je te propose… touche Confirmer ». Si ce qu'il demande est DÉJÀ le cas (un agent déjà éteint, déjà allumé), dis-le et ne propose rien. S'il écrit « je confirme » dans le chat, ce n'est PAS une confirmation: dis-lui de toucher « Confirmer » sur la carte. Tu ne dis JAMAIS qu'une action est faite: tu n'en sais rien, seul le bouton l'exécute. Quand tu proposes une action, "tache" vaut "" (pas de tâche en double). « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
 "regle": seulement si le DERNIER message du fondateur fixe une façon de faire qui doit valoir TOUJOURS, pour toute l'équipe (une préférence durable, une correction de comportement, une interdiction). Écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Dans tous les autres cas, "" — et c'est le cas le plus fréquent. NE SONT PAS des règles: une question (« sur quel écran tu travailles ? »), une demande ponctuelle ou une tâche (« crée un salon », « fais-moi le rapport »), un salut, une information. Une règle déjà listée plus haut ne se répète pas.`;
 }
 
@@ -224,7 +227,7 @@ ${faits || '(aucun chiffre mesuré)'}
 ${memoire.length ? `LES RÈGLES DE LA MAISON:\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}
 Vérifie, dans cet ordre:
 1. Chaque chiffre, pourcentage ou date figure-t-il dans les faits ou la conversation ? Sinon, retire-le ou remplace-le par ce qu'on sait vraiment.
-2. Le message prétend-il un travail qui n'a pas été fait ou qui n'est pas en cours (« j'ai revu », « j'ai analysé », « je suis en train de revoir les écrans », « je continue de travailler sur… ») ? Les agents n'ont que des outils de lecture: ils ne travaillent pas entre deux messages. Retire aussi toute promesse de livraison avec un délai (« je te le remets cet après-midi », « d'ici ce soir ») : remplace-la par ce que l'agent PROPOSE et ce dont il a besoin. Une vérification listée dans les faits, elle, a été faite.
+2. Le message prétend-il un travail qui n'a pas été fait ou qui n'est pas en cours (« j'ai revu », « j'ai analysé », « je suis en train de revoir les écrans », « je continue de travailler sur… ») ? Les agents n'ont que des outils de lecture: ils ne travaillent pas entre deux messages, et ils n'exécutent AUCUNE action eux-mêmes (« c'est fait, l'agent est éteint » est faux: seul le bouton « Confirmer » du fondateur exécute). Retire aussi toute promesse de livraison avec un délai (« je te le remets cet après-midi », « d'ici ce soir ») : remplace-la par ce que l'agent PROPOSE et ce dont il a besoin. Une vérification listée dans les faits, elle, a été faite.
 3. Enfreint-il une règle de la maison ?
 4. Est-il creux (formules, promesses vagues sans qui/quoi/quand) ? Rends-le concret ou plus court.
 
@@ -445,6 +448,12 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     else if (m) mesures = JSON.stringify(m);
   }
 
+  // L'état de l'équipe: pour qu'un agent ne propose pas d'éteindre quelqu'un
+  // qui l'est déjà, ni ne prétende l'avoir fait (Beau, 22/09: Alpha a dit
+  // « Plume est éteint » sans avoir rien fait).
+  const equipe = (agents as Agent[]).filter((a) => !a.user_id)
+    .map((a) => `- ${a.nom} (${a.poste}) — ${a.actif ? 'allumé' : 'éteint'}`);
+
   // La mémoire: les règles de la maison, relues avant chaque réponse.
   const { data: regles } = await service.from('legion_memoire').select('regle')
     .eq('entreprise_id', msg.entreprise_id).eq('actif', true).order('created_at', { ascending: false }).limit(60);
@@ -489,7 +498,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie, memoire, competences, ailleursPour(cible)));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie, memoire, competences, ailleursPour(cible), equipe));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     let texte = String(r.obj.texte).trim().slice(0, 1200);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
@@ -519,7 +528,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     if (!estClaude && a0.type && a0.type !== 'aucune') {
       const visee = a0.agent ? (agents as Agent[]).find((x) => !x.user_id && sansAccent(x.nom) === sansAccent(String(a0.agent))) : null;
       const besoinAgent = a0.type !== 'retenir_regle';
-      if ((!besoinAgent || visee) && (a0.type.startsWith('allumer') || a0.type.startsWith('eteindre') || String(a0.valeur || '').trim())) {
+      const dejaFait = visee && ((a0.type === 'allumer_agent' && visee.actif) || (a0.type === 'eteindre_agent' && !visee.actif));
+      if (!dejaFait && (!besoinAgent || visee) && (a0.type.startsWith('allumer') || a0.type.startsWith('eteindre') || String(a0.valeur || '').trim())) {
         action = { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
       }
     }
@@ -532,7 +542,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     ont_repondu.push(cible.nom);
     lignes.push(`${cible.nom}: ${texte}`);
 
-    const intitule = typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '';
+    const intitule = action ? '' : (typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '');
     if (intitule) {
       const { data: tache } = await service.from('legion_messages').insert({
         entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
