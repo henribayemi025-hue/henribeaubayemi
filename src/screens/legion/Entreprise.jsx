@@ -363,6 +363,27 @@ export default function Entreprise() {
         </div>
       ) : (
         <>
+          {/* Le bouton était caché derrière « Écrire à quelqu'un »: Beau ne
+              l'a pas trouvé — « je ne vois pas de qu'ils choisissent
+              eux-mêmes ». Une chose qu'on doit faire une fois se met sur le
+              chemin, pas dans un sous-menu. Il disparaît quand c'est fait. */}
+          {aChoisir.length > 0 && (
+            <div className="border-b border-hairline bg-teal/10 px-4 py-2">
+              <p className="text-caption font-semibold text-ink">
+                {t('legion.choisirAide', { n: aChoisir.length })}
+              </p>
+              <button type="button" onClick={quIlsChoisissent} disabled={choisissent}
+                className="mt-1.5 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white disabled:opacity-50">
+                {choisissent ? t('legion.ilsChoisissent') : t('legion.quIlsChoisissent')}
+              </button>
+              {bilan && (
+                <p className="mt-1.5 text-caption font-semibold text-teal">
+                  {t('legion.bilanChoix', { faits: bilan.faits, restants: bilan.restants })}
+                </p>
+              )}
+            </div>
+          )}
+
           {(data.ouverts.length > 0 || data.libres.length > 0) && (
             <div className="border-b border-hairline bg-brass/10 px-4 py-2">
               {data.ouverts.length > 0 && (
