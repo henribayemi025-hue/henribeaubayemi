@@ -172,6 +172,31 @@ s'assembler dès maintenant à partir de vrais fichiers. « Juridique »,
 4. L'espace pour coder (aller sur Claude depuis l'app).
 5. Les agents qui **travaillent vraiment**: aujourd'hui ce sont des fiches
    et des messages; personne ne réfléchit derrière. C'est le vrai chantier.
+   Ce que Beau veut qu'ils sachent faire (sa liste du 22/09), et où on en
+   est honnêtement:
+   - **Se connecter à ses outils** — e-mail, calendrier, Supabase, Drive —
+     « comme HappyCapy ». C'est la première brique: sans accès, un agent ne
+     peut que parler. Techniquement: un bouton « Connecter » par outil
+     (OAuth), les jetons chiffrés côté serveur, chaque agent ne reçoit que
+     les accès de son poste. À faire en premier.
+   - **Coder en autonomie** — écrire, tester, déboguer, déployer pendant des
+     heures. C'est ce que je fais déjà pour Finjaro; le rendre disponible
+     dans Legion, c'est brancher un exécuteur de code sur un dépôt du client.
+   - **Enchaîner des tâches** — recherche → analyse → rédaction → envoi.
+     Faisable dès que les outils sont connectés.
+   - **Gérer un flux métier** — trier une boîte mail, relancer les factures
+     impayées, tenir le CRM. Idem: outils connectés + une tâche récurrente.
+   - **Recherche scientifique** — hypothèses, expériences, analyse. Le
+     modèle « laboratoire » a les postes; il lui manque l'exécution.
+   - **Négocier entre agents** — deux agents qui discutent prix et
+     conditions. Intéressant pour la place de marché (acheteur ↔ vendeuse).
+   - **Naviguer sur le web / contrôler un ordinateur** — remplir des
+     formulaires, cliquer. Possible, mais coûteux et fragile: on ne le
+     promet pas avant que le reste tourne.
+   - **Jouer à des jeux vidéo** — pas pour Finjaro.
+   - **Travailler en arrière-plan pendant des heures** et revenir avec un
+     résultat: c'est le cœur. Tâche prise → l'agent tourne → compte rendu
+     dans le salon. La messagerie est déjà là pour ça.
 6. L'installation d'un agent: télécharger son texte depuis la source au
    moment où on l'engage.
 
