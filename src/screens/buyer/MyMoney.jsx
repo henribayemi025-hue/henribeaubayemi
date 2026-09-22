@@ -12,6 +12,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
+import ChatEspace from './money/ChatEspace';
 
 // Mon argent — le tout premier Finjaro, remis en service.
 //
@@ -396,6 +397,10 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="mt-3 rounded-card border border-hairline p-3">
+          <ChatEspace spaceId={espace.id} moi={moi} t={t} />
         </div>
       </>
     );
