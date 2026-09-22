@@ -7,6 +7,7 @@ import {
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { iconeDept, statutDe, STATUTS } from './outils';
+import { Memoire } from './Memoire';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -310,6 +311,9 @@ export function Accueil({
           )}
         </section>
       </div>
+
+      {/* 6. La mémoire: ce que les agents ont retenu de ce que Beau leur dit */}
+      <Memoire entrepriseId={entreprise.id} t={t} />
     </div>
   );
 }

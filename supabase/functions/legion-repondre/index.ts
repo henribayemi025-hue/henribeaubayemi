@@ -68,14 +68,16 @@ const SCHEMA = {
     texte: { type: 'STRING' },
     genre: { type: 'STRING', enum: ['info', 'question', 'proposition'] },
     tache: { type: 'STRING' },
+    regle: { type: 'STRING' },
   },
-  required: ['texte', 'genre', 'tache'],
+  required: ['texte', 'genre', 'tache', 'regle'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[]): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[]): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
+${memoire.length ? `\nLES RÈGLES DE LA MAISON — ce que le fondateur a déjà dit, à respecter sans qu'il ait à le répéter:\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}
 Niveau d'autonomie: ${a.autonomie === 'autonome' ? 'tu agis et tu préviens' : a.autonomie === 'semi' ? 'tu agis sur ce qui ne coûte rien et tu rends compte' : 'tu proposes, le fondateur valide'}.
 
 Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
@@ -102,7 +104,8 @@ Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »
 - Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné${mesures ? ' et qui ne figure pas dans les chiffres mesurés' : ''}.
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
-"tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.`;
+"tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
+"regle": si le DERNIER message du fondateur contient une consigne qui doit valoir pour la suite (une préférence, une correction, une interdiction, une façon de faire), écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Sinon "". Une question ou un salut n'est pas une règle, et une règle déjà listée plus haut ne se répète pas.`;
 }
 
 // Les outils de lecture (0144): l'agent VÉRIFIE lui-même dans la base avant
@@ -345,6 +348,12 @@ Deno.serve(async (req: Request) => {
     else if (m) mesures = JSON.stringify(m);
   }
 
+  // La mémoire: les règles de la maison, relues avant chaque réponse.
+  const { data: regles } = await service.from('legion_memoire').select('regle')
+    .eq('entreprise_id', msg.entreprise_id).eq('actif', true).order('created_at', { ascending: false }).limit(60);
+  const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
+  let retenue = false; // une seule règle par message, même si plusieurs répondent
+
   const verifie = mesures ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte)) : [];
 
   const ecrits: unknown[] = [];
@@ -352,13 +361,23 @@ Deno.serve(async (req: Request) => {
   let pourquoi = '';
 
   for (const cible of allumees) {
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie, memoire));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     const texte = String(r.obj.texte).trim().slice(0, 1200);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
+    // Une consigne durable du fondateur: on la retient pour toute l'équipe.
+    let retenu = '';
+    const regle = typeof r.obj.regle === 'string' ? r.obj.regle.trim().slice(0, 400) : '';
+    if (!retenue && regle.length >= 8 && !memoire.some((x) => x.toLowerCase() === regle.toLowerCase())) {
+      const { error: errMem } = await service.from('legion_memoire').insert({
+        entreprise_id: msg.entreprise_id, regle, source: 'fondateur', message_id: msg.id, agent_id: cible.id, cree_par: auteur.user_id,
+      });
+      if (errMem) console.error('mémoire:', errMem.message);
+      else { retenu = regle; retenue = true; memoire.push(regle); }
+    }
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     ecrits.push(ecrit);
