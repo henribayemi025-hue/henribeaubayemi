@@ -113,6 +113,38 @@ style. « Mon argent » est noir et violet comme le premier Finjaro, Athlo est
 noir et vert, la place de marché reste crème et terracotta. Ce qui est
 commun, c'est le compte et les six points — pas les couleurs.
 
+### Le SMS Mobile Money qui remplit « Mon argent » tout seul
+Beau, 22/09: « est-ce possible que Finjaro aille fouiller les messages de la
+personne pour sortir ses finances et mettre à jour son Mon argent si elle
+oublie de le faire ? »
+
+**« Aller fouiller » — non, et ce n'est pas un choix de notre part:**
+- Un site web ne peut PAS lire les SMS. Aucune interface de navigateur ne
+  l'autorise (`WebOTP` lit un code à usage unique, rien d'autre).
+- Les applications Android et iOS de Finjaro chargent `https://finjaro.net`
+  dans une fenêtre web: elles n'ont pas plus d'accès qu'un navigateur.
+- Sur iPhone, l'accès aux SMS n'existe pour personne.
+- Sur Android il faudrait du code natif ET la permission SMS, que Google Play
+  n'accorde qu'à une courte liste d'usages. Des applications de finance s'y
+  sont cassé les dents.
+
+**Trois chemins qui marchent, du plus faisable au plus lourd:**
+1. **Elle PARTAGE le SMS** — appui long sur le message MoMo → « Partager » →
+   Finjaro. Un geste, aucune permission, et ça marche dans une application
+   web installée (Web Share Target). Finia lit le message et crée la ligne.
+   **C'est celui que je ferais.**
+2. **Capture d'écran ou copier-coller** — la vision de Finia existe déjà
+   (idée 16). Zéro code natif.
+3. **L'API Mobile Money MTN / Orange** — officiel, avec l'accord de la
+   personne, et ça donne l'historique complet au lieu de messages isolés.
+   C'est l'idée 9.
+
+**Ce qui n'est pas technique et qui compte autant:** une application qui lit
+TOUS les messages de quelqu'un se fait désinstaller. Le partage volontaire
+donne le même résultat et se laisse expliquer en une phrase.
+
+**Rien n'est décidé. À dire par Beau.**
+
 ### Hors ligne
 Demandé par Beau le 22/09. Le service worker existe déjà et met la coque en
 cache: **l'application s'ouvre sans réseau, mais elle est vide.** Ce qui
