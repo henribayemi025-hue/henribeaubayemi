@@ -86,7 +86,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache', 'regle', 'action'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[], plans: string[] = [], boutique: Boutique | null = null): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[], plans: string[] = [], boutique: Boutique | null = null, memoireSalon: string | null = null): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}${boutique ? `L'entreprise a branché SA boutique sur la place de marché Finjaro: « ${boutique.nom} ». Ses ventes, son stock, ses avis et ses messages en attente sont lisibles (vérifications ci-dessous quand elles ont eu lieu); tu parles de « notre boutique ».\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -106,7 +106,10 @@ Si on te demande ce que tu as prévu, sur quoi tu travailles ou où tu en es, r�
 L'ÉQUIPE, à l'instant (qui est allumé ou éteint):
 ${equipe.join('\n')}
 
-Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
+${memoireSalon ? `LA MÉMOIRE DE CE SALON — le résumé de ce qui s'est dit avant les derniers messages (décisions, chiffres, qui fait quoi). Tu t'en souviens comme si tu y étais:
+${memoireSalon}
+
+` : ''}Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
 ${fil}
 ${collegues.length ? `\nTes collègues ${collegues.join(', ')} viennent de répondre juste au-dessus: ne répète pas ce qu'ils ont dit, apporte autre chose ou sois bref.\n` : ''}
 Claude (« Claude Code ») est le développeur de Legion: il passe lire les salons de temps en temps et répond lui-même. Ne parle jamais à sa place et ne promets rien en son nom.
@@ -287,7 +290,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
 
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
     service.from('legion_entreprises').select('nom, projet').eq('id', msg.entreprise_id).single(),
-    service.from('legion_canaux').select('id, cle, nom, prive_entre, membres').eq('id', msg.canal_id).single(),
+    service.from('legion_canaux').select('id, cle, nom, prive_entre, membres, resume').eq('id', msg.canal_id).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
   ]);
@@ -504,7 +507,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).

@@ -54,7 +54,7 @@ function cors(origin: string | null): Record<string, string> {
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; moteur: string };
 type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string } | null; created_at: string };
-type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null };
+type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
 
 const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -96,6 +96,30 @@ async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<{
     } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
   }
   return { erreur: derniere };
+}
+
+// La mémoire d'un salon (0161): ce qui précède les 20 derniers messages,
+// résumé par Flash — décisions, chiffres, qui fait quoi, questions
+// ouvertes. Beau, 22/09: « compacter les messages quand c'est trop long ».
+const SCHEMA_RESUME = { type: 'OBJECT', properties: { resume: { type: 'STRING' } }, required: ['resume'] };
+async function resumer(apiKey: string, salon: string, ancien: string | null, messages: string): Promise<string | null> {
+  const texte = `Tu tiens la mémoire du salon « ${salon} » d'une entreprise (des humains et des agents y parlent). Écris un résumé, en français, de 600 à 1500 signes, en Markdown léger (## titres courts, - points): les décisions prises, les chiffres cités (avec leur date), qui fait quoi, les questions restées ouvertes, les consignes du fondateur. Rien d'autre: pas de salutations, pas de commentaires. Jamais de numéro de téléphone, d'e-mail ni d'adresse.
+${ancien ? `\nLE RÉSUMÉ PRÉCÉDENT (à fusionner, en gardant ce qui compte encore):\n${ancien}\n` : ''}
+LES NOUVEAUX MESSAGES À RÉSUMER, du plus ancien au plus récent:
+${messages}`;
+  try {
+    const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
+      method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json', responseSchema: SCHEMA_RESUME } }),
+      signal: AbortSignal.timeout(40_000),
+    });
+    if (!resp.ok) { console.error('résumé:', resp.status); return null; }
+    const body = await resp.json();
+    const txt = body?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+    const r = String(JSON.parse(txt).resume || '').replace(/\\r\\n|\\n/g, '\n').trim();
+    return r.length >= 80 ? r.slice(0, 2500) : null;
+  } catch (e) { console.error('résumé:', (e as Error).message); return null; }
 }
 
 const SCHEMA_PLAN = {
@@ -205,7 +229,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet').eq('id', entrepriseId).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur').eq('entreprise_id', entrepriseId).order('ordre'),
-    service.from('legion_canaux').select('id, cle, nom, prive_entre').eq('entreprise_id', entrepriseId),
+    service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
     service.from('legion_connecteurs').select('id').eq('entreprise_id', entrepriseId).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
   ]);
@@ -232,6 +256,24 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     || publics.find((c) => sansAccent(c.cle) === 'direction') || publics[0];
   const direction = publics.find((c) => sansAccent(c.cle) === 'direction');
   const nomDe = (id: string | null) => (agents as Agent[]).find((a) => a.id === id)?.nom || 'Quelqu\'un';
+
+  // 0. LA MÉMOIRE DES SALONS — un long fil se compacte (0161). Ce qui
+  // précède les 20 derniers messages, quand il y en a au moins 30 de
+  // nouveaux depuis le dernier résumé.
+  for (const c of canaux as Canal[]) {
+    if (tempsEcoule()) break;
+    const { count } = await service.from('legion_messages').select('id', { count: 'exact', head: true }).eq('canal_id', c.id).neq('genre', 'tache');
+    if ((count ?? 0) <= 40) continue;
+    const { data: anciens } = await service.from('legion_messages').select('auteur_id, texte, created_at')
+      .eq('canal_id', c.id).neq('genre', 'tache').gt('created_at', c.resume_jusqua || '1970-01-01').order('created_at', { ascending: true }).limit(400);
+    const aResumer = (anciens || []).slice(0, Math.max(0, (anciens || []).length - 20));
+    if (aResumer.length < 30) continue;
+    const texte = aResumer.map((m: { auteur_id: string; texte: string; created_at: string }) => `[${m.created_at.slice(0, 16).replace('T', ' ')}] ${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 400)}`).join('\n');
+    const resume = await resumer(apiKey, c.nom, c.resume, texte);
+    if (!resume) continue;
+    await service.from('legion_canaux').update({ resume, resume_jusqua: aResumer[aResumer.length - 1].created_at, resume_le: new Date().toISOString() }).eq('id', c.id);
+    journal.push(`${entreprise.nom}/${c.nom}: mémoire du salon mise à jour (${aResumer.length} messages résumés)`);
+  }
   const equipe = (agents as Agent[]).filter((a) => !a.user_id).map((a) => `- ${a.nom} (${a.poste}${a.departement ? `, ${a.departement}` : ''}) — ${a.actif ? 'allumé' : 'éteint'}`);
 
   const { data: tachesOuvertes } = await service.from('legion_messages').select('id, texte, assigne_a, canal_id, meta, created_at')
