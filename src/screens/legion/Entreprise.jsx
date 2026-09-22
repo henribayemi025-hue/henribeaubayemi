@@ -242,6 +242,25 @@ export default function Entreprise() {
     majMessage(x.id, { meta: { ...(x.meta || {}), statut }, termine_le: statut === 'fait' ? new Date().toISOString() : null });
   }
 
+  // La revue d'un livrable (chantier 7, « des agents qui s'améliorent »):
+  // le fondateur valide, ou renvoie avec une remarque. La remarque part
+  // dans le salon, adressée à l'agent (qui refait son livrable), et, s'il
+  // le demande, devient une règle que toute l'équipe relit.
+  async function renvoyer(x, remarque, enRegle) {
+    const a = data.agents.find((y) => y.id === x.assigne_a);
+    await majMessage(x.id, { meta: { ...(x.meta || {}), statut: 'a_faire', remarque, renvoye_le: new Date().toISOString() }, termine_le: null });
+    const { data: livrable } = await supabase.from('legion_messages').select('id, texte').eq('entreprise_id', entrepriseId)
+      .contains('meta', { livrable: { tache_id: x.id } }).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (enRegle && remarque.trim().length >= 8) {
+      await supabase.from('legion_memoire').insert({ entreprise_id: entrepriseId, regle: remarque.trim(), source: 'main', agent_id: a?.id || null, cree_par: user.id });
+    }
+    await envoyer({
+      texte: `↩ ${a ? `@${a.nom} ` : ''}${t('legion.renvoiTexte', { tache: x.texte, remarque, defaultValue: '« {{tache}} » — à refaire : {{remarque}}' })}`,
+      genre: 'decision',
+      meta: { ...(livrable && a ? { reponse_a: { id: livrable.id, nom: a.nom, texte: String(livrable.texte).slice(0, 120) } } : {}), renvoi: { tache_id: x.id, agent_id: a?.id || null } },
+    }, x.canal_id);
+  }
+
   async function convoquer(x, a) {
     await ecrireA(a);
     setBrouillon(t('legion.ouEnEsTu', { nom: a.nom, tache: x.texte }));
@@ -466,7 +485,7 @@ export default function Entreprise() {
 
         <Kanban
           taches={taches} agents={data.agents} departements={departements}
-          onStatut={statutTache} onCreer={creerTache} onConvoquer={convoquer} onFermer={() => setKanban(false)} t={t}
+          onStatut={statutTache} onCreer={creerTache} onConvoquer={convoquer} onRenvoyer={renvoyer} onFermer={() => setKanban(false)} t={t}
           className={`${vue === 'taches' ? 'flex' : 'hidden'} ${kanban && vue !== 'accueil' ? 'lg:flex' : 'lg:hidden'}`}
         />
       </div>

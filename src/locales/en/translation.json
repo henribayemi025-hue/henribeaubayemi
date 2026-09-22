@@ -28,6 +28,11 @@
     "badgePlan": "Plan",
     "badgeLivrable": "Deliverable",
     "badgeBloque": "Blocked",
+    "valider": "Approve",
+    "renvoyer": "Send back",
+    "remarquePlaceholder": "What's wrong, what you expect…",
+    "enFaireUneRegle": "Make it a rule for the whole team",
+    "renvoiTexte": "“{{tache}}” — redo: {{remarque}}",
     "aucune": "You have no company yet.",
     "nouvelle": "New company",
     "taille": {

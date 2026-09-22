@@ -28,6 +28,11 @@
     "badgePlan": "Plan",
     "badgeLivrable": "Livrable",
     "badgeBloque": "Bloqué",
+    "valider": "Valider",
+    "renvoyer": "Renvoyer",
+    "remarquePlaceholder": "Ce qui ne va pas, ce que tu attends…",
+    "enFaireUneRegle": "En faire une règle pour toute l’équipe",
+    "renvoiTexte": "« {{tache}} » — à refaire : {{remarque}}",
     "aucune": "Tu n'as pas encore d'entreprise.",
     "nouvelle": "Nouvelle entreprise",
     "taille": {

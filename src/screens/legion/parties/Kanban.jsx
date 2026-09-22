@@ -8,8 +8,10 @@ import { STATUTS, statutDe, PRIORITES, COULEUR_PRIORITE } from './outils';
 // qu'on transforme), elle avance de colonne en colonne, elle est tenue par
 // un agent. Convoquer l'agent ouvre son salon privé avec la question
 // déjà écrite.
-export function Kanban({ taches, agents, departements, onStatut, onCreer, onConvoquer, onFermer, t, className = '' }) {
+export function Kanban({ taches, agents, departements, onStatut, onCreer, onConvoquer, onRenvoyer, onFermer, t, className = '' }) {
   const [filtre, setFiltre] = useState('tous');
+  // La revue d'un livrable: quelle tâche est en train d'être renvoyée.
+  const [renvoi, setRenvoi] = useState(null); // { id, remarque, regle }
   const [ajout, setAjout] = useState(false);
   const [titre, setTitre] = useState('');
   const [agentId, setAgentId] = useState('');
@@ -113,6 +115,30 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-legion-bg">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#2A9D8F' : (d?.couleur || '#E09F3E') }} />
                     </div>
+                    {/* À revoir: le livrable est dans le salon; ici, on tranche.
+                        Beau, 22/09: « donne-moi le résultat » — et ce qu'il
+                        corrige doit servir la fois suivante. */}
+                    {s === 'revue' && onRenvoyer && (
+                      renvoi?.id === x.id ? (
+                        <form onSubmit={(e) => { e.preventDefault(); if (!renvoi.remarque.trim()) return; onRenvoyer(x, renvoi.remarque.trim(), renvoi.regle); setRenvoi(null); }} className="space-y-1.5 rounded-input border border-legion-line bg-legion-bg p-2">
+                          <textarea autoFocus rows={2} value={renvoi.remarque} onChange={(e) => setRenvoi({ ...renvoi, remarque: e.target.value })}
+                            placeholder={t('legion.remarquePlaceholder', 'Ce qui ne va pas, ce que tu attends…')} className="input w-full text-[13px]" />
+                          <label className="flex items-center gap-1.5 text-[11px] text-legion-muted">
+                            <input type="checkbox" checked={renvoi.regle} onChange={(e) => setRenvoi({ ...renvoi, regle: e.target.checked })} />
+                            {t('legion.enFaireUneRegle', 'En faire une règle pour toute l’équipe')}
+                          </label>
+                          <div className="flex justify-end gap-1.5">
+                            <button type="button" onClick={() => setRenvoi(null)} className="rounded-input px-2 py-1 text-[11px] text-legion-muted hover:bg-legion-card">{t('common.cancel', 'Annuler')}</button>
+                            <button type="submit" className="rounded-input bg-legion-gold px-2.5 py-1 text-[11px] font-semibold text-legion-ink">{t('legion.renvoyer', 'Renvoyer')}</button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="flex gap-1.5">
+                          <button type="button" onClick={() => onStatut(x, 'fait')} className="flex-1 rounded-input bg-legion-success/15 px-2 py-1 text-[11px] font-semibold text-legion-success hover:bg-legion-success/25">✓ {t('legion.valider', 'Valider')}</button>
+                          <button type="button" onClick={() => setRenvoi({ id: x.id, remarque: '', regle: false })} className="flex-1 rounded-input bg-legion-danger/10 px-2 py-1 text-[11px] font-semibold text-legion-danger hover:bg-legion-danger/20">↩ {t('legion.renvoyer', 'Renvoyer')}</button>
+                        </div>
+                      )
+                    )}
                     <div className="flex items-center justify-between">
                       <button type="button" onClick={() => a && onConvoquer(x, a)} disabled={!a} className="flex min-w-0 items-center gap-1.5 text-left disabled:cursor-default" title={a ? t('legion.convoquer', 'Lui demander où il en est') : ''}>
                         {a ? <Visage a={a} taille={22} point={false} /> : <span className="h-[22px] w-[22px] rounded-full border border-dashed border-legion-line" />}

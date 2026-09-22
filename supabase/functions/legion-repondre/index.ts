@@ -319,6 +319,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     .order('created_at', { ascending: false }).limit(CONTEXTE);
   const fil = (filBrut || []).reverse();
   const lignes = fil.map((m) => `${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 500)}`);
+  // Le fondateur renvoie un livrable (bouton « Renvoyer » du tableau):
+  // l'agent le refait ici même, corrigé, en entier — pas une excuse.
+  if ((msg.meta as { renvoi?: unknown } | null)?.renvoi) {
+    lignes.push('[Consigne de Legion] Le message ci-dessus RENVOIE ton livrable avec une remarque. Réponds par le livrable refait, complet, corrigé selon la remarque (titres et points, retours à la ligne). Pas d\'excuses, pas de « je vais le refaire »: le voici.');
+  }
   // Qui a parlé récemment (les huit derniers messages, hors celui-ci).
   const ontParle = new Set(fil.slice(-9, -1).filter((m) => !m.user_id).map((m) => m.auteur_id));
   const t = sansAccent(msg.texte);
