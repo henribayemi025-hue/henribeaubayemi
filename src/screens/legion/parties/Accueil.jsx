@@ -9,6 +9,7 @@ import { Interrupteur } from './Interrupteur';
 import { iconeDept, statutDe, STATUTS } from './outils';
 import { Memoire } from './Memoire';
 import { EquiperEquipe } from './Competences';
+import { Depense } from './Depense';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -316,8 +317,11 @@ export function Accueil({
       {/* 6. Les compétences: que l'équipe s'équipe (chantier 2) */}
       <EquiperEquipe entrepriseId={entreprise.id} agents={agents} t={t} />
 
-      {/* 7. La mémoire: ce que les agents ont retenu de ce que Beau leur dit */}
-      <Memoire entrepriseId={entreprise.id} t={t} />
+      {/* 7. La mémoire, et ce que Legion coûte */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2"><Memoire entrepriseId={entreprise.id} t={t} /></div>
+        <Depense entreprise={entreprise} t={t} />
+      </div>
     </div>
   );
 }

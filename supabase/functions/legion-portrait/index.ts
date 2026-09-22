@@ -23,6 +23,7 @@
 //   - c'est un bouton à part, qui dit que ça coûte. Beau décide.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 
 const MODELES_IMAGE = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
 const MODELE_TEXTE = 'gemini-2.5-flash';
@@ -82,7 +83,7 @@ Do not include any text, watermark, logo or border. Do not depict any real or re
 
 async function demanderTexte(apiKey: string, texte: string): Promise<string | null> {
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELE_TEXTE}:generateContent`, {
+    const r = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELE_TEXTE}:generateContent`, {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -104,7 +105,7 @@ async function fabriquerImage(apiKey: string, invite: string): Promise<Image> {
   let derniere = 'aucun modèle d’image joignable';
   for (const modele of MODELES_IMAGE) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent`, {
+      const r = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,7 +139,7 @@ async function fabriquerImage(apiKey: string, invite: string): Promise<Image> {
   return { erreur: derniere };
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(compter('legion_portrait', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: h });
@@ -159,6 +160,13 @@ Deno.serve(async (req: Request) => {
   const { data: entreprise } = await personne
     .from('legion_entreprises').select('id, nom').eq('id', corps.entreprise_id).maybeSingle();
   if (!entreprise) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
+
+  // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
+  pourEntreprise(entreprise.id);
+  {
+    const p = await plafondAtteint(entreprise.id);
+    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Legion.` });
+  }
 
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false } });
@@ -209,4 +217,4 @@ Deno.serve(async (req: Request) => {
     .or('apparence->>famille.is.null,apparence->>famille.neq.photo');
 
   return json({ faits, restants: restants ?? 0, rates, ...(faits === 0 && pourquoi ? { pourquoi } : {}) });
-});
+}));

@@ -19,6 +19,7 @@
 // fonctions, s'il est ajouté un jour, est utilisé tout seul.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const RECHERCHES = ['topic:claude-skills', 'topic:agent-skills', 'topic:claude-code-skills'];
@@ -62,7 +63,7 @@ Pour chacune: la clé EXACTE, le nom EXACT de l'agent, et en une phrase courte e
     properties: { cle: { type: 'STRING' }, agent: { type: 'STRING' }, pourquoi: { type: 'STRING' } }, required: ['cle', 'agent', 'pourquoi'] } } }, required: ['propositions'] };
   for (const model of MODELS) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      const r = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: invite }] }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json', responseSchema: schema } }),
@@ -77,7 +78,7 @@ Pour chacune: la clé EXACTE, le nom EXACT de l'agent, et en une phrase courte e
   return [];
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(compter('legion_veilleur', async (req: Request) => {
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
@@ -184,4 +185,4 @@ Deno.serve(async (req: Request) => {
   // 5. Le journal.
   await db.from('legion_veilles').insert({ depots_vus: vus, depots_retenus: retenus, fiches_ajoutees: ajoutees, propositions: propositionsFaites, erreurs });
   return json({ depots_vus: vus, depots_retenus: retenus, fiches_ajoutees: ajoutees, propositions: propositionsFaites, erreurs });
-});
+}));

@@ -28,6 +28,7 @@
 // l'écran au lieu de disparaître.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -127,7 +128,7 @@ async function demander(apiKey: string, texte: string): Promise<Resultat> {
   let derniere = 'aucun modèle joignable';
   for (const model of MODELS) {
     try {
-      const resp = await fetch(
+      const resp = await gemini(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
           method: 'POST',
@@ -178,7 +179,7 @@ async function demander(apiKey: string, texte: string): Promise<Resultat> {
   return { erreur: derniere };
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(compter('legion_se_choisir', async (req: Request) => {
   const cors = getCorsHeaders(req.headers.get('Origin'));
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -209,6 +210,13 @@ Deno.serve(async (req: Request) => {
   const { data: entreprise } = await clientPersonne
     .from('legion_entreprises').select('id, nom').eq('id', entrepriseId).maybeSingle();
   if (!entreprise) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
+
+  // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
+  pourEntreprise(entreprise.id);
+  {
+    const p = await plafondAtteint(entreprise.id);
+    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Legion.` });
+  }
 
   const service = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -270,4 +278,4 @@ Deno.serve(async (req: Request) => {
     // rien sans dire pourquoi.
     ...(faits === 0 && pourquoi ? { pourquoi } : {}),
   });
-});
+}));

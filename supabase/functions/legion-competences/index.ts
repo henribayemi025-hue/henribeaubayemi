@@ -15,6 +15,7 @@
 // quelques centimes pour toute une équipe) et il choisit.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -79,7 +80,7 @@ ${dejaCles.length ? `Tu as déjà: ${dejaCles.join(', ')}. N'en reprends pas.\n`
   let derniere = 'aucun modèle joignable';
   for (const model of MODELS) {
     try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      const r = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,7 +100,7 @@ ${dejaCles.length ? `Tu as déjà: ${dejaCles.join(', ')}. N'en reprends pas.\n`
   return { erreur: derniere };
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(compter('legion_competences', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: h });
@@ -116,6 +117,13 @@ Deno.serve(async (req: Request) => {
   const { data: { user } } = await personne.auth.getUser();
   const { data: entreprise } = await personne.from('legion_entreprises').select('id, nom, projet').eq('id', corps.entreprise_id).maybeSingle();
   if (!entreprise || !user) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
+
+  // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
+  pourEntreprise(entreprise.id);
+  {
+    const p = await plafondAtteint(entreprise.id);
+    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Legion.` });
+  }
 
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
@@ -196,4 +204,4 @@ Deno.serve(async (req: Request) => {
   }
 
   return json({ erreur: 'Action inconnue.' }, 400);
-});
+}));

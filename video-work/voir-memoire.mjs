@@ -81,6 +81,8 @@ const debord = async (pg) => pg.evaluate(() => document.documentElement.scrollWi
   const { ctx, pg } = await page(390, 844);
   await pg.route('**/rest/v1/legion_memoire*', (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
     body: JSON.stringify([{ id: 'r1', regle: 'Finjaro est une place de marché pour le monde entier.', source: 'claude' }, { id: 'r2', regle: 'Toujours donner les visiteurs engagés avant les navigateurs.', source: 'fondateur' }]) }));
+  await pg.route('**/rest/v1/rpc/legion_depense_mois*', (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
+    body: JSON.stringify({ total_eur: 0.4213, appels: 57, par_fonction: { legion_repondre: 0.31, legion_portrait: 0.09, legion_competences: 0.0213 }, plafond_eur: 5 }) }));
   await pg.goto(`${BASE}/legion/${EID}`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(3500); await fermerBandeaux(pg);
   await pg.locator('text=Ce qu’ils ont retenu').first().scrollIntoViewIfNeeded(); await pg.waitForTimeout(300);
   await pg.screenshot({ path: `${SORTIE}/legion-memoire.png` });

@@ -24,6 +24,7 @@
 // message n'a qu'une série de réponses; un agent ne répond jamais à un agent.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -157,7 +158,7 @@ Si y répondre demande un chiffre ou une vérification dans la base de la place 
   for (let tour = 0; tour < 3 && resultats.length < MAX_APPELS; tour += 1) {
     let parts: Array<{ functionCall?: { name: string; args?: Record<string, unknown> } }> = [];
     try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
+      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents, tools: OUTILS, generationConfig: { temperature: 0.1, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } } }),
@@ -217,7 +218,7 @@ Vérifie, dans cet ordre:
 
 Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original; raison = en une courte phrase, ce que tu as corrigé.`;
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
+    const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -241,7 +242,7 @@ async function demander(apiKey: string, texte: string): Promise<{ obj: Record<st
   let derniere = 'aucun modèle joignable';
   for (const model of MODELS) {
     try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -270,7 +271,7 @@ async function demander(apiKey: string, texte: string): Promise<{ obj: Record<st
   return { erreur: derniere };
 }
 
-Deno.serve(async (req: Request) => {
+Deno.serve(compter('legion_repondre', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: h });
@@ -304,6 +305,13 @@ Deno.serve(async (req: Request) => {
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
   ]);
   if (!entreprise || !salon || !agents) return json({ erreur: 'Entreprise introuvable.' }, 404);
+
+  // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
+  pourEntreprise(msg.entreprise_id);
+  {
+    const p = await plafondAtteint(msg.entreprise_id);
+    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Legion.`, messages: [] });
+  }
 
   const auteur = (agents as Agent[]).find((a) => a.id === msg.auteur_id);
   if (!auteur || !auteur.user_id) return json({ ignore: 'pas un humain', messages: [] });
@@ -496,4 +504,4 @@ Deno.serve(async (req: Request) => {
   // On répond TOUJOURS 200 avec la raison: « Edge Function returned a
   // non-2xx status code » ne dit rien à personne.
   return json({ messages: ecrits, ...(ecrits.length === 0 ? { erreur: pourquoi || 'personne n’a pu répondre' } : {}) });
-});
+}));
