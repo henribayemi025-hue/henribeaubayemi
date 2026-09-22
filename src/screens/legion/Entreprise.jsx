@@ -3,6 +3,7 @@ import { Navigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera, IconHome } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
+import { useFondLegion } from './parties/useFondLegion';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -39,6 +40,7 @@ const MAX_MESSAGES = 500;
 export default function Entreprise() {
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
+  useFondLegion();
   const toast = useToast();
   const { id: entrepriseId } = useParams();
   const [params, setParams] = useSearchParams();
@@ -159,9 +161,11 @@ export default function Entreprise() {
     try {
       const { data: r, error: e2 } = await supabase.functions.invoke('legion-repondre', { body: { message_id: ligne.id } });
       if (e2) throw e2;
-      if (r?.erreur) throw new Error(r.erreur);
       if (r?.dort) toast.error(t('legion.ilDort', { nom: r.dort.nom }));
-      const arrives = [r?.message, r?.tache].filter(Boolean);
+      else if (r?.erreur) toast.error(t('legion.personneNaPuRepondre', { raison: r.erreur }));
+      // Plusieurs peuvent répondre à un « salut à tous »: le temps réel les
+      // apporte aussi, on dédoublonne par identifiant.
+      const arrives = (r?.messages || []).filter(Boolean);
       if (arrives.length) setData((d) => (d ? { ...d, messages: [...d.messages, ...arrives.filter((x) => !d.messages.some((m) => m.id === x.id))] } : d));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setTape(null); }
@@ -266,19 +270,29 @@ export default function Entreprise() {
   // Ce bouton-là DÉPENSE: fabriquer une image se paie, contrairement au
   // dessin. D'où un bouton séparé, qui le dit, et une photo par agent.
   async function vraiesPhotos(agent) {
+    // Par paquets de trois: fabriquer vingt images d'un coup dépassait le
+    // temps accordé à la fonction, et Beau voyait « Edge Function returned a
+    // non-2xx status code » alors que les photos, elles, se faisaient.
     setPhotos(true);
+    let total = 0;
     try {
-      const { data: r, error: err } = await supabase.functions.invoke('legion-portrait', {
-        body: { entreprise_id: entrepriseId, ...(agent ? { agent_id: agent.id } : { limite: 25 }) },
-      });
-      if (err) throw err;
-      if (r?.erreur) throw new Error(r.erreur);
-      if ((r?.faits ?? 0) === 0 && r?.pourquoi) toast.error(r.pourquoi);
-      else toast.success(t('legion.photosFaites', { faits: r?.faits ?? 0, restants: r?.restants ?? 0 }));
-      const { data: frais } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre');
-      if (frais) {
-        setData((d) => d && ({ ...d, agents: frais }));
-        setFiche((f) => (f ? frais.find((x) => x.id === f.id) || f : f));
+      for (let tour = 0; tour < 12; tour += 1) {
+        const { data: r, error: err } = await supabase.functions.invoke('legion-portrait', {
+          body: { entreprise_id: entrepriseId, ...(agent ? { agent_id: agent.id } : { limite: 3 }) },
+        });
+        if (err) throw err;
+        if (r?.erreur) throw new Error(r.erreur);
+        total += r?.faits ?? 0;
+        const { data: frais } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre');
+        if (frais) {
+          setData((d) => d && ({ ...d, agents: frais }));
+          setFiche((f) => (f ? frais.find((x) => x.id === f.id) || f : f));
+        }
+        if ((r?.faits ?? 0) === 0 && r?.pourquoi) { toast.error(r.pourquoi); break; }
+        if (agent || !r?.restants) {
+          toast.success(t('legion.photosFaites', { faits: total, restants: r?.restants ?? 0 }));
+          break;
+        }
       }
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setPhotos(false); }

@@ -181,7 +181,16 @@
     "aucuneTache": "No task yet.",
     "trombinoscope": "The team ({{n}})",
     "ongletAccueil": "Home",
-    "sansPhotoCourt": "{{n}} don't have their photo yet."
+    "sansPhotoCourt": "{{n}} don't have their photo yet.",
+    "personneNaPuRepondre": "Nobody could answer: {{raison}}",
+    "porteTitre1": "Your companies,",
+    "porteTitre2": "and the teams working in them.",
+    "porteTexte": "Each company has its departments, rooms and agents — with a face, a character and a switch. Step into one, or found another.",
+    "aucuneAide": "Pick a model, a headcount, and the team appears.",
+    "vueEnsemble": "Overview",
+    "tachesOuvertes": "Open tasks",
+    "actionsRapides": "Quick actions",
+    "reprendre": "Back to {{nom}}"
   },
   "equipe": {
     "titre": "The team",

@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconArrowRight, IconMoon } from '@tabler/icons-react';
+import { IconArrowRight, IconArrowLeft, IconMoon } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
+import { useFondLegion } from './parties/useFondLegion';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
-import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea } from '../../components/Field';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -42,6 +42,7 @@ const tailleDe = (n) => (n <= 5 ? 'cocon' : n <= 40 ? 'startup' : n <= 300 ? 'sc
 export default function Fonder() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  useFondLegion();
   const toast = useToast();
   const navigate = useNavigate();
   const [modele, setModele] = useState(null);
@@ -59,8 +60,8 @@ export default function Fonder() {
     return { modeles: m.data || [], postes: p.data || [] };
   }, [], { cacheKey: 'legion:modeles:v2' });
 
-  if (loading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
-  if (error) return <ErrorState onRetry={retry} />;
+  if (loading) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><Skeleton className="h-40 w-full" /></div>;
+  if (error) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><ErrorState onRetry={retry} /></div>;
   if (!data) return null;
 
   const taille = tailleDe(Number(effectif) || 1);
@@ -82,8 +83,13 @@ export default function Fonder() {
   }
 
   return (
-    <div className="pb-24">
-      <AppHeader title={t('legion.fonder')} back />
+    <div className="legion-app min-h-dvh bg-legion-bg pb-24 text-legion-ink">
+      {/* L'en-tête sombre de Legion, pas celui, crème, de la place de marché. */}
+      <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-legion-line bg-legion-panel/95 px-4 backdrop-blur">
+        <Link to="/legion" aria-label={t('common.back')} className="rounded-full p-1 text-legion-muted hover:text-legion-ink"><IconArrowLeft size={20} /></Link>
+        <span className="flex h-8 w-8 items-center justify-center rounded-input bg-legion-gold/20 font-serif text-[18px] font-semibold text-legion-gold">L</span>
+        <h1 className="text-body font-semibold">{t('legion.fonder')}</h1>
+      </header>
       <div className="mx-auto w-full max-w-3xl px-4 pt-3">
         <p className="text-body text-legion-muted">{t('legion.fonderIntro')}</p>
 

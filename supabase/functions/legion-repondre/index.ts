@@ -1,21 +1,27 @@
-// LEGION — un agent répond.
+// LEGION — les agents répondent.
 //
-// Beau a écrit « salut tout le monde » dans Direction, et personne n'a
-// répondu. C'est le trou principal, et c'est ici qu'il se bouche.
+// Beau, 22/09 au soir: « c'est juste Alpha qui écrit, personne d'autre », puis
+// « j'ai écrit, personne ne répond ». Trois défauts trouvés, corrigés ici:
 //
-// Ce que fait cette fonction, et rien de plus:
-//   1. Elle reçoit l'identifiant d'un message que quelqu'un vient d'écrire.
-//   2. Elle décide QUI doit répondre — une seule personne, jamais toute la
-//      salle: l'agent en face dans un message privé, l'agent nommé par
-//      « @Nom », sinon le directeur du département du salon.
-//   3. Si cet agent est éteint, elle ne dépense rien et le dit.
-//   4. Sinon elle lui donne son poste, son mandat, sa personnalité et les
-//      vingt derniers messages du salon, et lui demande de répondre comme le
-//      collègue qu'il est — court, en français, avec son caractère.
-//   5. Elle écrit la réponse dans le salon. Le temps réel fait le reste.
+//   1. LE MODÈLE RÉPONDAIT À VIDE dès que le fil devenait long. Même cause
+//      que pour les visages: sur les modèles qui réfléchissent, la réflexion
+//      se paie sur le budget de sortie et mange la réponse. Ses deux « salut à
+//      tous » de 17 h 30 sont restés sans réponse à cause de ça.
+//      → schéma de réponse imposé, réflexion bornée, budget doublé.
 //
-// Garde-fous: un agent éteint ne tourne pas; un message n'a qu'UNE réponse
-// d'agent (rappuyer ne repaie pas); 1 200 caractères au plus.
+//   2. SEUL ALPHA RÉPONDAIT. Les agents de Finjaro n'avaient aucun
+//      département: aucun salon n'avait de responsable, tout retombait sur le
+//      premier directeur venu. (Réparé en base.) Et un « salut à tous » ne
+//      faisait répondre qu'UNE personne. Maintenant, quand on s'adresse à
+//      tout le monde, jusqu'à trois agents allumés répondent, chacun à son
+//      tour, en lisant ce que les précédents viennent de dire.
+//
+//   3. ALPHA A INVENTÉ: « J'ai revu 80 % des écrans ». Il n'a rien revu, il
+//      n'a accès à rien. Un agent qui prétend avoir fait un travail est pire
+//      qu'un agent muet. La consigne l'interdit maintenant en toutes lettres.
+//
+// Garde-fous inchangés: un agent éteint ne répond pas (et on le dit); un
+// message n'a qu'une série de réponses; un agent ne répond jamais à un agent.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -23,6 +29,7 @@ const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
 const TIMEOUT_MS = 25_000;
 const CONTEXTE = 20;
+const MAX_REPONDANTS = 3;
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -42,40 +49,49 @@ function cors(origin: string | null): Record<string, string> {
   };
 }
 
-const sansAccent = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+// « À tout le monde »: un salut, ou un appel explicite à l'équipe.
+const A_TOUS = /\b(tous|toutes|tout le monde|everyone|everybody|l'equipe|equipe|la team|all of you|hello|salut|bonjour|bonsoir|coucou|hi|hey)\b/;
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; autonomie: string; ordre: number };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string): string {
+const SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    texte: { type: 'STRING' },
+    genre: { type: 'STRING', enum: ['info', 'question', 'proposition'] },
+    tache: { type: 'STRING' },
+  },
+  required: ['texte', 'genre', 'tache'],
+};
+
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[]): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
 Niveau d'autonomie: ${a.autonomie === 'autonome' ? 'tu agis et tu préviens' : a.autonomie === 'semi' ? 'tu agis sur ce qui ne coûte rien et tu rends compte' : 'tu proposes, le fondateur valide'}.
 
-Tu es dans le salon « ${salon} ». Voici les derniers messages, du plus ancien au plus récent:
+Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
 ${fil}
+${collegues.length ? `\nTes collègues ${collegues.join(', ')} viennent de répondre juste au-dessus: ne répète pas ce qu'ils ont dit, apporte autre chose ou sois bref.\n` : ''}
+Réponds à ${auteur} comme un collègue, pas comme un assistant:
+- dans la langue de son message (français par défaut), avec TA façon d'écrire;
+- court: une à quatre phrases. Un simple salut appelle un salut court et vivant, pas un rapport;
+- pas de formule creuse (« excellente question », « n'hésitez pas »), pas de liste numérotée pour un bonjour.
 
-Le dernier message est de ${auteur}. Réponds-lui comme un collègue, pas comme un assistant:
-- dans la langue de son message (français par défaut), avec TA façon d'écrire (ta personnalité doit s'entendre);
-- court: une à cinq phrases, sauf s'il faut vraiment détailler;
-- concret: si tu ne sais pas, dis ce que tu vas vérifier et quand;
-- jamais de chiffre inventé; si un chiffre manque, dis-le;
-- pas de formule creuse (« excellente question », « n'hésitez pas »);
-- si une action précise en découle et qu'elle est de ton ressort, propose-la comme tâche.
+RÈGLE ABSOLUE — l'honnêteté:
+- Tu n'as encore accès à AUCUN outil: ni au site, ni aux chiffres, ni aux e-mails, ni à Internet. Tu ne peux donc RIEN avoir vérifié, revu, mesuré, lu ou envoyé.
+- Ne prétends JAMAIS avoir fait un travail (« j'ai revu », « j'ai analysé », « j'ai vérifié »). Dis ce que tu PROPOSES de faire, ou ce dont tu aurais besoin.
+- Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné.
 
-Réponds UNIQUEMENT par un objet JSON, sans texte autour:
-{"texte": "ta réponse", "genre": "info" | "question" | "proposition", "tache": "intitulé court de la tâche que tu prends, ou null"}
-"question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer — ça fait sonner son téléphone.`;
+"genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
+"tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.`;
 }
 
-function extraireJson(t: string): Record<string, unknown> | null {
-  const d = t.indexOf('{'); const f = t.lastIndexOf('}');
-  if (d < 0 || f <= d) return null;
-  try { return JSON.parse(t.slice(d, f + 1)); } catch { return null; }
-}
-
-async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | null> {
+async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
+  let derniere = 'aucun modèle joignable';
   for (const model of MODELS) {
     try {
       const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -83,18 +99,28 @@ async function demander(apiKey: string, texte: string): Promise<{ obj: Record<st
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: texte }] }],
-          generationConfig: { temperature: 0.8, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 2048,
+            thinkingConfig: { thinkingBudget: 256 },
+            responseMimeType: 'application/json',
+            responseSchema: SCHEMA,
+          },
         }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      if (!resp.ok) continue;
+      if (!resp.ok) { derniere = `${model}: HTTP ${resp.status} ${(await resp.text()).slice(0, 160)}`; console.error(derniere); continue; }
       const body = await resp.json();
-      const txt = body?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-      const obj = extraireJson(txt);
-      if (obj && typeof obj.texte === 'string') return { obj, modele: model };
-    } catch { /* modèle suivant */ }
+      const txt = body?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+      if (!txt) { derniere = `${model}: réponse vide (${body?.candidates?.[0]?.finishReason ?? '?'})`; console.error(derniere); continue; }
+      try {
+        const obj = JSON.parse(txt);
+        if (typeof obj.texte === 'string' && obj.texte.trim()) return { obj, modele: model };
+        derniere = `${model}: texte vide`;
+      } catch { derniere = `${model}: JSON illisible — ${txt.slice(0, 120)}`; console.error(derniere); }
+    } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
   }
-  return null;
+  return { erreur: derniere };
 }
 
 Deno.serve(async (req: Request) => {
@@ -104,7 +130,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ erreur: 'Méthode non permise.' }, 405);
 
   const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) return json({ erreur: 'Moteur non configuré.' }, 503);
+  if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
 
@@ -112,8 +138,6 @@ Deno.serve(async (req: Request) => {
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
   if (!corps.message_id) return json({ erreur: 'Message manquant.' }, 400);
 
-  // Avec le jeton de la personne: si elle n'est pas membre, la base ne
-  // renvoie pas le message, et on s'arrête là.
   const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
   const { data: msg } = await personne.from('legion_messages')
@@ -122,10 +146,9 @@ Deno.serve(async (req: Request) => {
 
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-  // Une seule réponse d'agent par message.
   const { count: deja } = await service.from('legion_messages').select('id', { count: 'exact', head: true })
     .eq('canal_id', msg.canal_id).contains('meta', { reponse_a_id: msg.id });
-  if ((deja ?? 0) > 0) return json({ deja: true });
+  if ((deja ?? 0) > 0) return json({ deja: true, messages: [] });
 
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
     service.from('legion_entreprises').select('nom, projet').eq('id', msg.entreprise_id).single(),
@@ -135,61 +158,85 @@ Deno.serve(async (req: Request) => {
   ]);
   if (!entreprise || !salon || !agents) return json({ erreur: 'Entreprise introuvable.' }, 404);
 
-  const auteur = agents.find((a) => a.id === msg.auteur_id);
-  // Un agent ne répond pas à un agent: sinon deux machines se parlent
-  // toute la nuit sur le compte de Beau.
-  if (!auteur || !auteur.user_id) return json({ ignore: 'pas un humain' });
+  const auteur = (agents as Agent[]).find((a) => a.id === msg.auteur_id);
+  if (!auteur || !auteur.user_id) return json({ ignore: 'pas un humain', messages: [] });
 
   const machines = (agents as Agent[]).filter((a) => !a.user_id);
-  let cible: Agent | undefined;
+  const t = sansAccent(msg.texte);
+  const nomSalon = sansAccent(salon.nom);
+  const prive = Array.isArray(salon.prive_entre) && salon.prive_entre.length > 0;
 
-  if (Array.isArray(salon.prive_entre) && salon.prive_entre.length) {
-    cible = machines.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== auteur.cle);
-  }
-  if (!cible) {
-    const t = sansAccent(msg.texte);
-    cible = machines.find((a) => t.includes('@' + sansAccent(a.nom)));
-  }
-  if (!cible) {
-    const nomSalon = sansAccent(salon.nom);
-    const duDept = machines.filter((a) => a.departement && sansAccent(a.departement) === nomSalon);
-    cible = duDept.find((a) => a.est_directeur && a.actif) || duDept.find((a) => a.actif) || duDept[0];
-  }
-  if (!cible) {
-    cible = machines.find((a) => a.est_directeur && a.actif) || machines.find((a) => a.est_directeur) || machines.find((a) => a.actif);
-  }
-  if (!cible) return json({ personne: true });
-  if (!cible.actif) return json({ dort: { id: cible.id, nom: cible.nom, poste: cible.poste } });
+  // Qui répond — la liste, dans l'ordre.
+  let cibles: Agent[] = [];
+  let endormi: Agent | null = null;
 
+  if (prive) {
+    const en_face = machines.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== auteur.cle);
+    if (en_face) cibles = [en_face];
+  } else {
+    const nommes = machines.filter((a) => t.includes('@' + sansAccent(a.nom)));
+    if (nommes.length) {
+      cibles = nommes.slice(0, MAX_REPONDANTS);
+    } else {
+      const duSalon = machines.filter((a) => sansAccent(a.departement || '') === nomSalon);
+      // Dans « Direction » on parle à toute l'entreprise: les responsables des
+      // départements répondent. Ailleurs, l'équipe du salon.
+      const vivier = nomSalon === 'direction'
+        ? [...duSalon.filter((a) => a.est_directeur), ...machines.filter((a) => a.est_directeur && !duSalon.includes(a)), ...duSalon.filter((a) => !a.est_directeur)]
+        : [...duSalon.filter((a) => a.est_directeur), ...duSalon.filter((a) => !a.est_directeur)];
+      const allumes = vivier.filter((a) => a.actif);
+      if (A_TOUS.test(t)) {
+        cibles = allumes.slice(0, MAX_REPONDANTS);
+      } else {
+        cibles = allumes.slice(0, 1);
+      }
+      if (!cibles.length) endormi = vivier[0] || machines.find((a) => a.est_directeur) || null;
+    }
+  }
+
+  const allumees = cibles.filter((a) => a.actif);
+  if (!allumees.length) {
+    const qui = cibles[0] || endormi;
+    return json({ dort: qui ? { id: qui.id, nom: qui.nom, poste: qui.poste } : null, messages: [] });
+  }
+
+  const nomDe = (id: string) => (agents as Agent[]).find((a) => a.id === id)?.nom || 'Quelqu\'un';
   const { data: fil } = await service.from('legion_messages')
-    .select('auteur_id, texte, created_at').eq('canal_id', msg.canal_id)
+    .select('auteur_id, texte, created_at, genre').eq('canal_id', msg.canal_id)
+    .neq('genre', 'tache')
     .order('created_at', { ascending: false }).limit(CONTEXTE);
-  const nomDe = (id: string) => agents.find((a) => a.id === id)?.nom || 'Quelqu\'un';
-  const texteFil = (fil || []).reverse().map((m) => `${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 600)}`).join('\n');
+  const lignes = (fil || []).reverse().map((m) => `${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 500)}`);
 
-  const rep = await demander(apiKey, consigne(cible, entreprise, salon.nom, texteFil, auteur.nom));
-  if (!rep) return json({ erreur: 'Le modèle n\'a pas répondu.' }, 502);
+  const ecrits: unknown[] = [];
+  const ont_repondu: string[] = [];
+  let pourquoi = '';
 
-  const texte = String(rep.obj.texte).trim().slice(0, 1200);
-  const genre = ['info', 'question', 'proposition'].includes(String(rep.obj.genre)) ? String(rep.obj.genre) : 'info';
-  if (!texte) return json({ erreur: 'Réponse vide.' }, 502);
-
-  const { data: ecrit, error } = await service.from('legion_messages').insert({
-    entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-    texte, genre, meta: { par_ia: true, modele: rep.modele, reponse_a_id: msg.id },
-  }).select().single();
-  if (error) return json({ erreur: error.message }, 500);
-
-  let tache = null;
-  const intitule = typeof rep.obj.tache === 'string' ? rep.obj.tache.trim().slice(0, 200) : '';
-  if (intitule) {
-    const { data: t } = await service.from('legion_messages').insert({
+  for (const cible of allumees) {
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu));
+    if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
+    const texte = String(r.obj.texte).trim().slice(0, 1200);
+    const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
+    const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte: intitule, genre: 'tache', assigne_a: cible.id,
-      meta: { par_ia: true, statut: 'a_faire', priorite: 'moyenne', depuis: msg.id },
+      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id },
     }).select().single();
-    tache = t;
+    if (error) { pourquoi = pourquoi || error.message; continue; }
+    ecrits.push(ecrit);
+    ont_repondu.push(cible.nom);
+    lignes.push(`${cible.nom}: ${texte}`);
+
+    const intitule = typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '';
+    if (intitule) {
+      const { data: tache } = await service.from('legion_messages').insert({
+        entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
+        texte: intitule, genre: 'tache', assigne_a: cible.id,
+        meta: { par_ia: true, statut: 'a_faire', priorite: 'moyenne', depuis: msg.id },
+      }).select().single();
+      if (tache) ecrits.push(tache);
+    }
   }
 
-  return json({ agent: { id: cible.id, nom: cible.nom }, message: ecrit, tache });
+  // On répond TOUJOURS 200 avec la raison: « Edge Function returned a
+  // non-2xx status code » ne dit rien à personne.
+  return json({ messages: ecrits, ...(ecrits.length === 0 ? { erreur: pourquoi || 'personne n’a pu répondre' } : {}) });
 });

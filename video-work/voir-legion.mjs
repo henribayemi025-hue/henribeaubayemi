@@ -57,7 +57,7 @@ async function page(largeur, hauteur = 900) {
     const json = (d) => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-expose-headers': 'content-range', 'access-control-allow-origin': '*' }, body: JSON.stringify(d) });
     if (url.includes('/auth/v1/user')) return json({ id: MOI, email: 'beau@example.test' });
     if (url.includes('/rest/v1/profiles')) return json([{ id: MOI, name: 'Beau', is_admin: true }]);
-    if (url.includes('/rest/v1/legion_entreprises')) return json({ id: EID, nom: 'Finjaro', modele: 'conseil', taille: 'scaleup', projet: 'La place de marché.', owner_id: MOI });
+    if (url.includes('/rest/v1/legion_entreprises')) { const e = { id: EID, nom: 'Finjaro', modele: 'conseil', taille: 'scaleup', projet: 'La place de marché.', owner_id: MOI, created_at: new Date().toISOString(), studio_modeles: { nom: 'Cabinet de conseil', emoji: '🏛️' } }; return json(url.includes('id=eq.') ? e : [e]); }
     if (url.includes('/rest/v1/legion_agents')) return json(AGENTS);
     if (url.includes('/rest/v1/legion_canaux')) return json(CANAUX);
     if (url.includes('/rest/v1/legion_reactions')) return json(REACTIONS);
@@ -77,6 +77,25 @@ const fermerBandeaux = async (pg) => { for (const l of ['Refuser', 'Passer', 'Pl
 const lire = async (pg, n = 700) => (await pg.locator('body').innerText()).replace(/\n{2,}/g, '\n').slice(0, n);
 const debord = async (pg) => pg.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
+// 0. La porte d'entrée: mes entreprises
+for (const [l, h] of [[1280, 820], [390, 844]]) {
+  const { ctx, pg } = await page(l, h);
+  await pg.goto(`${BASE}/legion`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(3000); await fermerBandeaux(pg);
+  console.log(`=== MES ENTREPRISES ${l} ===`); console.log(await lire(pg, 400));
+  await pg.screenshot({ path: `${SORTIE}/legion-mes-${l}.png`, fullPage: true });
+  console.log(`  debordement: ${await debord(pg)}px`);
+  await ctx.close();
+}
+// 0b. Fonder
+{
+  const { ctx, pg } = await page(390, 844);
+  await pg.route('**/rest/v1/studio_modeles*', (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify([{ cle: 'conseil', nom: 'Cabinet de conseil', promesse: 'Une direction complète.', emoji: '🏛️', concept: 'Un cabinet vend du jugement.', effectifs: 'Boutique: 5 à 30.', actif: true, ordre: 1 }]) }));
+  await pg.goto(`${BASE}/legion/fonder`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(2500); await fermerBandeaux(pg);
+  await pg.locator('button:has-text("Cabinet de conseil")').first().click().catch(() => {}); await pg.waitForTimeout(400);
+  await pg.screenshot({ path: `${SORTIE}/legion-fonder.png`, fullPage: true });
+  console.log(`=== FONDER 390 === debordement: ${await debord(pg)}px`);
+  await ctx.close();
+}
 // 1. Ordinateur: les quatre colonnes
 {
   const { ctx, pg } = await page(1280, 820);

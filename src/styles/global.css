@@ -219,3 +219,8 @@
 .legion-modale { background-color: #121A2B !important; color: #EDF1F8; }
 .legion-modale h2 { color: #EDF1F8; }
 .legion-modale option { background-color: #1A2337; color: #EDF1F8; }
+.legion-app .label { color: #EDF1F8; }
+.legion-app .btn-primary { background: #E3A857; color: #0B1120; }
+.legion-app .btn-primary:hover { background: #F2C98A; }
+.legion-app .btn-primary:disabled { background: #2A3550; color: #93A1B8; }
+.legion-app textarea.input { background-color: #1A2337; }

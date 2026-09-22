@@ -181,7 +181,16 @@
     "aucuneTache": "Aucune tâche pour l’instant.",
     "trombinoscope": "L’équipe ({{n}})",
     "ongletAccueil": "Accueil",
-    "sansPhotoCourt": "{{n}} n’ont pas encore leur photo."
+    "sansPhotoCourt": "{{n}} n’ont pas encore leur photo.",
+    "personneNaPuRepondre": "Personne n’a pu répondre : {{raison}}",
+    "porteTitre1": "Tes entreprises,",
+    "porteTitre2": "et les équipes qui y travaillent.",
+    "porteTexte": "Chaque entreprise a ses départements, ses salons et ses agents — avec un visage, un caractère et un interrupteur. Entre dans l’une, ou fondes-en une autre.",
+    "aucuneAide": "Choisis un modèle, un effectif, et l’équipe apparaît.",
+    "vueEnsemble": "Vue d’ensemble",
+    "tachesOuvertes": "Tâches ouvertes",
+    "actionsRapides": "Actions rapides",
+    "reprendre": "Reprendre {{nom}}"
   },
   "equipe": {
     "titre": "L'équipe",
