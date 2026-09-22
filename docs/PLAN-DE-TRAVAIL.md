@@ -200,6 +200,14 @@ s'assembler dès maintenant à partir de vrais fichiers. « Juridique »,
    - **Avec les compétences (skills) prises sur GitHub** — les 571 du
      catalogue: un agent s'équipe de celles de son poste au moment où il
      prend une tâche.
+   - **Un agent part chaque matin chercher les nouvelles** — Beau, 22/09:
+     « les skills qu'un agent va partir prendre sur le net chaque matin, sur
+     GitHub et d'autres plateformes gratuites ». Un poste « Veilleur de
+     compétences »: chaque jour il parcourt les dépôts sources (et ceux
+     qu'il découvre), garde ce qui est sous licence libre, l'ajoute au
+     catalogue avec l'origine et la licence, et dit dans le salon ce qui
+     est entré. `studio_charger_catalogue(url)` fait déjà la moitié du
+     travail; il manque la tournée et la découverte.
    - **Et qui s'améliorent en travaillant** — Beau: « qui se développent
      aussi en utilisant ». Chaque tâche finie laisse une note (ce qui a
      marché, ce qui a coincé) que l'agent relit avant la suivante; les
