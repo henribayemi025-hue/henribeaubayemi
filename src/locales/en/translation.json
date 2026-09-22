@@ -1985,12 +1985,33 @@
       "budget": "Budget",
       "epargne": "Savings",
       "projets": "Projects",
-      "njangi": "Njangi"
+      "njangi": "Njangi",
+      "comptes": "Accounts",
+      "espaces": "Spaces"
     },
     "freq": {
       "weekly": "weekly",
       "monthly": "monthly",
       "daily": "daily"
-    }
+    },
+    "total": "All in",
+    "addAccount": "Add an account",
+    "accountName": "Account name",
+    "accountBalance": "Balance",
+    "noAccount": "No account yet. Add one.",
+    "noSpace": "No shared space.",
+    "joinSpace": "Join a space with a code",
+    "allSpaces": "My spaces",
+    "moneyIn": "Money in",
+    "moneyOut": "Money out",
+    "members": "MEMBERS",
+    "whoPaid": "ACTIVITY (WHO PAID)",
+    "noActivity": "Nothing yet. Add money in or out.",
+    "movement": "Movement",
+    "txLabel": "What was it for?",
+    "txAmount": "How much?",
+    "txBadAmount": "Invalid amount.",
+    "memberCount": "{{count}} member",
+    "memberCount_other": "{{count}} members"
   }
 }

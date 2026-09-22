@@ -33,27 +33,33 @@ import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 // qu'on l'a saisi. On met le symbole de la monnaie choisie à côté, rien de
 // plus.
 
-const ONGLETS = ['budget', 'epargne', 'projets', 'njangi'];
+const ONGLETS = ['comptes', 'budget', 'epargne', 'njangi', 'projets', 'espaces'];
 
+// Les centimes comptent — vu à l'écran le 22/09: un compte Paypal à 0,16 €
+// s'affichait « 0 » et 22,88 € s'affichait « 23 ». J'arrondissais comme du
+// FCFA, qui n'a pas de centimes. Un montant entier reste affiché sans
+// décimales; seul ce qui en a les garde.
 function montant(n, lang) {
-  return new Intl.NumberFormat(lang, { maximumFractionDigits: 0 }).format(Number(n) || 0);
+  return new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(Number(n) || 0);
 }
 
 export default function MyMoney() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const lang = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
-  const [onglet, setOnglet] = useState('budget');
+  const [onglet, setOnglet] = useState('comptes');
   const [n, setN] = useState(0);
   const recharger = () => setN((x) => x + 1);
 
   const { data, loading, error } = useAsync(async () => {
     if (!user?.id) return null;
-    const [budget, epargne, projets, njangis] = await Promise.all([
+    const [comptes, budget, epargne, projets, njangis, espaces] = await Promise.all([
+      supabase.from('accounts').select('id, name, balance, color, glyph').eq('user_id', user.id).order('created_at'),
       supabase.from('budget_entries').select('*').eq('user_id', user.id).order('created_at'),
       supabase.from('savings_goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('projects').select('id, name, emoji, goal, invite_code, owner_id').order('created_at', { ascending: false }),
       supabase.from('njangis').select('id, name, amount, frequency, current_round, invite_code, owner_id').order('created_at', { ascending: false }),
+      supabase.from('shared_spaces').select('id, name, invite_code, owner_id').order('created_at', { ascending: false }),
     ]);
     if (budget.error) throw budget.error;
 
@@ -68,7 +74,21 @@ export default function MyMoney() {
       nids.length ? supabase.from('njangi_payments').select('njangi_id, round, user_id').in('njangi_id', nids) : { data: [] },
     ]);
 
+    const sids = (espaces.data || []).map((e) => e.id);
+    const [membresEsp, mouvements] = await Promise.all([
+      sids.length ? supabase.from('space_members').select('space_id, user_id, name, role').in('space_id', sids) : { data: [] },
+      sids.length ? supabase.from('space_tx').select('space_id, user_id, name, kind, label, amount, created_at').in('space_id', sids).order('created_at', { ascending: false }) : { data: [] },
+    ]);
+
     return {
+      comptes: comptes.data || [],
+      espaces: (espaces.data || []).map((e) => {
+        const tx = (mouvements.data || []).filter((m) => m.space_id === e.id);
+        const entre = tx.filter((m) => m.kind === 'in').reduce((s2, m) => s2 + Number(m.amount || 0), 0);
+        const sorti = tx.filter((m) => m.kind !== 'in').reduce((s2, m) => s2 + Number(m.amount || 0), 0);
+        return { ...e, tx, entre, sorti, solde: entre - sorti,
+                 membres: (membresEsp.data || []).filter((m) => m.space_id === e.id) };
+      }),
       budget: budget.data || [],
       epargne: epargne.data || [],
       projets: (projets.data || []).map((p) => ({
@@ -107,12 +127,210 @@ export default function MyMoney() {
       </div>
 
       <div className="px-4 pb-24 pt-3">
+        {onglet === 'comptes' && <Comptes comptes={data.comptes} lang={lang} t={t} userId={user.id} onDone={recharger} />}
+        {onglet === 'espaces' && <Espaces espaces={data.espaces} moi={user.id} lang={lang} t={t} onDone={recharger} />}
         {onglet === 'budget' && <Budget lignes={data.budget} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'epargne' && <Epargne objectifs={data.epargne} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'projets' && <Projets projets={data.projets} lang={lang} t={t} onDone={recharger} />}
         {onglet === 'njangi' && <Njangi njangis={data.njangis} moi={user.id} lang={lang} t={t} onDone={recharger} />}
       </div>
     </div>
+  );
+}
+
+/* ------------------------------- comptes ------------------------------ */
+
+// Les comptes: Paypal, Revolut, la caisse, l'argent liquide. C'est la
+// première chose qu'on veut voir en ouvrant — combien j'ai, et où.
+// `color` et `glyph` étaient déjà en base et resservent tels quels.
+function Comptes({ comptes, lang, t, userId, onDone }) {
+  const toast = useToast();
+  const [ouvert, setOuvert] = useState(false);
+  const [nom, setNom] = useState('');
+  const [solde, setSolde] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+
+  const total = comptes.reduce((s2, c) => s2 + Number(c.balance || 0), 0);
+
+  async function ajouter() {
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('accounts').insert({
+        user_id: userId,
+        name: nom.trim(),
+        balance: Number(solde) || 0,
+        glyph: nom.trim().charAt(0).toUpperCase(),
+        color: '#C25E38',
+      });
+      if (error) throw error;
+      setNom(''); setSolde(''); setOuvert(false); onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  return (
+    <>
+      <div className="rounded-card border border-hairline p-3">
+        <p className="text-caption text-muted">{t('money.total')}</p>
+        <p className={`text-title ${total < 0 ? 'text-danger' : 'text-teal'}`}>{montant(total, lang)}</p>
+      </div>
+
+      {!ouvert ? (
+        <button onClick={() => setOuvert(true)} className="mt-3 flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white">
+          <IconPlus size={18} /> {t('money.addAccount')}
+        </button>
+      ) : (
+        <div className="mt-3 space-y-2 rounded-card border border-hairline p-3">
+          <Field label={t('money.accountName')} required>
+            {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
+          </Field>
+          <Field label={t('money.accountBalance')}>
+            {(id) => <TextInput id={id} type="number" inputMode="decimal" value={solde} onChange={(e) => setSolde(e.target.value)} />}
+          </Field>
+          <div className="flex gap-2">
+            <Button onClick={ajouter} loading={envoi} disabled={nom.trim() === ''}>{t('common.add')}</Button>
+            <Button variant="secondary" onClick={() => setOuvert(false)}>{t('common.cancel')}</Button>
+          </div>
+        </div>
+      )}
+
+      {comptes.length === 0 ? (
+        <EmptyState title={t('money.noAccount')} />
+      ) : (
+        <ul className="mt-4 grid grid-cols-2 gap-3">
+          {comptes.map((c) => (
+            <li key={c.id} className="rounded-card border border-hairline p-3">
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-card text-caption font-semibold text-white"
+                style={{ backgroundColor: c.color || '#C25E38' }}
+              >
+                {c.glyph || (c.name || '?').charAt(0).toUpperCase()}
+              </span>
+              <p className="mt-2 truncate text-caption text-muted">{c.name}</p>
+              <p className={`text-body font-semibold ${Number(c.balance) < 0 ? 'text-danger' : 'text-ink'}`}>
+                {montant(c.balance, lang)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+/* ------------------------------- espaces ------------------------------ */
+
+// Un espace partagé: un compte commun avec quelqu'un. Qui a mis quoi, qui a
+// sorti quoi. « L'activité (qui a payé) » est la seule question qui compte
+// entre deux personnes qui partagent une caisse.
+function Espaces({ espaces, moi, lang, t, onDone }) {
+  const toast = useToast();
+  const [actif, setActif] = useState(null);
+  const espace = espaces.find((e) => e.id === actif);
+
+  async function mouvement(kind) {
+    const label = window.prompt(t('money.txLabel'));
+    if (label === null) return;
+    const brut = window.prompt(t('money.txAmount'));
+    if (brut === null) return;
+    const somme = Number(String(brut).replace(',', '.'));
+    if (!Number.isFinite(somme) || somme <= 0) { toast.error(t('money.txBadAmount')); return; }
+    try {
+      const { error } = await supabase.from('space_tx').insert({
+        space_id: espace.id, user_id: moi, kind, label: label.trim() || null, amount: somme,
+      });
+      if (error) throw error;
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+
+  if (espace) {
+    return (
+      <>
+        <button onClick={() => setActif(null)} className="text-caption text-muted">‹ {t('money.allSpaces')}</button>
+        <div className="mt-2 rounded-card bg-teal p-4 text-white">
+          <p className="text-body font-semibold">{espace.name}</p>
+          <p className="text-title">{montant(espace.solde, lang)}</p>
+          <div className="mt-1 flex gap-4 text-caption opacity-90">
+            <span>{t('money.income')} {montant(espace.entre, lang)}</span>
+            <span>{t('money.spent')} {montant(espace.sorti, lang)}</span>
+          </div>
+          {espace.invite_code && (
+            <p className="mt-2 text-caption opacity-90">
+              <IconLink size={12} className="inline" /> {espace.invite_code}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <button onClick={() => mouvement('in')} className="flex-1 rounded-pill bg-success px-3 py-2 text-body font-semibold text-white">
+            + {t('money.moneyIn')}
+          </button>
+          <button onClick={() => mouvement('out')} className="flex-1 rounded-pill bg-danger px-3 py-2 text-body font-semibold text-white">
+            + {t('money.moneyOut')}
+          </button>
+        </div>
+
+        <div className="mt-4 rounded-card border border-hairline p-3">
+          <p className="text-caption font-semibold text-muted">{t('money.members')}</p>
+          <ul className="mt-1 space-y-1">
+            {espace.membres.map((m) => (
+              <li key={m.user_id} className="flex justify-between text-body">
+                <span className="truncate text-ink">
+                  {m.name || t('work.someone')}{m.user_id === moi ? ` (${t('money.me')})` : ''}
+                </span>
+                <span className="shrink-0 text-caption text-muted">{m.role}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="mt-3 rounded-card border border-hairline p-3">
+          <p className="text-caption font-semibold text-muted">{t('money.whoPaid')}</p>
+          {espace.tx.length === 0 ? (
+            <p className="mt-1 text-body text-muted">{t('money.noActivity')}</p>
+          ) : (
+            <ul className="mt-1 space-y-1">
+              {espace.tx.map((m, i) => (
+                <li key={i} className="flex justify-between text-body">
+                  <span className="truncate text-ink">
+                    {m.label || t('money.movement')} · <span className="text-muted">{m.name || t('work.someone')}</span>
+                  </span>
+                  <span className={`shrink-0 font-semibold ${m.kind === 'in' ? 'text-success' : 'text-danger'}`}>
+                    {m.kind === 'in' ? '+' : '−'}{montant(m.amount, lang)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <RejoindreParCode rpc="join_space" libelle={t('money.joinSpace')} t={t} onDone={onDone} />
+      {espaces.length === 0 ? (
+        <EmptyState title={t('money.noSpace')} />
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {espaces.map((e) => (
+            <li key={e.id}>
+              <button onClick={() => setActif(e.id)} className="flex w-full items-center justify-between rounded-card border border-hairline p-3 text-left">
+                <span className="min-w-0">
+                  <span className="block truncate text-body font-semibold text-ink">{e.name}</span>
+                  <span className="text-caption text-muted">
+                    {t('money.memberCount', { count: e.membres.length })}
+                  </span>
+                </span>
+                <span className="shrink-0 text-body font-semibold text-teal">{montant(e.solde, lang)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 

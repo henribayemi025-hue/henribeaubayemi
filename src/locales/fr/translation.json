@@ -1985,12 +1985,33 @@
       "budget": "Budget",
       "epargne": "Épargne",
       "projets": "Projets",
-      "njangi": "Njangi"
+      "njangi": "Njangi",
+      "comptes": "Comptes",
+      "espaces": "Espaces"
     },
     "freq": {
       "weekly": "chaque semaine",
       "monthly": "chaque mois",
       "daily": "chaque jour"
-    }
+    },
+    "total": "Tout compris",
+    "addAccount": "Ajouter un compte",
+    "accountName": "Nom du compte",
+    "accountBalance": "Solde",
+    "noAccount": "Aucun compte. Ajoute-en un.",
+    "noSpace": "Aucun espace partagé.",
+    "joinSpace": "Rejoindre un espace avec un code",
+    "allSpaces": "Mes espaces",
+    "moneyIn": "Argent entré",
+    "moneyOut": "Argent sorti",
+    "members": "MEMBRES",
+    "whoPaid": "L'ACTIVITÉ (QUI A PAYÉ)",
+    "noActivity": "Rien encore. Ajoute une entrée ou une sortie.",
+    "movement": "Mouvement",
+    "txLabel": "C'était pour quoi ?",
+    "txAmount": "Combien ?",
+    "txBadAmount": "Montant invalide.",
+    "memberCount": "{{count}} membre",
+    "memberCount_other": "{{count}} membres"
   }
 }
