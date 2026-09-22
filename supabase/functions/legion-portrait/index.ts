@@ -170,9 +170,8 @@ Deno.serve(async (req: Request) => {
   // demander SA photo, comme à n'importe quel agent (22/09: « je veux une
   // vraie photo, pas l'icône du marteau »).
   if (corps.agent_id) q = q.eq('id', corps.agent_id);
-  else q = q.neq('moteur', 'claude-code');
   // Une photo par agent, jamais deux: ce qui est payé n'est pas repayé.
-  else q = q.or('apparence->>famille.is.null,apparence->>famille.neq.photo');
+  else q = q.neq('moteur', 'claude-code').or('apparence->>famille.is.null,apparence->>famille.neq.photo');
   const { data: agents, error } = await q.order('ordre').limit(limite);
   if (error) return json({ erreur: error.message }, 500);
   if (!agents || agents.length === 0) return json({ faits: 0, restants: 0, message: 'Tout le monde a déjà sa photo.' });
