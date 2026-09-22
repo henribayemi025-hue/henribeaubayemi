@@ -72,7 +72,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[]): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -88,10 +88,14 @@ Réponds à ${auteur} comme un collègue, pas comme un assistant:
 - court: une à quatre phrases. Un simple salut appelle un salut court et vivant, pas un rapport;
 - pas de formule creuse (« excellente question », « n'hésitez pas »), pas de liste numérotée pour un bonjour.
 
-RÈGLE ABSOLUE — l'honnêteté:
-- Tu n'as encore accès à AUCUN outil: ni au site, ni aux chiffres, ni aux e-mails, ni à Internet. Tu ne peux donc RIEN avoir vérifié, revu, mesuré, lu ou envoyé.
-- Ne prétends JAMAIS avoir fait un travail (« j'ai revu », « j'ai analysé », « j'ai vérifié »). Dis ce que tu PROPOSES de faire, ou ce dont tu aurais besoin.
-- Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné.
+${mesures ? `CHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (connecteur « Mesures Finjaro », lecture seule, comptes de test exclus; une « personne » qui visite = un navigateur):
+${mesures}
+Si on te demande un chiffre qui est ici, donne-le tout de suite, avec sa période (« ces 7 jours », « aujourd'hui »). Un pic isolé sur un jour n'est pas vérifié (ce peut être des robots ou des tests): dis-le plutôt que de le fêter. Un chiffre qui n'est pas ici, tu ne l'as pas: dis-le.
+
+` : ''}RÈGLE ABSOLUE — l'honnêteté:
+- ${mesures ? "Tes seuls outils sont les chiffres ci-dessus. Tu n'as accès ni au code, ni aux e-mails, ni à Internet, et tu ne peux rien modifier." : "Tu n'as encore accès à AUCUN outil: ni au site, ni aux chiffres, ni aux e-mails, ni à Internet."} Tu ne peux donc RIEN avoir revu, analysé, envoyé ou changé.
+- Ne prétends JAMAIS avoir fait un travail (« j'ai revu », « j'ai analysé »). Dis ce que tu PROPOSES de faire, ou ce dont tu aurais besoin.
+- Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné${mesures ? ' et qui ne figure pas dans les chiffres mesurés' : ''}.
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.`;
@@ -253,12 +257,24 @@ Deno.serve(async (req: Request) => {
   }
 
 
+  // Le connecteur « Mesures Finjaro »: si l'entreprise l'a branché, les
+  // agents voient les vrais chiffres de la plateforme (des comptes, jamais
+  // une personne). Une panne de mesure ne doit pas empêcher de répondre.
+  let mesures: string | null = null;
+  const { data: branche } = await service.from('legion_connecteurs').select('id')
+    .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle();
+  if (branche) {
+    const { data: m, error: errMesure } = await service.rpc('legion_mesures_finjaro');
+    if (errMesure) console.error('mesures:', errMesure.message);
+    else if (m) mesures = JSON.stringify(m);
+  }
+
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
   let pourquoi = '';
 
   for (const cible of allumees) {
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     const texte = String(r.obj.texte).trim().slice(0, 1200);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
