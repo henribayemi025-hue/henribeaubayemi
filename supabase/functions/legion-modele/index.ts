@@ -147,7 +147,9 @@ Deno.serve(compter('legion_modele', async (req: Request) => {
       taille: TAILLES.includes(p.des_la_taille) ? p.des_la_taille : 'scaleup', dir, poids: Math.min(8, Math.max(1, Number(p.poids) || 1)) };
   }).filter((p) => { const k = sansAccent(p.poste); if (vus.has(k)) return false; vus.add(k); return true; });
 
-  let cle = cle0 || slug(String(obj.nom)); if (!cle) cle = `modele-${Date.now().toString(36)}`;
+  // La clé vient du NOM du modèle (« operateur-telecom »), pas de la phrase
+  // tapée (« operateur-telecom-mobile-internet-mobile »).
+  let cle = slug(String(obj.nom)) || cle0; if (!cle) cle = `modele-${Date.now().toString(36)}`;
   const { data: doublon } = await service.from('studio_modeles').select('cle').eq('cle', cle).maybeSingle();
   if (doublon) cle = `${cle}-${Date.now().toString(36).slice(-4)}`;
   const { data: dernier } = await service.from('studio_modeles').select('ordre').order('ordre', { ascending: false }).limit(1).maybeSingle();

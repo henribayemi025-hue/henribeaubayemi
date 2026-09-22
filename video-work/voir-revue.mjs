@@ -85,8 +85,8 @@ const debord = async (pg) => pg.evaluate(() => document.documentElement.scrollWi
   await carte.scrollIntoViewIfNeeded();
   await pg.screenshot({ path: `${SORTIE}/legion-revue-1.png` });
   await carte.click(); await pg.waitForTimeout(600); await pg.screenshot({ path: `${SORTIE}/legion-revue-1b.png` }); console.log('textarea:', await pg.locator('textarea').count(), '| renvoyer:', await pg.locator('button:has-text("Renvoyer")').count());
-  await pg.locator('textarea').first().fill('Le message est trop long et parle de « jusqu’en novembre » : c’est gratuit à vie pour les inscrites avant fin octobre.');
-  await pg.locator('input[type="checkbox"]').first().check();
+  await pg.locator('textarea:visible').first().fill('Le message est trop long et parle de « jusqu’en novembre » : c’est gratuit à vie pour les inscrites avant fin octobre.');
+  await pg.locator('input[type="checkbox"]:visible').first().check();
   await pg.screenshot({ path: `${SORTIE}/legion-revue-2.png` });
   console.log('débordement:', await debord(pg));
   await ctx.close();
