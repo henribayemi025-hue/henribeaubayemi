@@ -180,6 +180,60 @@ Si y répondre demande un chiffre ou une vérification dans la base de la place 
   return resultats;
 }
 
+// L'agent critique. Beau: « je ne veux plus le travail bâclé ». Avant qu'une
+// réponse n'arrive au fondateur, un relecteur la confronte aux faits: un
+// chiffre qui n'est ni mesuré ni vérifié, un travail prétendu, une règle de
+// la maison enfreinte, une proposition creuse. Il corrige, ou il laisse
+// passer. Un simple salut ne passe pas en relecture (ça coûterait pour rien).
+const SCHEMA_CRITIQUE = {
+  type: 'OBJECT',
+  properties: {
+    verdict: { type: 'STRING', enum: ['ok', 'corrige'] },
+    texte: { type: 'STRING' },
+    raison: { type: 'STRING' },
+  },
+  required: ['verdict', 'texte', 'raison'],
+};
+async function critiquer(apiKey: string, a: Agent, brouillon: string, faits: string, memoire: string[], fil: string):
+  Promise<{ texte: string; raison: string } | null> {
+  const invite = `Tu es le relecteur de l'équipe. ${a.nom} (${a.poste}) s'apprête à envoyer ce message au fondateur:
+« ${brouillon} »
+
+La conversation, pour le contexte:
+${fil}
+
+LES FAITS DISPONIBLES (la seule source de chiffres autorisée, avec la conversation):
+${faits || '(aucun chiffre mesuré)'}
+
+${memoire.length ? `LES RÈGLES DE LA MAISON:\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}
+Vérifie, dans cet ordre:
+1. Chaque chiffre, pourcentage ou date figure-t-il dans les faits ou la conversation ? Sinon, retire-le ou remplace-le par ce qu'on sait vraiment.
+2. Le message prétend-il un travail qui n'a pas été fait (« j'ai revu », « j'ai analysé », « j'ai envoyé ») ? Une vérification listée dans les faits, elle, a été faite.
+3. Enfreint-il une règle de la maison ?
+4. Est-il creux (formules, promesses vagues sans qui/quoi/quand) ? Rends-le concret ou plus court.
+
+Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original; raison = en une courte phrase, ce que tu as corrigé.`;
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
+      method: 'POST',
+      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: invite }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 256 }, responseMimeType: 'application/json', responseSchema: SCHEMA_CRITIQUE },
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!resp.ok) { console.error('critique:', resp.status); return null; }
+    const body = await resp.json();
+    const txt = body?.candidates?.[0]?.content?.parts?.filter((x: { thought?: boolean }) => !x.thought).map((x: { text?: string }) => x.text ?? '').join('') ?? '';
+    const obj = JSON.parse(txt);
+    if (obj.verdict === 'corrige' && typeof obj.texte === 'string' && obj.texte.trim()) {
+      return { texte: obj.texte.trim().slice(0, 1200), raison: String(obj.raison || '').slice(0, 200) };
+    }
+  } catch (e) { console.error('critique:', (e as Error).message); }
+  return null; // en cas de doute ou de panne, le message part tel quel
+}
+
 async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
   let derniere = 'aucun modèle joignable';
   for (const model of MODELS) {
@@ -363,8 +417,16 @@ Deno.serve(async (req: Request) => {
   for (const cible of allumees) {
     const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie, memoire));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
-    const texte = String(r.obj.texte).trim().slice(0, 1200);
+    let texte = String(r.obj.texte).trim().slice(0, 1200);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
+    // La relecture: une proposition, une question, un chiffre, une tâche prise.
+    let relu: { corrige: boolean; raison?: string } | null = null;
+    const aRelire = genre !== 'info' || /\d/.test(texte) || (typeof r.obj.tache === 'string' && r.obj.tache.trim() !== '');
+    if (aRelire) {
+      const faits = [mesures ? `Chiffres mesurés: ${mesures}` : '', ...verifie].filter(Boolean).join('\n');
+      const c = await critiquer(apiKey, cible, texte, faits, memoire, lignes.join('\n'));
+      if (c) { texte = c.texte; relu = { corrige: true, raison: c.raison }; } else relu = { corrige: false };
+    }
     // Une consigne durable du fondateur: on la retient pour toute l'équipe.
     let retenu = '';
     const regle = typeof r.obj.regle === 'string' ? r.obj.regle.trim().slice(0, 400) : '';
@@ -377,7 +439,7 @@ Deno.serve(async (req: Request) => {
     }
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}) },
+      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     ecrits.push(ecrit);

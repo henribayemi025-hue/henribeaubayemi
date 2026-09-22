@@ -252,10 +252,11 @@ export function Conversation({
                           <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
                         </p>
                       )}
-                      {(m.meta?.verifie?.length > 0 || m.meta?.retenu) && (
+                      {(m.meta?.verifie?.length > 0 || m.meta?.retenu || m.meta?.relu?.corrige) && (
                         <div className="mb-3 mt-1 space-y-1 border-t border-legion-line/60 pt-1.5 text-[12px] text-legion-muted">
                           {m.meta?.verifie?.length > 0 && <p>🔎 {t('legion.verifieBase', 'Vérifié dans la base')} · {m.meta.verifie.map((v) => v.split('(')[0].replaceAll('_', ' ')).join(', ')}</p>}
                           {m.meta?.retenu && <p className="text-legion-gold">🧠 {t('legion.retenu', 'Retenu')} : {m.meta.retenu}</p>}
+                          {m.meta?.relu?.corrige && <p>🧐 {t('legion.reluCorrige', 'Relu et corrigé')}{m.meta.relu.raison ? ` : ${m.meta.relu.raison}` : ''}</p>}
                         </div>
                       )}
                       <span className={`absolute bottom-1 right-2.5 flex items-center gap-0.5 text-[11px] ${mien ? 'text-white/75' : 'text-legion-muted'}`}>
