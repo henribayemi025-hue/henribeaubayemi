@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
 import { useEcranVisible } from './parties/useEcranVisible';
 import { useAuth } from '../../hooks/useAuth';
+import { IconLogout } from '@tabler/icons-react';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { Skeleton, ErrorState } from '../../components/states';
@@ -41,7 +42,7 @@ const MAX_MESSAGES = 500;
 
 export default function Entreprise() {
   const { t, i18n } = useTranslation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   useFondLegion();
   useEcranVisible();
   const toast = useToast();
@@ -397,6 +398,11 @@ export default function Entreprise() {
                 onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) maPhoto(f); }} />
             </label>
           )}
+          {/* Beau, 22/09: « j'arrive même pas à me déconnecter dans Legion ». */}
+          <button type="button" onClick={() => signOut()} title={t('legion.seDeconnecter', 'Se déconnecter')} aria-label={t('legion.seDeconnecter', 'Se déconnecter')}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-legion-line text-legion-muted transition hover:text-legion-danger">
+            <IconLogout size={15} />
+          </button>
           {sansPhoto > 0 && (
             <button type="button" onClick={() => vraiesPhotos(null)} disabled={photos}
               title={t('legion.photosCoutent')}

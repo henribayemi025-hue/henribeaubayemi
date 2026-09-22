@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
 import { useAuth } from '../../hooks/useAuth';
+import { IconLogout } from '@tabler/icons-react';
 import { useAsync } from '../../hooks/useAsync';
 import { Skeleton, ErrorState } from '../../components/states';
 import { Visage } from './parties/Visage';
@@ -25,7 +26,7 @@ import { Visage } from './parties/Visage';
 
 export default function MesEntreprises() {
   const { t } = useTranslation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   useFondLegion();
 
   const { data, loading, error, retry } = useAsync(async () => {
@@ -73,10 +74,17 @@ export default function MesEntreprises() {
           <img src="/logos/legion.png" alt="Legion" className="h-8 w-8 rounded-input object-cover" />
           <span className="text-body font-semibold">Legion</span>
         </div>
-        <Link to="/legion/fonder"
-          className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg transition hover:brightness-110 sm:flex">
-          <IconPlus size={15} /> {t('legion.nouvelle')}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to="/legion/fonder"
+            className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg transition hover:brightness-110 sm:flex">
+            <IconPlus size={15} /> {t('legion.nouvelle')}
+          </Link>
+          {/* Beau, 22/09: « j'arrive même pas à me déconnecter dans Legion ». */}
+          <button type="button" onClick={() => signOut()} title={t('legion.seDeconnecter', 'Se déconnecter')}
+            className="flex items-center gap-1 rounded-pill border border-legion-line px-2.5 py-1 text-caption font-semibold text-legion-muted transition hover:text-legion-danger">
+            <IconLogout size={14} /> <span className="hidden sm:inline">{t('legion.seDeconnecter', 'Se déconnecter')}</span>
+          </button>
+        </div>
       </header>
 
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_300px] lg:px-6">
