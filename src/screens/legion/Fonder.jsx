@@ -53,6 +53,15 @@ export default function Fonder() {
   const [secteur, setSecteur] = useState('');
   const [generation, setGeneration] = useState(false);
   const [generationErreur, setGenerationErreur] = useState('');
+  const [filtre, setFiltre] = useState('');
+  const [tous, setTous] = useState(false);
+  const plat = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const modelesFiltres = (data?.modeles || []).filter((m) => {
+    if (modele?.cle === m.cle) return true;
+    const q = plat(filtre.trim());
+    return !q || plat(`${m.nom} ${m.promesse} ${m.niveau} ${m.secteur_demande || ''}`).includes(q);
+  });
+  const modelesVisibles = tous || filtre.trim() ? modelesFiltres : modelesFiltres.slice(0, 12);
 
   // Un nouveau modèle, écrit pour le secteur décrit; puis la liste se
   // recharge et le modèle est sélectionné.
@@ -121,8 +130,12 @@ export default function Fonder() {
 
         {/* 1. Le modèle */}
         <p className="mt-5 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.etapeModele')}</p>
+        {/* Cinquante secteurs et plus (22/09): un champ pour chercher le sien,
+            et la liste ne s'étale pas — douze cartes, puis « voir tous ». */}
+        <input value={filtre} onChange={(e) => setFiltre(e.target.value)} placeholder={t('legion.chercherSecteur', { n: data.modeles.length, defaultValue: 'Chercher parmi {{n}} secteurs…' })}
+          className="input mt-2 w-full" />
         <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {data.modeles.map((m) => {
+          {modelesVisibles.map((m) => {
             const ps = data.postes.filter((p) => p.modele === m.cle);
             const aEcrire = ps.filter((p) => p.a_ecrire).length;
             const choisi = modele?.cle === m.cle;
@@ -146,6 +159,14 @@ export default function Fonder() {
             );
           })}
         </ul>
+        {!tous && !filtre.trim() && modelesFiltres.length > 12 && (
+          <button type="button" onClick={() => setTous(true)} className="mt-2 w-full rounded-card border border-legion-line py-2 text-caption font-semibold text-legion-gold hover:bg-legion-card">
+            {t('legion.voirTousModeles', { n: modelesFiltres.length, defaultValue: 'Voir les {{n}} secteurs' })}
+          </button>
+        )}
+        {filtre.trim() && modelesFiltres.length === 0 && (
+          <p className="mt-2 text-caption text-legion-muted">{t('legion.aucunSecteur', 'Aucun secteur ne correspond — décris-le ci-dessous, Legion l’écrit.')}</p>
+        )}
 
         {/* Ton secteur n'est pas là ? Beau, 22/09: « il y a des milliers de
             services ». On décrit le secteur, Legion écrit l'organigramme
