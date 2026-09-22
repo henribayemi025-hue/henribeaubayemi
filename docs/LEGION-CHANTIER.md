@@ -82,14 +82,14 @@ propre plan détaillé AVANT la première ligne de code.
 | 1 | **Les logos** | Legion, Accounting, Athlo, Mon argent dans les six points et dans Legion | ✅ en ligne (22/09). Le logo Accounting vient d'une capture coupée en bas : à remplacer si Beau a l'original |
 | 2 | **Les compétences (skills) et le veilleur** | Un agent reçoit des compétences (fiches de savoir-faire) ; un agent « veilleur » part chaque matin sur GitHub et les plateformes gratuites, trouve des compétences et des dépôts utiles à l'entreprise, les propose ; on les attache aux agents qui en ont besoin | ✅ en ligne (22/09) : catalogue, « Équiper », veilleur quotidien à 5 h 15 UTC |
 | 3 | **Les connecteurs Google** | Gmail, Agenda, Drive : chaque personne branche SON compte (connexion Google, ses autorisations) ; les agents lisent, préparent, et n'envoient qu'avec son clic | ⏳ |
-| 4 | **« Se connecter avec Finjaro »** | Une entreprise qui a une boutique sur la place de marché, des comptes dans Accounting, relie son compte : ses agents lisent SES ventes, SON stock, SES livres — jamais ceux des autres — et parlent aux finances | ⏳ — touche les deux applications : on le conçoit avec Claudinette |
+| 4 | **« Se connecter avec Finjaro »** | Une entreprise qui a une boutique sur la place de marché, des comptes dans Accounting, relie son compte : ses agents lisent SES ventes, SON stock, SES livres — jamais ceux des autres — et parlent aux finances | 🔸 la boutique : ✅ en ligne (nuit du 22/09, accueil de Legion → « Ce que les agents peuvent lire ») ; les livres : proposition envoyée à Claudinette, attend sa réponse et le oui de Beau |
 | 5 | **L'équipe humaine et les appels** | Inviter des collègues humains dans l'entreprise ; parler à un agent à la voix (appel) ; une réunion où humains et agents se parlent | ⏳ — l'appel vocal passe par la voix en direct de Gemini (payant à l'usage) : à chiffrer avant |
 | 6 | **Le studio de code** (comme Codex / GitHub) | Un projet est découpé ; un agent architecte répartit ; plusieurs agents codent chacun leur morceau sur leur branche ; un relecteur et des tests ; puis on assemble (zip), on pousse sur GitHub, on déploie | ⏳ — le plus gros. Il faut un endroit où le code s'exécute vraiment (des machines à part), pas seulement un modèle qui écrit : je présente le plan et son coût avant de commencer |
-| 7 | **Des agents qui s'améliorent** | Mémoire (fait), relecture (faite), compétences (fait), **la journée de travail** (22/09 au soir : plan de la semaine et du mois par département, un livrable par agent chaque matin, tâche « à revoir »), et une note sur chaque livrable : ce qui a été corrigé devient une règle | 🔸 bien avancé — reste la note sur les livrables |
+| 7 | **Des agents qui s'améliorent** | Mémoire (fait), relecture (faite), compétences (fait), **la journée de travail** (22/09 au soir : plan de la semaine et du mois par département, un livrable par agent chaque matin, tâche « à revoir »), et une note sur chaque livrable : ce qui a été corrigé devient une règle | ✅ la revue des livrables (Valider / Renvoyer, la remarque devient une règle) est en ligne ; la mémoire des salons aussi |
 
 ## Pour plus tard (noté le 22/09 au soir)
 
-- **Compacter les longues conversations.** Beau : « il doit aussi avoir la
+- ✅ (nuit du 22/09) **Compacter les longues conversations.** Beau : « il doit aussi avoir la
   limite, genre compacter les messages quand c'est trop long ». Aujourd'hui
   chaque agent relit les 20 derniers messages du salon et les 20 qui le
   concernent ailleurs : au-delà, il oublie. À faire : quand un salon
@@ -97,12 +97,12 @@ propre plan détaillé AVANT la première ligne de code.
   remplace les vieux messages dans ce que l'agent relit — comme une mémoire
   de réunion. Le fil complet reste visible pour Beau.
 
-- **Une page de connexion comme celle d'Accounting** (capture de Beau,
+- ✅ (nuit du 22/09) **Une page de connexion comme celle d'Accounting** (capture de Beau,
   22/09) pour Legion ET Mon argent : à gauche ce que fait l'application en
   quatre cartes, à droite « Continuer avec Google », e-mail ou téléphone,
   « Créer un compte », et la phrase « le même compte que sur Finjaro ».
-- **Mon argent : se déconnecter.** Beau est entré dans Mon argent et n'a
-  trouvé ni où se déconnecter, ni où sauvegarder.
+- ✅ (nuit du 22/09) **Mon argent : se déconnecter.** Beau est entré dans Mon argent et n'a
+  trouvé ni où se déconnecter, ni où sauvegarder. Le bouton est là ; « sauvegarder » : tout est enregistré au fil de l'eau, il n'y a rien à sauvegarder — à dire à l'écran, à faire.
 
 ## La phase d'après : l'audit complet (demandé par Beau, 22/09 au soir)
 
