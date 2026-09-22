@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { SettingsProvider } from './hooks/useSettings';
 import { CartProvider } from './hooks/useCart';
@@ -114,7 +114,10 @@ const Settings = lazyWithReload(() => import('./screens/buyer/Settings'));
 const EditProfile = lazyWithReload(() => import('./screens/buyer/EditProfile'));
 const MyOrders = lazyWithReload(() => import('./screens/buyer/MyOrders'));
 const MyFavorites = lazyWithReload(() => import('./screens/buyer/MyFavorites'));
-const MyMoney = lazyWithReload(() => import('./screens/buyer/MyMoney'));
+// « Mon argent » — une application À PART, pas un écran de la place de marché.
+// Elle vit dans `screens/money/`, avec sa propre coque et ses couleurs, et se
+// monte HORS de BuyerLayout: ni la barre de Finjaro, ni Services, ni le crème.
+const MonArgent = lazyWithReload(() => import('./screens/money/MonArgent'));
 const InviteFriend = lazyWithReload(() => import('./screens/buyer/InviteFriend'));
 const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
@@ -231,6 +234,10 @@ export default function App() {
                     {/* L'environnement Finjaro: la liste des applications, publique
                         et partageable par un lien. */}
                     <Route path="/apps" element={<Apps />} />
+                    {/* « Mon argent »: application à part entière, hors de
+                        BuyerLayout — Beau, 22/09: « ce n'est pas possible que
+                        je voie ça dans Finjaro avec Services et tout ». */}
+                    <Route path="/argent" element={<RequireAuth><MonArgent /></RequireAuth>} />
                     {/* La démonstration complète — acheter, vendre, voir
                         l'écriture. Hors layout et hors base: les boutiques
                         sont inventées et rien n'est enregistré. C'est le lien
@@ -273,9 +280,9 @@ export default function App() {
                       <Route path="profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
                       <Route path="profile/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
                       <Route path="profile/favorites" element={<RequireAuth><MyFavorites /></RequireAuth>} />
-                      {/* Mon argent: budget, épargne, projets, njangi. Le premier
-                          Finjaro — les tables n'avaient jamais été supprimées. */}
-                      <Route path="profile/argent" element={<RequireAuth><MyMoney /></RequireAuth>} />
+                      {/* L'ancienne adresse de « Mon argent », le temps que les
+                          liens en circulation se mettent à jour. */}
+                      <Route path="profile/argent" element={<Navigate to="/argent" replace />} />
                       <Route path="profile/invite" element={<RequireAuth><InviteFriend /></RequireAuth>} />
                       <Route path="profile/help" element={<Help />} />
                       <Route path="become-vendor" element={<RequireAuth><BecomeVendor /></RequireAuth>} />

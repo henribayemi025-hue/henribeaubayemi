@@ -1957,6 +1957,7 @@
   },
   "money": {
     "title": "My money",
+    "hello": "Welcome back, {{name}} 👋",
     "remaining": "You have left",
     "income": "In",
     "spent": "Out",
@@ -2014,7 +2015,7 @@
       "monthly": "monthly",
       "daily": "daily"
     },
-    "total": "All in",
+    "total": "Total balance",
     "addAccount": "Add an account",
     "accountName": "Account name",
     "accountBalance": "Opening balance",

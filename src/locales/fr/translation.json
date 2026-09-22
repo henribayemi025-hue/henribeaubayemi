@@ -1957,6 +1957,7 @@
   },
   "money": {
     "title": "Mon argent",
+    "hello": "Bonjour, {{name}} 👋",
     "remaining": "Il te reste",
     "income": "Entré",
     "spent": "Sorti",
@@ -2014,7 +2015,7 @@
       "monthly": "chaque mois",
       "daily": "chaque jour"
     },
-    "total": "Tout compris",
+    "total": "Solde total",
     "addAccount": "Ajouter un compte",
     "accountName": "Nom du compte",
     "accountBalance": "Solde de départ",

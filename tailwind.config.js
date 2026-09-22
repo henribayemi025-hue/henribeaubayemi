@@ -18,6 +18,28 @@ export default {
         danger: { DEFAULT: '#D14343', bg: '#FDEDED' },
         success: { DEFAULT: '#2A9D8F', bg: '#EAF6EA' },
         warning: { DEFAULT: '#B8860B', bg: '#FDF6E3' },
+        // « Mon argent » — une application À PART, avec ses propres couleurs.
+        //
+        // Ce ne sont pas des couleurs inventées: ce sont celles des captures
+        // du tout premier Finjaro que Beau a envoyées le 22/09. Noir, violet,
+        // et les pastilles de comptes qui sont DÉJÀ en base (`accounts.color`:
+        // #6366F1, #38BDF8, #34D399, #F5B544, #8B5CF6, #FB7185).
+        //
+        // Elles ne se mélangent pas avec « Terre & Or » ci-dessus: la place de
+        // marché est crème et terracotta, celle-ci est sombre et violette. Les
+        // confondre est exactement l'erreur que j'ai faite la première fois.
+        money: {
+          bg: '#0B0B0F', // fond de page, presque noir
+          card: '#17171C', // une carte posée dessus
+          line: '#26262E', // les traits
+          ink: '#F5F5F7', // texte principal
+          muted: '#8A8A93', // texte secondaire
+          accent: '#7C5CFC', // le violet
+          'accent-soft': '#8B5CF6', // l'autre bout du dégradé
+          gold: '#F5B544',
+          danger: '#FB7185',
+          success: '#34D399',
+        },
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],

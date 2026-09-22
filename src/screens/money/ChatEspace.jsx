@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { IconSend, IconMessage } from '@tabler/icons-react';
-import { supabase } from '../../../lib/supabase';
-import { useAuth } from '../../../hooks/useAuth';
-import { useAsync } from '../../../hooks/useAsync';
-import { useToast } from '../../../hooks/useToast';
-import { Button } from '../../../components/Button';
-import { TextInput } from '../../../components/Field';
-import { EmptyState, Skeleton } from '../../../components/states';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
+import { useAsync } from '../../hooks/useAsync';
+import { useToast } from '../../hooks/useToast';
+import { Button } from '../../components/Button';
+import { TextInput } from '../../components/Field';
+import { EmptyState, Skeleton } from '../../components/states';
 
 // La discussion d'un espace partagé.
 //
@@ -79,8 +79,8 @@ export default function ChatEspace({ spaceId, moi, t }) {
   }
 
   return (
-    <div className="rounded-card border border-hairline p-3">
-      <p className="text-caption font-semibold text-muted">{t('money.chatTitle')}</p>
+    <div className="rounded-card border border-money-line p-3">
+      <p className="text-caption font-semibold text-money-muted">{t('money.chatTitle')}</p>
 
       {loading ? (
         <div className="mt-2 space-y-2">
@@ -90,8 +90,8 @@ export default function ChatEspace({ spaceId, moi, t }) {
         </div>
       ) : error ? (
         <div className="mt-2">
-          <p className="text-body text-danger">{t('errors.generic')}</p>
-          <button type="button" onClick={retry} className="mt-1 text-caption font-semibold text-teal">
+          <p className="text-body text-money-danger">{t('errors.generic')}</p>
+          <button type="button" onClick={retry} className="mt-1 text-caption font-semibold text-money-accent">
             {t('common.retry')}
           </button>
         </div>
@@ -105,15 +105,15 @@ export default function ChatEspace({ spaceId, moi, t }) {
               <li key={m.id} className={`flex ${amoi ? 'justify-end' : 'justify-start'}`}>
                 <div className="max-w-[85%] sm:max-w-[70%]">
                   {!amoi && (
-                    <p className="mb-0.5 truncate text-caption text-muted">{m.name || t('work.someone')}</p>
+                    <p className="mb-0.5 truncate text-caption text-money-muted">{m.name || t('work.someone')}</p>
                   )}
                   <div
                     className={`rounded-card px-3 py-2 ${
-                      amoi ? 'bg-teal text-white' : 'border border-hairline bg-base text-ink'
+                      amoi ? 'bg-money-accent text-white' : 'border border-money-line bg-money-card text-money-ink'
                     }`}
                   >
                     <p className="whitespace-pre-wrap break-words text-body">{m.text}</p>
-                    <p className={`mt-0.5 text-caption ${amoi ? 'text-white/75' : 'text-muted'}`}>
+                    <p className={`mt-0.5 text-caption ${amoi ? 'text-white/75' : 'text-money-muted'}`}>
                       {heure(m.created_at)}
                     </p>
                   </div>

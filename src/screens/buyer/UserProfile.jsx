@@ -69,7 +69,7 @@ export default function UserProfile() {
     { icon: IconHeart, label: t('profile.myFavorites'), to: '/profile/favorites' },
     // Mon argent: budget, épargne, projets, njangi. Les données étaient
     // en base depuis le premier Finjaro, sans plus aucun écran pour y aller.
-    { icon: IconPigMoney, label: t('money.title'), to: '/profile/argent' },
+    { icon: IconPigMoney, label: t('money.title'), to: '/argent' },
     // Distinct de "Messages" (barre du bas): là, c'est acheteuse↔boutique;
     // ici, un compte peut écrire à un autre compte (voir dm.mustFollowHint).
     { icon: IconMessageCircle, label: t('dm.title'), to: '/profile/messages', badge: dmUnread },

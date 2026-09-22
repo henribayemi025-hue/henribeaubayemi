@@ -1,5 +1,5 @@
 import { IconChartBar, IconAlertTriangle } from '@tabler/icons-react';
-import { EmptyState } from '../../../components/states';
+import { EmptyState } from '../../components/states';
 
 // Analyste — l'onglet qui lit le budget au lieu de le saisir.
 //
@@ -13,9 +13,7 @@ import { EmptyState } from '../../../components/states';
 // faux, les convertir le serait deux fois.
 
 // Les centimes comptent — un compte à 0,16 s'affichait « 0 ».
-function montant(n, lang) {
-  return new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(Number(n) || 0);
-}
+import { montant } from './montant';
 
 function moisCourant() {
   const d = new Date();
@@ -43,7 +41,7 @@ const estEntree = (l) => l.kind === 'income';
 
 const somme = (liste, champ) => liste.reduce((s, l) => s + (Number(l[champ]) || 0), 0);
 
-export default function Analyste({ lignes, comptes, epargne, lang, t }) {
+export default function Analyste({ devise = '', lignes, comptes, epargne, lang, t }) {
   const toutes = Array.isArray(lignes) ? lignes : [];
   const lesComptes = Array.isArray(comptes) ? comptes : [];
   const lEpargne = Array.isArray(epargne) ? epargne : [];
@@ -114,40 +112,40 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
       {montrerEnsemble && (
         <div className="grid grid-cols-2 gap-3">
           {lesComptes.length > 0 && (
-            <div className="rounded-card border border-hairline p-3">
-              <p className="text-caption text-muted">{t('money.anOnAccounts')}</p>
-              <p className={`text-section ${surComptes < 0 ? 'text-danger' : 'text-ink'}`}>
-                {montant(surComptes, lang)}
+            <div className="rounded-card border border-money-line p-3">
+              <p className="text-caption text-money-muted">{t('money.anOnAccounts')}</p>
+              <p className={`text-section ${surComptes < 0 ? 'text-money-danger' : 'text-money-ink'}`}>
+                {montant(surComptes, lang, devise)}
               </p>
             </div>
           )}
           {lEpargne.length > 0 && (
-            <div className="rounded-card border border-hairline p-3">
-              <p className="text-caption text-muted">{t('money.anSetAside')}</p>
-              <p className="text-section text-ink">{montant(misDeCote, lang)}</p>
+            <div className="rounded-card border border-money-line p-3">
+              <p className="text-caption text-money-muted">{t('money.anSetAside')}</p>
+              <p className="text-section text-money-ink">{montant(misDeCote, lang, devise)}</p>
             </div>
           )}
         </div>
       )}
 
       {/* 1 — le mois en cours, et ce qui a changé depuis le mois dernier */}
-      <section className="rounded-card border border-hairline p-3">
-        <p className="text-caption text-muted">
+      <section className="rounded-card border border-money-line p-3">
+        <p className="text-caption text-money-muted">
           {nomMois(mois, lang, { month: 'long', year: 'numeric' })}
         </p>
-        <p className={`text-title ${ce.reste < 0 ? 'text-danger' : 'text-teal'}`}>
-          {montant(ce.reste, lang)}
+        <p className={`text-title ${ce.reste < 0 ? 'text-money-danger' : 'text-money-accent'}`}>
+          {montant(ce.reste, lang, devise)}
         </p>
-        <p className="text-caption text-muted">{t('money.remaining')}</p>
+        <p className="text-caption text-money-muted">{t('money.remaining')}</p>
         {compare && (
-          <p className="mt-1 text-caption text-muted">
-            {t('money.prevMonth')} {montant(precedent.reste, lang)}{' '}
-            <Ecart valeur={ce.reste - precedent.reste} bonSiPositif lang={lang} />
+          <p className="mt-1 text-caption text-money-muted">
+            {t('money.prevMonth')} {montant(precedent.reste, lang, devise)}{' '}
+            <Ecart devise={devise} valeur={ce.reste - precedent.reste} bonSiPositif lang={lang} />
           </p>
         )}
 
-        <div className="mt-3 space-y-2 border-t border-hairline pt-3">
-          <Ligne
+        <div className="mt-3 space-y-2 border-t border-money-line pt-3">
+          <Ligne devise={devise}
             libelle={t('money.income')}
             valeur={ce.entre}
             avant={compare ? precedent.entre : null}
@@ -155,7 +153,7 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
             lang={lang}
             t={t}
           />
-          <Ligne
+          <Ligne devise={devise}
             libelle={t('money.spent')}
             valeur={ce.sorti}
             avant={compare ? precedent.sorti : null}
@@ -168,10 +166,10 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* 2 — où part l'argent */}
-        <section className="rounded-card border border-hairline p-3">
-          <h3 className="text-section text-ink">{t('money.anWhereItGoes')}</h3>
+        <section className="rounded-card border border-money-line p-3">
+          <h3 className="text-section text-money-ink">{t('money.anWhereItGoes')}</h3>
           {categories.length === 0 ? (
-            <p className="mt-2 text-caption text-muted">{t('money.anNoExpense')}</p>
+            <p className="mt-2 text-caption text-money-muted">{t('money.anNoExpense')}</p>
           ) : (
             <ul className="mt-3 space-y-3">
               {categories.map((c) => {
@@ -179,14 +177,14 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
                 return (
                   <li key={c.categorie}>
                     <div className="flex items-baseline justify-between gap-3">
-                      <p className="min-w-0 truncate text-body text-ink">{c.categorie}</p>
-                      <span className="shrink-0 text-body text-ink">{montant(c.reel, lang)}</span>
+                      <p className="min-w-0 truncate text-body text-money-ink">{c.categorie}</p>
+                      <span className="shrink-0 text-body text-money-ink">{montant(c.reel, lang, devise)}</span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-teal/10">
-                        <div className="h-full rounded-pill bg-teal" style={{ width: `${pct}%` }} />
+                      <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-pill bg-money-accent/10">
+                        <div className="h-full rounded-pill bg-money-accent" style={{ width: `${pct}%` }} />
                       </div>
-                      <span className="shrink-0 text-caption text-muted">{pct} %</span>
+                      <span className="shrink-0 text-caption text-money-muted">{pct} %</span>
                     </div>
                   </li>
                 );
@@ -196,14 +194,14 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
         </section>
 
         {/* 3 — prévu contre réel */}
-        <section className="rounded-card border border-hairline p-3">
-          <h3 className="text-section text-ink">{t('money.anPlannedVsActual')}</h3>
+        <section className="rounded-card border border-money-line p-3">
+          <h3 className="text-section text-money-ink">{t('money.anPlannedVsActual')}</h3>
           {!aDuPrevu ? (
-            <p className="mt-2 text-caption text-muted">{t('money.anNoPlanned')}</p>
+            <p className="mt-2 text-caption text-money-muted">{t('money.anNoPlanned')}</p>
           ) : (
             <>
               <div className="mt-3 space-y-2">
-                <Confrontation
+                <Confrontation devise={devise}
                   libelle={t('money.spent')}
                   prevu={prevuSorti}
                   reel={ce.sorti}
@@ -211,7 +209,7 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
                   lang={lang}
                   t={t}
                 />
-                <Confrontation
+                <Confrontation devise={devise}
                   libelle={t('money.income')}
                   prevu={prevuEntre}
                   reel={ce.entre}
@@ -221,21 +219,21 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
                 />
               </div>
 
-              <div className="mt-3 border-t border-hairline pt-3">
-                <p className="text-caption text-muted">{t('money.anOverBudget')}</p>
+              <div className="mt-3 border-t border-money-line pt-3">
+                <p className="text-caption text-money-muted">{t('money.anOverBudget')}</p>
                 {depassements.length === 0 ? (
-                  <p className="mt-1 text-caption text-muted">{t('money.anNoOverBudget')}</p>
+                  <p className="mt-1 text-caption text-money-muted">{t('money.anNoOverBudget')}</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
                     {depassements.map((c) => (
                       <li key={c.categorie} className="flex items-baseline justify-between gap-3">
-                        <p className="flex min-w-0 items-baseline gap-1 text-body text-ink">
-                          <IconAlertTriangle size={15} className="shrink-0 self-center text-danger" />
+                        <p className="flex min-w-0 items-baseline gap-1 text-body text-money-ink">
+                          <IconAlertTriangle size={15} className="shrink-0 self-center text-money-danger" />
                           <span className="truncate">{c.categorie}</span>
                         </p>
-                        <span className="shrink-0 text-caption text-muted">
-                          {montant(c.reel, lang)} / {montant(c.prevu, lang)}{' '}
-                          <span className="text-danger">+{montant(c.reel - c.prevu, lang)}</span>
+                        <span className="shrink-0 text-caption text-money-muted">
+                          {montant(c.reel, lang, devise)} / {montant(c.prevu, lang, devise)}{' '}
+                          <span className="text-money-danger">+{montant(c.reel - c.prevu, lang, devise)}</span>
                         </span>
                       </li>
                     ))}
@@ -248,15 +246,15 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
       </div>
 
       {/* 4 — les six derniers mois */}
-      <section className="rounded-card border border-hairline p-3">
-        <h3 className="text-section text-ink">{t('money.anSixMonths')}</h3>
+      <section className="rounded-card border border-money-line p-3">
+        <h3 className="text-section text-money-ink">{t('money.anSixMonths')}</h3>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-muted">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-money-muted">
           <span className="flex items-center gap-1">
-            <span className="h-2 w-4 rounded-pill bg-teal" aria-hidden="true" /> {t('money.income')}
+            <span className="h-2 w-4 rounded-pill bg-money-accent" aria-hidden="true" /> {t('money.income')}
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-4 rounded-pill bg-teal/30" aria-hidden="true" /> {t('money.spent')}
+            <span className="h-2 w-4 rounded-pill bg-money-accent/30" aria-hidden="true" /> {t('money.spent')}
           </span>
         </div>
 
@@ -265,19 +263,19 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
             <div
               key={s.periode}
               className="flex min-w-0 flex-1 flex-col items-center gap-1"
-              title={`${nomMois(s.periode, lang, { month: 'long', year: 'numeric' })} — ${t('money.income')} ${montant(s.entre, lang)} · ${t('money.spent')} ${montant(s.sorti, lang)}`}
+              title={`${nomMois(s.periode, lang, { month: 'long', year: 'numeric' })} — ${t('money.income')} ${montant(s.entre, lang, devise)} · ${t('money.spent')} ${montant(s.sorti, lang, devise)}`}
             >
               <div className="flex h-24 w-full items-end justify-center gap-1" aria-hidden="true">
                 <div
-                  className="w-1/3 max-w-[18px] rounded-pill bg-teal"
+                  className="w-1/3 max-w-[18px] rounded-pill bg-money-accent"
                   style={{ height: `${hauteur(s.entre)}%` }}
                 />
                 <div
-                  className="w-1/3 max-w-[18px] rounded-pill bg-teal/30"
+                  className="w-1/3 max-w-[18px] rounded-pill bg-money-accent/30"
                   style={{ height: `${hauteur(s.sorti)}%` }}
                 />
               </div>
-              <span className="w-full truncate border-t border-hairline pt-1 text-center text-caption text-muted">
+              <span className="w-full truncate border-t border-money-line pt-1 text-center text-caption text-money-muted">
                 {nomMois(s.periode, lang, { month: 'short' })}
               </span>
             </div>
@@ -291,16 +289,16 @@ export default function Analyste({ lignes, comptes, epargne, lang, t }) {
 /* ---------------------------------------------------------------------- */
 
 // Une ligne « ce mois-ci vs le mois dernier ».
-function Ligne({ libelle, valeur, avant, bonSiPositif, lang, t }) {
+function Ligne({ devise, libelle, valeur, avant, bonSiPositif, lang, t }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <p className="min-w-0 truncate text-body text-ink">{libelle}</p>
+      <p className="min-w-0 truncate text-body text-money-ink">{libelle}</p>
       <div className="shrink-0 text-right">
-        <span className="text-body text-ink">{montant(valeur, lang)}</span>
+        <span className="text-body text-money-ink">{montant(valeur, lang, devise)}</span>
         {avant !== null && (
-          <p className="text-caption text-muted">
-            {t('money.prevMonth')} {montant(avant, lang)}{' '}
-            <Ecart valeur={valeur - avant} bonSiPositif={bonSiPositif} lang={lang} />
+          <p className="text-caption text-money-muted">
+            {t('money.prevMonth')} {montant(avant, lang, devise)}{' '}
+            <Ecart devise={devise} valeur={valeur - avant} bonSiPositif={bonSiPositif} lang={lang} />
           </p>
         )}
       </div>
@@ -310,36 +308,36 @@ function Ligne({ libelle, valeur, avant, bonSiPositif, lang, t }) {
 
 // L'écart, signé et coloré selon le sens: dépenser plus n'est pas la même
 // nouvelle que gagner plus.
-function Ecart({ valeur, bonSiPositif, lang }) {
-  if (valeur === 0) return <span className="text-muted">=</span>;
+function Ecart({ devise, valeur, bonSiPositif, lang }) {
+  if (valeur === 0) return <span className="text-money-muted">=</span>;
   const bon = valeur > 0 ? bonSiPositif : !bonSiPositif;
   return (
-    <span className={bon ? 'text-teal' : 'text-danger'}>
+    <span className={bon ? 'text-money-accent' : 'text-money-danger'}>
       {valeur > 0 ? '+' : '−'}
-      {montant(Math.abs(valeur), lang)}
+      {montant(Math.abs(valeur), lang, devise)}
     </span>
   );
 }
 
 // Prévu face à réel, pour un type de ligne.
-function Confrontation({ libelle, prevu, reel, bonSiSousLePrevu, lang, t }) {
+function Confrontation({ devise, libelle, prevu, reel, bonSiSousLePrevu, lang, t }) {
   const ecart = reel - prevu;
   const bon = ecart === 0 ? true : ecart < 0 ? bonSiSousLePrevu : !bonSiSousLePrevu;
   const pct = prevu > 0 ? Math.min(100, Math.round((reel / prevu) * 100)) : 0;
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <p className="min-w-0 truncate text-body text-ink">{libelle}</p>
-        <span className="shrink-0 text-caption text-muted">
-          {t('money.plannedShort')} {montant(prevu, lang)} · {montant(reel, lang)}{' '}
-          <span className={ecart === 0 ? 'text-muted' : bon ? 'text-teal' : 'text-danger'}>
-            {ecart === 0 ? '=' : `${ecart > 0 ? '+' : '−'}${montant(Math.abs(ecart), lang)}`}
+        <p className="min-w-0 truncate text-body text-money-ink">{libelle}</p>
+        <span className="shrink-0 text-caption text-money-muted">
+          {t('money.plannedShort')} {montant(prevu, lang, devise)} · {montant(reel, lang, devise)}{' '}
+          <span className={ecart === 0 ? 'text-money-muted' : bon ? 'text-money-accent' : 'text-money-danger'}>
+            {ecart === 0 ? '=' : `${ecart > 0 ? '+' : '−'}${montant(Math.abs(ecart), lang, devise)}`}
           </span>
         </span>
       </div>
       {prevu > 0 && (
-        <div className="mt-1 h-2 w-full overflow-hidden rounded-pill bg-teal/10">
-          <div className="h-full rounded-pill bg-teal" style={{ width: `${pct}%` }} />
+        <div className="mt-1 h-2 w-full overflow-hidden rounded-pill bg-money-accent/10">
+          <div className="h-full rounded-pill bg-money-accent" style={{ width: `${pct}%` }} />
         </div>
       )}
     </div>

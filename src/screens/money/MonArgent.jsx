@@ -8,12 +8,19 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
-import { AppHeader } from '../../components/AppHeader';
+import { useSettings } from '../../hooks/useSettings';
 import { Button } from '../../components/Button';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
-import ChatEspace from './money/ChatEspace';
-import Analyste from './money/Analyste';
+import ChatEspace from './ChatEspace';
+import Analyste from './Analyste';
+import { MoneyShell } from './MoneyShell';
+import { montant } from './montant';
+
+// Les pastilles de compte. Ce sont EXACTEMENT les six couleurs que les
+// comptes existants portent déjà en base (`accounts.color`) — pas le
+// terracotta de la place de marché, qui n'a rien à faire ici.
+const COULEURS = ['#6366F1', '#38BDF8', '#34D399', '#F5B544', '#8B5CF6', '#FB7185'];
 
 // Mon argent — le tout premier Finjaro, remis en service.
 //
@@ -35,19 +42,11 @@ import Analyste from './money/Analyste';
 // qu'on l'a saisi. On met le symbole de la monnaie choisie à côté, rien de
 // plus.
 
-const ONGLETS = ['comptes', 'budget', 'epargne', 'njangi', 'projets', 'espaces', 'analyste'];
-
-// Les centimes comptent — vu à l'écran le 22/09: un compte Paypal à 0,16 €
-// s'affichait « 0 » et 22,88 € s'affichait « 23 ». J'arrondissais comme du
-// FCFA, qui n'a pas de centimes. Un montant entier reste affiché sans
-// décimales; seul ce qui en a les garde.
-function montant(n, lang) {
-  return new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(Number(n) || 0);
-}
 
 export default function MyMoney() {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const { currency: devise } = useSettings();
   const lang = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
   const [onglet, setOnglet] = useState('comptes');
   const [n, setN] = useState(0);
@@ -120,40 +119,31 @@ export default function MyMoney() {
     };
   }, [user?.id, n]);
 
-  if (loading) return <Skeleton />;
-  if (error) return <ErrorState onRetry={recharger} />;
+  // Même en attente, on reste dans la coque sombre: sans ça, le crème de la
+  // place de marché apparaît une seconde avant l'application.
+  const enveloppe = (contenu) => (
+    <MoneyShell onglet={onglet} setOnglet={setOnglet} prenom={profile?.name} t={t}>
+      <div className="px-4 pt-3">{contenu}</div>
+    </MoneyShell>
+  );
+  if (loading) return enveloppe(<Skeleton className="h-40 w-full" />);
+  if (error) return enveloppe(<ErrorState onRetry={recharger} />);
   if (!data) return null;
 
   return (
-    <div>
-      <AppHeader title={t('money.title')} />
-
-      <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-hairline px-4 pb-2 pt-1">
-        {ONGLETS.map((o) => (
-          <button
-            key={o}
-            onClick={() => setOnglet(o)}
-            className={`shrink-0 rounded-pill px-3 py-1 text-caption font-semibold ${
-              onglet === o ? 'bg-teal text-white' : 'border border-hairline text-muted'
-            }`}
-          >
-            {t(`money.tab.${o}`)}
-          </button>
-        ))}
-      </div>
-
-      <div className="px-4 pb-24 pt-3">
-        {onglet === 'comptes' && <Comptes comptes={data.comptes} lang={lang} t={t} userId={user.id} onDone={recharger} />}
-        {onglet === 'espaces' && <Espaces espaces={data.espaces} moi={user.id} lang={lang} t={t} onDone={recharger} />}
+    <MoneyShell onglet={onglet} setOnglet={setOnglet} prenom={profile?.name} t={t}>
+      <div className="px-4 pb-28 pt-3">
+        {onglet === 'comptes' && <Comptes devise={devise} comptes={data.comptes} lang={lang} t={t} userId={user.id} onDone={recharger} />}
+        {onglet === 'espaces' && <Espaces devise={devise} espaces={data.espaces} moi={user.id} lang={lang} t={t} onDone={recharger} />}
         {onglet === 'analyste' && (
-          <Analyste lignes={data.budget} comptes={data.comptes} epargne={data.epargne} lang={lang} t={t} />
+          <Analyste devise={devise} lignes={data.budget} comptes={data.comptes} epargne={data.epargne} lang={lang} t={t} />
         )}
-        {onglet === 'budget' && <Budget lignes={data.budget} lang={lang} t={t} userId={user.id} onDone={recharger} />}
-        {onglet === 'epargne' && <Epargne objectifs={data.epargne} lang={lang} t={t} userId={user.id} onDone={recharger} />}
-        {onglet === 'projets' && <Projets projets={data.projets} lang={lang} t={t} onDone={recharger} />}
-        {onglet === 'njangi' && <Njangi njangis={data.njangis} moi={user.id} lang={lang} t={t} onDone={recharger} />}
+        {onglet === 'budget' && <Budget devise={devise} lignes={data.budget} lang={lang} t={t} userId={user.id} onDone={recharger} />}
+        {onglet === 'epargne' && <Epargne devise={devise} objectifs={data.epargne} lang={lang} t={t} userId={user.id} onDone={recharger} />}
+        {onglet === 'projets' && <Projets devise={devise} projets={data.projets} lang={lang} t={t} onDone={recharger} />}
+        {onglet === 'njangi' && <Njangi devise={devise} njangis={data.njangis} moi={user.id} lang={lang} t={t} onDone={recharger} />}
       </div>
-    </div>
+    </MoneyShell>
   );
 }
 
@@ -162,7 +152,7 @@ export default function MyMoney() {
 // Les comptes: Paypal, Revolut, la caisse, l'argent liquide. C'est la
 // première chose qu'on veut voir en ouvrant — combien j'ai, et où.
 // `color` et `glyph` étaient déjà en base et resservent tels quels.
-function Comptes({ comptes, lang, t, userId, onDone }) {
+function Comptes({ devise, comptes, lang, t, userId, onDone }) {
   const toast = useToast();
   const [ouvert, setOuvert] = useState(false);
   const [nom, setNom] = useState('');
@@ -179,7 +169,7 @@ function Comptes({ comptes, lang, t, userId, onDone }) {
         name: nom.trim(),
         balance: Number(solde) || 0,
         glyph: nom.trim().charAt(0).toUpperCase(),
-        color: '#C25E38',
+        color: COULEURS[Math.floor(Math.random() * COULEURS.length)],
       });
       if (error) throw error;
       setNom(''); setSolde(''); setOuvert(false); onDone();
@@ -189,17 +179,27 @@ function Comptes({ comptes, lang, t, userId, onDone }) {
 
   return (
     <>
-      <div className="rounded-card border border-hairline p-3">
-        <p className="text-caption text-muted">{t('money.total')}</p>
-        <p className={`text-title ${total < 0 ? 'text-danger' : 'text-teal'}`}>{montant(total, lang)}</p>
+      {/* La grande carte violette de ses captures: « Total balance » en
+          petit, le solde en très grand. C'est la première chose qu'on voit
+          en ouvrant, et la seule qui compte. */}
+      <div className="rounded-[20px] bg-gradient-to-br from-money-accent to-money-accent-soft p-5 text-white shadow-lg shadow-money-accent/20">
+        <p className="text-body text-white/80">{t('money.total')}</p>
+        <p className="mt-1 text-[40px] font-bold leading-none tracking-tight">{montant(total, lang, devise)}</p>
       </div>
 
-      {!ouvert ? (
-        <button onClick={() => setOuvert(true)} className="mt-3 flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white">
-          <IconPlus size={18} /> {t('money.addAccount')}
-        </button>
-      ) : (
-        <div className="mt-3 space-y-2 rounded-card border border-hairline p-3">
+      {/* « ACCOUNTS » à gauche, « + Add account » en petit à droite — pas un
+          bouton large comme la page. */}
+      <div className="mt-6 flex items-center justify-between">
+        <p className="text-caption font-semibold uppercase tracking-wider text-money-muted">{t('money.tab.comptes')}</p>
+        {!ouvert && (
+          <button onClick={() => setOuvert(true)} className="flex items-center gap-1 text-body font-semibold text-money-accent">
+            <IconPlus size={18} /> {t('money.addAccount')}
+          </button>
+        )}
+      </div>
+
+      {ouvert && (
+        <div className="mt-3 space-y-2 rounded-card border border-money-line bg-money-card p-3">
           <Field label={t('money.accountName')} required>
             {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
           </Field>
@@ -218,7 +218,7 @@ function Comptes({ comptes, lang, t, userId, onDone }) {
       ) : (
         <ul className="mt-4 grid grid-cols-2 gap-3">
           {comptes.map((c) => (
-            <CarteCompte key={c.id} compte={c} lang={lang} t={t} onDone={onDone} />
+            <CarteCompte devise={devise} key={c.id} compte={c} lang={lang} t={t} onDone={onDone} />
           ))}
         </ul>
       )}
@@ -235,7 +235,7 @@ function Comptes({ comptes, lang, t, userId, onDone }) {
 //
 // Retirer un compte ne supprime AUCUNE ligne de budget: la clé étrangère est
 // en `on delete set null`, les lignes restent et se détachent simplement.
-function CarteCompte({ compte: c, lang, t, onDone }) {
+function CarteCompte({ devise, compte: c, lang, t, onDone }) {
   const toast = useToast();
   const [edition, setEdition] = useState(false);
   const [nom, setNom] = useState(c.name || '');
@@ -270,7 +270,7 @@ function CarteCompte({ compte: c, lang, t, onDone }) {
 
   if (edition) {
     return (
-      <li className="col-span-2 space-y-2 rounded-card border border-hairline p-3">
+      <li className="col-span-2 space-y-2 rounded-card border border-money-line p-3 bg-money-card">
         <Field label={t('money.accountName')} required>
           {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
         </Field>
@@ -278,8 +278,8 @@ function CarteCompte({ compte: c, lang, t, onDone }) {
           {(id) => <TextInput id={id} type="number" inputMode="decimal" value={depart} onChange={(e) => setDepart(e.target.value)} />}
         </Field>
         {mouvements !== 0 && (
-          <p className="text-caption text-muted">
-            {t('money.accountMovements', { amount: montant(mouvements, lang), total: montant(c.solde, lang) })}
+          <p className="text-caption text-money-muted">
+            {t('money.accountMovements', { amount: montant(mouvements, lang, devise), total: montant(c.solde, lang, devise) })}
           </p>
         )}
         <div className="flex gap-2">
@@ -293,12 +293,12 @@ function CarteCompte({ compte: c, lang, t, onDone }) {
   }
 
   return (
-    <li className="relative rounded-card border border-hairline p-3">
+    <li className="relative rounded-card border border-money-line p-3 bg-money-card">
       <div className="absolute right-2 top-2 flex gap-1">
-        <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editAccount', { name: c.name })} className="p-1 text-muted">
+        <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editAccount', { name: c.name })} className="p-1 text-money-muted">
           <IconPencil size={16} />
         </button>
-        <button type="button" onClick={retirer} disabled={envoi} aria-label={t('money.removeAccount', { name: c.name })} className="p-1 text-muted">
+        <button type="button" onClick={retirer} disabled={envoi} aria-label={t('money.removeAccount', { name: c.name })} className="p-1 text-money-muted">
           <IconX size={16} />
         </button>
       </div>
@@ -308,9 +308,9 @@ function CarteCompte({ compte: c, lang, t, onDone }) {
       >
         {c.glyph || (c.name || '?').charAt(0).toUpperCase()}
       </span>
-      <p className="mt-2 truncate pr-12 text-caption text-muted">{c.name}</p>
-      <p className={`text-body font-semibold ${Number(c.solde) < 0 ? 'text-danger' : 'text-ink'}`}>
-        {montant(c.solde, lang)}
+      <p className="mt-2 truncate pr-12 text-caption text-money-muted">{c.name}</p>
+      <p className={`text-body font-semibold ${Number(c.solde) < 0 ? 'text-money-danger' : 'text-money-ink'}`}>
+        {montant(c.solde, lang, devise)}
       </p>
     </li>
   );
@@ -321,7 +321,7 @@ function CarteCompte({ compte: c, lang, t, onDone }) {
 // Un espace partagé: un compte commun avec quelqu'un. Qui a mis quoi, qui a
 // sorti quoi. « L'activité (qui a payé) » est la seule question qui compte
 // entre deux personnes qui partagent une caisse.
-function Espaces({ espaces, moi, lang, t, onDone }) {
+function Espaces({ devise, espaces, moi, lang, t, onDone }) {
   const toast = useToast();
   const [actif, setActif] = useState(null);
   const espace = espaces.find((e) => e.id === actif);
@@ -345,13 +345,13 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
   if (espace) {
     return (
       <>
-        <button onClick={() => setActif(null)} className="text-caption text-muted">‹ {t('money.allSpaces')}</button>
-        <div className="mt-2 rounded-card bg-teal p-4 text-white">
+        <button onClick={() => setActif(null)} className="text-caption text-money-muted">‹ {t('money.allSpaces')}</button>
+        <div className="mt-2 rounded-card bg-money-accent p-4 text-white">
           <p className="text-body font-semibold">{espace.name}</p>
-          <p className="text-title">{montant(espace.solde, lang)}</p>
+          <p className="text-title">{montant(espace.solde, lang, devise)}</p>
           <div className="mt-1 flex gap-4 text-caption opacity-90">
-            <span>{t('money.income')} {montant(espace.entre, lang)}</span>
-            <span>{t('money.spent')} {montant(espace.sorti, lang)}</span>
+            <span>{t('money.income')} {montant(espace.entre, lang, devise)}</span>
+            <span>{t('money.spent')} {montant(espace.sorti, lang, devise)}</span>
           </div>
           {espace.invite_code && (
             <p className="mt-2 text-caption opacity-90">
@@ -369,33 +369,33 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
           </button>
         </div>
 
-        <div className="mt-4 rounded-card border border-hairline p-3">
-          <p className="text-caption font-semibold text-muted">{t('money.members')}</p>
+        <div className="mt-4 rounded-card border border-money-line p-3 bg-money-card">
+          <p className="text-caption font-semibold text-money-muted">{t('money.members')}</p>
           <ul className="mt-1 space-y-1">
             {espace.membres.map((m) => (
               <li key={m.user_id} className="flex justify-between text-body">
-                <span className="truncate text-ink">
+                <span className="truncate text-money-ink">
                   {m.name || t('work.someone')}{m.user_id === moi ? ` (${t('money.me')})` : ''}
                 </span>
-                <span className="shrink-0 text-caption text-muted">{m.role}</span>
+                <span className="shrink-0 text-caption text-money-muted">{m.role}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="mt-3 rounded-card border border-hairline p-3">
-          <p className="text-caption font-semibold text-muted">{t('money.whoPaid')}</p>
+        <div className="mt-3 rounded-card border border-money-line p-3 bg-money-card">
+          <p className="text-caption font-semibold text-money-muted">{t('money.whoPaid')}</p>
           {espace.tx.length === 0 ? (
-            <p className="mt-1 text-body text-muted">{t('money.noActivity')}</p>
+            <p className="mt-1 text-body text-money-muted">{t('money.noActivity')}</p>
           ) : (
             <ul className="mt-1 space-y-1">
               {espace.tx.map((m, i) => (
                 <li key={i} className="flex justify-between text-body">
-                  <span className="truncate text-ink">
-                    {m.label || t('money.movement')} · <span className="text-muted">{m.name || t('work.someone')}</span>
+                  <span className="truncate text-money-ink">
+                    {m.label || t('money.movement')} · <span className="text-money-muted">{m.name || t('work.someone')}</span>
                   </span>
-                  <span className={`shrink-0 font-semibold ${m.kind === 'in' ? 'text-success' : 'text-danger'}`}>
-                    {m.kind === 'in' ? '+' : '−'}{montant(m.amount, lang)}
+                  <span className={`shrink-0 font-semibold ${m.kind === 'in' ? 'text-money-success' : 'text-money-danger'}`}>
+                    {m.kind === 'in' ? '+' : '−'}{montant(m.amount, lang, devise)}
                   </span>
                 </li>
               ))}
@@ -403,7 +403,7 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
           )}
         </div>
 
-        <div className="mt-3 rounded-card border border-hairline p-3">
+        <div className="mt-3 rounded-card border border-money-line p-3 bg-money-card">
           <ChatEspace spaceId={espace.id} moi={moi} t={t} />
         </div>
       </>
@@ -426,14 +426,14 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
         <ul className="mt-4 space-y-2">
           {espaces.map((e) => (
             <li key={e.id}>
-              <button onClick={() => setActif(e.id)} className="flex w-full items-center justify-between rounded-card border border-hairline p-3 text-left">
+              <button onClick={() => setActif(e.id)} className="flex w-full items-center justify-between rounded-card border border-money-line p-3 text-left bg-money-card">
                 <span className="min-w-0">
-                  <span className="block truncate text-body font-semibold text-ink">{e.name}</span>
-                  <span className="text-caption text-muted">
+                  <span className="block truncate text-body font-semibold text-money-ink">{e.name}</span>
+                  <span className="text-caption text-money-muted">
                     {t('money.memberCount', { count: e.membres.length })}
                   </span>
                 </span>
-                <span className="shrink-0 text-body font-semibold text-teal">{montant(e.solde, lang)}</span>
+                <span className="shrink-0 text-body font-semibold text-money-accent">{montant(e.solde, lang, devise)}</span>
               </button>
             </li>
           ))}
@@ -466,7 +466,7 @@ function moisVoisin(p, pas) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function Budget({ lignes: toutes, lang, t, userId, onDone }) {
+function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
   const toast = useToast();
   const [periode, setPeriode] = useState(moisCourant());
   const lignes = toutes.filter((l) => (l.period || moisCourant()) === periode);
@@ -527,36 +527,36 @@ function Budget({ lignes: toutes, lang, t, userId, onDone }) {
     <>
       <div className="mb-3 flex items-center justify-between">
         <button onClick={() => setPeriode(moisVoisin(periode, -1))} aria-label={t('money.prevMonth')}
-          className="rounded-pill border border-hairline px-3 py-1 text-body text-ink">‹</button>
+          className="rounded-pill border border-money-line px-3 py-1 text-body text-money-ink">‹</button>
         <div className="text-center">
-          <p className="text-body font-semibold text-ink">{nomMois}</p>
-          {periode === moisCourant() && <p className="text-caption text-muted">{t('money.thisMonth')}</p>}
+          <p className="text-body font-semibold text-money-ink">{nomMois}</p>
+          {periode === moisCourant() && <p className="text-caption text-money-muted">{t('money.thisMonth')}</p>}
         </div>
         <button onClick={() => setPeriode(moisVoisin(periode, 1))} aria-label={t('money.nextMonth')}
-          className="rounded-pill border border-hairline px-3 py-1 text-body text-ink">›</button>
+          className="rounded-pill border border-money-line px-3 py-1 text-body text-money-ink">›</button>
       </div>
 
       {lignes.length === 0 && (
-        <button onClick={reporter} className="mb-3 w-full rounded-card border border-hairline px-3 py-2 text-caption font-semibold text-ink">
+        <button onClick={reporter} className="mb-3 w-full rounded-card border border-money-line px-3 py-2 text-caption font-semibold text-money-ink bg-money-card">
           {t('money.carryOver')}
         </button>
       )}
 
-      <div className="rounded-card border border-hairline p-3">
-        <p className="text-caption text-muted">{t('money.remaining')}</p>
-        <p className={`text-title ${reste < 0 ? 'text-danger' : 'text-teal'}`}>{montant(reste, lang)}</p>
-        <div className="mt-2 flex justify-between text-caption text-muted">
-          <span>{t('money.income')} {montant(somme(revenus, 'actual'), lang)}</span>
-          <span>{t('money.spent')} {montant(somme(depenses, 'actual'), lang)}</span>
+      <div className="rounded-card border border-money-line p-3 bg-money-card">
+        <p className="text-caption text-money-muted">{t('money.remaining')}</p>
+        <p className={`text-title ${reste < 0 ? 'text-money-danger' : 'text-money-accent'}`}>{montant(reste, lang, devise)}</p>
+        <div className="mt-2 flex justify-between text-caption text-money-muted">
+          <span>{t('money.income')} {montant(somme(revenus, 'actual'), lang, devise)}</span>
+          <span>{t('money.spent')} {montant(somme(depenses, 'actual'), lang, devise)}</span>
         </div>
       </div>
 
       {!ouvert ? (
-        <button onClick={() => setOuvert(true)} className="mt-3 flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white">
+        <button onClick={() => setOuvert(true)} className="mt-3 flex w-full items-center justify-center gap-1 rounded-pill bg-money-accent px-3 py-2 text-body font-semibold text-white">
           <IconPlus size={18} /> {t('money.addLine')}
         </button>
       ) : (
-        <div className="mt-3 space-y-2 rounded-card border border-hairline p-3">
+        <div className="mt-3 space-y-2 rounded-card border border-money-line p-3 bg-money-card">
           <Field label={t('money.kind')}>
             {(id) => (
               <Select id={id} value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -590,15 +590,15 @@ function Budget({ lignes: toutes, lang, t, userId, onDone }) {
           {lignes.map((l) => {
             const depasse = l.kind !== 'income' && Number(l.actual) > Number(l.planned) && Number(l.planned) > 0;
             return (
-              <li key={l.id} className="flex items-center justify-between rounded-card border border-hairline p-3">
+              <li key={l.id} className="flex items-center justify-between rounded-card border border-money-line p-3 bg-money-card">
                 <div className="min-w-0">
-                  <p className="truncate text-body text-ink">{l.category}</p>
-                  <p className="text-caption text-muted">
-                    {t('money.plannedShort')} {montant(l.planned, lang)}
+                  <p className="truncate text-body text-money-ink">{l.category}</p>
+                  <p className="text-caption text-money-muted">
+                    {t('money.plannedShort')} {montant(l.planned, lang, devise)}
                   </p>
                 </div>
-                <span className={`shrink-0 text-body font-semibold ${depasse ? 'text-danger' : 'text-ink'}`}>
-                  {l.kind === 'income' ? '+' : '−'}{montant(l.actual, lang)}
+                <span className={`shrink-0 text-body font-semibold ${depasse ? 'text-money-danger' : 'text-money-ink'}`}>
+                  {l.kind === 'income' ? '+' : '−'}{montant(l.actual, lang, devise)}
                 </span>
               </li>
             );
@@ -611,7 +611,7 @@ function Budget({ lignes: toutes, lang, t, userId, onDone }) {
 
 /* ------------------------------- épargne ------------------------------ */
 
-function Epargne({ objectifs, lang, t, userId, onDone }) {
+function Epargne({ devise, objectifs, lang, t, userId, onDone }) {
   const toast = useToast();
   const [ouvert, setOuvert] = useState(false);
   const [nom, setNom] = useState('');
@@ -648,21 +648,21 @@ function Epargne({ objectifs, lang, t, userId, onDone }) {
   return (
     <>
       {objectifs.length > 0 && (
-        <div className="mb-3 rounded-card border border-hairline p-3">
-          <p className="text-caption text-muted">{t('money.setAsideTotal')}</p>
-          <p className="text-title text-teal">{montant(misDeCote, lang)}</p>
+        <div className="mb-3 rounded-card border border-money-line p-3 bg-money-card">
+          <p className="text-caption text-money-muted">{t('money.setAsideTotal')}</p>
+          <p className="text-title text-money-accent">{montant(misDeCote, lang, devise)}</p>
           {vise > 0 && (
-            <p className="text-caption text-muted">{t('money.ofTarget', { target: montant(vise, lang) })}</p>
+            <p className="text-caption text-money-muted">{t('money.ofTarget', { target: montant(vise, lang, devise) })}</p>
           )}
         </div>
       )}
 
       {!ouvert ? (
-        <button onClick={() => setOuvert(true)} className="flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white">
+        <button onClick={() => setOuvert(true)} className="flex w-full items-center justify-center gap-1 rounded-pill bg-money-accent px-3 py-2 text-body font-semibold text-white">
           <IconTargetArrow size={18} /> {t('money.newGoal')}
         </button>
       ) : (
-        <div className="space-y-2 rounded-card border border-hairline p-3">
+        <div className="space-y-2 rounded-card border border-money-line p-3 bg-money-card">
           <Field label={t('money.goalName')} required>
             {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
           </Field>
@@ -681,7 +681,7 @@ function Epargne({ objectifs, lang, t, userId, onDone }) {
       ) : (
         <ul className="mt-4 space-y-3">
           {objectifs.map((o) => (
-            <CarteObjectif key={o.id} objectif={o} lang={lang} t={t} onDone={onDone} />
+            <CarteObjectif devise={devise} key={o.id} objectif={o} lang={lang} t={t} onDone={onDone} />
           ))}
         </ul>
       )}
@@ -696,7 +696,7 @@ function Epargne({ objectifs, lang, t, userId, onDone }) {
 // données réelles, un compte à 0,16 et un autre à 22,88 — proposer d'ajouter
 // 1 000 d'un coup n'a aucun sens. On laisse la personne taper ce qu'elle a
 // mis de côté, dans SA monnaie, comme partout ailleurs sur cet écran.
-function CarteObjectif({ objectif: o, lang, t, onDone }) {
+function CarteObjectif({ devise, objectif: o, lang, t, onDone }) {
   const toast = useToast();
   const [edition, setEdition] = useState(false);
   const [nom, setNom] = useState(o.name || '');
@@ -750,7 +750,7 @@ function CarteObjectif({ objectif: o, lang, t, onDone }) {
 
   if (edition) {
     return (
-      <li className="space-y-2 rounded-card border border-hairline p-3">
+      <li className="space-y-2 rounded-card border border-money-line p-3 bg-money-card">
         <Field label={t('money.goalName')} required>
           {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
         </Field>
@@ -768,24 +768,24 @@ function CarteObjectif({ objectif: o, lang, t, onDone }) {
   }
 
   return (
-    <li className="rounded-card border border-hairline p-3">
+    <li className="rounded-card border border-money-line p-3 bg-money-card">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="truncate text-body font-semibold text-ink">{o.name}</p>
+        <p className="truncate text-body font-semibold text-money-ink">{o.name}</p>
         <div className="flex shrink-0 items-center gap-1">
-          <span className="text-caption text-muted">{pct} %</span>
-          <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editGoal', { name: o.name })} className="p-1 text-muted">
+          <span className="text-caption text-money-muted">{pct} %</span>
+          <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editGoal', { name: o.name })} className="p-1 text-money-muted">
             <IconPencil size={16} />
           </button>
-          <button type="button" onClick={retirer} disabled={envoi} aria-label={t('money.removeGoal', { name: o.name })} className="p-1 text-muted">
+          <button type="button" onClick={retirer} disabled={envoi} aria-label={t('money.removeGoal', { name: o.name })} className="p-1 text-money-muted">
             <IconX size={16} />
           </button>
         </div>
       </div>
-      <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-black/[0.06]">
-        <div className="h-full rounded-pill bg-teal" style={{ width: `${pct}%` }} />
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-white/10">
+        <div className="h-full rounded-pill bg-money-accent" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-1 text-caption text-muted">
-        {montant(o.saved, lang)} / {montant(o.target, lang)}
+      <p className="mt-1 text-caption text-money-muted">
+        {montant(o.saved, lang, devise)} / {montant(o.target, lang, devise)}
       </p>
       <div className="mt-2 flex items-center gap-2">
         <TextInput
@@ -804,7 +804,7 @@ function CarteObjectif({ objectif: o, lang, t, onDone }) {
 
 /* ------------------------------- projets ------------------------------ */
 
-function Projets({ projets, lang, t, onDone }) {
+function Projets({ devise, projets, lang, t, onDone }) {
   return (
     <>
       <CreerParSoiMeme
@@ -826,22 +826,22 @@ function Projets({ projets, lang, t, onDone }) {
           {projets.map((p) => {
             const pct = Number(p.goal) > 0 ? Math.min(100, Math.round((p.recu / Number(p.goal)) * 100)) : 0;
             return (
-              <li key={p.id} className="rounded-card border border-hairline p-3">
+              <li key={p.id} className="rounded-card border border-money-line p-3 bg-money-card">
                 <div className="flex items-baseline justify-between">
-                  <p className="truncate text-body font-semibold text-ink">
+                  <p className="truncate text-body font-semibold text-money-ink">
                     {p.emoji ? `${p.emoji} ` : ''}{p.name}
                   </p>
                   {p.invite_code && (
-                    <span className="shrink-0 text-caption text-muted"><IconLink size={12} className="inline" /> {p.invite_code}</span>
+                    <span className="shrink-0 text-caption text-money-muted"><IconLink size={12} className="inline" /> {p.invite_code}</span>
                   )}
                 </div>
                 {Number(p.goal) > 0 && (
                   <>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-black/[0.06]">
-                      <div className="h-full rounded-pill bg-brass" style={{ width: `${pct}%` }} />
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-white/10">
+                      <div className="h-full rounded-pill bg-money-gold" style={{ width: `${pct}%` }} />
                     </div>
-                    <p className="mt-1 text-caption text-muted">
-                      {montant(p.recu, lang)} / {montant(p.goal, lang)}
+                    <p className="mt-1 text-caption text-money-muted">
+                      {montant(p.recu, lang, devise)} / {montant(p.goal, lang, devise)}
                     </p>
                   </>
                 )}
@@ -856,7 +856,7 @@ function Projets({ projets, lang, t, onDone }) {
 
 /* -------------------------------- njangi ------------------------------ */
 
-function Njangi({ njangis, moi, lang, t, onDone }) {
+function Njangi({ devise, njangis, moi, lang, t, onDone }) {
   return (
     <>
       <CreerParSoiMeme
@@ -885,15 +885,15 @@ function Njangi({ njangis, moi, lang, t, onDone }) {
             const paye = new Set(x.payes.map((p) => p.user_id));
             const beneficiaire = x.membres.find((m) => m.position === x.current_round);
             return (
-              <li key={x.id} className="rounded-card border border-hairline p-3">
+              <li key={x.id} className="rounded-card border border-money-line p-3 bg-money-card">
                 <div className="flex items-baseline justify-between">
-                  <p className="truncate text-body font-semibold text-ink">{x.name}</p>
-                  <span className="shrink-0 text-caption text-muted">
+                  <p className="truncate text-body font-semibold text-money-ink">{x.name}</p>
+                  <span className="shrink-0 text-caption text-money-muted">
                     {t('money.round')} {x.current_round}
                   </span>
                 </div>
-                <p className="text-caption text-muted">
-                  {montant(x.amount, lang)}{x.frequency ? ` · ${t(`money.freq.${x.frequency}`, { defaultValue: x.frequency })}` : ''}
+                <p className="text-caption text-money-muted">
+                  {montant(x.amount, lang, devise)}{x.frequency ? ` · ${t(`money.freq.${x.frequency}`, { defaultValue: x.frequency })}` : ''}
                 </p>
                 {beneficiaire && (
                   <p className="mt-1 text-caption text-brass">
@@ -903,12 +903,12 @@ function Njangi({ njangis, moi, lang, t, onDone }) {
                 <ul className="mt-2 space-y-1">
                   {x.membres.map((m) => (
                     <li key={m.user_id} className="flex items-center justify-between text-body">
-                      <span className="truncate text-ink">
+                      <span className="truncate text-money-ink">
                         {m.name || t('work.someone')}{m.user_id === moi ? ` (${t('money.me')})` : ''}
                       </span>
                       {paye.has(m.user_id)
-                        ? <IconCheck size={16} className="shrink-0 text-success" />
-                        : <span className="shrink-0 text-caption text-muted">{t('money.notPaid')}</span>}
+                        ? <IconCheck size={16} className="shrink-0 text-money-success" />
+                        : <span className="shrink-0 text-caption text-money-muted">{t('money.notPaid')}</span>}
                     </li>
                   ))}
                 </ul>
@@ -969,7 +969,7 @@ function CreerParSoiMeme({ table, libelle, champs, t, onDone }) {
     return (
       <button
         onClick={() => setOuvert(true)}
-        className="mb-3 flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white"
+        className="mb-3 flex w-full items-center justify-center gap-1 rounded-pill bg-money-accent px-3 py-2 text-body font-semibold text-white"
       >
         <IconPlus size={18} /> {libelle}
       </button>
@@ -977,7 +977,7 @@ function CreerParSoiMeme({ table, libelle, champs, t, onDone }) {
   }
 
   return (
-    <div className="mb-3 space-y-2 rounded-card border border-hairline p-3">
+    <div className="mb-3 space-y-2 rounded-card border border-money-line p-3 bg-money-card">
       {champs.map((c) => (
         <Field key={c.cle} label={t(c.libelle)} hint={c.aide ? t(c.aide) : undefined} required={c.cle === 'name'}>
           {(id) =>

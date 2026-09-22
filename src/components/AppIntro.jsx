@@ -37,7 +37,9 @@ const SLIDES = [
 // Une prestataire qui demande « comment ça marche » et à qui on répond par un
 // lien tombait sur la présentation du premier lancement, pas sur ce qu'on lui
 // avait promis — elle devait la passer avant de voir quoi que ce soit.
-const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/demo', '/apps'];
+// `/argent` est « Mon argent », une application à part: la présentation
+// de la place de marché et sa bannière n'ont rien à y faire (Beau, 22/09).
+const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/demo', '/apps', '/argent'];
 
 export function AppIntro() {
   const { t } = useTranslation();

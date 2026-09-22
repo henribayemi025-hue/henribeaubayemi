@@ -162,3 +162,39 @@
   0% { transform: scale(0.6); opacity: 0.9; }
   100% { transform: scale(1.6); opacity: 0; }
 }
+
+/* « Mon argent » — application à part, sombre et violette.
+   Les composants partagés (.input, .btn-primary, .label, .skeleton) sont
+   écrits pour le crème de la place de marché. Ici on les repeint, et
+   SEULEMENT ici: tout est sous .money-app, rien ne fuit vers Finjaro.
+   Les valeurs sont celles de `money.*` dans tailwind.config.js. */
+.money-app .input {
+  background: #17171C;
+  border-color: #26262E;
+  color: #F5F5F7;
+}
+.money-app .input::placeholder { color: #8A8A93; }
+.money-app .input:focus { border-color: #7C5CFC; }
+.money-app .label { color: #F5F5F7; }
+.money-app .btn-primary { background: #7C5CFC; }
+.money-app .btn-primary:hover { background: #8B5CF6; }
+.money-app .btn-primary:disabled { background: #26262E; color: #8A8A93; }
+.money-app .btn-secondary {
+  background: transparent;
+  border-color: #26262E;
+  color: #F5F5F7;
+}
+.money-app .btn-secondary:hover { background: rgba(255, 255, 255, 0.05); }
+.money-app .btn-ghost { color: #7C5CFC; }
+.money-app .btn-ghost:hover { background: rgba(255, 255, 255, 0.05); }
+.money-app .skeleton {
+  background: #17171C;
+  background-image: linear-gradient(90deg, #17171C 0px, #222229 200px, #17171C 400px);
+  background-size: 800px 100%;
+}
+/* Les états vides et d'erreur partagés parlent en `text-ink` / `text-muted`
+   (encre sombre sur crème): illisibles sur fond noir sans ceci. */
+.money-app .text-ink { color: #F5F5F7; }
+.money-app .text-muted { color: #8A8A93; }
+.money-app .text-teal { color: #7C5CFC; }
+.money-app .border-hairline { border-color: #26262E; }
