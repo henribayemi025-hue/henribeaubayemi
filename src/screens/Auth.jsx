@@ -153,7 +153,9 @@ export default function Auth({ consoleMode = false }) {
 
   async function handleGoogle() {
     setBusy(true);
-    const { error } = await signInWithGoogle();
+    // `from` est la page d'où RequireAuth nous a renvoyés. On la passe ici,
+    // parce que l'état de navigation ne survivra pas à l'aller-retour OAuth.
+    const { error } = await signInWithGoogle(from);
     // En cas de succès la page redirige vers Google — rien à faire ici.
     // On ne repasse busy à false qu'en cas d'échec (erreur réseau, provider
     // désactivé), sinon on verrait un clignotement juste avant la redirection.
@@ -168,7 +170,7 @@ export default function Auth({ consoleMode = false }) {
   // et parce que Sign in with Apple fonctionne aussi sur le web.
   async function handleApple() {
     setBusy(true);
-    const { error } = await signInWithApple();
+    const { error } = await signInWithApple(from);
     if (error) {
       toast.error(networkMessage(error, t));
       setBusy(false);

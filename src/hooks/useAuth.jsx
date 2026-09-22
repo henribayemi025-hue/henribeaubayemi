@@ -16,6 +16,37 @@ const AuthCtx = createContext(null);
 // `handle_new_user`.
 const langueChoisie = () => (i18n.language?.startsWith('en') ? 'en' : 'fr');
 
+// Où revenir après un aller-retour chez Google ou Apple.
+//
+// C'était `window.location.origin`, c'est-à-dire TOUJOURS la racine. Quelqu'un
+// qui ouvrait « Mon argent », cliquait « continuer avec Google » et revenait
+// se retrouvait sur la place de marché, sans comprendre pourquoi. Signalé par
+// Beau le 22/09, et ça valait pour chaque écran, pas seulement celui-là.
+//
+// Supabase accepte un chemin complet parce que `https://finjaro.net/**` est
+// dans les Redirect URLs — c'est à ça que sert le `/**` (CLAUDE.md §8). Sans
+// lui, Supabase ignorerait l'adresse EN SILENCE et retomberait sur le Site
+// URL: exactement le comportement qu'on corrige ici.
+//
+// `destination` vient de `RequireAuth`, qui range dans l'état de navigation
+// la page d'où l'on a été renvoyé. Cet état est en mémoire et ne survit pas à
+// l'aller-retour OAuth — d'où le fait de le transformer en URL AVANT de
+// partir.
+export function retourApres(destination) {
+  const { origin, pathname, search } = window.location;
+
+  // Un chemin interne uniquement. `//ailleurs.example` est une adresse
+  // absolue déguisée: on refuse tout ce qui n'est pas un chemin de chez nous.
+  if (typeof destination === 'string' && /^\/(?!\/)/.test(destination)) {
+    return `${origin}${destination}`;
+  }
+
+  // Pas de destination: on revient là où l'on est — sauf si l'on est déjà sur
+  // un écran de connexion, où revenir n'aurait aucun sens.
+  if (/^\/(auth|login|signup)(\/|$)/.test(pathname)) return origin;
+  return `${origin}${pathname}${search}`;
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -130,18 +161,18 @@ export function AuthProvider({ children }) {
       supabase.auth.signUp({ phone, password, options: { data: { name, locale: langueChoisie(), ...(ref ? { ref } : {}) } } }),
     signInWithPhonePassword: (phone, password) =>
       supabase.auth.signInWithPassword({ phone, password }),
-    // OAuth redirige vers Google puis revient sur cette même URL — pas de
-    // deuxième étape à gérer côté client, `onAuthStateChange` (ci-dessus)
-    // s'occupe de charger la session au retour.
-    signInWithGoogle: () =>
-      supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
+    // OAuth part vers Google puis revient — pas de deuxième étape à gérer
+    // côté client, `onAuthStateChange` (ci-dessus) charge la session au
+    // retour. Reste à savoir OÙ revenir: voir `retourApres` plus haut.
+    signInWithGoogle: (destination) =>
+      supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: retourApres(destination) } }),
     // Exigé par l'App Store (règle 4.8): une app qui propose Google Sign-In
     // doit aussi proposer Sign in with Apple. Même flux OAuth que Google —
     // le provider `apple` doit être configuré côté Supabase (Services ID,
     // Team ID, clé .p8 du compte développeur de Beau) avant que le bouton
     // fonctionne réellement.
-    signInWithApple: () =>
-      supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: window.location.origin } }),
+    signInWithApple: (destination) =>
+      supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: retourApres(destination) } }),
     signOut: () => supabase.auth.signOut(),
     resetPassword: (email) =>
       supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset` }),
