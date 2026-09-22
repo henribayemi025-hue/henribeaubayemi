@@ -2012,6 +2012,11 @@
     "txAmount": "How much?",
     "txBadAmount": "Invalid amount.",
     "memberCount": "{{count}} member",
-    "memberCount_other": "{{count}} members"
+    "memberCount_other": "{{count}} members",
+    "thisMonth": "This month",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "carryOver": "Bring my lines from last month",
+    "nothingToCarry": "Nothing to bring from last month."
   }
 }

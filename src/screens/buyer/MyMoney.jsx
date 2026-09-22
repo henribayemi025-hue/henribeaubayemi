@@ -336,8 +336,31 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
 
 /* ------------------------------- budget ------------------------------- */
 
-function Budget({ lignes, lang, t, userId, onDone }) {
+// Le budget est MENSUEL, et je l'avais raté.
+//
+// La colonne `period` ('2026-06') existait depuis le premier Finjaro, et les
+// captures de Beau montrent un sélecteur de mois en haut de l'écran. Sans
+// lui, les sept lignes de juin s'affichaient comme si elles étaient de
+// septembre: un budget qui additionne tous les mois ne veut rien dire.
+//
+// La méthode, écrite à l'écran dans l'ancienne version: on PRÉVOIT en début
+// de mois, on saisit le RÉEL au fil du mois, on compare. Le prévu n'est pas
+// un souhait, c'est le point de comparaison.
+function moisCourant() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function moisVoisin(p, pas) {
+  const [a, m] = p.split('-').map(Number);
+  const d = new Date(a, m - 1 + pas, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function Budget({ lignes: toutes, lang, t, userId, onDone }) {
   const toast = useToast();
+  const [periode, setPeriode] = useState(moisCourant());
+  const lignes = toutes.filter((l) => (l.period || moisCourant()) === periode);
   const [ouvert, setOuvert] = useState(false);
   const [kind, setKind] = useState('expense');
   const [cat, setCat] = useState('');
@@ -361,6 +384,7 @@ function Budget({ lignes, lang, t, userId, onDone }) {
         category: cat.trim(),
         planned: Number(prevu) || 0,
         actual: Number(reel) || 0,
+        period: periode,
       });
       if (error) throw error;
       setCat(''); setPrevu(''); setReel(''); setOuvert(false);
@@ -370,8 +394,45 @@ function Budget({ lignes, lang, t, userId, onDone }) {
     } finally { setEnvoi(false); }
   }
 
+  // Reprendre les lignes du mois précédent: le loyer, l'abonnement, le
+  // transport ne changent pas. Les retaper chaque mois est ce qui fait
+  // abandonner un budget.
+  async function reporter() {
+    const avant = toutes.filter((l) => l.period === moisVoisin(periode, -1));
+    if (avant.length === 0) { toast.error(t('money.nothingToCarry')); return; }
+    try {
+      const { error } = await supabase.from('budget_entries').insert(
+        avant.map((l) => ({
+          user_id: userId, kind: l.kind, category: l.category,
+          planned: l.planned, actual: 0, period: periode,
+        })),
+      );
+      if (error) throw error;
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+
+  const nomMois = new Date(`${periode}-01T00:00:00`).toLocaleDateString(lang, { month: 'long', year: 'numeric' });
+
   return (
     <>
+      <div className="mb-3 flex items-center justify-between">
+        <button onClick={() => setPeriode(moisVoisin(periode, -1))} aria-label={t('money.prevMonth')}
+          className="rounded-pill border border-hairline px-3 py-1 text-body text-ink">‹</button>
+        <div className="text-center">
+          <p className="text-body font-semibold text-ink">{nomMois}</p>
+          {periode === moisCourant() && <p className="text-caption text-muted">{t('money.thisMonth')}</p>}
+        </div>
+        <button onClick={() => setPeriode(moisVoisin(periode, 1))} aria-label={t('money.nextMonth')}
+          className="rounded-pill border border-hairline px-3 py-1 text-body text-ink">›</button>
+      </div>
+
+      {lignes.length === 0 && (
+        <button onClick={reporter} className="mb-3 w-full rounded-card border border-hairline px-3 py-2 text-caption font-semibold text-ink">
+          {t('money.carryOver')}
+        </button>
+      )}
+
       <div className="rounded-card border border-hairline p-3">
         <p className="text-caption text-muted">{t('money.remaining')}</p>
         <p className={`text-title ${reste < 0 ? 'text-danger' : 'text-teal'}`}>{montant(reste, lang)}</p>
