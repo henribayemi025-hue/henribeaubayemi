@@ -14,6 +14,11 @@ const rpc = vi.fn(() =>
   Promise.resolve({ data: [{ id: 'order-1', order_no: 'ABCD1234', shop_id: 'shop-1', total_fcfa: 30000 }], error: null })
 );
 
+// La boutique du test: reglable, parce que le parcours « livraison » n'existe
+// que si elle la propose — et c'est justement celui ou l'acheteuse se bloque.
+const BOUTIQUE = { id: 'shop-1', name: 'Boutique Test', offers_delivery: false, delivery_fee_fcfa: 0, country: 'CM' };
+function boutiqueLivre(oui) { BOUTIQUE.offers_delivery = oui; BOUTIQUE.delivery_fee_fcfa = oui ? 1000 : 0; }
+
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     rpc: (...args) => rpc(...args),
@@ -21,7 +26,7 @@ vi.mock('../../lib/supabase', () => ({
       if (table === 'shops') {
         return {
           select: () => ({
-            eq: () => ({ maybeSingle: () => Promise.resolve({ data: { id: 'shop-1', name: 'Boutique Test', offers_delivery: false, delivery_fee_fcfa: 0, country: 'CM' }, error: null }) }),
+            eq: () => ({ maybeSingle: () => Promise.resolve({ data: { ...BOUTIQUE }, error: null }) }),
           }),
         };
       }
@@ -69,6 +74,7 @@ beforeEach(() => {
   rpc.mockClear();
   clearShop.mockClear();
   toastError.mockClear();
+  boutiqueLivre(false);
   rpc.mockImplementation(() =>
     Promise.resolve({ data: [{ id: 'order-1', order_no: 'ABCD1234', shop_id: 'shop-1', total_fcfa: 30000 }], error: null })
   );
@@ -105,5 +111,64 @@ describe('CheckoutCOD — passation de commande', () => {
     await waitFor(() => expect(toastError).toHaveBeenCalledWith('checkout.errProductMissing'));
     expect(clearShop).not.toHaveBeenCalled();
     expect(screen.queryByText('checkout.successTitle')).toBeNull();
+  });
+});
+
+// Le 22/09, une acheteuse réelle a atteint cet écran deux fois en deux jours
+// sans jamais commander, puis a cliqué pour joindre la vendeuse la minute
+// suivante. Le bouton restait vif alors que le formulaire de livraison était
+// incomplet, et le clic sortait en SILENCE: les messages rouges apparaissent
+// au-dessus, dans le formulaire, alors que la barre de boutons est collée en
+// bas. Sur 390 px, elle ne les voit pas. « J'appuie, il ne se passe rien. »
+describe('CheckoutCOD — livraison: le refus doit se voir', () => {
+  async function passerEnLivraison() {
+    boutiqueLivre(true);
+    render(<CheckoutCOD />);
+    fireEvent.click(await screen.findByText('checkout.delivery'));
+  }
+
+  it('désactive le bouton tant que les champs obligatoires manquent', async () => {
+    await passerEnLivraison();
+    const bouton = screen.getByText('checkout.payOnDelivery').closest('button');
+    expect(bouton.disabled).toBe(true);
+  });
+
+  it('le clic ne part pas au serveur tant que le formulaire est incomplet', async () => {
+    await passerEnLivraison();
+    // Un bouton desactive n'emet plus d'evenement: c'est precisement la
+    // protection. Le message reste comme filet pour tout chemin qui
+    // appellerait `submit` autrement.
+    fireEvent.click(screen.getByText('checkout.payOnDelivery'));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('une espace ne vaut pas une adresse: le bouton reste desactive', async () => {
+    await passerEnLivraison();
+    const remplir = (id, v) => fireEvent.change(document.getElementById(id), { target: { value: v } });
+    remplir('co-name', 'Blanche');
+    remplir('co-phone', '699411208');
+    remplir('co-address', '   ');
+    remplir('co-city', 'Yaounde');
+    const bouton = screen.getByText('checkout.payOnDelivery').closest('button');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(bouton.disabled).toBe(true);
+  });
+
+  it('accepte un numéro écrit avec des points — « 6.99.41.12.08 »', async () => {
+    await passerEnLivraison();
+    const remplir = (label, valeur) =>
+      fireEvent.change(document.getElementById(label), { target: { value: valeur } });
+    remplir('co-name', 'Blanche');
+    remplir('co-phone', '6.99.41.12.08');
+    remplir('co-address', 'Rue 1234');
+    remplir('co-city', 'Yaoundé');
+
+    const bouton = screen.getByText('checkout.payOnDelivery').closest('button');
+    await waitFor(() => expect(bouton.disabled).toBe(false));
+
+    fireEvent.click(bouton);
+    await waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+    expect(rpc.mock.calls[0][1].p_buyer_phone).toBe('6.99.41.12.08');
   });
 });

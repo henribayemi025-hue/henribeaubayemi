@@ -103,14 +103,22 @@ export default function CheckoutCOD() {
   // Quand la boutique définit des zones, la « ville » est la zone choisie —
   // pas de champ en double à retaper.
   const required = method === 'delivery' ? (zone ? ['name', 'phone', 'address', 'country'] : ['name', 'phone', 'address', 'city', 'country']) : [];
-  const phoneOk = /^[+()\d][\d\s()-]{6,}$/.test(form.phone);
+  // Le point est une separation de numero aussi courante que l'espace
+  // (« 6.99.41.12.08 »). Il etait refuse, et le refus etait MUET: le bouton
+  // restait vif et ne faisait rien. Signale par Claudinette le 22/09.
+  const phoneOk = /^[+()\d][\d\s().-]{6,}$/.test(form.phone);
+  // Un champ qui ne contient qu'une espace n'est pas rempli. Sans ce `trim`,
+  // une adresse « » activait le bouton et partait telle quelle au serveur:
+  // la vendeuse recevait une commande sans adresse de livraison.
+  const rempli = (k) => String(form[k] ?? '').trim().length > 0;
+
   function fieldError(k) {
     if (!touched[k]) return null;
-    if (required.includes(k) && !form[k]) return t('common.required');
+    if (required.includes(k) && !rempli(k)) return t('common.required');
     if (k === 'phone' && form.phone && !phoneOk) return t('checkout.invalidPhone');
     return null;
   }
-  const valid = required.every((k) => form[k]) && (method === 'pickup' || phoneOk);
+  const valid = required.every(rempli) && (method === 'pickup' || phoneOk);
 
   // Une commande = UN appel atomique (fonction SQL `place_order`, migration
   // 0042). Avant, la commande et ses articles partaient en deux requêtes dont
@@ -162,9 +170,34 @@ export default function CheckoutCOD() {
     return networkMessage(e, t);
   }
 
-  async function submit() {
+  // Le clic refuse ne disait RIEN.
+  //
+  // Le 22/09, une acheteuse reelle a atteint cet ecran deux fois en deux
+  // jours sans jamais commander, puis a clique pour joindre la vendeuse la
+  // minute suivante. Ce n'est pas un abandon: c'est quelqu'un qui cherche un
+  // humain parce que la machine ne repond pas.
+  //
+  // Le bouton restait vif, le clic marquait les champs « touches » — et les
+  // messages rouges apparaissaient AU-DESSUS, dans le formulaire, alors que
+  // la barre de boutons est collee en bas. Sur 390 px elle regarde le bas de
+  // l'ecran: l'erreur s'affiche hors de son champ de vision. Rien ne bouge.
+  //
+  // Desormais: on amene la personne au premier champ fautif, et on le dit.
+  function signalerChampsManquants() {
     setTouched({ name: true, phone: true, address: true, city: true, country: true });
-    if (!valid) return;
+    const fautif = required.find((k) => !rempli(k)) || (!phoneOk ? 'phone' : null);
+    if (fautif) {
+      const el = document.getElementById(`co-${fautif}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus({ preventScroll: true });
+      }
+    }
+    toast.error(t('checkout.fillRequired'));
+  }
+
+  async function submit() {
+    if (!valid) { signalerChampsManquants(); return; }
     setSubmitting(true);
     try {
       const order = await placeOrder('cod');
@@ -183,8 +216,7 @@ export default function CheckoutCOD() {
   }
 
   async function payByCard() {
-    setTouched({ name: true, phone: true, address: true, city: true, country: true });
-    if (!valid) return;
+    if (!valid) { signalerChampsManquants(); return; }
     setPayingCard(true);
     try {
       const order = await placeOrder('unpaid');
@@ -278,17 +310,17 @@ export default function CheckoutCOD() {
                 )}
               </Field>
             )}
-            <Field label={t('checkout.fullName')} required error={fieldError('name')}>
+            <Field label={t('checkout.fullName')} id="co-name" required error={fieldError('name')}>
               {(id) => <TextInput id={id} value={form.name} error={fieldError('name')} onChange={(e) => setForm({ ...form, name: e.target.value })} onBlur={() => setTouched({ ...touched, name: true })} />}
             </Field>
-            <Field label={t('checkout.phone')} required error={fieldError('phone')}>
+            <Field label={t('checkout.phone')} id="co-phone" required error={fieldError('phone')}>
               {(id) => <TextInput id={id} type="tel" value={form.phone} error={fieldError('phone')} onChange={(e) => setForm({ ...form, phone: e.target.value })} onBlur={() => setTouched({ ...touched, phone: true })} />}
             </Field>
-            <Field label={t('checkout.address')} required error={fieldError('address')}>
+            <Field label={t('checkout.address')} id="co-address" required error={fieldError('address')}>
               {(id) => <TextInput id={id} value={form.address} error={fieldError('address')} onChange={(e) => setForm({ ...form, address: e.target.value })} onBlur={() => setTouched({ ...touched, address: true })} />}
             </Field>
             {!zone && (
-              <Field label={t('checkout.city')} required error={fieldError('city')}>
+              <Field label={t('checkout.city')} id="co-city" required error={fieldError('city')}>
                 {(id) => <TextInput id={id} value={form.city} error={fieldError('city')} onChange={(e) => setForm({ ...form, city: e.target.value })} onBlur={() => setTouched({ ...touched, city: true })} />}
               </Field>
             )}
@@ -343,15 +375,17 @@ export default function CheckoutCOD() {
 
       <div className="sticky bottom-0 z-30 space-y-2 border-t border-hairline bg-white p-3">
         {stripeEnabled && (
-          <Button onClick={payByCard} loading={payingCard} disabled={submitting}>
+          <Button onClick={payByCard} loading={payingCard} disabled={submitting || !valid}>
             <IconCreditCard size={20} /> {t('checkout.payByCard')}
           </Button>
         )}
+        {/* Un bouton gris qui n'invite pas au clic vaut mieux qu'un bouton vif
+            qui ne fait rien. `valid` n'entrait pas dans `disabled`. */}
         <Button
           variant={stripeEnabled ? 'secondary' : 'primary'}
           onClick={submit}
           loading={submitting}
-          disabled={payingCard}
+          disabled={payingCard || !valid}
         >
           {devis ? t('checkout.askForPrice') : t('checkout.payOnDelivery')}
         </Button>

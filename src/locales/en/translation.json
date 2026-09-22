@@ -853,7 +853,8 @@
     "quoteSentTitle": "Request sent",
     "quoteSentBody": "The shop will send you its price. You'll find it in “My orders”.",
     "quoteShopNote": "This shop needs to send you its price first.",
-    "quoteAllNote": "The total leaves out items without a price."
+    "quoteAllNote": "The total leaves out items without a price.",
+    "fillRequired": "Some details are missing. Please fill in the fields marked in red."
   },
   "vendor": {
     "greeting": "Hello, {{name}}",
