@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconMinus, IconPlus, IconShoppingCart } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Price } from '../../components/Price';
@@ -12,7 +13,14 @@ import { storageUrl, storageThumbUrl} from '../../lib/supabase';
 export default function Cart() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { items, setQty, remove, subtotal, pendingCount, clearShop } = useCart();
+  const { items, setQty, remove, subtotal, pendingCount, clearShop, ouvrirDemande } = useCart();
+  const { user } = useAuth();
+  // Sans compte, « Passer commande » n'envoie plus vers la page de
+  // connexion (c'est là qu'on perdait tout le monde): un prénom, un numéro
+  // WhatsApp, et la demande part chez la vendeuse (DemandeInvite).
+  const commander = (shopId, group) => (user
+    ? navigate(`/checkout/${shopId}`)
+    : ouvrirDemande({ shop_id: shopId, shop_name: group.name, items: group.items.map((it) => ({ id: it.id, qty: it.qty, size: it.size, color: it.color })) }));
 
   // Group by shop so each order/checkout targets a single vendor.
   const byShop = items.reduce((acc, it) => {
@@ -99,7 +107,7 @@ export default function Cart() {
                 </div>
               ))}
             </div>
-            <Button className="mt-3" onClick={() => navigate(`/checkout/${shopId}`)}>
+            <Button className="mt-3" onClick={() => commander(shopId, group)}>
               {t('cart.checkout')}
             </Button>
           </div>

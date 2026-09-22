@@ -16,6 +16,7 @@ import { NameGate } from '../../components/NameGate';
 import { WelcomeTour } from '../../components/WelcomeTour';
 import { SuspendedNotice } from '../../components/SuspendedNotice';
 import CartDrawer from '../../components/CartDrawer';
+import DemandeInvite from '../../components/DemandeInvite';
 import { useAuth } from '../../hooks/useAuth';
 import { useViewportHeight } from '../../hooks/useViewportHeight';
 import { useScrollRestore } from '../../hooks/useScrollRestore';
@@ -113,6 +114,7 @@ export function BuyerLayout() {
           <NameGate />
         </ErrorBoundary>
         <CartDrawer />
+        <DemandeInvite />
       </div>
     </div>
   );

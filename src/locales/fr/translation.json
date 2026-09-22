@@ -1099,6 +1099,18 @@
       "not_in_conversation": "Cette conversation n'existe plus."
     }
   },
+  "guest": {
+    "title": "Pour que la boutique te réponde",
+    "help": "{{shop}} reçoit ta demande ({{count}} article) et te confirme sur WhatsApp. Pas besoin de compte.",
+    "help_plural": "{{shop}} reçoit ta demande ({{count}} articles) et te confirme sur WhatsApp. Pas besoin de compte.",
+    "name": "Ton prénom",
+    "phone": "Ton numéro WhatsApp",
+    "send": "Envoyer ma demande",
+    "later": "Plus tard, je continue mes achats",
+    "sentTitle": "Demande envoyée",
+    "sentBody": "{{shop}} reçoit ta demande maintenant et te répond sur WhatsApp pour le prix, la livraison et le paiement.",
+    "tooMany": "Trop de demandes aujourd'hui depuis cet appareil. Réessaie demain, ou crée un compte."
+  },
   "checkout": {
     "title": "Commande",
     "deliveryMethod": "Mode de réception",
@@ -1163,6 +1175,7 @@
     "fillRequired": "Il manque des informations. Complète les champs marqués en rouge."
   },
   "vendor": {
+    "guestOrder": "sans compte",
     "greeting": "Bonjour, {{name}}",
     "todayOrders": "Commandes du jour",
     "unreadMessages": "Messages non lus",

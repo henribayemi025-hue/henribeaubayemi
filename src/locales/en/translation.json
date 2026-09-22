@@ -1099,6 +1099,18 @@
       "not_in_conversation": "This conversation no longer exists."
     }
   },
+  "guest": {
+    "title": "So the shop can get back to you",
+    "help": "{{shop}} receives your request ({{count}} item) and confirms on WhatsApp. No account needed.",
+    "help_plural": "{{shop}} receives your request ({{count}} items) and confirms on WhatsApp. No account needed.",
+    "name": "Your first name",
+    "phone": "Your WhatsApp number",
+    "send": "Send my request",
+    "later": "Later, I'll keep shopping",
+    "sentTitle": "Request sent",
+    "sentBody": "{{shop}} is receiving your request now and will reply on WhatsApp about price, delivery and payment.",
+    "tooMany": "Too many requests today from this device. Try again tomorrow, or create an account."
+  },
   "checkout": {
     "title": "Checkout",
     "deliveryMethod": "Delivery method",
@@ -1163,6 +1175,7 @@
     "fillRequired": "Some details are missing. Please fill in the fields marked in red."
   },
   "vendor": {
+    "guestOrder": "no account",
     "greeting": "Hello, {{name}}",
     "todayOrders": "Today's orders",
     "unreadMessages": "Unread messages",

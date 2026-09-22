@@ -1,0 +1,20 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', proxy: process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: 'localhost' } : undefined });
+const ctx = await b.newContext({ viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, locale: 'fr-FR', ignoreHTTPSErrors: true });
+const failed = [];
+const page = await ctx.newPage(); page.on('requestfailed', (r) => failed.push(r.url().slice(0, 90) + ' ' + r.failure()?.errorText)); page.on('console', (m) => { if (m.type() === 'error') failed.push('console: ' + m.text().slice(0, 120)); });
+await page.route('**/rest/v1/events*', (r) => r.fulfill({ status: 201, body: '[]' }));
+await page.route('**/rest/v1/rpc/place_guest_order*', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ id: 'x', order_no: 'FJ-TEST01', shop_id: 'ba58894d-5b18-4058-8756-78ba653adfd5', total_fcfa: 15600 }]) }));
+await page.goto('http://localhost:4174/product/6a456a84-d2d7-434b-99e2-75cd23f66c41', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+for (const sel of ['button:has-text("Passer")', 'button:has-text("Accepter")']) { const el = page.locator(sel).first(); if (await el.count()) await el.click({ timeout: 1000 }).catch(() => {}); }
+await page.screenshot({ path: "/tmp/claude-0/-home-user-henribeaubayemi/46c5ddec-5d8e-5943-95aa-4e0c79f09944/scratchpad/invite-0.png" }); console.log(failed.slice(0, 6)); await page.locator("button:has-text(\"panier\")").first().click({ timeout: 8000 });
+await page.waitForTimeout(800);
+await page.screenshot({ path: '/tmp/claude-0/-home-user-henribeaubayemi/46c5ddec-5d8e-5943-95aa-4e0c79f09944/scratchpad/invite-1.png' });
+await page.fill('input[autocomplete="given-name"]', 'Aïcha');
+await page.fill('input[type="tel"]', '+237 6 99 41 12 08');
+await page.screenshot({ path: '/tmp/claude-0/-home-user-henribeaubayemi/46c5ddec-5d8e-5943-95aa-4e0c79f09944/scratchpad/invite-2.png' });
+await page.locator('button:has-text("Envoyer ma demande")').click();
+await page.waitForTimeout(800);
+await page.screenshot({ path: '/tmp/claude-0/-home-user-henribeaubayemi/46c5ddec-5d8e-5943-95aa-4e0c79f09944/scratchpad/invite-3.png' });
+await b.close();

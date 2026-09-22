@@ -196,11 +196,22 @@ export default function VendorOrders() {
                     {(o.buyer_name || '?').trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-body font-semibold text-ink">{o.buyer_name || t('vendor.buyerName')}</p>
+                    <p className="truncate text-body font-semibold text-ink">
+                      {o.buyer_name || t('vendor.buyerName')}
+                      {/* Une demande sans compte (0156): la cliente n'a laissé
+                          qu'un prénom et un numéro — WhatsApp est le seul
+                          chemin vers elle, on le met en évidence. */}
+                      {!o.buyer_id && <span className="ml-1.5 rounded-pill bg-brass/15 px-1.5 py-0.5 text-[11px] font-semibold text-brass">{t('vendor.guestOrder', 'sans compte')}</span>}
+                    </p>
                     {o.buyer_phone && (
-                      <a href={`tel:${o.buyer_phone.replace(/[^+\d]/g, '')}`} className="flex items-center gap-1 text-caption font-semibold text-teal">
-                        <IconPhone size={12} /> {o.buyer_phone}
-                      </a>
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <a href={`tel:${o.buyer_phone.replace(/[^+\d]/g, '')}`} className="flex items-center gap-1 text-caption font-semibold text-teal">
+                          <IconPhone size={12} /> {o.buyer_phone}
+                        </a>
+                        <a href={`https://wa.me/${o.buyer_phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-caption font-semibold text-success">
+                          <IconBrandWhatsapp size={13} /> WhatsApp
+                        </a>
+                      </span>
                     )}
                   </div>
                 </div>

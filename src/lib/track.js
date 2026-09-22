@@ -10,7 +10,7 @@ const ANON_ID_KEY = 'finjaro-anon-id';
 // deux visites du même appareil à deux jours d'écart partagent le même id.
 // Une fenêtre privée ou un autre navigateur en aura un différent — ça
 // SOUS-compte les revisites, ça n'en invente jamais.
-function getAnonId() {
+export function getAnonId() {
   try {
     let id = localStorage.getItem(ANON_ID_KEY);
     if (!id) {

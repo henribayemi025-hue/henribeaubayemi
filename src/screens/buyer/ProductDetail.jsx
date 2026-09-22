@@ -28,7 +28,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { add, items, setQty, remove } = useCart();
+  const { add, items, setQty, remove, ouvrirDemande } = useCart();
   const { user } = useAuth();
   const { requireLogin } = useUI();
   const toast = useToast();
@@ -226,6 +226,11 @@ export default function ProductDetail() {
     add({ ...p, shop_name: shop.name }, 1, { size: size || null, color: color || null });
     // Le vrai signal d'intention d'achat, distinct du simple 'product_view'.
     track('cart_add', p.id, { shop_id: p.shop_id, size: size || null, color: color || null });
+    // Sans compte, « le panier, c'est une commande » (Beau, 22/09): on
+    // demande tout de suite un prénom et un numéro WhatsApp, et la demande
+    // part chez la vendeuse. Avant, ces personnes disparaissaient sans
+    // qu'on puisse les rappeler.
+    if (!user) ouvrirDemande({ shop_id: p.shop_id, shop_name: shop.name, items: [{ id: p.id, qty: 1, size: size || null, color: color || null }] });
   }
 
   return (

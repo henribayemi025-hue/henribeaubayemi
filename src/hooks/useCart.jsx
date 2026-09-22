@@ -31,6 +31,13 @@ export function CartProvider({ children }) {
   const [justAdded, setJustAdded] = useState(null);
   const dismissJustAdded = useCallback(() => setJustAdded(null), []);
 
+  // « Le panier, c'est une commande » (Beau, 22/09): sans compte, la
+  // personne laisse un prénom et un numéro WhatsApp, et sa demande part
+  // chez la vendeuse (composant DemandeInvite). { shop_id, shop_name, items }.
+  const [demande, setDemande] = useState(null);
+  const ouvrirDemande = useCallback((d) => setDemande(d), []);
+  const fermerDemande = useCallback(() => setDemande(null), []);
+
   const add = useCallback((product, qty = 1, variant = {}) => {
     const size = variant.size || null;
     const color = variant.color || null;
@@ -85,6 +92,7 @@ export function CartProvider({ children }) {
   const value = {
     items, add, setQty, remove, clear, clearShop,
     count, subtotal, pendingCount, justAdded, dismissJustAdded,
+    demande, ouvrirDemande, fermerDemande,
   };
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
