@@ -84,6 +84,69 @@ attrapé un plantage de l'onglet Analyste que la compilation ne voyait pas.
 `finjaro.net/argent`. Ça demande un enregistrement DNS et une route
 Cloudflare; rien ne casse en attendant.
 
+### Le Studio — « une app pour créer et gérer ses agents IA » (poste: Orchestre)
+Beau, 22/09, en plusieurs messages. Ce qu'il veut, dans l'ordre où il l'a dit:
+
+1. **On choisit un MODÈLE d'entreprise**, pas une liste vide. Ses exemples:
+   un studio de cinéma et d'animation (réalisateurs, directeurs photo,
+   animateurs, bruiteurs, testeurs qui critiquent le rythme); un cabinet
+   juridique et d'expansion mondiale (experts par pays, brevets, conformité
+   sur 50 marchés); un laboratoire de recherche en essaim (lit arXiv, formule
+   des hypothèses, rédige des pré-publications); un cabinet de conseil
+   « niveau McKinsey »; une salle de marché « niveau finance / trading ».
+2. **L'organigramme dépend du projet**: sa taille, son secteur, son niveau.
+   Cocon (3), startup, scale-up, mégacorp (jusqu'à 1 500).
+3. **Les agents sont ULTRA-spécifiques** et **humanisés**: un nom, un visage
+   (choisi sur le web ou généré), une personnalité, un poste précis.
+4. **Le catalogue vient de GitHub** — « ce n'est pas discutable, je veux que
+   tu partes et copies ». Et les agents eux-mêmes peuvent aller y chercher
+   ceux dont ils ont besoin.
+5. Un espace pour coder directement (aller sur Claude depuis l'app).
+6. Ceux qui ont une boutique Finjaro ou Accounting y auront « les trucs
+   selon le projet » — une vendeuse reçoit sa petite équipe.
+7. Il cherche **un nom badass**.
+
+**Ce qui est FAIT le 22/09:**
+- Le catalogue réel: **1 052 entrées** (481 agents, 571 compétences) copiées
+  de trois dépôts GitHub sous licence MIT, avec l'origine et la licence sur
+  chaque ligne. `docs/studio/catalogue.json` + `LICENCES-SOURCES.md`.
+  Table `studio_catalogue`, chargée par `studio_charger_catalogue(url)` qui
+  lit le dépôt directement — rien n'est recopié à la main.
+- Le prototype reçu (Gemini) a été lu en entier. Sa maquette d'écrans est
+  bonne. Mais **rien derrière n'est réel**: sa route d'import demandait à un
+  modèle d'INVENTER une fiche avec de fausses étoiles, sa place de marché
+  listait des dépôts qui n'existent pas, et son organigramme annonce
+  « 520 agents d'ingénierie » sortis de nulle part. On garde les écrans, on
+  jette les données.
+
+**Ce que le catalogue couvre bien, et ce qu'il ne couvre PAS — mesuré:**
+
+| Modèle d'entreprise voulu | Ce qu'on a dans le catalogue |
+| --- | --- |
+| Cabinet de conseil / direction | **85** entrées « c-level »: CFO, CMO, CRO, COO, CHRO, CISO, GC, boardroom. Le plus fourni. |
+| Marketing / croissance | **63** + business-product 17 |
+| Juridique / conformité | compliance 17, legal-advisor, gc-review — **maigre pour « 50 marchés »** |
+| Recherche scientifique | research 19, statistical-analyst — un début, pas un laboratoire |
+| Finance / trading | quant-analyst, risk-manager, fintech, finance — **très maigre** |
+| Ingénierie | **186** + langages 30 + infra, data, sécurité… le plus gros bloc |
+| Cinéma / animation | **rien**. Ça n'existe pas sur GitHub sous cette forme. À écrire. |
+
+Donc: les modèles « conseil », « marketing » et « ingénierie » peuvent
+s'assembler dès maintenant à partir de vrais fichiers. « Juridique »,
+« recherche » et « finance » demandent qu'on ÉCRIVE des agents, et
+« cinéma » entièrement. Le dire vaut mieux que de promettre 1 000 juristes.
+
+**Ce qui reste, dans l'ordre:**
+1. La table des **modèles d'entreprise** (`studio_modeles`): un modèle = des
+   départements, des postes, et pour chaque poste l'agent du catalogue qui le
+   tient — ou « à écrire ».
+2. L'écran: choisir un modèle, régler la taille, nommer, voir l'organigramme.
+3. L'installation d'un agent: télécharger son texte depuis la source au
+   moment où on l'engage, pas avant.
+4. Les visages: DiceBear (déjà dans le prototype, gratuit, sans compte) pour
+   commencer; une photo choisie ensuite.
+5. Le nom.
+
 ### Retravailler le DESIGN des applications
 Demandé par Beau le 22/09.
 
