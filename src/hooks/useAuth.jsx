@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { reclamerParrainage } from '../lib/referral';
+import { toutOublier } from '../lib/queryCache';
 import i18n from '../lib/i18n';
 
 const AuthCtx = createContext(null);
@@ -61,18 +62,56 @@ export function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    setProfile(data || null);
+    // Ne JAMAIS laisser cet appel remonter une exception.
+    //
+    // Sans réseau, `fetch` échoue et la promesse est rejetée — ce n'est pas
+    // une erreur Postgrest qu'on lirait dans `{ error }`, c'est un rejet.
+    // Or cette fonction est attendue dans le démarrage de l'authentification
+    // ci-dessous: un rejet y empêchait `setLoading(false)` de s'exécuter, et
+    // l'application entière restait sur un rond qui tourne, sans jamais
+    // afficher un seul écran. Mesuré le 22/09 avec Supabase coupé.
+    //
+    // Sans profil on continue: les écrans ont tous un comportement par
+    // défaut, et le profil reviendra au prochain passage en ligne.
+    try {
+      const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+      setProfile(data || null);
+    } catch {
+      /* hors ligne: on garde ce qu'on a, on ne bloque rien */
+    }
   }, []);
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      await loadProfile(data.session?.user?.id);
-      setLoading(false);
-    });
+
+    // Garde-fou: l'application ne reste JAMAIS sur un rond qui tourne.
+    //
+    // Mesuré le 22/09 avec Supabase injoignable: `getSession()` ne se
+    // terminait ni en succès ni en erreur — elle restait simplement en
+    // attente. Ni `catch` ni `finally` ne se déclenchent sur une promesse qui
+    // ne se résout pas, donc `loading` restait vrai et `RequireAuth`
+    // affichait son rond indéfiniment. L'application s'ouvrait, et n'allait
+    // jamais plus loin.
+    //
+    // Au bout de trois secondes on continue avec ce qu'on a. Ce n'est pas
+    // grave: la session vit dans le stockage local, `onAuthStateChange`
+    // s'exécute quand même, et le profil se chargera au retour du réseau.
+    const secours = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 3000);
+
+    // `finally` plutôt que la fin du `then`, et un `catch`: quoi qu'il
+    // arrive, l'application doit sortir de son écran de chargement. C'est la
+    // ceinture qui va avec le `try` de `loadProfile` — deux endroits, parce
+    // que `getSession` elle-même peut échouer.
+    supabase.auth.getSession()
+      .then(async ({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+        await loadProfile(data.session?.user?.id);
+      })
+      .catch(() => { /* hors ligne: pas de session à charger, on continue */ })
+      .finally(() => { if (active) { clearTimeout(secours); setLoading(false); } });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s);
       const uid = s?.user?.id || null;
@@ -83,12 +122,15 @@ export function AuthProvider({ children }) {
         // endroit où l'on sait que la session vient de s'ouvrir: le code de
         // parrainage mis de côté avant le départ est réclamé maintenant.
         // Avant, un compte créé par Google perdait son parrainage.
-        if (uid) await reclamerParrainage();
+        // Même raison qu'au-dessus: sans réseau, réclamer le parrainage
+        // échoue, et un rejet ici empêcherait le profil de se charger.
+        if (uid) await reclamerParrainage().catch(() => {});
         loadProfile(uid);
       }
     });
     return () => {
       active = false;
+      clearTimeout(secours);
       sub.subscription.unsubscribe();
     };
   }, [loadProfile]);
@@ -173,7 +215,14 @@ export function AuthProvider({ children }) {
     // fonctionne réellement.
     signInWithApple: (destination) =>
       supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: retourApres(destination) } }),
-    signOut: () => supabase.auth.signOut(),
+    // La déconnexion vide aussi le cache hors ligne. Il contient les
+    // commandes et les messages de la personne: sur un téléphone prêté ou
+    // partagé, les laisser sur l'appareil les montrerait à la suivante.
+    signOut: async () => {
+      const r = await supabase.auth.signOut();
+      toutOublier();
+      return r;
+    },
     resetPassword: (email) =>
       supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/reset` }),
     updatePassword: (password) => supabase.auth.updateUser({ password }),

@@ -17,11 +17,17 @@
 //  - TTL par défaut 5 min: assez court pour que la fraîcheur reste correcte
 //    (nouveau produit, changement de prix), assez long pour couvrir la vraie
 //    fenêtre de navigation (l'utilisateur qui va voir un article puis revient).
-//  - Pas de persistance: c'est bien un cache mémoire, il disparaît au reload.
-//    Le cache "long terme" reste dans Cloudflare (voir src/worker.js pour les
-//    images) et dans le service worker (Workbox) pour les assets JS/CSS.
+//  - PERSISTANCE, ajoutée le 22/09 (elle n'existait pas avant, et c'est ce
+//    qui rendait l'application VIDE sans réseau). Ce qui est lu est aussi
+//    écrit dans IndexedDB par `cachePersistant.js`, et relu au démarrage.
+//    Le cache mémoire reste la référence pendant la session; le disque ne
+//    sert qu'à repartir avec quelque chose plutôt qu'avec rien.
+//    Le cache "long terme" des fichiers reste dans Cloudflare (voir
+//    src/worker.js pour les images) et dans le service worker pour le JS/CSS.
 //  - Limite en taille: on garde les 100 dernières clés (LRU basique) pour
 //    ne pas grossir indéfiniment sur une session longue.
+
+import { toutRelire, garder, viderTout } from './cachePersistant';
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ENTRIES = 100;
@@ -64,6 +70,37 @@ export function getCached(key) {
 export function setCached(key, data, ttl = DEFAULT_TTL_MS) {
   bumpLru(key, { data, ttl, timestamp: Date.now() });
   notify(key);
+  // Et sur le disque, pour la prochaine ouverture sans réseau. Volontairement
+  // sans `await`: l'écran ne doit pas attendre le cache.
+  garder(key, data, ttl);
+}
+
+// Relire le disque au démarrage. Appelé une fois, depuis `main.jsx`.
+//
+// Une valeur venue du disque est posée en mémoire SANS notifier: à cet
+// instant aucun écran n'est encore monté, et notifier ne servirait qu'à
+// déclencher des rafraîchissements pour rien.
+//
+// On n'écrase jamais une valeur déjà en mémoire: si un écran a déjà chargé
+// quelque chose de frais pendant qu'on relisait le disque, le frais gagne.
+let rechargeFaite = false;
+export async function rechargerDepuisLeDisque() {
+  if (rechargeFaite) return;
+  rechargeFaite = true;
+  const tout = await toutRelire();
+  for (const [key, entry] of Object.entries(tout)) {
+    if (store.has(key)) continue;
+    bumpLru(key, entry);
+  }
+}
+
+// À la déconnexion. Ce cache contient les commandes et les messages de la
+// personne: le laisser sur l'appareil ferait voir ses données à la suivante.
+export function toutOublier() {
+  store.clear();
+  listeners.clear();
+  inflight.clear();
+  viderTout();
 }
 
 export function invalidate(prefix) {

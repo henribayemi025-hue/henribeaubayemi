@@ -40,7 +40,7 @@ export default function VendorProducts() {
       .order('created_at', { ascending: false });
     if (err) throw err;
     return products || [];
-  }, [shop.id]);
+  }, [shop.id], { cacheKey: `boutique-articles:${shop.id}` });
 
   // Publier / retirer. `published_at` repart à maintenant à chaque publication:
   // sinon la rotation, qui compte à partir de cette date, ré-archiverait

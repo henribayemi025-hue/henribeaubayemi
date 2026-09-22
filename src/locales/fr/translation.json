@@ -1,4 +1,7 @@
 {
+  "offline": {
+    "banner": "Hors ligne — voici ce que tu avais."
+  },
   "common": {
     "appName": "Finjaro",
     "tagline": "Au-delà des rêves",

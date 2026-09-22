@@ -21,15 +21,31 @@ export function useAsync(fn, deps = [], options = {}) {
   const [error, setError] = useState(null);
   const mounted = useRef(true);
 
+  // A-t-on déjà quelque chose de montrable ? Sert au cas hors ligne
+  // ci-dessous, et doit être une ref: `run` est mémorisé sur `deps` et ne
+  // reverrait pas un `data` capturé.
+  const aDesDonnees = useRef(cached.hit);
+
   const run = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     setError(null);
     try {
       const result = cacheKey ? await dedupe(cacheKey, fn) : await fn();
-      if (mounted.current) setData(result);
+      if (mounted.current) {
+        setData(result);
+        aDesDonnees.current = true;
+      }
       if (cacheKey) setCached(cacheKey, result, ttlMs);
     } catch (e) {
-      if (mounted.current) setError(e?.message || 'error');
+      // Un rafraîchissement qui échoue alors qu'on a DÉJÀ quelque chose à
+      // l'écran ne doit pas l'effacer au profit d'un message d'erreur.
+      //
+      // C'est précisément le cas hors ligne depuis le 22/09: la valeur vient
+      // du disque, l'écran est rempli, et l'appel à Supabase échoue. Avant
+      // ce garde-fou, on remplaçait des données parfaitement lisibles par
+      // « une erreur est survenue » — soit exactement l'écran vide qu'on
+      // cherchait à supprimer.
+      if (mounted.current && !aDesDonnees.current) setError(e?.message || 'error');
     } finally {
       if (mounted.current) setLoading(false);
     }

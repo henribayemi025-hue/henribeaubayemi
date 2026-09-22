@@ -10,6 +10,7 @@ import { RequireAuth } from './components/RequireAuth';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppIntro } from './components/AppIntro';
 import { CookieConsent } from './components/CookieConsent';
+import { BandeauHorsLigne } from './components/BandeauHorsLigne';
 import { InstallAppBanner } from './components/InstallAppBanner';
 import { NativePushBootstrap } from './components/NativePushBootstrap';
 import { useViewportHeight } from './hooks/useViewportHeight';
@@ -216,6 +217,9 @@ export default function App() {
                     doit s'afficher quelle que soit la page d'arrivée, et sans
                     attendre qu'un compte existe. */}
                 <ErrorBoundary silent><AppIntro /></ErrorBoundary>
+                {/* « Hors ligne — voici ce que tu avais ». Obligatoire dès lors
+                    que l'application réaffiche des données gardées sur l'appareil. */}
+                <ErrorBoundary silent><BandeauHorsLigne /></ErrorBoundary>
                 <ErrorBoundary silent><CookieConsent /></ErrorBoundary>
                 <ErrorBoundary silent><InstallAppBanner /></ErrorBoundary>
                 <ErrorBoundary silent><NativePushBootstrap /></ErrorBoundary>

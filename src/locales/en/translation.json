@@ -1,4 +1,7 @@
 {
+  "offline": {
+    "banner": "Offline — here is what you had."
+  },
   "common": {
     "appName": "Finjaro",
     "tagline": "Beyond dreams",

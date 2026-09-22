@@ -43,7 +43,7 @@ export default function MyOrders() {
       .order('created_at', { ascending: false });
     if (err) throw err;
     return orders || [];
-  }, [user]);
+  }, [user], { cacheKey: `mes-commandes:${user?.id || 'anon'}` });
 
   async function markReceived(order) {
     // « J'ai bien reçu » clôt VRAIMENT la commande: statut livré + horodatage,

@@ -68,7 +68,7 @@ export default function VendorOrders() {
       .order('created_at', { ascending: false });
     if (err) throw err;
     return orders || [];
-  }, [shop.id]);
+  }, [shop.id], { cacheKey: `boutique-commandes:${shop.id}` });
 
   // Toutes les transitions passent ici: patch + horodatage. La commande ne
   // peut avancer QUE dans l'ordre du flux. La notification acheteuse

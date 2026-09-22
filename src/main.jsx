@@ -4,6 +4,7 @@ import './lib/i18n';
 import './styles/global.css';
 import App from './App';
 import { prefetchHome } from './lib/homeCache';
+import { rechargerDepuisLeDisque } from './lib/queryCache';
 import { track } from './lib/track';
 import { reportPageLoad } from './lib/perf';
 import { creerGardienRechargement } from './lib/swUpdate';
@@ -76,11 +77,30 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Relire le cache du disque AVANT le premier rendu.
+//
+// C'est la condition pour que l'application serve à quelque chose sans
+// réseau: un écran décide d'afficher une valeur cachée au moment où il se
+// monte, donc si le disque arrive après, il arrive trop tard et on voit un
+// écran vide.
+//
+// Mais on ne fait pas attendre l'affichage pour autant: 400 ms au maximum,
+// et on démarre. Une lecture d'IndexedDB prend quelques millisecondes; ce
+// délai n'existe que pour les cas où le stockage traîne ou ne répond jamais
+// (Firefox en navigation privée). Mieux vaut une application qui démarre
+// sans son cache qu'une application qui ne démarre pas.
+function demarrer() {
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
+
+Promise.race([
+  rechargerDepuisLeDisque(),
+  new Promise((r) => setTimeout(r, 400)),
+]).then(demarrer, demarrer);
 
 // Clear the stale-chunk reload guard (see App.jsx lazyWithReload) once the app
 // has been up a few seconds — so if the tab is left open across a LATER
