@@ -28,6 +28,32 @@ export default {
         // Elles ne se mélangent pas avec « Terre & Or » ci-dessus: la place de
         // marché est crème et terracotta, celle-ci est sombre et violette. Les
         // confondre est exactement l'erreur que j'ai faite la première fois.
+        // LEGION — sa propre peau, sombre et or.
+        //
+        // Beau, 22/09, en envoyant sa maquette préférée: « ceci c'est
+        // vraiment ma pépite visuellement ». Puis: « mets les couleurs
+        // comme le truc de Gemini que je t'ai envoyé ».
+        //
+        // Ce ne sont pas des couleurs inventées: c'est son LOGO Legion —
+        // bleu nuit, laiton, un filet de turquoise. Comme « Mon argent »,
+        // Legion est une application à part et ne se mélange pas avec le
+        // crème et la terracotta de la place de marché. Le laiton
+        // (#E3A857) est le seul pont entre les deux, volontairement.
+        legion: {
+          bg: '#0B1120', // le fond, bleu nuit
+          panel: '#121A2B', // le rail et les colonnes
+          card: '#1A2337', // une carte posée dessus
+          'card-haut': '#222D45', // au survol
+          line: '#2A3550', // les traits
+          ink: '#EDF1F8', // texte principal
+          muted: '#93A1B8', // texte secondaire
+          gold: '#E3A857', // le laiton du logo
+          'gold-soft': '#F2C98A',
+          teal: '#5FC8C0', // le turquoise du logo
+          accent: '#C25E38', // la terracotta, pour MES bulles
+          success: '#34D399',
+          danger: '#FB7185',
+        },
         money: {
           bg: '#0B0B0F', // fond de page, presque noir
           card: '#17171C', // une carte posée dessus

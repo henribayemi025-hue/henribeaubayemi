@@ -36,30 +36,30 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
   }
 
   return (
-    <aside className={`flex w-full shrink-0 flex-col border-l border-hairline bg-[#FFFDF9] lg:w-[360px] ${className}`}>
-      <div className="flex items-center justify-between border-b border-hairline p-3">
-        <h2 className="flex items-center gap-2 text-body font-semibold text-ink"><IconLayoutKanban size={16} className="text-brass" /> {t('legion.tableauTaches', 'Tableau des tâches')}</h2>
+    <aside className={`flex w-full shrink-0 flex-col border-l border-legion-line bg-legion-panel lg:w-[360px] ${className}`}>
+      <div className="flex items-center justify-between border-b border-legion-line p-3">
+        <h2 className="flex items-center gap-2 text-body font-semibold text-legion-ink"><IconLayoutKanban size={16} className="text-legion-gold" /> {t('legion.tableauTaches', 'Tableau des tâches')}</h2>
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => setAjout((v) => !v)}
-            className="flex items-center gap-1 rounded-input border border-brass/40 bg-brass/10 px-2 py-1 text-[11px] font-semibold text-ink transition hover:bg-brass/20">
+            className="flex items-center gap-1 rounded-input border border-legion-gold/40 bg-legion-gold/10 px-2 py-1 text-[11px] font-semibold text-legion-ink transition hover:bg-legion-gold/25">
             <IconPlus size={13} /> {t('legion.nouvelleTache', 'Nouvelle tâche')}
           </button>
           {onFermer && (
-            <button type="button" onClick={onFermer} aria-label={t('common.close', 'Fermer')} className="rounded-input p-1.5 text-muted hover:bg-base hover:text-ink">
+            <button type="button" onClick={onFermer} aria-label={t('common.close', 'Fermer')} className="rounded-input p-1.5 text-legion-muted hover:bg-legion-bg hover:text-legion-ink">
               <IconX size={16} />
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 overflow-x-auto border-b border-hairline bg-base/50 px-3 py-1.5 text-caption" style={{ scrollbarWidth: 'none' }}>
-        <IconFilter size={13} className="shrink-0 text-muted" />
-        <button type="button" onClick={() => setFiltre('tous')} className={`shrink-0 rounded-input px-2 py-0.5 text-[11px] font-semibold ${filtre === 'tous' ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>
+      <div className="flex items-center gap-1.5 overflow-x-auto border-b border-legion-line bg-legion-bg/50 px-3 py-1.5 text-caption" style={{ scrollbarWidth: 'none' }}>
+        <IconFilter size={13} className="shrink-0 text-legion-muted" />
+        <button type="button" onClick={() => setFiltre('tous')} className={`shrink-0 rounded-input px-2 py-0.5 text-[11px] font-semibold ${filtre === 'tous' ? 'bg-ink text-white' : 'text-legion-muted hover:text-legion-ink'}`}>
           {t('legion.tous', 'Tous')} ({taches.length})
         </button>
         {departements.map((d) => (
           <button key={d.id} type="button" onClick={() => setFiltre(d.id)}
-            className={`shrink-0 rounded-input border px-2 py-0.5 text-[11px] font-semibold ${filtre === d.id ? 'text-white' : 'border-transparent text-muted hover:text-ink'}`}
+            className={`shrink-0 rounded-input border px-2 py-0.5 text-[11px] font-semibold ${filtre === d.id ? 'text-white' : 'border-transparent text-legion-muted hover:text-legion-ink'}`}
             style={filtre === d.id ? { backgroundColor: d.couleur, borderColor: d.couleur } : undefined}>
             {d.nom}
           </button>
@@ -67,8 +67,8 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
       </div>
 
       {ajout && (
-        <form onSubmit={creer} className="space-y-2 border-b border-hairline bg-white p-3 text-caption">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">{t('legion.nouvelleMission', 'Nouvelle mission pour un agent')}</p>
+        <form onSubmit={creer} className="space-y-2 border-b border-legion-line bg-legion-card p-3 text-caption">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.nouvelleMission', 'Nouvelle mission pour un agent')}</p>
           <input autoFocus value={titre} onChange={(e) => setTitre(e.target.value)} placeholder={t('legion.intituleTache', 'Ce qu’il faut faire…')} className="input w-full" />
           <div className="grid grid-cols-2 gap-2">
             <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="input w-full">
@@ -80,8 +80,8 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
             </select>
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={() => setAjout(false)} className="rounded-input px-2.5 py-1 text-muted hover:bg-base">{t('common.cancel', 'Annuler')}</button>
-            <button type="submit" className="rounded-input bg-brass px-3 py-1 font-semibold text-ink">{t('legion.creerTache', 'Créer la tâche')}</button>
+            <button type="button" onClick={() => setAjout(false)} className="rounded-input px-2.5 py-1 text-legion-muted hover:bg-legion-bg">{t('common.cancel', 'Annuler')}</button>
+            <button type="submit" className="rounded-input bg-legion-gold px-3 py-1 font-semibold text-legion-ink">{t('legion.creerTache', 'Créer la tâche')}</button>
           </div>
         </form>
       )}
@@ -93,10 +93,10 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
             <div key={col.cle} className="space-y-2">
               <div className="flex items-center justify-between px-1">
                 <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: col.couleur }}>{t(`legion.statut.${col.cle}`)}</span>
-                <span className="rounded-input border border-hairline bg-white px-1.5 font-mono text-[11px] text-muted">{dedans.length}</span>
+                <span className="rounded-input border border-legion-line bg-legion-card px-1.5 font-mono text-[11px] text-legion-muted">{dedans.length}</span>
               </div>
               {dedans.length === 0 ? (
-                <div className="rounded-card border border-dashed border-hairline p-3 text-center text-[11px] text-muted">{t('legion.colonneVide', 'Rien ici')}</div>
+                <div className="rounded-card border border-dashed border-legion-line p-3 text-center text-[11px] text-legion-muted">{t('legion.colonneVide', 'Rien ici')}</div>
               ) : dedans.map((x) => {
                 const a = agentDe(x.assigne_a);
                 const d = deptDe(x);
@@ -104,24 +104,24 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
                 const s = statutDe(x);
                 const pct = s === 'fait' ? 100 : s === 'revue' ? 85 : s === 'en_cours' ? 50 : 10;
                 return (
-                  <div key={x.id} className="group space-y-2 rounded-card border border-hairline bg-white p-3 shadow-sm transition hover:border-brass/50">
+                  <div key={x.id} className="group space-y-2 rounded-card border border-legion-line bg-legion-card p-3 shadow-sm transition hover:border-legion-gold/50">
                     <div className="flex items-center justify-between text-[10px]">
                       {d ? <span className="rounded border px-1.5 py-0.5 font-semibold" style={{ borderColor: d.couleur, color: d.couleur, backgroundColor: d.couleur + '14' }}>{d.nom}</span> : <span />}
                       <span className="rounded border px-1.5 py-0.5 font-mono font-semibold uppercase" style={{ color: COULEUR_PRIORITE[prio], borderColor: COULEUR_PRIORITE[prio] + '55', backgroundColor: COULEUR_PRIORITE[prio] + '14' }}>{t(`legion.priorite.${prio}`)}</span>
                     </div>
-                    <p className="text-caption font-semibold leading-snug text-ink group-hover:text-teal">{x.texte}</p>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-base">
+                    <p className="text-caption font-semibold leading-snug text-legion-ink group-hover:text-legion-gold">{x.texte}</p>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-legion-bg">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#2A9D8F' : (d?.couleur || '#E09F3E') }} />
                     </div>
                     <div className="flex items-center justify-between">
                       <button type="button" onClick={() => a && onConvoquer(x, a)} disabled={!a} className="flex min-w-0 items-center gap-1.5 text-left disabled:cursor-default" title={a ? t('legion.convoquer', 'Lui demander où il en est') : ''}>
-                        {a ? <Visage a={a} taille={22} point={false} /> : <span className="h-[22px] w-[22px] rounded-full border border-dashed border-hairline" />}
-                        <span className="truncate text-[11px] text-muted">{a ? a.nom : t('legion.libre', 'Libre — personne ne l’a prise')}</span>
-                        {a && <IconMessageCircle size={12} className="shrink-0 text-muted" />}
+                        {a ? <Visage a={a} taille={22} point={false} /> : <span className="h-[22px] w-[22px] rounded-full border border-dashed border-legion-line" />}
+                        <span className="truncate text-[11px] text-legion-muted">{a ? a.nom : t('legion.libre', 'Libre — personne ne l’a prise')}</span>
+                        {a && <IconMessageCircle size={12} className="shrink-0 text-legion-muted" />}
                       </button>
                       <div className="flex shrink-0 items-center gap-0.5">
-                        <button type="button" onClick={() => reculer(x)} disabled={s === 'a_faire'} aria-label="←" className="rounded p-1 text-muted hover:bg-base disabled:opacity-30"><IconArrowLeft size={13} /></button>
-                        <button type="button" onClick={() => avancer(x)} disabled={s === 'fait'} aria-label="→" className="rounded p-1 text-muted hover:bg-base disabled:opacity-30"><IconArrowRight size={13} /></button>
+                        <button type="button" onClick={() => reculer(x)} disabled={s === 'a_faire'} aria-label="←" className="rounded p-1 text-legion-muted hover:bg-legion-bg disabled:opacity-30"><IconArrowLeft size={13} /></button>
+                        <button type="button" onClick={() => avancer(x)} disabled={s === 'fait'} aria-label="→" className="rounded p-1 text-legion-muted hover:bg-legion-bg disabled:opacity-30"><IconArrowRight size={13} /></button>
                       </div>
                     </div>
                   </div>

@@ -3,7 +3,11 @@ import { createPortal } from 'react-dom';
 import { IconX } from '@tabler/icons-react';
 
 // Bottom-sheet modal on mobile, centered on desktop.
-export function Modal({ open, onClose, title, children }) {
+//
+// `className` s'ajoute au panneau. Legion s'en sert pour poser sa peau
+// sombre: la fenêtre est rendue sur <body>, donc elle sort de `.legion-app`
+// et ne peut pas hériter de ses couleurs. Sans valeur, rien ne change.
+export function Modal({ open, onClose, title, children, className = '' }) {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -32,7 +36,7 @@ export function Modal({ open, onClose, title, children }) {
     >
       <button className="animate-fade-in absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
       <div
-        className="animate-slide-up relative z-10 flex w-full max-w-app flex-col overflow-y-auto rounded-t-2xl bg-white p-4 sm:rounded-2xl sm:animate-fade-in"
+        className={`animate-slide-up relative z-10 flex w-full max-w-app flex-col overflow-y-auto rounded-t-2xl bg-white p-4 sm:rounded-2xl sm:animate-fade-in ${className}`}
         style={{ maxHeight: 'var(--app-height, 100dvh)' }}
       >
         <div className="mb-3 flex items-center justify-between">

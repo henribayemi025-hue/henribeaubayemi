@@ -85,10 +85,10 @@ export default function Fonder() {
     <div className="pb-24">
       <AppHeader title={t('legion.fonder')} back />
       <div className="mx-auto w-full max-w-3xl px-4 pt-3">
-        <p className="text-body text-muted">{t('legion.fonderIntro')}</p>
+        <p className="text-body text-legion-muted">{t('legion.fonderIntro')}</p>
 
         {/* 1. Le modèle */}
-        <p className="mt-5 text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.etapeModele')}</p>
+        <p className="mt-5 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.etapeModele')}</p>
         <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {data.modeles.map((m) => {
             const ps = data.postes.filter((p) => p.modele === m.cle);
@@ -98,12 +98,12 @@ export default function Fonder() {
               <li key={m.cle}>
                 <button type="button" onClick={() => setModele(m)}
                   className={`flex w-full items-start gap-3 rounded-card border p-3 text-left ${
-                    choisi ? 'border-teal bg-teal-light' : 'border-hairline bg-white'}`}>
+                    choisi ? 'border-legion-gold bg-legion-gold/15' : 'border-legion-line bg-legion-card'}`}>
                   <span className="text-title">{m.emoji}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-body font-semibold text-ink">{m.nom}</span>
-                    <span className="block text-caption text-muted">{m.promesse}</span>
-                    <span className="mt-1 block text-caption text-muted">
+                    <span className="block text-body font-semibold text-legion-ink">{m.nom}</span>
+                    <span className="block text-caption text-legion-muted">{m.promesse}</span>
+                    <span className="mt-1 block text-caption text-legion-muted">
                       {t('legion.postesCatalogue', { n: ps.length - aEcrire })}
                       {' · '}{t('legion.departements', { n: new Set(ps.map((p) => p.departement)).size })}
                       {aEcrire > 0 && <> · <IconMoon size={11} className="inline" /> {t('legion.postesAEcrire', { n: aEcrire })}</>}
@@ -121,29 +121,29 @@ export default function Fonder() {
                 d'habitude. Beau: « un cabinet de conseil c'est quoi le concept,
                 combien de personnes, qui y travaille ». */}
             {(modele.concept || modele.effectifs) && (
-              <div className="mt-4 rounded-card border border-hairline bg-white p-3">
+              <div className="mt-4 rounded-card border border-legion-line bg-legion-card p-3">
                 {modele.concept && (
                   <>
-                    <p className="text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.conceptTitre')}</p>
-                    <p className="mt-1 text-body text-ink">{modele.concept}</p>
+                    <p className="text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.conceptTitre')}</p>
+                    <p className="mt-1 text-body text-legion-ink">{modele.concept}</p>
                   </>
                 )}
                 {modele.effectifs && (
                   <>
-                    <p className="mt-3 text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.effectifsTitre')}</p>
-                    <p className="mt-1 text-body text-ink">{modele.effectifs}</p>
+                    <p className="mt-3 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.effectifsTitre')}</p>
+                    <p className="mt-1 text-body text-legion-ink">{modele.effectifs}</p>
                   </>
                 )}
               </div>
             )}
 
             {/* 2. L'effectif — un nombre, à lui de choisir */}
-            <p className="mt-6 text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.etapeEffectif')}</p>
+            <p className="mt-6 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.etapeEffectif')}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {RACCOURCIS.map((n) => (
                 <button key={n} type="button" onClick={() => setEffectif(n)}
                   className={`rounded-pill px-3 py-1 text-caption font-semibold ${
-                    Number(effectif) === n ? 'bg-teal text-white' : 'border border-hairline text-muted'}`}>
+                    Number(effectif) === n ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>
                   {n.toLocaleString('fr-FR')}
                 </button>
               ))}
@@ -151,23 +151,23 @@ export default function Fonder() {
                 onChange={(e) => setEffectif(e.target.value)} aria-label={t('legion.etapeEffectif')}
                 className="input w-28" />
             </div>
-            <p className="mt-1 text-caption text-muted">{t('legion.effectifAide')}</p>
+            <p className="mt-1 text-caption text-legion-muted">{t('legion.effectifAide')}</p>
 
             {/* Ce qu'on obtient VRAIMENT à cette taille */}
-            <div className="mt-3 rounded-card border border-hairline bg-white p-3">
-              <p className="text-caption font-semibold text-ink">
+            <div className="mt-3 rounded-card border border-legion-line bg-legion-card p-3">
+              <p className="text-caption font-semibold text-legion-ink">
                 {t('legion.apercuEffectif', { metiers: postesDu(modele.cle).length, personnes: Math.max(Number(effectif) || 1, postesDu(modele.cle).length) })}
               </p>
               {/* Par département, comme un organigramme — pas une liste plate. */}
               {parDepartement(postesDu(modele.cle)).map((d) => (
                 <div key={d.nom} className="mt-3">
-                  <p className="text-caption font-semibold text-ink">{d.nom} <span className="font-normal text-muted">· {d.postes.length}</span></p>
-                  <p className="mt-0.5 text-caption text-muted">
+                  <p className="text-caption font-semibold text-legion-ink">{d.nom} <span className="font-normal text-legion-muted">· {d.postes.length}</span></p>
+                  <p className="mt-0.5 text-caption text-legion-muted">
                     {d.postes.slice(0, 12).map((p, i) => (
                       <span key={i}>
                         {i > 0 && ', '}
-                        <span className={p.est_directeur ? 'font-semibold text-ink' : ''}>{p.est_directeur ? '★ ' : ''}{p.poste}</span>
-                        {p.a_ecrire && <span className="ml-1 rounded-pill bg-brass/15 px-1.5 text-brass">{t('legion.aEcrire')}</span>}
+                        <span className={p.est_directeur ? 'font-semibold text-legion-ink' : ''}>{p.est_directeur ? '★ ' : ''}{p.poste}</span>
+                        {p.a_ecrire && <span className="ml-1 rounded-pill bg-legion-gold/15 px-1.5 text-legion-gold">{t('legion.aEcrire')}</span>}
                       </span>
                     ))}
                     {d.postes.length > 12 && <span> {t('legion.etPlus', { n: d.postes.length - 12 })}</span>}
@@ -187,7 +187,7 @@ export default function Fonder() {
               <Button onClick={fonder} loading={envoi} disabled={nom.trim() === '' || !user}>
                 {t('legion.fonderBouton')} <IconArrowRight size={18} />
               </Button>
-              {!user && <p className="text-caption text-muted">{t('legion.connecteToi')}</p>}
+              {!user && <p className="text-caption text-legion-muted">{t('legion.connecteToi')}</p>}
             </div>
           </>
         )}

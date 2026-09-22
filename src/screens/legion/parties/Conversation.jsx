@@ -57,9 +57,9 @@ export function Conversation({
   let jourPrecedent = null;
 
   return (
-    <div className="relative flex min-w-0 flex-1 flex-col bg-base">
+    <div className="relative flex min-w-0 flex-1 flex-col bg-legion-bg">
       {/* L'en-tête du salon */}
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-hairline bg-white px-4">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-legion-line bg-legion-card px-4">
         <div className="flex min-w-0 items-center gap-3">
           {agentPrive ? (
             <button type="button" onClick={() => onFiche(agentPrive)}><Visage a={agentPrive} taille={40} /></button>
@@ -70,25 +70,25 @@ export function Conversation({
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="truncate text-body font-semibold text-ink">{agentPrive ? agentPrive.nom : salon?.nom}</h3>
+              <h3 className="truncate text-body font-semibold text-legion-ink">{agentPrive ? agentPrive.nom : salon?.nom}</h3>
               {agentPrive && <span className="rounded border px-1.5 py-0.5 text-[10px] font-mono" style={{ borderColor: agentPrive.couleur, color: agentPrive.couleur, backgroundColor: agentPrive.couleur + '15' }}>{agentPrive.poste}</span>}
             </div>
-            <p className="truncate text-[11px] text-muted">
+            <p className="truncate text-[11px] text-legion-muted">
               {agentPrive
-                ? (agentPrive.actif ? <span className="font-semibold text-success">{t(`legion.autonomie.${agentPrive.autonomie || 'supervise'}`)}</span> : t('legion.enVeille', 'En veille'))
+                ? (agentPrive.actif ? <span className="font-semibold text-legion-success">{t(`legion.autonomie.${agentPrive.autonomie || 'supervise'}`)}</span> : t('legion.enVeille', 'En veille'))
                 : (salon?.a_quoi_ca_sert || dept?.a_quoi_ca_sert || '')}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {agentPrive && (
-            <div className="flex items-center gap-2 rounded-input border border-hairline bg-base px-2.5 py-1">
-              <span className="hidden text-[11px] font-semibold text-muted sm:inline">{agentPrive.actif ? t('legion.allume', 'Allumé') : t('legion.eteint', 'Éteint')}</span>
+            <div className="flex items-center gap-2 rounded-input border border-legion-line bg-legion-bg px-2.5 py-1">
+              <span className="hidden text-[11px] font-semibold text-legion-muted sm:inline">{agentPrive.actif ? t('legion.allume', 'Allumé') : t('legion.eteint', 'Éteint')}</span>
               <Interrupteur petit on={!!agentPrive.actif} onChange={(v) => onAllumer(agentPrive, v)} label={t('legion.interrupteur')} />
             </div>
           )}
           {onToggleKanban && (
-            <button type="button" onClick={onToggleKanban} title={t('legion.tableauTaches')} className="hidden rounded-input border border-hairline bg-base p-2 text-brass transition hover:bg-white lg:block">
+            <button type="button" onClick={onToggleKanban} title={t('legion.tableauTaches')} className="hidden rounded-input border border-legion-line bg-legion-bg p-2 text-legion-gold transition hover:bg-legion-card lg:block">
               <IconLayoutKanban size={16} />
             </button>
           )}
@@ -98,7 +98,7 @@ export function Conversation({
       {/* Le fil */}
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:px-5">
         {messages.length === 0 && (
-          <div className="mx-auto max-w-sm rounded-card border border-hairline bg-white p-4 text-center text-caption text-muted">
+          <div className="mx-auto max-w-sm rounded-card border border-legion-line bg-legion-card p-4 text-center text-caption text-legion-muted">
             {agentPrive ? t('legion.videPrive', { nom: agentPrive.nom }) : t('legion.videSalon', 'Personne n’a encore écrit ici. Commence.')}
           </div>
         )}
@@ -118,10 +118,10 @@ export function Conversation({
               <div key={m.id}>
                 {sep && <Jour label={jour} />}
                 <div className="flex justify-center">
-                  <div className="flex max-w-md items-center gap-2 rounded-card border border-hairline bg-white px-3 py-1.5 text-[12px] text-ink shadow-sm">
+                  <div className="flex max-w-md items-center gap-2 rounded-card border border-legion-line bg-legion-card px-3 py-1.5 text-[12px] text-legion-ink shadow-sm">
                     <span>📌</span>
                     <span className="min-w-0 truncate"><span className="font-semibold">{t('legion.genre.tache', 'Tâche')}</span> · {m.texte}</span>
-                    {pris && <span className="flex shrink-0 items-center gap-1 text-muted"><Visage a={pris} taille={16} point={false} /> {pris.nom}</span>}
+                    {pris && <span className="flex shrink-0 items-center gap-1 text-legion-muted"><Visage a={pris} taille={16} point={false} /> {pris.nom}</span>}
                   </div>
                 </div>
               </div>
@@ -140,20 +140,20 @@ export function Conversation({
                 <div className={`flex max-w-[86%] flex-col sm:max-w-[72%] ${mien ? 'items-end' : 'items-start'}`}>
                   {!mien && (
                     <div className="mb-1 flex items-center gap-2 px-1">
-                      <span className="text-[12px] font-semibold text-ink">{a?.nom || '?'}</span>
-                      {a?.poste && <span className="truncate text-[10px] text-muted">· {a.poste}</span>}
-                      {m.meta?.par_ia && <IconSparkles size={11} className="text-brass" title="IA" />}
+                      <span className="text-[12px] font-semibold text-legion-ink">{a?.nom || '?'}</span>
+                      {a?.poste && <span className="truncate text-[10px] text-legion-muted">· {a.poste}</span>}
+                      {m.meta?.par_ia && <IconSparkles size={11} className="text-legion-gold" title="IA" />}
                     </div>
                   )}
-                  <div className={`relative rounded-2xl px-3.5 py-2.5 shadow-sm ${mien ? 'rounded-tr-sm bg-gradient-to-tr from-teal to-[#D97A55] text-white' : 'rounded-tl-sm border border-hairline bg-white text-ink'}`}>
+                  <div className={`relative rounded-2xl px-3.5 py-2.5 shadow-sm ${mien ? 'rounded-tr-sm bg-legion-accent text-white' : 'rounded-tl-sm border border-legion-line bg-legion-card text-legion-ink'}`}>
                     {m.meta?.reponse_a && (
-                      <div className={`mb-2 rounded-input border-l-2 px-2 py-1 text-[11px] ${mien ? 'border-brass bg-black/15' : 'border-brass bg-base'}`}>
+                      <div className={`mb-2 rounded-input border-l-2 px-2 py-1 text-[11px] ${mien ? 'border-legion-gold bg-black/15' : 'border-legion-gold bg-legion-bg'}`}>
                         <div className="font-semibold opacity-90">{m.meta.reponse_a.nom}</div>
                         <div className="line-clamp-2 opacity-75">{m.meta.reponse_a.texte}</div>
                       </div>
                     )}
                     {genre && genre.cle !== 'info' && (
-                      <span className={`mb-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[10px] font-semibold ${mien ? 'bg-white/20' : 'bg-base text-muted'}`}>
+                      <span className={`mb-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[10px] font-semibold ${mien ? 'bg-legion-card/20' : 'bg-legion-bg text-legion-muted'}`}>
                         {genre.emoji} {t(`legion.genre.${genre.cle}`)}
                       </span>
                     )}
@@ -175,7 +175,7 @@ export function Conversation({
                         ))}
                       </div>
                     )}
-                    <div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mien ? 'text-white/80' : 'text-muted'}`}>
+                    <div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mien ? 'text-white/80' : 'text-legion-muted'}`}>
                       <span>{heure(m.created_at, langue)}</span>
                       {mien && <IconChecks size={13} />}
                     </div>
@@ -184,8 +184,8 @@ export function Conversation({
                     <div className="mt-1 flex flex-wrap gap-1 px-1">
                       {[...reac.entries()].map(([emoji, x]) => (
                         <button key={emoji} type="button" onClick={() => onReagir(m.id, emoji)} title={x.qui.join(', ')}
-                          className={`flex items-center gap-1 rounded-pill border px-1.5 py-0.5 text-[12px] transition ${x.moi ? 'border-teal bg-teal-light' : 'border-hairline bg-white'}`}>
-                          <span>{emoji}</span><span className="text-[10px] font-semibold text-muted">{x.n}</span>
+                          className={`flex items-center gap-1 rounded-pill border px-1.5 py-0.5 text-[12px] transition ${x.moi ? 'border-legion-gold bg-legion-gold/15' : 'border-legion-line bg-legion-card'}`}>
+                          <span>{emoji}</span><span className="text-[10px] font-semibold text-legion-muted">{x.n}</span>
                         </button>
                       ))}
                     </div>
@@ -194,18 +194,18 @@ export function Conversation({
 
                 {/* La barre d'actions: au survol sur ordinateur, sur « ⋯ » sur téléphone */}
                 <button type="button" onClick={() => setOuvert(ouverte ? null : m.id)} aria-label="…"
-                  className={`mt-5 shrink-0 rounded-full p-1 text-muted lg:hidden ${ouverte ? 'bg-white' : ''}`}>
+                  className={`mt-5 shrink-0 rounded-full p-1 text-legion-muted lg:hidden ${ouverte ? 'bg-legion-card' : ''}`}>
                   <IconDots size={14} />
                 </button>
-                <div className={`absolute -top-3 z-10 flex items-center gap-0.5 rounded-input border border-hairline bg-white p-1 shadow-lg transition ${mien ? 'left-2' : 'right-2'} ${ouverte ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'} ${ouverte ? '' : 'pointer-events-none lg:pointer-events-auto'}`}>
+                <div className={`absolute -top-3 z-10 flex items-center gap-0.5 rounded-input border border-legion-line bg-legion-card p-1 shadow-lg transition ${mien ? 'left-2' : 'right-2'} ${ouverte ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'} ${ouverte ? '' : 'pointer-events-none lg:pointer-events-auto'}`}>
                   {RAPIDES.slice(0, 5).map((e) => (
                     <button key={e} type="button" onClick={() => { onReagir(m.id, e); setOuvert(null); }} className="p-0.5 text-[14px] transition hover:scale-125">{e}</button>
                   ))}
-                  <button type="button" onClick={() => setPicker(picker === m.id ? null : m.id)} title={t('legion.autreEmoji', 'Un autre emoji')} className="rounded p-1 text-muted hover:bg-base"><IconMoodSmile size={14} /></button>
-                  <span className="mx-0.5 h-4 w-px bg-hairline" />
-                  <button type="button" onClick={() => { setReponseA(m); setOuvert(null); }} title={t('legion.repondre', 'Répondre')} className="rounded p-1 text-muted hover:bg-base"><IconArrowBackUp size={14} /></button>
-                  <button type="button" onClick={() => { onTacheDepuis(m); setOuvert(null); }} title={t('legion.enFaireUneTache', 'En faire une tâche')} className="rounded p-1 text-muted hover:bg-base hover:text-brass"><IconPlus size={14} /></button>
-                  <button type="button" onClick={() => copier(m)} title={t('legion.copier', 'Copier')} className="rounded p-1 text-muted hover:bg-base">{copie === m.id ? <IconCheck size={14} className="text-success" /> : <IconCopy size={14} />}</button>
+                  <button type="button" onClick={() => setPicker(picker === m.id ? null : m.id)} title={t('legion.autreEmoji', 'Un autre emoji')} className="rounded p-1 text-legion-muted hover:bg-legion-bg"><IconMoodSmile size={14} /></button>
+                  <span className="mx-0.5 h-4 w-px bg-legion-line" />
+                  <button type="button" onClick={() => { setReponseA(m); setOuvert(null); }} title={t('legion.repondre', 'Répondre')} className="rounded p-1 text-legion-muted hover:bg-legion-bg"><IconArrowBackUp size={14} /></button>
+                  <button type="button" onClick={() => { onTacheDepuis(m); setOuvert(null); }} title={t('legion.enFaireUneTache', 'En faire une tâche')} className="rounded p-1 text-legion-muted hover:bg-legion-bg hover:text-legion-gold"><IconPlus size={14} /></button>
+                  <button type="button" onClick={() => copier(m)} title={t('legion.copier', 'Copier')} className="rounded p-1 text-legion-muted hover:bg-legion-bg">{copie === m.id ? <IconCheck size={14} className="text-legion-success" /> : <IconCopy size={14} />}</button>
                 </div>
                 {picker === m.id && (
                   <div className={`absolute top-6 z-20 ${mien ? 'left-2' : 'right-2'}`}>
@@ -220,10 +220,10 @@ export function Conversation({
         {tape && (
           <div className="flex items-start gap-2.5">
             <Visage a={tape} taille={32} point={false} />
-            <div className="rounded-2xl rounded-tl-sm border border-hairline bg-white px-3.5 py-2.5 shadow-sm">
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-brass"><span>{tape.nom}</span><span className="font-normal text-muted">{t('legion.ecrit', 'écrit…')}</span></div>
+            <div className="rounded-2xl rounded-tl-sm border border-legion-line bg-legion-card px-3.5 py-2.5 shadow-sm">
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-legion-gold"><span>{tape.nom}</span><span className="font-normal text-legion-muted">{t('legion.ecrit', 'écrit…')}</span></div>
               <div className="flex items-center gap-1.5 py-0.5">
-                {[0, 150, 300].map((d) => <span key={d} className="h-2 w-2 animate-bounce rounded-full bg-brass" style={{ animationDelay: `${d}ms` }} />)}
+                {[0, 150, 300].map((d) => <span key={d} className="h-2 w-2 animate-bounce rounded-full bg-legion-gold" style={{ animationDelay: `${d}ms` }} />)}
               </div>
             </div>
           </div>
@@ -245,7 +245,7 @@ export function Conversation({
 function Jour({ label }) {
   return (
     <div className="my-2 flex justify-center">
-      <span className="rounded-pill border border-hairline bg-white px-3 py-0.5 text-[11px] font-medium text-muted shadow-sm">{label}</span>
+      <span className="rounded-pill border border-legion-line bg-legion-card px-3 py-0.5 text-[11px] font-medium text-legion-muted shadow-sm">{label}</span>
     </div>
   );
 }
@@ -358,17 +358,17 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
   }
 
   return (
-    <div className="shrink-0 border-t border-hairline bg-white p-2.5 sm:p-3">
+    <div className="shrink-0 border-t border-legion-line bg-legion-card p-2.5 sm:p-3">
       {reponseA && (
-        <div className="mb-2 flex items-center justify-between rounded-input border-l-2 border-brass bg-base px-2 py-1.5 text-[11px]">
-          <div className="min-w-0"><span className="font-semibold text-brass">{t('legion.reponseA', 'Réponse à')} {agents.find((a) => a.id === reponseA.auteur_id)?.nom}</span><p className="line-clamp-1 text-muted">{reponseA.texte}</p></div>
-          <button type="button" onClick={onAnnulerReponse} aria-label="✕" className="px-2 text-muted"><IconX size={14} /></button>
+        <div className="mb-2 flex items-center justify-between rounded-input border-l-2 border-legion-gold bg-legion-bg px-2 py-1.5 text-[11px]">
+          <div className="min-w-0"><span className="font-semibold text-legion-gold">{t('legion.reponseA', 'Réponse à')} {agents.find((a) => a.id === reponseA.auteur_id)?.nom}</span><p className="line-clamp-1 text-legion-muted">{reponseA.texte}</p></div>
+          <button type="button" onClick={onAnnulerReponse} aria-label="✕" className="px-2 text-legion-muted"><IconX size={14} /></button>
         </div>
       )}
       <div className="mb-2 flex gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {GENRES.map((g) => (
           <button key={g.cle} type="button" onClick={() => setGenre(g.cle)}
-            className={`flex shrink-0 items-center gap-1 rounded-pill px-2.5 py-1 text-[12px] font-semibold transition ${genre === g.cle ? 'bg-teal text-white' : 'border border-hairline text-muted hover:text-ink'}`}
+            className={`flex shrink-0 items-center gap-1 rounded-pill px-2.5 py-1 text-[12px] font-semibold transition ${genre === g.cle ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted hover:text-legion-ink'}`}
             title={g.sonne ? t('legion.sonne', 'Fait sonner le téléphone') : ''}>
             {g.emoji} {t(`legion.genre.${g.cle}`)}
           </button>
@@ -376,13 +376,13 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
       </div>
 
       {mentions && candidats.length > 0 && (
-        <div className="absolute bottom-28 left-3 right-3 z-30 max-h-56 max-w-sm overflow-y-auto rounded-card border border-hairline bg-white p-1.5 shadow-2xl">
-          <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted">{t('legion.mentionner', 'Nommer quelqu’un')}</p>
+        <div className="absolute bottom-28 left-3 right-3 z-30 max-h-56 max-w-sm overflow-y-auto rounded-card border border-legion-line bg-legion-card p-1.5 shadow-2xl">
+          <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.mentionner', 'Nommer quelqu’un')}</p>
           {candidats.map((a) => (
-            <button key={a.id} type="button" onClick={() => mentionner(a)} className="flex w-full items-center gap-2.5 rounded-input p-1.5 text-left hover:bg-base">
+            <button key={a.id} type="button" onClick={() => mentionner(a)} className="flex w-full items-center gap-2.5 rounded-input p-1.5 text-left hover:bg-legion-bg">
               <Visage a={a} taille={24} point={false} />
-              <span className="min-w-0 flex-1"><span className="block truncate text-caption font-semibold text-ink">@{a.nom}</span><span className="block truncate text-[10px] text-muted">{a.poste}</span></span>
-              <span className={`h-2 w-2 rounded-full ${a.actif ? 'bg-success' : 'bg-hairline'}`} />
+              <span className="min-w-0 flex-1"><span className="block truncate text-caption font-semibold text-legion-ink">@{a.nom}</span><span className="block truncate text-[10px] text-legion-muted">{a.poste}</span></span>
+              <span className={`h-2 w-2 rounded-full ${a.actif ? 'bg-legion-success' : 'bg-legion-line'}`} />
             </button>
           ))}
         </div>
@@ -396,25 +396,25 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
 
       <form onSubmit={envoyer} className="flex items-end gap-1.5 sm:gap-2">
         <div className="flex items-center pb-1">
-          <button type="button" onClick={() => onPicker(!picker)} title={t('legion.emoji', 'Emoji')} className={`rounded-input p-2 transition hover:bg-base ${picker ? 'text-teal' : 'text-muted hover:text-ink'}`}><IconMoodSmile size={20} /></button>
-          <button type="button" onClick={() => { setTexte((v) => `${v}@`); setMentions(true); setFiltreMention(''); zone.current?.focus(); }} title="@" className="rounded-input p-2 text-muted transition hover:bg-base hover:text-teal"><IconAt size={20} /></button>
-          <button type="button" onClick={() => fichier.current?.click()} disabled={!!depot} title={t('legion.photo', 'Photo')} className="rounded-input p-2 text-muted transition hover:bg-base hover:text-ink disabled:opacity-40"><IconPhoto size={20} /></button>
+          <button type="button" onClick={() => onPicker(!picker)} title={t('legion.emoji', 'Emoji')} className={`rounded-input p-2 transition hover:bg-legion-bg ${picker ? 'text-legion-gold' : 'text-legion-muted hover:text-legion-ink'}`}><IconMoodSmile size={20} /></button>
+          <button type="button" onClick={() => { setTexte((v) => `${v}@`); setMentions(true); setFiltreMention(''); zone.current?.focus(); }} title="@" className="rounded-input p-2 text-legion-muted transition hover:bg-legion-bg hover:text-legion-gold"><IconAt size={20} /></button>
+          <button type="button" onClick={() => fichier.current?.click()} disabled={!!depot} title={t('legion.photo', 'Photo')} className="rounded-input p-2 text-legion-muted transition hover:bg-legion-bg hover:text-legion-ink disabled:opacity-40"><IconPhoto size={20} /></button>
           <input ref={fichier} type="file" accept="image/*" className="hidden" onChange={photoChoisie} />
         </div>
-        <div className="flex-1 rounded-card border border-hairline bg-base px-3 py-2 transition focus-within:border-teal">
+        <div className="flex-1 rounded-card border border-legion-line bg-legion-bg px-3 py-2 transition focus-within:border-legion-gold">
           <textarea
             ref={zone} rows={1} value={texte} onChange={changer} onKeyDown={toucheClavier}
             placeholder={enregistre ? `🔴 ${t('legion.enregistrement', 'Enregistrement')} ${secondes}s` : depot ? t('legion.envoiEnCours', 'Envoi…') : t('legion.ecrireIci', 'Écris, ou nomme quelqu’un avec @')}
-            className="max-h-[140px] w-full resize-none bg-transparent text-[14px] text-ink outline-none placeholder:text-muted"
+            className="max-h-[140px] w-full resize-none bg-transparent text-[14px] text-legion-ink outline-none placeholder:text-legion-muted"
             aria-label={t('equipe.ecrire')}
           />
         </div>
         <button type="button" onClick={micro} disabled={!!depot} title={enregistre ? t('legion.arreter', 'Arrêter') : t('legion.vocal', 'Message vocal')}
-          className={`rounded-card border p-2.5 transition ${enregistre ? 'animate-pulse border-danger bg-danger text-white' : 'border-hairline bg-base text-muted hover:text-ink'} disabled:opacity-40`}>
+          className={`rounded-card border p-2.5 transition ${enregistre ? 'animate-pulse border-legion-danger bg-legion-danger text-white' : 'border-legion-line bg-legion-bg text-legion-muted hover:text-legion-ink'} disabled:opacity-40`}>
           {enregistre ? <IconPlayerStopFilled size={18} /> : <IconMicrophone size={18} />}
         </button>
         <button type="submit" disabled={envoi || texte.trim() === '' || !moi} aria-label={t('equipe.envoyer')}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-brass text-ink shadow-md transition hover:brightness-105 disabled:bg-hairline disabled:text-muted disabled:shadow-none">
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card bg-legion-gold text-legion-bg shadow-md transition hover:brightness-105 disabled:bg-legion-line disabled:text-legion-muted disabled:shadow-none">
           <IconSend size={18} />
         </button>
       </form>

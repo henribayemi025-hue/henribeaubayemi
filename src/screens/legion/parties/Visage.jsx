@@ -20,7 +20,7 @@ export function Visage({ a, taille = 36, point = true, rond = true, className = 
         />
       ) : (
         <span
-          className={`${forme} flex h-full w-full items-center justify-center border-2 text-[11px] font-semibold ${allume ? 'text-ink' : 'text-muted grayscale'}`}
+          className={`${forme} flex h-full w-full items-center justify-center border-2 text-[11px] font-semibold ${allume ? 'text-legion-ink' : 'text-legion-muted grayscale'}`}
           style={{ ...style, borderColor: allume ? (a?.couleur || '#C25E38') : '#E8DFD1', fontSize: Math.max(10, taille / 3) }}
         >
           {a?.emoji || initiales(a?.nom)}
@@ -28,7 +28,7 @@ export function Visage({ a, taille = 36, point = true, rond = true, className = 
       )}
       {point && a && !a.user_id && (
         <span
-          className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white"
+          className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-legion-card"
           style={{ width: Math.max(8, taille / 4), height: Math.max(8, taille / 4), backgroundColor: allume ? '#2A9D8F' : '#9CA3AF' }}
         />
       )}

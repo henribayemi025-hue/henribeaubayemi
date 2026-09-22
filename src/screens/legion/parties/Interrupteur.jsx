@@ -14,9 +14,9 @@ export function Interrupteur({ on, onChange, petit = false, label, disabled = fa
       title={label}
       disabled={disabled}
       onClick={(e) => { e.stopPropagation(); onChange(!on); }}
-      className={`relative inline-flex ${w} shrink-0 items-center rounded-full border-2 border-transparent transition-colors disabled:opacity-40 ${on ? 'bg-success' : 'bg-hairline'}`}
+      className={`relative inline-flex ${w} shrink-0 items-center rounded-full border-2 border-transparent transition-colors disabled:opacity-40 ${on ? 'bg-legion-success' : 'bg-legion-line'}`}
     >
-      <span className={`pointer-events-none inline-block ${b} transform rounded-full bg-white shadow transition ${on ? d : 'translate-x-0'}`} />
+      <span className={`pointer-events-none inline-block ${b} transform rounded-full bg-legion-card shadow transition ${on ? d : 'translate-x-0'}`} />
     </button>
   );
 }

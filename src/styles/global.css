@@ -198,3 +198,24 @@
 .money-app .text-muted { color: #8A8A93; }
 .money-app .text-teal { color: #7C5CFC; }
 .money-app .border-hairline { border-color: #26262E; }
+
+/* LEGION — les morceaux partagés, repeints en sombre.
+   Beau: « mets les couleurs comme le truc de Gemini que je t'ai envoyé ».
+   Legion est une application à part, comme « Mon argent »: elle a sa peau.
+   Ce qui suit ne touche QUE ce qui est à l'intérieur de `.legion-app`, plus
+   la fenêtre modale qui, elle, est rendue sur <body> — d'où le sélecteur
+   séparé posé par la fiche d'agent. */
+.legion-app .input,
+.legion-modale .input {
+  background-color: #1A2337;
+  border-color: #2A3550;
+  color: #EDF1F8;
+}
+.legion-app .input::placeholder,
+.legion-modale .input::placeholder { color: #93A1B8; }
+.legion-app .input:focus,
+.legion-modale .input:focus { border-color: #E3A857; }
+.legion-app .skeleton { background-color: #1A2337; }
+.legion-modale { background-color: #121A2B !important; color: #EDF1F8; }
+.legion-modale h2 { color: #EDF1F8; }
+.legion-modale option { background-color: #1A2337; color: #EDF1F8; }

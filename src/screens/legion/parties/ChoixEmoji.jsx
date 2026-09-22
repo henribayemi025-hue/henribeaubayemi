@@ -22,24 +22,24 @@ export function ChoixEmoji({ onChoisir, onFermer, titre = 'Emoji' }) {
   }
 
   return (
-    <div className="flex h-72 w-full max-w-sm flex-col overflow-hidden rounded-card border border-hairline bg-white shadow-xl" role="dialog" aria-label={titre}>
-      <div className="flex items-center gap-2 border-b border-hairline px-2 py-1.5">
-        <IconSearch size={14} className="shrink-0 text-muted" />
+    <div className="flex h-72 w-full max-w-sm flex-col overflow-hidden rounded-card border border-legion-line bg-legion-card shadow-xl" role="dialog" aria-label={titre}>
+      <div className="flex items-center gap-2 border-b border-legion-line px-2 py-1.5">
+        <IconSearch size={14} className="shrink-0 text-legion-muted" />
         <input
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Chercher: coeur, feu, bravo…"
-          className="min-w-0 flex-1 bg-transparent text-caption text-ink outline-none placeholder:text-muted"
+          className="min-w-0 flex-1 bg-transparent text-caption text-legion-ink outline-none placeholder:text-legion-muted"
         />
         {onFermer && (
-          <button type="button" onClick={onFermer} aria-label="Fermer" className="rounded-full p-1 text-muted hover:bg-base">
+          <button type="button" onClick={onFermer} aria-label="Fermer" className="rounded-full p-1 text-legion-muted hover:bg-legion-bg">
             <IconX size={14} />
           </button>
         )}
       </div>
       {!q && (
-        <div className="flex gap-0.5 overflow-x-auto border-b border-hairline px-1 py-1" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex gap-0.5 overflow-x-auto border-b border-legion-line px-1 py-1" style={{ scrollbarWidth: 'none' }}>
           {CATEGORIES.map((c) => (
             <button
               key={c.cle}
@@ -47,7 +47,7 @@ export function ChoixEmoji({ onChoisir, onFermer, titre = 'Emoji' }) {
               onClick={() => setCat(c.cle)}
               title={c.nom}
               aria-label={c.nom}
-              className={`shrink-0 rounded-input px-1.5 py-0.5 text-[16px] leading-none transition ${cat === c.cle ? 'bg-teal-light' : 'hover:bg-base'}`}
+              className={`shrink-0 rounded-input px-1.5 py-0.5 text-[16px] leading-none transition ${cat === c.cle ? 'bg-legion-gold/15' : 'hover:bg-legion-bg'}`}
             >
               {c.emoji}
             </button>
@@ -56,7 +56,7 @@ export function ChoixEmoji({ onChoisir, onFermer, titre = 'Emoji' }) {
       )}
       <div className="grid flex-1 grid-cols-8 content-start gap-0.5 overflow-y-auto p-1.5">
         {liste.length === 0 && (
-          <p className="col-span-8 p-3 text-center text-caption text-muted">Rien pour « {q} ».</p>
+          <p className="col-span-8 p-3 text-center text-caption text-legion-muted">Rien pour « {q} ».</p>
         )}
         {liste.map((e, i) => (
           <button
@@ -64,7 +64,7 @@ export function ChoixEmoji({ onChoisir, onFermer, titre = 'Emoji' }) {
             type="button"
             onClick={() => choisir(e.emoji)}
             title={e.mots}
-            className="flex h-8 items-center justify-center rounded-input text-[20px] leading-none transition hover:scale-125 hover:bg-base"
+            className="flex h-8 items-center justify-center rounded-input text-[20px] leading-none transition hover:scale-125 hover:bg-legion-bg"
           >
             {e.emoji}
           </button>

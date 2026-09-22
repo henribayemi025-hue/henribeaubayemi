@@ -255,7 +255,10 @@ export default function Entreprise() {
       const { data: r, error: err } = await supabase.functions.invoke('legion-se-choisir', { body: { entreprise_id: entrepriseId, limite: 25 } });
       if (err) throw err;
       if (r?.erreur) throw new Error(r.erreur);
-      setBilan({ faits: r?.faits ?? 0, restants: r?.restants ?? 0 });
+      setBilan({ faits: r?.faits ?? 0, restants: r?.restants ?? 0, pourquoi: r?.pourquoi || null });
+      // Beau a appuyé une fois, rien ne s'est passé, et rien ne lui a dit
+      // pourquoi. Si ça échoue encore, il le saura.
+      if ((r?.faits ?? 0) === 0 && r?.pourquoi) toast.error(r.pourquoi);
       const { data: frais } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre');
       if (frais) setData((d) => d && ({ ...d, agents: frais }));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
@@ -277,20 +280,20 @@ export default function Entreprise() {
   };
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-base text-ink">
+    <div className="legion-app flex h-dvh flex-col overflow-hidden bg-legion-bg text-legion-ink">
       {/* L'en-tête: la marque, l'entreprise, les trois nombres, l'interrupteur général */}
-      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-hairline bg-white px-3 sm:px-4">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-legion-line bg-legion-card px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-hairline px-2 py-1 text-caption font-semibold text-muted lg:hidden" title={t('legion.retourFinjaro')}>
+          <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-legion-line px-2 py-1 text-caption font-semibold text-legion-muted lg:hidden" title={t('legion.retourFinjaro')}>
             <IconArrowLeft size={14} /> Finjaro
           </Link>
-          <span className="hidden h-8 w-8 items-center justify-center rounded-input bg-teal font-serif text-[18px] font-semibold text-white sm:flex">L</span>
+          <span className="hidden h-8 w-8 items-center justify-center rounded-input bg-legion-gold font-serif text-[18px] font-semibold text-white sm:flex">L</span>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="truncate text-body font-semibold text-ink">{data.entreprise.nom}</span>
-              <span className="hidden rounded border border-hairline bg-base px-1.5 font-mono text-[10px] text-muted sm:inline">LEGION</span>
+              <span className="truncate text-body font-semibold text-legion-ink">{data.entreprise.nom}</span>
+              <span className="hidden rounded border border-legion-line bg-legion-bg px-1.5 font-mono text-[10px] text-legion-muted sm:inline">LEGION</span>
             </div>
-            <p className="truncate text-[11px] text-muted">
+            <p className="truncate text-[11px] text-legion-muted">
               {t('legion.bilanAgents', { total: machines.length, allumes, choisis: machines.filter((a) => a.choisi_par_lui).length })}
             </p>
           </div>
@@ -298,31 +301,32 @@ export default function Entreprise() {
         <div className="flex shrink-0 items-center gap-2">
           {aChoisir > 0 && (
             <button type="button" onClick={quIlsChoisissent} disabled={choisissent}
-              className="hidden items-center gap-1 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white disabled:opacity-50 md:flex">
+              className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg disabled:opacity-50 md:flex">
               <IconSparkles size={14} /> {choisissent ? t('legion.ilsChoisissent') : `${t('legion.quIlsChoisissent')} (${aChoisir})`}
             </button>
           )}
-          <div className="flex items-center gap-2 rounded-input border border-hairline bg-base px-2 py-1" title={t('legion.interrupteurGeneral', 'Interrupteur général')}>
-            <IconPower size={14} className={allumes > 0 ? 'text-success' : 'text-muted'} />
-            <span className="hidden text-[11px] font-semibold text-muted sm:inline">{allumes}/{machines.length}</span>
+          <div className="flex items-center gap-2 rounded-input border border-legion-line bg-legion-bg px-2 py-1" title={t('legion.interrupteurGeneral', 'Interrupteur général')}>
+            <IconPower size={14} className={allumes > 0 ? 'text-legion-success' : 'text-legion-muted'} />
+            <span className="hidden text-[11px] font-semibold text-legion-muted sm:inline">{allumes}/{machines.length}</span>
             <Interrupteur petit on={allumes > 0} onChange={(v) => allumerTous(v)} label={t('legion.interrupteurGeneral', 'Interrupteur général')} />
           </div>
           <button type="button" onClick={() => setKanban((k) => !k)} title={t('legion.tableauTaches')}
-            className={`hidden rounded-input border p-2 transition lg:block ${kanban ? 'border-brass bg-brass/15 text-ink' : 'border-hairline text-muted hover:text-ink'}`}>
+            className={`hidden rounded-input border p-2 transition lg:block ${kanban ? 'border-legion-gold bg-legion-gold/15 text-legion-ink' : 'border-legion-line text-legion-muted hover:text-legion-ink'}`}>
             <IconLayoutKanban size={16} />
           </button>
         </div>
       </header>
 
       {bilan && (
-        <div className="border-b border-hairline bg-teal/10 px-4 py-1.5 text-caption font-semibold text-teal">
+        <div className="border-b border-legion-line bg-legion-gold/10 px-4 py-1.5 text-caption font-semibold text-legion-gold">
           {t('legion.bilanChoix', { faits: bilan.faits, restants: bilan.restants })}
+          {bilan.pourquoi && <span className="ml-2 font-normal text-legion-danger">{bilan.pourquoi}</span>}
         </div>
       )}
       {aChoisir > 0 && (
-        <div className="flex items-center justify-between gap-2 border-b border-hairline bg-teal/10 px-3 py-1.5 md:hidden">
-          <p className="min-w-0 truncate text-[12px] text-ink">{t('legion.choisirAideCourt', { n: aChoisir })}</p>
-          <button type="button" onClick={quIlsChoisissent} disabled={choisissent} className="shrink-0 rounded-pill bg-teal px-2.5 py-1 text-[12px] font-semibold text-white disabled:opacity-50">
+        <div className="flex items-center justify-between gap-2 border-b border-legion-line bg-legion-gold/10 px-3 py-1.5 md:hidden">
+          <p className="min-w-0 truncate text-[12px] text-legion-ink">{t('legion.choisirAideCourt', { n: aChoisir })}</p>
+          <button type="button" onClick={quIlsChoisissent} disabled={choisissent} className="shrink-0 rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-white disabled:opacity-50">
             {choisissent ? t('legion.ilsChoisissent') : t('legion.quIlsChoisissent')}
           </button>
         </div>
@@ -344,7 +348,7 @@ export default function Entreprise() {
               onToggleKanban={() => setKanban((k) => !k)} entrepriseId={entrepriseId} t={t}
             />
           ) : (
-            <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-muted">{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
+            <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
           )}
         </div>
 
@@ -356,7 +360,7 @@ export default function Entreprise() {
       </div>
 
       {/* Téléphone: les quatre onglets */}
-      <nav className="flex shrink-0 border-t border-hairline bg-white lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav className="flex shrink-0 border-t border-legion-line bg-legion-card lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {[
           ['salons', IconMessages, t('legion.ongletSalons', 'Salons')],
           ['chat', IconSparkles, t('legion.ongletDiscussion', 'Discussion')],
@@ -364,7 +368,7 @@ export default function Entreprise() {
           ['taches', IconChecklist, t('legion.ongletTaches', 'Tâches')],
         ].map(([k, Icone, label]) => (
           <button key={k} type="button" onClick={() => setVue(k)}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold ${vue === k ? 'text-teal' : 'text-muted'}`}>
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold ${vue === k ? 'text-legion-gold' : 'text-legion-muted'}`}>
             <Icone size={20} /> {label}
           </button>
         ))}

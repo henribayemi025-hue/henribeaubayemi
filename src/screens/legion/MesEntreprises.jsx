@@ -33,11 +33,11 @@ export default function MesEntreprises() {
       <AppHeader title={t('legion.nom')} back />
       <div className="mx-auto w-full max-w-3xl px-4 pt-3">
         <Link to="/legion/fonder"
-          className="flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white">
+          className="flex w-full items-center justify-center gap-1 rounded-pill bg-legion-gold px-3 py-2 text-body font-semibold text-white">
           <IconPlus size={18} /> {t('legion.nouvelle')}
         </Link>
 
-        <p className="mt-6 text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.mesEntreprises')}</p>
+        <p className="mt-6 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.mesEntreprises')}</p>
         {data.length === 0 ? (
           <EmptyState icon={IconBuildingSkyscraper} title={t('legion.aucune')} />
         ) : (
@@ -45,15 +45,15 @@ export default function MesEntreprises() {
             {data.map((e) => (
               <li key={e.id}>
                 <Link to={`/legion/${e.id}`}
-                  className="flex items-center gap-3 rounded-card border border-hairline bg-white p-3">
+                  className="flex items-center gap-3 rounded-card border border-legion-line bg-legion-card p-3">
                   <span className="text-title">{e.studio_modeles?.emoji || '🏢'}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-body font-semibold text-ink">{e.nom}</span>
-                    <span className="block truncate text-caption text-muted">
+                    <span className="block text-body font-semibold text-legion-ink">{e.nom}</span>
+                    <span className="block truncate text-caption text-legion-muted">
                       {e.studio_modeles?.nom || e.modele} · {t(`legion.taille.${e.taille}`)}
                     </span>
                   </span>
-                  <IconChevronRight size={18} className="shrink-0 text-muted" />
+                  <IconChevronRight size={18} className="shrink-0 text-legion-muted" />
                 </Link>
               </li>
             ))}
