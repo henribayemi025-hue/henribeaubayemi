@@ -52,6 +52,15 @@ pour Finjaro. Aucune donnée personnelle (le dépôt est public).
 - Legion : « Le plan de la semaine », bouton « Au travail maintenant »,
   badges Plan / Livrable / Bloqué, réponses mises en forme.
 
+**À faire, noté par Beau ce soir**
+
+- Console › Commandes montre aussi les commandes des comptes de test (la
+  boutique d'essai de Beau, l'essai de Claude « FJ-8XR6VC »). Beau : « pourquoi
+  il y a toujours les nouveaux orders là ? » → exclure les comptes de test
+  par défaut (compte_reel), avec un interrupteur « voir les tests ».
+- Legion : se déconnecter (fait ce soir), une page de connexion comme celle
+  d'Accounting (plus tard).
+
 **Ce qu'on ne peut pas faire**
 
 - Retrouver les cinq personnes qui ont rempli un panier sans compte : ni
