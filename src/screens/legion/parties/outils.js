@@ -1,0 +1,95 @@
+// Ce que toutes les pièces de l'écran d'entreprise partagent: les couleurs
+// d'un département, son icône, l'heure « il y a 3 min », les statuts d'une
+// tâche. Une seule définition, pour que le rail, la colonne et le kanban
+// disent la même chose de la même couleur.
+import {
+  IconCrown, IconRadar2, IconFlame, IconStack2, IconShieldCheck, IconCoins, IconWorld, IconHash,
+} from '@tabler/icons-react';
+
+// Terre & Or d'abord (terracotta, laiton), puis des teintes franches pour
+// que sept départements restent distinguables d'un coup d'œil.
+export const COULEURS_DEPT = ['#C25E38', '#B45309', '#7C3AED', '#2563EB', '#059669', '#0D9488', '#E11D48', '#6366F1', '#DB2777', '#4F46E5'];
+
+const ICONES = {
+  direction: IconCrown, concurrence: IconRadar2, marketing: IconFlame, produit: IconStack2,
+  qualite: IconShieldCheck, argent: IconCoins, international: IconWorld,
+};
+
+export function iconeDept(cle) {
+  const k = (cle || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  return ICONES[k] || IconHash;
+}
+
+// Le département d'un salon: sa couleur vient de sa position, stable tant
+// que l'ordre des salons ne change pas.
+export function couleurDept(index) {
+  return COULEURS_DEPT[index % COULEURS_DEPT.length];
+}
+
+export const sansAccent = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+export function quand(iso, langue) {
+  const d = new Date(iso);
+  const min = Math.round((Date.now() - d.getTime()) / 60000);
+  if (min < 1) return 'à l’instant';
+  if (min < 60) return `il y a ${min} min`;
+  if (min < 1440) return d.toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(langue, { day: 'numeric', month: 'short' });
+}
+
+export function heure(iso, langue) {
+  return new Date(iso).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit' });
+}
+
+export function jourDe(iso, langue) {
+  const d = new Date(iso);
+  const auj = new Date();
+  if (d.toDateString() === auj.toDateString()) return 'Aujourd’hui';
+  const hier = new Date(auj); hier.setDate(auj.getDate() - 1);
+  if (d.toDateString() === hier.toDateString()) return 'Hier';
+  return d.toLocaleDateString(langue, { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+// La clé d'un salon privé: les deux clés triées, pour que « alpha → vigie »
+// et « vigie → alpha » désignent le MÊME salon.
+export const clePrivee = (a, b) => `dm-${[a, b].sort().join('-')}`;
+
+export const initiales = (nom) => (nom || '?').split(/\s+/).slice(0, 2).map((m) => m[0]).join('').toUpperCase();
+
+export const GENRES = [
+  { cle: 'info', emoji: '💬', sonne: false },
+  { cle: 'question', emoji: '❓', sonne: true },
+  { cle: 'proposition', emoji: '💡', sonne: true },
+  { cle: 'decision', emoji: '⚖️', sonne: true },
+  { cle: 'tache', emoji: '📌', sonne: false },
+];
+
+export const STATUTS = [
+  { cle: 'a_faire', couleur: '#6B6B6B' },
+  { cle: 'en_cours', couleur: '#E09F3E' },
+  { cle: 'revue', couleur: '#7C3AED' },
+  { cle: 'fait', couleur: '#2A9D8F' },
+];
+
+export function statutDe(m) {
+  if (m.termine_le) return 'fait';
+  return m.meta?.statut || 'a_faire';
+}
+
+export const PRIORITES = ['basse', 'moyenne', 'haute', 'critique'];
+
+export const COULEUR_PRIORITE = {
+  basse: '#6B6B6B', moyenne: '#2563EB', haute: '#E09F3E', critique: '#D14343',
+};
+
+export const AUTONOMIES = ['supervise', 'semi', 'autonome'];
+
+// Les messages qu'un salon montre dans sa liste: pas les tâches (elles ont
+// leur tableau) — le dernier vrai message, celui qu'on lirait.
+export function dernierMessage(messages, salonId) {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const m = messages[i];
+    if (m.canal_id === salonId && m.genre !== 'tache') return m;
+  }
+  return null;
+}
