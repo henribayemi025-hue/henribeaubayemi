@@ -87,22 +87,24 @@ Ma proposition pour Finjaro (21 agents), **à valider par lui**:
   Lien (relation clients).
 - **On éteint les 15 autres** jusqu'à ce qu'il y ait de quoi les occuper.
 
-### B4. La messagerie comme WhatsApp — 🔸 COMMENCÉ
-Beau: « ce n'est pas comme dans WhatsApp. Les emojis en bas, pas de clavier,
-pas de stickers. Je ne peux même pas envoyer des photos, ni faire de voix.
-C'est vraiment déplorable. »
+### B4. La messagerie comme WhatsApp — ✅ FAIT (regardé à 1280 et à 390)
+Beau a envoyé quatre maquettes: « voilà exactement ce que je te demande de
+faire ». L'écran est maintenant le leur, en Terre & Or:
+- le rail des départements, la colonne des salons et des agents avec leur
+  interrupteur, la conversation façon WhatsApp Web, le tableau des tâches;
+  sur téléphone, quatre onglets (Salons / Discussion / Équipe / Tâches);
+- **le clavier d'emojis** (10 familles, recherche en français, récents);
+- **les photos** et **les messages vocaux** (rangement `legion`, réservé
+  aux membres de l'entreprise);
+- la mention **@Nom**, la citation, la copie, « en faire une tâche », les
+  réactions groupées;
+- **la recherche** d'un agent par nom, poste ou département;
+- le dernier message et l'heure sous chaque salon;
+- la fiche de chaque agent avec son **niveau d'autonomie** (supervisé /
+  semi / autonome).
 
-- **Le clavier d'emojis**: écrit (10 catégories, recherche en français,
-  récents), **pas encore branché sur la zone de saisie**. C'est la prochaine
-  chose que je fais.
-- ⏳ **Envoyer une photo**.
-- ⏳ **Envoyer un message vocal**.
-- ⏳ La liste des salons montre le **dernier message**, l'heure, et combien
-  de personnes — comme une communauté WhatsApp.
-- ⏳ **Chercher une personne** dans le carnet. Beau: « je peux décider
-  d'écrire à quelqu'un dans une équipe de 45 000 ». Sans recherche, c'est
-  impossible.
-- ⏳ Voir qui est dans un salon.
+**Reste:** voir qui est dans un salon; la liste des salons sur téléphone
+peut encore montrer le nombre de non-lus.
 
 ### B5. L'écran d'accueil et la connexion — ⏳ À FAIRE
 Beau: « pour se connecter, ça doit être comme les autres: se connecter avec
@@ -119,10 +121,20 @@ propose **Google / mon compte Finjaro / créer un compte**. Sa page
 comme un cabinet de conseil en carrière: je la prends pour le STYLE, pas
 pour la définition du produit — à confirmer.)
 
-### B6. Les agents qui travaillent vraiment — ⏳ LE GROS CHANTIER
-Beau a écrit « salut tout le monde » et personne n'a répondu. Normal:
-jusqu'à aujourd'hui, un agent était une fiche. Depuis ce soir, il sait faire
-UNE chose (choisir sa tête). Il reste tout le reste.
+### B6. Les agents qui travaillent vraiment — 🔸 COMMENCÉ, le trou principal est bouché
+Beau a écrit « salut tout le monde » et personne n'a répondu. **Depuis ce
+soir, quelqu'un répond** (fonction `legion-repondre`): l'agent en face dans
+un message privé, celui qu'on nomme avec @, sinon le directeur du
+département du salon. Il répond avec sa personnalité, en lisant les vingt
+derniers messages, et peut se donner une tâche qui apparaît dans le
+tableau. Un agent éteint ne répond pas, et l'écran le dit. Un message n'a
+qu'une réponse; un agent ne répond jamais à un agent (sinon deux machines
+se parlent toute la nuit sur le compte de Beau).
+
+Trouvé en chemin: les tables Legion n'étaient pas dans la diffusion temps
+réel — une réponse n'arrivait jamais sans recharger. Réparé (0140).
+
+Il reste tout le reste:
 
 Ce que Beau veut qu'ils sachent faire, dans son ordre à lui:
 1. **Se connecter à ses outils** — e-mail, calendrier, Supabase, Drive,
@@ -264,8 +276,9 @@ et c'est Beau qui a trouvé la faute avant moi.
 
 ## F. QUAND ON REPREND — les trois premières choses
 
-1. Beau appuie sur **« Qu'ils choisissent eux-mêmes »**, on regarde ensemble
-   ce que les 21 ont choisi, et on **éteint les non nécessaires** (B3).
-2. Je branche le **clavier d'emojis**, puis **les photos**, puis **la voix**
-   dans la messagerie (B4).
-3. Je fais **l'écran d'accueil et la connexion** de Legion (B5).
+1. Beau recharge, passe en français, appuie sur **« Qu'ils choisissent
+   eux-mêmes »**, écrit « salut » dans Direction et voit **qui répond**.
+   Puis on **éteint les non nécessaires** (B3).
+2. Je fais **l'écran d'accueil et la connexion** de Legion (B5).
+3. **Se connecter à ses outils** (e-mail, calendrier, Drive) — la première
+   brique pour que les agents fassent autre chose que parler (B6-1).
