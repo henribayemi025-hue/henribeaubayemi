@@ -163,10 +163,24 @@ const OUTILS = [{
 }];
 const MAX_APPELS = 4;
 
+// Réservés à la Direction (Beau, 22/09: « qui sont ces personnes ? »): qui a
+// fait une action, et la fiche d'une personne — noms et activité, jamais
+// d'e-mail ni de téléphone (0153, legion_outil_personnes).
+const OUTILS_DIRECTION = [
+  { name: 'qui_a_fait', description: "Qui (nom affiché) a fait une action sur la place de marché: les personnes connectées, combien de fois, sur quoi, si c'est une vendeuse; et combien de visiteurs non connectés (sans nom).",
+    parameters: { type: 'OBJECT', properties: {
+      type: { type: 'STRING', enum: ['product_view', 'shop_view', 'search', 'whatsapp_click', 'phone_click', 'contact_intent', 'cart_add', 'checkout_start', 'follow', 'comment', 'share_reel', 'share_shop'] },
+      jours: JOURS }, required: ['type'] } },
+  { name: 'fiche_personne', description: "La fiche d'une personne à partir de son nom (au moins 3 lettres): inscription, pays, ville, ses boutiques s'il y en a, ses commandes, ses 15 dernières actions. Sert à savoir qui c'est et ce qu'elle a fait (par exemple: cliente ou vendeuse qui teste sa boutique).",
+    parameters: { type: 'OBJECT', properties: { nom: { type: 'STRING' } }, required: ['nom'] } },
+];
+const OUTILS_PERSONNES = new Set(OUTILS_DIRECTION.map((o) => o.name));
+
 // Une enquête par message, faite une fois pour toute l'équipe: le modèle
 // choisit les outils, la base répond, et les résultats entrent dans la
 // consigne de chaque agent qui répond. Rien à vérifier → liste vide.
-async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string): Promise<string[]> {
+async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false): Promise<string[]> {
+  const outils = direction ? [{ functionDeclarations: [...OUTILS[0].functionDeclarations, ...OUTILS_DIRECTION] }] : OUTILS;
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const contents: unknown[] = [{ role: 'user', parts: [{ text:
 `Tu prépares la réponse d'une équipe à son fondateur, sur la place de marché Finjaro. Nous sommes le ${aujourdhui}.
@@ -183,7 +197,7 @@ Si y répondre demande un chiffre ou une vérification dans la base de la place 
       const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents, tools: OUTILS, generationConfig: { temperature: 0.1, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } } }),
+        body: JSON.stringify({ contents, tools: outils, generationConfig: { temperature: 0.1, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } } }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!resp.ok) { console.error('enquête:', resp.status, (await resp.text()).slice(0, 200)); break; }
@@ -196,7 +210,8 @@ Si y répondre demande un chiffre ou une vérification dans la base de la place 
     for (const { functionCall } of appels) {
       const nom = functionCall!.name;
       const args = functionCall!.args ?? {};
-      const { data, error } = await service.rpc('legion_outil', { p_nom: nom, p_params: args });
+      const fonction = OUTILS_PERSONNES.has(nom) ? (direction ? 'legion_outil_personnes' : null) : 'legion_outil';
+      const { data, error } = fonction ? await service.rpc(fonction, { p_nom: nom, p_params: args }) : { data: null, error: { message: 'outil réservé à la Direction' } };
       const resultat = error ? { erreur: error.message } : data;
       resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
       reponses.push({ functionResponse: { name: nom, response: { resultat } } });
@@ -264,7 +279,9 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
 // comme toi ». La réponse elle-même passe donc au modèle Pro (plus fin,
 // environ 1 centime la réponse au lieu d'un demi); l'enquête et la
 // relecture restent sur Flash. Le plafond du mois protège la dépense.
-const MODELES_REPONSE = ['gemini-2.5-pro', 'gemini-2.5-flash'];
+// Le premier Pro que Google accepte (2.5 Pro n'est plus ouvert aux nouveaux
+// comptes: 404, vu le 22/09); Flash en dernier recours.
+const MODELES_REPONSE = ['gemini-3.5-pro', 'gemini-3-pro-preview', 'gemini-3-pro', 'gemini-2.5-flash'];
 async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
   let derniere = 'aucun modèle joignable';
   for (const model of MODELES_REPONSE) {
@@ -514,7 +531,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     .map((m: { auteur_id: string; texte: string; created_at: string; canal_id: string }) =>
       `[${nomSalonDe(m.canal_id)}, ${new Date(m.created_at).toISOString().slice(5, 16).replace('T', ' ')}] ${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 300)}`);
 
-  const verifie = mesures ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte)) : [];
+  // Les outils « qui / fiche » ne s'ouvrent qu'en Direction, ou en privé
+  // avec un agent de la Direction.
+  const enDirection = nomSalon === 'direction'
+    || (prive && machines.some((a) => salon.prive_entre.includes(a.cle) && (sansAccent(a.departement || '') === 'direction')));
+  const verifie = mesures ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection) : [];
 
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
