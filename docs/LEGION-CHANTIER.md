@@ -31,7 +31,7 @@ Dans cet ordre. Chaque ligne n'est « faite » que lorsqu'on l'a vue marcher.
 | **Qui reste allumé** chez Finjaro (B3) — je propose 6 : Alpha, Claudinette, Vigie, Traque, Écho, Lien | C'est ton équipe |
 | **Toute action qui change quelque chose** : « déconnecte Finia », envoyer un e-mail, supprimer, publier | Une erreur d'agent ne doit jamais partir sans toi |
 | **Ouvrir Legion à d'autres entreprises** | Ce jour-là, il faut les conditions, le prix et le compteur de dépense |
-| **Apprendre des conversations des clients avec Finia** | Ce sont les messages d'autres personnes, et les tables de Finia appartiennent à Accounting. Il faut : l'annoncer dans la politique de confidentialité, n'en tirer que des tendances anonymes (« ce que les gens demandent le plus »), et l'accord de Claudinette |
+| ✅ **Apprendre des conversations des clients avec Finia** — oui de Beau et de Claudinette (22/09) | Conditions de Claudinette, non négociables : (1) la ligne dans la politique de confidentialité est en ligne AVANT de brancher l'outil ; (2) `finia_tendances(jours)` en SECURITY DEFINER, service_role seulement, agrégats anonymes seulement (thèmes, questions sans réponse, plaintes) ; (3) un thème à moins de 5 messages n'apparaît pas — sinon l'agrégat redevient identifiable |
 
 ## 3. Ça dépend de toi (je ne peux pas le faire à ta place)
 
