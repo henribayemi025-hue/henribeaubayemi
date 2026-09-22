@@ -90,7 +90,7 @@ async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<{
         // Gemini rend parfois « \n » échappé deux fois: le texte arrive avec
         // des barres obliques au lieu de retours à la ligne (vu sur le
         // premier livrable d'Alpha, 22/09). On les rétablit.
-        for (const k of Object.keys(obj)) if (typeof obj[k] === 'string') obj[k] = obj[k].replace(/\\r?\\n/g, '\n');
+        for (const k of Object.keys(obj)) if (typeof obj[k] === 'string') obj[k] = obj[k].replace(/\\r\\n|\\n/g, '\n');
         return { obj, modele: model };
       } catch { derniere = `${model}: JSON illisible`; }
     } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
