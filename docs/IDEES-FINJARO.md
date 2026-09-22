@@ -371,3 +371,56 @@ qu'un ERP ne peut pas faire: il ne voit pas les ventes arriver. Nous si.
 paramètres — « tout afficher » — et pas une fourche à l'inscription.
 
 **Rien n'est décidé. C'est Beau qui tranche.**
+
+---
+
+## 10. « Certains trucs doivent fonctionner hors ligne »
+
+Beau, 22/09. C'était l'idée n° 20; elle remonte.
+
+### Où on en est vraiment
+
+Il y a **déjà un service worker** (`public/sw.js`, v3). Il met en cache la
+COQUE de l'application: `index.html` et les fichiers JavaScript.
+
+Conséquence exacte, ni plus ni moins: **sans réseau, l'application s'ouvre —
+et elle est vide.** Toutes les données viennent de Supabase, rien n'est gardé
+en local. C'est la moitié du chemin, et c'est la moitié la moins utile.
+
+### La règle qui décide de tout
+
+**Hors ligne, on peut AJOUTER. On ne peut pas MODIFIER.**
+
+Ce qu'on ajoute ne se contredit jamais: deux ventes faites hors réseau par
+deux personnes sont deux ventes, on les envoie toutes les deux et c'est fini.
+Ce qu'on modifie se contredit tout le temps: deux personnes qui changent le
+même stock hors réseau, on ne saura jamais laquelle avait raison — et en
+comptabilité, deviner est interdit.
+
+Donc, dans l'ordre:
+
+**1. Ce qui marche hors ligne sans rien risquer** (ajout seul):
+- une **vente au comptoir** (le point de vente), c'est le cas le plus utile —
+  le marché, le vendeur ambulant;
+- une **entrée ou une sortie de caisse**;
+- une **ligne de budget**;
+- une **photo de preuve** d'une tâche faite;
+- un **mouvement de stock** enregistré comme un mouvement, pas comme un
+  nouveau total.
+
+**2. Ce qui doit rester lisible hors ligne** (lecture seule, en cache):
+ses propres articles, ses prix, ses commandes du jour, ses comptes.
+
+**3. Ce qui ne se fait PAS hors ligne**, et il faut le dire à l'écran plutôt
+que de faire semblant: payer, publier un article, discuter, tout ce qui
+demande l'autre personne.
+
+### Ce que ça demande
+
+Une file d'attente locale (IndexedDB), un envoi quand le réseau revient, et
+un identifiant posé par le téléphone à la création pour qu'un double envoi
+n'écrive pas deux fois la même vente. Plus, à l'écran, **un état visible**:
+« 3 ventes en attente d'envoi ». Une file invisible qui échoue en silence est
+pire que pas de hors ligne du tout.
+
+**Rien n'est décidé. À dire par Beau.**

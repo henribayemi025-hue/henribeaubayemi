@@ -54,6 +54,13 @@ Vu sur ses captures de l'ancienne application, absent de mon écran:
 Fait aujourd'hui: le solde se calcule au lieu de se lire, et chaque compte a
 son crayon et sa croix.
 
+### Hors ligne
+Demandé par Beau le 22/09. Le service worker existe déjà et met la coque en
+cache: **l'application s'ouvre sans réseau, mais elle est vide.** Ce qui
+manque, c'est garder les données et mettre les écritures en file d'attente.
+Règle retenue: **hors ligne on AJOUTE, on ne MODIFIE pas** — détail dans
+`IDEES-FINJARO.md` §10. Par quoi commencer: la vente au comptoir.
+
 ### Le RH qui manque, par ordre de difficulté
 La grille d'un ERP est déjà couverte aux trois quarts (détail dans
 `IDEES-FINJARO.md` §7). Ce qui manque vraiment:
