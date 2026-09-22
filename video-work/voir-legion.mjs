@@ -82,7 +82,10 @@ const debord = async (pg) => pg.evaluate(() => document.documentElement.scrollWi
   const { ctx, pg } = await page(1280, 820);
   const t0 = Date.now();
   await pg.goto(`${BASE}/legion/${EID}`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(3500); await fermerBandeaux(pg);
-  console.log(`=== ORDINATEUR 1280 — ${Date.now() - t0} ms ===`); console.log(await lire(pg, 900));
+  console.log(`=== ORDINATEUR 1280 — accueil, ${Date.now() - t0} ms ===`); console.log(await lire(pg, 900));
+  await pg.screenshot({ path: `${SORTIE}/legion-accueil.png`, fullPage: true });
+  console.log(`  debordement accueil: ${await debord(pg)}px`);
+  await pg.locator('button:has-text("Entrer dans les salons")').first().click(); await pg.waitForTimeout(600);
   await pg.screenshot({ path: `${SORTIE}/legion-ordi.png` });
   await pg.locator('button[title="Fiche agent"]').first().click().catch(() => {}); await pg.waitForTimeout(500);
   await pg.screenshot({ path: `${SORTIE}/legion-ordi-fiche.png` });
@@ -96,7 +99,10 @@ const debord = async (pg) => pg.evaluate(() => document.documentElement.scrollWi
 {
   const { ctx, pg } = await page(390, 844);
   await pg.goto(`${BASE}/legion/${EID}`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(3500); await fermerBandeaux(pg);
-  console.log(`\n=== TÉLÉPHONE 390 — discussion ===`); console.log(await lire(pg, 500));
+  console.log(`\n=== TÉLÉPHONE 390 — accueil ===`); console.log(await lire(pg, 500));
+  await pg.screenshot({ path: `${SORTIE}/legion-tel-accueil.png`, fullPage: true });
+  console.log(`  debordement accueil: ${await debord(pg)}px`);
+  await pg.locator('nav button:has-text("Discussion")').first().click(); await pg.waitForTimeout(400);
   await pg.screenshot({ path: `${SORTIE}/legion-tel-chat.png` });
   for (const [onglet, fichier] of [['Salons', 'salons'], ['Équipe', 'equipe'], ['Tâches', 'taches']]) {
     await pg.locator(`nav button:has-text("${onglet}")`).first().click(); await pg.waitForTimeout(400);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Navigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera } from '@tabler/icons-react';
+import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera, IconHome } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
@@ -12,6 +12,7 @@ import { ColonneSalons } from './parties/ColonneSalons';
 import { Conversation } from './parties/Conversation';
 import { Kanban } from './parties/Kanban';
 import { FicheAgent } from './parties/FicheAgent';
+import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
 import { couleurDept, clePrivee, sansAccent } from './parties/outils';
 
@@ -44,13 +45,12 @@ export default function Entreprise() {
   const canalDemande = params.get('canal');
 
   const [deptId, setDeptId] = useState(null);
-  const [vue, setVue] = useState('chat'); // téléphone: 'salons' | 'chat' | 'equipe' | 'taches'
+  // La tour de contrôle est ce qu'on voit en arrivant — la maquette de Beau.
+  const [vue, setVue] = useState('accueil'); // 'accueil' | 'salons' | 'chat' | 'equipe' | 'taches'
   const [kanban, setKanban] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
   const [fiche, setFiche] = useState(null);
   const [tape, setTape] = useState(null);
   const [brouillon, setBrouillon] = useState('');
-  const [choisissent, setChoisissent] = useState(false);
-  const [bilan, setBilan] = useState(null);
   const [photos, setPhotos] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
@@ -110,6 +110,7 @@ export default function Entreprise() {
   const sansPhoto = machines.filter((a) => a.apparence?.famille !== 'photo').length;
 
   const choisirSalon = useCallback((id) => { setParams({ canal: id }); setVue('chat'); setTape(null); }, [setParams]);
+  const entrer = useCallback((ou) => setVue(ou || 'chat'), []);
   const choisirDept = useCallback((id) => { setDeptId(id); if (id) choisirSalon(id); }, [choisirSalon]);
 
   const ecrireA = useCallback(async (autre) => {
@@ -141,10 +142,11 @@ export default function Entreprise() {
       || machines.find((a) => a.est_directeur && a.actif) || machines.find((a) => a.est_directeur) || machines.find((a) => a.actif) || null;
   }
 
-  async function envoyer({ texte, genre, meta }) {
-    if (!moi || !salonId) return;
+  async function envoyer({ texte, genre, meta }, canalForce) {
+    const canal = canalForce || salonId;
+    if (!moi || !canal) return;
     const { data: ligne, error: err } = await supabase.from('legion_messages')
-      .insert({ entreprise_id: entrepriseId, canal_id: salonId, auteur_id: moi.id, user_id: user.id, texte, genre, meta: meta && Object.keys(meta).length ? meta : null })
+      .insert({ entreprise_id: entrepriseId, canal_id: canal, auteur_id: moi.id, user_id: user.id, texte, genre, meta: meta && Object.keys(meta).length ? meta : null })
       .select().single();
     if (err) { toast.error(err.message || t('errors.generic')); throw err; }
     setData((d) => (d && !d.messages.some((m) => m.id === ligne.id) ? { ...d, messages: [...d.messages, ligne] } : d));
@@ -163,6 +165,14 @@ export default function Entreprise() {
       if (arrives.length) setData((d) => (d ? { ...d, messages: [...d.messages, ...arrives.filter((x) => !d.messages.some((m) => m.id === x.id))] } : d));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setTape(null); }
+  }
+
+  // Une directive depuis l'accueil: c'est un message « à trancher » posé
+  // dans le salon visé, et l'agent du département répond comme d'habitude.
+  async function directive(texte, canalId) {
+    setParams({ canal: canalId });
+    setVue('chat');
+    await envoyer({ texte, genre: 'decision' }, canalId);
   }
 
   async function reagir(id, emoji) {
@@ -274,22 +284,6 @@ export default function Entreprise() {
     finally { setPhotos(false); }
   }
 
-  async function quIlsChoisissent() {
-    setChoisissent(true);
-    try {
-      const { data: r, error: err } = await supabase.functions.invoke('legion-se-choisir', { body: { entreprise_id: entrepriseId, limite: 25 } });
-      if (err) throw err;
-      if (r?.erreur) throw new Error(r.erreur);
-      setBilan({ faits: r?.faits ?? 0, restants: r?.restants ?? 0, pourquoi: r?.pourquoi || null });
-      // Beau a appuyé une fois, rien ne s'est passé, et rien ne lui a dit
-      // pourquoi. Si ça échoue encore, il le saura.
-      if ((r?.faits ?? 0) === 0 && r?.pourquoi) toast.error(r.pourquoi);
-      const { data: frais } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre');
-      if (frais) setData((d) => d && ({ ...d, agents: frais }));
-    } catch (e) { toast.error(e.message || t('errors.generic')); }
-    finally { setChoisissent(false); }
-  }
-
   if (authLoading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
   if (!user) return <Navigate to="/auth" state={{ from: `/legion/${entrepriseId}` }} replace />;
   if (loading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
@@ -324,16 +318,10 @@ export default function Entreprise() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {aChoisir > 0 && (
-            <button type="button" onClick={quIlsChoisissent} disabled={choisissent}
-              className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg disabled:opacity-50 md:flex">
-              <IconSparkles size={14} /> {choisissent ? t('legion.ilsChoisissent') : `${t('legion.quIlsChoisissent')} (${aChoisir})`}
-            </button>
-          )}
           {sansPhoto > 0 && (
             <button type="button" onClick={() => vraiesPhotos(null)} disabled={photos}
               title={t('legion.photosCoutent')}
-              className="hidden items-center gap-1 rounded-pill border border-legion-gold/50 bg-legion-gold/15 px-3 py-1.5 text-caption font-semibold text-legion-gold disabled:opacity-50 lg:flex">
+              className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg disabled:opacity-50 md:flex">
               <IconCamera size={14} /> {photos ? t('legion.photosEnCours') : `${t('legion.vraiesPhotos')} (${sansPhoto})`}
             </button>
           )}
@@ -349,17 +337,11 @@ export default function Entreprise() {
         </div>
       </header>
 
-      {bilan && (
-        <div className="border-b border-legion-line bg-legion-gold/10 px-4 py-1.5 text-caption font-semibold text-legion-gold">
-          {t('legion.bilanChoix', { faits: bilan.faits, restants: bilan.restants })}
-          {bilan.pourquoi && <span className="ml-2 font-normal text-legion-danger">{bilan.pourquoi}</span>}
-        </div>
-      )}
-      {aChoisir > 0 && (
+      {sansPhoto > 0 && vue !== 'accueil' && (
         <div className="flex items-center justify-between gap-2 border-b border-legion-line bg-legion-gold/10 px-3 py-1.5 md:hidden">
-          <p className="min-w-0 truncate text-[12px] text-legion-ink">{t('legion.choisirAideCourt', { n: aChoisir })}</p>
-          <button type="button" onClick={quIlsChoisissent} disabled={choisissent} className="shrink-0 rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-white disabled:opacity-50">
-            {choisissent ? t('legion.ilsChoisissent') : t('legion.quIlsChoisissent')}
+          <p className="min-w-0 truncate text-[12px] text-legion-ink">{t('legion.sansPhotoCourt', { n: sansPhoto })}</p>
+          <button type="button" onClick={() => vraiesPhotos(null)} disabled={photos} className="shrink-0 rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-50">
+            {photos ? t('legion.photosEnCours') : t('legion.vraiesPhotos')}
           </button>
         </div>
       )}
@@ -367,11 +349,23 @@ export default function Entreprise() {
       <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} t={t} />
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <Rail entreprise={data.entreprise} departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} t={t} />
+        <Rail entreprise={data.entreprise} departements={departements} courant={vue === 'accueil' ? null : deptId} onChoisir={choisirDept} onTous={() => { setDeptId(null); setVue('accueil'); }} agents={data.agents} t={t} />
 
-        <ColonneSalons key={vue === 'equipe' ? 'equipe' : 'salons'} {...propsColonne} ongletInitial={vue === 'equipe' ? 'agents' : 'mixte'} className={`${vue === 'salons' || vue === 'equipe' ? 'flex' : 'hidden'} lg:flex`} />
+        {vue === 'accueil' && (
+          <Accueil
+            entreprise={data.entreprise} departements={departements} agents={data.agents}
+            messages={data.messages} taches={taches} moi={moi}
+            onEntrer={entrer} onOuvrirSalon={choisirSalon} onEcrireA={ecrireA} onFiche={setFiche}
+            onKanban={() => { setKanban(true); if (window.innerWidth < 1024) setVue('taches'); else setVue('chat'); }}
+            onAllumer={allumer} onAllumerTous={allumerTous} onDirective={directive}
+            onVraiesPhotos={vraiesPhotos} photosEnCours={photos}
+            sansPhoto={sansPhoto} aChoisir={aChoisir} t={t}
+          />
+        )}
 
-        <div className={`min-w-0 flex-1 ${vue === 'chat' ? 'flex' : 'hidden'} lg:flex`}>
+        <ColonneSalons key={vue === 'equipe' ? 'equipe' : 'salons'} {...propsColonne} ongletInitial={vue === 'equipe' ? 'agents' : 'mixte'} className={`${vue === 'salons' || vue === 'equipe' ? 'flex' : 'hidden'} ${vue === 'accueil' ? 'lg:hidden' : 'lg:flex'}`} />
+
+        <div className={`min-w-0 flex-1 ${vue === 'chat' ? 'flex' : 'hidden'} ${vue === 'accueil' ? 'lg:hidden' : 'lg:flex'}`}>
           {salon ? (
             <Conversation
               salon={salon} dept={dept} agentPrive={agentPrive} messages={messagesDuSalon} agents={data.agents} moi={moi}
@@ -387,21 +381,22 @@ export default function Entreprise() {
         <Kanban
           taches={taches} agents={data.agents} departements={departements}
           onStatut={statutTache} onCreer={creerTache} onConvoquer={convoquer} onFermer={() => setKanban(false)} t={t}
-          className={`${vue === 'taches' ? 'flex' : 'hidden'} ${kanban ? 'lg:flex' : 'lg:hidden'}`}
+          className={`${vue === 'taches' ? 'flex' : 'hidden'} ${kanban && vue !== 'accueil' ? 'lg:flex' : 'lg:hidden'}`}
         />
       </div>
 
       {/* Téléphone: les quatre onglets */}
       <nav className="flex shrink-0 border-t border-legion-line bg-legion-card lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {[
+          ['accueil', IconHome, t('legion.ongletAccueil', 'Accueil')],
           ['salons', IconMessages, t('legion.ongletSalons', 'Salons')],
           ['chat', IconSparkles, t('legion.ongletDiscussion', 'Discussion')],
           ['equipe', IconUsers, t('legion.ongletEquipe', 'Équipe')],
           ['taches', IconChecklist, t('legion.ongletTaches', 'Tâches')],
         ].map(([k, Icone, label]) => (
           <button key={k} type="button" onClick={() => setVue(k)}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold ${vue === k ? 'text-legion-gold' : 'text-legion-muted'}`}>
-            <Icone size={20} /> {label}
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${vue === k ? 'text-legion-gold' : 'text-legion-muted'}`}>
+            <Icone size={19} /> {label}
           </button>
         ))}
       </nav>
