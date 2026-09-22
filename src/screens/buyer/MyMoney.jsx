@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   IconPigMoney, IconTargetArrow, IconUsersGroup, IconRepeat,
-  IconPlus, IconCheck, IconLink,
+  IconPlus, IconCheck, IconLink, IconPencil, IconX,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -80,8 +80,22 @@ export default function MyMoney() {
       sids.length ? supabase.from('space_tx').select('space_id, user_id, name, kind, label, amount, created_at').in('space_id', sids).order('created_at', { ascending: false }) : { data: [] },
     ]);
 
+    // `accounts.balance` est le solde de DÉPART, pas le solde d'aujourd'hui.
+    // Chaque ligne de budget rattachée à un compte (`budget_entries.account_id`)
+    // le fait bouger: une entrée l'augmente, une dépense le diminue. Lire
+    // `balance` tel quel affichait Revolut à 31 au lieu de 19,1 et la caisse
+    // d'épargne en positif alors qu'elle est à découvert.
+    // Aucun filtre de mois ici, et c'est voulu: un solde est cumulatif.
+    const soldeDe = (id) =>
+      (budget.data || [])
+        .filter((b) => b.account_id === id)
+        .reduce((s2, b) => s2 + (b.kind === 'income' ? 1 : -1) * Number(b.actual || 0), 0);
+
     return {
-      comptes: comptes.data || [],
+      comptes: (comptes.data || []).map((c) => ({
+        ...c,
+        solde: Number(c.balance || 0) + soldeDe(c.id),
+      })),
       espaces: (espaces.data || []).map((e) => {
         const tx = (mouvements.data || []).filter((m) => m.space_id === e.id);
         const entre = tx.filter((m) => m.kind === 'in').reduce((s2, m) => s2 + Number(m.amount || 0), 0);
@@ -150,7 +164,7 @@ function Comptes({ comptes, lang, t, userId, onDone }) {
   const [solde, setSolde] = useState('');
   const [envoi, setEnvoi] = useState(false);
 
-  const total = comptes.reduce((s2, c) => s2 + Number(c.balance || 0), 0);
+  const total = comptes.reduce((s2, c) => s2 + Number(c.solde || 0), 0);
 
   async function ajouter() {
     setEnvoi(true);
@@ -199,22 +213,101 @@ function Comptes({ comptes, lang, t, userId, onDone }) {
       ) : (
         <ul className="mt-4 grid grid-cols-2 gap-3">
           {comptes.map((c) => (
-            <li key={c.id} className="rounded-card border border-hairline p-3">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-card text-caption font-semibold text-white"
-                style={{ backgroundColor: c.color || '#C25E38' }}
-              >
-                {c.glyph || (c.name || '?').charAt(0).toUpperCase()}
-              </span>
-              <p className="mt-2 truncate text-caption text-muted">{c.name}</p>
-              <p className={`text-body font-semibold ${Number(c.balance) < 0 ? 'text-danger' : 'text-ink'}`}>
-                {montant(c.balance, lang)}
-              </p>
-            </li>
+            <CarteCompte key={c.id} compte={c} lang={lang} t={t} onDone={onDone} />
           ))}
         </ul>
       )}
     </>
+  );
+}
+
+// Une carte de compte: le crayon pour corriger, la croix pour retirer.
+// Les deux manquaient — on pouvait ajouter un compte et plus jamais y toucher.
+//
+// ⚠️ On modifie `balance`, le solde de DÉPART, jamais le solde affiché: celui-ci
+// est la somme du départ et des lignes de budget. L'écran le dit, sinon on
+// tape « 19,1 » dans une case qui contient « 31 » et le compte se décale.
+//
+// Retirer un compte ne supprime AUCUNE ligne de budget: la clé étrangère est
+// en `on delete set null`, les lignes restent et se détachent simplement.
+function CarteCompte({ compte: c, lang, t, onDone }) {
+  const toast = useToast();
+  const [edition, setEdition] = useState(false);
+  const [nom, setNom] = useState(c.name || '');
+  const [depart, setDepart] = useState(String(c.balance ?? ''));
+  const [envoi, setEnvoi] = useState(false);
+
+  const mouvements = Number(c.solde || 0) - Number(c.balance || 0);
+
+  async function enregistrer() {
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('accounts')
+        .update({ name: nom.trim(), balance: Number(depart) || 0 })
+        .eq('id', c.id);
+      if (error) throw error;
+      setEdition(false);
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  async function retirer() {
+    if (!window.confirm(t('money.removeAccountConfirm', { name: c.name }))) return;
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('accounts').delete().eq('id', c.id);
+      if (error) throw error;
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  if (edition) {
+    return (
+      <li className="col-span-2 space-y-2 rounded-card border border-hairline p-3">
+        <Field label={t('money.accountName')} required>
+          {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
+        </Field>
+        <Field label={t('money.openingBalance')} hint={t('money.openingBalanceHint')}>
+          {(id) => <TextInput id={id} type="number" inputMode="decimal" value={depart} onChange={(e) => setDepart(e.target.value)} />}
+        </Field>
+        {mouvements !== 0 && (
+          <p className="text-caption text-muted">
+            {t('money.accountMovements', { amount: montant(mouvements, lang), total: montant(c.solde, lang) })}
+          </p>
+        )}
+        <div className="flex gap-2">
+          <Button onClick={enregistrer} loading={envoi} disabled={nom.trim() === ''}>{t('common.save')}</Button>
+          <Button variant="secondary" onClick={() => { setEdition(false); setNom(c.name || ''); setDepart(String(c.balance ?? '')); }}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="relative rounded-card border border-hairline p-3">
+      <div className="absolute right-2 top-2 flex gap-1">
+        <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editAccount', { name: c.name })} className="p-1 text-muted">
+          <IconPencil size={16} />
+        </button>
+        <button type="button" onClick={retirer} disabled={envoi} aria-label={t('money.removeAccount', { name: c.name })} className="p-1 text-muted">
+          <IconX size={16} />
+        </button>
+      </div>
+      <span
+        className="flex h-8 w-8 items-center justify-center rounded-card text-caption font-semibold text-white"
+        style={{ backgroundColor: c.color || '#C25E38' }}
+      >
+        {c.glyph || (c.name || '?').charAt(0).toUpperCase()}
+      </span>
+      <p className="mt-2 truncate pr-12 text-caption text-muted">{c.name}</p>
+      <p className={`text-body font-semibold ${Number(c.solde) < 0 ? 'text-danger' : 'text-ink'}`}>
+        {montant(c.solde, lang)}
+      </p>
+    </li>
   );
 }
 
