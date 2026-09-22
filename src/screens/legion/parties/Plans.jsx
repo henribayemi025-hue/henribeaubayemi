@@ -87,20 +87,25 @@ export function Plans({ entreprise, t }) {
 }
 
 // Le Markdown léger des agents (## titres, - listes, **gras**), sans
-// bibliothèque: ce sont les seules formes qu'on leur demande.
-function Texte({ contenu }) {
+// bibliothèque: ce sont les seules formes qu'on leur demande. Servi ici et
+// dans les bulles des salons (Beau, 22/09: « mets ça point par point, bien
+// clair, présentable »).
+export function Texte({ contenu, className = 'text-[13px] leading-snug text-legion-ink', titre = 'text-legion-gold' }) {
   const lignes = String(contenu || '').split('\n');
   return (
-    <div className="space-y-1 text-[13px] leading-snug text-legion-ink">
+    <div className={`space-y-1 ${className}`}>
       {lignes.map((l, i) => {
-        if (/^##\s/.test(l)) return <p key={i} className="pt-1 text-[12px] font-bold uppercase tracking-wide text-legion-gold">{l.replace(/^##\s*/, '')}</p>;
-        if (/^[-•]\s/.test(l)) return <p key={i} className="pl-3 before:mr-1.5 before:content-['–']">{gras(l.replace(/^[-•]\s*/, ''))}</p>;
+        if (/^#{1,3}\s/.test(l)) return <p key={i} className={`pt-1 text-[12px] font-bold uppercase tracking-wide ${titre}`}>{l.replace(/^#{1,3}\s*/, '')}</p>;
+        if (/^\s*(\d+[.)]|[-•*])\s/.test(l)) return <p key={i} className="pl-3 before:mr-1.5 before:content-['–']">{gras(l.replace(/^\s*(\d+[.)]|[-•*])\s*/, ''))}</p>;
         if (!l.trim()) return null;
         return <p key={i}>{gras(l)}</p>;
       })}
     </div>
   );
 }
+// Un texte d'agent qui contient un titre ou une liste mérite la mise en
+// forme; un simple salut reste une phrase.
+export const estStructure = (s) => /(^|\n)(#{1,3}\s|\s*(\d+[.)]|[-•*])\s)/.test(String(s || ''));
 function gras(s) {
   const parts = s.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((p, i) => (p.startsWith('**') && p.endsWith('**') ? <strong key={i}>{p.slice(2, -2)}</strong> : p));

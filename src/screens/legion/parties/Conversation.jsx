@@ -10,6 +10,7 @@ import { Interrupteur } from './Interrupteur';
 import { ChoixEmoji } from './ChoixEmoji';
 import { RAPIDES } from '../emojis';
 import { GENRES, heure, jourDe, sansAccent, iconeDept } from './outils';
+import { Texte, estStructure } from './Plans';
 
 // La conversation — le centre de l'écran, à la WhatsApp: les bulles
 // groupées par auteur, le nom en couleur DANS la bulle, la citation, les
@@ -305,13 +306,21 @@ export function Conversation({
                           ))}
                         </div>
                       )}
-                      {!seulementPiece && (
+                      {!seulementPiece && (m.meta?.par_ia && estStructure(m.texte) ? (
+                        // Un plan, un livrable, une réponse point par point
+                        // (Beau, 22/09: « présentable, on n'est pas au
+                        // primaire »): titres et listes rendus, pas du
+                        // Markdown brut dans une bulle.
+                        <div className="mb-3 break-words">
+                          <Texte contenu={m.texte} className={`text-[15px] leading-[1.35] ${mien ? 'text-white' : 'text-legion-ink'}`} titre={mien ? 'text-white/85' : 'text-legion-gold'} />
+                        </div>
+                      ) : (
                         <p className="whitespace-pre-wrap break-words text-[15.5px] leading-[1.35]">
                           {m.texte}
                           {/* La place de l'heure, pour qu'elle ne chevauche jamais le texte */}
                           <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
                         </p>
-                      )}
+                      ))}
                       {(m.meta?.plan || m.meta?.livrable) && (
                         <p className={`mb-1 inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11px] font-semibold ${m.meta?.livrable?.statut === 'bloque' ? 'bg-legion-danger/15 text-legion-danger' : 'bg-legion-gold/15 text-legion-gold'}`}>
                           {m.meta?.plan ? `📅 ${t('legion.badgePlan', 'Plan')} · ${m.meta.plan.departement || ''}`
