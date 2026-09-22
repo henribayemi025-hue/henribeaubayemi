@@ -108,8 +108,10 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Les plus suivis d'abord (étoiles): à défaut de mieux, c'est le signe
+  // que d'autres s'en servent.
   const aLire: Array<[string, { licence: string | null; branche: string }]> = [];
-  for (const [depot, info] of candidats) {
+  for (const [depot, info] of [...candidats].sort((a, b) => b[1].etoiles - a[1].etoiles)) {
     if (reposConnus.has(depot) || vusAvant.has(depot)) continue;
     vus += 1;
     if (!info.licence || !LICENCES_LIBRES.includes(info.licence)) {
@@ -140,7 +142,9 @@ Deno.serve(async (req: Request) => {
         if (clesConnues.has(cle)) continue;
         const { error } = await db.from('studio_catalogue').insert({
           cle, source_repo: depot, source_chemin: chemin, nom: nomFiche, genre: 'skill',
-          description: (description || '').slice(0, 1000), categorie: chemin.split('/').slice(-3, -2)[0] || null,
+          // Une fiche rangée à la racine du dépôt n'a pas de dossier parent:
+          // sa catégorie est alors le nom du dépôt (la colonne est obligatoire).
+          description: (description || '').slice(0, 1000), categorie: chemin.split('/').slice(-3, -2)[0] || depot.split('/')[1],
           licence: info.licence, modele: '', taille: texte.length,
         });
         if (error) { erreurs.push(`${depot}/${chemin}: ${error.message}`); continue; }
