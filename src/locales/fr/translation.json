@@ -853,7 +853,8 @@
     "quoteSentTitle": "Demande envoyée",
     "quoteSentBody": "La boutique va t'envoyer son prix. Tu le retrouveras dans « Mes commandes ».",
     "quoteShopNote": "Cette boutique doit d'abord t'envoyer son prix.",
-    "quoteAllNote": "Le total ne compte pas les articles sans prix."
+    "quoteAllNote": "Le total ne compte pas les articles sans prix.",
+    "fillRequired": "Il manque des informations. Complète les champs marqués en rouge."
   },
   "vendor": {
     "greeting": "Bonjour, {{name}}",
