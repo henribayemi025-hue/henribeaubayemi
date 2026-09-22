@@ -42,6 +42,45 @@ export function VendorPrice({ fcfa, className = '' }) {
   return <Price fcfa={fcfa} className={className} currency={currency} />;
 }
 
+// Le montant qu'on va TENDRE, pas celui qu'on va lire.
+//
+// Vu à l'écran le 22/09: une commande chez une boutique de Yaoundé, payée en
+// ESPÈCES à la livraison, affichait « 6,86 € ». La donnée était juste — 4 500
+// FCFA convertis — mais elle ne sert à rien: l'acheteuse ne paiera pas en
+// euros. Elle sortira des billets et les tendra à quelqu'un qui attend des
+// FCFA.
+//
+// Le bon partage n'est pas « acheteuse / vendeuse » mais « ce qu'on va
+// DÉBITER / ce qu'on va TENDRE » (formulation de la session Accounting):
+//   - carte: sa banque débite dans SA monnaie, elle doit lire sa monnaie;
+//   - espèces à la livraison: le montant à sortir de la poche est celui de la
+//     boutique, en gros; sa monnaie à elle reste à côté, en petit, pour
+//     qu'elle sache ce que ça vaut.
+//
+// Et celle qui subit l'erreur n'est pas l'acheteuse, qui peut refuser: c'est
+// la VENDEUSE, qui se retrouve à discuter un prix sur son pas de porte.
+//
+// À noter: réparer la détection de pays ne rendrait pas l'affichage en euros
+// souhaitable ici. Ce sont deux sujets.
+export function CashPrice({ fcfa, shopCountry, className = '' }) {
+  const { currency, language } = useSettings();
+  const deviseBoutique = shopCountry ? currencyForCountry(shopCountry) : null;
+  const aPayer = formatPrice(fcfa, deviseBoutique || currency, language);
+
+  // Même monnaie des deux côtés, ou boutique inconnue: rien à ajouter.
+  if (!deviseBoutique || deviseBoutique === currency) {
+    return <span className={className}>{aPayer}</span>;
+  }
+  return (
+    <span className={className}>
+      {aPayer}
+      <span className="ml-1 whitespace-nowrap text-caption font-normal text-muted">
+        ≈ {formatPrice(fcfa, currency, language)}
+      </span>
+    </span>
+  );
+}
+
 // Remise réelle en %, ou null s'il n'y en a pas.
 //
 // `compare_at_price_fcfa` est le prix AVANT promo (le prix barré). On refuse

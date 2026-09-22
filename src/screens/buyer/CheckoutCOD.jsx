@@ -10,7 +10,7 @@ import { useSettings } from '../../hooks/useSettings';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
-import { Price } from '../../components/Price';
+import { Price, CashPrice } from '../../components/Price';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
@@ -361,7 +361,7 @@ export default function CheckoutCOD() {
             <span>{t('vendor.orderTotal')}</span>
             {devis
               ? <span className="text-brass">{t('checkout.quoteTotalPending')}</span>
-              : <Price fcfa={total} className="text-teal" />}
+              : <CashPrice fcfa={total} shopCountry={shop?.country} className="text-teal" />}
           </div>
         </section>
 
