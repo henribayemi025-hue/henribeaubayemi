@@ -8,6 +8,7 @@ import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { iconeDept, statutDe, STATUTS } from './outils';
 import { Memoire } from './Memoire';
+import { EquiperEquipe } from './Competences';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -312,7 +313,10 @@ export function Accueil({
         </section>
       </div>
 
-      {/* 6. La mémoire: ce que les agents ont retenu de ce que Beau leur dit */}
+      {/* 6. Les compétences: que l'équipe s'équipe (chantier 2) */}
+      <EquiperEquipe entrepriseId={entreprise.id} agents={agents} t={t} />
+
+      {/* 7. La mémoire: ce que les agents ont retenu de ce que Beau leur dit */}
       <Memoire entrepriseId={entreprise.id} t={t} />
     </div>
   );

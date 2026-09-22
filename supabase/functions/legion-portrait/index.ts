@@ -165,8 +165,12 @@ Deno.serve(async (req: Request) => {
 
   let q = service.from('legion_agents')
     .select('id, nom, poste, departement, mandat, personnalite, apparence')
-    .eq('entreprise_id', entreprise.id).is('user_id', null).neq('moteur', 'claude-code');
+    .eq('entreprise_id', entreprise.id).is('user_id', null);
+  // Claude n'est pas pris dans la tournée générale; mais Beau peut lui
+  // demander SA photo, comme à n'importe quel agent (22/09: « je veux une
+  // vraie photo, pas l'icône du marteau »).
   if (corps.agent_id) q = q.eq('id', corps.agent_id);
+  else q = q.neq('moteur', 'claude-code');
   // Une photo par agent, jamais deux: ce qui est payé n'est pas repayé.
   else q = q.or('apparence->>famille.is.null,apparence->>famille.neq.photo');
   const { data: agents, error } = await q.order('ordre').limit(limite);

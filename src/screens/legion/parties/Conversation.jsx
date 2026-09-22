@@ -38,8 +38,9 @@ function couleurNom(a) {
 
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
-  onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, entrepriseId, t,
+  onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, entrepriseId, t,
 }) {
+  const photoSalon = useRef(null);
   const fil = useRef(null);
   const colle = useRef(true); // la liste est-elle tout en bas ?
   const [enHaut, setEnHaut] = useState(false);
@@ -137,9 +138,19 @@ export function Conversation({
           {agentPrive ? (
             <button type="button" onClick={() => onFiche(agentPrive)}><Visage a={agentPrive} taille={38} point={false} /></button>
           ) : (
-            <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-white lg:h-10 lg:w-10 lg:rounded-card" style={{ backgroundColor: salon?.couleur || '#C25E38' }}>
-              <Icone size={18} />
-            </span>
+            // Toucher l'icône du salon: lui mettre une photo (Beau, 22/09).
+            <button type="button" onClick={() => photoSalon.current?.click()} disabled={!onPhotoSalon}
+              title={t('legion.photoDuSalon', 'Changer la photo du salon')} className="shrink-0">
+              {salon?.image_url ? (
+                <img src={salon.image_url} alt="" className="h-[38px] w-[38px] rounded-full object-cover lg:h-10 lg:w-10" />
+              ) : (
+                <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-white lg:h-10 lg:w-10 lg:rounded-card" style={{ backgroundColor: salon?.couleur || '#C25E38' }}>
+                  <Icone size={18} />
+                </span>
+              )}
+              <input ref={photoSalon} type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhotoSalon?.(salon, f); }} />
+            </button>
           )}
           <div className="min-w-0">
             <h3 className="truncate text-[16px] font-semibold leading-tight text-legion-ink">{agentPrive ? agentPrive.nom : salon?.nom}</h3>

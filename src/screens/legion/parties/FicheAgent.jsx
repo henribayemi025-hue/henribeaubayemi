@@ -4,6 +4,7 @@ import { Modal } from '../../../components/Modal';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { AUTONOMIES } from './outils';
+import { CompetencesAgent } from './Competences';
 
 // La fiche d'un agent: qui il est, ce qu'on attend de lui, comment il parle,
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
@@ -83,6 +84,8 @@ export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEc
             ))}
           </div>
         </div>
+
+        {agent.moteur !== 'claude-code' && <CompetencesAgent agent={agent} t={t} />}
 
         <div className="flex items-center justify-between gap-2 border-t border-legion-line pt-3">
           <div className="flex items-center gap-3">

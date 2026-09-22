@@ -16,6 +16,7 @@ import { Kanban } from './parties/Kanban';
 import { FicheAgent } from './parties/FicheAgent';
 import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
+import { Visage } from './parties/Visage';
 import { couleurDept, clePrivee, sansAccent } from './parties/outils';
 
 // LEGION — l'entreprise, sur le téléphone et sur l'ordinateur de celui qui
@@ -311,6 +312,35 @@ export default function Entreprise() {
     finally { setPhotos(false); }
   }
 
+  // Les photos que Beau pose lui-même (22/09: « une photo pour la
+  // Direction, et moi aussi je dois pouvoir mettre une photo »). Le fichier
+  // va dans le rangement `legion`, sous le dossier de l'entreprise.
+  async function televerser(fichier, dossier) {
+    if (fichier.size > 10 * 1024 * 1024) throw new Error(t('legion.tropLourd', 'Trop lourd: 10 Mo au plus.'));
+    const ext = (fichier.name.split('.').pop() || 'jpg').toLowerCase();
+    const chemin = `${entrepriseId}/${dossier}/${crypto.randomUUID()}.${ext}`;
+    const { error: e } = await supabase.storage.from('legion').upload(chemin, fichier, { contentType: fichier.type || 'image/jpeg' });
+    if (e) throw e;
+    return supabase.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+  }
+  async function photoSalon(s, fichier) {
+    try {
+      const url = await televerser(fichier, 'salons');
+      const { error: e } = await supabase.from('legion_canaux').update({ image_url: url }).eq('id', s.id);
+      if (e) throw e;
+      setData((d) => (d ? { ...d, salons: d.salons.map((x) => (x.id === s.id ? { ...x, image_url: url } : x)) } : d));
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+  async function maPhoto(fichier) {
+    if (!moi) return;
+    try {
+      const url = await televerser(fichier, 'membres');
+      const { error: e } = await supabase.from('legion_agents').update({ avatar_url: url }).eq('id', moi.id);
+      if (e) throw e;
+      setData((d) => (d ? { ...d, agents: d.agents.map((x) => (x.id === moi.id ? { ...x, avatar_url: url } : x)) } : d));
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+
   if (authLoading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
   if (!user) return <Navigate to="/auth" state={{ from: `/legion/${entrepriseId}` }} replace />;
   if (loading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
@@ -351,6 +381,13 @@ export default function Entreprise() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {moi && (
+            <label title={t('legion.maPhoto', 'Ma photo')} className="cursor-pointer">
+              <Visage a={moi} taille={32} point={false} />
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) maPhoto(f); }} />
+            </label>
+          )}
           {sansPhoto > 0 && (
             <button type="button" onClick={() => vraiesPhotos(null)} disabled={photos}
               title={t('legion.photosCoutent')}
@@ -404,7 +441,7 @@ export default function Entreprise() {
               salon={salon} dept={dept} agentPrive={agentPrive} messages={messagesDuSalon} agents={data.agents} moi={moi}
               reactions={data.reactions} langue={langue} tape={tape} brouillon={brouillon} onBrouillonPris={() => setBrouillon('')}
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
-              onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')}
+              onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon}
               entrepriseId={entrepriseId} t={t}
             />
           ) : (

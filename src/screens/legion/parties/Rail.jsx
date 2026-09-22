@@ -40,7 +40,7 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
                 className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition ${choisi ? 'bg-legion-card text-legion-ink shadow-lg' : 'bg-legion-card text-legion-muted hover:bg-legion-card-haut hover:text-legion-ink'}`}
                 style={choisi ? { color: d.couleur } : undefined}
               >
-                <Icone size={20} />
+                {d.image_url ? <img src={d.image_url} alt="" className="h-full w-full rounded-2xl object-cover" /> : <Icone size={20} />}
                 <span
                   className={`absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-legion-panel ${allumes > 0 ? 'bg-legion-success' : 'bg-legion-line'}`}
                   title={`${allumes}/${desAgents.length}`}
