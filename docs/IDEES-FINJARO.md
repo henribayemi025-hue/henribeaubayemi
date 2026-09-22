@@ -180,3 +180,88 @@ C'est une décision, pas une hésitation: tant qu'il n'y a pas d'acheteurs, le
 temps se met dans le produit plutôt que dans l'attente. Ma réserve ci-dessus
 reste écrite pour le jour où les premiers clients arriveront — à ce
 moment-là, c'est eux qui décideront de l'ordre, pas cette liste.
+
+---
+
+## 7. « On peut aussi faire comme ça » — la grille d'un ERP (Dolibarr)
+
+Beau, 22/09, captures de Dolibarr à l'appui: « c'est ça je demande de faire,
+même RH, etc. », « genre open source ».
+
+### Ce que la grille contient, et où on en est VRAIMENT
+
+Vérifié fichier par fichier dans les deux dépôts, pas de mémoire.
+
+| Module Dolibarr | Chez nous | Où |
+| --- | --- | --- |
+| Prospects / Clients | ✅ | `Parties` (Accounting) + `prospects`, 60 lignes (place de marché) |
+| Devis | ✅ | `Quotes` |
+| Commandes | ✅ | `orders` (place de marché) |
+| Contrats / Abonnements | ✅ | `Subscriptions` |
+| Service d'assistance | ◐ | table `support_tickets` en base, aucun écran |
+| Opportunités | ❌ | — |
+| Base de connaissance | ❌ | — |
+| **Employés** | ✅ | `Staff` |
+| **Pointage / présence** | ✅ | `Staff` — présent, demi-journée, absent, congé |
+| **Paie** | ✅ | `Staff` |
+| Notes de frais | ◐ | `Expenses` existe, mais côté comptable, pas « l'employé demande, on rembourse » |
+| Demandes de congé | ❌ | un STATUT « congé » existe; le circuit demande → réponse, non |
+| Feuilles de temps | ❌ | — |
+| Recrutement | ❌ | — |
+| Gestion association | ❌ | — |
+| CMS / Site web | ✅ | chaque boutique a sa page |
+| **Point de vente** | ✅ | `PointOfSale`, `CashRegister`, `CashBook` |
+| Produits, Services | ✅ | `Products` + `products`, 501 lignes |
+| Stocks | ✅ | `Stock` |
+| Achat, approvisionnement | ✅ | `Purchases` |
+| Expéditions | ❌ | la livraison existe sur une commande, pas un bon d'expédition |
+| Fabrication | ❌ | — |
+| **Facturation & Paiements** | ✅ | `Sales`, `Journal` |
+| **Rapprochement bancaire** | ✅ | `Reconcile`, `Statements` |
+| **Comptabilité à double entrée** | ✅ | `GeneralLedger`, `ChartOfAccounts`, `TrialBalance`, `Closing` |
+| Emailing | ◐ | `relances`, 50 envois — vers des prospects, pas une campagne |
+| Enquêtes | ❌ | — |
+
+**Le fait à retenir:** la grille est déjà couverte aux trois quarts, et la
+partie la plus dure — la comptabilité en partie double, le PDV, la paie — est
+FAITE. Ce n'est pas un projet à commencer, c'est un inventaire à finir.
+
+### Ce qui manque vraiment, par ordre de difficulté
+
+1. **Demandes de congé** — le statut existe, le circuit non. Petit.
+2. **Feuilles de temps** — heures par personne et par jour. Petit, et ça
+   nourrit la paie qui existe déjà.
+3. **Notes de frais de l'employé** — il photographie un reçu, on rembourse.
+   `Expenses` sert de sortie comptable, il manque l'entrée.
+4. **Expéditions** — bon d'expédition détaché de la commande.
+5. **Recrutement, fabrication, enquêtes, association** — gros, et sans
+   demande mesurée. À ne pas ouvrir maintenant.
+
+### Sur « open source »
+
+Deux choses différentes, à ne pas confondre:
+
+- **Le dépôt est DÉJÀ public.** N'importe qui peut lire ce code aujourd'hui.
+  Vérifié le 22/09: aucune clé secrète n'y est écrite — les fonctions ne
+  lisent que des noms de variables d'environnement.
+- **Il n'y a AUCUNE licence.** Sans licence, « tous droits réservés »
+  s'applique: on peut lire, pas réutiliser. Poser une licence est une
+  décision qui ne se reprend pas — ce qui est publié sous licence libre
+  l'est pour toujours, même si on change d'avis.
+
+Ce qu'il faut savoir avant de choisir:
+
+- **Le code n'est pas ce qui a de la valeur ici.** Une place de marché vaut
+  par ses vendeuses et ses acheteuses. Quelqu'un qui copierait le code
+  repartirait de zéro côté monde réel. Le risque est plus petit qu'il n'en
+  a l'air.
+- **Mais le code public rend la base de données seule gardienne.** C'est
+  exactement le travail du 22/09: quatorze fonctions étaient ouvertes à tout
+  compte connecté. En logiciel libre, chaque trou de ce genre se lit dans le
+  code par n'importe qui. Ça ne condamne pas l'idée — ça dit que la sécurité
+  doit passer AVANT la licence, pas après.
+- **Dolibarr vit de l'hébergement et du support**, pas du logiciel. Le modèle
+  marche quand une communauté contribue, et une contribution demande
+  quelqu'un pour la relire. Beau ne code pas.
+
+**Rien n'est décidé.** À trancher quand il le voudra.
