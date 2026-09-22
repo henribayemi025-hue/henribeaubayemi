@@ -63,7 +63,17 @@ begin
       'recherches', (select count(*) from ev where type = 'search'),
       'contacts_vendeuse', (select count(*) from ev where type in ('whatsapp_click','phone_click','contact_intent')),
       'ajouts_panier', (select count(*) from ev where type = 'cart_add'),
-      'lecture', 'Beaucoup de navigateurs, presque autant d''articles différents vus une fois chacun, et presque pas de visiteurs engagés ni de recherches: c''est un robot qui parcourt le catalogue.'
+      -- Le verdict se CALCULE: beaucoup de fiches, presque toutes sur des
+      -- articles différents, et moins d'un navigateur sur dix engagé.
+      'verdict', case
+        when (select count(*) from ev where type = 'product_view') >= 100
+         and (select count(distinct target_id) from ev where type = 'product_view')
+             >= 0.9 * (select count(*) from ev where type = 'product_view')
+         and (select count(*) from par where visite and (connecte or pages >= 2 or actions > 0))
+             < 0.1 * greatest((select count(*) from par where visite), 1)
+        then 'robot: le catalogue a été parcouru article par article, presque sans visiteur engagé'
+        else 'rien d''anormal: pas de parcours du catalogue par un robot'
+      end
     ) into r;
     return r;
 
@@ -97,7 +107,8 @@ begin
       select s.name as boutique, s.city as ville, s.country as pays,
              case v_critere
                when 'articles' then (select count(*) from products pr where pr.shop_id = s.id and pr.is_active and pr.moderation_hidden_at is null)
-               when 'commandes' then (select count(*) from orders o where o.shop_id = s.id and o.created_at > v_depuis)
+               when 'commandes' then (select count(*) from orders o where o.shop_id = s.id and o.created_at > v_depuis
+                                         and (o.buyer_id is null or compte_reel(o.buyer_id)))
                when 'abonnes' then coalesce(s.followers_count, 0)
                else (select coalesce(sum(pr.views), 0) from products pr where pr.shop_id = s.id)
              end as valeur
@@ -117,7 +128,7 @@ begin
         from products pr join shops s on s.id = pr.shop_id
        where pr.is_active and pr.moderation_hidden_at is null and compte_reel(s.owner_id)
          and (v_categorie is null or pr.category ilike v_categorie)
-         and (v_prix_max is null or pr.price_fcfa <= v_prix_max)
+         and (v_prix_max is null or (pr.price_fcfa > 0 and pr.price_fcfa <= v_prix_max))
     )
     select jsonb_build_object(
       'filtre', jsonb_build_object('categorie', v_categorie, 'prix_max_fcfa', v_prix_max),
