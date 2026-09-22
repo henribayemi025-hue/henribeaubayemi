@@ -154,10 +154,20 @@ s'assembler dès maintenant à partir de vrais fichiers. « Juridique »,
 - Chaque agent a un nom, un visage (DiceBear, gratuit) et un poste. Finjaro
   est la première entreprise Legion (21 agents, 7 salons).
 
+- **Les métiers sont ÉCRITS, pas seulement copiés** (migration 0138). Beau:
+  « 8 métiers pour un studio de cinéma ? C'est quoi le concept, combien de
+  personnes, qui y travaille, un petit, un grand comme McKinsey ». Chaque
+  modèle a maintenant son concept, ses effectifs typiques, ses départements
+  et ses métiers avec un mandat chacun — mesurés: produit 267, conseil 88,
+  juridique 82 (dont 21 experts pays), cinéma 81, recherche 74, marché 62,
+  croissance 57. Plus aucun poste « à écrire ».
+- Legion est dans **les six points** (`finjaro_apps`).
+
 **Ce qui reste, dans l'ordre:**
 1. Un modèle **« sur mesure »**: choisir soi-même ses métiers dans le
    catalogue.
-2. Écrire les agents qui manquent: cinéma (8), marché, juridique.
+2. Les noms anglais des postes venus du catalogue (« Devils Advocate »,
+   « Startup Cto ») à traduire.
 3. Le visage choisi: une photo du web ou un bitmoji, à la place de DiceBear.
 4. L'espace pour coder (aller sur Claude depuis l'app).
 5. Les agents qui **travaillent vraiment**: aujourd'hui ce sont des fiches

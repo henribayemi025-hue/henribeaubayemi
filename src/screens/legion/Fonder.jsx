@@ -27,6 +27,16 @@ const TAILLES = ['cocon', 'startup', 'scaleup', 'megacorp'];
 // L'effectif est un NOMBRE, pas une case: Beau — « c'est à moi de choisir
 // selon ma taille, mon entreprise ». 10 000 est le plafond qu'il a dit.
 const RACCOURCIS = [3, 25, 150, 1500, 10000];
+// Regroupe les postes par département, dans l'ordre où le modèle les donne
+// (directeurs en premier). Pour lire un organigramme, pas une liste.
+function parDepartement(postes) {
+  const m = new Map();
+  for (const p of postes) {
+    if (!m.has(p.departement)) m.set(p.departement, { nom: p.departement, postes: [] });
+    m.get(p.departement).postes.push(p);
+  }
+  return [...m.values()];
+}
 const tailleDe = (n) => (n <= 5 ? 'cocon' : n <= 40 ? 'startup' : n <= 300 ? 'scaleup' : 'megacorp');
 
 export default function Fonder() {
@@ -47,7 +57,7 @@ export default function Fonder() {
     ]);
     if (m.error) throw m.error;
     return { modeles: m.data || [], postes: p.data || [] };
-  }, [], { cacheKey: 'legion:modeles' });
+  }, [], { cacheKey: 'legion:modeles:v2' });
 
   if (loading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
   if (error) return <ErrorState onRetry={retry} />;
@@ -95,6 +105,7 @@ export default function Fonder() {
                     <span className="block text-caption text-muted">{m.promesse}</span>
                     <span className="mt-1 block text-caption text-muted">
                       {t('legion.postesCatalogue', { n: ps.length - aEcrire })}
+                      {' · '}{t('legion.departements', { n: new Set(ps.map((p) => p.departement)).size })}
                       {aEcrire > 0 && <> · <IconMoon size={11} className="inline" /> {t('legion.postesAEcrire', { n: aEcrire })}</>}
                     </span>
                   </span>
@@ -106,6 +117,26 @@ export default function Fonder() {
 
         {modele && (
           <>
+            {/* Le concept: c'est quoi, comment c'est organisé, combien de gens
+                d'habitude. Beau: « un cabinet de conseil c'est quoi le concept,
+                combien de personnes, qui y travaille ». */}
+            {(modele.concept || modele.effectifs) && (
+              <div className="mt-4 rounded-card border border-hairline bg-white p-3">
+                {modele.concept && (
+                  <>
+                    <p className="text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.conceptTitre')}</p>
+                    <p className="mt-1 text-body text-ink">{modele.concept}</p>
+                  </>
+                )}
+                {modele.effectifs && (
+                  <>
+                    <p className="mt-3 text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.effectifsTitre')}</p>
+                    <p className="mt-1 text-body text-ink">{modele.effectifs}</p>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* 2. L'effectif — un nombre, à lui de choisir */}
             <p className="mt-6 text-caption font-semibold uppercase tracking-wider text-muted">{t('legion.etapeEffectif')}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -127,20 +158,22 @@ export default function Fonder() {
               <p className="text-caption font-semibold text-ink">
                 {t('legion.apercuEffectif', { metiers: postesDu(modele.cle).length, personnes: Math.max(Number(effectif) || 1, postesDu(modele.cle).length) })}
               </p>
-              <ul className="mt-2 space-y-1">
-                {postesDu(modele.cle).slice(0, 30).map((p, i) => (
-                  <li key={i} className="flex items-center gap-2 text-caption">
-                    <span className={p.a_ecrire ? 'text-muted' : 'text-ink'}>
-                      {p.est_directeur ? '★ ' : ''}{p.poste}
-                    </span>
-                    <span className="text-muted">· {p.departement}</span>
-                    {p.a_ecrire && <span className="rounded-pill bg-brass/15 px-2 text-brass">{t('legion.aEcrire')}</span>}
-                  </li>
-                ))}
-              </ul>
-              {postesDu(modele.cle).length > 30 && (
-                <p className="mt-2 text-caption text-muted">{t('legion.etPlus', { n: postesDu(modele.cle).length - 30 })}</p>
-              )}
+              {/* Par département, comme un organigramme — pas une liste plate. */}
+              {parDepartement(postesDu(modele.cle)).map((d) => (
+                <div key={d.nom} className="mt-3">
+                  <p className="text-caption font-semibold text-ink">{d.nom} <span className="font-normal text-muted">· {d.postes.length}</span></p>
+                  <p className="mt-0.5 text-caption text-muted">
+                    {d.postes.slice(0, 12).map((p, i) => (
+                      <span key={i}>
+                        {i > 0 && ', '}
+                        <span className={p.est_directeur ? 'font-semibold text-ink' : ''}>{p.est_directeur ? '★ ' : ''}{p.poste}</span>
+                        {p.a_ecrire && <span className="ml-1 rounded-pill bg-brass/15 px-1.5 text-brass">{t('legion.aEcrire')}</span>}
+                      </span>
+                    ))}
+                    {d.postes.length > 12 && <span> {t('legion.etPlus', { n: d.postes.length - 12 })}</span>}
+                  </p>
+                </div>
+              ))}
             </div>
 
             {/* 3 et 4. Le nom, le projet */}

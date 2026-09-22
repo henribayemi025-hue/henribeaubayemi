@@ -394,3 +394,10 @@ update public.studio_modele_postes set poste = regexp_replace(poste, '^Cs ', '')
 
 -- Un directeur par département suffit: dans un modèle, un poste directeur
 -- reste unique, les nouveaux directeurs écrits ici ne doublent pas ceux de 0136.
+
+-- L'ordre décide qui entre en premier quand l'effectif est petit: un fonds
+-- de 12 doit avoir son responsable des marchés avant son troisième trader.
+-- Directeurs d'abord (1–199), puis les postes écrits (1 000+), puis ceux
+-- venus du catalogue (1 500+).
+update public.studio_modele_postes set ordre = case when est_directeur then ordre else ordre + 1000 end
+where ordre < 1000;

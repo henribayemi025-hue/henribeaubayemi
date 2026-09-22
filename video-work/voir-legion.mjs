@@ -78,7 +78,7 @@ const lire = async (pg, n=700) => (await pg.locator('body').innerText()).replace
   await pg.goto(`${BASE}/legion/${EID}`, { waitUntil:'domcontentloaded' }); await pg.waitForTimeout(3500); await fermerBandeaux(pg);
   console.log(`\n=== ENTREPRISE 1200 — salon (390px), ${Date.now()-t0} ms ===`); console.log(await lire(pg, 500));
   await pg.screenshot({ path:`${SORTIE}/legion-salon.png` });
-  await pg.locator('button:has-text("Écrire à un")').first().click(); await pg.waitForTimeout(800);
+  await pg.locator('button:has-text("Écrire à quelqu")').first().click(); await pg.waitForTimeout(800);
   const t1 = Date.now();
   console.log(`\n=== carnet par métier, ${Date.now()-t1} ms de rendu ===`); console.log(await lire(pg, 600));
   const debord = await pg.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
