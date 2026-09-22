@@ -69,3 +69,20 @@ Aujourd'hui, les étapes 1 et 4 existent (les agents parlent et prennent des
 tâches). Les étapes 2, 3, 5 et 6 sont les lignes 2 à 8 du plan. Les chiffres
 de Finjaro (ligne 2) sont le premier connecteur : c'est le même mécanisme
 qu'une télécom utilisera pour ses propres données.
+
+## Les grands chantiers — dans l'ordre de Beau (22/09, soir)
+
+Beau : « d'abord les logos, ensuite les skills, les connecteurs Google…
+et je ne veux pas que tu banalises ça : c'est un gros chantier, highly
+spécialisé. » Chacun ci-dessous est un projet en soi ; chacun aura son
+propre plan détaillé AVANT la première ligne de code.
+
+| # | Chantier | Ce que ça veut dire | État |
+| --- | --- | --- | --- |
+| 1 | **Les logos** | Legion, Accounting, Athlo, Mon argent dans les six points et dans Legion | ✅ en ligne (22/09). Le logo Accounting vient d'une capture coupée en bas : à remplacer si Beau a l'original |
+| 2 | **Les compétences (skills) et le veilleur** | Un agent reçoit des compétences (fiches de savoir-faire) ; un agent « veilleur » part chaque matin sur GitHub et les plateformes gratuites, trouve des compétences et des dépôts utiles à l'entreprise, les propose ; on les attache aux agents qui en ont besoin | ⏳ suivant |
+| 3 | **Les connecteurs Google** | Gmail, Agenda, Drive : chaque personne branche SON compte (connexion Google, ses autorisations) ; les agents lisent, préparent, et n'envoient qu'avec son clic | ⏳ |
+| 4 | **« Se connecter avec Finjaro »** | Une entreprise qui a une boutique sur la place de marché, des comptes dans Accounting, relie son compte : ses agents lisent SES ventes, SON stock, SES livres — jamais ceux des autres — et parlent aux finances | ⏳ — touche les deux applications : on le conçoit avec Claudinette |
+| 5 | **L'équipe humaine et les appels** | Inviter des collègues humains dans l'entreprise ; parler à un agent à la voix (appel) ; une réunion où humains et agents se parlent | ⏳ — l'appel vocal passe par la voix en direct de Gemini (payant à l'usage) : à chiffrer avant |
+| 6 | **Le studio de code** (comme Codex / GitHub) | Un projet est découpé ; un agent architecte répartit ; plusieurs agents codent chacun leur morceau sur leur branche ; un relecteur et des tests ; puis on assemble (zip), on pousse sur GitHub, on déploie | ⏳ — le plus gros. Il faut un endroit où le code s'exécute vraiment (des machines à part), pas seulement un modèle qui écrit : je présente le plan et son coût avant de commencer |
+| 7 | **Des agents qui s'améliorent** | Mémoire (fait), relecture (faite), compétences (2), et une note sur chaque livrable : ce qui a été corrigé devient une règle | 🔸 commencé |
