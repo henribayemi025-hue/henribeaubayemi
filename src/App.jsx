@@ -119,6 +119,7 @@ const MyFavorites = lazyWithReload(() => import('./screens/buyer/MyFavorites'));
 // Elle vit dans `screens/money/`, avec sa propre coque et ses couleurs, et se
 // monte HORS de BuyerLayout: ni la barre de Finjaro, ni Services, ni le crème.
 const MonArgent = lazyWithReload(() => import('./screens/money/MonArgent'));
+const Equipe = lazyWithReload(() => import('./screens/Equipe'));
 const InviteFriend = lazyWithReload(() => import('./screens/buyer/InviteFriend'));
 const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
@@ -243,6 +244,10 @@ export default function App() {
                         BuyerLayout — Beau, 22/09: « ce n'est pas possible que
                         je voie ça dans Finjaro avec Services et tout ». */}
                     <Route path="/argent" element={<RequireAuth><MonArgent /></RequireAuth>} />
+                    {/* L'équipe Finjaro sur le téléphone de Beau. Hors de la
+                        place de marché: c'est un outil interne, et la serrure
+                        est en base (is_admin), pas ici. */}
+                    <Route path="/equipe" element={<RequireAuth><Equipe /></RequireAuth>} />
                     {/* La démonstration complète — acheter, vendre, voir
                         l'écriture. Hors layout et hors base: les boutiques
                         sont inventées et rien n'est enregistré. C'est le lien

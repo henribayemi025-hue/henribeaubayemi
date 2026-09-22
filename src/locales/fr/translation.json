@@ -1,4 +1,20 @@
 {
+  "equipe": {
+    "titre": "L'équipe",
+    "membres": "{{count}} agent",
+    "membres_other": "{{count}} agents",
+    "tAttendent": "{{count}} chose attend ta réponse",
+    "tAttendent_other": "{{count}} choses attendent ta réponse",
+    "regle": "Réglé",
+    "vide": "Rien encore dans ce salon.",
+    "ecrire": "Écrire à l'équipe",
+    "envoyer": "Envoyer",
+    "genre": {
+      "question": "Question",
+      "decision": "À trancher",
+      "proposition": "Proposition"
+    }
+  },
   "learn": {
     "title": "Apprendre",
     "intro": "Trois choses à faire, dans l'ordre.",

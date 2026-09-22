@@ -1,4 +1,20 @@
 {
+  "equipe": {
+    "titre": "The team",
+    "membres": "{{count}} agent",
+    "membres_other": "{{count}} agents",
+    "tAttendent": "{{count}} thing is waiting for you",
+    "tAttendent_other": "{{count}} things are waiting for you",
+    "regle": "Done",
+    "vide": "Nothing here yet.",
+    "ecrire": "Write to the team",
+    "envoyer": "Send",
+    "genre": {
+      "question": "Question",
+      "decision": "To decide",
+      "proposition": "Proposal"
+    }
+  },
   "learn": {
     "title": "Learn",
     "intro": "Three things to do, in order.",
