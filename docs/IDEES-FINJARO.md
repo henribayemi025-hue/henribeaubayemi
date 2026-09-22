@@ -265,3 +265,56 @@ Ce qu'il faut savoir avant de choisir:
   quelqu'un pour la relire. Beau ne code pas.
 
 **Rien n'est décidé.** À trancher quand il le voudra.
+
+---
+
+## 8. ERPNext — la vraie référence, et ce qu'elle change
+
+Beau, 22/09, après Dolibarr: « voici l'autre ». ERPNext est le logiciel qu'il
+faut regarder en face, pas Dolibarr.
+
+### Ce qu'ils sont, dans leurs propres mots
+
+- **100 % libre, rien derrière un péage.** « Everything is yours to use,
+  modify, or resell » — on peut même le revendre.
+- **30 000+ entreprises** l'utilisent.
+- Modules: comptabilité, facturation, ventes, achats, stock, fabrication,
+  projets, **point de vente**, **RH**, **paie**. Plus Frappe HR, CRM,
+  Helpdesk, Insights, LMS à côté.
+- **Pas de prix par utilisateur.** On paie l'hébergement: 14 $, 50 $, 100 $,
+  108 $ par mois sur Frappe Cloud. Utilisateurs illimités.
+- 200+ partenaires, des certifications payantes, une école.
+
+### Ce que ça veut dire pour nous, sans se raconter d'histoire
+
+**1. « Plus de modules » ne peut pas être notre avantage.** La liste RH que
+j'ai écrite ce matin — congés, feuilles de temps, notes de frais, paie —
+Frappe HR la fait déjà, gratuitement, et mieux. Construire ces écrans pour
+« rattraper un ERP » n'a aucun sens. Les construire parce qu'une boutique de
+trois personnes en a besoin SUR UN TÉLÉPHONE, c'en a un.
+
+**2. L'argent d'un ERP libre n'est pas dans le logiciel.** Il est dans
+l'hébergement, l'installation, la formation, les partenaires. C'est un métier
+de services. Beau a un emploi à côté et ne code pas: ce métier-là n'est pas
+tenable pour lui aujourd'hui.
+
+**3. Leur propre FAQ dit où est le trou.** « Any ERP is complex to implement
+on your own... It is recommended to start with a partner. » Un ERP demande un
+partenaire, des semaines, et quelqu'un qui sait. **Une boutique de trois
+personnes n'implémentera jamais un ERP.** Elle n'a ni le temps, ni l'argent,
+ni l'ordinateur.
+
+**4. Ce qu'ERPNext n'a pas, et qu'on a.** Un ERP gère la vie INTERNE d'une
+entreprise. Il n'amène aucun client. Finjaro amène l'acheteuse — et derrière
+elle la commande, qui devient l'écriture comptable toute seule. Personne ne
+peut copier ça en ajoutant un module, parce que ça demande une place de
+marché vivante.
+
+### Ce que j'en retiens
+
+Ne pas courir après la grille. La vraie phrase n'est pas « Finjaro fait tout
+ce que fait un ERP », c'est **« Finjaro fait ce qu'un ERP demande trois
+semaines et un consultant pour faire — et il le fait depuis un téléphone,
+tout seul, à partir des ventes. »**
+
+**Rien n'est décidé ici. C'est Beau qui tranche.**
