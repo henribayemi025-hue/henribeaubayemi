@@ -96,12 +96,30 @@ async function glisser(pg, texte, dx) {
   const { ctx, pg } = await page(390, 844);
   await pg.goto(`${BASE}/legion/${EID}`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(3500); await fermerBandeaux(pg);
   await pg.locator('nav button:has-text("Discussion")').first().click(); await pg.waitForTimeout(500);
+  await pg.screenshot({ path: `${SORTIE}/legion-tel-chat-wa.png` });
+  console.log(`debordement chat: ${await debord(pg)}px`);
   await glisser(pg, 'Compris. Je regarde', 30);
   console.log('petit geste (30px) -> réponse ?', await pg.locator('text=Réponse à').count());
   await glisser(pg, 'Compris. Je regarde', 90);
   console.log('vrai geste (90px) -> réponse ?', await pg.locator('text=Réponse à Claudinette').count());
   console.log('clavier ouvert ?', await pg.evaluate(() => document.activeElement?.tagName));
   await pg.screenshot({ path: `${SORTIE}/legion-glisse-apres.png` });
+  // Appui long: le menu du message
+  {
+    const bulle = pg.locator('p:has-text("Côté technique")').first();
+    await bulle.evaluate((el) => el.scrollIntoView({ block: 'center' })); await pg.waitForTimeout(200);
+    const r = await bulle.boundingBox();
+    const cdp = await pg.context().newCDPSession(pg);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x + 30, y: r.y + 10, id: 1 }] });
+    await pg.waitForTimeout(650);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await pg.waitForTimeout(300);
+    console.log('menu appui long ?', await pg.locator('button:has-text("Copier")').count());
+    await pg.screenshot({ path: `${SORTIE}/legion-appui-long.png` });
+    await pg.mouse.click(200, 120); await pg.waitForTimeout(300);
+  }
+  await pg.locator('form button[aria-label="+"]').click(); await pg.waitForTimeout(300);
+  await pg.screenshot({ path: `${SORTIE}/legion-plus.png` });
   console.log(`debordement: ${await debord(pg)}px`);
   await ctx.close();
 }

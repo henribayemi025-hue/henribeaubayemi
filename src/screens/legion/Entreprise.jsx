@@ -326,7 +326,10 @@ export default function Entreprise() {
   return (
     <div className="legion-app flex h-dvh flex-col overflow-hidden bg-legion-bg text-legion-ink">
       {/* L'en-tête: la marque, l'entreprise, les trois nombres, l'interrupteur général */}
-      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-legion-line bg-legion-card px-3 sm:px-4">
+      {/* Sur téléphone, une conversation ouverte prend tout l'écran, comme un
+          groupe WhatsApp: pas d'en-tête d'entreprise, pas de pastilles, pas
+          d'onglets. La flèche de la conversation ramène aux salons. */}
+      <header className={`${vue === 'chat' ? 'hidden lg:flex' : 'flex'} h-14 shrink-0 items-center justify-between gap-2 border-b border-legion-line bg-legion-card px-3 sm:px-4`}>
         <div className="flex min-w-0 items-center gap-2.5">
           <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-legion-line px-2 py-1 text-caption font-semibold text-legion-muted lg:hidden" title={t('legion.retourFinjaro')}>
             <IconArrowLeft size={14} /> Finjaro
@@ -362,7 +365,7 @@ export default function Entreprise() {
         </div>
       </header>
 
-      {sansPhoto > 0 && vue !== 'accueil' && (
+      {sansPhoto > 0 && vue !== 'accueil' && vue !== 'chat' && (
         <div className="flex items-center justify-between gap-2 border-b border-legion-line bg-legion-gold/10 px-3 py-1.5 md:hidden">
           <p className="min-w-0 truncate text-[12px] text-legion-ink">{t('legion.sansPhotoCourt', { n: sansPhoto })}</p>
           <button type="button" onClick={() => vraiesPhotos(null)} disabled={photos} className="shrink-0 rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-50">
@@ -371,7 +374,7 @@ export default function Entreprise() {
         </div>
       )}
 
-      <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} t={t} />
+      {vue !== 'chat' && <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} t={t} />}
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <Rail entreprise={data.entreprise} departements={departements} courant={vue === 'accueil' ? null : deptId} onChoisir={choisirDept} onTous={() => { setDeptId(null); setVue('accueil'); }} agents={data.agents} t={t} />
@@ -396,7 +399,8 @@ export default function Entreprise() {
               salon={salon} dept={dept} agentPrive={agentPrive} messages={messagesDuSalon} agents={data.agents} moi={moi}
               reactions={data.reactions} langue={langue} tape={tape} brouillon={brouillon} onBrouillonPris={() => setBrouillon('')}
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
-              onToggleKanban={() => setKanban((k) => !k)} entrepriseId={entrepriseId} t={t}
+              onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')}
+              entrepriseId={entrepriseId} t={t}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
@@ -411,7 +415,7 @@ export default function Entreprise() {
       </div>
 
       {/* Téléphone: les quatre onglets */}
-      <nav className="flex shrink-0 border-t border-legion-line bg-legion-card lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav className={`${vue === 'chat' ? 'hidden' : 'flex'} shrink-0 border-t border-legion-line bg-legion-card lg:hidden`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {[
           ['accueil', IconHome, t('legion.ongletAccueil', 'Accueil')],
           ['salons', IconMessages, t('legion.ongletSalons', 'Salons')],
