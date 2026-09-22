@@ -635,8 +635,21 @@ function Epargne({ objectifs, lang, t, userId, onDone }) {
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
 
+  const misDeCote = objectifs.reduce((s2, o) => s2 + Number(o.saved || 0), 0);
+  const vise = objectifs.reduce((s2, o) => s2 + Number(o.target || 0), 0);
+
   return (
     <>
+      {objectifs.length > 0 && (
+        <div className="mb-3 rounded-card border border-hairline p-3">
+          <p className="text-caption text-muted">{t('money.setAsideTotal')}</p>
+          <p className="text-title text-teal">{montant(misDeCote, lang)}</p>
+          {vise > 0 && (
+            <p className="text-caption text-muted">{t('money.ofTarget', { target: montant(vise, lang) })}</p>
+          )}
+        </div>
+      )}
+
       {!ouvert ? (
         <button onClick={() => setOuvert(true)} className="flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white">
           <IconTargetArrow size={18} /> {t('money.newGoal')}
@@ -660,36 +673,125 @@ function Epargne({ objectifs, lang, t, userId, onDone }) {
         <EmptyState title={t('money.noGoal')} />
       ) : (
         <ul className="mt-4 space-y-3">
-          {objectifs.map((o) => {
-            const pct = Number(o.target) > 0
-              ? Math.min(100, Math.round((Number(o.saved) / Number(o.target)) * 100))
-              : 0;
-            return (
-              <li key={o.id} className="rounded-card border border-hairline p-3">
-                <div className="flex items-baseline justify-between">
-                  <p className="truncate text-body font-semibold text-ink">{o.name}</p>
-                  <span className="shrink-0 text-caption text-muted">{pct} %</span>
-                </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-black/[0.06]">
-                  <div className="h-full rounded-pill bg-teal" style={{ width: `${pct}%` }} />
-                </div>
-                <p className="mt-1 text-caption text-muted">
-                  {montant(o.saved, lang)} / {montant(o.target, lang)}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  {[1000, 5000].map((v) => (
-                    <button key={v} onClick={() => mettre(o, v)}
-                      className="rounded-pill border border-hairline px-3 py-1 text-caption font-semibold text-ink">
-                      + {montant(v, lang)}
-                    </button>
-                  ))}
-                </div>
-              </li>
-            );
-          })}
+          {objectifs.map((o) => (
+            <CarteObjectif key={o.id} objectif={o} lang={lang} t={t} onDone={onDone} />
+          ))}
         </ul>
       )}
     </>
+  );
+}
+
+// Un objectif d'épargne: la barre, le crayon, la croix, et un montant LIBRE.
+//
+// ⚠️ Les deux boutons « + 1 000 » et « + 5 000 » qui étaient là supposaient un
+// pays. Pour quelqu'un dont les comptes sont en euros — et c'est le cas des
+// données réelles, un compte à 0,16 et un autre à 22,88 — proposer d'ajouter
+// 1 000 d'un coup n'a aucun sens. On laisse la personne taper ce qu'elle a
+// mis de côté, dans SA monnaie, comme partout ailleurs sur cet écran.
+function CarteObjectif({ objectif: o, lang, t, onDone }) {
+  const toast = useToast();
+  const [edition, setEdition] = useState(false);
+  const [nom, setNom] = useState(o.name || '');
+  const [cible, setCible] = useState(String(o.target ?? ''));
+  const [ajout, setAjout] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+
+  const pct = Number(o.target) > 0
+    ? Math.min(100, Math.round((Number(o.saved) / Number(o.target)) * 100))
+    : 0;
+
+  async function mettre() {
+    const combien = Number(ajout);
+    if (!Number.isFinite(combien) || combien === 0) return;
+    setEnvoi(true);
+    try {
+      const { error } = await supabase
+        .from('savings_goals')
+        .update({ saved: Math.max(0, Number(o.saved || 0) + combien) })
+        .eq('id', o.id);
+      if (error) throw error;
+      setAjout('');
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  async function enregistrer() {
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('savings_goals')
+        .update({ name: nom.trim(), target: Number(cible) || 0 })
+        .eq('id', o.id);
+      if (error) throw error;
+      setEdition(false);
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  async function retirer() {
+    if (!window.confirm(t('money.removeGoalConfirm', { name: o.name }))) return;
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('savings_goals').delete().eq('id', o.id);
+      if (error) throw error;
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  if (edition) {
+    return (
+      <li className="space-y-2 rounded-card border border-hairline p-3">
+        <Field label={t('money.goalName')} required>
+          {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
+        </Field>
+        <Field label={t('money.goalTarget')} required>
+          {(id) => <TextInput id={id} type="number" inputMode="decimal" value={cible} onChange={(e) => setCible(e.target.value)} />}
+        </Field>
+        <div className="flex gap-2">
+          <Button onClick={enregistrer} loading={envoi} disabled={nom.trim() === '' || !Number(cible)}>{t('common.save')}</Button>
+          <Button variant="secondary" onClick={() => { setEdition(false); setNom(o.name || ''); setCible(String(o.target ?? '')); }}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded-card border border-hairline p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="truncate text-body font-semibold text-ink">{o.name}</p>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="text-caption text-muted">{pct} %</span>
+          <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editGoal', { name: o.name })} className="p-1 text-muted">
+            <IconPencil size={16} />
+          </button>
+          <button type="button" onClick={retirer} disabled={envoi} aria-label={t('money.removeGoal', { name: o.name })} className="p-1 text-muted">
+            <IconX size={16} />
+          </button>
+        </div>
+      </div>
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-black/[0.06]">
+        <div className="h-full rounded-pill bg-teal" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-1 text-caption text-muted">
+        {montant(o.saved, lang)} / {montant(o.target, lang)}
+      </p>
+      <div className="mt-2 flex items-center gap-2">
+        <TextInput
+          type="number"
+          inputMode="decimal"
+          value={ajout}
+          onChange={(e) => setAjout(e.target.value)}
+          placeholder={t('money.addAmount')}
+          aria-label={t('money.addToGoal', { name: o.name })}
+        />
+        <Button onClick={mettre} loading={envoi} disabled={!Number(ajout)}>{t('common.add')}</Button>
+      </div>
+    </li>
   );
 }
 
