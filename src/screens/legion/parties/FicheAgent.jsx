@@ -12,9 +12,15 @@ import { CompetencesAgent } from './Competences';
 // personne ».
 export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEcrireA, onAutreTete, onVraiePhoto, photosEnCours, t }) {
   const [change, setChange] = useState(false);
+  const [enGrand, setEnGrand] = useState(false);
   if (!agent) return null;
 
+  // Beau, 22/09: « par erreur j'ai enlevé la belle photo de Claudinette,
+  // je voulais juste la voir ». Toucher le visage le montre en grand; il ne
+  // change plus la tête. Et remplacer une vraie photo demande confirmation.
+  const aUnePhoto = agent.apparence?.famille === 'photo';
   async function autreTete() {
+    if (aUnePhoto && !window.confirm(t('legion.remplacerPhoto', 'Remplacer sa vraie photo par un dessin ? La photo reste gardée, Claude peut la remettre.'))) return;
     setChange(true);
     try { await onAutreTete(agent); } finally { setChange(false); }
   }
@@ -23,10 +29,16 @@ export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEc
   // sa propre classe pour recevoir la peau sombre.
   return (
     <Modal open={!!agent} onClose={onFermer} title={t('legion.ficheAgent', 'Fiche agent')} className="legion-modale">
+      {enGrand && (
+        <button type="button" onClick={() => setEnGrand(false)} aria-label="✕"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6">
+          <img src={agent.avatar_url} alt={agent.nom} className="h-auto max-h-[80vh] w-[min(85vw,480px)] rounded-2xl object-contain shadow-2xl" />
+        </button>
+      )}
       <div className="space-y-4 text-legion-ink">
         <div className="flex items-start justify-between gap-3 rounded-card border border-legion-line bg-legion-bg p-3">
           <div className="flex items-start gap-3">
-            <button type="button" onClick={autreTete} disabled={change} title={t('legion.autreTete', 'Une autre tête')} className="rounded-full disabled:opacity-40">
+            <button type="button" onClick={() => agent.avatar_url && setEnGrand(true)} title={agent.nom} className="rounded-full">
               <Visage a={agent} taille={64} />
             </button>
             <div className="min-w-0">

@@ -130,6 +130,7 @@
     "vocal": "Message vocal",
     "ilDort": "{{nom}} est éteint : il ne répond pas. Allume-le pour qu’il travaille.",
     "claudeRepondra": "{{nom}} répond lui-même, à son prochain passage dans Legion.",
+    "remplacerPhoto": "Remplacer sa vraie photo par un dessin ? La photo reste gardée, Claude peut la remettre.",
     "depenseTitre": "Ce que Legion coûte ce mois-ci",
     "depenseEstimation": "estimation",
     "depenseAppels": "{{n}} appels",
