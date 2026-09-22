@@ -286,13 +286,27 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
   if (!corps.message_id) return json({ erreur: 'Message manquant.' }, 400);
 
-  const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
-  const { data: msg } = await personne.from('legion_messages')
-    .select('id, entreprise_id, canal_id, auteur_id, texte, genre, meta').eq('id', corps.message_id).maybeSingle();
-  if (!msg) return json({ erreur: 'Message inconnu, ou tu n\'es pas membre.' }, 403);
-
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+
+  // Deux portes. La personne connectée (son jeton: elle ne lit que ce qui
+  // est à elle). Ou la base elle-même, quand Claude écrit dans Legion: un
+  // déclencheur appelle ici avec le jeton partagé de app_secrets (0151).
+  // Beau, 22/09: « tu lui demandes, et vice versa ».
+  const jetonBase = req.headers.get('x-finjaro-token');
+  let parLaBase = false;
+  const colonnes = 'id, entreprise_id, canal_id, auteur_id, texte, genre, meta';
+  let msg: { id: string; entreprise_id: string; canal_id: string; auteur_id: string; texte: string; genre: string; meta: Record<string, unknown> | null } | null = null;
+  if (jetonBase) {
+    const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_repondre').maybeSingle();
+    if (!sec?.value || sec.value !== jetonBase) return json({ erreur: 'non autorisé' }, 401);
+    parLaBase = true;
+    ({ data: msg } = await service.from('legion_messages').select(colonnes).eq('id', corps.message_id).maybeSingle());
+  } else {
+    const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
+    ({ data: msg } = await personne.from('legion_messages').select(colonnes).eq('id', corps.message_id).maybeSingle());
+  }
+  if (!msg) return json({ erreur: 'Message inconnu, ou tu n\'es pas membre.' }, 403);
 
   const { count: deja } = await service.from('legion_messages').select('id', { count: 'exact', head: true })
     .eq('canal_id', msg.canal_id).contains('meta', { reponse_a_id: msg.id });
@@ -314,7 +328,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   }
 
   const auteur = (agents as Agent[]).find((a) => a.id === msg.auteur_id);
-  if (!auteur || !auteur.user_id) return json({ ignore: 'pas un humain', messages: [] });
+  // Les agents répondent aux humains, et à Claude quand c'est la base qui
+  // appelle; jamais à un autre agent Gemini (deux machines qui se parlent
+  // toute la nuit sur le compte de Beau).
+  const estClaude = parLaBase && auteur?.moteur === 'claude-code';
+  if (!auteur || (!auteur.user_id && !estClaude)) return json({ ignore: 'pas un humain', messages: [] });
 
   // Claude (moteur « claude-code ») répond lui-même, à ses passages: Gemini ne
   // parle jamais à sa place.
@@ -474,7 +492,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     // Une consigne durable du fondateur: on la retient pour toute l'équipe.
     let retenu = '';
     const regle = typeof r.obj.regle === 'string' ? r.obj.regle.trim().slice(0, 400) : '';
-    if (!retenue && regle.length >= 8 && !memoire.some((x) => x.toLowerCase() === regle.toLowerCase())) {
+    // Une règle ne vient que du fondateur, jamais d'un message de Claude.
+    if (!retenue && !estClaude && regle.length >= 8 && !memoire.some((x) => x.toLowerCase() === regle.toLowerCase())) {
       const { error: errMem } = await service.from('legion_memoire').insert({
         entreprise_id: msg.entreprise_id, regle, source: 'fondateur', message_id: msg.id, agent_id: cible.id, cree_par: auteur.user_id,
       });
