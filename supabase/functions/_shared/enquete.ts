@@ -50,15 +50,37 @@ const OUTILS_DIRECTION = [
 ];
 const OUTILS_PERSONNES = new Set(OUTILS_DIRECTION.map((o) => o.name));
 
+// « Se connecter avec Finjaro » (0160): l'entreprise a branché SA boutique
+// de la place de marché; ses agents lisent SES chiffres — prénom de la
+// cliente au plus, jamais de téléphone ni d'adresse.
+export type Boutique = { shop_id: string; nom: string };
+const OUTILS_BOUTIQUE = [
+  { name: 'ma_boutique_resume', description: "Le tableau de bord de NOTRE boutique sur Finjaro: articles en ligne, stock faible, commandes sur la période (par statut, montant livré), commandes qui attendent notre réponse, vues et ajouts au panier des 7 jours, messages non répondus, abonnés, note.",
+    parameters: { type: 'OBJECT', properties: { jours: JOURS } } },
+  { name: 'ma_boutique_commandes', description: 'Les dernières commandes de NOTRE boutique: numéro, statut, montant, date, prénom de la cliente, articles.',
+    parameters: { type: 'OBJECT', properties: { jours: JOURS, n: { type: 'INTEGER', description: 'Combien, de 1 à 20.' }, statut: { type: 'STRING', description: 'Filtrer sur un statut (new, confirmed, shipped, delivered, cancelled).' } } } },
+  { name: 'ma_boutique_articles', description: 'Les articles de NOTRE boutique: prix, stock, en ligne ou non, vues et ajouts au panier sur 30 jours.',
+    parameters: { type: 'OBJECT', properties: { n: { type: 'INTEGER', description: 'Combien, de 1 à 20.' } } } },
+  { name: 'ma_boutique_avis', description: 'Les derniers avis laissés sur NOTRE boutique: note, texte, article.',
+    parameters: { type: 'OBJECT', properties: { n: { type: 'INTEGER', description: 'Combien, de 1 à 20.' } } } },
+];
+const OUTILS_MA_BOUTIQUE = new Set(OUTILS_BOUTIQUE.map((o) => o.name));
+
 // Une enquête par message, faite une fois pour toute l'équipe: le modèle
 // choisit les outils, la base répond, et les résultats entrent dans la
 // consigne de chaque agent qui répond. Rien à vérifier → liste vide.
-export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false): Promise<string[]> {
-  const outils = direction ? [{ functionDeclarations: [...OUTILS[0].functionDeclarations, ...OUTILS_DIRECTION] }] : OUTILS;
+export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true): Promise<string[]> {
+  const declarations = [
+    ...(mesures ? OUTILS[0].functionDeclarations : []),
+    ...(direction ? OUTILS_DIRECTION : []),
+    ...(boutique ? OUTILS_BOUTIQUE : []),
+  ];
+  if (!declarations.length) return [];
+  const outils = [{ functionDeclarations: declarations }];
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const contents: unknown[] = [{ role: 'user', parts: [{ text:
-`Tu prépares la réponse d'une équipe à son fondateur, sur la place de marché Finjaro. Nous sommes le ${aujourdhui}.
-La conversation récente:
+`Tu prépares la réponse d'une équipe à son fondateur${mesures ? ', sur la place de marché Finjaro' : ''}. Nous sommes le ${aujourdhui}.
+${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}La conversation récente:
 ${fil}
 
 Le dernier message, auquel il faut répondre: « ${question} »
@@ -84,8 +106,15 @@ Si y répondre demande un chiffre ou une vérification dans la base de la place 
     for (const { functionCall } of appels) {
       const nom = functionCall!.name;
       const args = functionCall!.args ?? {};
-      const fonction = OUTILS_PERSONNES.has(nom) ? (direction ? 'legion_outil_personnes' : null) : 'legion_outil';
-      const { data, error } = fonction ? await service.rpc(fonction, { p_nom: nom, p_params: args }) : { data: null, error: { message: 'outil réservé à la Direction' } };
+      let appel: Promise<{ data: unknown; error: { message: string } | null }>;
+      if (OUTILS_MA_BOUTIQUE.has(nom)) {
+        appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
+      } else if (OUTILS_PERSONNES.has(nom)) {
+        appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });
+      } else {
+        appel = service.rpc('legion_outil', { p_nom: nom, p_params: args });
+      }
+      const { data, error } = await appel;
       const resultat = error ? { erreur: error.message } : data;
       resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
       reponses.push({ functionResponse: { name: nom, response: { resultat } } });

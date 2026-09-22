@@ -30,7 +30,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
-import { enqueter } from '../_shared/enquete.ts';
+import { enqueter, type Boutique } from '../_shared/enquete.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -213,13 +213,19 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const machines = (agents as Agent[]).filter((a) => !a.user_id && a.moteur !== 'claude-code' && a.actif);
   if (!machines.length) { journal.push(`${entreprise.nom}: personne d'allumé`); return false; }
   const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
-  const projet = String(entreprise.projet || entreprise.nom);
+  let projet = String(entreprise.projet || entreprise.nom);
 
   let mesures: string | null = null;
   if (branche) {
     const { data: m, error } = await service.rpc('legion_mesures_finjaro');
     if (error) console.error('mesures:', error.message); else if (m) mesures = JSON.stringify(m);
   }
+  // « Se connecter avec Finjaro » (0160): la boutique branchée, s'il y en a une.
+  const { data: brancheBoutique } = await service.from('legion_connecteurs').select('config')
+    .eq('entreprise_id', entrepriseId).eq('type', 'finjaro-boutique').eq('actif', true).maybeSingle();
+  const boutique: Boutique | null = brancheBoutique?.config?.shop_id ? { shop_id: String(brancheBoutique.config.shop_id), nom: String(brancheBoutique.config.nom || 'ma boutique') } : null;
+  if (boutique) projet += `\nL'entreprise a branché SA boutique sur la place de marché Finjaro: « ${boutique.nom} » — ses ventes, son stock, ses avis, ses messages en attente sont lisibles par les outils ma_boutique_* (vérifications ci-dessous); on dit « notre boutique ».`;
+  const peutEnqueter = !!(mesures || boutique);
 
   const publics = (canaux as Canal[]).filter((c) => !(Array.isArray(c.prive_entre) && c.prive_entre.length));
   const canalDe = (dept: string | null) => publics.find((c) => sansAccent(c.cle) === sansAccent(dept || '') || sansAccent(c.nom) === sansAccent(dept || ''))
@@ -275,7 +281,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const autresPlans = estDirection(d)
       ? [...plansDuJour, ...(plansRecents || []).filter((x: { departement: string; horizon: string; created_at: string }) => x.horizon === 'semaine' && sansAccent(x.departement) !== 'direction' && (Date.now() - new Date(x.created_at).getTime()) / 86_400_000 < 6 && !plansDuJour.some((p) => p.startsWith(`[${x.departement}]`))).map((x: { departement: string; contenu: string }) => `[${x.departement}]\n${String(x.contenu).slice(0, 1500)}`)]
       : [];
-    const verifie = mesures ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction') : [];
+    const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', boutique, !!mesures) : [];
     const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans), SCHEMA_PLAN);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = String(r.obj.plan_semaine || '').trim().slice(0, 4000);
@@ -317,7 +323,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';
-      const verifie = mesures ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection) : [];
+      const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, boutique, !!mesures) : [];
       const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans), SCHEMA_LIVRABLE);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
