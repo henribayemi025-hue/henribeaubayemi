@@ -70,7 +70,7 @@ export default function MesEntreprises() {
           <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-legion-line px-2.5 py-1 text-caption font-semibold text-legion-muted transition hover:text-legion-ink">
             <IconArrowLeft size={14} /> Finjaro
           </Link>
-          <span className="flex h-8 w-8 items-center justify-center rounded-input bg-legion-gold/20 font-serif text-[18px] font-semibold text-legion-gold">L</span>
+          <img src="/logos/legion.png" alt="Legion" className="h-8 w-8 rounded-input object-cover" />
           <span className="text-body font-semibold">Legion</span>
         </div>
         <Link to="/legion/fonder"

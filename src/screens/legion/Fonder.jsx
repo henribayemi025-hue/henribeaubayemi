@@ -87,7 +87,7 @@ export default function Fonder() {
       {/* L'en-tête sombre de Legion, pas celui, crème, de la place de marché. */}
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-legion-line bg-legion-panel/95 px-4 backdrop-blur">
         <Link to="/legion" aria-label={t('common.back')} className="rounded-full p-1 text-legion-muted hover:text-legion-ink"><IconArrowLeft size={20} /></Link>
-        <span className="flex h-8 w-8 items-center justify-center rounded-input bg-legion-gold/20 font-serif text-[18px] font-semibold text-legion-gold">L</span>
+        <img src="/logos/legion.png" alt="Legion" className="h-8 w-8 rounded-input object-cover" />
         <h1 className="text-body font-semibold">{t('legion.fonder')}</h1>
       </header>
       <div className="mx-auto w-full max-w-3xl px-4 pt-3">

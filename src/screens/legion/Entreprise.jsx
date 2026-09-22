@@ -339,7 +339,7 @@ export default function Entreprise() {
           <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-legion-line px-2 py-1 text-caption font-semibold text-legion-muted lg:hidden" title={t('legion.retourFinjaro')}>
             <IconArrowLeft size={14} /> Finjaro
           </Link>
-          <span className="hidden h-8 w-8 items-center justify-center rounded-input bg-legion-gold font-serif text-[18px] font-semibold text-white sm:flex">L</span>
+          <img src="/logos/legion.png" alt="Legion" className="hidden h-8 w-8 rounded-input object-cover sm:block" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="truncate text-body font-semibold text-legion-ink">{data.entreprise.nom}</span>

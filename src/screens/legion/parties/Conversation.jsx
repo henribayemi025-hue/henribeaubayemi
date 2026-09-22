@@ -334,7 +334,12 @@ export function Conversation({
         reponseA={reponseA} onAnnulerReponse={() => setReponseA(null)}
         picker={picker === 'saisie'} onPicker={(v) => setPicker(v ? 'saisie' : null)}
         brouillon={brouillon} onBrouillonPris={onBrouillonPris}
-        onEnvoyer={async (x) => { colle.current = true; await onEnvoyer({ ...x, meta: { ...(x.meta || {}), ...(reponseA ? { reponse_a: { id: reponseA.id, nom: agentDe(reponseA.auteur_id)?.nom || '?', texte: reponseA.texte.slice(0, 160) } } : {}) } }); setReponseA(null); }}
+        onEnvoyer={async (x) => {
+          // La citation part avec le message et disparaît tout de suite de la case.
+          const cite = reponseA;
+          colle.current = true; setReponseA(null);
+          await onEnvoyer({ ...x, meta: { ...(x.meta || {}), ...(cite ? { reponse_a: { id: cite.id, nom: agentDe(cite.auteur_id)?.nom || '?', texte: cite.texte.slice(0, 160) } } : {}) } });
+        }}
       />
     </div>
   );
@@ -431,7 +436,6 @@ function Jour({ label }) {
 function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, picker, onPicker, brouillon, onBrouillonPris, onEnvoyer }) {
   const [texte, setTexte] = useState('');
   const [genre, setGenre] = useState('info');
-  const [envoi, setEnvoi] = useState(false);
   const [plus, setPlus] = useState(false);
   const [mentions, setMentions] = useState(false);
   const [filtreMention, setFiltreMention] = useState('');
@@ -466,16 +470,23 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
     const at = texte.lastIndexOf('@');
     setTexte(`${texte.slice(0, at)}@${a.nom} `); setMentions(false); zone.current?.focus();
   }
+  // La case se vide TOUT DE SUITE, comme WhatsApp — pas quand l'agent a fini
+  // de répondre. Beau, 22/09: « le message reste dans la case jusqu'à ce
+  // qu'il réponde, et ce que j'ai recommencé à écrire s'efface ». On ne
+  // bloque plus la saisie pendant que l'agent réfléchit; si l'envoi échoue,
+  // le texte revient dans la case.
   async function envoyer(e) {
     e?.preventDefault();
     const corps = texte.trim();
-    if (!corps || !moi || envoi) return;
-    setEnvoi(true);
+    if (!corps || !moi) return;
+    const genreEnvoye = genre;
+    setTexte(''); setGenre('info'); setMentions(false);
+    if (zone.current) zone.current.style.height = 'auto';
     try {
-      await onEnvoyer({ texte: corps, genre });
-      setTexte(''); setGenre('info'); setMentions(false);
-      if (zone.current) zone.current.style.height = 'auto';
-    } finally { setEnvoi(false); }
+      await onEnvoyer({ texte: corps, genre: genreEnvoye });
+    } catch {
+      setTexte((v) => (v ? v : corps)); setGenre(genreEnvoye);
+    }
   }
   function toucheClavier(e) {
     // Sur téléphone, « Entrée » va à la ligne, comme WhatsApp; on envoie
@@ -629,7 +640,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
         )}
         <input ref={fichier} type="file" accept="image/*" className="hidden" onChange={photoChoisie} />
         {aEcrit ? (
-          <button type="submit" disabled={envoi || !moi} aria-label={t('equipe.envoyer')}
+          <button type="submit" disabled={!moi} aria-label={t('equipe.envoyer')}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-legion-gold text-legion-bg shadow-md transition active:scale-95 disabled:opacity-50">
             <IconSend size={20} />
           </button>
