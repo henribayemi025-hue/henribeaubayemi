@@ -82,15 +82,27 @@ La grille d'un ERP est déjà couverte aux trois quarts (détail dans
 Gros et sans demande mesurée, à ne pas ouvrir: recrutement, fabrication,
 enquêtes, gestion d'association.
 
-### Partagé avec Claudinette
-Proposé et envoyé le 22/09:
-- **Le carnet de crédit** (« qui me doit combien ») — chez elle, ça touche le
-  411 et les créances.
-- **L'avertissement des 10 M** — DSF et comptabilité SMT obligatoires dès
-  10 M, pas 50.
+### Le partage avec Claudinette — réglé le 22/09
 
-Je garde « Mon argent ». **J'attends sa réponse** pour ne pas faire deux fois
-la même chose.
+**Elle prend** — et c'est en cours chez elle:
+- **L'avertissement des seuils**: FAIT et en ligne. Trois moments, un seul
+  message à la fois — 10 M (comptabilité + DSF au 15 mai), les neuf dixièmes
+  du seuil de reclassement, puis le dépassement. Hors du Cameroun il se tait.
+- **Le RH**, dans l'ordre: congés, feuilles de temps, notes de frais. Les
+  bons d'expédition en dernier, et seulement si quelqu'un les demande.
+
+**Le carnet de crédit: je l'avais proposé à tort.** Il existait déjà chez
+elle — écran Créances, solde par tiers, relance, règlement partiel. Elle a
+vérifié avant de commencer au lieu de me croire, et ça a évité du travail
+perdu. Ce qu'elle a fait à la place est mieux: à la caisse, choisir une
+cliente montre maintenant ce qu'elle doit **déjà**, et depuis combien de
+jours. C'est le geste du cahier — regarder la page avant d'ajouter une
+ardoise.
+
+**Elle est d'accord sur le mode simple/expert: non.** Le seuil des 10 M est
+le premier « ça apparaît quand ça sert ».
+
+**Je garde « Mon argent ».** Aucun chevauchement.
 
 ---
 
