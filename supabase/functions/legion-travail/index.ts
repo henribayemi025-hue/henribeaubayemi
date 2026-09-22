@@ -122,16 +122,19 @@ const REGLES_COMMUNES = `RÈGLES ABSOLUES:
 - Jamais de chiffre, de pourcentage ou de date qui ne figure pas dans les chiffres mesurés ou les vérifications. Un chiffre que tu n'as pas, tu dis que tu ne l'as pas.
 - Aucune phrase qui enferme la place de marché dans un pays; jamais de « diaspora ».
 - Pas de formule creuse, pas de « on travaille dessus »: du concret — qui, quoi, pour quand, et ce que ça demande au fondateur.
+- Ton: professionnel et direct. Pas d'excuses, pas de « haha », pas de « désolé pour la tension », pas d'exclamations enthousiastes, pas de digressions (« mais je me disperse »). Le document commence par le fond.
 - Écris en français, en Markdown léger (titres courts avec ##, listes avec -), sans tableau. Un retour à la ligne AVANT chaque titre et chaque point de liste (le texte est affiché tel quel: un bloc compact est illisible).
 - Legion, l'application où tu travailles, existe déjà: le fondateur y allume et éteint les agents, y lit les salons, le tableau des tâches, les plans, la mémoire des règles, les compétences et la dépense. Ne propose jamais de construire un outil qui fait déjà ça; propose ce qui manque, précisément.
 - Les faits sur l'offre: la place de marché est gratuite pour les boutiques inscrites avant fin octobre 2026 (gratuit à vie pour elles), payante ensuite pour les nouvelles. Ne dis rien d'autre sur les prix.`;
 
-function invitePlan(a: Agent, projet: string, dept: string, equipe: string[], taches: string[], memoire: string[], fil: string[], mesures: string | null, verifie: string[], plansPrecedents: string[], besoinMois: boolean) {
+function invitePlan(a: Agent, projet: string, dept: string, equipe: string[], taches: string[], memoire: string[], fil: string[], mesures: string | null, verifie: string[], plansPrecedents: string[], besoinMois: boolean, plansDepartements: string[] = []) {
   const aujourdhui = new Date().toISOString().slice(0, 10);
+  const direction = plansDepartements.length > 0;
   return `Tu es ${a.nom}, ${a.poste}, responsable du département « ${dept} ». ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
 Ton mandat: ${a.mandat || '(non précisé)'}.
 L'entreprise: ${projet}
-Nous sommes le ${aujourdhui}. C'est le matin: tu écris le PLAN de ton département, comme un vrai responsable qui sait ce que son équipe fait aujourd'hui, demain et cette semaine.
+Nous sommes le ${aujourdhui}. C'est le matin: tu écris le PLAN de ${direction ? "L'ENTREPRISE — le seul que le fondateur lira: il reprend les plans des départements ci-dessous, tranche entre eux, et fixe l'objectif commun" : 'ton département, comme un vrai responsable qui sait ce que son équipe fait aujourd\'hui, demain et cette semaine'}.
+${direction ? `\nLES PLANS DES DÉPARTEMENTS, écrits ce matin par leurs responsables (à reprendre, pas à répéter: un objectif commun, les 5 à 7 actions qui comptent le plus toutes équipes confondues, chacune avec son responsable):\n${plansDepartements.join('\n\n')}\n` : ''}
 
 TON ÉQUIPE (seuls les agents allumés peuvent recevoir une tâche):
 ${equipe.join('\n')}
@@ -245,8 +248,13 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     .eq('entreprise_id', entrepriseId).gte('created_at', new Date().toISOString().slice(0, 10)).not('meta->livrable', 'is', null);
   const dejaLivre = new Set((livresAujourdhui || []).map((x: { auteur_id: string }) => x.auteur_id));
 
-  // 1. LES PLANS — un par département dont le responsable est allumé.
-  const directeurs = machines.filter((a) => a.est_directeur && a.departement);
+  // 1. LES PLANS — un par département dont le responsable est allumé; la
+  // Direction en dernier: son plan est LE plan de l'entreprise, il reprend
+  // ceux des départements écrits juste avant (Beau, 22/09 au soir: « tu ne
+  // m'envoies pas quatre plans différents »).
+  const estDirection = (a: Agent) => sansAccent(a.departement || '') === 'direction';
+  const directeurs = machines.filter((a) => a.est_directeur && a.departement).sort((a, b) => Number(estDirection(a)) - Number(estDirection(b)));
+  const plansDuJour: string[] = [];
   for (const d of directeurs) {
     const dept = d.departement!;
     const jours = (x: { created_at: string }) => (Date.now() - new Date(x.created_at).getTime()) / 86_400_000;
@@ -262,13 +270,19 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const tachesDept = ouvertes.filter((t) => t.assigne_a && idsDept.includes(t.assigne_a)).map((t) => `- ${t.texte} (${nomDe(t.assigne_a)}, ${t.meta?.statut || 'a_faire'})`);
     const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
     const precedents = [dernierSemaine, dernierMois].filter(Boolean).map((x) => `(${x!.horizon}, ${x!.created_at.slice(0, 10)})\n${String(x!.contenu).slice(0, 1500)}`);
+    // La Direction reçoit les plans des départements écrits ce matin (ou
+    // cette semaine) pour en faire un seul plan d'entreprise.
+    const autresPlans = estDirection(d)
+      ? [...plansDuJour, ...(plansRecents || []).filter((x: { departement: string; horizon: string; created_at: string }) => x.horizon === 'semaine' && sansAccent(x.departement) !== 'direction' && (Date.now() - new Date(x.created_at).getTime()) / 86_400_000 < 6 && !plansDuJour.some((p) => p.startsWith(`[${x.departement}]`))).map((x: { departement: string; contenu: string }) => `[${x.departement}]\n${String(x.contenu).slice(0, 1500)}`)]
+      : [];
     const verifie = mesures ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction') : [];
-    const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois), SCHEMA_PLAN);
+    const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans), SCHEMA_PLAN);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = String(r.obj.plan_semaine || '').trim().slice(0, 4000);
     const mois = String(r.obj.plan_mois || '').trim().slice(0, 4000);
     if (semaine.length < 100) { journal.push(`${entreprise.nom}/${dept}: plan vide`); continue; }
     await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'semaine', contenu: semaine });
+    plansDuJour.push(`[${dept}]\n${semaine.slice(0, 1500)}`);
     if (besoinMois && mois.length >= 100) await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'mois', contenu: mois });
     const texte = `## Plan de la semaine — ${dept}\n${semaine.replace(/^##\s*plan[^\n]*\n/i, '')}${besoinMois && mois.length >= 100 ? `\n\n## Plan du mois — ${dept}\n${mois.replace(/^##\s*plan[^\n]*\n/i, '')}` : ''}`;
     await service.from('legion_messages').insert({

@@ -45,14 +45,21 @@ export function Plans({ entreprise, t }) {
     }
   }
 
+  // UN plan (Beau, 22/09: « tu ne m'envoies pas quatre plans différents »):
+  // celui de la Direction est le plan de l'entreprise; ceux des
+  // départements sont ses annexes, repliées.
+  const estDirection = (p) => /^direction$/i.test(String(p.departement || '').normalize('NFD').replace(/[̀-ͯ]/g, ''));
   const semaines = plans.filter((p) => p.horizon === 'semaine');
+  const principal = semaines.find(estDirection) || null;
+  const annexes = semaines.filter((p) => p !== principal);
+  const moisDe = (p) => plans.find((x) => x.departement === p.departement && x.horizon === 'mois');
   const date = (s) => new Date(s).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 
   return (
     <section className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-legion-line pb-3">
         <h3 className="flex items-center gap-2 text-caption font-bold text-legion-ink">
-          <IconCalendarEvent size={15} className="text-legion-gold" /> {t('legion.plansTitre', 'Le plan de la semaine, par département')}
+          <IconCalendarEvent size={15} className="text-legion-gold" /> {t('legion.plansTitre', { nom: entreprise.nom, defaultValue: 'Le plan de {{nom}}' })}
         </h3>
         <button type="button" onClick={auTravail} disabled={etat === 'encours'}
           className="inline-flex items-center gap-1.5 rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-60">
@@ -64,9 +71,23 @@ export function Plans({ entreprise, t }) {
       {semaines.length === 0 ? (
         <p className="text-[12px] leading-snug text-legion-muted">{t('legion.plansVide', 'Aucun plan encore. Chaque matin, chaque responsable écrit le plan de son département et chaque agent allumé rend un livrable sur sa tâche. Touche « Au travail maintenant » pour ne pas attendre demain.')}</p>
       ) : (
+        <>
+        {principal && (
+          <div className="space-y-3">
+            <p className="text-[11px] text-legion-muted">{t('legion.planSemaineDu', { date: date(principal.created_at), defaultValue: 'Semaine du {{date}}' })}</p>
+            <Texte contenu={principal.contenu} className="text-[13.5px] leading-snug text-legion-ink" />
+            {moisDe(principal) && (
+              <details className="rounded-card border border-legion-line bg-legion-bg px-3 py-2">
+                <summary className="cursor-pointer text-[12px] font-semibold text-legion-ink">{t('legion.planDuMois', 'Le plan du mois')}</summary>
+                <div className="pt-2"><Texte contenu={moisDe(principal).contenu} /></div>
+              </details>
+            )}
+          </div>
+        )}
+        {annexes.length > 0 && <p className="pt-1 text-[11px] font-semibold uppercase tracking-wide text-legion-muted">{t('legion.plansAnnexes', 'Par département')}</p>}
         <ul className="space-y-2">
-          {semaines.map((p) => {
-            const mois = plans.find((x) => x.departement === p.departement && x.horizon === 'mois');
+          {annexes.map((p) => {
+            const mois = moisDe(p);
             const estOuvert = ouvert === p.id;
             return (
               <li key={p.id} className="rounded-card border border-legion-line bg-legion-bg">
@@ -87,6 +108,7 @@ export function Plans({ entreprise, t }) {
             );
           })}
         </ul>
+        </>
       )}
     </section>
   );

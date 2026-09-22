@@ -26,23 +26,34 @@ const TABS = [
 export default function AdminOrders() {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState('all');
+  // Beau, 22/09: « pourquoi il y a toujours les nouveaux orders là ? » — la
+  // liste mêlait les commandes des comptes de test (sa boutique d'essai,
+  // les essais de Claude) aux vraies. Cachées par défaut, un interrupteur
+  // les montre.
+  const [avecTests, setAvecTests] = useState(false);
 
   const { data, loading, error, retry } = useAsync(async () => {
-    const { data: rows, error: err } = await supabase
-      .from('orders')
-      .select('id, order_no, status, total_fcfa, created_at, buyer_name, buyer_phone, delivery_method, city, cancel_reason, shops(name), order_items(name, qty)')
-      .order('created_at', { ascending: false })
-      .limit(200);
+    const [{ data: rows, error: err }, { data: tests }] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, order_no, status, total_fcfa, created_at, buyer_id, buyer_name, buyer_phone, delivery_method, city, cancel_reason, shops(name, owner_id), order_items(name, qty)')
+        .order('created_at', { ascending: false })
+        .limit(200),
+      supabase.from('profiles').select('id').eq('is_test', true),
+    ]);
     if (err) throw err;
-    return rows || [];
+    const testIds = new Set((tests || []).map((p) => p.id));
+    return (rows || []).map((o) => ({ ...o, est_test: testIds.has(o.buyer_id) || testIds.has(o.shops?.owner_id) }));
   }, []);
 
   if (loading) return <div className="space-y-3 p-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>;
   if (error) return <ErrorState onRetry={retry} />;
 
-  const countFor = (tb) => (tb.statuses ? (data || []).filter((o) => tb.statuses.includes(o.status)).length : (data || []).length);
+  const visibles = (data || []).filter((o) => avecTests || !o.est_test);
+  const nbTests = (data || []).filter((o) => o.est_test).length;
+  const countFor = (tb) => (tb.statuses ? visibles.filter((o) => tb.statuses.includes(o.status)).length : visibles.length);
   const current = TABS.find((x) => x.key === tab);
-  const list = current.statuses ? (data || []).filter((o) => current.statuses.includes(o.status)) : data || [];
+  const list = current.statuses ? visibles.filter((o) => current.statuses.includes(o.status)) : visibles;
   const total = list.reduce((n, o) => n + (o.total_fcfa || 0), 0);
 
   return (
@@ -56,8 +67,14 @@ export default function AdminOrders() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between rounded-card bg-base px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2 rounded-card bg-base px-3 py-2.5">
         <span className="text-caption text-muted">{t('admin.selectionTotal', { count: list.length })}</span>
+        {nbTests > 0 && (
+          <label className="flex items-center gap-1.5 text-caption text-muted">
+            <input type="checkbox" checked={avecTests} onChange={(e) => setAvecTests(e.target.checked)} />
+            {t('admin.voirTests', { count: nbTests, defaultValue: 'voir les tests ({{count}})' })}
+          </label>
+        )}
         <Price fcfa={total} className="text-section font-semibold text-teal" />
       </div>
 

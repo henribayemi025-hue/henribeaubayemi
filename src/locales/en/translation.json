@@ -22,7 +22,9 @@
     "connecteToi": "Sign in to found a company.",
     "mesEntreprises": "My companies",
     "seDeconnecter": "Sign out",
-    "plansTitre": "This week's plan, by department",
+    "plansTitre": "{{nom}}'s plan",
+    "planSemaineDu": "Week of {{date}}",
+    "plansAnnexes": "By department",
     "auTravail": "Get to work now",
     "auTravailEnCours": "They're getting to work…",
     "auTravailFait": "✓ Started — plans and deliverables are arriving in the rooms",
@@ -1872,6 +1874,7 @@
       "quotes": "Price requests"
     },
     "selectionTotal": "{{count}} order(s)",
+    "voirTests": "show tests ({{count}})",
     "reportStatus": {
       "pending": "To review",
       "rangement": "Sorting",

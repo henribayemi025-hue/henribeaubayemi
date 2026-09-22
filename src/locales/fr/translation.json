@@ -22,7 +22,9 @@
     "connecteToi": "Connecte-toi pour fonder une entreprise.",
     "mesEntreprises": "Mes entreprises",
     "seDeconnecter": "Se déconnecter",
-    "plansTitre": "Le plan de la semaine, par département",
+    "plansTitre": "Le plan de {{nom}}",
+    "planSemaineDu": "Semaine du {{date}}",
+    "plansAnnexes": "Par département",
     "auTravail": "Au travail maintenant",
     "auTravailEnCours": "Ils se mettent au travail…",
     "auTravailFait": "✓ Lancé — les plans et livrables arrivent dans les salons",
@@ -1872,6 +1874,7 @@
       "quotes": "Prix demandés"
     },
     "selectionTotal": "{{count}} commande(s)",
+    "voirTests": "voir les tests ({{count}})",
     "reportStatus": {
       "pending": "À traiter",
       "rangement": "Rangement",
