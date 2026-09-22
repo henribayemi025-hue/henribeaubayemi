@@ -163,12 +163,74 @@ autorisation, et se laisse expliquer en une phrase.
 
 **Rien n'est décidé. À dire par Beau.**
 
-### Hors ligne
-Demandé par Beau le 22/09. Le service worker existe déjà et met la coque en
-cache: **l'application s'ouvre sans réseau, mais elle est vide.** Ce qui
-manque, c'est garder les données et mettre les écritures en file d'attente.
-Règle retenue: **hors ligne on AJOUTE, on ne MODIFIE pas** — détail dans
-`IDEES-FINJARO.md` §10. Par quoi commencer: la vente au comptoir.
+### Finjaro Learn — demandé par Beau le 22/09
+Frappe a « Learning » à côté d'ERPNext; Beau veut le nôtre.
+
+**Le chiffre qui dit à quoi ça sert, et il est mesuré: 19 boutiques sur 67
+sont VIDES.** Ces personnes se sont inscrites et n'ont jamais publié. Ce
+n'est pas un problème d'envie, c'est qu'entre « je m'inscris » et « mon
+article est en ligne » il y a un trou que personne ne leur explique.
+
+Donc Learn commence par là, pas par un catalogue de cours:
+1. **Publier ton premier article** — la photo, le prix, la description.
+2. **Répondre à une cliente** — le chat, et pourquoi la nuit compte.
+3. **Suivre une commande** jusqu'à la livraison.
+4. **Tenir ses comptes** — le pont vers Finjaro Accounting.
+
+Une leçon = un écran court, une chose à faire, et on vérifie qu'elle est
+faite en regardant la base (elle a publié ? elle a répondu ?). Pas de quiz:
+la preuve, c'est l'action.
+
+**Plus tard, si ça prend:** laisser quelqu'un vendre son propre cours. Mais
+d'abord servir les 19.
+
+**⚠️ Aucun chiffre inventé dans les leçons** — pas de « les vendeuses qui
+publient 10 articles vendent 3 fois plus ». On ne l'a pas mesuré.
+
+### Les appels vidéo — « le truc Google Meet »
+Beau y revient pour la deuxième fois. Ce que j'avais écarté, c'était le
+**Teams de Finjaro** (se réunir), et Beau avait déjà corrigé ma réserve sur
+la data: « les gigas, ils ne sont pas fous ». Il a raison, et ma conclusion
+tient: **en commerce, la vidéo sert à VENDRE** — c'est l'idée 1 (voir
+l'article en vrai avant de payer) et l'idée 2 (la vente en direct).
+
+**Bonne nouvelle: c'est le MÊME chantier.** Un appel vidéo entre deux
+personnes sert aussi bien à montrer un pagne qu'à tenir une réunion.
+
+**Ce qui est faisable sans rien payer:**
+- **Un appel à DEUX**, dans le navigateur, en WebRTC. La mise en relation
+  passe par Supabase Realtime, qu'on a déjà. Aucun serveur de vidéo.
+
+**Ce qui coûte de l'argent, et qu'il faut dire avant de promettre:**
+- **Un serveur TURN.** Quand les deux téléphones sont derrière un réseau
+  mobile fermé — courant ici — la vidéo ne passe pas en direct et doit
+  transiter par un relais. Ce relais se paie au gigaoctet. Sans lui, une
+  partie des appels échoue sans qu'on sache pourquoi.
+- **À trois ou plus**, il faut un serveur qui mélange les flux (LiveKit,
+  Jitsi…). Ce n'est plus du gratuit.
+- **Les notes prises par Finia** demandent de transcrire le son: facturé à
+  la minute.
+
+**Donc l'ordre que je propose:** l'appel à deux d'abord, depuis la fiche
+d'un article et depuis une conversation. On mesure combien d'appels
+aboutissent VRAIMENT. Si beaucoup échouent, c'est le TURN qu'il faut payer,
+et on saura pourquoi. Les notes de Finia et les appels à plusieurs viennent
+après, quand quelqu'un s'en sert.
+
+### Hors ligne — la LECTURE est faite et en ligne
+Fait le 22/09, et vérifié sur le site servi: ce qui a été lu est gardé sur
+l'appareil et réaffiché sans réseau, avec un bandeau qui le dit. Deux vrais
+défauts trouvés en regardant, que la compilation ne voyait pas:
+1. sans réseau, l'application restait bloquée sur un rond qui tourne et
+   n'affichait jamais aucun écran — `getSession()` ne se terminait ni en
+   succès ni en erreur, donc ni `catch` ni `finally` ne partaient;
+2. le chargement du profil laissait remonter le rejet de `fetch` et bloquait
+   tout le démarrage.
+
+**Ce qui reste: l'ÉCRITURE.** Une file d'attente locale, un identifiant posé
+par le téléphone à la création (sinon un renvoi écrit deux fois), et un état
+visible « 3 choses en attente d'envoi ». Règle: **hors ligne on AJOUTE, on
+ne MODIFIE pas** — détail dans `IDEES-FINJARO.md` §10.
 
 ### Le RH qui manque, par ordre de difficulté
 La grille d'un ERP est déjà couverte aux trois quarts (détail dans
