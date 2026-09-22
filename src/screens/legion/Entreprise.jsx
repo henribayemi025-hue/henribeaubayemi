@@ -3,7 +3,7 @@ import { Navigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconSend, IconUsers, IconAlertCircle, IconArrowLeft, IconHash,
-  IconCircleCheck, IconHandGrab, IconMoon, IconBuildingSkyscraper,
+  IconCircleCheck, IconHandGrab, IconMoon,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -219,9 +219,13 @@ export default function Entreprise() {
         <span className="min-w-0 flex-1 truncate text-section font-semibold text-ink">
           {vue === 'membres' ? t('equipe.membresTitre') : data.entreprise.nom}
         </span>
+        {/* La sortie. Elle était une icône d'immeuble sans texte, et Beau
+            s'est retrouvé enfermé: « je n'arrive plus à sortir, je ne trouve
+            pas le site pour revenir ». Une porte se montre, elle ne se
+            devine pas. */}
         {vue === 'salons' && (
-          <Link to="/legion" aria-label={t('legion.mesEntreprises')} className="p-1 text-muted">
-            <IconBuildingSkyscraper size={18} />
+          <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-hairline px-2 py-1 text-caption font-semibold text-muted">
+            <IconArrowLeft size={14} /> Finjaro
           </Link>
         )}
         {vue === 'salons' && (
