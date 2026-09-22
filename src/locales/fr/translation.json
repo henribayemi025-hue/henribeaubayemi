@@ -1,4 +1,37 @@
 {
+  "learn": {
+    "title": "Apprendre",
+    "intro": "Trois choses à faire, dans l'ordre.",
+    "introHint": "Chacune se valide toute seule quand tu l'as faite pour de vrai — il n'y a rien à cocher.",
+    "progress": "{{faites}} sur {{total}}",
+    "ensuite": "Et ensuite",
+    "publier": {
+      "titre": "Publier ton premier article",
+      "quoi": "Une photo, un prix, quelques mots. C'est ce qui fait exister ta boutique.",
+      "comment": "Prends la photo à la lumière du jour, sur un fond uni. Écris le prix même si tu peux en discuter.",
+      "fait": "{{count}} article publié",
+      "fait_other": "{{count}} articles publiés"
+    },
+    "repondre": {
+      "titre": "Répondre à une cliente",
+      "quoi": "Une question sans réponse, c'est une vente qui part ailleurs.",
+      "comment": "Réponds même si tu n'as pas l'article: dis quand tu l'auras.",
+      "fait": "{{count}} réponse envoyée",
+      "fait_other": "{{count}} réponses envoyées"
+    },
+    "livrer": {
+      "titre": "Mener une commande jusqu'au bout",
+      "quoi": "Accepter, préparer, livrer, encaisser. Le tour complet.",
+      "comment": "Marque chaque étape au moment où elle arrive: la cliente voit où en est sa commande.",
+      "fait": "{{count}} commande livrée",
+      "fait_other": "{{count}} commandes livrées"
+    },
+    "comptes": {
+      "titre": "Tenir tes comptes",
+      "quoi": "Ce qui entre, ce qui sort, ce qu'on te doit. Dans Finjaro Accounting, avec le même compte.",
+      "ouvrir": "Ouvrir Finjaro Accounting"
+    }
+  },
   "offline": {
     "banner": "Hors ligne — voici ce que tu avais."
   },
@@ -106,6 +139,7 @@
     "phoneConfirmBlocked": "Ton compte est créé mais il attend une confirmation. Écris-nous, on te débloque tout de suite."
   },
   "nav": {
+    "learn": "Apprendre",
     "home": "Accueil",
     "fin": "Fin",
     "nearYou": "Près de vous",

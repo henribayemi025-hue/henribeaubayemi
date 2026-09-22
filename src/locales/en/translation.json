@@ -1,4 +1,37 @@
 {
+  "learn": {
+    "title": "Learn",
+    "intro": "Three things to do, in order.",
+    "introHint": "Each one ticks itself once you have really done it — there is nothing to check off.",
+    "progress": "{{faites}} of {{total}}",
+    "ensuite": "And then",
+    "publier": {
+      "titre": "Publish your first item",
+      "quoi": "A photo, a price, a few words. That is what makes your shop exist.",
+      "comment": "Take the photo in daylight, on a plain background. Write the price even if it is negotiable.",
+      "fait": "{{count}} item published",
+      "fait_other": "{{count}} items published"
+    },
+    "repondre": {
+      "titre": "Reply to a customer",
+      "quoi": "A question left unanswered is a sale going elsewhere.",
+      "comment": "Reply even if you do not have the item: say when you will.",
+      "fait": "{{count}} reply sent",
+      "fait_other": "{{count}} replies sent"
+    },
+    "livrer": {
+      "titre": "Take an order all the way",
+      "quoi": "Accept, prepare, deliver, get paid. The full round.",
+      "comment": "Mark each step as it happens: the customer sees where her order stands.",
+      "fait": "{{count}} order delivered",
+      "fait_other": "{{count}} orders delivered"
+    },
+    "comptes": {
+      "titre": "Keep your books",
+      "quoi": "What comes in, what goes out, what you are owed. In Finjaro Accounting, with the same account.",
+      "ouvrir": "Open Finjaro Accounting"
+    }
+  },
   "offline": {
     "banner": "Offline — here is what you had."
   },
@@ -106,6 +139,7 @@
     "phoneConfirmBlocked": "Your account is created but waiting for confirmation. Write to us and we'll unblock it right away."
   },
   "nav": {
+    "learn": "Learn",
     "home": "Home",
     "fin": "Fin",
     "nearYou": "Near You",

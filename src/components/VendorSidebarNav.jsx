@@ -4,6 +4,7 @@ import {
   IconLayoutDashboard, IconLayoutDashboardFilled,
   IconBox, IconShoppingBag, IconShoppingBagCheck,
   IconBuildingStore, IconBuildingStore as IconStoreOn,
+  IconSchool,
 } from '@tabler/icons-react';
 
 const items = [
@@ -11,6 +12,7 @@ const items = [
   { to: '/vendor/products', key: 'products', out: IconBox, on: IconBox },
   { to: '/vendor/orders', key: 'orders', out: IconShoppingBag, on: IconShoppingBagCheck },
   { to: '/vendor/shop', key: 'shop', out: IconBuildingStore, on: IconStoreOn },
+  { to: '/vendor/learn', key: 'learn', out: IconSchool, on: IconSchool },
 ];
 
 // Desktop-only left sidebar for the vendor space, mirroring BuyerSidebarNav —

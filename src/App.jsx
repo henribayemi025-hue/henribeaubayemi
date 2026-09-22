@@ -145,6 +145,7 @@ const VendorShop = lazyWithReload(() => import('./screens/vendor/VendorShop'));
 const VendorStats = lazyWithReload(() => import('./screens/vendor/VendorStats'));
 const VendorFinances = lazyWithReload(() => import('./screens/vendor/VendorFinances'));
 const VendorLeaderboard = lazyWithReload(() => import('./screens/vendor/VendorLeaderboard'));
+const VendorLearn = lazyWithReload(() => import('./screens/vendor/VendorLearn'));
 
 function Loading() {
   return (
@@ -309,6 +310,9 @@ export default function App() {
                       <Route path="stats" element={<VendorStats />} />
                       <Route path="finances" element={<VendorFinances />} />
                       <Route path="leaderboard" element={<VendorLeaderboard />} />
+                      {/* Finjaro Learn: apprendre en faisant. Les leçons se
+                          valident sur ce qui a VRAIMENT été fait, pas sur un quiz. */}
+                      <Route path="learn" element={<VendorLearn />} />
                     </Route>
 
                     <Route path="*" element={<Home />} />
