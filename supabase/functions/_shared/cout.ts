@@ -79,8 +79,9 @@ export function compter(fn: string, traiter: (req: Request) => Promise<Response>
     } finally {
       const s = suivi.getStore();
       if (s && s.eur > 0) {
-        await service().from('ai_usage').insert({ fn: s.fn, cost_eur: Number(s.eur.toFixed(6)), entreprise_id: s.entreprise })
-          .then(() => {}, (e: unknown) => console.error('ai_usage:', e));
+        // Supabase ne lève pas: l'échec revient dans { error }. On le dit.
+        const { error } = await service().from('ai_usage').insert({ fn: s.fn, cost_eur: Number(s.eur.toFixed(6)), entreprise_id: s.entreprise });
+        if (error) console.error('ai_usage:', error.message);
       }
     }
   });
