@@ -85,7 +85,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache', 'regle', 'action'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[]): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[]): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -95,13 +95,20 @@ Niveau d'autonomie: ${a.autonomie === 'autonome' ? 'tu agis et tu préviens' : a
 ${ailleurs.length ? `CE QUI S'EST DIT AILLEURS DANS L'ENTREPRISE — dans les autres salons, entre le fondateur et toi ou toute l'équipe, du plus ancien au plus récent. C'est TA mémoire: tu t'en souviens, tu ne dis jamais que tu n'y as pas accès.
 ${ailleurs.join('\n')}
 
-` : ''}L'ÉQUIPE, à l'instant (qui est allumé ou éteint):
+` : ''}TES TÂCHES OUVERTES (le tableau des tâches — c'est ton plan de travail réel):
+${mesTaches.length ? mesTaches.join('\n') : '(aucune)'}
+Si on te demande ce que tu as prévu, sur quoi tu travailles ou où tu en es, réponds à partir de CETTE liste, telle qu'elle est.
+
+L'ÉQUIPE, à l'instant (qui est allumé ou éteint):
 ${equipe.join('\n')}
 
 Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
 ${fil}
 ${collegues.length ? `\nTes collègues ${collegues.join(', ')} viennent de répondre juste au-dessus: ne répète pas ce qu'ils ont dit, apporte autre chose ou sois bref.\n` : ''}
 Claude (« Claude Code ») est le développeur de Legion: il passe lire les salons de temps en temps et répond lui-même. Ne parle jamais à sa place et ne promets rien en son nom.
+
+LE MESSAGE AUQUEL TU RÉPONDS (le dernier du fil ci-dessus, de ${auteur}): lis-le deux fois, comprends ce qu'il veut vraiment — il écrit vite, parfois à la voix, avec des fautes: lis l'intention, pas la lettre.
+Réponds à LA QUESTION POSÉE dans ce message, pas à une autre. Si tu ne comprends pas, demande-lui en une phrase ce qu'il veut dire. Ne cite des chiffres que si la question porte dessus: ne répète pas les mêmes chiffres d'un message à l'autre.
 
 Réponds à ${auteur} comme un collègue, pas comme un assistant:
 - dans la langue de son message (français par défaut), avec TA façon d'écrire;
@@ -253,9 +260,14 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
   return null; // en cas de doute ou de panne, le message part tel quel
 }
 
+// Beau, 22/09: « il est con… ils doivent savoir causer, comprendre, répondre
+// comme toi ». La réponse elle-même passe donc au modèle Pro (plus fin,
+// environ 1 centime la réponse au lieu d'un demi); l'enquête et la
+// relecture restent sur Flash. Le plafond du mois protège la dépense.
+const MODELES_REPONSE = ['gemini-2.5-pro', 'gemini-2.5-flash'];
 async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
   let derniere = 'aucun modèle joignable';
-  for (const model of MODELS) {
+  for (const model of MODELES_REPONSE) {
     try {
       const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
@@ -263,14 +275,14 @@ async function demander(apiKey: string, texte: string): Promise<{ obj: Record<st
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: texte }] }],
           generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 2048,
-            thinkingConfig: { thinkingBudget: 256 },
+            temperature: 0.7,
+            maxOutputTokens: 4096,
+            thinkingConfig: { thinkingBudget: 1024 },
             responseMimeType: 'application/json',
             responseSchema: SCHEMA,
           },
         }),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(45_000),
       });
       if (!resp.ok) { derniere = `${model}: HTTP ${resp.status} ${(await resp.text()).slice(0, 160)}`; console.error(derniere); continue; }
       const body = await resp.json();
@@ -379,9 +391,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const { data: m } = await service.from('legion_messages').select('auteur_id').eq('id', citeId).maybeSingle();
     cite = m ? (agents as Agent[]).find((a) => a.id === m.auteur_id && !a.user_id) || null : null;
   }
-  const pourClaude = !!claude && (cite?.id === claude.id
+  const pourClaude = !!claude && !estClaude && (cite?.id === claude.id
     || (prive && salon.prive_entre.includes(claude.cle))
-    || t.includes('@' + sansAccent(claude.nom)));
+    || t.includes('@' + sansAccent(claude.nom))
+    // « demande à Claude », « Claude regarde »: son nom sans @ suffit.
+    || new RegExp(`\\b${sansAccent(claude.nom)}\\b`).test(t));
 
   if (prive) {
     const en_face = machines.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== auteur.cle);
@@ -454,6 +468,21 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const equipe = (agents as Agent[]).filter((a) => !a.user_id)
     .map((a) => `- ${a.nom} (${a.poste}) — ${a.actif ? 'allumé' : 'éteint'}`);
 
+  // Les tâches ouvertes de l'entreprise (tableau des tâches): chacun voit les
+  // siennes — Beau: « tu avais planifié quoi cette semaine ? ».
+  const { data: tachesOuvertes } = await service.from('legion_messages').select('texte, assigne_a, meta, created_at')
+    .eq('entreprise_id', msg.entreprise_id).eq('genre', 'tache').is('termine_le', null).order('created_at').limit(200);
+  const tachesDe = (id: string) => (tachesOuvertes || [])
+    .filter((x: { assigne_a: string | null; meta: { statut?: string } | null }) => x.assigne_a === id && x.meta?.statut !== 'fait')
+    .map((x: { texte: string; meta: { statut?: string } | null }) => `- ${x.texte} (${x.meta?.statut || 'a_faire'})`);
+  const semblable = (a: string, b: string) => {
+    const mots = (x: string) => new Set(sansAccent(x).split(/[^a-z0-9]+/).filter((m) => m.length > 3));
+    const A = mots(a), B = mots(b);
+    if (!A.size || !B.size) return sansAccent(a) === sansAccent(b);
+    const communs = [...A].filter((m) => B.has(m)).length;
+    return communs / Math.min(A.size, B.size) >= 0.6;
+  };
+
   // La mémoire: les règles de la maison, relues avant chaque réponse.
   const { data: regles } = await service.from('legion_memoire').select('regle')
     .eq('entreprise_id', msg.entreprise_id).eq('actif', true).order('created_at', { ascending: false }).limit(60);
@@ -498,7 +527,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesures, verifie, memoire, competences, ailleursPour(cible), equipe));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, verifie.length ? mesures : null, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id)));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     let texte = String(r.obj.texte).trim().slice(0, 1200);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
@@ -542,7 +571,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     ont_repondu.push(cible.nom);
     lignes.push(`${cible.nom}: ${texte}`);
 
-    const intitule = action ? '' : (typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '');
+    let intitule = action ? '' : (typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '');
+    // Une tâche qu'il a déjà (même intitulé, ou presque) n'est pas recréée.
+    if (intitule && (tachesOuvertes || []).some((x: { texte: string; assigne_a: string | null }) => x.assigne_a === cible.id && semblable(x.texte, intitule))) intitule = '';
     if (intitule) {
       const { data: tache } = await service.from('legion_messages').insert({
         entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
