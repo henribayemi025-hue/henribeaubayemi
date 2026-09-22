@@ -23,15 +23,15 @@ Rien de tout ça n'avance tant qu'il n'a pas répondu. C'est court exprès.
 
 | # | La question | Pourquoi ça bloque |
 | --- | --- | --- |
-| 1 | **« Mon argent »: application à part, ou onglet de Finjaro ?** | L'ancien Finjaro est noir et violet, la place de marché est crème. Mon avis: application à part, `money.finjaro.net`. |
-| 2 | **« Mon argent » en production ?** | Prêt en préproduction. Les chiffres sont justes depuis aujourd'hui. |
+| 1 | ~~« Mon argent »: application à part ou onglet ?~~ | **Tranché par l'usage**: Beau voulait le voir dans les six points. C'est fait, via l'adresse `finjaro.net/profile/argent`. Une adresse propre (`money.finjaro.net`) reste possible plus tard, sans rien casser. |
+| 2 | ~~« Mon argent » en production ?~~ | **EN LIGNE**, vérifié sur le site servi. |
 | 3 | **Open source: on pose une licence ?** | Le dépôt est DÉJÀ public. Poser une licence ne se reprend jamais. |
 | 4 | **Par quoi je commence côté RH ?** | Congés, feuilles de temps, ou notes de frais. |
 | 5 | **Les 262 Mo de fichiers orphelins, je supprime ?** | Du stockage payé pour rien. Je ne supprime rien sans son mot. |
 | 6 | **Les 17 e-mails de prospection, j'envoie ?** | Écrits, pas envoyés. |
 | 7 | **Le jeton Cloudflare est valable sur tout le compte** | C'est lui qui doit le restreindre, je ne peux pas. |
 | 8 | **`.claude/settings.local.json`** | Bloqué en écriture de mon côté. C'est lui qui doit changer les permissions. |
-| 9 | **Athlo ne se connecte plus — je libère une place ?** | Son projet Supabase `athlo` est **en pause**. Le forfait est **gratuit**: 2 projets actifs maximum, et les deux places sont prises par `finjaro` et `finjaro-staging`. Pour réveiller Athlo il faut mettre `finjaro-staging` en pause. **finjaro.net n'est pas touché.** Je ne le fais pas sans son mot. |
+| 9 | ~~Athlo ne se connecte plus~~ | **Réveillé** le 22/09 sur son ordre. Le forfait gratuit n'autorise que 2 projets actifs: `finjaro-staging` est donc **en pause**. finjaro.net et la comptabilité ne sont pas touchés; ça me prive seulement de l'endroit où je répète les migrations. |
 
 ---
 
@@ -60,6 +60,34 @@ maintenant. Fait le 22/09, dans cet ordre:
 
 Il reste **à le regarder à l'écran avec les vraies données** avant de dire
 qu'il marche. Et Beau doit trancher: application à part, ou onglet.
+
+### Retravailler le DESIGN des applications
+Demandé par Beau le 22/09.
+
+Ce que ça ne veut PAS dire: une refonte. Quand Beau parle de design, il parle
+le plus souvent des **détails** — icônes, couleurs, libellés (CLAUDE.md §6).
+Le style vintage — crème, terracotta, laiton, grands titres — est celui que
+les gens ont aimé; on ne le rabote pas au nom de la sobriété.
+
+Ce qui saute aux yeux aujourd'hui, et qui est vrai:
+
+- **Les applications ne se ressemblent pas entre elles.** « Mon argent » est
+  l'ancien Finjaro repeint aux couleurs de la place de marché; Accounting a
+  les siennes; Athlo est noir et vert. Quelqu'un qui passe de l'une à l'autre
+  par les six points a l'impression de changer de maison. C'est le premier
+  chantier, et c'est celui que les six points rendent visible.
+- **Le sélecteur d'applications** lui-même: quatre carrés désormais, sans
+  hiérarchie ni état (laquelle est à moi, laquelle dort).
+- **« Mon argent » n'a pas été regardé à l'écran** avec de vraies données,
+  seulement compilé. Sept onglets sur une barre à 390 px, c'est beaucoup.
+
+⚠️ **Une capture de téléphone ne suffit pas à valider un changement visuel**:
+le harnais ne rend que 390 px de large, et un recadrage qui passe sur mobile
+peut couper un visage en deux sur un écran large.
+
+**À cadrer avec Beau avant de toucher à quoi que ce soit:** est-ce qu'on veut
+que les applications se ressemblent (un seul air de famille), ou que chacune
+garde le sien ? Les deux se défendent et ça décide tout le reste.
 
 ### Hors ligne
 Demandé par Beau le 22/09. Le service worker existe déjà et met la coque en
