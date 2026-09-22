@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Navigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower } from '@tabler/icons-react';
+import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
@@ -51,6 +51,7 @@ export default function Entreprise() {
   const [brouillon, setBrouillon] = useState('');
   const [choisissent, setChoisissent] = useState(false);
   const [bilan, setBilan] = useState(null);
+  const [photos, setPhotos] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
     if (!user?.id || !entrepriseId) return null;
@@ -105,7 +106,8 @@ export default function Entreprise() {
   const taches = useMemo(() => (data?.messages || []).filter((m) => m.genre === 'tache'), [data?.messages]);
   const machines = useMemo(() => (data?.agents || []).filter((a) => !a.user_id), [data?.agents]);
   const allumes = machines.filter((a) => a.actif).length;
-  const aChoisir = machines.filter((a) => a.actif && !a.choisi_par_lui).length;
+  const aChoisir = machines.filter((a) => !a.choisi_par_lui).length;
+  const sansPhoto = machines.filter((a) => a.apparence?.famille !== 'photo').length;
 
   const choisirSalon = useCallback((id) => { setParams({ canal: id }); setVue('chat'); setTape(null); }, [setParams]);
   const choisirDept = useCallback((id) => { setDeptId(id); if (id) choisirSalon(id); }, [choisirSalon]);
@@ -249,6 +251,29 @@ export default function Entreprise() {
       }
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
+  // Une VRAIE photo, fabriquée à partir du visage que l'agent décrit
+  // lui-même. Beau: « chacun est libre de choisir la photo qu'il veut ».
+  // Ce bouton-là DÉPENSE: fabriquer une image se paie, contrairement au
+  // dessin. D'où un bouton séparé, qui le dit, et une photo par agent.
+  async function vraiesPhotos(agent) {
+    setPhotos(true);
+    try {
+      const { data: r, error: err } = await supabase.functions.invoke('legion-portrait', {
+        body: { entreprise_id: entrepriseId, ...(agent ? { agent_id: agent.id } : { limite: 25 }) },
+      });
+      if (err) throw err;
+      if (r?.erreur) throw new Error(r.erreur);
+      if ((r?.faits ?? 0) === 0 && r?.pourquoi) toast.error(r.pourquoi);
+      else toast.success(t('legion.photosFaites', { faits: r?.faits ?? 0, restants: r?.restants ?? 0 }));
+      const { data: frais } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre');
+      if (frais) {
+        setData((d) => d && ({ ...d, agents: frais }));
+        setFiche((f) => (f ? frais.find((x) => x.id === f.id) || f : f));
+      }
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setPhotos(false); }
+  }
+
   async function quIlsChoisissent() {
     setChoisissent(true);
     try {
@@ -303,6 +328,13 @@ export default function Entreprise() {
             <button type="button" onClick={quIlsChoisissent} disabled={choisissent}
               className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg disabled:opacity-50 md:flex">
               <IconSparkles size={14} /> {choisissent ? t('legion.ilsChoisissent') : `${t('legion.quIlsChoisissent')} (${aChoisir})`}
+            </button>
+          )}
+          {sansPhoto > 0 && (
+            <button type="button" onClick={() => vraiesPhotos(null)} disabled={photos}
+              title={t('legion.photosCoutent')}
+              className="hidden items-center gap-1 rounded-pill border border-legion-gold/50 bg-legion-gold/15 px-3 py-1.5 text-caption font-semibold text-legion-gold disabled:opacity-50 lg:flex">
+              <IconCamera size={14} /> {photos ? t('legion.photosEnCours') : `${t('legion.vraiesPhotos')} (${sansPhoto})`}
             </button>
           )}
           <div className="flex items-center gap-2 rounded-input border border-legion-line bg-legion-bg px-2 py-1" title={t('legion.interrupteurGeneral', 'Interrupteur général')}>
@@ -375,7 +407,8 @@ export default function Entreprise() {
       </nav>
 
       <FicheAgent agent={fiche} dept={departements.find((d) => d.nom === fiche?.departement)} onFermer={() => setFiche(null)}
-        onAllumer={allumer} onAutonomie={autonomie} onEcrireA={(a) => { ecrireA(a); }} onAutreTete={autreTete} t={t} />
+        onAllumer={allumer} onAutonomie={autonomie} onEcrireA={(a) => { ecrireA(a); }} onAutreTete={autreTete}
+        onVraiePhoto={vraiesPhotos} photosEnCours={photos} t={t} />
     </div>
   );
 }

@@ -135,7 +135,12 @@
     "ongletSalons": "Rooms",
     "ongletDiscussion": "Chat",
     "ongletEquipe": "Team",
-    "ongletTaches": "Tasks"
+    "ongletTaches": "Tasks",
+    "vraiesPhotos": "Real photos",
+    "saVraiePhoto": "Their real photo",
+    "photosEnCours": "Taking the photos…",
+    "photosFaites": "{{faits}} photos done. {{restants}} to go.",
+    "photosCoutent": "Each one describes the face they want and we generate it. No real person is used. Note: generating an image costs money, unlike the drawing."
   },
   "equipe": {
     "titre": "The team",

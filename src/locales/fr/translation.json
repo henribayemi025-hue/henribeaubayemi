@@ -135,7 +135,12 @@
     "ongletSalons": "Salons",
     "ongletDiscussion": "Discussion",
     "ongletEquipe": "Équipe",
-    "ongletTaches": "Tâches"
+    "ongletTaches": "Tâches",
+    "vraiesPhotos": "De vraies photos",
+    "saVraiePhoto": "Sa vraie photo",
+    "photosEnCours": "On les photographie…",
+    "photosFaites": "{{faits}} photos faites. Il en reste {{restants}}.",
+    "photosCoutent": "Chacun décrit le visage qu'il veut et on le fabrique. Personne de réel n'est utilisé. Attention: fabriquer une image se paie, contrairement au dessin."
   },
   "equipe": {
     "titre": "L'équipe",

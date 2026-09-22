@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck } from '@tabler/icons-react';
+import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera } from '@tabler/icons-react';
 import { Modal } from '../../../components/Modal';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
@@ -9,7 +9,7 @@ import { AUTONOMIES } from './outils';
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
 // personne ».
-export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEcrireA, onAutreTete, t }) {
+export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEcrireA, onAutreTete, onVraiePhoto, photosEnCours, t }) {
   const [change, setChange] = useState(false);
   if (!agent) return null;
 
@@ -85,9 +85,18 @@ export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEc
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-legion-line pt-3">
-          <button type="button" onClick={autreTete} disabled={change} className="flex items-center gap-1 text-caption text-legion-muted hover:text-legion-ink disabled:opacity-40">
-            <IconRefresh size={14} /> {t('legion.autreTete', 'Une autre tête')}
-          </button>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={autreTete} disabled={change} className="flex items-center gap-1 text-caption text-legion-muted hover:text-legion-ink disabled:opacity-40">
+              <IconRefresh size={14} /> {t('legion.autreTete', 'Une autre tête')}
+            </button>
+            {onVraiePhoto && (
+              <button type="button" onClick={() => onVraiePhoto(agent)} disabled={photosEnCours}
+                title={t('legion.photosCoutent')}
+                className="flex items-center gap-1 text-caption text-legion-gold hover:brightness-110 disabled:opacity-40">
+                <IconCamera size={14} /> {photosEnCours ? t('legion.photosEnCours') : t('legion.saVraiePhoto')}
+              </button>
+            )}
+          </div>
           <button type="button" onClick={() => { onEcrireA(agent); onFermer(); }}
             className="flex items-center gap-1.5 rounded-input bg-legion-gold px-3.5 py-2 text-caption font-semibold text-legion-ink shadow-md transition hover:brightness-105">
             <IconMessageCircle size={14} /> {t('legion.ouvrirDiscussion', 'Lui écrire en privé')}
