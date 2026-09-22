@@ -114,6 +114,7 @@ const Settings = lazyWithReload(() => import('./screens/buyer/Settings'));
 const EditProfile = lazyWithReload(() => import('./screens/buyer/EditProfile'));
 const MyOrders = lazyWithReload(() => import('./screens/buyer/MyOrders'));
 const MyFavorites = lazyWithReload(() => import('./screens/buyer/MyFavorites'));
+const MyMoney = lazyWithReload(() => import('./screens/buyer/MyMoney'));
 const InviteFriend = lazyWithReload(() => import('./screens/buyer/InviteFriend'));
 const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
@@ -272,6 +273,9 @@ export default function App() {
                       <Route path="profile/edit" element={<RequireAuth><EditProfile /></RequireAuth>} />
                       <Route path="profile/orders" element={<RequireAuth><MyOrders /></RequireAuth>} />
                       <Route path="profile/favorites" element={<RequireAuth><MyFavorites /></RequireAuth>} />
+                      {/* Mon argent: budget, épargne, projets, njangi. Le premier
+                          Finjaro — les tables n'avaient jamais été supprimées. */}
+                      <Route path="profile/argent" element={<RequireAuth><MyMoney /></RequireAuth>} />
                       <Route path="profile/invite" element={<RequireAuth><InviteFriend /></RequireAuth>} />
                       <Route path="profile/help" element={<Help />} />
                       <Route path="become-vendor" element={<RequireAuth><BecomeVendor /></RequireAuth>} />

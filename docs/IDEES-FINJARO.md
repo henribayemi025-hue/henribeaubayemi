@@ -1,0 +1,426 @@
+# Les idées de Beau — ce qui est décidé, ce qui attend, ce qui est écarté
+
+Écrit le 22/09/2026 à sa demande: « note les idées dont on a parlé, sinon je
+vais oublier ».
+
+Règle de ce fichier: **rien n'est ajouté ici sans que Beau l'ait dit**, et
+tout ce qui est écarté garde la raison de l'avoir été. Une idée écartée sans
+raison revient tous les trois mois.
+
+---
+
+## 1. Ce qui est FAIT
+
+| Quoi | Où |
+| --- | --- |
+| Annulation automatique d'une commande sans réponse (7 j après l'escalade) | production |
+| Fermeture de 14 fonctions ouvertes à tout compte connecté | production |
+| Finia connaît Finjaro Accounting et l'ouvre par un BOUTON | production |
+| Liens cliquables dans les réponses de Finia | production |
+| Le bouton de commande ne refuse plus en silence | production |
+| Montant en espèces dans la monnaie qu'on va tendre | production |
+| La visite guidée ne recouvre plus l'écran de paiement | production |
+| Démonstration `/demo` — acheter, vendre, voir la comptabilité | production |
+| « Mon argent »: comptes, budget mensuel, épargne, njangi, projets, espaces | préproduction |
+
+---
+
+## 2. Ce qui est POSÉ DE CÔTÉ, sur décision de Beau
+
+### Finjaro Work — l'équipe d'une boutique
+
+Migration `0134` et écran `VendorWork.jsx` écrits, **non branchés**, migration
+appliquée au projet de test seulement.
+
+Beau a dit « fais le », puis « ne lance pas encore, réfléchis d'abord ».
+
+Ce qui a été trouvé en cherchant:
+
+- Le marché « ton business dans WhatsApp » est **plein**: 41Plus, Selloops,
+  Kipa, Queek, Ortusflore, VONO, Ovira.
+- La preuve du travail (photo + GPS + heure) existe aussi: **ShambaBoy**
+  (Kenya, ~18 000 FCFA/mois), TraKKiT, Nexura Agent, Tarsil, AgriFriend.
+  Tous VERTICAUX — fermes, distribution, livraison. Aucun ne sert une
+  boutique de trois personnes.
+- Ce que personne d'autre ne peut faire: **la tâche qui naît du commerce
+  lui-même** (une commande arrive → une tâche assignée). Eux n'ont pas les
+  commandes.
+- Le fait qui justifie tout: la commande du 04/09 est restée 17 jours sans
+  que personne ne bouge. Ce n'était pas un problème de communication, c'est
+  que **personne n'était nommé**.
+
+**Question ouverte, non mesurée:** combien de boutiques ont plus d'une
+personne ? Ça décide si Work sert à quelqu'un.
+
+### « Mon argent » — application à part, ou section de Finjaro ?
+
+L'ancien Finjaro est **noir et violet, sept onglets** (Home, Budget, Savings,
+Njangi, Projects, Analyst, Settings). La place de marché est crème et
+terracotta. Ce sont deux produits.
+
+Mon avis: **application à part**, `money.finjaro.net`, dans le sélecteur
+d'applications à côté d'Accounting. Ce n'est pas le même usage.
+
+**Beau n'a pas tranché.**
+
+---
+
+## 3. Les vingt idées du 22/09
+
+★ = seul Finjaro peut le faire, parce qu'il a les commandes, les livres et Finia.
+
+### Vendre
+1. ★ Appel vidéo depuis la fiche article — voir l'article en vrai avant de payer.
+2. ★ Vente en direct — la vendeuse diffuse, on achète pendant.
+3. ★ Commande vocale — la cliente dit ce qu'elle veut, Finia commande.
+4. Essayage virtuel — **existe déjà**, en Premium, sous-utilisé.
+5. ★ Le prix conseillé — Finjaro voit tous les prix, dit si tu es trop chère.
+
+### L'argent
+6. ★ **Le carnet de crédit** — « qui me doit combien ». Le cahier de toute boutique.
+7. ★ **Avance sur ventes** — financer sur l'historique Finjaro.
+8. Tontine / njangi — **tables déjà en base**, écran refait le 22/09.
+9. Mobile Money MTN + Orange — pas commencé.
+10. ★ Achat groupé — cinq boutiques commandent ensemble, prix de gros.
+
+### L'équipe
+11. Pointage, paie, CNPS.
+12. ★ Preuve de livraison — photo + confirmation de la cliente.
+13. ★ Écart de caisse — le tiroir contre les ventes, le soir.
+14. Réassignation d'une tâche quand quelqu'un est absent.
+
+### Finia
+15. ★ **Vocal → décisions → tâches + écritures.** Sikia AI (Dakar, sur Claude)
+    s'arrête au résumé: elle n'a ni les commandes ni les livres.
+16. Photo → fiche article complète — la vision existe déjà.
+17. ★ Finia répond la nuit à la place de la vendeuse — l'autoreply existe, il dort.
+18. Traduction automatique des fiches.
+
+### Les autres métiers
+19. ★ Rendez-vous pour les prestataires — la page Services existe déjà.
+20. Hors ligne complet — le marché, le vendeur ambulant.
+
+**Les trois que je garderais:** le 6 (douleur quotidienne), le 1 (la vidéo qui
+est la tienne), le 7 (ce qui rend Finjaro irremplaçable).
+
+---
+
+## 4. Les idées à reprendre plus tard
+
+### Finjaro covoiturage
+Un vrai métier, pas une fonctionnalité: chauffeurs, trajets, sièges, sécurité,
+litiges. À discuter à part. Ce qui est déjà en place et servirait: les
+comptes, le paiement à la livraison, la géolocalisation.
+
+### Un dépôt où les gens déposent les applications qu'ils ont créées
+L'idée tient debout, mais elle n'a de valeur que le jour où des gens
+construisent des choses SUR Finjaro. À reprendre après.
+
+### Vendre l'API de Finjaro
+Pas maintenant: il n'y a encore rien qu'on veuille acheter. À reprendre quand
+il y aura du trafic.
+
+### La microfinance
+**Pas cherché**, et je ne répondrai pas au feeling. Métier régulé, très
+différent d'une boutique. Ça vaut une vraie recherche si Beau le demande.
+
+---
+
+## 5. Ce qui est ÉCARTÉ, avec la raison
+
+### L'IA qui construit le logiciel du client
+Espace le plus saturé du marché, et déjà africain: **Gebeya Dala** (paie en
+M-Pesa, langues locales), **RationalGo** (Nigeria, pidgin, Paystack),
+**KasiCode** (Afrique du Sud, R49 les 15 applications), **Creator by Wisely**
+(₦10 000/mois), **Lahar AI** (183 métiers, 106 modules).
+
+Et derrière eux: Lovable, Replit, Claude lui-même. On construirait un moins
+bon Claude avec nos moyens.
+
+### Génération d'images
+Aucun avantage, concurrence infinie.
+
+### Un « Teams » de Finjaro
+Teams coûte 6 000 à 10 000 FCFA par personne et par mois, demande un
+ordinateur et une formation — personne ne le prend, c'est vrai. Mais les
+notes de réunion par IA existent déjà en Afrique: **Sikia AI** (PANEOTECH,
+Dakar, construit sur Claude, déployable chez le client), **NoteWave**
+(Afrique du Sud). Et la vidéo coûte cher en data: Google Meet 270 Mo/heure,
+Zoom 540 Mo/heure.
+
+**Réserve de Beau, retenue:** « les gigas, ils ne sont pas fous, s'ils
+décident de le faire c'est qu'ils le veulent et peuvent payer. » Il a raison —
+mon erreur était de traiter la vidéo comme une réunion. **En commerce, la
+vidéo sert à VENDRE** (idées 1 et 2), pas à se réunir.
+
+---
+
+## 6. Chiffres mesurés qui pèsent sur ces choix
+
+Tout est mesuré en production, rien n'est estimé.
+
+| Fait | Chiffre |
+| --- | --- |
+| Boutiques | 67 |
+| Boutiques vides | 19 |
+| Boutiques reliées à un espace comptable | **4 sur 67** |
+| Ventes remontées en comptabilité depuis le 17/09 | **0** |
+| Espaces Accounting avec au moins un membre | 0 sur 8 |
+| Clics pour joindre une vendeuse (total) | 2 |
+| Boutique ivoirienne | 1, **vide** |
+| Stockage Supabase | 550 Mo, 54 % du gratuit |
+
+**Ce que ces chiffres disent:** le problème n'est pas le nombre de
+fonctionnalités, c'est que personne n'achète encore.
+
+**La position de Beau, 22/09, et elle prime:** « on n'a pas encore les
+clients, donc en attendant construisons les choses, améliorons. »
+
+C'est une décision, pas une hésitation: tant qu'il n'y a pas d'acheteurs, le
+temps se met dans le produit plutôt que dans l'attente. Ma réserve ci-dessus
+reste écrite pour le jour où les premiers clients arriveront — à ce
+moment-là, c'est eux qui décideront de l'ordre, pas cette liste.
+
+---
+
+## 7. « On peut aussi faire comme ça » — la grille d'un ERP (Dolibarr)
+
+Beau, 22/09, captures de Dolibarr à l'appui: « c'est ça je demande de faire,
+même RH, etc. », « genre open source ».
+
+### Ce que la grille contient, et où on en est VRAIMENT
+
+Vérifié fichier par fichier dans les deux dépôts, pas de mémoire.
+
+| Module Dolibarr | Chez nous | Où |
+| --- | --- | --- |
+| Prospects / Clients | ✅ | `Parties` (Accounting) + `prospects`, 60 lignes (place de marché) |
+| Devis | ✅ | `Quotes` |
+| Commandes | ✅ | `orders` (place de marché) |
+| Contrats / Abonnements | ✅ | `Subscriptions` |
+| Service d'assistance | ◐ | table `support_tickets` en base, aucun écran |
+| Opportunités | ❌ | — |
+| Base de connaissance | ❌ | — |
+| **Employés** | ✅ | `Staff` |
+| **Pointage / présence** | ✅ | `Staff` — présent, demi-journée, absent, congé |
+| **Paie** | ✅ | `Staff` |
+| Notes de frais | ◐ | `Expenses` existe, mais côté comptable, pas « l'employé demande, on rembourse » |
+| Demandes de congé | ❌ | un STATUT « congé » existe; le circuit demande → réponse, non |
+| Feuilles de temps | ❌ | — |
+| Recrutement | ❌ | — |
+| Gestion association | ❌ | — |
+| CMS / Site web | ✅ | chaque boutique a sa page |
+| **Point de vente** | ✅ | `PointOfSale`, `CashRegister`, `CashBook` |
+| Produits, Services | ✅ | `Products` + `products`, 501 lignes |
+| Stocks | ✅ | `Stock` |
+| Achat, approvisionnement | ✅ | `Purchases` |
+| Expéditions | ❌ | la livraison existe sur une commande, pas un bon d'expédition |
+| Fabrication | ❌ | — |
+| **Facturation & Paiements** | ✅ | `Sales`, `Journal` |
+| **Rapprochement bancaire** | ✅ | `Reconcile`, `Statements` |
+| **Comptabilité à double entrée** | ✅ | `GeneralLedger`, `ChartOfAccounts`, `TrialBalance`, `Closing` |
+| Emailing | ◐ | `relances`, 50 envois — vers des prospects, pas une campagne |
+| Enquêtes | ❌ | — |
+
+**Le fait à retenir:** la grille est déjà couverte aux trois quarts, et la
+partie la plus dure — la comptabilité en partie double, le PDV, la paie — est
+FAITE. Ce n'est pas un projet à commencer, c'est un inventaire à finir.
+
+### Ce qui manque vraiment, par ordre de difficulté
+
+1. **Demandes de congé** — le statut existe, le circuit non. Petit.
+2. **Feuilles de temps** — heures par personne et par jour. Petit, et ça
+   nourrit la paie qui existe déjà.
+3. **Notes de frais de l'employé** — il photographie un reçu, on rembourse.
+   `Expenses` sert de sortie comptable, il manque l'entrée.
+4. **Expéditions** — bon d'expédition détaché de la commande.
+5. **Recrutement, fabrication, enquêtes, association** — gros, et sans
+   demande mesurée. À ne pas ouvrir maintenant.
+
+### Sur « open source »
+
+Deux choses différentes, à ne pas confondre:
+
+- **Le dépôt est DÉJÀ public.** N'importe qui peut lire ce code aujourd'hui.
+  Vérifié le 22/09: aucune clé secrète n'y est écrite — les fonctions ne
+  lisent que des noms de variables d'environnement.
+- **Il n'y a AUCUNE licence.** Sans licence, « tous droits réservés »
+  s'applique: on peut lire, pas réutiliser. Poser une licence est une
+  décision qui ne se reprend pas — ce qui est publié sous licence libre
+  l'est pour toujours, même si on change d'avis.
+
+Ce qu'il faut savoir avant de choisir:
+
+- **Le code n'est pas ce qui a de la valeur ici.** Une place de marché vaut
+  par ses vendeuses et ses acheteuses. Quelqu'un qui copierait le code
+  repartirait de zéro côté monde réel. Le risque est plus petit qu'il n'en
+  a l'air.
+- **Mais le code public rend la base de données seule gardienne.** C'est
+  exactement le travail du 22/09: quatorze fonctions étaient ouvertes à tout
+  compte connecté. En logiciel libre, chaque trou de ce genre se lit dans le
+  code par n'importe qui. Ça ne condamne pas l'idée — ça dit que la sécurité
+  doit passer AVANT la licence, pas après.
+- **Dolibarr vit de l'hébergement et du support**, pas du logiciel. Le modèle
+  marche quand une communauté contribue, et une contribution demande
+  quelqu'un pour la relire. Beau ne code pas.
+
+**Rien n'est décidé.** À trancher quand il le voudra.
+
+---
+
+## 8. ERPNext — la vraie référence, et ce qu'elle change
+
+Beau, 22/09, après Dolibarr: « voici l'autre ». ERPNext est le logiciel qu'il
+faut regarder en face, pas Dolibarr.
+
+### Ce qu'ils sont, dans leurs propres mots
+
+- **100 % libre, rien derrière un péage.** « Everything is yours to use,
+  modify, or resell » — on peut même le revendre.
+- **30 000+ entreprises** l'utilisent.
+- Modules: comptabilité, facturation, ventes, achats, stock, fabrication,
+  projets, **point de vente**, **RH**, **paie**. Plus Frappe HR, CRM,
+  Helpdesk, Insights, LMS à côté.
+- **Pas de prix par utilisateur.** On paie l'hébergement: 14 $, 50 $, 100 $,
+  108 $ par mois sur Frappe Cloud. Utilisateurs illimités.
+- 200+ partenaires, des certifications payantes, une école.
+
+### Ce que ça veut dire pour nous, sans se raconter d'histoire
+
+**1. « Plus de modules » ne peut pas être notre avantage.** La liste RH que
+j'ai écrite ce matin — congés, feuilles de temps, notes de frais, paie —
+Frappe HR la fait déjà, gratuitement, et mieux. Construire ces écrans pour
+« rattraper un ERP » n'a aucun sens. Les construire parce qu'une boutique de
+trois personnes en a besoin SUR UN TÉLÉPHONE, c'en a un.
+
+**2. L'argent d'un ERP libre n'est pas dans le logiciel.** Il est dans
+l'hébergement, l'installation, la formation, les partenaires. C'est un métier
+de services. Beau a un emploi à côté et ne code pas: ce métier-là n'est pas
+tenable pour lui aujourd'hui.
+
+**3. Leur propre FAQ dit où est le trou.** « Any ERP is complex to implement
+on your own... It is recommended to start with a partner. » Un ERP demande un
+partenaire, des semaines, et quelqu'un qui sait. **Une boutique de trois
+personnes n'implémentera jamais un ERP.** Elle n'a ni le temps, ni l'argent,
+ni l'ordinateur.
+
+**4. Ce qu'ERPNext n'a pas, et qu'on a.** Un ERP gère la vie INTERNE d'une
+entreprise. Il n'amène aucun client. Finjaro amène l'acheteuse — et derrière
+elle la commande, qui devient l'écriture comptable toute seule. Personne ne
+peut copier ça en ajoutant un module, parce que ça demande une place de
+marché vivante.
+
+### Ce que j'en retiens
+
+Ne pas courir après la grille. La vraie phrase n'est pas « Finjaro fait tout
+ce que fait un ERP », c'est **« Finjaro fait ce qu'un ERP demande trois
+semaines et un consultant pour faire — et il le fait depuis un téléphone,
+tout seul, à partir des ventes. »**
+
+**Rien n'est décidé ici. C'est Beau qui tranche.**
+
+---
+
+## 9. « Mode expert / mode simple » — la question de Beau, et ma réponse
+
+Beau, 22/09: « notre défi c'est de faire plusieurs choses à la fois, où les
+experts vont être à l'aise et d'autres qui n'ont rien. Je propose qu'on
+divise: celui qui choisit expert aura tout, l'autre qui veut le simple aura
+un truc plus simple. Qu'en penses-tu ? Mais ça peut diluer. »
+
+**Il a raison sur les deux points, y compris sur le danger.**
+
+### Pourquoi je ne ferais PAS deux modes
+
+**Ça demande à la personne de se classer avant de savoir de quoi on parle.**
+Personne ne coche « expert » le premier jour. Et celle qui en aurait besoin
+six mois plus tard ne retourne jamais changer le réglage. Résultat: deux
+produits à tenir, et la bonne moitié que personne ne voit.
+
+**Le chiffre qui le dit chez nous:** 19 boutiques sur 67 sont vides. Ces
+personnes ne sont jamais allées au-delà du premier écran. Un choix
+« simple ou expert » à l'inscription aurait été un mur de plus devant elles,
+pas une aide.
+
+### Ce que fait ERPNext, et qui est mieux
+
+Ses captures le montrent: la colonne de gauche liste Accounting, Assets,
+Buying, CRM, Healthcare, HR, Loans, Manufacturing, Payroll, Projects,
+Quality, Retail, Selling. **Ce ne sont pas des niveaux, ce sont des
+métiers.** Une boutique de vêtements ne voit jamais Healthcare — pas parce
+qu'elle s'est déclarée débutante, mais parce qu'elle ne fait pas de santé.
+
+Des modules qu'on allume, pas un niveau qu'on se donne.
+
+### Ce que je ferais, et c'est encore un cran plus loin
+
+**Ne rien demander du tout. Faire apparaître la chose au moment où elle
+sert.**
+
+- La boutique est seule → aucun écran d'équipe. Une deuxième personne arrive
+  → l'équipe apparaît.
+- Aucune vente à crédit → pas de carnet de crédit. La première vente à
+  crédit → le carnet apparaît.
+- Le cumul passe 10 M → l'avertissement comptable apparaît, parce qu'à ce
+  moment-là il est obligatoire.
+
+Le produit grandit avec le commerce, et personne ne choisit rien. C'est ça
+qu'un ERP ne peut pas faire: il ne voit pas les ventes arriver. Nous si.
+
+**Si un réglage est vraiment voulu**, alors une seule ligne dans les
+paramètres — « tout afficher » — et pas une fourche à l'inscription.
+
+**Rien n'est décidé. C'est Beau qui tranche.**
+
+---
+
+## 10. « Certains trucs doivent fonctionner hors ligne »
+
+Beau, 22/09. C'était l'idée n° 20; elle remonte.
+
+### Où on en est vraiment
+
+Il y a **déjà un service worker** (`public/sw.js`, v3). Il met en cache la
+COQUE de l'application: `index.html` et les fichiers JavaScript.
+
+Conséquence exacte, ni plus ni moins: **sans réseau, l'application s'ouvre —
+et elle est vide.** Toutes les données viennent de Supabase, rien n'est gardé
+en local. C'est la moitié du chemin, et c'est la moitié la moins utile.
+
+### La règle qui décide de tout
+
+**Hors ligne, on peut AJOUTER. On ne peut pas MODIFIER.**
+
+Ce qu'on ajoute ne se contredit jamais: deux ventes faites hors réseau par
+deux personnes sont deux ventes, on les envoie toutes les deux et c'est fini.
+Ce qu'on modifie se contredit tout le temps: deux personnes qui changent le
+même stock hors réseau, on ne saura jamais laquelle avait raison — et en
+comptabilité, deviner est interdit.
+
+Donc, dans l'ordre:
+
+**1. Ce qui marche hors ligne sans rien risquer** (ajout seul):
+- une **vente au comptoir** (le point de vente), c'est le cas le plus utile —
+  le marché, le vendeur ambulant;
+- une **entrée ou une sortie de caisse**;
+- une **ligne de budget**;
+- une **photo de preuve** d'une tâche faite;
+- un **mouvement de stock** enregistré comme un mouvement, pas comme un
+  nouveau total.
+
+**2. Ce qui doit rester lisible hors ligne** (lecture seule, en cache):
+ses propres articles, ses prix, ses commandes du jour, ses comptes.
+
+**3. Ce qui ne se fait PAS hors ligne**, et il faut le dire à l'écran plutôt
+que de faire semblant: payer, publier un article, discuter, tout ce qui
+demande l'autre personne.
+
+### Ce que ça demande
+
+Une file d'attente locale (IndexedDB), un envoi quand le réseau revient, et
+un identifiant posé par le téléphone à la création pour qu'un double envoi
+n'écrive pas deux fois la même vente. Plus, à l'écran, **un état visible**:
+« 3 ventes en attente d'envoi ». Une file invisible qui échoue en silence est
+pire que pas de hors ligne du tout.
+
+**Rien n'est décidé. À dire par Beau.**
