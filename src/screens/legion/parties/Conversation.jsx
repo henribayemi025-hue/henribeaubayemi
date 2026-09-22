@@ -56,6 +56,14 @@ export function Conversation({
   };
   useEffect(() => { colle.current = true; enBas(false); }, [salon?.id]);
   useEffect(() => { if (colle.current) enBas(false); }, [messages.length, tape]);
+  // Le clavier qui s'ouvre rétrécit le fil: le dernier message reste en vue.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return undefined;
+    const suivre = () => { if (colle.current) enBas(false); };
+    vv.addEventListener('resize', suivre);
+    return () => vv.removeEventListener('resize', suivre);
+  }, []);
   function defile() {
     const el = fil.current;
     if (!el) return;
@@ -600,7 +608,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
             ref={zone} rows={1} value={texte} onChange={changer} onKeyDown={toucheClavier}
             placeholder={enregistre ? `🔴 ${t('legion.enregistrement', 'Enregistrement')} ${secondes}s` : depot ? t('legion.envoiEnCours', 'Envoi…') : t('legion.ecrireCourt', 'Message')}
             // 16 px au moins: en dessous, Safari zoome sur la page à chaque toucher.
-            className="max-h-[140px] min-h-[40px] w-full resize-none bg-transparent py-[9px] text-[16px] leading-[22px] text-legion-ink outline-none placeholder:text-legion-muted"
+            className="max-h-[140px] min-h-[40px] w-full resize-none bg-transparent py-[9px] text-[16px] leading-[22px] text-legion-ink outline-none placeholder:text-legion-muted focus-visible:outline-none"
             aria-label={t('equipe.ecrire')}
           />
           <button type="button" onClick={() => onPicker(!picker)} title={t('legion.emoji', 'Emoji')} className={`mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${picker ? 'text-legion-gold' : 'text-legion-muted'}`}>

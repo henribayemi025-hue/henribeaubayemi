@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera, IconHome } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
+import { useEcranVisible } from './parties/useEcranVisible';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -41,6 +42,7 @@ export default function Entreprise() {
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   useFondLegion();
+  useEcranVisible();
   const toast = useToast();
   const { id: entrepriseId } = useParams();
   const [params, setParams] = useSearchParams();
@@ -324,7 +326,10 @@ export default function Entreprise() {
   };
 
   return (
-    <div className="legion-app flex h-dvh flex-col overflow-hidden bg-legion-bg text-legion-ink">
+    // Calée sur la partie visible de l'écran (voir useEcranVisible): le
+    // clavier du téléphone rétrécit Legion au lieu de la pousser dehors.
+    <div className="legion-app fixed inset-x-0 flex flex-col overflow-hidden bg-legion-bg text-legion-ink"
+      style={{ top: 'var(--legion-top, 0px)', height: 'var(--legion-h, 100dvh)' }}>
       {/* L'en-tête: la marque, l'entreprise, les trois nombres, l'interrupteur général */}
       {/* Sur téléphone, une conversation ouverte prend tout l'écran, comme un
           groupe WhatsApp: pas d'en-tête d'entreprise, pas de pastilles, pas
