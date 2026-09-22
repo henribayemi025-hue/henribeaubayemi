@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import {
   IconHome, IconChartPie, IconPigMoney, IconRepeat,
-  IconStack2, IconSparkles, IconUsersGroup, IconGridDots,
+  IconStack2, IconSparkles, IconUsersGroup, IconGridDots, IconLogout,
 } from '@tabler/icons-react';
+import { useAuth } from '../../hooks/useAuth';
 
 // La coque de « Mon argent » — une application à part entière.
 //
@@ -48,6 +49,7 @@ function Marque({ t }) {
 }
 
 export function MoneyShell({ onglet, setOnglet, prenom, t, children }) {
+  const { signOut } = useAuth();
   return (
     // Le fond est posé ici et sur toute la hauteur: sinon le crème de la
     // place de marché dépasse sous le contenu.
@@ -90,17 +92,30 @@ export function MoneyShell({ onglet, setOnglet, prenom, t, children }) {
           <IconGridDots size={18} />
           <span className="truncate">{t('apps.title')}</span>
         </Link>
+        <button type="button" onClick={() => signOut()}
+          className="flex w-full items-center gap-3 rounded-card px-3 py-2 text-caption text-money-muted hover:bg-white/5">
+          <IconLogout size={18} />
+          <span className="truncate">{t('money.signOut', 'Se déconnecter')}</span>
+        </button>
       </aside>
 
       <div className="min-w-0 flex-1">
         {/* TÉLÉPHONE — l'entête. Sur ordinateur la marque est déjà à gauche. */}
-        <header className="flex items-center justify-between px-4 pb-2 pt-4 lg:hidden">
+        <header className="flex items-center justify-between gap-2 px-4 pb-2 pt-4 lg:hidden">
           <Marque t={t} />
-          {prenom && (
-            <span className="max-w-[45%] truncate text-caption text-money-muted">
-              {t('money.hello', { name: prenom })}
-            </span>
-          )}
+          <span className="flex min-w-0 items-center gap-2">
+            {prenom && (
+              <span className="truncate text-caption text-money-muted">
+                {t('money.hello', { name: prenom })}
+              </span>
+            )}
+            {/* Beau, 22/09: entré dans Mon argent, il n'a trouvé ni où se
+                déconnecter, ni où sauvegarder. */}
+            <button type="button" onClick={() => signOut()} title={t('money.signOut', 'Se déconnecter')} aria-label={t('money.signOut', 'Se déconnecter')}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-money-line text-money-muted">
+              <IconLogout size={15} />
+            </button>
+          </span>
         </header>
 
         {/* Sur ordinateur on laisse respirer, mais on ne laisse pas les

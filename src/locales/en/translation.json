@@ -2301,6 +2301,7 @@
   "money": {
     "title": "My money",
     "hello": "Welcome back, {{name}} 👋",
+    "signOut": "Sign out",
     "remaining": "You have left",
     "income": "In",
     "spent": "Out",

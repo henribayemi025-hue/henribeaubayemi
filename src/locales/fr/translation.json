@@ -2301,6 +2301,7 @@
   "money": {
     "title": "Mon argent",
     "hello": "Bonjour, {{name}} 👋",
+    "signOut": "Se déconnecter",
     "remaining": "Il te reste",
     "income": "Entré",
     "spent": "Sorti",
