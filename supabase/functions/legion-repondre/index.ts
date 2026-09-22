@@ -232,6 +232,9 @@ async function demander(apiKey: string, texte: string): Promise<{ obj: Record<st
       if (!txt) { derniere = `${model}: réponse vide (${body?.candidates?.[0]?.finishReason ?? '?'})`; console.error(derniere); continue; }
       try {
         const obj = JSON.parse(txt);
+        // « \n » échappé deux fois par le modèle: on rétablit les vrais
+        // retours à la ligne, sinon la bulle affiche des barres obliques.
+        if (typeof obj.texte === 'string') obj.texte = obj.texte.replace(/\\r?\\n/g, '\n');
         if (typeof obj.texte === 'string' && obj.texte.trim()) return { obj, modele: model };
         derniere = `${model}: texte vide`;
       } catch { derniere = `${model}: JSON illisible — ${txt.slice(0, 120)}`; console.error(derniere); }

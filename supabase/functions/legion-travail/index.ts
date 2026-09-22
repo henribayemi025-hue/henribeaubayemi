@@ -85,7 +85,14 @@ async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<{
       const body = await resp.json();
       const txt = body?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
       if (!txt) { derniere = `${model}: réponse vide`; continue; }
-      try { return { obj: JSON.parse(txt), modele: model }; } catch { derniere = `${model}: JSON illisible`; }
+      try {
+        const obj = JSON.parse(txt);
+        // Gemini rend parfois « \n » échappé deux fois: le texte arrive avec
+        // des barres obliques au lieu de retours à la ligne (vu sur le
+        // premier livrable d'Alpha, 22/09). On les rétablit.
+        for (const k of Object.keys(obj)) if (typeof obj[k] === 'string') obj[k] = obj[k].replace(/\\r?\\n/g, '\n');
+        return { obj, modele: model };
+      } catch { derniere = `${model}: JSON illisible`; }
     } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
   }
   return { erreur: derniere };
@@ -173,11 +180,22 @@ ${REGLES_COMMUNES}
 "besoin": si bloqué, en une phrase, ce qu'il te faut et de qui; sinon "".`;
 }
 
-// Le plan et les livrables d'UNE entreprise.
-async function travailler(service: Service, apiKey: string, entrepriseId: string, journal: string[]) {
+// Supabase coupe une fonction qui n'a rien envoyé pendant 150 s (vu le
+// 22/09 au premier essai: 4 plans et 3 livrables, puis « IDLE_TIMEOUT »).
+// Une journée se fait donc en TRANCHES d'environ 100 s: chaque tranche fait
+// ce qu'elle peut, puis se rappelle elle-même pour la suite (avec le jeton
+// de la base), jusqu'à ce qu'il ne reste rien. Un plan déjà écrit cette
+// semaine et un livrable déjà rendu aujourd'hui ne se refont pas: la
+// chaîne s'arrête d'elle-même.
+const BUDGET_MS = 100_000;
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
+// Le plan et les livrables d'UNE entreprise. Rend true s'il reste du travail.
+async function travailler(service: Service, apiKey: string, entrepriseId: string, journal: string[], debut: number): Promise<boolean> {
+  const tempsEcoule = () => Date.now() - debut > BUDGET_MS;
   pourEntreprise(entrepriseId);
   const p = await plafondAtteint(entrepriseId);
-  if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return; }
+  if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return false; }
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet').eq('id', entrepriseId).single(),
@@ -186,9 +204,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
     service.from('legion_connecteurs').select('id').eq('entreprise_id', entrepriseId).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
   ]);
-  if (!entreprise || !agents || !canaux) { journal.push(`${entrepriseId}: introuvable`); return; }
+  if (!entreprise || !agents || !canaux) { journal.push(`${entrepriseId}: introuvable`); return false; }
   const machines = (agents as Agent[]).filter((a) => !a.user_id && a.moteur !== 'claude-code' && a.actif);
-  if (!machines.length) { journal.push(`${entreprise.nom}: personne d'allumé`); return; }
+  if (!machines.length) { journal.push(`${entreprise.nom}: personne d'allumé`); return false; }
   const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
   const projet = String(entreprise.projet || entreprise.nom);
 
@@ -220,6 +238,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const plansDe = (dept: string, horizon?: string) => (plansRecents || [])
     .filter((x: { departement: string; horizon: string }) => sansAccent(x.departement) === sansAccent(dept) && (!horizon || x.horizon === horizon));
 
+  // Qui a déjà rendu son livrable aujourd'hui (une tranche précédente).
+  const { data: livresAujourdhui } = await service.from('legion_messages').select('auteur_id')
+    .eq('entreprise_id', entrepriseId).gte('created_at', new Date().toISOString().slice(0, 10)).not('meta->livrable', 'is', null);
+  const dejaLivre = new Set((livresAujourdhui || []).map((x: { auteur_id: string }) => x.auteur_id));
+
   // 1. LES PLANS — un par département dont le responsable est allumé.
   const directeurs = machines.filter((a) => a.est_directeur && a.departement);
   for (const d of directeurs) {
@@ -228,6 +251,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const dernierSemaine = plansDe(dept, 'semaine')[0];
     const dernierMois = plansDe(dept, 'mois')[0];
     if (dernierSemaine && jours(dernierSemaine) < 6) continue;
+    if (tempsEcoule()) return true;
     const besoinMois = !dernierMois || jours(dernierMois) >= 25;
     const canal = canalDe(dept);
     const equipeDept = (agents as Agent[]).filter((a) => !a.user_id && sansAccent(a.departement || '') === sansAccent(dept))
@@ -265,10 +289,12 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
 
   // 2. LES LIVRABLES — chaque agent allumé prend sa tâche la plus ancienne.
   const lot = 3;
-  for (let i = 0; i < machines.length; i += lot) {
-    await Promise.all(machines.slice(i, i + lot).map(async (a) => {
+  const restants = machines.filter((a) => !dejaLivre.has(a.id));
+  for (let i = 0; i < restants.length; i += lot) {
+    if (tempsEcoule()) return true;
+    await Promise.all(restants.slice(i, i + lot).map(async (a) => {
       const tache = ouvertes.find((t) => t.assigne_a === a.id);
-      if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); return; }
+      if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
       const canal = canalDe(a.departement);
       const { data: comp } = await service.from('legion_competences').select('nom, description, contenu').eq('agent_id', a.id).eq('actif', true).order('created_at').limit(4);
       const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) => ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
@@ -290,8 +316,10 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
       await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
       journal.push(`${entreprise.nom}: ${a.nom} a livré « ${tache.texte.slice(0, 60)} » (${bloque ? 'bloqué' : 'terminé'}, ${r.modele})`);
+      dejaLivre.add(a.id);
     }));
   }
+  return false;
 }
 
 Deno.serve(compter('legion_travail', async (req: Request) => {
@@ -313,8 +341,11 @@ Deno.serve(compter('legion_travail', async (req: Request) => {
   if (jeton) {
     const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_travail').maybeSingle();
     if (!sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
-    const { data } = await service.from('legion_agents').select('entreprise_id').eq('actif', true).is('user_id', null).neq('moteur', 'claude-code');
-    entreprises = [...new Set((data || []).map((x: { entreprise_id: string }) => x.entreprise_id))];
+    if (corps.entreprise_id) entreprises = [corps.entreprise_id]; // une tranche suivante
+    else {
+      const { data } = await service.from('legion_agents').select('entreprise_id').eq('actif', true).is('user_id', null).neq('moteur', 'claude-code');
+      entreprises = [...new Set((data || []).map((x: { entreprise_id: string }) => x.entreprise_id))];
+    }
   } else {
     const auth = req.headers.get('Authorization');
     if (!auth || !corps.entreprise_id) return json({ erreur: 'Il faut être connecté.' }, 401);
@@ -325,9 +356,27 @@ Deno.serve(compter('legion_travail', async (req: Request) => {
   }
 
   const journal: string[] = [];
+  const debut = Date.now();
+  const aSuivre: string[] = [];
   for (const id of entreprises) {
-    try { await travailler(service, apiKey, id, journal); } catch (e) { journal.push(`${id}: ${(e as Error).message}`); console.error(e); }
+    try { if (await travailler(service, apiKey, id, journal, debut)) aSuivre.push(id); } catch (e) { journal.push(`${id}: ${(e as Error).message}`); console.error(e); }
+  }
+  // La tranche suivante, pour ce qui reste: la fonction se rappelle avec le
+  // jeton de la base, sans attendre la réponse.
+  if (aSuivre.length) {
+    const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_travail').maybeSingle();
+    if (sec?.value) {
+      for (const id of aSuivre) {
+        const suite = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-travail`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`, 'x-finjaro-token': sec.value },
+          body: JSON.stringify({ entreprise_id: id }),
+        }).catch((e) => console.error('tranche suivante:', (e as Error).message));
+        if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(suite);
+      }
+      journal.push(`tranche suivante lancée pour ${aSuivre.length} entreprise(s)`);
+    }
   }
   console.log(journal.join('\n'));
-  return json({ ok: true, journal });
+  return json({ ok: true, journal, suite: aSuivre.length > 0 });
 }));

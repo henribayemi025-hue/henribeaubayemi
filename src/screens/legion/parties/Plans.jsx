@@ -36,7 +36,13 @@ export function Plans({ entreprise, t }) {
     setEtat('encours');
     const { data, error } = await supabase.functions.invoke('legion-travail', { body: { entreprise_id: entreprise.id } });
     if (error || data?.erreur) setEtat(data?.erreur || error.message);
-    else { setEtat('fait'); charger(); setTimeout(() => setEtat(''), 4000); }
+    else {
+      // La journée se fait en tranches côté serveur: les plans et les
+      // livrables continuent d'arriver après cette réponse.
+      setEtat('fait'); charger();
+      setTimeout(charger, 60_000); setTimeout(charger, 150_000);
+      setTimeout(() => setEtat(''), 8000);
+    }
   }
 
   const semaines = plans.filter((p) => p.horizon === 'semaine');
@@ -51,7 +57,7 @@ export function Plans({ entreprise, t }) {
         <button type="button" onClick={auTravail} disabled={etat === 'encours'}
           className="inline-flex items-center gap-1.5 rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-60">
           <IconPlayerPlay size={13} />
-          {etat === 'encours' ? t('legion.auTravailEnCours', 'Ils travaillent… (une à trois minutes)') : etat === 'fait' ? t('legion.auTravailFait', '✓ Livré dans les salons') : t('legion.auTravail', 'Au travail maintenant')}
+          {etat === 'encours' ? t('legion.auTravailEnCours', 'Ils se mettent au travail…') : etat === 'fait' ? t('legion.auTravailFait', '✓ Lancé — les plans et livrables arrivent dans les salons') : t('legion.auTravail', 'Au travail maintenant')}
         </button>
       </div>
       {etat && etat !== 'encours' && etat !== 'fait' && <p className="text-[12px] text-legion-danger">{etat}</p>}
