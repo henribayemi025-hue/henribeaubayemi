@@ -70,8 +70,19 @@ const SCHEMA = {
     genre: { type: 'STRING', enum: ['info', 'question', 'proposition'] },
     tache: { type: 'STRING' },
     regle: { type: 'STRING' },
+    // Une action que l'agent PROPOSE; elle ne s'exécute qu'avec le clic du
+    // fondateur (bouton « Confirmer », fonction legion-action).
+    action: {
+      type: 'OBJECT',
+      properties: {
+        type: { type: 'STRING', enum: ['aucune', 'allumer_agent', 'eteindre_agent', 'retenir_regle', 'equiper_competence'] },
+        agent: { type: 'STRING' },
+        valeur: { type: 'STRING' },
+      },
+      required: ['type'],
+    },
   },
-  required: ['texte', 'genre', 'tache', 'regle'],
+  required: ['texte', 'genre', 'tache', 'regle', 'action'],
 };
 
 function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[]): string {
@@ -109,6 +120,7 @@ Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
+"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la — elle ne partira qu'avec son clic, donc dis « je te propose… confirme ». « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
 "regle": seulement si le DERNIER message du fondateur fixe une façon de faire qui doit valoir TOUJOURS, pour toute l'équipe (une préférence durable, une correction de comportement, une interdiction). Écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Dans tous les autres cas, "" — et c'est le cas le plus fréquent. NE SONT PAS des règles: une question (« sur quel écran tu travailles ? »), une demande ponctuelle ou une tâche (« crée un salon », « fais-moi le rapport »), un salut, une information. Une règle déjà listée plus haut ne se répète pas.`;
 }
 
@@ -500,9 +512,20 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       if (errMem) console.error('mémoire:', errMem.message);
       else { retenu = regle; retenue = true; memoire.push(regle); }
     }
+    // L'action proposée, vérifiée ici (un agent qui existe), exécutée plus
+    // tard seulement si le fondateur confirme.
+    let action: Record<string, unknown> | null = null;
+    const a0 = (r.obj.action || {}) as { type?: string; agent?: string; valeur?: string };
+    if (!estClaude && a0.type && a0.type !== 'aucune') {
+      const visee = a0.agent ? (agents as Agent[]).find((x) => !x.user_id && sansAccent(x.nom) === sansAccent(String(a0.agent))) : null;
+      const besoinAgent = a0.type !== 'retenir_regle';
+      if ((!besoinAgent || visee) && (a0.type.startsWith('allumer') || a0.type.startsWith('eteindre') || String(a0.valeur || '').trim())) {
+        action = { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
+      }
+    }
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}) },
+      texte, genre, meta: { ...(action ? { action } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     ecrits.push(ecrit);

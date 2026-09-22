@@ -57,6 +57,17 @@ export function Conversation({
   };
   useEffect(() => { colle.current = true; enBas(false); }, [salon?.id]);
   useEffect(() => { if (colle.current) enBas(false); }, [messages.length, tape]);
+  // Sur téléphone, la conversation est cachée tant qu'on n'ouvre pas
+  // l'onglet: descendre en bas ne faisait alors rien, et le fil s'ouvrait
+  // sur les vieux messages. Dès que le fil prend une taille (il apparaît,
+  // ou le clavier le rétrécit), on redescend s'il était en bas.
+  useEffect(() => {
+    const el = fil.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(() => { if (colle.current) enBas(false); });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   // Le clavier qui s'ouvre rétrécit le fil: le dernier message reste en vue.
   useEffect(() => {
     const vv = window.visualViewport;
@@ -301,6 +312,7 @@ export function Conversation({
                           <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
                         </p>
                       )}
+                      {m.meta?.action && <ActionProposee message={m} t={t} />}
                       {Array.isArray(m.meta?.propositions) && m.meta.propositions.length > 0 && (
                         <PropositionsVeilleur propositions={m.meta.propositions} entrepriseId={entrepriseId} t={t} />
                       )}
@@ -393,6 +405,46 @@ export function Conversation({
           await onEnvoyer({ ...x, meta: { ...(x.meta || {}), ...(cite ? { reponse_a: { id: cite.id, nom: agentDe(cite.auteur_id)?.nom || '?', texte: cite.texte.slice(0, 160) } } : {}) } });
         }}
       />
+    </div>
+  );
+}
+
+// Une action proposée par un agent: rien ne part sans « Confirmer »
+// (fonction legion-action, avec le jeton du fondateur).
+const LIBELLES_ACTION = {
+  allumer_agent: (a) => `Allumer ${a.agent}`,
+  eteindre_agent: (a) => `Éteindre ${a.agent}`,
+  retenir_regle: (a) => `Retenir la règle : « ${a.valeur} »`,
+  equiper_competence: (a) => `Équiper ${a.agent} de « ${a.valeur} »`,
+};
+function ActionProposee({ message, t }) {
+  const [etat, setEtat] = useState(message.meta.action);
+  const [occupe, setOccupe] = useState(false);
+  const libelle = (LIBELLES_ACTION[etat.type] || (() => etat.type))(etat);
+  async function decider(decision) {
+    setOccupe(true);
+    const { data, error } = await supabase.functions.invoke('legion-action', { body: { message_id: message.id, decision } });
+    setOccupe(false);
+    if (error || data?.erreur) { setEtat((e) => ({ ...e, resultat: data?.erreur || error.message })); return; }
+    setEtat((e) => ({ ...e, statut: data.statut, resultat: data.resultat }));
+  }
+  return (
+    <div className="mb-3 mt-2 rounded-card border border-legion-gold/40 bg-legion-gold/10 p-2.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-gold">{t('legion.actionProposee', 'Action proposée')}</p>
+      <p className="mt-0.5 text-[14px] font-semibold text-legion-ink">{libelle}</p>
+      {etat.statut === 'a_confirmer' ? (
+        <div className="mt-2 flex gap-2">
+          <button type="button" onClick={() => decider('confirmer')} disabled={occupe}
+            className="rounded-pill bg-legion-gold px-3.5 py-1.5 text-[13px] font-semibold text-legion-bg disabled:opacity-50">{occupe ? '…' : t('legion.confirmer', 'Confirmer')}</button>
+          <button type="button" onClick={() => decider('refuser')} disabled={occupe}
+            className="rounded-pill border border-legion-line px-3.5 py-1.5 text-[13px] font-semibold text-legion-muted disabled:opacity-50">{t('legion.refuser', 'Refuser')}</button>
+        </div>
+      ) : (
+        <p className={`mt-1 text-[12px] font-semibold ${etat.statut === 'faite' ? 'text-legion-success' : etat.statut === 'echec' ? 'text-legion-danger' : 'text-legion-muted'}`}>
+          {etat.statut === 'faite' ? '✓ ' : etat.statut === 'refusee' ? '✕ ' : ''}{etat.resultat}
+        </p>
+      )}
+      {etat.statut === 'a_confirmer' && etat.resultat && <p className="mt-1 text-[12px] text-legion-danger">{etat.resultat}</p>}
     </div>
   );
 }
