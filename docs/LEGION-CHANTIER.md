@@ -103,3 +103,17 @@ propre plan détaillé AVANT la première ligne de code.
   « Créer un compte », et la phrase « le même compte que sur Finjaro ».
 - **Mon argent : se déconnecter.** Beau est entré dans Mon argent et n'a
   trouvé ni où se déconnecter, ni où sauvegarder.
+
+## La phase d'après : l'audit complet (demandé par Beau, 22/09 au soir)
+
+« Quand tu auras tout fini, tu me dis. On va aller plateforme par
+plateforme, première page, on teste tout ce qui est sur la page, on audite ;
+c'est bon, deuxième page, troisième… toutes les plateformes. Et on passe sur
+le design, tout. On reprend tout du début. »
+
+Quand les chantiers ci-dessus sont faits (hors ce qui attend un geste de
+Beau : Meta, stores, MTN/Orange…), on fait ensemble, **une page à la fois** :
+Finjaro (place de marché), Mon argent, Legion, Accounting (avec Claudinette),
+Athlo, la Console. Pour chaque page : chaque bouton essayé, chaque texte lu
+(langue, pays, chiffres), le design à 390 px ET sur grand écran, et la
+liste de ce qui casse — corrigé avant de passer à la page suivante.
