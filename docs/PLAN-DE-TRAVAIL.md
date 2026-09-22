@@ -180,6 +180,59 @@ la gratuité pour toujours est une promesse qu'on ne pourra pas tenir.
 
 ---
 
+## 💡 LES 20 IDÉES DU 22/09 — état de chacune
+
+Elles étaient dans `IDEES-FINJARO.md` §3 et pas ici; Beau les a réclamées.
+Le détail et les raisons restent là-bas, l'ÉTAT est ici.
+
+★ = seul Finjaro peut le faire, parce qu'il a les commandes, les livres et Finia.
+
+### Vendre
+| # | Idée | État |
+| --- | --- | --- |
+| 1 | ★ Appel vidéo depuis la fiche article | à faire |
+| 2 | ★ Vente en direct | à faire |
+| 3 | ★ Commande vocale | à faire |
+| 4 | Essayage virtuel | **existe déjà**, en Premium, sous-utilisé |
+| 5 | ★ Le prix conseillé | à faire |
+
+### L'argent
+| # | Idée | État |
+| --- | --- | --- |
+| 6 | ★ Carnet de crédit | ✅ **existait déjà chez Claudinette**, et elle a ajouté l'ardoise à la caisse |
+| 7 | ★ Avance sur ventes | à faire |
+| 8 | Tontine / njangi | ✅ **en ligne** dans « Mon argent » |
+| 9 | Mobile Money MTN + Orange | pas commencé |
+| 10 | ★ Achat groupé | à faire |
+
+### L'équipe
+| # | Idée | État |
+| --- | --- | --- |
+| 11 | Pointage, paie, CNPS | ✅ pointage et paie existent (`Staff`); congés et feuilles de temps **en cours chez Claudinette** |
+| 12 | ★ Preuve de livraison | à faire |
+| 13 | ★ Écart de caisse | à faire |
+| 14 | Réassignation d'une tâche | posé avec Finjaro Work |
+
+### Finia
+| # | Idée | État |
+| --- | --- | --- |
+| 15 | ★ Vocal → décisions → tâches + écritures | à faire |
+| 16 | Photo → fiche article complète | la vision **existe déjà** |
+| 17 | ★ Finia répond la nuit | l'autoreply **existe et dort** — à réveiller |
+| 18 | Traduction automatique des fiches | à faire |
+
+### Les autres métiers
+| # | Idée | État |
+| --- | --- | --- |
+| 19 | ★ Rendez-vous pour les prestataires | la page Services **existe déjà** |
+| 20 | Hors ligne complet | 🔸 **le prochain que je prends** |
+
+**Les trois que je garderais si Beau doit choisir:** le 17 (il existe et il dort
+— le moins cher), le 1 (la vidéo, la sienne), le 7 (ce qui rend Finjaro
+irremplaçable).
+
+---
+
 ## ✅ FAIT — en ligne et vérifié
 
 | Quoi | Où |
