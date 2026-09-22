@@ -299,7 +299,7 @@ Deno.serve(async (req: Request) => {
 
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
     service.from('legion_entreprises').select('nom, projet').eq('id', msg.entreprise_id).single(),
-    service.from('legion_canaux').select('id, cle, nom, prive_entre').eq('id', msg.canal_id).single(),
+    service.from('legion_canaux').select('id, cle, nom, prive_entre, membres').eq('id', msg.canal_id).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
   ]);
@@ -354,7 +354,9 @@ Deno.serve(async (req: Request) => {
     } else if (pourClaude) {
       cibles = [];
     } else {
-      const duSalon = machines.filter((a) => sansAccent(a.departement || '') === nomSalon);
+      // Le département du même nom, plus les agents ajoutés à la main (0148).
+      const ajoutes: string[] = Array.isArray(salon.membres) ? salon.membres : [];
+      const duSalon = machines.filter((a) => sansAccent(a.departement || '') === nomSalon || ajoutes.includes(a.cle));
       // Dans « Direction » on parle à toute l'entreprise: les responsables des
       // départements répondent. Ailleurs, l'équipe du salon.
       const vivier = nomSalon === 'direction'

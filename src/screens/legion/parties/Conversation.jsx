@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
-  IconChevronDown, IconCamera,
+  IconChevronDown, IconCamera, IconUserPlus,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { Visage } from './Visage';
@@ -38,7 +38,7 @@ function couleurNom(a) {
 
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
-  onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, entrepriseId, t,
+  onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -92,8 +92,10 @@ export function Conversation({
   const membres = useMemo(() => {
     if (agentPrive || !salon) return [];
     const n = sansAccent(salon.nom);
-    return agents.filter((a) => !a.user_id && a.actif && sansAccent(a.departement) === n);
+    const ajoutes = salon.membres || [];
+    return agents.filter((a) => !a.user_id && a.actif && (sansAccent(a.departement) === n || ajoutes.includes(a.cle)));
   }, [agents, salon, agentPrive]);
+  const [gererMembres, setGererMembres] = useState(false);
 
   function copier(m) {
     navigator.clipboard?.writeText(m.texte).catch(() => {});
@@ -161,6 +163,12 @@ export function Conversation({
           {agentPrive && (
             <Interrupteur petit on={!!agentPrive.actif} onChange={(v) => onAllumer(agentPrive, v)} label={t('legion.interrupteur')} />
           )}
+          {!agentPrive && onMembres && (
+            <button type="button" onClick={() => setGererMembres((v) => !v)} title={t('legion.gererMembres', 'Qui est dans ce salon')}
+              className={`rounded-full p-2 transition ${gererMembres ? 'text-legion-gold' : 'text-legion-ink'}`}>
+              <IconUserPlus size={20} />
+            </button>
+          )}
           {onTaches && (
             <button type="button" onClick={onTaches} title={t('legion.tableauTaches')} className="rounded-full p-2 text-legion-ink lg:hidden">
               <IconLayoutKanban size={20} />
@@ -173,6 +181,36 @@ export function Conversation({
           )}
         </div>
       </div>
+
+      {/* Qui est dans ce salon: le département, et ceux qu'on ajoute à la main */}
+      {gererMembres && !agentPrive && salon && (
+        <div className="max-h-[45%] shrink-0 overflow-y-auto border-b border-legion-line bg-legion-panel px-3 py-2.5">
+          <p className="mb-2 text-[12px] text-legion-muted">{t('legion.membresAide', 'Les agents du département sont là d’office. Ajoute qui tu veux en plus.')}</p>
+          <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {agents.filter((a) => !a.user_id).map((a) => {
+              const duDept = sansAccent(a.departement) === sansAccent(salon.nom);
+              const ajoute = (salon.membres || []).includes(a.cle);
+              return (
+                <li key={a.id} className="flex items-center gap-2 rounded-card bg-legion-card px-2.5 py-1.5">
+                  <Visage a={a} taille={28} point={false} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-semibold text-legion-ink">{a.nom}</span>
+                    <span className="block truncate text-[11px] text-legion-muted">{a.poste}</span>
+                  </span>
+                  {duDept ? (
+                    <span className="shrink-0 text-[11px] text-legion-muted">{t('legion.duDepartement', 'du département')}</span>
+                  ) : (
+                    <button type="button" onClick={() => onMembres(salon, ajoute ? (salon.membres || []).filter((c) => c !== a.cle) : [...(salon.membres || []), a.cle])}
+                      className={`shrink-0 rounded-pill px-2.5 py-1 text-[12px] font-semibold ${ajoute ? 'border border-legion-line text-legion-muted' : 'bg-legion-gold text-legion-bg'}`}>
+                      {ajoute ? t('legion.retirer', 'Retirer') : t('legion.ajouter', 'Ajouter')}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Le fil */}
       <div ref={fil} onScroll={defile} className="legion-fond-chat flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-3 pt-2 sm:px-5">

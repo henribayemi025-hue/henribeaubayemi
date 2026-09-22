@@ -147,7 +147,7 @@ export default function Entreprise() {
     const nomme = machines.find((a) => tx.includes('@' + sansAccent(a.nom)));
     if (nomme) return nomme;
     const nomSalon = sansAccent(salon?.nom);
-    const duDept = machines.filter((a) => sansAccent(a.departement) === nomSalon);
+    const duDept = machines.filter((a) => sansAccent(a.departement) === nomSalon || (salon?.membres || []).includes(a.cle));
     return duDept.find((a) => a.est_directeur && a.actif) || duDept.find((a) => a.actif) || duDept[0]
       || machines.find((a) => a.est_directeur && a.actif) || machines.find((a) => a.est_directeur) || machines.find((a) => a.actif) || null;
   }
@@ -331,6 +331,15 @@ export default function Entreprise() {
       setData((d) => (d ? { ...d, salons: d.salons.map((x) => (x.id === s.id ? { ...x, image_url: url } : x)) } : d));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
+  async function membresSalon(s, membres) {
+    const avant = s.membres || [];
+    setData((d) => (d ? { ...d, salons: d.salons.map((x) => (x.id === s.id ? { ...x, membres } : x)) } : d));
+    const { error: e } = await supabase.from('legion_canaux').update({ membres }).eq('id', s.id);
+    if (e) {
+      toast.error(e.message || t('errors.generic'));
+      setData((d) => (d ? { ...d, salons: d.salons.map((x) => (x.id === s.id ? { ...x, membres: avant } : x)) } : d));
+    }
+  }
   async function maPhoto(fichier) {
     if (!moi) return;
     try {
@@ -441,7 +450,7 @@ export default function Entreprise() {
               salon={salon} dept={dept} agentPrive={agentPrive} messages={messagesDuSalon} agents={data.agents} moi={moi}
               reactions={data.reactions} langue={langue} tape={tape} brouillon={brouillon} onBrouillonPris={() => setBrouillon('')}
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
-              onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon}
+              onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon} onMembres={membresSalon}
               entrepriseId={entrepriseId} t={t}
             />
           ) : (
