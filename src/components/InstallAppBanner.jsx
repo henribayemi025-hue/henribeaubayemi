@@ -22,7 +22,7 @@ const DISMISS_DAYS = 14;
 // immersifs plein écran (chat, Fin) où toute la hauteur compte.
 // `/argent` est « Mon argent », une application à part: la présentation
 // de la place de marché et sa bannière n'ont rien à y faire (Beau, 22/09).
-const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/chat', '/fin', '/argent'];
+const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/chat', '/fin', '/argent', '/legion', '/equipe'];
 
 export function InstallAppBanner() {
   const { t } = useTranslation();

@@ -120,6 +120,11 @@ const MyFavorites = lazyWithReload(() => import('./screens/buyer/MyFavorites'));
 // monte HORS de BuyerLayout: ni la barre de Finjaro, ni Services, ni le crème.
 const MonArgent = lazyWithReload(() => import('./screens/money/MonArgent'));
 const Equipe = lazyWithReload(() => import('./screens/Equipe'));
+// LEGION — l'entreprise d'agents, pour n'importe qui. Finjaro est le client
+// zéro. Trois écrans: mes entreprises, en fonder une, et l'entreprise.
+const LegionMes = lazyWithReload(() => import('./screens/legion/MesEntreprises'));
+const LegionFonder = lazyWithReload(() => import('./screens/legion/Fonder'));
+const LegionEntreprise = lazyWithReload(() => import('./screens/legion/Entreprise'));
 const InviteFriend = lazyWithReload(() => import('./screens/buyer/InviteFriend'));
 const Help = lazyWithReload(() => import('./screens/buyer/Help'));
 const BecomeVendor = lazyWithReload(() => import('./screens/vendor/BecomeVendor'));
@@ -248,6 +253,9 @@ export default function App() {
                         place de marché: c'est un outil interne, et la serrure
                         est en base (is_admin), pas ici. */}
                     <Route path="/equipe" element={<RequireAuth><Equipe /></RequireAuth>} />
+                    <Route path="/legion" element={<RequireAuth><LegionMes /></RequireAuth>} />
+                    <Route path="/legion/fonder" element={<RequireAuth><LegionFonder /></RequireAuth>} />
+                    <Route path="/legion/:id" element={<RequireAuth><LegionEntreprise /></RequireAuth>} />
                     {/* La démonstration complète — acheter, vendre, voir
                         l'écriture. Hors layout et hors base: les boutiques
                         sont inventées et rien n'est enregistré. C'est le lien

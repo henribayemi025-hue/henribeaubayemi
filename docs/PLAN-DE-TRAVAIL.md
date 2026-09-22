@@ -84,7 +84,8 @@ attrapé un plantage de l'onglet Analyste que la compilation ne voyait pas.
 `finjaro.net/argent`. Ça demande un enregistrement DNS et une route
 Cloudflare; rien ne casse en attendant.
 
-### Le Studio — « une app pour créer et gérer ses agents IA » (poste: Orchestre)
+### LEGION — « une app pour créer et gérer ses agents IA » (poste: Orchestre)
+**Nom validé par Beau le 22/09: Legion.** Adresse: `finjaro.net/legion`.
 Beau, 22/09, en plusieurs messages. Ce qu'il veut, dans l'ordre où il l'a dit:
 
 1. **On choisit un MODÈLE d'entreprise**, pas une liste vide. Ses exemples:
@@ -136,16 +137,33 @@ s'assembler dès maintenant à partir de vrais fichiers. « Juridique »,
 « recherche » et « finance » demandent qu'on ÉCRIVE des agents, et
 « cinéma » entièrement. Le dire vaut mieux que de promettre 1 000 juristes.
 
+**FAIT aussi, plus tard le 22/09 (migrations 0136 et 0137):**
+- Les **7 modèles d'entreprise** (`studio_modeles`): conseil, produit,
+  croissance, recherche, juridique, marché, cinéma. Chaque poste est relié à
+  l'agent du catalogue qui le tient, ou marqué « à écrire ». Métiers par
+  modèle, mesurés: produit 238, conseil 33, croissance 29, recherche 28,
+  juridique 17, marché 9, cinéma 8.
+- **L'effectif se choisit librement, de 1 à 10 000** — Beau: « c'est à moi
+  de choisir selon ma taille ». Le nombre décide de la taille (cocon ≤ 5,
+  startup ≤ 40, scale-up ≤ 300, mégacorp au-delà). Les directeurs restent
+  seuls, les autres se multiplient; le total fait exactement l'effectif
+  demandé (testé: 150 → 150, 1 200 → 1 200, 10 000 → 10 000).
+- Les écrans: `/legion` (mes entreprises), `/legion/fonder` (modèle,
+  effectif, nom, projet), `/legion/:id` (salons, messages privés, réactions,
+  tâches, équipe regroupée par métier dès 60 personnes).
+- Chaque agent a un nom, un visage (DiceBear, gratuit) et un poste. Finjaro
+  est la première entreprise Legion (21 agents, 7 salons).
+
 **Ce qui reste, dans l'ordre:**
-1. La table des **modèles d'entreprise** (`studio_modeles`): un modèle = des
-   départements, des postes, et pour chaque poste l'agent du catalogue qui le
-   tient — ou « à écrire ».
-2. L'écran: choisir un modèle, régler la taille, nommer, voir l'organigramme.
-3. L'installation d'un agent: télécharger son texte depuis la source au
-   moment où on l'engage, pas avant.
-4. Les visages: DiceBear (déjà dans le prototype, gratuit, sans compte) pour
-   commencer; une photo choisie ensuite.
-5. Le nom.
+1. Un modèle **« sur mesure »**: choisir soi-même ses métiers dans le
+   catalogue.
+2. Écrire les agents qui manquent: cinéma (8), marché, juridique.
+3. Le visage choisi: une photo du web ou un bitmoji, à la place de DiceBear.
+4. L'espace pour coder (aller sur Claude depuis l'app).
+5. Les agents qui **travaillent vraiment**: aujourd'hui ce sont des fiches
+   et des messages; personne ne réfléchit derrière. C'est le vrai chantier.
+6. L'installation d'un agent: télécharger son texte depuis la source au
+   moment où on l'engage.
 
 ### Retravailler le DESIGN des applications
 Demandé par Beau le 22/09.

@@ -1,4 +1,39 @@
 {
+  "legion": {
+    "nom": "Legion",
+    "fonder": "Fonder une entreprise",
+    "fonderIntro": "Choisis un modèle, règle la taille, nomme-la, dis le projet. L'équipe apparaît — chacun avec un nom, un visage et un poste.",
+    "etapeModele": "1. Le modèle",
+    "etapeTaille": "2. La taille",
+    "postesCatalogue": "{{n}} postes tenus par un agent du catalogue",
+    "postesAEcrire": "{{n}} encore à écrire",
+    "apercu": "À cette taille : {{n}} postes",
+    "aEcrire": "à écrire",
+    "nomEntreprise": "Le nom de ton entreprise",
+    "nomExemple": "Ex. : Finjaro",
+    "projet": "Le projet",
+    "projetAide": "Ce sur quoi l'équipe travaille. C'est ce que les agents lisent en premier.",
+    "fonderBouton": "Fonder",
+    "connecteToi": "Connecte-toi pour fonder une entreprise.",
+    "mesEntreprises": "Mes entreprises",
+    "aucune": "Tu n'as pas encore d'entreprise.",
+    "nouvelle": "Nouvelle entreprise",
+    "taille": {
+      "cocon": "Cocon · 3",
+      "startup": "Startup",
+      "scaleup": "Scale-up",
+      "megacorp": "Mégacorp"
+    },
+    "etapeEffectif": "2. L'effectif",
+    "effectifAide": "Combien de personnes. Chaque métier est tenu par au moins une; les directeurs restent seuls; les autres se multiplient. 10 000 au plus.",
+    "apercuEffectif": "{{metiers}} métiers · {{personnes}} personnes",
+    "etPlus": "… et {{n}} autres métiers",
+    "metiersCount": "{{count}} métier",
+    "metiersCount_other": "{{count}} métiers",
+    "personnes": "{{count}} personne",
+    "personnes_other": "{{count}} personnes",
+    "etPlusPersonnes": "… et {{n}} autres"
+  },
   "equipe": {
     "titre": "L'équipe",
     "membres": "{{count}} agent",
@@ -18,7 +53,7 @@
       "reunion": "Réunion"
     },
     "membresTitre": "L'équipe",
-    "ecrireAUn": "Écrire à un",
+    "ecrireAUn": "Écrire à quelqu'un",
     "enService": "En service ({{count}})",
     "enSommeil": "En sommeil ({{count}})",
     "sommeilPourquoi": "Leur poste est défini. On les allume quand il y a de quoi les occuper — chacun coûte.",
