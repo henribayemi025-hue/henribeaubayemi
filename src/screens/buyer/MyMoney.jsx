@@ -13,6 +13,7 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, Select } from '../../components/Field';
 import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import ChatEspace from './money/ChatEspace';
+import Analyste from './money/Analyste';
 
 // Mon argent — le tout premier Finjaro, remis en service.
 //
@@ -34,7 +35,7 @@ import ChatEspace from './money/ChatEspace';
 // qu'on l'a saisi. On met le symbole de la monnaie choisie à côté, rien de
 // plus.
 
-const ONGLETS = ['comptes', 'budget', 'epargne', 'njangi', 'projets', 'espaces'];
+const ONGLETS = ['comptes', 'budget', 'epargne', 'njangi', 'projets', 'espaces', 'analyste'];
 
 // Les centimes comptent — vu à l'écran le 22/09: un compte Paypal à 0,16 €
 // s'affichait « 0 » et 22,88 € s'affichait « 23 ». J'arrondissais comme du
@@ -144,6 +145,9 @@ export default function MyMoney() {
       <div className="px-4 pb-24 pt-3">
         {onglet === 'comptes' && <Comptes comptes={data.comptes} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'espaces' && <Espaces espaces={data.espaces} moi={user.id} lang={lang} t={t} onDone={recharger} />}
+        {onglet === 'analyste' && (
+          <Analyste lignes={data.budget} comptes={data.comptes} epargne={data.epargne} lang={lang} t={t} />
+        )}
         {onglet === 'budget' && <Budget lignes={data.budget} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'epargne' && <Epargne objectifs={data.epargne} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'projets' && <Projets projets={data.projets} lang={lang} t={t} onDone={recharger} />}
