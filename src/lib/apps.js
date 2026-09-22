@@ -57,7 +57,7 @@ export function appsFromCache() {
 export async function fetchApps() {
   const { data, error } = await supabase
     .from('finjaro_apps')
-    .select('key, name, tagline, url, emoji, accent, audience, sort_order')
+    .select('key, name, tagline, url, emoji, logo_url, accent, audience, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
   if (error || !data || data.length === 0) return appsFromCache();

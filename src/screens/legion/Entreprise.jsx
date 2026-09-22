@@ -203,6 +203,24 @@ export default function Entreprise() {
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
 
+  // Beau veut que chaque agent choisisse sa tête. Aucun agent ne tourne
+  // encore: en attendant, on tire une autre apparence et on la GARDE. Le
+  // jour où l'agent réfléchira, il appellera la même fonction lui-même.
+  async function autreTete(a) {
+    try {
+      const { error: err } = await supabase.rpc('legion_visage_au_hasard', { p_agent: a.id });
+      if (err) throw err;
+      const { data: frais } = await supabase.from('legion_agents')
+        .select('id, apparence, avatar_url').eq('id', a.id).single();
+      if (frais) {
+        setData((d) => d && ({
+          ...d,
+          agents: d.agents.map((x) => (x.id === a.id ? { ...x, ...frais } : x)),
+        }));
+      }
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+
   const enService = data.agents.filter((a) => a.actif && !a.user_id);
   const enSommeil = data.agents.filter((a) => !a.actif && !a.user_id);
 
@@ -245,7 +263,7 @@ export default function Entreprise() {
             <ParMetier agents={enService} t={t} onClick={ouvrirPrive} />
           ) : (
             <ul className="mt-2 space-y-2">
-              {enService.map((a) => <Carte key={a.id} a={a} onClick={() => ouvrirPrive(a)} />)}
+              {enService.map((a) => <Carte key={a.id} a={a} onClick={() => ouvrirPrive(a)} onAutreTete={autreTete} />)}
             </ul>
           )}
           {enSommeil.length > 0 && (
@@ -255,7 +273,7 @@ export default function Entreprise() {
               </p>
               <p className="mt-1 text-caption text-muted">{t('equipe.sommeilPourquoi')}</p>
               <ul className="mt-2 space-y-2">
-                {enSommeil.map((a) => <Carte key={a.id} a={a} endormi onClick={() => ouvrirPrive(a)} />)}
+                {enSommeil.map((a) => <Carte key={a.id} a={a} endormi onClick={() => ouvrirPrive(a)} onAutreTete={autreTete} />)}
               </ul>
             </>
           )}
@@ -406,18 +424,34 @@ export default function Entreprise() {
   );
 }
 
-function Carte({ a, endormi, onClick }) {
+// La fiche de quelqu'un. Beau: « commençons d'abord par l'audit de chaque
+// personne ». Donc on montre ce qui fait un collègue et pas une ligne de
+// base: son visage, son poste, ce qu'il doit faire, et SA PERSONNALITÉ —
+// comment il parle, ce qui l'agace, sa manie.
+function Carte({ a, endormi, onClick, onAutreTete }) {
+  const [change, setChange] = useState(false);
+  async function autreTete(e) {
+    e.stopPropagation();
+    setChange(true);
+    try { await onAutreTete(a); } finally { setChange(false); }
+  }
   return (
-    <li>
-      <button onClick={onClick}
-        className={`flex w-full items-start gap-3 rounded-card border border-hairline p-3 text-left ${endormi ? 'opacity-60' : ''}`}>
-        <Visage a={a} taille={9} />
-        <span className="min-w-0 flex-1">
+    <li className={`rounded-card border border-hairline ${endormi ? 'opacity-60' : ''}`}>
+      <div className="flex items-start gap-3 p-3">
+        <button onClick={autreTete} disabled={change}
+          title="Une autre tête" aria-label="Une autre tête"
+          className="shrink-0 rounded-card disabled:opacity-40">
+          <Visage a={a} taille={12} />
+        </button>
+        <button onClick={onClick} className="min-w-0 flex-1 text-left">
           <span className="block text-body font-semibold text-ink">{a.nom}</span>
           <span className="block text-caption text-muted">{a.poste}</span>
-          <span className="mt-1 block text-caption text-muted">{a.mandat}</span>
-        </span>
-      </button>
+          {a.mandat && <span className="mt-1 block text-caption text-muted">{a.mandat}</span>}
+          {a.personnalite && (
+            <span className="mt-1 block text-caption italic text-teal">{a.personnalite}</span>
+          )}
+        </button>
+      </div>
     </li>
   );
 }

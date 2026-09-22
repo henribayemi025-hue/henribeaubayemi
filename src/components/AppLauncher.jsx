@@ -77,12 +77,25 @@ export function AppsList({ currentKey }) {
         const ouverte = a.key === currentKey;
         const contenu = (
           <>
-            <span
-              aria-hidden="true"
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-input font-serif text-[19px] font-semibold ${accentClass(a.accent)}`}
-            >
-              {monogramme(a.name)}
-            </span>
+            {/* Un vrai logo quand l'application en a un (Beau en a fourni un
+                pour Legion le 22/09); le monogramme sinon. On ne met pas un
+                carré vide en attendant que chaque application ait le sien. */}
+            {a.logo_url ? (
+              <img
+                src={a.logo_url}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                className="h-11 w-11 shrink-0 rounded-input object-cover"
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-input font-serif text-[19px] font-semibold ${accentClass(a.accent)}`}
+              >
+                {monogramme(a.name)}
+              </span>
+            )}
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="truncate text-body font-semibold text-ink">{a.name}</span>
