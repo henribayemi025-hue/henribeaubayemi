@@ -50,6 +50,28 @@ export default function Fonder() {
   const [nom, setNom] = useState('');
   const [projet, setProjet] = useState('');
   const [envoi, setEnvoi] = useState(false);
+  const [secteur, setSecteur] = useState('');
+  const [generation, setGeneration] = useState(false);
+  const [generationErreur, setGenerationErreur] = useState('');
+
+  // Un nouveau modèle, écrit pour le secteur décrit; puis la liste se
+  // recharge et le modèle est sélectionné.
+  async function genererModele(e) {
+    e.preventDefault();
+    if (generation || secteur.trim().length < 3) return;
+    setGeneration(true); setGenerationErreur('');
+    try {
+      const { data: r, error: err } = await supabase.functions.invoke('legion-modele', { body: { secteur: secteur.trim() } });
+      if (err) throw err;
+      if (r?.erreur) throw new Error(r.erreur);
+      try { localStorage.removeItem('legion:modeles:v2'); } catch { /* sans stockage */ }
+      await retry();
+      setSecteur('');
+      setTimeout(() => { const m = document.querySelector(`[data-modele="${r.cle}"]`); if (m) { m.click(); m.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, 300);
+    } catch (e2) {
+      setGenerationErreur(e2.message || t('errors.generic'));
+    } finally { setGeneration(false); }
+  }
 
   const { data, loading, error, retry } = useAsync(async () => {
     const [m, p] = await Promise.all([
@@ -83,7 +105,11 @@ export default function Fonder() {
   }
 
   return (
-    <div className="legion-app min-h-dvh bg-legion-bg pb-24 text-legion-ink">
+    // h-dvh + overflow-y-auto, pas min-h-dvh: le <body> de l'application
+    // ne défile jamais (global.css), c'est la page qui doit porter son
+    // propre défilement. Beau, 22/09: « je clique, je suis collé ici, je ne
+    // monte pas, je ne descends pas ».
+    <div className="legion-app h-dvh overflow-y-auto bg-legion-bg pb-24 text-legion-ink">
       {/* L'en-tête sombre de Legion, pas celui, crème, de la place de marché. */}
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-legion-line bg-legion-panel/95 px-4 backdrop-blur">
         <Link to="/legion" aria-label={t('common.back')} className="rounded-full p-1 text-legion-muted hover:text-legion-ink"><IconArrowLeft size={20} /></Link>
@@ -102,7 +128,7 @@ export default function Fonder() {
             const choisi = modele?.cle === m.cle;
             return (
               <li key={m.cle}>
-                <button type="button" onClick={() => setModele(m)}
+                <button type="button" onClick={() => setModele(m)} data-modele={m.cle}
                   className={`flex w-full items-start gap-3 rounded-card border p-3 text-left ${
                     choisi ? 'border-legion-gold bg-legion-gold/15' : 'border-legion-line bg-legion-card'}`}>
                   <span className="text-title">{m.emoji}</span>
@@ -120,6 +146,23 @@ export default function Fonder() {
             );
           })}
         </ul>
+
+        {/* Ton secteur n'est pas là ? Beau, 22/09: « il y a des milliers de
+            services ». On décrit le secteur, Legion écrit l'organigramme
+            (fonction legion-modele), et il entre au catalogue pour tous. */}
+        <form onSubmit={genererModele} className="mt-3 rounded-card border border-dashed border-legion-line bg-legion-card/60 p-3">
+          <p className="text-caption font-semibold text-legion-ink">{t('legion.autreSecteurTitre', 'Ton secteur n’est pas là ?')}</p>
+          <p className="mt-0.5 text-caption text-legion-muted">{t('legion.autreSecteurAide', 'Décris-le en quelques mots : Legion écrit les départements et les métiers, avec leur mandat.')}</p>
+          <div className="mt-2 flex gap-2">
+            <input value={secteur} onChange={(e) => setSecteur(e.target.value)} placeholder={t('legion.autreSecteurPlaceholder', 'Opérateur télécom, clinique privée, salon de coiffure…')}
+              className="input min-w-0 flex-1" maxLength={160} />
+            <button type="submit" disabled={generation || secteur.trim().length < 3}
+              className="shrink-0 rounded-input bg-legion-gold px-3 py-2 text-caption font-semibold text-legion-ink disabled:opacity-50">
+              {generation ? t('legion.autreSecteurEnCours', 'Écriture… (1 min)') : t('legion.autreSecteurBouton', 'Créer le modèle')}
+            </button>
+          </div>
+          {generationErreur && <p className="mt-2 text-caption text-legion-danger">{generationErreur}</p>}
+        </form>
 
         {modele && (
           <>

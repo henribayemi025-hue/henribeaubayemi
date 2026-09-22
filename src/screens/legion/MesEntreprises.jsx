@@ -64,7 +64,7 @@ export default function MesEntreprises() {
   const totalTaches = Object.values(taches).reduce((s, n) => s + n, 0);
 
   return (
-    <div className="legion-app min-h-dvh bg-legion-bg text-legion-ink">
+    <div className="legion-app h-dvh overflow-y-auto bg-legion-bg text-legion-ink">
       {/* La barre du haut */}
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-legion-line bg-legion-panel/95 px-4 backdrop-blur">
         <div className="flex items-center gap-2.5">
