@@ -86,3 +86,13 @@ propre plan détaillé AVANT la première ligne de code.
 | 5 | **L'équipe humaine et les appels** | Inviter des collègues humains dans l'entreprise ; parler à un agent à la voix (appel) ; une réunion où humains et agents se parlent | ⏳ — l'appel vocal passe par la voix en direct de Gemini (payant à l'usage) : à chiffrer avant |
 | 6 | **Le studio de code** (comme Codex / GitHub) | Un projet est découpé ; un agent architecte répartit ; plusieurs agents codent chacun leur morceau sur leur branche ; un relecteur et des tests ; puis on assemble (zip), on pousse sur GitHub, on déploie | ⏳ — le plus gros. Il faut un endroit où le code s'exécute vraiment (des machines à part), pas seulement un modèle qui écrit : je présente le plan et son coût avant de commencer |
 | 7 | **Des agents qui s'améliorent** | Mémoire (fait), relecture (faite), compétences (2), et une note sur chaque livrable : ce qui a été corrigé devient une règle | 🔸 commencé |
+
+## Pour plus tard (noté le 22/09 au soir)
+
+- **Compacter les longues conversations.** Beau : « il doit aussi avoir la
+  limite, genre compacter les messages quand c'est trop long ». Aujourd'hui
+  chaque agent relit les 20 derniers messages du salon et les 20 qui le
+  concernent ailleurs : au-delà, il oublie. À faire : quand un salon
+  dépasse un seuil, un résumé écrit (décisions, chiffres, qui fait quoi)
+  remplace les vieux messages dans ce que l'agent relit — comme une mémoire
+  de réunion. Le fil complet reste visible pour Beau.
