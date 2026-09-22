@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconHeart, IconSettings, IconHelpCircle, IconLogout, IconFileText,
   IconBuildingStore, IconChevronRight, IconClockHour4, IconSwitchHorizontal, IconGridDots,
-  IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift, IconMessageCircle,
-} from '@tabler/icons-react';
+  IconUserCircle, IconRosetteDiscountCheckFilled, IconCalendarHeart, IconGift, IconMessageCircle, IconPigMoney } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useVendorStatus } from '../../hooks/useVendorStatus';
@@ -68,6 +67,9 @@ export default function UserProfile() {
   const rows = [
     { icon: IconShoppingBag, label: t('profile.myOrders'), to: '/profile/orders' },
     { icon: IconHeart, label: t('profile.myFavorites'), to: '/profile/favorites' },
+    // Mon argent: budget, épargne, projets, njangi. Les données étaient
+    // en base depuis le premier Finjaro, sans plus aucun écran pour y aller.
+    { icon: IconPigMoney, label: t('money.title'), to: '/profile/argent' },
     // Distinct de "Messages" (barre du bas): là, c'est acheteuse↔boutique;
     // ici, un compte peut écrire à un autre compte (voir dm.mustFollowHint).
     { icon: IconMessageCircle, label: t('dm.title'), to: '/profile/messages', badge: dmUnread },

@@ -1953,5 +1953,44 @@
       "manager": "Manager",
       "staff": "Team member"
     }
+  },
+  "money": {
+    "title": "My money",
+    "remaining": "You have left",
+    "income": "In",
+    "spent": "Out",
+    "addLine": "Add a line",
+    "kind": "Type",
+    "expense": "Expense",
+    "incomeOne": "Income",
+    "category": "What",
+    "planned": "Planned",
+    "actual": "Actual",
+    "plannedShort": "planned",
+    "noBudget": "Nothing in your budget yet.",
+    "newGoal": "New goal",
+    "goalName": "What for",
+    "goalTarget": "How much you need",
+    "noGoal": "No savings goal.",
+    "noProject": "No project.",
+    "joinProject": "Join a project with a code",
+    "noNjangi": "No njangi.",
+    "joinNjangi": "Join a njangi with a code",
+    "codePlaceholder": "The code you got",
+    "round": "Round",
+    "thisRoundFor": "This round is for {{name}}",
+    "notPaid": "not yet",
+    "me": "me",
+    "tab": {
+      "budget": "Budget",
+      "epargne": "Savings",
+      "projets": "Projects",
+      "njangi": "Njangi"
+    },
+    "freq": {
+      "weekly": "weekly",
+      "monthly": "monthly",
+      "daily": "daily"
+    }
   }
 }

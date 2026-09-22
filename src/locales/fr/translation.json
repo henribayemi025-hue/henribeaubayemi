@@ -1953,5 +1953,44 @@
       "manager": "Responsable",
       "staff": "Équipier"
     }
+  },
+  "money": {
+    "title": "Mon argent",
+    "remaining": "Il te reste",
+    "income": "Entré",
+    "spent": "Sorti",
+    "addLine": "Ajouter une ligne",
+    "kind": "Nature",
+    "expense": "Dépense",
+    "incomeOne": "Revenu",
+    "category": "Quoi",
+    "planned": "Prévu",
+    "actual": "Réel",
+    "plannedShort": "prévu",
+    "noBudget": "Rien dans ton budget pour l'instant.",
+    "newGoal": "Nouvel objectif",
+    "goalName": "Pour quoi",
+    "goalTarget": "Combien il faut",
+    "noGoal": "Aucun objectif d'épargne.",
+    "noProject": "Aucun projet.",
+    "joinProject": "Rejoindre un projet avec un code",
+    "noNjangi": "Aucun njangi.",
+    "joinNjangi": "Rejoindre un njangi avec un code",
+    "codePlaceholder": "Le code reçu",
+    "round": "Tour",
+    "thisRoundFor": "Ce tour est pour {{name}}",
+    "notPaid": "pas encore",
+    "me": "moi",
+    "tab": {
+      "budget": "Budget",
+      "epargne": "Épargne",
+      "projets": "Projets",
+      "njangi": "Njangi"
+    },
+    "freq": {
+      "weekly": "chaque semaine",
+      "monthly": "chaque mois",
+      "daily": "chaque jour"
+    }
   }
 }
