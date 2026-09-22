@@ -100,6 +100,10 @@ export function notificationHref(n) {
       return d.for_role === 'vendor' ? `/vendor/messages/${d.conversation_id}` : `/chat/${d.conversation_id}`;
     case 'order_received':
       return '/vendor/orders';
+    // Quelqu'un a mis un de ses articles au panier (migration 0155): on
+    // l'amène sur l'article, là où elle peut vérifier prix, stock et photos.
+    case 'cart_added':
+      return d.product_id ? `/vendor/products/${d.product_id}` : '/vendor/products';
     case 'order_confirmed':
     case 'order_shipped':
     case 'order_delivered':

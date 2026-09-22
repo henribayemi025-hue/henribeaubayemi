@@ -111,10 +111,13 @@ Claude (« Claude Code ») est le développeur de Legion: il passe lire les salo
 LE MESSAGE AUQUEL TU RÉPONDS (le dernier du fil ci-dessus, de ${auteur}): lis-le deux fois, comprends ce qu'il veut vraiment — il écrit vite, parfois à la voix, avec des fautes: lis l'intention, pas la lettre.
 Réponds à LA QUESTION POSÉE dans ce message, pas à une autre. Si tu ne comprends pas, demande-lui en une phrase ce qu'il veut dire. Ne cite des chiffres que si la question porte dessus: ne répète pas les mêmes chiffres d'un message à l'autre.
 
-Réponds à ${auteur} comme un collègue, pas comme un assistant:
+Réponds à ${auteur} comme un collègue qui LIVRE, pas comme un assistant qui propose:
 - dans la langue de son message (français par défaut), avec TA façon d'écrire;
-- court: une à quatre phrases. Un simple salut appelle un salut court et vivant, pas un rapport;
-- pas de formule creuse (« excellente question », « n'hésitez pas »), pas de liste numérotée pour un bonjour.
+- la longueur suit la question: un salut appelle une ligne vivante; une question simple, une à quatre phrases; une demande de plan, de stratégie, d'analyse ou de bilan appelle le document COMPLET, tout de suite, dans ce message (titres courts, chiffres mesurés, qui fait quoi et pour quand, ce que ça demande au fondateur);
+- INTERDIT de proposer de faire ce que tu peux faire ici même. Jamais « je peux te préparer une proposition, dis-moi si tu veux »: tu la ÉCRIS. Jamais « on travaille dessus », « on est en train de »: tu dis ce qui est FAIT, ce qui est décidé, et ce qui bloque avec la raison;
+- s'il te demande la stratégie de la semaine, du mois, de fin d'année: un objectif chiffré par horizon, à partir des chiffres mesurés (d'où on part), trois à cinq actions concrètes chacune avec un responsable de l'équipe, et la première action à faire demain matin. Pas de phrases-valises (« optimiser le parcours », « améliorer la conversion ») sans dire QUOI précisément;
+- si le fondateur s'énerve ou dit que tu répètes, ne te justifie pas: change de contenu et réponds à ce qu'il demande;
+- pas de formule creuse (« excellente question », « n'hésitez pas », « je comprends ta frustration »), pas de liste numérotée pour un bonjour.
 
 ${mesures ? `CHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (connecteur « Mesures Finjaro », lecture seule, comptes de test exclus; une « personne » qui visite = un navigateur):
 ${mesures}
@@ -166,15 +169,16 @@ Vérifie, dans cet ordre:
 2. Le message prétend-il un travail qui n'a pas été fait ou qui n'est pas en cours (« j'ai revu », « j'ai analysé », « je suis en train de revoir les écrans », « je continue de travailler sur… ») ? Les agents n'ont que des outils de lecture: ils ne travaillent pas entre deux messages, et ils n'exécutent AUCUNE action eux-mêmes (« c'est fait, l'agent est éteint » est faux: seul le bouton « Confirmer » du fondateur exécute). Retire aussi toute promesse de livraison avec un délai (« je te le remets cet après-midi », « d'ici ce soir ») : remplace-la par ce que l'agent PROPOSE et ce dont il a besoin. Une vérification listée dans les faits, elle, a été faite.
 3. Enfreint-il une règle de la maison ?
 4. Est-il creux (formules, promesses vagues sans qui/quoi/quand) ? Rends-le concret ou plus court.
+5. Le fondateur a-t-il demandé un plan, une stratégie, une analyse, un bilan — et le message se contente-t-il de PROPOSER de le faire (« je peux te préparer… », « dis-moi si tu veux ») ou de dire qu'on y travaille ? C'est la faute la plus grave (Beau, 22/09: « paresseux »). Réécris-le pour qu'il LIVRE le contenu demandé, complet, avec les chiffres des faits et des actions précises (qui, quoi, quand). Dans ce cas seulement, le texte corrigé peut être plus long que l'original.
 
-Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original; raison = en une courte phrase, ce que tu as corrigé.`;
+Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original (sauf le cas 5); raison = en une courte phrase, ce que tu as corrigé.`;
   try {
     const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: invite }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 256 }, responseMimeType: 'application/json', responseSchema: SCHEMA_CRITIQUE },
+        generationConfig: { temperature: 0.2, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 512 }, responseMimeType: 'application/json', responseSchema: SCHEMA_CRITIQUE },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
@@ -183,7 +187,7 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
     const txt = body?.candidates?.[0]?.content?.parts?.filter((x: { thought?: boolean }) => !x.thought).map((x: { text?: string }) => x.text ?? '').join('') ?? '';
     const obj = JSON.parse(txt);
     if (obj.verdict === 'corrige' && typeof obj.texte === 'string' && obj.texte.trim()) {
-      return { texte: obj.texte.trim().slice(0, 1200), raison: String(obj.raison || '').slice(0, 200) };
+      return { texte: obj.texte.trim().slice(0, 4000), raison: String(obj.raison || '').slice(0, 200) };
     }
   } catch (e) { console.error('critique:', (e as Error).message); }
   return null; // en cas de doute ou de panne, le message part tel quel
@@ -193,9 +197,12 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
 // comme toi ». La réponse elle-même passe donc au modèle Pro (plus fin,
 // environ 1 centime la réponse au lieu d'un demi); l'enquête et la
 // relecture restent sur Flash. Le plafond du mois protège la dépense.
-// Le premier Pro que Google accepte (2.5 Pro n'est plus ouvert aux nouveaux
-// comptes: 404, vu le 22/09); Flash en dernier recours.
-const MODELES_REPONSE = ['gemini-3.5-pro', 'gemini-3-pro-preview', 'gemini-3-pro', 'gemini-2.5-flash'];
+// Le premier Pro que Google accepte; Flash en dernier recours. Vu dans les
+// journaux le 22/09 au soir: 2.5 Pro « n'est plus ouvert aux nouveaux
+// comptes », 3-pro-preview « n'est plus disponible, passez à gemini-3.1-… »,
+// 3.5-pro et 3-pro n'existent pas — toutes les réponses de la soirée sont
+// donc sorties de Flash, et Beau les a trouvées « bêtes ». C'était ça.
+const MODELES_REPONSE = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
   let derniere = 'aucun modèle joignable';
   for (const model of MODELES_REPONSE) {
@@ -207,8 +214,8 @@ async function demander(apiKey: string, texte: string): Promise<{ obj: Record<st
           contents: [{ role: 'user', parts: [{ text: texte }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 4096,
-            thinkingConfig: { thinkingBudget: 1024 },
+            maxOutputTokens: 8192,
+            thinkingConfig: { thinkingBudget: 4096 },
             responseMimeType: 'application/json',
             responseSchema: SCHEMA,
           },
@@ -450,6 +457,13 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const enDirection = nomSalon === 'direction'
     || (prive && machines.some((a) => salon.prive_entre.includes(a.cle) && (sansAccent(a.departement || '') === 'direction')));
   const verifie = mesures ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection) : [];
+  // Les chiffres mesurés partent avec la consigne quand la question le
+  // demande: une vérification a eu lieu, ou c'est une question de fond
+  // (plan, stratégie, bilan, priorités). Beau, 22/09: la « stratégie »
+  // d'Alpha ne contenait pas un seul chiffre parce qu'aucun outil n'avait
+  // été appelé — le tableau des mesures n'arrivait qu'après une enquête.
+  const questionDeFond = /strat|plan|bilan|object|priorit|analy|résultat|resultat|semaine|mois|trimestre|décembre|decembre|chiffre|combien|pourquoi/i.test(String(msg.texte)) || String(msg.texte).length > 120;
+  const mesuresPour = verifie.length || questionDeFond ? mesures : null;
 
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
@@ -462,9 +476,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, verifie.length ? mesures : null, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id)));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id)));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
-    let texte = String(r.obj.texte).trim().slice(0, 1200);
+    // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
+    // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
+    let texte = String(r.obj.texte).trim().slice(0, 4000);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
     // La relecture: une proposition, une question, un chiffre, une tâche prise.
     let relu: { corrige: boolean; raison?: string } | null = null;
