@@ -122,7 +122,9 @@ const REGLES_COMMUNES = `RÈGLES ABSOLUES:
 - Jamais de chiffre, de pourcentage ou de date qui ne figure pas dans les chiffres mesurés ou les vérifications. Un chiffre que tu n'as pas, tu dis que tu ne l'as pas.
 - Aucune phrase qui enferme la place de marché dans un pays; jamais de « diaspora ».
 - Pas de formule creuse, pas de « on travaille dessus »: du concret — qui, quoi, pour quand, et ce que ça demande au fondateur.
-- Écris en français, en Markdown léger (titres courts avec ##, listes avec -), sans tableau.`;
+- Écris en français, en Markdown léger (titres courts avec ##, listes avec -), sans tableau. Un retour à la ligne AVANT chaque titre et chaque point de liste (le texte est affiché tel quel: un bloc compact est illisible).
+- Legion, l'application où tu travailles, existe déjà: le fondateur y allume et éteint les agents, y lit les salons, le tableau des tâches, les plans, la mémoire des règles, les compétences et la dépense. Ne propose jamais de construire un outil qui fait déjà ça; propose ce qui manque, précisément.
+- Les faits sur l'offre: la place de marché est gratuite pour les boutiques inscrites avant fin octobre 2026 (gratuit à vie pour elles), payante ensuite pour les nouvelles. Ne dis rien d'autre sur les prix.`;
 
 function invitePlan(a: Agent, projet: string, dept: string, equipe: string[], taches: string[], memoire: string[], fil: string[], mesures: string | null, verifie: string[], plansPrecedents: string[], besoinMois: boolean) {
   const aujourdhui = new Date().toISOString().slice(0, 10);

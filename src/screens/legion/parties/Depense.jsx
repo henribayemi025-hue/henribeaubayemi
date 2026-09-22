@@ -16,6 +16,7 @@ const NOMS = {
   legion_portrait: 'Photos des agents',
   legion_se_choisir: 'Visages et caractères',
   legion_veilleur: 'Le veilleur',
+  legion_travail: 'La journée de travail (plans et livrables)',
 };
 
 export function Depense({ entreprise, t }) {
