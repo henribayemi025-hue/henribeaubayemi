@@ -412,6 +412,13 @@ function Espaces({ espaces, moi, lang, t, onDone }) {
 
   return (
     <>
+      <CreerParSoiMeme
+        table="shared_spaces"
+        libelle={t('money.newSpace')}
+        champs={[{ cle: 'name', libelle: 'money.spaceName' }]}
+        t={t}
+        onDone={onDone}
+      />
       <RejoindreParCode rpc="join_space" libelle={t('money.joinSpace')} t={t} onDone={onDone} />
       {espaces.length === 0 ? (
         <EmptyState title={t('money.noSpace')} />
@@ -800,6 +807,17 @@ function CarteObjectif({ objectif: o, lang, t, onDone }) {
 function Projets({ projets, lang, t, onDone }) {
   return (
     <>
+      <CreerParSoiMeme
+        table="projects"
+        libelle={t('money.newProject')}
+        champs={[
+          { cle: 'name', libelle: 'money.projectName' },
+          { cle: 'emoji', libelle: 'money.projectEmoji' },
+          { cle: 'goal', libelle: 'money.projectGoal', type: 'number', aide: 'money.amountInYourCurrency' },
+        ]}
+        t={t}
+        onDone={onDone}
+      />
       <RejoindreParCode rpc="join_project" libelle={t('money.joinProject')} t={t} onDone={onDone} />
       {projets.length === 0 ? (
         <EmptyState title={t('money.noProject')} />
@@ -841,6 +859,21 @@ function Projets({ projets, lang, t, onDone }) {
 function Njangi({ njangis, moi, lang, t, onDone }) {
   return (
     <>
+      <CreerParSoiMeme
+        table="njangis"
+        libelle={t('money.newNjangi')}
+        champs={[
+          { cle: 'name', libelle: 'money.njangiName' },
+          { cle: 'amount', libelle: 'money.njangiAmount', type: 'number', aide: 'money.amountInYourCurrency' },
+          { cle: 'frequency', libelle: 'money.njangiFrequency', options: [
+            { valeur: 'monthly', libelle: 'money.freq.monthly' },
+            { valeur: 'weekly', libelle: 'money.freq.weekly' },
+            { valeur: 'daily', libelle: 'money.freq.daily' },
+          ] },
+        ]}
+        t={t}
+        onDone={onDone}
+      />
       <RejoindreParCode rpc="join_njangi" libelle={t('money.joinNjangi')} t={t} onDone={onDone} />
       {njangis.length === 0 ? (
         <EmptyState title={t('money.noNjangi')} />
@@ -893,6 +926,83 @@ function Njangi({ njangis, moi, lang, t, onDone }) {
 // Un njangi, un projet et un espace se rejoignent par un CODE qu'on reçoit
 // sur WhatsApp. Les fonctions `join_*` existent en base depuis le premier
 // Finjaro; seuls les écrans manquaient.
+// Créer un projet, un njangi ou un espace.
+//
+// Jusqu'ici on ne pouvait que REJOINDRE celui de quelqu'un d'autre, avec un
+// code. Personne ne pouvait commencer le sien — c'est le trou que Beau a vu
+// sur ses captures de l'ancienne application.
+//
+// Rien à ajouter en base, vérifié le 22/09 sur la production: les trois
+// tables acceptent déjà la création (`with check (owner_id = auth.uid())`),
+// `owner_id` et le code d'invitation ont leurs valeurs par défaut, et trois
+// déclencheurs qui existaient DÉJÀ — `on_project_created`,
+// `on_space_created`, `on_njangi_created` — inscrivent la créatrice comme
+// `admin`, en position 1 pour un njangi. J'avais écrit une migration pour
+// faire ça; elle faisait doublon et je l'ai retirée.
+function CreerParSoiMeme({ table, libelle, champs, t, onDone }) {
+  const toast = useToast();
+  const { user } = useAuth();
+  const [ouvert, setOuvert] = useState(false);
+  const [valeurs, setValeurs] = useState({});
+  const [envoi, setEnvoi] = useState(false);
+
+  const nom = String(valeurs.name ?? '').trim();
+
+  async function creer() {
+    setEnvoi(true);
+    try {
+      const ligne = { owner_id: user.id, name: nom };
+      champs.forEach((c) => {
+        if (c.cle === 'name') return;
+        const v = valeurs[c.cle];
+        if (v === undefined || v === '') return;
+        ligne[c.cle] = c.type === 'number' ? Number(v) || 0 : v;
+      });
+      const { error } = await supabase.from(table).insert(ligne);
+      if (error) throw error;
+      setValeurs({}); setOuvert(false); onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  if (!ouvert) {
+    return (
+      <button
+        onClick={() => setOuvert(true)}
+        className="mb-3 flex w-full items-center justify-center gap-1 rounded-pill bg-teal px-3 py-2 text-body font-semibold text-white"
+      >
+        <IconPlus size={18} /> {libelle}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mb-3 space-y-2 rounded-card border border-hairline p-3">
+      {champs.map((c) => (
+        <Field key={c.cle} label={t(c.libelle)} hint={c.aide ? t(c.aide) : undefined} required={c.cle === 'name'}>
+          {(id) =>
+            c.options ? (
+              <Select id={id} value={valeurs[c.cle] ?? c.options[0].valeur}
+                onChange={(e) => setValeurs((v) => ({ ...v, [c.cle]: e.target.value }))}>
+                {c.options.map((o) => <option key={o.valeur} value={o.valeur}>{t(o.libelle)}</option>)}
+              </Select>
+            ) : (
+              <TextInput id={id} type={c.type === 'number' ? 'number' : 'text'}
+                inputMode={c.type === 'number' ? 'decimal' : undefined}
+                value={valeurs[c.cle] ?? ''}
+                onChange={(e) => setValeurs((v) => ({ ...v, [c.cle]: e.target.value }))} />
+            )
+          }
+        </Field>
+      ))}
+      <div className="flex gap-2">
+        <Button onClick={creer} loading={envoi} disabled={nom === ''}>{t('common.create')}</Button>
+        <Button variant="secondary" onClick={() => { setOuvert(false); setValeurs({}); }}>{t('common.cancel')}</Button>
+      </div>
+    </div>
+  );
+}
+
 function RejoindreParCode({ rpc, libelle, t, onDone }) {
   const toast = useToast();
   const { profile } = useAuth();
