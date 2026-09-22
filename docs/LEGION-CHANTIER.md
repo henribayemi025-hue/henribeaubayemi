@@ -13,9 +13,9 @@ Dans cet ordre. Chaque ligne n'est « faite » que lorsqu'on l'a vue marcher.
 
 | # | Quoi | Pour toi, ça veut dire |
 | --- | --- | --- |
-| 1 | ✅ Le chat du téléphone façon WhatsApp, glisser pour répondre, appui long (sur staging) | Il attend ton « oui » pour finjaro.net (colonne 2) |
-| 2 | **Brancher les agents sur les chiffres de Finjaro** (lecture seule) : visites, fiches vues, boutiques, articles, inscriptions, commandes | « Alpha, combien de visites cette semaine ? » → un vrai chiffre, plus jamais « je vais demander à Boussole » |
-| 3 | **La mémoire des règles** : quand tu corriges un agent, la règle est notée et tous la relisent avant de répondre | Tu ne répètes plus la même chose deux fois |
+| 1 | ✅ Le chat du téléphone façon WhatsApp, glisser pour répondre, appui long, clavier qui ne pousse plus la page — **en ligne** | |
+| 2 | ✅ **Les agents branchés sur la base** (lecture seule) : un tableau de chiffres, et 7 outils qu'ils appellent eux-mêmes (vérifier un jour — robot ou vrais gens —, compter un événement, classer les boutiques, articles, catégories, commandes, pays). Pas de SQL libre : chaque outil est une requête fixe | « Alpha, combien de visites cette semaine ? » → un vrai chiffre, plus jamais « je vais demander à Boussole » |
+| 3 | ✅ **La mémoire** : une consigne durable devient une règle que tous relisent ; liste « Ce qu'ils ont retenu » sur l'accueil (sur staging) | Tu ne répètes plus la même chose deux fois |
 | 4 | **L'agent critique** : relit chaque proposition avant qu'elle n'arrive à toi | Moins de réponses creuses |
 | 5 | **L'écran d'entrée de Legion** : Google / compte Finjaro / créer un compte (B5) | Un inconnu comprend ce qu'est Legion et entre chez lui, pas chez toi |
 | 6 | **Le compteur de dépense** par entreprise et par département, avec un plafond (B9) | Tu sais ce que ça coûte avant que ça coûte |
@@ -31,6 +31,7 @@ Dans cet ordre. Chaque ligne n'est « faite » que lorsqu'on l'a vue marcher.
 | **Qui reste allumé** chez Finjaro (B3) — je propose 6 : Alpha, Claudinette, Vigie, Traque, Écho, Lien | C'est ton équipe |
 | **Toute action qui change quelque chose** : « déconnecte Finia », envoyer un e-mail, supprimer, publier | Une erreur d'agent ne doit jamais partir sans toi |
 | **Ouvrir Legion à d'autres entreprises** | Ce jour-là, il faut les conditions, le prix et le compteur de dépense |
+| **Apprendre des conversations des clients avec Finia** | Ce sont les messages d'autres personnes, et les tables de Finia appartiennent à Accounting. Il faut : l'annoncer dans la politique de confidentialité, n'en tirer que des tendances anonymes (« ce que les gens demandent le plus »), et l'accord de Claudinette |
 
 ## 3. Ça dépend de toi (je ne peux pas le faire à ta place)
 
