@@ -10,10 +10,24 @@
     "ecrire": "Write to the team",
     "envoyer": "Send",
     "genre": {
+      "info": "Info",
       "question": "Question",
       "decision": "To decide",
-      "proposition": "Proposal"
-    }
+      "proposition": "Proposal",
+      "tache": "Task",
+      "reunion": "Meeting"
+    },
+    "membresTitre": "The team",
+    "ecrireAUn": "Message someone",
+    "enService": "On duty ({{count}})",
+    "enSommeil": "Asleep ({{count}})",
+    "sommeilPourquoi": "Their role is defined. We wake them when there is enough to keep them busy — each one costs.",
+    "tachesLibres": "{{count}} task nobody has taken",
+    "tachesLibres_other": "{{count}} tasks nobody has taken",
+    "jeLaPrends": "I'll take it",
+    "prisePar": "Taken by {{nom}}",
+    "terminer": "Mark done",
+    "terminee": "Done"
   },
   "learn": {
     "title": "Learn",

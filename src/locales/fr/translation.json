@@ -10,10 +10,24 @@
     "ecrire": "Écrire à l'équipe",
     "envoyer": "Envoyer",
     "genre": {
+      "info": "Info",
       "question": "Question",
       "decision": "À trancher",
-      "proposition": "Proposition"
-    }
+      "proposition": "Proposition",
+      "tache": "Tâche",
+      "reunion": "Réunion"
+    },
+    "membresTitre": "L'équipe",
+    "ecrireAUn": "Écrire à un",
+    "enService": "En service ({{count}})",
+    "enSommeil": "En sommeil ({{count}})",
+    "sommeilPourquoi": "Leur poste est défini. On les allume quand il y a de quoi les occuper — chacun coûte.",
+    "tachesLibres": "{{count}} tâche que personne n'a prise",
+    "tachesLibres_other": "{{count}} tâches que personne n'a prises",
+    "jeLaPrends": "Je la prends",
+    "prisePar": "Prise par {{nom}}",
+    "terminer": "Terminer",
+    "terminee": "Terminée"
   },
   "learn": {
     "title": "Apprendre",
