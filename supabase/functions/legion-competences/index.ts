@@ -137,8 +137,10 @@ Deno.serve(async (req: Request) => {
   if (corps.action === 'equiper') {
     if (!corps.agent_id || !corps.catalogue_cle) return json({ erreur: 'Agent ou compétence manquant.' }, 400);
     const { data: a } = await agentsReq.eq('id', corps.agent_id).maybeSingle();
-    const { data: f } = await service.from('studio_catalogue').select('cle, nom, description, categorie, source_repo, source_chemin, licence')
-      .eq('cle', corps.catalogue_cle).eq('genre', 'skill').maybeSingle();
+    // Une même clé peut exister dans deux dépôts: on prend la première.
+    const { data: lignes } = await service.from('studio_catalogue').select('cle, nom, description, categorie, source_repo, source_chemin, licence')
+      .eq('cle', corps.catalogue_cle).eq('genre', 'skill').order('source_repo').limit(1);
+    const f = lignes?.[0];
     if (!a || !f) return json({ erreur: 'Agent ou compétence introuvable.' }, 404);
     return json(await poser(a as Agent, f as Fiche, 'fondateur', null));
   }

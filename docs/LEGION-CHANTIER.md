@@ -96,3 +96,10 @@ propre plan détaillé AVANT la première ligne de code.
   dépasse un seuil, un résumé écrit (décisions, chiffres, qui fait quoi)
   remplace les vieux messages dans ce que l'agent relit — comme une mémoire
   de réunion. Le fil complet reste visible pour Beau.
+
+- **Une page de connexion comme celle d'Accounting** (capture de Beau,
+  22/09) pour Legion ET Mon argent : à gauche ce que fait l'application en
+  quatre cartes, à droite « Continuer avec Google », e-mail ou téléphone,
+  « Créer un compte », et la phrase « le même compte que sur Finjaro ».
+- **Mon argent : se déconnecter.** Beau est entré dans Mon argent et n'a
+  trouvé ni où se déconnecter, ni où sauvegarder.

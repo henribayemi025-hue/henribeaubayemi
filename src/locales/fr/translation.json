@@ -130,6 +130,8 @@
     "vocal": "Message vocal",
     "ilDort": "{{nom}} est éteint : il ne répond pas. Allume-le pour qu’il travaille.",
     "claudeRepondra": "{{nom}} répond lui-même, à son prochain passage dans Legion.",
+    "equipe": "Équipé",
+    "equiper": "Équiper",
     "gererMembres": "Qui est dans ce salon",
     "membresAide": "Les agents du département sont là d’office. Ajoute qui tu veux en plus.",
     "duDepartement": "du département",

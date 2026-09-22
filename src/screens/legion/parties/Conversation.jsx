@@ -301,6 +301,9 @@ export function Conversation({
                           <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
                         </p>
                       )}
+                      {Array.isArray(m.meta?.propositions) && m.meta.propositions.length > 0 && (
+                        <PropositionsVeilleur propositions={m.meta.propositions} entrepriseId={entrepriseId} t={t} />
+                      )}
                       {(m.meta?.verifie?.length > 0 || m.meta?.retenu || m.meta?.relu?.corrige) && (
                         <div className="mb-3 mt-1 space-y-1 border-t border-legion-line/60 pt-1.5 text-[12px] text-legion-muted">
                           {m.meta?.verifie?.length > 0 && <p>🔎 {t('legion.verifieBase', 'Vérifié dans la base')} · {m.meta.verifie.map((v) => v.split('(')[0].replaceAll('_', ' ')).join(', ')}</p>}
@@ -390,6 +393,37 @@ export function Conversation({
           await onEnvoyer({ ...x, meta: { ...(x.meta || {}), ...(cite ? { reponse_a: { id: cite.id, nom: agentDe(cite.auteur_id)?.nom || '?', texte: cite.texte.slice(0, 160) } } : {}) } });
         }}
       />
+    </div>
+  );
+}
+
+// Les propositions du veilleur: une compétence pour un agent, un bouton
+// « Équiper ». Rien n'est attaché sans ce clic.
+function PropositionsVeilleur({ propositions, entrepriseId, t }) {
+  const [etat, setEtat] = useState({}); // clé → 'encours' | 'fait' | message d'erreur
+  async function equiper(p) {
+    const k = `${p.agent_id}:${p.cle}`;
+    setEtat((e) => ({ ...e, [k]: 'encours' }));
+    const { data, error } = await supabase.functions.invoke('legion-competences', { body: { action: 'equiper', entreprise_id: entrepriseId, agent_id: p.agent_id, catalogue_cle: p.cle } });
+    setEtat((e) => ({ ...e, [k]: error || data?.erreur ? (data?.erreur || error.message) : 'fait' }));
+  }
+  return (
+    <div className="mb-3 mt-2 space-y-1.5">
+      {propositions.map((p) => {
+        const k = `${p.agent_id}:${p.cle}`;
+        const e = etat[k];
+        return (
+          <div key={k} className="flex items-center justify-between gap-2 rounded-input bg-legion-bg/70 px-2.5 py-1.5 text-[12px]">
+            <span className="min-w-0 truncate"><span className="font-semibold">{p.nom}</span> → {p.agent}</span>
+            {e === 'fait' ? <span className="shrink-0 font-semibold text-legion-success">✓ {t('legion.equipe', 'Équipé')}</span>
+              : <button type="button" onClick={() => equiper(p)} disabled={e === 'encours'}
+                  className="shrink-0 rounded-pill bg-legion-gold px-2.5 py-0.5 font-semibold text-legion-bg disabled:opacity-50">
+                  {e === 'encours' ? '…' : t('legion.equiper', 'Équiper')}
+                </button>}
+            {e && e !== 'fait' && e !== 'encours' && <span className="text-legion-danger">{e}</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
