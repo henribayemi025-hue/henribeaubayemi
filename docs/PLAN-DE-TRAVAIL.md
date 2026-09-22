@@ -197,6 +197,18 @@ s'assembler dès maintenant à partir de vrais fichiers. « Juridique »,
    - **Travailler en arrière-plan pendant des heures** et revenir avec un
      résultat: c'est le cœur. Tâche prise → l'agent tourne → compte rendu
      dans le salon. La messagerie est déjà là pour ça.
+   - **Avec les compétences (skills) prises sur GitHub** — les 571 du
+     catalogue: un agent s'équipe de celles de son poste au moment où il
+     prend une tâche.
+   - **Et qui s'améliorent en travaillant** — Beau: « qui se développent
+     aussi en utilisant ». Chaque tâche finie laisse une note (ce qui a
+     marché, ce qui a coincé) que l'agent relit avant la suivante; les
+     bonnes notes deviennent des compétences maison. Sans ça, un agent
+     recommence de zéro chaque matin.
+     **Pareil pour Finou (place de marché) et Finia (Accounting)** — Beau,
+     22/09: « comme Finia et Finia Accounting, ils doivent aussi se
+     développer ». Même mécanisme, même table de notes; à dire à
+     Claudinette pour Accounting.
 6. L'installation d'un agent: télécharger son texte depuis la source au
    moment où on l'engage.
 
