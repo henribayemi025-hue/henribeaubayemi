@@ -31,6 +31,7 @@ Rien de tout ça n'avance tant qu'il n'a pas répondu. C'est court exprès.
 | 6 | **Les 17 e-mails de prospection, j'envoie ?** | Écrits, pas envoyés. |
 | 7 | **Le jeton Cloudflare est valable sur tout le compte** | C'est lui qui doit le restreindre, je ne peux pas. |
 | 8 | **`.claude/settings.local.json`** | Bloqué en écriture de mon côté. C'est lui qui doit changer les permissions. |
+| 9 | **Athlo ne se connecte plus — je libère une place ?** | Son projet Supabase `athlo` est **en pause**. Le forfait est **gratuit**: 2 projets actifs maximum, et les deux places sont prises par `finjaro` et `finjaro-staging`. Pour réveiller Athlo il faut mettre `finjaro-staging` en pause. **finjaro.net n'est pas touché.** Je ne le fais pas sans son mot. |
 
 ---
 
@@ -121,6 +122,12 @@ la gratuité pour toujours est une promesse qu'on ne pourra pas tenir.
 ---
 
 ## 🗓 LE RESTE, qui n'est pas oublié
+
+- **Athlo** (`Ton suivi sport, poids et calories`, sur Netlify) tourne sur son
+  PROPRE projet Supabase `tyemqrbosgjvvnagypgu` — rien à voir avec Finjaro,
+  et rien de ce qu'on a changé ne l'a cassé. Il est simplement **en pause**:
+  un projet gratuit s'endort tout seul après une semaine sans usage. Il se
+  rallume, mais il n'y a que deux places actives sur le forfait gratuit.
 
 - **Écrire à l'acheteuse bloquée** au paiement, et appeler les deux boutiques
   dont quelqu'un a cliqué pour les joindre. (Beau, pas moi: le dépôt est
