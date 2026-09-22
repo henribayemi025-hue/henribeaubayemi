@@ -118,15 +118,32 @@ Beau, 22/09: « est-ce possible que Finjaro aille fouiller les messages de la
 personne pour sortir ses finances et mettre à jour son Mon argent si elle
 oublie de le faire ? »
 
-**« Aller fouiller » — non, et ce n'est pas un choix de notre part:**
-- Un site web ne peut PAS lire les SMS. Aucune interface de navigateur ne
-  l'autorise (`WebOTP` lit un code à usage unique, rien d'autre).
-- Les applications Android et iOS de Finjaro chargent `https://finjaro.net`
-  dans une fenêtre web: elles n'ont pas plus d'accès qu'un navigateur.
-- Sur iPhone, l'accès aux SMS n'existe pour personne.
-- Sur Android il faudrait du code natif ET la permission SMS, que Google Play
-  n'accorde qu'à une courte liste d'usages. Des applications de finance s'y
-  sont cassé les dents.
+**Ce que j'ai répondu d'abord était trop catégorique, et Beau a eu raison
+d'insister** (« mais l'app Finjaro est dans le tél »). Vérifié dans le dépôt
+plutôt que de mémoire:
+
+Finjaro n'est PAS une simple page web enveloppée. C'est **Capacitor**
+(`capacitor.config.json`, dossiers `android/` et `ios/`), donc un vrai projet
+natif, qui demande déjà `CAMERA` et `ACCESS_FINE_LOCATION`. Ajouter une
+permission et un greffon natif est dans nos cordes.
+
+**Donc, précisément:**
+- **Sur Android: techniquement POSSIBLE.** Le mur n'est pas le téléphone,
+  c'est **Google Play**: `READ_SMS` et `RECEIVE_SMS` sont des permissions
+  sous contrôle. Il faut remplir une déclaration et entrer dans une courte
+  liste d'usages autorisés — « lire les SMS Mobile Money » n'y figure pas.
+  Des applications de finance s'y sont cassé les dents. Le risque n'est pas
+  un refus technique, c'est le retrait de l'application du magasin.
+  (L'API « SMS Retriever », elle, n'est pas contrôlée — mais elle ne lit que
+  les messages portant une signature destinée à notre application. Un SMS de
+  MTN ou d'Orange ne l'a pas.)
+- **Sur iPhone: vraiment impossible.** Aucune interface n'existe, pour
+  personne, quel que soit le type d'application.
+- **Dans le navigateur: impossible aussi** (`WebOTP` lit un code à usage
+  unique, rien d'autre).
+
+**Ce que ça donne en clair:** ça marcherait pour une partie des utilisateurs
+seulement, au prix d'un risque sur la présence dans le Play Store.
 
 **Trois chemins qui marchent, du plus faisable au plus lourd:**
 1. **Elle PARTAGE le SMS** — appui long sur le message MoMo → « Partager » →
@@ -141,7 +158,8 @@ oublie de le faire ? »
 
 **Ce qui n'est pas technique et qui compte autant:** une application qui lit
 TOUS les messages de quelqu'un se fait désinstaller. Le partage volontaire
-donne le même résultat et se laisse expliquer en une phrase.
+donne le même résultat, marche sur les DEUX systèmes, ne demande aucune
+autorisation, et se laisse expliquer en une phrase.
 
 **Rien n'est décidé. À dire par Beau.**
 
