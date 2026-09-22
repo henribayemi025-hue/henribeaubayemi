@@ -35,7 +35,15 @@
     "metiersCount_other": "{{count}} métiers",
     "personnes": "{{count}} personne",
     "personnes_other": "{{count}} personnes",
-    "etPlusPersonnes": "… et {{n}} autres"
+    "etPlusPersonnes": "… et {{n}} autres",
+    "bilanAgents": "{{total}} agents · {{allumes}} allumés · {{choisis}} ont choisi leur tête",
+    "choisirAide": "{{n}} n'ont pas encore choisi. Ils vont lire leur poste et décider eux-mêmes de leur visage et de leur caractère. Seuls les agents allumés tournent.",
+    "quIlsChoisissent": "Qu'ils choisissent eux-mêmes",
+    "ilsChoisissent": "Ils choisissent…",
+    "tousOntChoisi": "Tout le monde a choisi sa tête.",
+    "bilanChoix": "{{faits}} viennent de choisir. Il en reste {{restants}}.",
+    "toutEteindre": "Tout éteindre",
+    "toutRallumer": "Tout rallumer"
   },
   "equipe": {
     "titre": "L'équipe",

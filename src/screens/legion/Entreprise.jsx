@@ -58,6 +58,8 @@ export default function Entreprise() {
   const [texte, setTexte] = useState('');
   const [genre, setGenre] = useState('info');
   const [envoi, setEnvoi] = useState(false);
+  const [choisissent, setChoisissent] = useState(false);
+  const [bilan, setBilan] = useState(null);
   const bas = useRef(null);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
@@ -221,8 +223,50 @@ export default function Entreprise() {
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
 
+  // L'INTERRUPTEUR. Beau: « je dois avoir le pouvoir de désactiver et
+  // réactiver ». Un agent éteint ne tourne pas, donc ne coûte rien. C'est
+  // ce qui décide de la facture, donc ça se voit sur chaque fiche.
+  async function allumer(a, actif) {
+    try {
+      const { error: err } = await supabase.rpc('legion_activer_agent', { p_agent: a.id, p_actif: actif });
+      if (err) throw err;
+      setData((d) => d && ({ ...d, agents: d.agents.map((x) => (x.id === a.id ? { ...x, actif } : x)) }));
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+
+  async function allumerTous(actif) {
+    try {
+      const { error: err } = await supabase.rpc('legion_activer_tous', { p_entreprise: entrepriseId, p_actif: actif });
+      if (err) throw err;
+      setData((d) => d && ({
+        ...d,
+        agents: d.agents.map((x) => (x.user_id ? x : { ...x, actif })),
+      }));
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+  }
+
+  // Le premier vrai tour de machine: chacun lit son poste et choisit sa tête
+  // et son caractère. Seuls les allumés partent, et jamais deux fois.
+  async function quIlsChoisissent() {
+    setChoisissent(true);
+    try {
+      const { data: r, error: err } = await supabase.functions.invoke('legion-se-choisir', {
+        body: { entreprise_id: entrepriseId, limite: 25 },
+      });
+      if (err) throw err;
+      if (r?.erreur) throw new Error(r.erreur);
+      setBilan({ faits: r?.faits ?? 0, restants: r?.restants ?? 0 });
+      const { data: frais } = await supabase.from('legion_agents')
+        .select('*').eq('entreprise_id', entrepriseId).order('ordre');
+      if (frais) setData((d) => d && ({ ...d, agents: frais }));
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setChoisissent(false); }
+  }
+
   const enService = data.agents.filter((a) => a.actif && !a.user_id);
   const enSommeil = data.agents.filter((a) => !a.actif && !a.user_id);
+  const sansMoi = data.agents.filter((a) => !a.user_id);
+  const aChoisir = enService.filter((a) => !a.choisi_par_lui);
 
   return (
     <div className="flex h-dvh flex-col bg-base">
@@ -255,7 +299,46 @@ export default function Entreprise() {
 
       {vue === 'membres' ? (
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          <p className="text-caption font-semibold uppercase tracking-wider text-muted">
+          {/* Le compte, et le bouton qui les fait tourner. Beau: « quand ils
+              finissent, dis-moi combien d'agents j'aurai ». Donc on annonce
+              toujours trois nombres: allumés, qui ont choisi, qui restent. */}
+          <div className="rounded-card border border-hairline bg-white p-3">
+            <p className="text-body font-semibold text-ink">
+              {t('legion.bilanAgents', {
+                total: sansMoi.length,
+                allumes: enService.length,
+                choisis: sansMoi.filter((a) => a.choisi_par_lui).length,
+              })}
+            </p>
+            {aChoisir.length > 0 ? (
+              <>
+                <p className="mt-1 text-caption text-muted">{t('legion.choisirAide', { n: aChoisir.length })}</p>
+                <button type="button" onClick={quIlsChoisissent} disabled={choisissent}
+                  className="mt-2 rounded-pill bg-teal px-3 py-1.5 text-caption font-semibold text-white disabled:opacity-50">
+                  {choisissent ? t('legion.ilsChoisissent') : t('legion.quIlsChoisissent')}
+                </button>
+              </>
+            ) : (
+              <p className="mt-1 text-caption text-muted">{t('legion.tousOntChoisi')}</p>
+            )}
+            {bilan && (
+              <p className="mt-2 text-caption font-semibold text-teal">
+                {t('legion.bilanChoix', { faits: bilan.faits, restants: bilan.restants })}
+              </p>
+            )}
+            <div className="mt-2 flex gap-2">
+              <button type="button" onClick={() => allumerTous(false)}
+                className="rounded-pill border border-hairline px-3 py-1 text-caption text-muted">
+                {t('legion.toutEteindre')}
+              </button>
+              <button type="button" onClick={() => allumerTous(true)}
+                className="rounded-pill border border-hairline px-3 py-1 text-caption text-muted">
+                {t('legion.toutRallumer')}
+              </button>
+            </div>
+          </div>
+
+          <p className="mt-4 text-caption font-semibold uppercase tracking-wider text-muted">
             {t('equipe.enService', { count: enService.length })}
             {' · '}{t('legion.metiersCount', { count: new Set(enService.map((a) => a.poste)).size })}
           </p>
@@ -263,7 +346,7 @@ export default function Entreprise() {
             <ParMetier agents={enService} t={t} onClick={ouvrirPrive} />
           ) : (
             <ul className="mt-2 space-y-2">
-              {enService.map((a) => <Carte key={a.id} a={a} onClick={() => ouvrirPrive(a)} onAutreTete={autreTete} />)}
+              {enService.map((a) => <Carte key={a.id} a={a} onClick={() => ouvrirPrive(a)} onAutreTete={autreTete} onAllumer={allumer} />)}
             </ul>
           )}
           {enSommeil.length > 0 && (
@@ -273,7 +356,7 @@ export default function Entreprise() {
               </p>
               <p className="mt-1 text-caption text-muted">{t('equipe.sommeilPourquoi')}</p>
               <ul className="mt-2 space-y-2">
-                {enSommeil.map((a) => <Carte key={a.id} a={a} endormi onClick={() => ouvrirPrive(a)} onAutreTete={autreTete} />)}
+                {enSommeil.map((a) => <Carte key={a.id} a={a} endormi onClick={() => ouvrirPrive(a)} onAutreTete={autreTete} onAllumer={allumer} />)}
               </ul>
             </>
           )}
@@ -428,7 +511,7 @@ export default function Entreprise() {
 // personne ». Donc on montre ce qui fait un collègue et pas une ligne de
 // base: son visage, son poste, ce qu'il doit faire, et SA PERSONNALITÉ —
 // comment il parle, ce qui l'agace, sa manie.
-function Carte({ a, endormi, onClick, onAutreTete }) {
+function Carte({ a, endormi, onClick, onAutreTete, onAllumer }) {
   const [change, setChange] = useState(false);
   async function autreTete(e) {
     e.stopPropagation();
@@ -450,7 +533,21 @@ function Carte({ a, endormi, onClick, onAutreTete }) {
           {a.personnalite && (
             <span className="mt-1 block text-caption italic text-teal">{a.personnalite}</span>
           )}
+          {/* Dire qui a choisi et qui ne l'a pas fait. Sans ça, Beau ne peut
+              pas savoir si un agent a vraiment tourné — et il a demandé
+              exactement cette question. */}
+          <span className="mt-1 block text-caption text-muted">
+            {a.choisi_par_lui ? '✓ il a choisi lui-même' : 'composé par défaut'}
+          </span>
         </button>
+        {onAllumer && (
+          <button type="button" onClick={(e) => { e.stopPropagation(); onAllumer(a, !!endormi); }}
+            title={endormi ? 'Allumer' : 'Éteindre'} aria-label={endormi ? 'Allumer' : 'Éteindre'}
+            className={`shrink-0 rounded-pill px-2 py-1 text-caption font-semibold ${
+              endormi ? 'border border-hairline text-muted' : 'bg-teal/15 text-teal'}`}>
+            {endormi ? 'Éteint' : 'Allumé'}
+          </button>
+        )}
       </div>
     </li>
   );

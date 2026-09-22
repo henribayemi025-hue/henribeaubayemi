@@ -35,7 +35,15 @@
     "metiersCount_other": "{{count}} roles",
     "personnes": "{{count}} person",
     "personnes_other": "{{count}} people",
-    "etPlusPersonnes": "… and {{n}} more"
+    "etPlusPersonnes": "… and {{n}} more",
+    "bilanAgents": "{{total}} agents · {{allumes}} on · {{choisis}} picked their own face",
+    "choisirAide": "{{n}} haven't picked yet. They will read their own role and decide their face and character themselves. Only agents that are on will run.",
+    "quIlsChoisissent": "Let them choose",
+    "ilsChoisissent": "They're choosing…",
+    "tousOntChoisi": "Everyone has picked their face.",
+    "bilanChoix": "{{faits}} just picked. {{restants}} to go.",
+    "toutEteindre": "Turn all off",
+    "toutRallumer": "Turn all on"
   },
   "equipe": {
     "titre": "The team",
