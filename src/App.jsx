@@ -7,6 +7,7 @@ import { ToastProvider } from './hooks/useToast';
 import { UIProvider } from './hooks/useUI';
 import { Spinner } from './components/Spinner';
 import { RequireAuth } from './components/RequireAuth';
+import { Porte } from './components/PorteApplication';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppIntro } from './components/AppIntro';
 import { CookieConsent } from './components/CookieConsent';
@@ -248,14 +249,16 @@ export default function App() {
                     {/* « Mon argent »: application à part entière, hors de
                         BuyerLayout — Beau, 22/09: « ce n'est pas possible que
                         je voie ça dans Finjaro avec Services et tout ». */}
-                    <Route path="/argent" element={<RequireAuth><MonArgent /></RequireAuth>} />
+                    <Route path="/argent" element={<Porte app="argent"><MonArgent /></Porte>} />
                     {/* L'équipe Finjaro sur le téléphone de Beau. Hors de la
                         place de marché: c'est un outil interne, et la serrure
                         est en base (is_admin), pas ici. */}
                     <Route path="/equipe" element={<RequireAuth><Equipe /></RequireAuth>} />
-                    <Route path="/legion" element={<RequireAuth><LegionMes /></RequireAuth>} />
-                    <Route path="/legion/fonder" element={<RequireAuth><LegionFonder /></RequireAuth>} />
-                    <Route path="/legion/:id" element={<RequireAuth><LegionEntreprise /></RequireAuth>} />
+                    {/* Chaque application a sa porte (PorteApplication): un
+                        inconnu comprend où il est, et entre chez lui. */}
+                    <Route path="/legion" element={<Porte app="legion"><LegionMes /></Porte>} />
+                    <Route path="/legion/fonder" element={<Porte app="legion"><LegionFonder /></Porte>} />
+                    <Route path="/legion/:id" element={<Porte app="legion"><LegionEntreprise /></Porte>} />
                     {/* La démonstration complète — acheter, vendre, voir
                         l'écriture. Hors layout et hors base: les boutiques
                         sont inventées et rien n'est enregistré. C'est le lien

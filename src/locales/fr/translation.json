@@ -662,6 +662,36 @@
     "q3": "Comment obtenir le badge vérifié ?",
     "a3": "Le badge apparaît quand ton identité est validée, ton téléphone confirmé, ta photo de boutique ajoutée et au moins un produit publié."
   },
+  "porte": {
+    "entrer": "Entrer",
+    "memeCompte": "Le même compte que sur Finjaro.",
+    "google": "Continuer avec Google",
+    "ou": "ou",
+    "email": "E-mail ou téléphone",
+    "creer": "Créer un compte",
+    "legion": {
+      "accroche": "Ton entreprise, avec une équipe d’agents qui travaillent chaque matin.",
+      "c1t": "Une équipe qui existe",
+      "c1": "Des agents avec un nom, un visage et un poste : direction, marketing, finances, produit, concurrence.",
+      "c2t": "Un plan chaque matin",
+      "c2": "Les responsables écrivent le plan de la semaine et du mois, à partir des vrais chiffres.",
+      "c3t": "Des livrables, pas des promesses",
+      "c3": "Chaque agent rend son travail dans son salon : analyse, proposition, brouillon. Tu valides, ou tu renvoies.",
+      "c4t": "Tes données, en lecture seule",
+      "c4": "Branche ta boutique Finjaro : ils lisent tes ventes et ton stock, jamais les numéros de tes clientes."
+    },
+    "argent": {
+      "accroche": "Ton argent, clair, sur ton téléphone et ton ordinateur.",
+      "c1t": "Tes comptes, d’un coup d’œil",
+      "c1": "Espèces, mobile money, banque : combien tu as, et où.",
+      "c2t": "Un budget qui tient",
+      "c2": "Ce qui entre, ce qui sort, mois par mois.",
+      "c3t": "L’épargne et les projets",
+      "c3": "Des objectifs avec une date, et le chemin pour y arriver.",
+      "c4t": "Le njangi",
+      "c4": "La tontine entre amis, tenue proprement."
+    }
+  },
   "apps": {
     "title": "Applications Finjaro",
     "subtitle": "Un seul compte, tous les outils Finjaro.",

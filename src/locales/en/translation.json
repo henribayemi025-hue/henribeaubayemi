@@ -662,6 +662,36 @@
     "q3": "How do I get the verified badge?",
     "a3": "The badge appears once your identity is verified, your phone confirmed, your shop photo added and at least one product posted."
   },
+  "porte": {
+    "entrer": "Sign in",
+    "memeCompte": "The same account as on Finjaro.",
+    "google": "Continue with Google",
+    "ou": "or",
+    "email": "Email or phone",
+    "creer": "Create an account",
+    "legion": {
+      "accroche": "Your company, with a team of agents that work every morning.",
+      "c1t": "A team that exists",
+      "c1": "Agents with a name, a face and a role: leadership, marketing, finance, product, competition.",
+      "c2t": "A plan every morning",
+      "c2": "Department heads write the week's and the month's plan, from real numbers.",
+      "c3t": "Deliverables, not promises",
+      "c3": "Each agent delivers its work in its room: analysis, proposal, draft. You approve, or send it back.",
+      "c4t": "Your data, read-only",
+      "c4": "Connect your Finjaro shop: they read your sales and stock, never your customers' numbers."
+    },
+    "argent": {
+      "accroche": "Your money, clear, on your phone and your computer.",
+      "c1t": "Your accounts at a glance",
+      "c1": "Cash, mobile money, bank: how much you have, and where.",
+      "c2t": "A budget that holds",
+      "c2": "What comes in, what goes out, month by month.",
+      "c3t": "Savings and projects",
+      "c3": "Goals with a date, and the path to get there.",
+      "c4t": "The njangi",
+      "c4": "The savings circle between friends, kept properly."
+    }
+  },
   "apps": {
     "title": "Finjaro apps",
     "subtitle": "One account, every Finjaro tool.",

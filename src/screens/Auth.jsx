@@ -54,7 +54,9 @@ export default function Auth({ consoleMode = false }) {
   // est perdu. C'est ce qui explique zéro parrainage enregistré sur 55
   // comptes. Le rattrapage se fait au retour, dans `useAuth`.
   useEffect(() => { souvenirCode(refCode); }, [refCode]);
-  const [mode, setMode] = useState(refCode && !consoleMode ? 'signup' : 'login');
+  // Une page d'entrée (Legion, Mon argent) peut demander directement
+  // l'inscription: state.mode = 'signup'.
+  const [mode, setMode] = useState(location.state?.mode === 'signup' || (refCode && !consoleMode) ? 'signup' : 'login');
   // 'email' | 'phone' — indépendant de `mode` (connexion/inscription/oubli),
   // exactement comme le prototype le proposait pour qui n'a pas d'e-mail.
   const [channel, setChannel] = useState('email');
