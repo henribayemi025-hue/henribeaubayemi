@@ -86,7 +86,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache', 'regle', 'action'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[]): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[], plans: string[] = []): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -95,6 +95,9 @@ Niveau d'autonomie: ${a.autonomie === 'autonome' ? 'tu agis et tu préviens' : a
 
 ${ailleurs.length ? `CE QUI S'EST DIT AILLEURS DANS L'ENTREPRISE — dans les autres salons, entre le fondateur et toi ou toute l'équipe, du plus ancien au plus récent. C'est TA mémoire: tu t'en souviens, tu ne dis jamais que tu n'y as pas accès.
 ${ailleurs.join('\n')}
+
+` : ''}${plans.length ? `LE PLAN EN COURS de ton département (écrit par son responsable; si on te demande le plan, la stratégie ou les priorités, tu pars de là et tu le tiens à jour, tu n'en inventes pas un autre):
+${plans.join('\n\n')}
 
 ` : ''}TES TÂCHES OUVERTES (le tableau des tâches — c'est ton plan de travail réel):
 ${mesTaches.length ? mesTaches.join('\n') : '(aucune)'}
@@ -462,7 +465,18 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // (plan, stratégie, bilan, priorités). Beau, 22/09: la « stratégie »
   // d'Alpha ne contenait pas un seul chiffre parce qu'aucun outil n'avait
   // été appelé — le tableau des mesures n'arrivait qu'après une enquête.
-  const questionDeFond = /strat|plan|bilan|object|priorit|analy|résultat|resultat|semaine|mois|trimestre|décembre|decembre|chiffre|combien|pourquoi/i.test(String(msg.texte)) || String(msg.texte).length > 120;
+  // Les plans écrits par les responsables (legion-travail): chacun relit
+  // ceux de son département (semaine et mois), pour ne pas en réinventer.
+  const { data: plansRecents } = await service.from('legion_plans').select('departement, horizon, contenu, created_at')
+    .eq('entreprise_id', msg.entreprise_id).gte('created_at', new Date(Date.now() - 40 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(40);
+  const plansDe = (dept: string | null) => {
+    const vus = new Set<string>();
+    return (plansRecents || []).filter((p: { departement: string; horizon: string }) => {
+      if (sansAccent(p.departement) !== sansAccent(dept || '') || vus.has(p.horizon)) return false;
+      vus.add(p.horizon); return true;
+    }).map((p: { horizon: string; contenu: string; created_at: string }) => `(${p.horizon}, ${p.created_at.slice(0, 10)})\n${String(p.contenu).slice(0, 1800)}`);
+  };
+  const questionDeFond =/strat|plan|bilan|object|priorit|analy|résultat|resultat|semaine|mois|trimestre|décembre|decembre|chiffre|combien|pourquoi/i.test(String(msg.texte)) || String(msg.texte).length > 120;
   const mesuresPour = verifie.length || questionDeFond ? mesures : null;
 
   const ecrits: unknown[] = [];
@@ -476,7 +490,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id)));
+    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement)));
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).

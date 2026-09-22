@@ -312,6 +312,13 @@ export function Conversation({
                           <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
                         </p>
                       )}
+                      {(m.meta?.plan || m.meta?.livrable) && (
+                        <p className={`mb-1 inline-flex items-center gap-1 rounded-pill px-2 py-0.5 text-[11px] font-semibold ${m.meta?.livrable?.statut === 'bloque' ? 'bg-legion-danger/15 text-legion-danger' : 'bg-legion-gold/15 text-legion-gold'}`}>
+                          {m.meta?.plan ? `📅 ${t('legion.badgePlan', 'Plan')} · ${m.meta.plan.departement || ''}`
+                            : m.meta.livrable.statut === 'bloque' ? `⛔ ${t('legion.badgeBloque', 'Bloqué')} · ${m.meta.livrable.tache || ''}`
+                            : `📦 ${t('legion.badgeLivrable', 'Livrable')} · ${m.meta.livrable.tache || ''}`}
+                        </p>
+                      )}
                       {m.meta?.action && <ActionProposee message={m} t={t} />}
                       {Array.isArray(m.meta?.propositions) && m.meta.propositions.length > 0 && (
                         <PropositionsVeilleur propositions={m.meta.propositions} entrepriseId={entrepriseId} t={t} />

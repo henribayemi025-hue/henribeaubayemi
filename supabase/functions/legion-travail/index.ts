@@ -1,0 +1,333 @@
+// LEGION — la journée de travail des agents, sans qu'on leur parle.
+//
+// Beau, 22/09: « le directeur ne sait pas ce qu'on va faire aujourd'hui,
+// demain. Quel est le plan de la semaine ? Du mois ? La stratégie ? Rien…
+// Tout le monde me dit "on est en train de travailler". Donne-moi le
+// résultat. Je veux des gens autonomes, une entreprise qui fonctionne. »
+//
+// Jusqu'ici, un agent n'existait que quand on lui écrivait. Chaque matin
+// (cron « legion-travail », 0154) — ou quand le fondateur touche « Au
+// travail » sur l'accueil —, cette fonction fait deux choses:
+//
+//   1. LES PLANS. Chaque responsable de département allumé écrit, une fois
+//      par semaine, le plan de la semaine (et une fois par mois, celui du
+//      mois): d'où on part (chiffres mesurés), un objectif chiffré, trois à
+//      cinq actions avec un responsable. Le plan est posté dans le salon du
+//      département et rangé dans legion_plans; ses actions deviennent des
+//      tâches sur le tableau.
+//
+//   2. LES LIVRABLES. Chaque agent allumé prend sa tâche ouverte la plus
+//      ancienne, vérifie dans la base (outils de lecture), et rend un
+//      LIVRABLE: une analyse, une proposition, un brouillon — un document,
+//      pas une action. Il le poste dans son salon; la tâche passe « à
+//      revoir ». S'il est bloqué, il dit pourquoi et ce qu'il lui faut.
+//
+// Honnêteté: un agent n'a que des outils de lecture. Le livrable est écrit
+// tel quel, mais il ne prétend jamais avoir changé quoi que ce soit.
+// Coût: Pro pour écrire, Flash pour l'enquête; le plafond du mois arrête
+// tout. Claude (moteur « claude-code ») ne travaille pas ici: il travaille
+// dans sa propre session.
+
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { enqueter } from '../_shared/enquete.ts';
+
+const PROD_HOST = 'finjaro.net';
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  let host: string;
+  try { host = new URL(origin).hostname; } catch { return false; }
+  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host === PROD_HOST || host.endsWith(`.${PROD_HOST}`)) return true;
+  if (host.endsWith('.pages.dev') || host.endsWith('.workers.dev')) return true;
+  return false;
+}
+function cors(origin: string | null): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin! : `https://${PROD_HOST}`,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-finjaro-token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
+
+type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
+  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; moteur: string };
+type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string } | null; created_at: string };
+type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null };
+type Service = ReturnType<typeof createClient>;
+
+const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const semblable = (a: string, b: string) => {
+  const mots = (x: string) => new Set(sansAccent(x).split(/[^a-z0-9]+/).filter((m) => m.length > 3));
+  const A = mots(a), B = mots(b);
+  if (!A.size || !B.size) return sansAccent(a) === sansAccent(b);
+  const communs = [...A].filter((m) => B.has(m)).length;
+  return communs / Math.min(A.size, B.size) >= 0.6;
+};
+
+// Même liste que legion-repondre: le premier Pro que Google accepte.
+const MODELES = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
+  let derniere = 'aucun modèle joignable';
+  for (const model of MODELES) {
+    try {
+      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: texte }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 4096 }, responseMimeType: 'application/json', responseSchema: schema },
+        }),
+        signal: AbortSignal.timeout(90_000),
+      });
+      if (!resp.ok) { derniere = `${model}: HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`; console.error(derniere); continue; }
+      const body = await resp.json();
+      const txt = body?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+      if (!txt) { derniere = `${model}: réponse vide`; continue; }
+      try { return { obj: JSON.parse(txt), modele: model }; } catch { derniere = `${model}: JSON illisible`; }
+    } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
+  }
+  return { erreur: derniere };
+}
+
+const SCHEMA_PLAN = {
+  type: 'OBJECT',
+  properties: {
+    plan_semaine: { type: 'STRING' },
+    plan_mois: { type: 'STRING' },
+    taches: { type: 'ARRAY', items: { type: 'OBJECT', properties: { titre: { type: 'STRING' }, agent: { type: 'STRING' } }, required: ['titre', 'agent'] } },
+  },
+  required: ['plan_semaine', 'plan_mois', 'taches'],
+};
+const SCHEMA_LIVRABLE = {
+  type: 'OBJECT',
+  properties: {
+    livrable: { type: 'STRING' },
+    statut: { type: 'STRING', enum: ['termine', 'bloque'] },
+    besoin: { type: 'STRING' },
+  },
+  required: ['livrable', 'statut', 'besoin'],
+};
+
+const REGLES_COMMUNES = `RÈGLES ABSOLUES:
+- Tu n'as que des outils de LECTURE sur la base de la place de marché (les vérifications ci-dessous). Tu n'as accès ni au code, ni aux e-mails, ni à Internet, et tu ne peux rien modifier ni envoyer. Tu ne prétends donc JAMAIS avoir fait, changé, envoyé ou publié quoi que ce soit.
+- Jamais de chiffre, de pourcentage ou de date qui ne figure pas dans les chiffres mesurés ou les vérifications. Un chiffre que tu n'as pas, tu dis que tu ne l'as pas.
+- Aucune phrase qui enferme la place de marché dans un pays; jamais de « diaspora ».
+- Pas de formule creuse, pas de « on travaille dessus »: du concret — qui, quoi, pour quand, et ce que ça demande au fondateur.
+- Écris en français, en Markdown léger (titres courts avec ##, listes avec -), sans tableau.`;
+
+function invitePlan(a: Agent, projet: string, dept: string, equipe: string[], taches: string[], memoire: string[], fil: string[], mesures: string | null, verifie: string[], plansPrecedents: string[], besoinMois: boolean) {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  return `Tu es ${a.nom}, ${a.poste}, responsable du département « ${dept} ». ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
+Ton mandat: ${a.mandat || '(non précisé)'}.
+L'entreprise: ${projet}
+Nous sommes le ${aujourdhui}. C'est le matin: tu écris le PLAN de ton département, comme un vrai responsable qui sait ce que son équipe fait aujourd'hui, demain et cette semaine.
+
+TON ÉQUIPE (seuls les agents allumés peuvent recevoir une tâche):
+${equipe.join('\n')}
+
+LES TÂCHES DÉJÀ OUVERTES dans ton département (ne les recrée pas):
+${taches.length ? taches.join('\n') : '(aucune)'}
+
+${memoire.length ? `LES RÈGLES DE LA MAISON (fixées par le fondateur):\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}
+${plansPrecedents.length ? `TES PLANS PRÉCÉDENTS (pour la continuité: dis ce qui a avancé, ce qui n'a pas bougé):\n${plansPrecedents.join('\n\n')}\n` : ''}
+CE QUI S'EST DIT RÉCEMMENT (ton salon et la Direction, du plus ancien au plus récent):
+${fil.length ? fil.join('\n') : '(rien)'}
+
+${mesures ? `CHIFFRES MESURÉS À L'INSTANT (connecteur « Mesures Finjaro », lecture seule, comptes de test exclus):\n${mesures}\n` : ''}
+${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → résultat):\n${verifie.join('\n')}\n` : ''}
+${REGLES_COMMUNES}
+
+ÉCRIS:
+"plan_semaine": le plan de la semaine, 900 à 1800 signes: ## D'où on part (les chiffres qui comptent pour ton département), ## Objectif de la semaine (UN objectif chiffré), ## Actions (3 à 5, chacune « - [Nom de l'agent] action précise — pour quand »), ## Ce qu'il faut au fondateur (décisions, accès, ou « rien »).
+"plan_mois": ${besoinMois ? 'le plan du mois, 600 à 1200 signes, même structure, avec l\'objectif du mois et les 3 à 5 chantiers.' : '"" (le plan du mois est déjà écrit ce mois-ci).'}
+"taches": les actions de la semaine qui ne sont pas déjà dans les tâches ouvertes, 5 au plus: {"titre": intitulé court et précis, "agent": le nom exact d'un agent ALLUMÉ de ton équipe (toi compris)}.`;
+}
+
+function inviteLivrable(a: Agent, projet: string, tache: Tache, equipe: string[], memoire: string[], competences: { nom: string; texte: string }[], fil: string[], mesures: string | null, verifie: string[], plans: string[]) {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  return `Tu es ${a.nom}, ${a.poste}${a.departement ? `, département « ${a.departement} »` : ''}. ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
+Ton mandat: ${a.mandat || '(non précisé)'}.
+L'entreprise: ${projet}
+Nous sommes le ${aujourdhui}. Tu prends ta tâche du jour et tu la LIVRES maintenant, par écrit. Le fondateur veut un résultat, pas « on y travaille ».
+
+TA TÂCHE: « ${tache.texte} » (ouverte depuis le ${tache.created_at.slice(0, 10)}${tache.meta?.priorite ? `, priorité ${tache.meta.priorite}` : ''}).
+
+L'ÉQUIPE:
+${equipe.join('\n')}
+
+${competences.length ? `TES COMPÉTENCES (fiches de savoir-faire, applique-les):\n${competences.map((c) => `### ${c.nom}\n${c.texte}`).join('\n\n')}\n` : ''}
+${memoire.length ? `LES RÈGLES DE LA MAISON:\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}
+${plans.length ? `LE PLAN EN COURS de ton département:\n${plans.join('\n\n')}\n` : ''}
+CE QUI S'EST DIT RÉCEMMENT (ton salon et la Direction):
+${fil.length ? fil.join('\n') : '(rien)'}
+
+${mesures ? `CHIFFRES MESURÉS À L'INSTANT (lecture seule, comptes de test exclus):\n${mesures}\n` : ''}
+${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → résultat):\n${verifie.join('\n')}\n` : ''}
+${REGLES_COMMUNES}
+
+ÉCRIS:
+"livrable": le résultat de la tâche, complet et utilisable tel quel, 800 à 2500 signes. Selon la tâche: une analyse (les chiffres, ce qu'ils disent, ce qu'on fait), une proposition (le quoi, le pourquoi, les étapes, ce que ça coûte en effort), un brouillon (texte prêt à l'emploi), une liste précise. Commence par « ## » et le titre de la tâche. Termine par « ## Et maintenant »: la prochaine étape concrète et qui la fait.
+"statut": "termine" si tu as pu livrer; "bloque" si la tâche demande quelque chose que tu n'as pas (un accès, une décision, un outil d'écriture) — dans ce cas "livrable" contient ce que tu as quand même pu faire.
+"besoin": si bloqué, en une phrase, ce qu'il te faut et de qui; sinon "".`;
+}
+
+// Le plan et les livrables d'UNE entreprise.
+async function travailler(service: Service, apiKey: string, entrepriseId: string, journal: string[]) {
+  pourEntreprise(entrepriseId);
+  const p = await plafondAtteint(entrepriseId);
+  if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return; }
+
+  const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
+    service.from('legion_entreprises').select('id, nom, projet').eq('id', entrepriseId).single(),
+    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur').eq('entreprise_id', entrepriseId).order('ordre'),
+    service.from('legion_canaux').select('id, cle, nom, prive_entre').eq('entreprise_id', entrepriseId),
+    service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
+    service.from('legion_connecteurs').select('id').eq('entreprise_id', entrepriseId).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
+  ]);
+  if (!entreprise || !agents || !canaux) { journal.push(`${entrepriseId}: introuvable`); return; }
+  const machines = (agents as Agent[]).filter((a) => !a.user_id && a.moteur !== 'claude-code' && a.actif);
+  if (!machines.length) { journal.push(`${entreprise.nom}: personne d'allumé`); return; }
+  const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
+  const projet = String(entreprise.projet || entreprise.nom);
+
+  let mesures: string | null = null;
+  if (branche) {
+    const { data: m, error } = await service.rpc('legion_mesures_finjaro');
+    if (error) console.error('mesures:', error.message); else if (m) mesures = JSON.stringify(m);
+  }
+
+  const publics = (canaux as Canal[]).filter((c) => !(Array.isArray(c.prive_entre) && c.prive_entre.length));
+  const canalDe = (dept: string | null) => publics.find((c) => sansAccent(c.cle) === sansAccent(dept || '') || sansAccent(c.nom) === sansAccent(dept || ''))
+    || publics.find((c) => sansAccent(c.cle) === 'direction') || publics[0];
+  const direction = publics.find((c) => sansAccent(c.cle) === 'direction');
+  const nomDe = (id: string | null) => (agents as Agent[]).find((a) => a.id === id)?.nom || 'Quelqu\'un';
+  const equipe = (agents as Agent[]).filter((a) => !a.user_id).map((a) => `- ${a.nom} (${a.poste}${a.departement ? `, ${a.departement}` : ''}) — ${a.actif ? 'allumé' : 'éteint'}`);
+
+  const { data: tachesOuvertes } = await service.from('legion_messages').select('id, texte, assigne_a, canal_id, meta, created_at')
+    .eq('entreprise_id', entrepriseId).eq('genre', 'tache').is('termine_le', null).order('created_at').limit(300);
+  const ouvertes = ((tachesOuvertes || []) as Tache[]).filter((t) => !['fait', 'revue'].includes(t.meta?.statut || ''));
+
+  // Les 30 derniers messages de chaque salon public, pour le contexte.
+  const { data: recents } = await service.from('legion_messages').select('auteur_id, texte, canal_id, created_at')
+    .eq('entreprise_id', entrepriseId).neq('genre', 'tache').order('created_at', { ascending: false }).limit(200);
+  const filDe = (canalIds: string[]) => (recents || []).filter((m: { canal_id: string }) => canalIds.includes(m.canal_id)).slice(0, 30).reverse()
+    .map((m: { auteur_id: string; texte: string; created_at: string }) => `[${m.created_at.slice(5, 16).replace('T', ' ')}] ${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 400)}`);
+
+  const { data: plansRecents } = await service.from('legion_plans').select('departement, horizon, contenu, created_at')
+    .eq('entreprise_id', entrepriseId).gte('created_at', new Date(Date.now() - 40 * 86_400_000).toISOString()).order('created_at', { ascending: false });
+  const plansDe = (dept: string, horizon?: string) => (plansRecents || [])
+    .filter((x: { departement: string; horizon: string }) => sansAccent(x.departement) === sansAccent(dept) && (!horizon || x.horizon === horizon));
+
+  // 1. LES PLANS — un par département dont le responsable est allumé.
+  const directeurs = machines.filter((a) => a.est_directeur && a.departement);
+  for (const d of directeurs) {
+    const dept = d.departement!;
+    const jours = (x: { created_at: string }) => (Date.now() - new Date(x.created_at).getTime()) / 86_400_000;
+    const dernierSemaine = plansDe(dept, 'semaine')[0];
+    const dernierMois = plansDe(dept, 'mois')[0];
+    if (dernierSemaine && jours(dernierSemaine) < 6) continue;
+    const besoinMois = !dernierMois || jours(dernierMois) >= 25;
+    const canal = canalDe(dept);
+    const equipeDept = (agents as Agent[]).filter((a) => !a.user_id && sansAccent(a.departement || '') === sansAccent(dept))
+      .map((a) => `- ${a.nom} (${a.poste}) — ${a.actif ? 'allumé' : 'éteint'}${a.mandat ? ` — ${a.mandat.slice(0, 160)}` : ''}`);
+    const idsDept = (agents as Agent[]).filter((a) => sansAccent(a.departement || '') === sansAccent(dept)).map((a) => a.id);
+    const tachesDept = ouvertes.filter((t) => t.assigne_a && idsDept.includes(t.assigne_a)).map((t) => `- ${t.texte} (${nomDe(t.assigne_a)}, ${t.meta?.statut || 'a_faire'})`);
+    const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
+    const precedents = [dernierSemaine, dernierMois].filter(Boolean).map((x) => `(${x!.horizon}, ${x!.created_at.slice(0, 10)})\n${String(x!.contenu).slice(0, 1500)}`);
+    const verifie = mesures ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction') : [];
+    const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois), SCHEMA_PLAN);
+    if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
+    const semaine = String(r.obj.plan_semaine || '').trim().slice(0, 4000);
+    const mois = String(r.obj.plan_mois || '').trim().slice(0, 4000);
+    if (semaine.length < 100) { journal.push(`${entreprise.nom}/${dept}: plan vide`); continue; }
+    await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'semaine', contenu: semaine });
+    if (besoinMois && mois.length >= 100) await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'mois', contenu: mois });
+    const texte = `## Plan de la semaine — ${dept}\n${semaine.replace(/^##\s*plan[^\n]*\n/i, '')}${besoinMois && mois.length >= 100 ? `\n\n## Plan du mois — ${dept}\n${mois.replace(/^##\s*plan[^\n]*\n/i, '')}` : ''}`;
+    await service.from('legion_messages').insert({
+      entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: d.id, user_id: null, texte, genre: 'info',
+      meta: { par_ia: true, modele: r.modele, plan: { horizon: besoinMois ? 'semaine+mois' : 'semaine', departement: dept }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+    });
+    let creees = 0;
+    for (const t of (Array.isArray(r.obj.taches) ? r.obj.taches : []).slice(0, 5) as { titre: string; agent: string }[]) {
+      const titre = String(t.titre || '').trim().slice(0, 200);
+      const qui = machines.find((a) => sansAccent(a.nom) === sansAccent(String(t.agent || '')) && sansAccent(a.departement || '') === sansAccent(dept)) || d;
+      if (titre.length < 6 || ouvertes.some((x) => semblable(x.texte, titre))) continue;
+      const { data: tache } = await service.from('legion_messages').insert({
+        entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: d.id, user_id: null, texte: titre, genre: 'tache', assigne_a: qui.id,
+        meta: { par_ia: true, statut: 'a_faire', priorite: 'moyenne', plan: dept },
+      }).select('id, texte, assigne_a, canal_id, meta, created_at').single();
+      if (tache) { ouvertes.push(tache as Tache); creees += 1; }
+    }
+    journal.push(`${entreprise.nom}/${dept}: plan écrit par ${d.nom} (${r.modele}), ${creees} tâche(s) ajoutée(s)`);
+  }
+
+  // 2. LES LIVRABLES — chaque agent allumé prend sa tâche la plus ancienne.
+  const lot = 3;
+  for (let i = 0; i < machines.length; i += lot) {
+    await Promise.all(machines.slice(i, i + lot).map(async (a) => {
+      const tache = ouvertes.find((t) => t.assigne_a === a.id);
+      if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); return; }
+      const canal = canalDe(a.departement);
+      const { data: comp } = await service.from('legion_competences').select('nom, description, contenu').eq('agent_id', a.id).eq('actif', true).order('created_at').limit(4);
+      const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) => ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
+      const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
+      const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
+      const enDirection = sansAccent(a.departement || '') === 'direction';
+      const verifie = mesures ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection) : [];
+      const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans), SCHEMA_LIVRABLE);
+      if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
+      const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
+      if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }
+      const bloque = r.obj.statut === 'bloque';
+      const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
+      const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
+      await service.from('legion_messages').insert({
+        entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: a.id, user_id: null, texte, genre: bloque ? 'question' : 'info',
+        meta: { par_ia: true, modele: r.modele, livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+      });
+      // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
+      await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
+      journal.push(`${entreprise.nom}: ${a.nom} a livré « ${tache.texte.slice(0, 60)} » (${bloque ? 'bloqué' : 'terminé'}, ${r.modele})`);
+    }));
+  }
+}
+
+Deno.serve(compter('legion_travail', async (req: Request) => {
+  const h = cors(req.headers.get('Origin'));
+  const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: h });
+  if (req.method !== 'POST') return json({ erreur: 'Méthode non permise.' }, 405);
+  const apiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
+  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+
+  let corps: { entreprise_id?: string } = {};
+  try { corps = await req.json(); } catch { corps = {}; }
+
+  // Deux portes: le cron du matin (jeton partagé, toutes les entreprises),
+  // ou un membre qui touche « Au travail » (son jeton, son entreprise).
+  const jeton = req.headers.get('x-finjaro-token');
+  let entreprises: string[] = [];
+  if (jeton) {
+    const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_travail').maybeSingle();
+    if (!sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
+    const { data } = await service.from('legion_agents').select('entreprise_id').eq('actif', true).is('user_id', null).neq('moteur', 'claude-code');
+    entreprises = [...new Set((data || []).map((x: { entreprise_id: string }) => x.entreprise_id))];
+  } else {
+    const auth = req.headers.get('Authorization');
+    if (!auth || !corps.entreprise_id) return json({ erreur: 'Il faut être connecté.' }, 401);
+    const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
+    const { data: e } = await personne.from('legion_entreprises').select('id').eq('id', corps.entreprise_id).maybeSingle();
+    if (!e) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
+    entreprises = [e.id];
+  }
+
+  const journal: string[] = [];
+  for (const id of entreprises) {
+    try { await travailler(service, apiKey, id, journal); } catch (e) { journal.push(`${id}: ${(e as Error).message}`); console.error(e); }
+  }
+  console.log(journal.join('\n'));
+  return json({ ok: true, journal });
+}));

@@ -10,6 +10,7 @@ import { iconeDept, statutDe, STATUTS } from './outils';
 import { Memoire } from './Memoire';
 import { EquiperEquipe } from './Competences';
 import { Depense } from './Depense';
+import { Plans } from './Plans';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -314,7 +315,10 @@ export function Accueil({
         </section>
       </div>
 
-      {/* 6. Les compétences: que l'équipe s'équipe (chantier 2) */}
+      {/* 6. Les plans par département, et « Au travail maintenant » */}
+      <Plans entreprise={entreprise} t={t} />
+
+      {/* 7. Les compétences: que l'équipe s'équipe (chantier 2) */}
       <EquiperEquipe entrepriseId={entreprise.id} agents={agents} t={t} />
 
       {/* 7. La mémoire, et ce que Legion coûte */}
