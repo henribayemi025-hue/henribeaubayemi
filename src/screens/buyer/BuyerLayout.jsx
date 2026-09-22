@@ -1,5 +1,9 @@
 import { useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+
+// Les écrans où l'on est en train de conclure quelque chose. Rien ne doit s'y
+// poser par-dessus: ni visite guidée, ni présentation, ni invitation.
+const TRANSACTION = ['/checkout', '/cart'];
 import { AnnouncementBanner } from '../../components/AnnouncementBanner';
 import { BuyerNav } from '../../components/BuyerNav';
 import { BuyerSidebarNav } from '../../components/BuyerSidebarNav';
@@ -84,9 +88,21 @@ export function BuyerLayout() {
         {/* La visite guidée passe par le même garde-fou que Finia: si elle
             plante, elle disparaît en silence au lieu d'emporter toute
             l'application avec elle. */}
-        <ErrorBoundary silent>
-          <WelcomeTour />
-        </ErrorBoundary>
+        {/* Mais JAMAIS pendant un paiement.
+            Vu de mes propres yeux le 22/09, écran de paiement à 390 px: le
+            panneau « Bienvenue ! Dis-moi ce qui t'amène » recouvre le bas de
+            l'écran, exactement là où se trouve le bouton « Payer à la
+            livraison », qui est collé en bas. Au centre du bouton, le clic
+            atteint un paragraphe du panneau — pas le bouton. La personne
+            appuie et il ne se passe rien.
+            Demander « qu'est-ce qui t'amène ? » à quelqu'un qui est en train
+            de payer n'a de toute façon aucun sens: on le sait, ce qui
+            l'amène. Même règle que l'écran d'accueil sur /demo. */}
+        {!TRANSACTION.some((p) => pathname.startsWith(p)) && (
+          <ErrorBoundary silent>
+            <WelcomeTour />
+          </ErrorBoundary>
+        )}
         <ErrorBoundary silent>
           <FinouChou />
         </ErrorBoundary>
