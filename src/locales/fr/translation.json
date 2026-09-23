@@ -2357,6 +2357,7 @@
     }
   },
   "money": {
+    "autoSave": "Tout s’enregistre tout seul, sur tous tes appareils.",
     "title": "Mon argent",
     "hello": "Bonjour, {{name}} 👋",
     "signOut": "Se déconnecter",

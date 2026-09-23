@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   IconHome, IconChartPie, IconPigMoney, IconRepeat,
-  IconStack2, IconSparkles, IconUsersGroup, IconGridDots, IconLogout,
-} from '@tabler/icons-react';
+  IconStack2, IconSparkles, IconUsersGroup, IconGridDots, IconLogout, IconCloudCheck } from '@tabler/icons-react';
 import { useAuth } from '../../hooks/useAuth';
 
 // La coque de « Mon argent » — une application à part entière.
@@ -83,6 +82,7 @@ export function MoneyShell({ onglet, setOnglet, prenom, t, children }) {
           })}
         </ul>
 
+        <Enregistre t={t} className="px-3 pb-2" />
         {/* Le seul lien vers le reste: le sélecteur d'applications. Pas la
             barre de la place de marché, pas Services. */}
         <Link
@@ -117,6 +117,7 @@ export function MoneyShell({ onglet, setOnglet, prenom, t, children }) {
             </button>
           </span>
         </header>
+        <Enregistre t={t} className="px-4 pb-2 lg:hidden" />
 
         {/* Sur ordinateur on laisse respirer, mais on ne laisse pas les
             cartes s'étirer sur 2 000 px: elles deviendraient illisibles. */}
@@ -150,5 +151,16 @@ export function MoneyShell({ onglet, setOnglet, prenom, t, children }) {
         </ul>
       </nav>
     </div>
+  );
+}
+
+// Beau, 22/09: « où sauvegarder ? ». Nulle part: chaque montant est écrit
+// dans son compte dès qu'il le valide. On le dit, une fois, en petit.
+function Enregistre({ t, className = '' }) {
+  return (
+    <p className={`flex items-center gap-1.5 text-[11px] text-money-muted ${className}`}>
+      <IconCloudCheck size={14} className="shrink-0 text-money-accent" aria-hidden="true" />
+      <span>{t('money.autoSave', 'Tout s’enregistre tout seul, sur tous tes appareils.')}</span>
+    </p>
   );
 }
