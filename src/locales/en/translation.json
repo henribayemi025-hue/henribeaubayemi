@@ -391,7 +391,9 @@
     "finMissionAide": "Empty: they stay. A date: they switch off on their own the next morning, and say so.",
     "mission": "Their mission",
     "jusquau": "Temp until {{date}}",
-    "sesLimites": "Their limits"
+    "sesLimites": "Their limits",
+    "catalogueChercher": "Search {{n}} roles (e.g. payroll, audit, social media)",
+    "catalogueChercherSimple": "Search the role catalogue"
   },
   "equipe": {
     "titre": "The team",

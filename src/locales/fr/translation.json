@@ -391,7 +391,9 @@
     "finMissionAide": "Vide : il reste. Une date : il s’éteint seul le lendemain matin, et le dit.",
     "mission": "Sa mission",
     "jusquau": "Intérim jusqu’au {{date}}",
-    "sesLimites": "Ses limites"
+    "sesLimites": "Ses limites",
+    "catalogueChercher": "Chercher parmi {{n}} postes (ex. : paie, audit, réseaux sociaux)",
+    "catalogueChercherSimple": "Chercher un poste dans le catalogue"
   },
   "equipe": {
     "titre": "L'équipe",

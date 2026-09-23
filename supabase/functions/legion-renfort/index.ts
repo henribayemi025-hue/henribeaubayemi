@@ -90,6 +90,10 @@ Deno.serve(compter('legion_renfort', async (req: Request) => {
   if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €.` });
 
   const anglais = entreprise.langue === 'en';
+  // Ce que peut VRAIMENT un agent de Legion (premier essai, 23/09: « se
+  // connecter à WhatsApp », « programmer l'envoi des relances » — il ne sait
+  // rien faire de tout ça).
+  const pouvoirs = `CE QU'UN AGENT DE LEGION PEUT VRAIMENT FAIRE: lire ce que l'entreprise lui donne (messages du salon, fichiers Excel/CSV/PDF déposés, chiffres branchés), analyser, écrire, préparer (réponses types, brouillons, procédures, tableaux, listes à valider), poser des questions, et rendre ses livrables au tableau des tâches. Il n'envoie RIEN lui-même, ne se connecte à aucun outil, n'automatise rien, ne paie rien: un humain valide et envoie. Écris donc "prend" comme ce qu'il PRÉPARE ou ANALYSE (« prépare les réponses aux questions fréquentes », pas « répond sur WhatsApp »), et "premieres_taches" comme des livrables écrits qu'il peut rendre seul la première semaine.`;
   const noms = (equipe || []).map((a: { nom: string }) => a.nom);
   const contexte = `L'entreprise « ${entreprise.nom} »${entreprise.projet ? ` : ${String(entreprise.projet).slice(0, 1200)}` : ''}.
 Son équipe d'agents aujourd'hui : ${(equipe || []).map((a: { nom: string; poste: string; departement: string | null }) => `${a.nom} (${a.poste}${a.departement ? `, ${a.departement}` : ''})`).join(' ; ') || 'personne encore'}.`;
@@ -112,6 +116,7 @@ Pour chaque agent :
 - "premieres_taches" : 1 à 3 premières tâches concrètes pour sa première semaine.
 "lecture" : en deux ou trois phrases, ce que tu as compris du service et de sa charge.
 "reste_humain" : en une ou deux phrases, ce qui doit rester aux humains et pourquoi.
+${pouvoirs}
 Aucun chiffre inventé (pas de « 40 % de temps gagné »). Écris en ${anglais ? 'anglais' : 'français'}.`
     : `${contexte}
 
@@ -130,6 +135,7 @@ Propose UN agent expert, comme un intérimaire qu'un cabinet enverrait : ses mé
 - "premieres_taches" : 2 à 4 premières tâches concrètes.
 "lecture" : en deux phrases, ce que tu as compris de la mission.
 "reste_humain" : ce qui reste à un humain habilité (expert-comptable, avocat, commissaire aux comptes…), si c'est le cas.
+${pouvoirs}
 Aucun chiffre inventé. Écris en ${anglais ? 'anglais' : 'français'}.`;
 
   const gratuite = entreprise.formule === 'gratuite';

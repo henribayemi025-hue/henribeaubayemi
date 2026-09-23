@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil, IconSearch } from '@tabler/icons-react';
 import { Modal } from '../../../components/Modal';
+import { supabase } from '../../../lib/supabase';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { AUTONOMIES } from './outils';
@@ -9,6 +10,52 @@ import { CompetencesAgent } from './Competences';
 // Ce qu'un agent peut lire parmi ce que l'entreprise a branché (0177, E4).
 // Vide = tout. Les fonctions des agents s'y tiennent.
 const SOURCES = ['mesures', 'boutique', 'web', 'github', 'documents'];
+
+// Chercher un poste dans le catalogue (studio_modele_postes) au lieu de
+// partir d'une page blanche (D7, 23/09). Toucher un résultat remplit le
+// poste, le mandat, et le département s'il existe dans l'entreprise.
+function ChercherCatalogue({ onChoisir, t }) {
+  const [q, setQ] = useState('');
+  const [res, setRes] = useState([]);
+  const [total, setTotal] = useState(null);
+  useEffect(() => {
+    supabase.from('studio_modele_postes').select('id', { count: 'exact', head: true }).then(({ count }) => setTotal(count ?? null), () => {});
+  }, []);
+  useEffect(() => {
+    const propre = q.replace(/[^\p{L}\p{N} '’-]/gu, ' ').trim();
+    if (propre.length < 3) { setRes([]); return undefined; }
+    const minuterie = setTimeout(async () => {
+      const motif = `%${propre.replace(/\s+/g, '%')}%`;
+      const { data } = await supabase.from('studio_modele_postes').select('id, poste, mandat, departement, modele')
+        .or(`poste.ilike.${motif},mandat.ilike.${motif}`).order('poste').limit(30);
+      // Un même intitulé revient d'un modèle à l'autre: on n'en garde qu'un.
+      const vus = new Set();
+      setRes((data || []).filter((x) => { const k = x.poste.toLowerCase(); if (vus.has(k)) return false; vus.add(k); return true; }).slice(0, 12));
+    }, 300);
+    return () => clearTimeout(minuterie);
+  }, [q]);
+  return (
+    <div className="rounded-card border border-legion-line bg-legion-bg p-2.5">
+      <label className="flex items-center gap-2 text-caption text-legion-muted">
+        <IconSearch size={15} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={total ? t('legion.catalogueChercher', { n: total.toLocaleString(), defaultValue: 'Chercher parmi {{n}} postes (ex. : paie, audit, réseaux sociaux)' }) : t('legion.catalogueChercherSimple', 'Chercher un poste dans le catalogue')}
+          className="w-full bg-transparent text-[16px] text-legion-ink outline-none placeholder:text-legion-muted" />
+      </label>
+      {res.length > 0 && (
+        <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto">
+          {res.map((x) => (
+            <li key={x.id}>
+              <button type="button" onClick={() => { onChoisir(x); setQ(''); setRes([]); }} className="w-full rounded-input px-2 py-1.5 text-left hover:bg-legion-card">
+                <span className="block text-caption font-semibold text-legion-ink">{x.poste}</span>
+                <span className="block text-[11px] text-legion-muted">{x.departement} · {x.mandat?.slice(0, 110)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // La fiche d'un agent: qui il est, ce qu'on attend de lui, comment il parle,
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
@@ -46,6 +93,10 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
     return (
       <Modal open onClose={() => (nouveau ? onFermer() : setEdition(null))} title={nouveau ? t('legion.nouvelAgent', 'Nouvel agent') : t('legion.modifierAgent', 'Modifier l’agent')} className="legion-modale">
         <form onSubmit={enregistrer} className="space-y-3 text-legion-ink">
+          {nouveau && (
+            <ChercherCatalogue t={t} onChoisir={(x) => setEdition({ ...champs, poste: x.poste, mandat: x.mandat || '',
+              departement: departements.find((d) => d.nom.toLowerCase() === String(x.departement || '').toLowerCase())?.nom || champs.departement })} />
+          )}
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.champNom', 'Son nom')}
             <input className={`${champ} mt-1`} value={champs.nom} maxLength={40} onChange={(e) => maj('nom', e.target.value)} autoFocus />
           </label>
