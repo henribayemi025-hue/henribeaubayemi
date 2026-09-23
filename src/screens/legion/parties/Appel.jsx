@@ -3,6 +3,7 @@ import { IconMicrophone, IconPhoneOff, IconPlayerStopFilled, IconVolume } from '
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
 import { Visage } from './Visage';
+import { raisonLisible } from './outils';
 
 // APPELER UN AGENT (23/09).
 //
@@ -154,7 +155,7 @@ export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, 
       if (arrives.length) onMessages(arrives);
       if (!actif.current) return;
       const reponse = arrives.find((m) => m.auteur_id === agent.id && m.genre !== 'tache');
-      if (!reponse) { setErreur(r?.erreur || t('legion.appel.pasDeReponse')); setEtat('erreur'); return; }
+      if (!reponse) { setErreur(r?.erreur ? raisonLisible(r.erreur, t) : t('legion.appel.pasDeReponse')); setEtat('erreur'); return; }
       setDernier(reponse.texte);
       parler(reponse.texte);
     } catch (e) {

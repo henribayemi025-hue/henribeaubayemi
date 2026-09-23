@@ -107,3 +107,15 @@ export function espacerPhrases(texte) {
     // « fluidifier.2. Réduire » : une phrase collée au point suivant d'une liste.
     .replace(/([a-zà-ÿ])\.(\d{1,2}\.\s)/g, '$1. $2');
 }
+
+// Pourquoi personne n'a répondu, dit simplement. Beau a appelé Claudinette
+// le 23/09 à 22 h 05 : Google était saturé (503 sur les trois modèles), et
+// l'écran montrait l'erreur brute de Google.
+export function raisonLisible(raison, t) {
+  const r = String(raison || '');
+  if (/\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(r)) {
+    return t('legion.googleSature', 'Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.');
+  }
+  if (/[{}]|HTTP \d{3}/.test(r)) return t('legion.reessaie', 'Petit souci de connexion avec les modèles. Réessaie dans un instant.');
+  return r.slice(0, 160);
+}

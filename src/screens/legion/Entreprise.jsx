@@ -21,7 +21,7 @@ import { FicheAgent } from './parties/FicheAgent';
 import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
 import { Visage } from './parties/Visage';
-import { couleurDept, clePrivee, sansAccent } from './parties/outils';
+import { couleurDept, clePrivee, sansAccent, raisonLisible } from './parties/outils';
 
 // LEGION — l'entreprise, sur le téléphone et sur l'ordinateur de celui qui
 // l'a fondée.
@@ -248,7 +248,7 @@ export default function Entreprise() {
       if (e2) throw e2;
       if (r?.attend) toast.info(t('legion.claudeRepondra', { nom: r.attend.nom }));
       else if (r?.dort) toast.error(t('legion.ilDort', { nom: r.dort.nom }));
-      else if (r?.erreur) toast.error(t('legion.personneNaPuRepondre', { raison: r.erreur }));
+      else if (r?.erreur) toast.error(t('legion.personneNaPuRepondre', { raison: raisonLisible(r.erreur, t) }));
       // Plusieurs peuvent répondre à un « salut à tous »: le temps réel les
       // apporte aussi, on dédoublonne par identifiant.
       const arrives = (r?.messages || []).filter(Boolean);
