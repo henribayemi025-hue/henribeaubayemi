@@ -1,3 +1,5 @@
+import { currencyForCountry, paysDuFuseau } from './currency';
+
 // Worldwide country list (ISO 3166-1). name = English; frName = French.
 // Used in dropdowns app-wide; label chosen by active locale.
 export const COUNTRIES = [
@@ -126,11 +128,20 @@ const TZ_COUNTRY = {
 // toujours au moins une RÉGION: quelqu'un sur « Europe/Ljubljana » doit voir
 // des euros, pas des FCFA — même si on n'a pas de quoi affirmer qu'il est
 // slovène. On déduit donc la devise sans mentir sur le pays.
-const REGION_CURRENCY = { Europe: 'EUR', America: 'USD', Africa: 'FCFA' };
+//
+// 23/09 : le fuseau donne d'abord le PAYS, pour tous les pays (base IANA,
+// monnaies-donnees.js) — quelqu'un à Harare, Tokyo ou São Paulo voit sa
+// monnaie. La région ne sert plus qu'aux fuseaux inconnus, et l'Afrique n'y
+// renvoie plus au franc CFA : supposer l'Afrique centrale pour tout un
+// continent, c'est la faute que Beau a interdite. Le repli est alors celui de
+// `currencyForCountry` (le dollar).
+const REGION_CURRENCY = { Europe: 'EUR' };
 
 export function detectCurrencyRegionSync() {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const pays = paysDuFuseau(tz);
+    if (pays) return currencyForCountry(pays);
     const region = tz?.split('/')[0];
     if (region && REGION_CURRENCY[region]) return REGION_CURRENCY[region];
   } catch {
@@ -152,9 +163,8 @@ export function detectCurrencyRegionSync() {
 export function detectCountrySync() {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz && TZ_COUNTRY[tz] && COUNTRIES.some((c) => c.code === TZ_COUNTRY[tz])) {
-      return TZ_COUNTRY[tz];
-    }
+    const pays = tz && (TZ_COUNTRY[tz] || paysDuFuseau(tz));
+    if (pays && COUNTRIES.some((c) => c.code === pays)) return pays;
   } catch {
     /* ignore */
   }

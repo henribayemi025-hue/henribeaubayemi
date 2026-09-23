@@ -320,6 +320,8 @@ export default function VendorProductsBulk() {
         description: r.description || null,
         price_on_request: bulkOnRequest,
         price_fcfa: bulkOnRequest ? 0 : toFcfa(Number(r.price), shopCurrency),
+        devise_saisie: shopCurrency,
+        prix_saisi: bulkOnRequest || r.price === '' ? null : Number(r.price),
         category: r.category,
         images: [r.path],
         stock: 1,

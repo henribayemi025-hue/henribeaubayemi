@@ -237,14 +237,26 @@ export default function VendorProductEdit() {
     if (isNew) return;
     supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data }) => {
       if (data) {
-        const shown = convertFromFcfa(data.price_fcfa, shopCurrency);
-        const shownCompare = data.compare_at_price_fcfa != null ? convertFromFcfa(data.compare_at_price_fcfa, shopCurrency) : null;
+        // Le prix tel qu'elle l'a TAPÉ, quand on l'a (0181) : relu tel quel,
+        // même si le taux a bougé depuis. Sinon, reconverti depuis les FCFA.
+        const tape = data.devise_saisie === shopCurrency;
+        const relu = (saisi, fcfa) => {
+          if (tape && saisi != null) return String(Number(saisi));
+          if (fcfa == null) return '';
+          const v = convertFromFcfa(fcfa, shopCurrency);
+          return String(shopCurrency === 'FCFA' ? Math.round(v) : Number(v.toFixed(2)));
+        };
         setForm({
           ...data,
-          price_fcfa: String(shopCurrency === 'FCFA' ? Math.round(shown) : Number(shown.toFixed(2))),
-          compare_at_price_fcfa: shownCompare == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(shownCompare) : Number(shownCompare.toFixed(2))),
+          // 323 articles sur 507 n'ont pas de description (NULL en base) :
+          // depuis le 09/09, `form.description.trim()` faisait planter leur
+          // page de modification — la vendeuse ne pouvait plus y toucher.
+          name: data.name || '',
+          description: data.description || '',
+          price_fcfa: relu(data.prix_saisi, data.price_fcfa),
+          compare_at_price_fcfa: relu(data.prix_barre_saisi, data.compare_at_price_fcfa),
           lot_qty: data.lot_qty ? String(data.lot_qty) : '',
-          lot_price_fcfa: data.lot_price_fcfa == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(convertFromFcfa(data.lot_price_fcfa, shopCurrency)) : Number(convertFromFcfa(data.lot_price_fcfa, shopCurrency).toFixed(2))),
+          lot_price_fcfa: relu(data.prix_lot_saisi, data.lot_price_fcfa),
           stock: String(data.stock ?? 0),
           images: data.images || [],
           sizes: data.sizes || [],
@@ -301,6 +313,12 @@ export default function VendorProductEdit() {
         compare_at_price_fcfa: form.compare_at_price_fcfa === '' ? null : toFcfa(Number(form.compare_at_price_fcfa), shopCurrency),
         lot_qty: form.lot_qty === '' ? null : Math.round(Number(form.lot_qty)),
         lot_price_fcfa: form.lot_price_fcfa === '' ? null : toFcfa(Number(form.lot_price_fcfa), shopCurrency),
+        // Ce qu'elle a tapé, dans SA monnaie (0181) : c'est ce prix qui fait
+        // foi, et la base en recalcule les FCFA au taux du jour.
+        devise_saisie: shopCurrency,
+        prix_saisi: form.price_on_request || form.price_fcfa === '' ? null : Number(form.price_fcfa),
+        prix_barre_saisi: form.compare_at_price_fcfa === '' ? null : Number(form.compare_at_price_fcfa),
+        prix_lot_saisi: form.lot_price_fcfa === '' ? null : Number(form.lot_price_fcfa),
         description: form.description.trim() || null,
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),

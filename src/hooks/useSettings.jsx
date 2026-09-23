@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CURRENCIES, currencyForCountry } from '../lib/currency';
+import { appliquerTaux, currencyForCountry, dateDesTaux, estMonnaie } from '../lib/currency';
 import { detectCountrySync, detectCurrencyRegionSync, countryFromPhone } from '../lib/countries';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
@@ -26,10 +26,16 @@ const LANG_MANUAL_KEY = 'finjaro_lang_manual';
 // premier rendu soit déjà juste — auparavant l'app peignait des FCFA puis se
 // corrigeait, et sur les visites suivantes la valeur fautive, déjà mémorisée,
 // ne se corrigeait plus jamais.
+//
+// 23/09 : une devise mémorisée SANS avoir été choisie n'est qu'une ancienne
+// déduction ; elle ne passe plus devant le pays. C'est ce qui gardait les
+// comptes canadiens en dollars américains après la correction.
 function initialCurrency(country) {
   const stored = localStorage.getItem(CUR_KEY);
-  if (stored && CURRENCIES.includes(stored)) return stored;
+  const choisie = localStorage.getItem(CUR_MANUAL_KEY) === '1';
+  if (choisie && estMonnaie(stored)) return stored;
   if (country) return currencyForCountry(country);
+  if (estMonnaie(stored)) return stored;
   // Dernier repli: le même que `currencyForCountry`, JAMAIS le FCFA en dur.
   // Supposer l'Afrique centrale pour quelqu'un dont on ne sait rien est
   // précisément ce que Beau a interdit — Finjaro est mondiale.
@@ -45,6 +51,19 @@ export function SettingsProvider({ children }) {
   const { user, profile } = useAuth();
   const [country, setCountryState] = useState(initialCountry);
   const [currency, setCurrencyState] = useState(() => initialCurrency(initialCountry()));
+  // Les taux du jour (0181), lus une fois au démarrage. En attendant, ceux du
+  // dernier passage (ou les taux de secours livrés avec l'application).
+  const [dateTaux, setDateTaux] = useState(dateDesTaux);
+  useEffect(() => {
+    let fini = false;
+    supabase.from('taux_du_jour').select('code, par_euro, maj')
+      .then(({ data, error }) => {
+        if (fini) return;
+        if (error) { console.error('[Settings] taux du jour indisponibles:', error.message); return; }
+        if (appliquerTaux(data)) setDateTaux(dateDesTaux());
+      });
+    return () => { fini = true; };
+  }, []);
 
   // Mémoriser ce qui vient d'être détecté, pour ne pas le recalculer à chaque
   // démarrage (et garder le même affichage si la personne voyage).
@@ -64,7 +83,7 @@ export function SettingsProvider({ children }) {
   // la détection décider.
   useEffect(() => {
     if (!profile) return;
-    if (profile.currency && CURRENCIES.includes(profile.currency)) {
+    if (estMonnaie(profile.currency)) {
       setCurrencyState(profile.currency);
     }
     // On n'adopte la langue du profil QUE si elle n'a pas déjà été choisie
@@ -191,6 +210,8 @@ export function SettingsProvider({ children }) {
 
   const value = {
     currency,
+    // Change quand les taux du jour arrivent : les prix affichés se recalculent.
+    dateTaux,
     setCurrency,
     country,
     setCountry,

@@ -1,97 +1,137 @@
-// Currency handling. Prices are stored canonically in FCFA (XOF/XAF) integers
-// in the DB (produits.prix_fcfa style). Rates are a static Phase-1 table,
-// structured so a live rate API can replace `RATES` later without touching UI.
-
-export const CURRENCIES = ['FCFA', 'EUR', 'USD', 'GBP'];
-
-// 1 FCFA = X target currency. Mocked static rates (swap for a live feed later).
-export const RATES = {
-  FCFA: 1,
-  EUR: 0.001524, // ~655.957 FCFA per EUR
-  USD: 0.00165,
-  GBP: 0.0013,
-};
-
-const SYMBOLS = { FCFA: 'FCFA', EUR: '€', USD: '$', GBP: '£' };
-
-// Devise d'un pays.
+// Les monnaies. Les prix sont stockés en FCFA entiers (`price_fcfa`) : c'est
+// un détail de stockage, jamais une préférence d'affichage (CLAUDE.md §1).
 //
-// Beau, 10/08: « quelqu'un en Angleterre, ça signale en monnaie d'Angleterre;
-// quelqu'un au Cameroun, les prix du Cameroun. Un prix par défaut en FCFA
-// comme tu faisais, je ne veux plus jamais entendre ça. »
+// Beau, 23/09 : « chacun doit voir les prix dans SA monnaie — FCFA, euro,
+// livre, dollar américain, dollar canadien, rouble… — et pouvoir la changer ».
+// Avant, Finjaro n'en connaissait que quatre, avec des taux écrits à la main
+// (celui du dollar était décalé d'environ 5 %), et bien des pays recevaient
+// la monnaie d'un autre : le Canada voyait des dollars américains.
 //
-// Finjaro est une place de marché MONDIALE — le Cameroun est la stratégie de
-// démarrage, pas l'identité du produit. L'ancienne table connaissait dix-sept
-// pays et renvoyait FCFA pour tout le reste: quelqu'un au Canada, au Japon ou
-// au Nigeria voyait donc des francs CFA sans jamais avoir rien demandé.
-//
-// La table ci-dessous couvre le monde; le repli, lui, ne suppose plus rien.
-const COUNTRY_CURRENCY = {
-  // Zone euro
-  FR: 'EUR', DE: 'EUR', ES: 'EUR', IT: 'EUR', BE: 'EUR', PT: 'EUR', NL: 'EUR',
-  IE: 'EUR', GR: 'EUR', AT: 'EUR', FI: 'EUR', LU: 'EUR', SK: 'EUR', SI: 'EUR',
-  EE: 'EUR', LV: 'EUR', LT: 'EUR', CY: 'EUR', MT: 'EUR', HR: 'EUR',
-  // Francs CFA — XOF (Afrique de l'Ouest) et XAF (Afrique centrale). Même
-  // parité fixe à l'euro, donc même affichage « FCFA » pour l'instant.
-  CI: 'FCFA', SN: 'FCFA', ML: 'FCFA', BF: 'FCFA', BJ: 'FCFA', TG: 'FCFA',
-  NE: 'FCFA', GW: 'FCFA', CM: 'FCFA', GA: 'FCFA', CG: 'FCFA', TD: 'FCFA',
-  CF: 'FCFA', GQ: 'FCFA',
-  // Livre sterling et dollar américain
-  GB: 'GBP', US: 'USD',
-  // Pays qui alignent leur monnaie sur le dollar américain, ou dont la
-  // devise n'est pas encore gérée: le dollar reste bien plus proche du vrai
-  // prix que le franc CFA.
-  CA: 'USD', AU: 'USD', NZ: 'USD', CH: 'EUR', NO: 'EUR', SE: 'EUR', DK: 'EUR',
-  PL: 'EUR', CZ: 'EUR', RO: 'EUR', BG: 'EUR', HU: 'EUR',
-  NG: 'USD', GH: 'USD', KE: 'USD', ZA: 'USD', EG: 'USD', MA: 'EUR', TN: 'EUR',
-  DZ: 'EUR', CD: 'USD', AO: 'USD', RW: 'USD', TZ: 'USD', UG: 'USD', ET: 'USD',
-  AE: 'USD', SA: 'USD', QA: 'USD', TR: 'EUR', IN: 'USD', CN: 'USD', JP: 'USD',
-  BR: 'USD', MX: 'USD', AR: 'USD', RU: 'EUR',
-};
+// Désormais :
+//   - toutes les monnaies qui ont un taux (166 au 23/09), la monnaie de chaque
+//     pays et le pays de chaque fuseau horaire viennent de sources publiques
+//     (monnaies-donnees.js, régénéré par scripts/generer-monnaies.mjs) ;
+//   - les taux sont ceux DU JOUR : la base les reprend chaque nuit
+//     (taux_du_jour, 0181) et l'application les charge au démarrage. Un taux
+//     par jour suffit pour afficher un prix ; le temps réel ferait bouger les
+//     prix sous les yeux de l'acheteur ;
+//   - le franc CFA garde sa parité fixe : 655,957 FCFA pour 1 euro.
 
-// Repli quand le pays est inconnu.
-//
-// Surtout PAS le FCFA: supposer l'Afrique centrale pour qui n'a rien dit,
-// c'est exactement la faute que ce fichier corrige. Le dollar est la monnaie
-// la plus universellement lisible — et c'est un aveu d'ignorance honnête,
-// pas une supposition sur l'endroit où vit la personne.
+import { PAYS_MONNAIE, FUSEAU_PAYS, TAUX_SECOURS, TAUX_SECOURS_DATE } from './monnaies-donnees';
+
+const FCFA_PAR_EURO = 655.957;
+// Liées à l'euro par une parité fixe : leur montant en FCFA ne bouge jamais.
+export const MONNAIES_ARRIMEES = ['FCFA', 'EUR', 'XAF', 'XOF'];
+
+// Unités de chaque monnaie pour 1 euro.
+let parEuro = { ...TAUX_SECOURS, FCFA: FCFA_PAR_EURO, EUR: 1 };
+let dateTaux = TAUX_SECOURS_DATE;
+
+const CLE_TAUX = 'finjaro_taux';
+try {
+  const c = JSON.parse(localStorage.getItem(CLE_TAUX) || 'null');
+  if (c?.date && c.date > dateTaux && c.par_euro) {
+    parEuro = { ...parEuro, ...c.par_euro, FCFA: FCFA_PAR_EURO, EUR: 1 };
+    dateTaux = c.date;
+  }
+} catch { /* navigation privée, ou pas de navigateur (tests) */ }
+
+/** Prend les taux du jour lus dans la base (lignes { code, par_euro, maj }). */
+export function appliquerTaux(lignes) {
+  if (!Array.isArray(lignes) || !lignes.length) return false;
+  const nouveaux = {};
+  let date = '';
+  for (const l of lignes) {
+    const v = Number(l.par_euro);
+    if (/^[A-Z]{3,4}$/.test(l.code) && v > 0) nouveaux[l.code] = v;
+    if (l.maj && String(l.maj).slice(0, 10) > date) date = String(l.maj).slice(0, 10);
+  }
+  parEuro = { ...parEuro, ...nouveaux, FCFA: FCFA_PAR_EURO, EUR: 1 };
+  if (date) dateTaux = date;
+  try { localStorage.setItem(CLE_TAUX, JSON.stringify({ date: dateTaux, par_euro: nouveaux })); } catch { /* rien */ }
+  return true;
+}
+
+/** La date des taux utilisés (AAAA-MM-JJ). */
+export function dateDesTaux() {
+  return dateTaux;
+}
+
+// Toutes les monnaies proposées : celles qui ont un taux, le franc CFA une
+// seule fois (XAF et XOF s'affichent « FCFA »).
+export const CURRENCIES = ['FCFA', ...Object.keys(TAUX_SECOURS).filter((c) => c !== 'XAF' && c !== 'XOF' && c !== 'EUR'), 'EUR'].sort((a, b) => a.localeCompare(b));
+
+export function estMonnaie(code) {
+  return !!code && (code === 'FCFA' || (code !== 'XAF' && code !== 'XOF' && !!parEuro[code]));
+}
+
+// Repli quand le pays est inconnu : surtout PAS le franc CFA (Beau, 10/08 :
+// « je ne veux plus jamais entendre ça »). Le dollar est la monnaie la plus
+// largement lisible — un aveu d'ignorance, pas une supposition sur l'endroit
+// où vit la personne.
 const FALLBACK_CURRENCY = 'USD';
 
 export function currencyForCountry(countryCode) {
   if (!countryCode) return FALLBACK_CURRENCY;
-  return COUNTRY_CURRENCY[String(countryCode).toUpperCase()] || FALLBACK_CURRENCY;
+  return PAYS_MONNAIE[String(countryCode).toUpperCase()] || FALLBACK_CURRENCY;
 }
 
-/** Convert an amount in FCFA to the target currency (number). */
+/** Le pays d'un fuseau horaire (« Africa/Douala » → « CM »), ou null. */
+export function paysDuFuseau(fuseau) {
+  return (fuseau && FUSEAU_PAYS[fuseau]) || null;
+}
+
+/** Convertit un montant en FCFA vers la monnaie demandée (nombre). */
 export function convertFromFcfa(amountFcfa, currency) {
-  const rate = RATES[currency] ?? 1;
-  return (Number(amountFcfa) || 0) * rate;
+  const taux = parEuro[currency];
+  if (!taux) return Number(amountFcfa) || 0;
+  return ((Number(amountFcfa) || 0) * taux) / FCFA_PAR_EURO;
 }
 
-/** Convert an amount expressed in `currency` back into canonical FCFA (integer). */
+/** Ramène un montant exprimé en `currency` en FCFA entiers (stockage). */
 export function toFcfa(amount, currency) {
-  const rate = RATES[currency] ?? 1;
-  return Math.round((Number(amount) || 0) / rate);
+  const taux = parEuro[currency];
+  if (!taux) return Math.round(Number(amount) || 0);
+  return Math.round(((Number(amount) || 0) * FCFA_PAR_EURO) / taux);
 }
 
-/** Format an FCFA amount into a localized currency string for display. */
+const LOCALES = { fr: 'fr-FR', en: 'en-US' };
+
+/** Un montant stocké en FCFA, écrit dans la monnaie demandée. */
 export function formatPrice(amountFcfa, currency = 'FCFA', locale = 'fr') {
   const value = convertFromFcfa(amountFcfa, currency);
+  const loc = LOCALES[locale] || LOCALES.fr;
   if (currency === 'FCFA') {
-    const rounded = Math.round(value);
-    return `${new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : 'en-US').format(rounded)} FCFA`;
+    return `${new Intl.NumberFormat(loc).format(Math.round(value))} FCFA`;
   }
   try {
-    return new Intl.NumberFormat(locale === 'fr' ? 'fr-FR' : 'en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 2,
-    }).format(value);
+    // Le nombre de décimales est celui de la monnaie : 2 pour l'euro,
+    // aucune pour le yen. Au-delà de 10 000, les centimes n'aident personne.
+    const options = { style: 'currency', currency };
+    if (Math.abs(value) >= 10000) options.maximumFractionDigits = 0;
+    return new Intl.NumberFormat(loc, options).format(value);
   } catch {
-    return `${SYMBOLS[currency] || ''}${value.toFixed(2)}`;
+    return `${value.toFixed(2)} ${currency}`;
+  }
+}
+
+/** Le nom d'une monnaie dans la langue de l'écran (« dollar canadien »). */
+export function nomMonnaie(code, locale = 'fr') {
+  if (code === 'FCFA') return locale === 'en' ? 'CFA franc' : 'franc CFA';
+  try {
+    const n = new Intl.DisplayNames([LOCALES[locale] || LOCALES.fr], { type: 'currency' }).of(code);
+    return n && n !== code ? n : code;
+  } catch {
+    return code;
   }
 }
 
 export function currencySymbol(currency) {
-  return SYMBOLS[currency] || currency;
+  if (currency === 'FCFA') return 'FCFA';
+  try {
+    const p = new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).formatToParts(0).find((x) => x.type === 'currency');
+    return p?.value || currency;
+  } catch {
+    return currency;
+  }
 }

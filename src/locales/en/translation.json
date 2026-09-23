@@ -2679,5 +2679,11 @@
     "enCours": "Signing you in…",
     "echec": "The hand-off has expired.",
     "echecAide": "Sign in here with the same account as on the other Finjaro apps."
+  },
+  "settings": {
+    "autreMonnaie": "Another currency",
+    "tauxDuJour": "Rates of {{date}}, updated daily",
+    "tauxSource": "Rates By Exchange Rate API",
+    "tauxFcfa": "The CFA franc keeps its fixed parity with the euro."
   }
 }

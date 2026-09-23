@@ -247,7 +247,9 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
               />
               <div className="min-w-0">
                 <p className="line-clamp-1 text-caption font-semibold text-ink">{reel.products.name}</p>
-                <Price fcfa={reel.products.price_fcfa} className="text-caption font-semibold text-teal" />
+                {reel.products.price_on_request
+                  ? <p className="text-caption font-semibold text-brass">{t('product.priceOnRequest')}</p>
+                  : <Price fcfa={reel.products.price_fcfa} className="text-caption font-semibold text-teal" />}
               </div>
             </Link>
             <button

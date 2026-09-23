@@ -103,6 +103,8 @@ export function FinouProductWizard({ onClose, onPublished }) {
         shop_id: shop.id,
         name: name.trim(),
         price_fcfa: toFcfa(Number(price), currency),
+        devise_saisie: currency,
+        prix_saisi: Number(price),
         description: description.trim() || null,
         category,
         stock: 1,

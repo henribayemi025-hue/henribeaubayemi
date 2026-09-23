@@ -10,7 +10,7 @@ import { StoreBadges } from '../../components/StoreBadges';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { TextArea } from '../../components/Field';
-import { CURRENCIES } from '../../lib/currency';
+import { CURRENCIES, currencyForCountry, dateDesTaux, nomMonnaie } from '../../lib/currency';
 import { enablePush } from '../../lib/push';
 import { networkMessage } from '../../lib/netError';
 import { supabase } from '../../lib/supabase';
@@ -21,7 +21,7 @@ const BUILD_ID = typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev';
 export default function Settings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { language, setLanguage, currency, setCurrency } = useSettings();
+  const { language, setLanguage, currency, setCurrency, country, dateTaux } = useSettings();
   const { user, signOut } = useAuth();
   const toast = useToast();
 
@@ -115,13 +115,29 @@ export default function Settings() {
 
         <section>
           <h2 className="mb-2 flex items-center gap-2 text-section text-ink"><IconCoin size={20} /> {t('common.currency')}</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {CURRENCIES.map((c) => (
-              <button key={c} onClick={() => setCurrency(c)} className={`chip justify-center ${currency === c ? 'chip-active' : 'text-ink'}`}>
+          {/* Toutes les monnaies du monde (23/09) : les plus courantes en
+              boutons — dont celle du pays de la personne —, les autres dans
+              la liste, par leur nom. */}
+          <div className="flex flex-wrap gap-2">
+            {[...new Set([currencyForCountry(country), 'FCFA', 'EUR', 'USD', 'GBP', 'CAD', currency])].map((c) => (
+              <button key={c} onClick={() => setCurrency(c)} title={nomMonnaie(c, language)} className={`chip justify-center ${currency === c ? 'chip-active' : 'text-ink'}`}>
                 {c}
               </button>
             ))}
           </div>
+          <label className="mt-3 block text-caption text-muted" htmlFor="autre-monnaie">{t('settings.autreMonnaie', 'Une autre monnaie')}</label>
+          <select id="autre-monnaie" value={currency} onChange={(e) => setCurrency(e.target.value)} className="input mt-1 w-full">
+            {CURRENCIES.map((c) => ({ c, nom: nomMonnaie(c, language) }))
+              .sort((a, b) => a.nom.localeCompare(b.nom, language))
+              .map(({ c, nom }) => <option key={c} value={c}>{nom === c ? c : `${nom} (${c})`}</option>)}
+          </select>
+          <p className="mt-2 text-caption text-muted">
+            {t('settings.tauxDuJour', { date: new Date(`${dateTaux || dateDesTaux()}T12:00:00`).toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR'), defaultValue: 'Taux du {{date}}, mis à jour chaque jour' })}
+            {' · '}
+            <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" className="underline">{t('settings.tauxSource', 'Rates By Exchange Rate API')}</a>
+            {'. '}
+            {t('settings.tauxFcfa', 'Le franc CFA suit sa parité fixe avec l’euro.')}
+          </p>
         </section>
 
         {user && (

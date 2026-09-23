@@ -2679,5 +2679,11 @@
     "enCours": "Connexion en cours…",
     "echec": "Le relais a expiré.",
     "echecAide": "Connecte-toi ici, avec le même compte que sur les autres applications Finjaro."
+  },
+  "settings": {
+    "autreMonnaie": "Une autre monnaie",
+    "tauxDuJour": "Taux du {{date}}, mis à jour chaque jour",
+    "tauxSource": "Rates By Exchange Rate API",
+    "tauxFcfa": "Le franc CFA suit sa parité fixe avec l’euro."
   }
 }

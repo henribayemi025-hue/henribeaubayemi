@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { storageUrl } from '../lib/supabase';
 import { Price } from './Price';
+import { isPriceOnRequest } from '../lib/categories';
 import mode from '../assets/categories/hero-mode.webp';
 import beaute from '../assets/categories/hero-beaute.webp';
 import evenement from '../assets/categories/hero-evenement.webp';
@@ -165,7 +166,10 @@ export function HomeHeroCarousel({ products }) {
                     {t('home.topPick')}
                   </span>
                   <p className="relative line-clamp-1 text-title font-semibold text-white">{s.name}</p>
-                  <Price fcfa={s.price_fcfa} className="relative text-body font-semibold text-white" />
+                  {/* « Prix sur demande » plutôt que « 0 FCFA » (vu le 23/09). */}
+                  {isPriceOnRequest(s)
+                    ? <p className="relative text-body font-semibold text-white">{t('product.priceOnRequest')}</p>
+                    : <Price fcfa={s.price_fcfa} className="relative text-body font-semibold text-white" />}
                 </>
               ) : (
                 <>
