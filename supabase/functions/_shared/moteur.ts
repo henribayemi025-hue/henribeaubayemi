@@ -107,3 +107,21 @@ export async function garder(service: Service, t: { entreprise_id: string; messa
     await service.from('ia_traces').insert({ ...t, consigne: t.consigne.slice(0, 60_000), sortie: t.sortie.slice(0, 20_000) });
   } catch (e) { console.error('trace:', (e as Error).message); }
 }
+
+// Un texte arrivé d'un seul bloc (vu le 23/09 avec Flash, quand le Pro de
+// Google était saturé: « trouvé :## Opportunités- Startup Day  - Date … »).
+// Beau: « mets ça point par point, bien clair, présentable ». On remet les
+// titres et les points sur leurs lignes; un texte qui a déjà des retours à
+// la ligne n'est pas touché.
+export function aerer(t: string): string {
+  if (!t || t.includes('\n')) return t;
+  return t
+    .replace(/\s*(#{1,3} )/g, '\n\n$1')
+    .replace(/ {2,}- /g, '\n  - ')
+    .replace(/([^\s-])- (?=[A-ZÀ-ÖØ-Þ0-9[«"*])/g, '$1\n- ')
+    .replace(/([.:!?)»])[ \t]+- (?=\S)/g, '$1\n- ')
+    .replace(/(\d)([A-ZÀ-ÖØ-Þ][a-zà-ÿ]{1,})/g, '$1\n$2')
+    .replace(/([.!?:])\s*(\d{1,2})\.\s(?=[A-ZÀ-ÖØ-Þ])/g, '$1\n$2. ')
+    .replace(/^\n+/, '')
+    .trim();
+}

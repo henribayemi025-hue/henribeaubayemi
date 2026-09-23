@@ -30,7 +30,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
-import { generer, garder, type Rendu } from '../_shared/moteur.ts';
+import { aerer, generer, garder, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
 
@@ -311,8 +311,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const consignePlan = invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans) + enLangue;
     const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
-    const semaine = String(r.obj.plan_semaine || '').trim().slice(0, 4000);
-    const mois = String(r.obj.plan_mois || '').trim().slice(0, 4000);
+    const semaine = aerer(String(r.obj.plan_semaine || '').trim()).slice(0, 4000);
+    const mois = aerer(String(r.obj.plan_mois || '').trim()).slice(0, 4000);
     if (semaine.length < 100) { journal.push(`${entreprise.nom}/${dept}: plan vide`); continue; }
     await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'semaine', contenu: semaine });
     plansDuJour.push(`[${dept}]\n${semaine.slice(0, 1500)}`);
@@ -366,7 +366,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const consigneLivrable = inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + (web ? blocWeb(web) : '') + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
-      const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
+      const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 4000);
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);

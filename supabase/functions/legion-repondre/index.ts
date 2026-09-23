@@ -26,7 +26,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
-import { generer, garder, moteurs, type Rendu } from '../_shared/moteur.ts';
+import { aerer, generer, garder, moteurs, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
@@ -504,7 +504,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
-    let texte = String(r.obj.texte).trim().slice(0, 4000);
+    let texte = aerer(String(r.obj.texte).trim()).slice(0, 4000);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
     // La relecture: une proposition, une question, un chiffre, une tâche prise.
     let relu: { corrige: boolean; raison?: string } | null = null;
