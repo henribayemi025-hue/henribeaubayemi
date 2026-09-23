@@ -46,7 +46,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 21 | **N types d'entreprises** | ✅ « Ton secteur n'est pas là ? » : Legion écrit le modèle |
 | 22 | « Nouvelle entreprise » ouvrait une **page blanche** | ✅ corrigé, en ligne sur finjaro.net le 23/09 |
 | 23 | Un simple utilisateur qui **code son application** | ✅ modèle « Créateur solo de logiciel » |
-| 24 | Brancher **Claude, Astra, ses propres outils** (connecteurs et compétences) | ✅ plan écrit (`LEGION-CONNECTEURS.md`) : son assistant se branche sur Legion (MCP) ; 📅 à construire après Google |
+| 24 | Brancher **Claude, Astra, ses propres outils** (connecteurs et compétences) | 🔧 le serveur MCP de Legion (en cours, 23/09 soir) |
 | 25 | Un agent qui dit « **tel concurrent a lancé ça**, on ne l'a pas » | ✅ Vigie + recherche sur Internet |
 | 26 | …et qui **le construit et le montre sur un panneau de test** | ✅ plan et coût écrits (`STUDIO-DE-CODE.md`) ; ⏸ un jeton GitHub en écriture + le oui de Beau pour commencer |
 | 27 | Un agent qui fait les **rappels** | ✅ Orchestre (allumé) |
@@ -74,7 +74,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 44 | E-mails de prospection | ⏸ pas maintenant (Beau) |
 | 45 | Connecteurs Google pour **chaque utilisateur** (Gmail…) | ⏸ les cinq gestes de Beau sont écrits (`LEGION-CONNECTEURS.md`) |
 | 46 | « Vas-y » à Claudinette ; elle choisit, elle montre ; un vrai expert design | ✅ transmis le 23/09 |
-| 47 | Une seule connexion pour toutes les applications Finjaro | 🔧 plan avec Claudinette |
+| 47 | Une seule connexion pour toutes les applications Finjaro | ✅ côté place de marché : table, fonction `sso-relais` (déployée, échange réel vérifié), page `/relais`, sélecteur ; 🔧 la page d'arrivée d'Accounting (Claudinette) |
 | 48 | Jeton GitHub — **pour tous les utilisateurs**, pas seulement Beau | ✅ « Mon dépôt GitHub » : chaque entreprise branche le sien, jeton au coffre ; celui de Finjaro est branché |
 | 49 | Une version gratuite / standard de Legion | ✅ formule gratuite (Flash seulement, sans recherche) / complète, choisie par le propriétaire ; ⏸ le prix, à décider par Beau |
 | 50 | Pas de clé Anthropic | ✅ |

@@ -67,3 +67,16 @@ utilisateurs aussi.
 2. Table + fonction (moi), relues par elle.
 3. Sélecteur → Accounting d'abord (le chemin que Beau fait le plus), puis
    le retour.
+
+## État au 23/09 soir
+
+- ✅ Table `sso_relais`, colonne `finjaro_apps.relais`, fonction `sso-relais`
+  déployée. Échange vérifié en vrai (compte de test) ; code brûlé refusé ;
+  `creer` sans session refusé.
+- ✅ Page `/relais` sur finjaro.net et le sélecteur (staging ; production au
+  prochain oui de Beau).
+- 🔧 La page d'arrivée d'Accounting : Claudinette, quand elle veut. Dès
+  qu'elle existe, `finjaro_apps.relais` prend son adresse et le sélecteur
+  s'en sert sans déploiement.
+- Limite connue : un compte inscrit par téléphone, sans e-mail (20 sur 108),
+  n'est pas relayé — il se connecte comme avant à l'arrivée.
