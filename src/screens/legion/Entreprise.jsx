@@ -290,6 +290,9 @@ export default function Entreprise() {
 
   function statutTache(x, statut) {
     majMessage(x.id, { meta: { ...(x.meta || {}), statut }, termine_le: statut === 'fait' ? new Date().toISOString() : null });
+    // Valider un livrable « à revoir » est un verdict humain: il rejoint nos
+    // exemples d'entraînement (0167), si l'entreprise a dit oui.
+    if (statut === 'fait' && x.meta?.statut === 'revue') supabase.rpc('ia_juger', { p_tache: x.id, p_verdict: 'valide' }).then(() => {}, () => {});
   }
 
   // La revue d'un livrable (chantier 7, « des agents qui s'améliorent »):
@@ -298,6 +301,8 @@ export default function Entreprise() {
   // le demande, devient une règle que toute l'équipe relit.
   async function renvoyer(x, remarque, enRegle) {
     const a = data.agents.find((y) => y.id === x.assigne_a);
+    // Le verdict et la remarque, pour nos exemples d'entraînement (0167).
+    supabase.rpc('ia_juger', { p_tache: x.id, p_verdict: 'renvoye', p_remarque: remarque }).then(() => {}, () => {});
     await majMessage(x.id, { meta: { ...(x.meta || {}), statut: 'a_faire', remarque, renvoye_le: new Date().toISOString() }, termine_le: null });
     const { data: livrable } = await supabase.from('legion_messages').select('id, texte').eq('entreprise_id', entrepriseId)
       .contains('meta', { livrable: { tache_id: x.id } }).order('created_at', { ascending: false }).limit(1).maybeSingle();

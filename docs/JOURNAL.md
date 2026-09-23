@@ -28,6 +28,24 @@ pour Finjaro. Aucune donnée personnelle (le dépôt est public).
   « en attente d'envoi », et part tout seul quand le réseau revient (une
   seule fois, à l'heure du geste). Le bandeau dit combien attendent. Règle :
   hors ligne on ajoute, on ne modifie pas.
+- **Notre propre IA, à long terme** (Beau : « on continue avec Gemini,
+  mais pendant ce temps on entraîne »). Deux fondations :
+  1. **Nos exemples** (`ia_traces`, migration 0167) : pour chaque plan,
+     livrable et réponse d'agent, la consigne complète, le texte rendu et le
+     modèle ; quand quelqu'un valide ou renvoie un livrable sur le tableau
+     des tâches, le verdict et la remarque s'y ajoutent. Seulement pour les
+     entreprises qui ont dit oui (`entrainement`) : Finjaro oui, les autres
+     non par défaut. Garder n'est pas entraîner : avant d'entraîner, on relit
+     les conditions de Google sur l'usage des réponses de Gemini ; la
+     matière sûre, ce sont nos consignes, nos verdicts et nos remarques.
+  2. **Un moteur interchangeable** (`_shared/moteur.ts`) : la liste des
+     moteurs vient du réglage `LEGION_MOTEURS`. « gemini-… » pour Google,
+     « oa:<modèle> » pour toute API compatible OpenAI (Mistral, un
+     hébergeur de modèles ouverts, ou notre propre serveur qui fera tourner
+     un Gemma spécialisé). Les agents (plans, livrables, réponses) passent
+     déjà par lui. Essayé avec de fausses réponses : repli d'un Pro saturé
+     vers le suivant, bascule vers « notre serveur » par le seul réglage,
+     retour à Gemini si ce serveur manque.
 - Captures de Legion pour LinkedIn faites sur une boutique d'exemple, sans
   les chiffres internes de Finjaro.
 

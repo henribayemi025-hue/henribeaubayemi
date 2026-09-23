@@ -26,6 +26,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
+import { generer, garder, moteurs, type Rendu } from '../_shared/moteur.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -210,39 +211,16 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
 // comptes », 3-pro-preview « n'est plus disponible, passez à gemini-3.1-… »,
 // 3.5-pro et 3-pro n'existent pas — toutes les réponses de la soirée sont
 // donc sorties de Flash, et Beau les a trouvées « bêtes ». C'était ça.
-const MODELES_REPONSE = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-async function demander(apiKey: string, texte: string): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
+// Le moteur (_shared/moteur.ts): la liste vient du réglage LEGION_MOTEURS
+// (par défaut, le premier Pro de Google, Flash en dernier recours). Un
+// moteur qui rend un texte vide passe la main au suivant.
+async function demander(apiKey: string, texte: string): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
-  for (const model of MODELES_REPONSE) {
-    try {
-      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST',
-        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: texte }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-            thinkingConfig: { thinkingBudget: 4096 },
-            responseMimeType: 'application/json',
-            responseSchema: SCHEMA,
-          },
-        }),
-        signal: AbortSignal.timeout(45_000),
-      });
-      if (!resp.ok) { derniere = `${model}: HTTP ${resp.status} ${(await resp.text()).slice(0, 160)}`; console.error(derniere); continue; }
-      const body = await resp.json();
-      const txt = body?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-      if (!txt) { derniere = `${model}: réponse vide (${body?.candidates?.[0]?.finishReason ?? '?'})`; console.error(derniere); continue; }
-      try {
-        const obj = JSON.parse(txt);
-        // « \n » échappé deux fois par le modèle: on rétablit les vrais
-        // retours à la ligne, sinon la bulle affiche des barres obliques.
-        if (typeof obj.texte === 'string') obj.texte = obj.texte.replace(/\\r\\n|\\n/g, '\n');
-        if (typeof obj.texte === 'string' && obj.texte.trim()) return { obj, modele: model };
-        derniere = `${model}: texte vide`;
-      } catch { derniere = `${model}: JSON illisible — ${txt.slice(0, 120)}`; console.error(derniere); }
-    } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
+  for (const nom of moteurs()) {
+    const r = await generer(apiKey, texte, SCHEMA, { temperature: 0.7, reflexion: 4096, delaiMs: 45_000, modeles: [nom] });
+    if ('erreur' in r) { derniere = r.erreur; continue; }
+    if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
+    derniere = `${nom}: texte vide`;
   }
   return { erreur: derniere };
 }
@@ -507,7 +485,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const r = await demander(apiKey, consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null));
+    const laConsigne = consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null);
+    const r = await demander(apiKey, laConsigne);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
@@ -549,6 +528,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       texte, genre, meta: { ...(action ? { action } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
+    // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est
+    // parti — relu compris —, si l'entreprise a dit oui.
+    await garder(service, { entreprise_id: msg.entreprise_id, message_id: ecrit.id, fonction: 'legion_repondre', modele: r.modele, consigne: laConsigne, sortie: JSON.stringify({ ...r.obj, texte }) });
     ecrits.push(ecrit);
     ont_repondu.push(cible.nom);
     lignes.push(`${cible.nom}: ${texte}`);

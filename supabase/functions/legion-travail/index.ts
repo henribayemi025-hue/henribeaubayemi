@@ -30,6 +30,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { generer, garder, type Rendu } from '../_shared/moteur.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -66,36 +67,10 @@ const semblable = (a: string, b: string) => {
   return communs / Math.min(A.size, B.size) >= 0.6;
 };
 
-// Même liste que legion-repondre: le premier Pro que Google accepte.
-const MODELES = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<{ obj: Record<string, unknown>; modele: string } | { erreur: string }> {
-  let derniere = 'aucun modèle joignable';
-  for (const model of MODELES) {
-    try {
-      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST',
-        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: texte }] }],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 4096 }, responseMimeType: 'application/json', responseSchema: schema },
-        }),
-        signal: AbortSignal.timeout(90_000),
-      });
-      if (!resp.ok) { derniere = `${model}: HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`; console.error(derniere); continue; }
-      const body = await resp.json();
-      const txt = body?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-      if (!txt) { derniere = `${model}: réponse vide`; continue; }
-      try {
-        const obj = JSON.parse(txt);
-        // Gemini rend parfois « \n » échappé deux fois: le texte arrive avec
-        // des barres obliques au lieu de retours à la ligne (vu sur le
-        // premier livrable d'Alpha, 22/09). On les rétablit.
-        for (const k of Object.keys(obj)) if (typeof obj[k] === 'string') obj[k] = obj[k].replace(/\\r\\n|\\n/g, '\n');
-        return { obj, modele: model };
-      } catch { derniere = `${model}: JSON illisible`; }
-    } catch (e) { derniere = `${model}: ${(e as Error).message}`; console.error(derniere); }
-  }
-  return { erreur: derniere };
+// Le moteur (_shared/moteur.ts): Gemini aujourd'hui, un autre demain, par
+// le réglage LEGION_MOTEURS — sans toucher à ce fichier.
+async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<Rendu> {
+  return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000 });
 }
 
 // La mémoire d'un salon (0161): ce qui précède les 20 derniers messages,
@@ -332,7 +307,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       ? [...plansDuJour, ...(plansRecents || []).filter((x: { departement: string; horizon: string; created_at: string }) => x.horizon === 'semaine' && sansAccent(x.departement) !== 'direction' && (Date.now() - new Date(x.created_at).getTime()) / 86_400_000 < 6 && !plansDuJour.some((p) => p.startsWith(`[${x.departement}]`))).map((x: { departement: string; contenu: string }) => `[${x.departement}]\n${String(x.contenu).slice(0, 1500)}`)]
       : [];
     const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', boutique, !!mesures) : [];
-    const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans) + enLangue, SCHEMA_PLAN);
+    const consignePlan = invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans) + enLangue;
+    const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = String(r.obj.plan_semaine || '').trim().slice(0, 4000);
     const mois = String(r.obj.plan_mois || '').trim().slice(0, 4000);
@@ -342,10 +318,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     if (besoinMois && mois.length >= 100) await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'mois', contenu: mois });
     const sansTitre = (x: string) => x.replace(/^##\s*(plan|weekly|monthly)[^\n]*\n/i, '');
     const texte = `## ${anglais ? 'Weekly plan' : 'Plan de la semaine'} — ${dept}\n${sansTitre(semaine)}${besoinMois && mois.length >= 100 ? `\n\n## ${anglais ? 'Monthly plan' : 'Plan du mois'} — ${dept}\n${sansTitre(mois)}` : ''}`;
-    await service.from('legion_messages').insert({
+    const { data: planPublie } = await service.from('legion_messages').insert({
       entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: d.id, user_id: null, texte, genre: 'info',
       meta: { par_ia: true, modele: r.modele, plan: { horizon: besoinMois ? 'semaine+mois' : 'semaine', departement: dept }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
-    });
+    }).select('id').single();
+    await garder(service, { entreprise_id: entrepriseId, message_id: planPublie?.id, fonction: 'legion_travail:plan', modele: r.modele, consigne: consignePlan, sortie: JSON.stringify(r.obj) });
     let creees = 0;
     for (const t of (Array.isArray(r.obj.taches) ? r.obj.taches : []).slice(0, 5) as { titre: string; agent: string }[]) {
       const titre = String(t.titre || '').trim().slice(0, 200);
@@ -382,17 +359,19 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
           .eq('meta->livrable->>tache_id', tache.meta.suite_de.tache_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (avant?.texte) recu = `\n\nCETTE TÂCHE T'EST PASSÉE EN RELAIS par ${tache.meta.suite_de.par}, qui vient de livrer « ${tache.meta.suite_de.tache} ». SON LIVRABLE (pars de là, ne le refais pas):\n${String(avant.texte).slice(0, 3000)}`;
       }
-      const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + enLangue, SCHEMA_LIVRABLE);
+      const consigneLivrable = inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + enLangue;
+      const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
       const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
-      await service.from('legion_messages').insert({
+      const { data: livrablePublie } = await service.from('legion_messages').insert({
         entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: a.id, user_id: null, texte, genre: bloque ? 'question' : 'info',
         meta: { par_ia: true, modele: r.modele, livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
-      });
+      }).select('id').single();
+      await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
       await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
       // LE RELAIS (plan complet, B6-5): un livrable fini passe la suite au bon
