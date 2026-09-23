@@ -141,10 +141,13 @@ Sa consigne : « je ne veux pas que tu balaies ça, regarde ça en profondeur »
 | --- | --- | --- |
 | J1 | Plusieurs agents Claude Code travaillent **en même temps** sur un même projet (l'un le serveur, l'autre l'écran, un troisième la connexion) sans se marcher dessus : **chacun sa branche et son dossier**, zéro conflit ; une commande pour ouvrir une nouvelle session par tâche | C'est le principe du **studio de code** de Legion (`STUDIO-DE-CODE.md`, mis à jour) : l'architecte découpe, chaque agent codeur a sa branche, les tests passent sur chaque branche, l'assembleur fusionne, l'aperçu s'ouvre, Beau valide. ⏸ une seule chose manque : le jeton GitHub **en écriture** (Beau) |
 
+| J2 | (vidéo « service client automatisé ») Le Drive de l'entreprise est branché : chaque document déposé entre dans une base, **l'agent est toujours à jour** ; la boîte mail est branchée ; un **tri** dit si l'e-mail est une demande client ou autre chose ; « autre » → l'agent ne fait **rien** ; demande client → l'agent (sa consigne : chez qui il travaille, sa mission ; un modèle pas cher) cherche dans la base, **étiquette** l'e-mail « service client » pour que l'entreprise vérifie, et **répond** | 🔧 **Documents de l'entreprise** : on y dépose ses documents (PDF, Excel, texte), ils sont découpés et indexés (recherche par le sens), et **tous** les agents s'en servent en citant la source ; 🔧 **Service client** : un message client collé ou transféré dans le salon est trié (demande client / autre / rien à faire), l'agent service client prépare la réponse depuis les documents, étiquetée, que l'entreprise valide ; ⏸ brancher la vraie boîte mail et envoyer seul : Gmail (projet Google de Beau) ou une adresse de réception Cloudflare (jeton Cloudflare de Beau) |
+
 ## Ordre de construction
 
 B5 (vocal entendu) → B3 + I6 (réunions qui débattent) → B4 (questions) →
 B5 (appeler) → B2 + I1 + I2 (Excel lu et modifié) → I3 + I4 + I5 (renforcer
-un service, intérim, experts à la mission) → D7 (+ Agent depuis le catalogue) → D9 + D10 (catalogue) → E1-E2
+un service, intérim, experts à la mission) → J2 (documents de
+l'entreprise, service client trié) → D7 (+ Agent depuis le catalogue) → D9 + D10 (catalogue) → E1-E2
 (outils) → E3 (droits par agent) → E4 (consigne visible) → C4 (connecteur
 Accounting) → D11 / D12 (les 200 propositions et le tableau de Finjaro).
