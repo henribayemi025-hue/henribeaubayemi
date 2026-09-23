@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   IconPigMoney, IconTargetArrow, IconUsersGroup, IconRepeat,
   IconPlus, IconCheck, IconLink, IconPencil, IconX,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
+import { ajouter as ajouterHorsLigne, enAttente, ecouterFile } from '../../lib/fileAttente';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -51,6 +52,13 @@ export default function MyMoney() {
   const [onglet, setOnglet] = useState('comptes');
   const [n, setN] = useState(0);
   const recharger = () => setN((x) => x + 1);
+
+  // Hors ligne (lib/fileAttente): ce qui attend l'envoi s'affiche avec le
+  // reste, marqué « en attente »; quand la file se vide, on relit la base.
+  const [file, setFile] = useState(() => enAttente().length);
+  const avant = useRef(file);
+  useEffect(() => ecouterFile(setFile), []);
+  useEffect(() => { if (file < avant.current) recharger(); avant.current = file; }, [file]);
 
   const { data, loading, error } = useAsync(async () => {
     if (!user?.id) return null;
@@ -129,16 +137,28 @@ export default function MyMoney() {
   if (loading) return enveloppe(<Skeleton className="h-40 w-full" />);
   if (error) return enveloppe(<ErrorState onRetry={recharger} />);
   if (!data) return null;
+  const vus = file >= 0; // relit la file à chaque changement de `file`
+  const budgetAffiche = vus ? [...data.budget, ...enAttente('budget_entries')
+    .filter((x) => x.ligne.user_id === user.id).map((x) => ({ ...x.ligne, _enAttente: true }))] : data.budget;
+  const txEnFile = enAttente('space_tx').map((x) => ({ ...x.ligne, _enAttente: true }));
+  const espacesAffiches = data.espaces.map((e) => {
+    const plus = txEnFile.filter((m) => m.space_id === e.id);
+    if (!plus.length) return e;
+    const tx = [...plus.reverse(), ...e.tx];
+    const entre = tx.filter((m) => m.kind === 'in').reduce((s2, m) => s2 + Number(m.amount || 0), 0);
+    const sorti = tx.filter((m) => m.kind !== 'in').reduce((s2, m) => s2 + Number(m.amount || 0), 0);
+    return { ...e, tx, entre, sorti, solde: entre - sorti };
+  });
 
   return (
     <MoneyShell onglet={onglet} setOnglet={setOnglet} prenom={profile?.name} t={t}>
       <div className="px-4 pb-28 pt-3">
         {onglet === 'comptes' && <Comptes devise={devise} comptes={data.comptes} lang={lang} t={t} userId={user.id} onDone={recharger} />}
-        {onglet === 'espaces' && <Espaces devise={devise} espaces={data.espaces} moi={user.id} lang={lang} t={t} onDone={recharger} />}
+        {onglet === 'espaces' && <Espaces devise={devise} espaces={espacesAffiches} moi={user.id} lang={lang} t={t} onDone={recharger} />}
         {onglet === 'analyste' && (
           <Analyste devise={devise} lignes={data.budget} comptes={data.comptes} epargne={data.epargne} lang={lang} t={t} />
         )}
-        {onglet === 'budget' && <Budget devise={devise} lignes={data.budget} lang={lang} t={t} userId={user.id} onDone={recharger} />}
+        {onglet === 'budget' && <Budget devise={devise} lignes={budgetAffiche} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'epargne' && <Epargne devise={devise} objectifs={data.epargne} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'projets' && <Projets devise={devise} projets={data.projets} lang={lang} t={t} onDone={recharger} />}
         {onglet === 'njangi' && <Njangi devise={devise} njangis={data.njangis} moi={user.id} lang={lang} t={t} onDone={recharger} />}
@@ -334,11 +354,11 @@ function Espaces({ devise, espaces, moi, lang, t, onDone }) {
     const somme = Number(String(brut).replace(',', '.'));
     if (!Number.isFinite(somme) || somme <= 0) { toast.error(t('money.txBadAmount')); return; }
     try {
-      const { error } = await supabase.from('space_tx').insert({
+      const { enFile } = await ajouterHorsLigne('space_tx', {
         space_id: espace.id, user_id: moi, kind, label: label.trim() || null, amount: somme,
       });
-      if (error) throw error;
-      onDone();
+      if (enFile) toast.info(t('offline.queued'));
+      else onDone();
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
 
@@ -392,7 +412,7 @@ function Espaces({ devise, espaces, moi, lang, t, onDone }) {
               {espace.tx.map((m, i) => (
                 <li key={i} className="flex justify-between text-body">
                   <span className="truncate text-money-ink">
-                    {m.label || t('money.movement')} · <span className="text-money-muted">{m.name || t('work.someone')}</span>
+                    {m.label || t('money.movement')} · <span className="text-money-muted">{m._enAttente ? t('offline.waiting', 'en attente d’envoi') : (m.name || t('work.someone'))}</span>
                   </span>
                   <span className={`shrink-0 font-semibold ${m.kind === 'in' ? 'text-money-success' : 'text-money-danger'}`}>
                     {m.kind === 'in' ? '+' : '−'}{montant(m.amount, lang, devise)}
@@ -487,7 +507,7 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
   async function ajouter() {
     setEnvoi(true);
     try {
-      const { error } = await supabase.from('budget_entries').insert({
+      const { enFile } = await ajouterHorsLigne('budget_entries', {
         user_id: userId,
         kind,
         category: cat.trim(),
@@ -495,9 +515,9 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
         actual: Number(reel) || 0,
         period: periode,
       });
-      if (error) throw error;
       setCat(''); setPrevu(''); setReel(''); setOuvert(false);
-      onDone();
+      if (enFile) toast.info(t('offline.queued'));
+      else onDone();
     } catch (e) {
       toast.error(e.message || t('errors.generic'));
     } finally { setEnvoi(false); }
@@ -595,6 +615,7 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
                   <p className="truncate text-body text-money-ink">{l.category}</p>
                   <p className="text-caption text-money-muted">
                     {t('money.plannedShort')} {montant(l.planned, lang, devise)}
+                    {l._enAttente && <span className="ml-2 text-money-accent">· {t('offline.waiting', 'en attente d’envoi')}</span>}
                   </p>
                 </div>
                 <span className={`shrink-0 text-body font-semibold ${depasse ? 'text-money-danger' : 'text-money-ink'}`}>

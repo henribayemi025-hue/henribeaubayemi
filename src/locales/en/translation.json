@@ -354,7 +354,15 @@
     }
   },
   "offline": {
-    "banner": "Offline — here is what you had."
+    "banner": "Offline — here is what you had.",
+    "pending_one": "{{count}} entry waiting to be sent",
+    "pending_other": "{{count}} entries waiting to be sent",
+    "sent_one": "{{count}} entry made offline has just been sent.",
+    "sent_other": "{{count}} entries made offline have just been sent.",
+    "refused_one": "{{count}} entry made offline was refused by the server.",
+    "refused_other": "{{count}} entries made offline were refused by the server.",
+    "waiting": "waiting to be sent",
+    "queued": "No network: it's kept on this phone and will be sent on its own."
   },
   "common": {
     "appName": "Finjaro",

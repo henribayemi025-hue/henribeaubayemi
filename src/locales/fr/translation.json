@@ -354,7 +354,15 @@
     }
   },
   "offline": {
-    "banner": "Hors ligne — voici ce que tu avais."
+    "banner": "Hors ligne — voici ce que tu avais.",
+    "pending_one": "{{count}} ajout en attente d'envoi",
+    "pending_other": "{{count}} ajouts en attente d'envoi",
+    "sent_one": "{{count}} ajout fait hors ligne vient de partir.",
+    "sent_other": "{{count}} ajouts faits hors ligne viennent de partir.",
+    "refused_one": "{{count}} ajout fait hors ligne a été refusé par le serveur.",
+    "refused_other": "{{count}} ajouts faits hors ligne ont été refusés par le serveur.",
+    "waiting": "en attente d’envoi",
+    "queued": "Pas de réseau : c'est gardé sur ce téléphone et ça partira tout seul."
   },
   "common": {
     "appName": "Finjaro",

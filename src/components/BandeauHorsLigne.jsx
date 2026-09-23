@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconWifiOff } from '@tabler/icons-react';
+import { IconWifiOff, IconCloudUpload } from '@tabler/icons-react';
+import { enAttente, envoyer, ecouterFile } from '../lib/fileAttente';
+import { useToast } from '../hooks/useToast';
 
 // « Tu es hors ligne. Voici ce que tu avais. »
 //
@@ -21,6 +23,26 @@ export function BandeauHorsLigne() {
     () => typeof navigator !== 'undefined' && navigator.onLine === false
   );
 
+  // Ce qui a été AJOUTÉ sans réseau (lib/fileAttente): on l'envoie au
+  // démarrage et dès que le réseau revient, et on dit combien attend.
+  const toast = useToast();
+  // useToast rend un objet neuf à chaque rendu: on le lit par une référence
+  // pour ne pas relancer l'envoi à chaque message affiché.
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
+  const [attente, setAttente] = useState(() => enAttente().length);
+  useEffect(() => ecouterFile(setAttente), []);
+  useEffect(() => {
+    const vider = async () => {
+      const { envoyees, refusees } = await envoyer();
+      if (envoyees > 0) toastRef.current.success(t('offline.sent', { count: envoyees }));
+      if (refusees.length > 0) toastRef.current.error(t('offline.refused', { count: refusees.length }));
+    };
+    vider();
+    window.addEventListener('online', vider);
+    return () => window.removeEventListener('online', vider);
+  }, [t]);
+
   useEffect(() => {
     const partie = () => setHorsLigne(true);
     const revenu = () => setHorsLigne(false);
@@ -32,15 +54,19 @@ export function BandeauHorsLigne() {
     };
   }, []);
 
-  if (!horsLigne) return null;
+  if (!horsLigne && attente === 0) return null;
 
   return (
     <div
       role="status"
       className="flex items-center justify-center gap-2 bg-ink px-4 py-2 text-caption text-white"
     >
-      <IconWifiOff size={16} aria-hidden="true" />
-      <span>{t('offline.banner')}</span>
+      {horsLigne ? <IconWifiOff size={16} aria-hidden="true" /> : <IconCloudUpload size={16} aria-hidden="true" />}
+      <span>
+        {horsLigne && t('offline.banner')}
+        {horsLigne && attente > 0 && ' · '}
+        {attente > 0 && t('offline.pending', { count: attente })}
+      </span>
     </div>
   );
 }
