@@ -28,6 +28,7 @@ import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
+import { lireFeuille } from '../_shared/feuille.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -488,6 +489,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     ? await chercherWeb(apiKey, `${String(msg.texte).slice(0, 800)}\n(Contexte: l'entreprise « ${entreprise.nom} »${entreprise.projet ? ` — ${String(entreprise.projet).slice(0, 300)}` : ''}.)`)
     : null;
 
+  // La feuille de route du fondateur (0168), lue avec le projet.
+  const feuille = await lireFeuille(service, msg.entreprise_id, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
+  const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
   const complexe = questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
     || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte));
@@ -503,7 +507,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const laConsigne = consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null, web);
+    const laConsigne = consigne(cible, entrepriseVue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null, web);
     const r = await demander(apiKey, laConsigne, complexe);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,

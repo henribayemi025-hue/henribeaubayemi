@@ -11,6 +11,7 @@ import { Memoire } from './Memoire';
 import { EquiperEquipe } from './Competences';
 import { Depense } from './Depense';
 import { Plans } from './Plans';
+import { FeuilleDeRoute } from './FeuilleDeRoute';
 import { Connecteurs } from './Connecteurs';
 import { Inviter } from './Inviter';
 
@@ -318,6 +319,7 @@ export function Accueil({
       </div>
 
       {/* 6. Les plans par département, et « Au travail maintenant » */}
+      <FeuilleDeRoute entreprise={entreprise} agents={agents} langue={typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined} t={t} />
       <Plans entreprise={entreprise} t={t} />
 
       {/* 7. Les compétences: que l'équipe s'équipe (chantier 2) */}
