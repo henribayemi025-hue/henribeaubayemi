@@ -15,7 +15,61 @@ Trois états, et un seul compte vraiment:
 - ⏳ **À FAIRE** = rien n'est commencé.
 - ⏸ **ATTEND BEAU** = je ne peux pas avancer sans lui.
 
-Dernière mise à jour: 22/09/2026, en fin de journée.
+Dernière mise à jour: 23/09/2026, au matin (section 0 ci-dessous). Les sections A à F
+sont celles du 22/09; leur état à jour est dans la section 0.
+
+---
+
+## 0. OÙ ON EN EST — 23/09 au matin
+
+Beau: « il te reste quoi à faire dans le plan ? » Tout le plan relu ligne
+par ligne (A à F, plus `LEGION-CHANTIER.md` et le journal).
+
+### ✅ Fait depuis (en ligne, vu marcher)
+A1 les agents ont choisi leur tête (20 sur 21) · A2-A3 les logos Legion,
+Accounting, Athlo · B3 on n'a gardé que les nécessaires · B4 voir qui est
+dans un salon · B5 la porte d'entrée (Google, e-mail, créer un compte) ·
+B6-1 les agents lisent la base (chiffres, boutique branchée) · B6-2 ils
+répondent · B6-3 ils travaillent seuls chaque matin et rendent un livrable ·
+B6-7 les compétences · B6-8 le veilleur · B6-9 ils apprennent (mémoire des
+règles, revue des livrables) · B8 la boutique branchée à Legion · B9 le
+compteur et le plafond · B10 54 secteurs, et « ton secteur n'est pas là ? »
+· la mémoire des salons · se déconnecter · commander sans compte · la
+vendeuse prévenue d'un ajout au panier.
+
+### 🔧 À moi, sans t'attendre — dans cet ordre
+1. Un responsable dans chaque département des 7 premiers modèles (49
+   départements n'en ont pas: pas de plan pour eux).
+2. Traduire les intitulés restés en anglais (« Devils Advocate »…).
+3. Inviter d'autres personnes dans une entreprise (B7).
+4. Le nombre de non-lus sur la liste des salons (B4).
+5. Choisir sa langue dans Legion (C).
+6. Mon argent: dire que tout s'enregistre tout seul (« où sauvegarder ? »).
+7. Enchaîner les tâches: un livrable fini passe la suite au bon agent (B6-5).
+8. Hors ligne — pouvoir agir sans réseau (D).
+
+### ⏸ À toi (une décision ou un geste)
+- 6 agents ont été éteints dans la nuit (Claudinette, Vigie, Écho, Traque,
+  Lien, Orchestre): c'est toi ? Je les rallume ?
+- Le plafond Legion, et la recharge automatique d'AI Studio.
+- Google (Gmail, Agenda, Drive): créer le projet dans la console Google.
+- Accounting dans Legion: ton oui quand Claudinette te montre ses fonctions.
+- Payer en espèces: afficher « 4 500 FCFA (≈ 6,86 €) » ? (question de
+  Claudinette)
+- A4-A8: licence du dépôt, 262 Mo de fichiers orphelins, 17 e-mails de
+  prospection, compte marchand MTN / Orange, jeton Cloudflare.
+- RH: par quoi commencer. Finjaro Planning: tes captures. Le mot « agent ».
+
+### 🏗 Gros chantiers — plan et coût d'abord, code ensuite
+Les appels voix et vidéo, et l'équipe humaine (chantier 5) · le studio de
+code (6) · l'ERP complet (D) · naviguer le web (B6-12). Puis l'audit page
+par page de toutes les plateformes.
+
+### ✂️ Ce que je propose d'abandonner
+B6-10 « négocier entre eux » et B6-11 « recherche scientifique » comme
+fonctions à part: le modèle « Laboratoire de recherche » et la revue des
+livrables couvrent déjà l'essentiel. « Expert / simple » (D): trop vague
+tant que l'audit n'a pas montré où ça manque.
 
 ---
 
