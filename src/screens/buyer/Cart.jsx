@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { prixLigne } from '../../lib/prixLigne';
 import { useTranslation } from 'react-i18next';
 import { IconTrash, IconMinus, IconPlus, IconShoppingCart } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
@@ -91,7 +92,13 @@ export default function Cart() {
                     {it.price_on_request ? (
                       <p className="text-body font-semibold text-brass">{t('cart.priceToConfirm')}</p>
                     ) : (
-                      <Price fcfa={it.price_fcfa} className="text-body font-semibold text-teal" />
+                      <Price fcfa={prixLigne(it)} className="text-body font-semibold text-teal" />
+                    )}
+                    {/* Achat groupé (0172): le prix de lot, atteint ou à portée. */}
+                    {!it.price_on_request && it.lot_qty && it.lot_price_fcfa && (
+                      <p className={`text-caption ${it.qty >= it.lot_qty ? 'font-semibold text-success' : 'text-muted'}`}>
+                        {it.qty >= it.lot_qty ? t('cart.lotApplied', { count: it.lot_qty }) : <>{t('product.lotFrom', { count: it.lot_qty })} <Price fcfa={it.lot_price_fcfa} /> {t('product.lotEach')}</>}
+                      </p>
                     )}
                     <div className="mt-1 flex items-center gap-3">
                       <div className="flex items-center rounded-input border border-hairline">

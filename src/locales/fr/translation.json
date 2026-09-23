@@ -655,6 +655,8 @@
     "mode_a_trier": "Mode"
   },
   "home": {
+    "liveNow": "En direct maintenant",
+    "liveJoin": "Rejoindre le direct",
     "heroCta": "Découvre la sélection",
     "topPick": "Top article",
     "trending": "Nouveautés",
@@ -737,6 +739,8 @@
     "proposeMissing": "Le nom et l’adresse (https://…) sont obligatoires."
   },
   "product": {
+    "lotFrom": "Dès {{count}} pièces :",
+    "lotEach": "la pièce",
     "addToCart": "Ajouter au panier",
     "added": "Ajouté",
     "inCart_one": "{{count}} au panier",
@@ -775,6 +779,8 @@
     "seeTranslation": "Voir la traduction"
   },
   "shop": {
+    "liveBadge": "En direct",
+    "liveJoin": "Rejoindre le direct",
     "products": "Produits",
     "reviews": "Avis",
     "about": "À propos",
@@ -963,6 +969,7 @@
     "stickers": "Stickers"
   },
   "cart": {
+    "lotApplied": "Prix de lot appliqué (dès {{count}} pièces)",
     "title": "Panier",
     "empty": "Ton panier est vide.",
     "continueShopping": "Continuer mes achats",
@@ -1278,6 +1285,20 @@
     "fillRequired": "Il manque des informations. Complète les champs marqués en rouge."
   },
   "vendor": {
+    "liveTitle": "Vente en direct",
+    "liveIntro": "Tu vends en direct sur Instagram, TikTok ou Facebook ? Annonce-le ici : ta page et l’accueil de Finjaro affichent « En direct » avec le lien, tant que ça dure (4 h au plus).",
+    "liveUrl": "Lien du direct",
+    "liveName": "Ce que tu présentes (facultatif)",
+    "liveStart": "Je suis en direct",
+    "liveStop": "Terminer le direct",
+    "liveOn": "En direct depuis {{time}}",
+    "liveStarted": "C’est annoncé : ta page et l’accueil affichent ton direct.",
+    "liveUrlMissing": "Colle le lien de ton direct (https://…).",
+    "lotTitle": "Achat groupé (facultatif)",
+    "lotHint": "Une famille, des amies ou un revendeur qui commandent ensemble paient ce prix par pièce dès ce nombre. Appliqué tout seul à la commande.",
+    "lotQty": "Dès combien de pièces",
+    "lotPrice": "Prix par pièce",
+    "lotInvalid": "Au moins 2 pièces, et un prix de lot plus bas que le prix.",
     "guestOrder": "sans compte",
     "greeting": "Bonjour, {{name}}",
     "todayOrders": "Commandes du jour",

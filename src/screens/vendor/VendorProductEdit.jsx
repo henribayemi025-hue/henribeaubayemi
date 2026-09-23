@@ -22,7 +22,7 @@ import { convertFromFcfa, toFcfa } from '../../lib/currency';
 // Un rayon vide au démarrage n'est pas une régression à corriger, c'est le
 // bug — une boutique d'électronique ou un artisan n'a aucune raison de
 // partir de "Mode Femme". Personne ne choisit à sa place.
-const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', description: '', category: '', stock: '1', images: [], video_url: null, price_on_request: false, sizes: [], colors: [], is_permanent: false, attributes: {} };
+const blank = { name: '', price_fcfa: '', compare_at_price_fcfa: '', lot_qty: '', lot_price_fcfa: '', description: '', category: '', stock: '1', images: [], video_url: null, price_on_request: false, sizes: [], colors: [], is_permanent: false, attributes: {} };
 const MAX_IMAGES = 10;
 
 // Tailles proposées en un clic selon le rayon: lettres pour les vêtements,
@@ -243,6 +243,8 @@ export default function VendorProductEdit() {
           ...data,
           price_fcfa: String(shopCurrency === 'FCFA' ? Math.round(shown) : Number(shown.toFixed(2))),
           compare_at_price_fcfa: shownCompare == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(shownCompare) : Number(shownCompare.toFixed(2))),
+          lot_qty: data.lot_qty ? String(data.lot_qty) : '',
+          lot_price_fcfa: data.lot_price_fcfa == null ? '' : String(shopCurrency === 'FCFA' ? Math.round(convertFromFcfa(data.lot_price_fcfa, shopCurrency)) : Number(convertFromFcfa(data.lot_price_fcfa, shopCurrency).toFixed(2))),
           stock: String(data.stock ?? 0),
           images: data.images || [],
           sizes: data.sizes || [],
@@ -264,6 +266,12 @@ export default function VendorProductEdit() {
     }
     // Un prix barré ne veut rien dire s'il n'est pas STRICTEMENT au-dessus du
     // prix demandé — sinon on afficherait une "promo" à l'envers ou à 0 %.
+    // Achat groupé: les deux chiffres ensemble, au moins 2 pièces, et un prix
+    // de lot plus bas que le prix — sinon ce n'est pas un lot.
+    if (form.lot_qty !== '' || form.lot_price_fcfa !== '') {
+      const q = Number(form.lot_qty), pr = Number(form.lot_price_fcfa);
+      if (!(q >= 2) || !(pr > 0) || (!form.price_on_request && pr >= Number(form.price_fcfa || 0))) e.lot = t('vendor.lotInvalid');
+    }
     if (form.compare_at_price_fcfa !== '' && Number(form.compare_at_price_fcfa) <= Number(form.price_fcfa || 0)) {
       e.compareAtPrice = t('vendor.compareAtPriceError');
     }
@@ -291,6 +299,8 @@ export default function VendorProductEdit() {
         // ce chiffre (voir isPriceOnRequest).
         price_fcfa: form.price_on_request ? 0 : toFcfa(Number(form.price_fcfa), shopCurrency),
         compare_at_price_fcfa: form.compare_at_price_fcfa === '' ? null : toFcfa(Number(form.compare_at_price_fcfa), shopCurrency),
+        lot_qty: form.lot_qty === '' ? null : Math.round(Number(form.lot_qty)),
+        lot_price_fcfa: form.lot_price_fcfa === '' ? null : toFcfa(Number(form.lot_price_fcfa), shopCurrency),
         description: form.description.trim() || null,
         category: form.category,
         stock: Math.max(0, Math.round(Number(form.stock) || 0)),
@@ -568,6 +578,23 @@ export default function VendorProductEdit() {
             />
           )}
         </Field>
+        {/* ACHAT GROUPÉ (0172): un prix par pièce dès N pièces dans la même
+            commande. Appliqué par le serveur au moment de commander. */}
+        {!form.price_on_request && (
+          <div className="space-y-2 rounded-card border border-hairline p-3">
+            <span className="text-body font-semibold text-ink">{t('vendor.lotTitle')}</span>
+            <p className="text-caption text-muted">{t('vendor.lotHint')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t('vendor.lotQty')} error={errors.lot}>
+                {(fid) => <TextInput id={fid} type="number" inputMode="numeric" min={2} value={form.lot_qty} onChange={(e) => setForm({ ...form, lot_qty: e.target.value })} />}
+              </Field>
+              <Field label={`${t('vendor.lotPrice')} (${shopCurrency})`}>
+                {(fid) => <TextInput id={fid} type="number" inputMode="decimal" value={form.lot_price_fcfa} onChange={(e) => setForm({ ...form, lot_price_fcfa: e.target.value })} />}
+              </Field>
+            </div>
+            {errors.lot && <p className="text-caption text-danger">{errors.lot}</p>}
+          </div>
+        )}
         {/* Repère HONNÊTE issu du catalogue (médiane d'articles comparables),
             jamais un prix "optimal" sorti du chapeau — la vendeuse décide. */}
         {priceHint && (

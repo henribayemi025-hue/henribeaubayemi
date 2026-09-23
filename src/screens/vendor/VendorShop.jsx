@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle, IconClock, IconTruckDelivery, IconPlus, IconTrash, IconSwitchHorizontal, IconChevronRight } from '@tabler/icons-react';
+import { IconShare2, IconExternalLink, IconCurrentLocation, IconCircleCheck, IconAlertCircle, IconClock, IconTruckDelivery, IconPlus, IconTrash, IconSwitchHorizontal, IconChevronRight, IconBroadcast } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
@@ -74,6 +74,29 @@ export default function VendorShop() {
     delivery_zones: Array.isArray(shop.delivery_zones) ? shop.delivery_zones : [],
   });
   const [busy, setBusy] = useState(false);
+  // LA VENTE EN DIRECT (0172): la boutique annonce son direct (Instagram,
+  // TikTok, Facebook…); sa page et l'accueil l'affichent tant qu'il dure.
+  // Enregistré tout de suite, hors du grand formulaire: on le fait au moment
+  // de commencer, pas en préparant sa boutique.
+  const [live, setLive] = useState({ url: shop.live_url || '', title: shop.live_title || '', since: shop.live_since || null });
+  const [liveBusy, setLiveBusy] = useState(false);
+  async function commencerDirect() {
+    if (!/^https?:\/\//i.test(live.url.trim())) return toast.error(t('vendor.liveUrlMissing'));
+    setLiveBusy(true);
+    const since = new Date().toISOString();
+    const { error } = await supabase.from('shops').update({ live_url: live.url.trim(), live_title: live.title.trim() || null, live_since: since }).eq('id', shop.id);
+    setLiveBusy(false);
+    if (error) return toast.error(error.message);
+    setLive({ ...live, since });
+    toast.success(t('vendor.liveStarted'));
+  }
+  async function terminerDirect() {
+    setLiveBusy(true);
+    const { error } = await supabase.from('shops').update({ live_since: null }).eq('id', shop.id);
+    setLiveBusy(false);
+    if (error) return toast.error(error.message);
+    setLive({ ...live, since: null });
+  }
 
   // Noms de jours localisés (le 1er janvier 2023 est un dimanche → index 0).
   const DAY_LABELS = Array.from({ length: 7 }, (_, d) =>
@@ -282,6 +305,28 @@ export default function VendorShop() {
             ))}
           </div>
           <p className="text-caption text-muted">{t('vendor.hoursHint')}</p>
+        </div>
+
+        {/* Vente en direct (0172). */}
+        <div className="space-y-2 rounded-card border border-hairline p-3">
+          <span className="flex items-center gap-2 text-body font-semibold text-ink">
+            <IconBroadcast size={18} className="text-teal" /> {t('vendor.liveTitle')}
+          </span>
+          <p className="text-caption text-muted">{t('vendor.liveIntro')}</p>
+          <Field label={t('vendor.liveUrl')}>
+            {(id) => <TextInput id={id} type="url" inputMode="url" placeholder="https://" value={live.url} onChange={(e) => setLive({ ...live, url: e.target.value })} disabled={!!live.since} />}
+          </Field>
+          <Field label={t('vendor.liveName')}>
+            {(id) => <TextInput id={id} value={live.title} onChange={(e) => setLive({ ...live, title: e.target.value })} maxLength={80} disabled={!!live.since} />}
+          </Field>
+          {live.since ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-caption font-semibold text-success"><span className="inline-block h-2 w-2 animate-pulse rounded-full bg-success" /> {t('vendor.liveOn', { time: new Date(live.since).toLocaleTimeString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' }) })}</span>
+              <button type="button" onClick={terminerDirect} disabled={liveBusy} className="btn-secondary">{t('vendor.liveStop')}</button>
+            </div>
+          ) : (
+            <button type="button" onClick={commencerDirect} disabled={liveBusy} className="btn-primary">{t('vendor.liveStart')}</button>
+          )}
         </div>
 
         {/* Zones de livraison — affichées sur la fiche, utilisées au checkout. */}

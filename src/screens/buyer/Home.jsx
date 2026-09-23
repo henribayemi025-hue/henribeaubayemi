@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore, IconMapPin } from '@tabler/icons-react';
+import { IconSearch, IconShoppingCart, IconMoodSmile, IconTool, IconChevronRight, IconFlame, IconBuildingStore, IconMapPin, IconBroadcast } from '@tabler/icons-react';
 import { useCart } from '../../hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
@@ -164,6 +164,8 @@ export default function Home() {
           <CategoryStrip />
         </div>
 
+        <EnDirect shops={data?.live} />
+
         {/* Proposée ici — pas seulement aux vendeuses sur leur tableau de
             bord — parce qu'un acheteur qui commande veut aussi savoir où
             en est sa commande, et une conversation qui n'obtient pas de
@@ -274,5 +276,36 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+// LA VENTE EN DIRECT (0172): les boutiques en direct en ce moment, avec le
+// lien vers leur direct (Instagram, TikTok, Facebook…). Rien n'apparaît
+// quand personne n'est en direct — pas de bande vide.
+function EnDirect({ shops }) {
+  const { t } = useTranslation();
+  const vivants = (shops || []).filter((s) => s.live_since && s.live_url && Date.now() - new Date(s.live_since).getTime() < 4 * 3600e3);
+  if (!vivants.length) return null;
+  return (
+    <section className="mt-4 px-4">
+      <h2 className="mb-2 flex items-center gap-1.5 text-section text-ink">
+        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-success" /> {t('home.liveNow')}
+      </h2>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {vivants.map((s) => (
+          <a key={s.id} href={s.live_url} target="_blank" rel="noopener noreferrer" className="flex w-64 shrink-0 items-center gap-2.5 rounded-card border border-success/40 bg-success-bg p-3">
+            {s.avatar_url ? (
+              <img src={s.avatar_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" loading="lazy" />
+            ) : (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success text-white"><IconBroadcast size={20} /></span>
+            )}
+            <span className="min-w-0">
+              <span className="block truncate text-body font-semibold text-ink">{s.name}</span>
+              <span className="block truncate text-caption text-success">{s.live_title || t('home.liveJoin')}</span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
   );
 }

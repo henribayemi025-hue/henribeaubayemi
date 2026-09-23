@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { prixLigne } from '../lib/prixLigne';
 
 const CartCtx = createContext(null);
 const KEY = 'finjaro_cart';
@@ -52,6 +53,10 @@ export function CartProvider({ children }) {
       name: product.name,
       price_on_request: surDemande,
       price_fcfa: surDemande ? 0 : product.price_fcfa,
+      // Achat groupé (0172): le prix de lot dès lot_qty pièces, pour que le
+      // panier montre le même total que la commande.
+      lot_qty: product.lot_qty || null,
+      lot_price_fcfa: product.lot_price_fcfa || null,
       image: product.images?.[0] || null,
       shop_id: product.shop_id,
       shop_name: product.shop_name || '',
@@ -84,7 +89,7 @@ export function CartProvider({ children }) {
   // Le sous-total ne compte QUE ce dont on connaît le prix. Additionner des
   // zéros donnerait un total qui a l'air vrai et qui est faux.
   const subtotal = useMemo(
-    () => items.reduce((n, i) => (i.price_on_request ? n : n + i.price_fcfa * i.qty), 0),
+    () => items.reduce((n, i) => (i.price_on_request ? n : n + prixLigne(i) * i.qty), 0),
     [items]
   );
   const pendingCount = useMemo(() => items.filter((i) => i.price_on_request).length, [items]);

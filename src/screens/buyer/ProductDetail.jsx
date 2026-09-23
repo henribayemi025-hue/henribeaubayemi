@@ -10,7 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUI } from '../../hooks/useUI';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
-import { PriceBlock, PromoBadge, discountPercent } from '../../components/Price';
+import { Price, PriceBlock, PromoBadge, discountPercent } from '../../components/Price';
 import { ProductCard } from '../../components/ProductCard';
 import { SmartImage } from '../../components/SmartImage';
 import { ProductVideo } from '../../components/ProductVideo';
@@ -295,6 +295,12 @@ export default function ProductDetail() {
         ) : (
           <div className="mt-1 flex items-center gap-2">
             <PriceBlock fcfa={p.price_fcfa} compareAtFcfa={p.compare_at_price_fcfa} className="block text-title font-semibold text-teal" />
+            {/* Achat groupé (0172): le prix par pièce dès N pièces, fixé par la vendeuse. */}
+            {p.lot_qty && p.lot_price_fcfa && (
+              <span className="rounded-pill bg-success-bg px-2 py-0.5 text-caption font-semibold text-success">
+                {t('product.lotFrom', { count: p.lot_qty })} <Price fcfa={p.lot_price_fcfa} /> {t('product.lotEach')}
+              </span>
+            )}
             {!outOfStock && (
               <button
                 type="button"

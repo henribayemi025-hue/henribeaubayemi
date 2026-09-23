@@ -5,7 +5,7 @@ import {
   IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh,
   IconBrandWhatsapp, IconPhone, IconBrandInstagram, IconSearch, IconMovie,
   IconShieldCheck, IconRosetteDiscountCheck, IconTruckDelivery, IconHeadset,
-  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore, IconBolt,
+  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore, IconBolt, IconBroadcast,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -301,6 +301,19 @@ export default function ShopProfile() {
               <IconRefresh size={12} />
               {t('shop.rotationBadge', { count: shop.rotation_days || 7 })}
             </span>
+          )}
+          {/* Vente en direct (0172): le direct annoncé par la boutique, tant
+              qu'il dure (4 h au plus). Le lien mène chez elle, sur la
+              plateforme où elle diffuse. */}
+          {shop.live_since && shop.live_url && Date.now() - new Date(shop.live_since).getTime() < 4 * 3600e3 && (
+            <a href={shop.live_url} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-2.5 rounded-card border border-success/40 bg-success-bg p-3 transition active:scale-[0.99]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-white"><IconBroadcast size={20} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5 text-body font-semibold text-ink"><span className="inline-block h-2 w-2 animate-pulse rounded-full bg-success" /> {t('shop.liveBadge')}{shop.live_title ? ` · ${shop.live_title}` : ''}</span>
+                <span className="block text-caption text-success">{t('shop.liveJoin')}</span>
+              </span>
+              <IconChevronDown size={18} className="-rotate-90 text-success" />
+            </a>
           )}
         </div>
 

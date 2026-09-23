@@ -97,5 +97,8 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 62 | Rendez-vous pour les prestataires | ✅ existe déjà dans Accounting (« Rendez-vous ») ; ✅ « Rendez-vous » sur le tableau de bord des prestataires y mène |
 | 63 | Dépôt ouvert d'applications pour les développeurs | ✅ finjaro.net/apps : « Proposer mon application » ; l'équipe accepte ou refuse depuis la console |
 | 64 | Écart de caisse du soir | 📅 Claudinette (Accounting) |
-| 65 | Achat groupé, vente en direct, commande vocale, appel vidéo depuis la fiche | 📅 après les précédentes |
+| 65a | Achat groupé | ✅ un prix par pièce dès N pièces dans la même commande, fixé par la vendeuse ; appliqué par le serveur (vérifié en base), affiché sur la fiche et dans le panier |
+| 65b | Vente en direct | ✅ la boutique annonce son direct (Instagram, TikTok, Facebook…) avec le lien : « En direct » sur sa page et sur l'accueil pendant 4 h au plus. Finjaro ne diffuse pas la vidéo elle-même (un serveur de flux se paie ; voir 55) |
+| 65c | Commande vocale | ✅ existait déjà : le micro de Finou (message vocal → elle cherche, ajoute au panier, suit la commande) |
+| 65d | Appel vidéo depuis la fiche | ⏸ demande un service de relais vidéo (TURN) pour passer les réseaux mobiles ; Cloudflare en fournit un (gratuit jusqu'à 1 000 Go/mois) avec le jeton Cloudflare de Beau (point 55). Sans lui, l'appel échouerait chez une partie des clientes — on ne le met pas en ligne à moitié |
 | — | Avance sur ventes, microfinance | ❌ métier réglementé : pas sans avis juridique |

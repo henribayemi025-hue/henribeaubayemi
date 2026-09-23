@@ -12,7 +12,7 @@ export let homeCache = null;
 let inFlight = null;
 let cachedFor; // pays ayant servi à construire `homeCache`
 
-const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country, featured_until';
+const SHOP_COLS = 'id, slug, name, avatar_url, rating, is_verified, followers_count, country, featured_until, live_url, live_title, live_since';
 export const HOME_PAGE_SIZE = 24;
 // 30 et non 12. Beau, en glissant la bande: « quand je glisse je ne vois
 // pas » — la bande s'arrêtait à douze sans jamais dire qu'il en existait
@@ -172,10 +172,21 @@ export async function fetchHome(country) {
 
   // allSettled so a transient hiccup on ONE section doesn't blank the whole
   // home — we render whatever loaded. Only fail if both truly failed.
-  const [pRes, sLocal, sAll] = await Promise.allSettled([
+  // Les boutiques en direct en ce moment (0172): un direct annoncé il y a
+  // moins de 4 h. Peu nombreuses, mais elles passent devant tout.
+  const enDirect = () =>
+    supabase
+      .from('shops')
+      .select(SHOP_COLS)
+      .eq('status', 'active')
+      .gte('live_since', new Date(Date.now() - 4 * 3600e3).toISOString())
+      .order('live_since', { ascending: false })
+      .limit(8);
+  const [pRes, sLocal, sAll, sLive] = await Promise.allSettled([
     fetchProductPage(country, initialCursor(country)),
     country ? shops().eq('country', country).limit(LIMIT_SHOPS) : Promise.resolve({ data: [] }),
     shops().limit(LIMIT_SHOPS),
+    enDirect(),
   ]);
 
   const ok = (res) => (res.status === 'fulfilled' && !res.value.error ? res.value.data : null);
@@ -188,6 +199,7 @@ export async function fetchHome(country) {
     cursor: page?.cursor || initialCursor(country),
     done: page ? page.done : true,
     shops: localShopsFirst(ok(sLocal), allShops, LIMIT_SHOPS, country),
+    live: ok(sLive) || [],
   };
 }
 

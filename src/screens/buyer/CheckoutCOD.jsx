@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { prixLigne } from '../../lib/prixLigne';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconCircleCheck, IconBuildingStore, IconTruckDelivery, IconCreditCard } from '@tabler/icons-react';
@@ -33,7 +34,7 @@ export default function CheckoutCOD() {
   // part en attente du prix de la vendeuse, et il n'y a aucun total à
   // afficher tant qu'elle n'a pas répondu.
   const devis = shopItems.some((i) => i.price_on_request);
-  const subtotal = shopItems.reduce((n, i) => (i.price_on_request ? n : n + i.price_fcfa * i.qty), 0);
+  const subtotal = shopItems.reduce((n, i) => (i.price_on_request ? n : n + prixLigne(i) * i.qty), 0);
 
   const [method, setMethod] = useState('pickup');
   // Pré-rempli depuis l'adresse enregistrée du profil — rien n'empêche de la

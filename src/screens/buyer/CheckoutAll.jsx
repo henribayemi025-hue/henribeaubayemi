@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { prixLigne } from '../../lib/prixLigne';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconCircleCheck, IconBuildingStore, IconTruckDelivery, IconAlertTriangle } from '@tabler/icons-react';
@@ -107,7 +108,7 @@ export default function CheckoutAll() {
   // Les articles sans prix ne s'additionnent pas: leur montant n'existe pas
   // encore. Ils partiront en demande de prix chez leur boutique.
   const subtotalOf = (shopId) =>
-    byShop[shopId].items.reduce((n, i) => (i.price_on_request ? n : n + i.price_fcfa * i.qty), 0);
+    byShop[shopId].items.reduce((n, i) => (i.price_on_request ? n : n + prixLigne(i) * i.qty), 0);
   const devisOf = (shopId) => byShop[shopId].items.some((i) => i.price_on_request);
   const anyDevis = shopIds.some(devisOf);
 
@@ -199,7 +200,7 @@ export default function CheckoutAll() {
         // La notification vendeuse (push+e-mail) part du SERVEUR (trigger
         // trg_order_created) — fiable, independante de ce navigateur.
         const shopTotal = byShop[shopId].items.reduce(
-          (n, it) => (it.price_on_request ? n : n + it.price_fcfa * it.qty), 0);
+          (n, it) => (it.price_on_request ? n : n + prixLigne(it) * it.qty), 0);
         track('order_placed', order.id, { shop_id: shopId, total: shopTotal });
         clearShop(shopId);
         placed.push({ shop: byShop[shopId].name, no: order.order_no });
