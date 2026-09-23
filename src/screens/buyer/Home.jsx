@@ -187,7 +187,7 @@ export default function Home() {
               réserver un service, pas acheter un produit. */}
           <Link
             to="/services"
-            className="flex items-center gap-3 rounded-card border border-brass/25 bg-brass/8 px-3.5 py-3 shadow-sm transition-transform duration-150 active:scale-[0.99]"
+            className="flex items-center gap-3 rounded-card border border-brass/25 bg-brass/10 px-3.5 py-3 shadow-sm transition-transform duration-150 active:scale-[0.99]"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-brass shadow-sm">
               <IconTool size={19} />

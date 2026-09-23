@@ -460,7 +460,7 @@ export default function VendorProductsBulk() {
                 n'est complète. C'est exactement là que des vendeurs se sont
                 arrêtés en croyant que l'application ne marchait pas. */}
             {ready.length === 0 ? (
-              <p className="rounded-card border border-brass/40 bg-brass/8 p-3 text-caption text-ink">
+              <p className="rounded-card border border-brass/40 bg-brass/10 p-3 text-caption text-ink">
                 <span className="font-semibold">{t('vendor.bulkReadyCount', { ready: ready.length, total: rows.length })}</span>{' '}
                 {t('vendor.bulkWhatsMissing')}
               </p>
@@ -503,7 +503,7 @@ export default function VendorProductsBulk() {
                       value={categoryHeadFor(r.category) || r.category}
                       placeholder={t('vendor.bulkCategoryPlaceholder')}
                       onChange={(e) => setRows((rs) => rs.map((x, idx) => (idx === i ? { ...x, category: e.target.value } : x)))}
-                      className={`text-caption ${r.category ? '' : 'border-terracotta text-terracotta'}`}
+                      className={`text-caption ${r.category ? '' : 'border-teal text-teal'}`}
                     />
                   </div>
                   <button

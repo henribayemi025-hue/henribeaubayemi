@@ -442,7 +442,8 @@
     "connecteurComptaBranchee": "“{{nom}}” is connected: month summary, sales, expenses, unpaid amounts.",
     "connecteurSansCompta": "You don’t have a Finjaro Accounting workspace yet.",
     "ouvrirAccounting": "Open Finjaro Accounting",
-    "connecteurComptaAide": "Agents read the TOTALS of your books: a month’s summary, sales, expenses by category, what is still to be collected and paid — never a customer’s name or a single line. If you leave this workspace, they read nothing more."
+    "connecteurComptaAide": "Agents read the TOTALS of your books: a month’s summary, sales, expenses by category, what is still to be collected and paid — never a customer’s name or a single line. If you leave this workspace, they read nothing more.",
+    "depenseMoinsDunCentime": "less than €0.01"
   },
   "equipe": {
     "titre": "The team",

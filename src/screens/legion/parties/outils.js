@@ -93,3 +93,17 @@ export function dernierMessage(messages, salonId) {
   }
   return null;
 }
+
+// Deux phrases collées dans un texte d'agent (« Bb beau.Pour être précis »,
+// « devise.Le prix ») : la relecture automatique les rend parfois sans
+// l'espace, vu au check-up du 23/09. On le remet à l'affichage — ça répare
+// aussi les messages déjà écrits. Seulement quand une majuscule suivie d'une
+// minuscule touche la ponctuation : « finjaro.net », « U.S.A. » ou « Node.JS »
+// ne bougent pas.
+export function espacerPhrases(texte) {
+  return String(texte || '')
+    .replace(/([a-zà-ÿ0-9»)])([.!?…])(?=[A-ZÀ-ÖØ-Þ][a-zà-ÿ])/g, '$1$2 ')
+    .replace(/([a-z0-9-])\.(fr|com|net|org|ca|io|app|dev|co)(?=[A-ZÀ-ÖØ-Þ][a-zà-ÿ])/g, '$1.$2 ')
+    // « fluidifier.2. Réduire » : une phrase collée au point suivant d'une liste.
+    .replace(/([a-zà-ÿ])\.(\d{1,2}\.\s)/g, '$1. $2');
+}

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { IconSearch, IconHash, IconAdjustmentsHorizontal, IconRobot, IconUsers } from '@tabler/icons-react';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
-import { dernierMessage, quand, sansAccent, iconeDept } from './outils';
+import { dernierMessage, quand, sansAccent, iconeDept, espacerPhrases } from './outils';
 
 // La deuxième colonne: les salons du département choisi, puis ses agents
 // avec leur interrupteur — comme la liste de WhatsApp Web, avec le dernier
@@ -101,7 +101,7 @@ export function ColonneSalons({
                           {dernier && <span className="shrink-0 text-[10px] text-legion-muted">{quand(dernier.created_at, langue)}</span>}
                         </span>
                         <span className={`block truncate text-[11px] ${nonLus[s.id] ? 'font-semibold text-legion-ink' : 'text-legion-muted'}`}>
-                          {dernier ? dernier.texte : s.a_quoi_ca_sert}
+                          {dernier ? espacerPhrases(dernier.texte) : s.a_quoi_ca_sert}
                         </span>
                       </span>
                       {nonLus[s.id] ? <NonLus n={nonLus[s.id]} t={t} />
@@ -124,7 +124,7 @@ export function ColonneSalons({
                           <span className="truncate text-caption font-semibold text-legion-ink">{s.nom}</span>
                           {dernier && <span className="shrink-0 text-[10px] text-legion-muted">{quand(dernier.created_at, langue)}</span>}
                         </span>
-                        <span className={`block truncate text-[11px] ${nonLus[s.id] ? 'font-semibold text-legion-ink' : 'text-legion-muted'}`}>{dernier ? dernier.texte : autre?.poste}</span>
+                        <span className={`block truncate text-[11px] ${nonLus[s.id] ? 'font-semibold text-legion-ink' : 'text-legion-muted'}`}>{dernier ? espacerPhrases(dernier.texte) : autre?.poste}</span>
                       </span>
                       {nonLus[s.id] > 0 && <NonLus n={nonLus[s.id]} t={t} />}
                     </button>

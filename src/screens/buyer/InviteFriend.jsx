@@ -90,7 +90,7 @@ export default function InviteFriend() {
             vérifier qu'elle a bien reçu ce qu'on lui a promis — sinon la
             promesse ne vaut rien la deuxième fois. */}
         {data?.shop && (
-          <div className={`flex items-start gap-3 rounded-card border p-3 ${enAvant ? 'border-brass/40 bg-brass/8' : 'border-hairline'}`}>
+          <div className={`flex items-start gap-3 rounded-card border p-3 ${enAvant ? 'border-brass/40 bg-brass/10' : 'border-hairline'}`}>
             <IconSparkles size={20} className={`mt-0.5 shrink-0 ${enAvant ? 'text-brass' : 'text-muted'}`} />
             <div className="min-w-0">
               <p className="text-body font-semibold text-ink">

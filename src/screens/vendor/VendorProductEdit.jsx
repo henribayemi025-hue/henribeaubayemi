@@ -537,7 +537,7 @@ export default function VendorProductEdit() {
             <Link
               to="/vendor/products/bulk"
               replace
-              className="mt-2 flex items-center gap-2 rounded-card border border-teal/25 bg-teal/8 p-3 text-caption font-semibold text-teal"
+              className="mt-2 flex items-center gap-2 rounded-card border border-teal/25 bg-teal/10 p-3 text-caption font-semibold text-teal"
             >
               <IconPhotoPlus size={18} className="shrink-0" />
               {t('vendor.bulkFromSingle')}

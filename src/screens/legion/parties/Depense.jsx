@@ -45,7 +45,9 @@ export function Depense({ entreprise, t }) {
   const total = Number(d.total_eur || 0);
   const max = d.plafond_eur != null ? Number(d.plafond_eur) : null;
   const part = max ? Math.min(100, (total / max) * 100) : null;
-  const euros = (n) => `${n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  // Quelques millièmes d'euro ne s'affichent pas « 0,00 € » (vu au check-up
+  // du 23/09 : la ligne semblait gratuite alors qu'elle avait coûté).
+  const euros = (n) => (n > 0 && n < 0.005 ? t('legion.depenseMoinsDunCentime', 'moins de 0,01 €') : `${n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`);
 
   async function choisirFormule(k) {
     setFormule(k);

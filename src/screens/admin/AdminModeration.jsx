@@ -213,7 +213,7 @@ export default function AdminModeration() {
       </div>
 
       {tab === 'rangement' && manquants.length > 0 && (
-        <div className="rounded-card border border-brass/40 bg-brass/8 p-3">
+        <div className="rounded-card border border-brass/40 bg-brass/10 p-3">
           <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
             <IconHelpCircle size={17} /> {t('admin.missingCategories', { count: manquants.length })}
           </p>

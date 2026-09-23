@@ -437,8 +437,11 @@ export default function ProductDetail() {
         * de Finjaro, donc pas de trace, pas de relance à 72 h, pas de
         * modération. Le chat interne reste juste à côté pour qui a un compte.
         */}
+      {/* Invisible du 17/09 au 23/09 : « bg-cream » et « bg-terracotta »
+          n'existent pas dans le thème (base, teal) — Tailwind les ignore
+          sans rien dire, le bouton blanc sur blanc ne se voyait pas. */}
       {lienWhatsApp && (
-        <div className="sticky bottom-[64px] z-30 border-t border-hairline bg-cream px-3 pt-3">
+        <div className="sticky bottom-[73px] z-30 border-t border-hairline bg-base px-3 pt-3">
           <a
             href={lienWhatsApp}
             target="_blank"
@@ -450,7 +453,7 @@ export default function ProductDetail() {
                 connectee: !!user,
               })
             }
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-terracotta text-body font-semibold text-white"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-teal text-body font-semibold text-white"
           >
             <IconBrandWhatsapp size={20} />
             {t('product.askSeller')}

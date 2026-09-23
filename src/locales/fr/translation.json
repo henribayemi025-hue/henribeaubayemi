@@ -442,7 +442,8 @@
     "connecteurComptaBranchee": "« {{nom}} » est branchée : résumé du mois, ventes, dépenses, impayés.",
     "connecteurSansCompta": "Tu n’as pas encore d’espace sur Finjaro Accounting.",
     "ouvrirAccounting": "Ouvrir Finjaro Accounting",
-    "connecteurComptaAide": "Les agents lisent les TOTAUX de tes livres : le résumé d’un mois, les ventes, les dépenses par catégorie, ce qui reste à encaisser et à payer — jamais le nom d’un client ni le détail d’une ligne. Si tu quittes cet espace, ils ne lisent plus rien."
+    "connecteurComptaAide": "Les agents lisent les TOTAUX de tes livres : le résumé d’un mois, les ventes, les dépenses par catégorie, ce qui reste à encaisser et à payer — jamais le nom d’un client ni le détail d’une ligne. Si tu quittes cet espace, ils ne lisent plus rien.",
+    "depenseMoinsDunCentime": "moins de 0,01 €"
   },
   "equipe": {
     "titre": "L'équipe",

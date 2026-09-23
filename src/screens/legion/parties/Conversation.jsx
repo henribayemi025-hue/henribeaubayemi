@@ -10,7 +10,7 @@ import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { ChoixEmoji } from './ChoixEmoji';
 import { RAPIDES } from '../emojis';
-import { GENRES, heure, jourDe, sansAccent, iconeDept } from './outils';
+import { GENRES, heure, jourDe, sansAccent, iconeDept, espacerPhrases } from './outils';
 import { Texte, estStructure } from './Plans';
 
 // La conversation — le centre de l'écran, à la WhatsApp: les bulles
@@ -355,7 +355,7 @@ export function Conversation({
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap break-words text-[15.5px] leading-[1.35]">
-                          {m.texte}
+                          {m.meta?.par_ia ? espacerPhrases(m.texte) : m.texte}
                           {/* La place de l'heure, pour qu'elle ne chevauche jamais le texte */}
                           <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
                         </p>

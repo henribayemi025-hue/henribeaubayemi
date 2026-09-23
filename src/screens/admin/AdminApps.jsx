@@ -88,7 +88,7 @@ export default function AdminApps() {
           <p className="mb-2 text-caption font-semibold text-ink">{t('admin.apps.propositions', { count: data.propositions.length, defaultValue: '{{count}} proposition(s) de développeurs' })}</p>
           <ul className="space-y-2">
             {data.propositions.map((pr) => (
-              <li key={pr.id} className="rounded-card bg-card p-3 text-caption">
+              <li key={pr.id} className="rounded-card bg-white p-3 text-caption">
                 <p className="text-body font-semibold text-ink">{pr.nom} <a href={pr.url} target="_blank" rel="noopener noreferrer" className="ml-1 font-normal text-teal underline">{pr.url}</a></p>
                 {pr.accroche && <p className="text-ink">{pr.accroche}</p>}
                 {pr.description && <p className="mt-1 whitespace-pre-wrap text-muted">{pr.description}</p>}

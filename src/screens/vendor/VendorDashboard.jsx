@@ -261,7 +261,7 @@ export default function VendorDashboard() {
               rendez-vous existent déjà dans Finjaro Accounting, avec le même
               compte: on y mène, on ne les réécrit pas ici (idées 57 et 62). */}
           <div className="grid gap-2">
-            <a href="https://accounting.finjaro.net/#/dettes" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-card p-3 transition active:scale-[0.99]">
+            <a href="https://accounting.finjaro.net/#/dettes" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-white p-3 transition active:scale-[0.99]">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal"><IconNotebook size={20} /></span>
               <span className="min-w-0">
                 <span className="block text-body font-semibold text-ink">{t('vendor.creditBook', 'Carnet de crédit')}</span>
@@ -269,7 +269,7 @@ export default function VendorDashboard() {
               </span>
             </a>
             {isServiceShop(shop) && (
-              <a href="https://accounting.finjaro.net/#/rendez-vous" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-card p-3 transition active:scale-[0.99]">
+              <a href="https://accounting.finjaro.net/#/rendez-vous" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-white p-3 transition active:scale-[0.99]">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass"><IconCalendarEvent size={20} /></span>
                 <span className="min-w-0">
                   <span className="block text-body font-semibold text-ink">{t('vendor.appointments', 'Rendez-vous')}</span>
@@ -301,7 +301,7 @@ export default function VendorDashboard() {
           <Link
             to="/profile/invite"
             className={`flex items-center gap-3 rounded-card border p-3.5 transition active:scale-[0.99] ${
-              estEnAvant(shop) ? 'border-brass/40 bg-brass/8' : 'border-hairline'
+              estEnAvant(shop) ? 'border-brass/40 bg-brass/10' : 'border-hairline'
             }`}
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-light text-teal">
@@ -326,7 +326,7 @@ export default function VendorDashboard() {
           <Link
             to="/fin"
             className={`flex items-center gap-3 rounded-card border p-3.5 transition active:scale-[0.99] ${
-              estPremium(shop) ? 'border-brass/40 bg-brass/8' : 'border-hairline'
+              estPremium(shop) ? 'border-brass/40 bg-brass/10' : 'border-hairline'
             }`}
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass">

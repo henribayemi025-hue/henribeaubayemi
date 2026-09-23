@@ -54,7 +54,7 @@ function Proposer({ t }) {
   }
 
   return (
-    <section className="mt-8 rounded-card border border-hairline bg-card p-4">
+    <section className="mt-8 rounded-card border border-hairline bg-white p-4">
       <h2 className="flex items-center gap-2 text-section text-ink"><IconCodePlus size={20} className="text-teal" /> {t('apps.proposeTitle', 'Développeurs : proposez votre application')}</h2>
       <p className="mt-1 text-caption text-muted">{t('apps.proposeIntro', 'Vous avez construit une application utile aux commerçants, aux créateurs ou aux entrepreneurs ? Proposez-la : si elle est acceptée, elle rejoint l’environnement Finjaro et s’ouvre avec le même compte.')}</p>
       {envoye ? (

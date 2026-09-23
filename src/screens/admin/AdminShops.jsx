@@ -215,7 +215,7 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
         <p className="mt-0.5 text-[11px] text-muted">{t('admin.shopRevenueHint')}</p>
       </div>
 
-      <div className={`mt-2 flex items-center justify-between gap-2 rounded-card border p-3 ${premiumActive ? 'border-brass/40 bg-brass/8' : 'border-hairline'}`}>
+      <div className={`mt-2 flex items-center justify-between gap-2 rounded-card border p-3 ${premiumActive ? 'border-brass/40 bg-brass/10' : 'border-hairline'}`}>
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
             <IconCrown size={17} className={premiumActive ? 'text-brass' : 'text-muted'} /> Finia Premium

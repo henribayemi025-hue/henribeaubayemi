@@ -110,7 +110,7 @@ export default function VendorProducts() {
                 libellé fin se fait attraper par le pouce à la place du +. */}
             <Link
               to="/vendor/products/bulk"
-              className="flex items-center gap-1 rounded-pill border border-teal/30 bg-teal/8 px-3 py-1.5 text-caption font-semibold text-teal"
+              className="flex items-center gap-1 rounded-pill border border-teal/30 bg-teal/10 px-3 py-1.5 text-caption font-semibold text-teal"
             >
               <IconPhotoPlus size={16} /> {t('vendor.bulkShort')}
             </Link>
@@ -134,7 +134,7 @@ export default function VendorProducts() {
       {/* Avant la grille, parce qu'une vendeuse qui fait defiler 63 « Baby »
           ne remonte pas chercher un bouton. */}
       {!loading && !error && aRenommer.length > 0 && (
-        <div className="mx-4 mt-3 rounded-card border border-brass/40 bg-brass/8 p-3">
+        <div className="mx-4 mt-3 rounded-card border border-brass/40 bg-brass/10 p-3">
           <p className="text-body font-semibold text-ink">
             {t('vendor.renameBannerTitle', { count: aRenommer.length })}
           </p>

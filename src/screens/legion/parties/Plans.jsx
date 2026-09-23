@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IconCalendarEvent, IconPlayerPlay } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
+import { espacerPhrases } from './outils';
 
 // LEGION — les plans, et le bouton « Au travail ».
 //
@@ -119,7 +120,7 @@ export function Plans({ entreprise, t }) {
 // dans les bulles des salons (Beau, 22/09: « mets ça point par point, bien
 // clair, présentable »).
 export function Texte({ contenu, className = 'text-[13px] leading-snug text-legion-ink', titre = 'text-legion-gold' }) {
-  const lignes = String(contenu || '').split('\n');
+  const lignes = espacerPhrases(contenu).split('\n');
   return (
     <div className={`space-y-1 ${className}`}>
       {lignes.map((l, i) => {
