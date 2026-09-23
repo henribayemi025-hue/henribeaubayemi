@@ -26,7 +26,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
-import { aerer, generer, garder, moteurs, type Rendu } from '../_shared/moteur.ts';
+import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
@@ -222,9 +222,9 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
 // Le moteur (_shared/moteur.ts): la liste vient du réglage LEGION_MOTEURS
 // (par défaut, le premier Pro de Google, Flash en dernier recours). Un
 // moteur qui rend un texte vide passe la main au suivant.
-async function demander(apiKey: string, texte: string): Promise<Rendu> {
+async function demander(apiKey: string, texte: string, complexe = true): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
-  for (const nom of moteurs()) {
+  for (const nom of complexe ? moteurs() : moteursSimples()) {
     const r = await generer(apiKey, texte, SCHEMA, { temperature: 0.7, reflexion: 4096, delaiMs: 45_000, modeles: [nom] });
     if ('erreur' in r) { derniere = r.erreur; continue; }
     if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
@@ -488,6 +488,10 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     ? await chercherWeb(apiKey, `${String(msg.texte).slice(0, 800)}\n(Contexte: l'entreprise « ${entreprise.nom} »${entreprise.projet ? ` — ${String(entreprise.projet).slice(0, 300)}` : ''}.)`)
     : null;
 
+  // Simple (un salut, une question courte) → Flash; complexe → Pro.
+  const complexe = questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
+    || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte));
+
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
   let pourquoi = '';
@@ -500,7 +504,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
     const laConsigne = consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null, web);
-    const r = await demander(apiKey, laConsigne);
+    const r = await demander(apiKey, laConsigne, complexe);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).

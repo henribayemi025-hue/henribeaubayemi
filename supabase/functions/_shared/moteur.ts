@@ -26,6 +26,16 @@ export function moteurs(): string[] {
   return reglage.length ? reglage : MOTEURS_PAR_DEFAUT;
 }
 
+// Beau, 23/09: « on peut utiliser Flash pour les trucs simples, et ça part
+// à Pro quand c'est complexe ». Un salut, une question courte: Flash, plus
+// rapide et bien moins cher. Réglable par LEGION_MOTEURS_SIMPLES. Le Pro
+// reste en dernier recours si Flash est saturé.
+export const MOTEURS_SIMPLES_PAR_DEFAUT = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-pro-preview'];
+export function moteursSimples(): string[] {
+  const reglage = (Deno.env.get('LEGION_MOTEURS_SIMPLES') || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return reglage.length ? reglage : MOTEURS_SIMPLES_PAR_DEFAUT;
+}
+
 type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[] };
 export type Rendu = { obj: Record<string, unknown>; modele: string } | { erreur: string };
 
