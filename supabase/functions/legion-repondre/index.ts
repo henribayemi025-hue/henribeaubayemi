@@ -277,7 +277,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   if ((deja ?? 0) > 0) return json({ deja: true, messages: [] });
 
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
-    service.from('legion_entreprises').select('nom, projet').eq('id', msg.entreprise_id).single(),
+    service.from('legion_entreprises').select('nom, projet, formule').eq('id', msg.entreprise_id).single(),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, membres, resume').eq('id', msg.canal_id).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
@@ -486,7 +486,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
 
   // Chercher sur Internet (Beau, 23/09): une fois par message, seulement
   // quand la demande regarde dehors (concurrents, événements, prospects…).
-  const web = aBesoinDuWeb(String(msg.texte))
+  // Formule gratuite (0170): pas de recherche sur Internet, Flash seulement.
+  const gratuite = (entreprise as { formule?: string | null }).formule === 'gratuite';
+  const web = !gratuite && aBesoinDuWeb(String(msg.texte))
     ? await chercherWeb(apiKey, `${String(msg.texte).slice(0, 800)}\n(Contexte: l'entreprise « ${entreprise.nom} »${entreprise.projet ? ` — ${String(entreprise.projet).slice(0, 300)}` : ''}.)`)
     : null;
 
@@ -496,8 +498,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const depot = PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '';
   const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
-  const complexe = questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
-    || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte));
+  const complexe = !gratuite && (questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
+    || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte)));
 
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];

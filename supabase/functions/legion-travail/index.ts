@@ -30,7 +30,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
-import { aerer, generer, garder, type Rendu } from '../_shared/moteur.ts';
+import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
@@ -72,8 +72,9 @@ const semblable = (a: string, b: string) => {
 
 // Le moteur (_shared/moteur.ts): Gemini aujourd'hui, un autre demain, par
 // le réglage LEGION_MOTEURS — sans toucher à ce fichier.
-async function ecrire(apiKey: string, texte: string, schema: unknown): Promise<Rendu> {
-  return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000 });
+async function ecrire(apiKey: string, texte: string, schema: unknown, gratuite = false): Promise<Rendu> {
+  // Formule gratuite (0170): Flash seulement.
+  return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000, ...(gratuite ? { modeles: moteursSimples() } : {}) });
 }
 
 // La mémoire d'un salon (0161): ce qui précède les 20 derniers messages,
@@ -208,7 +209,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return false; }
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
-    service.from('legion_entreprises').select('id, nom, projet, langue').eq('id', entrepriseId).single(),
+    service.from('legion_entreprises').select('id, nom, projet, langue, formule').eq('id', entrepriseId).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur').eq('entreprise_id', entrepriseId).order('ordre'),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
@@ -223,6 +224,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   // les livrables s'écrivent dans celle-là. Vide = français. Pas la langue du
   // profil: celui de Beau est en anglais, il lit ses agents en français.
   const anglais = entreprise.langue === 'en';
+  const gratuite = entreprise.formule === 'gratuite';
   const enLangue = anglais ? '\n\nLANGUE: le fondateur lit en anglais. Écris TOUT ce que tu rends en anglais (English), titres compris — même si les consignes et le fil sont en français.' : '';
 
   let mesures: string | null = null;
@@ -315,7 +317,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       : [];
     const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', boutique, !!mesures) : [];
     const consignePlan = invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans) + enLangue;
-    const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN);
+    const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN, gratuite);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = aerer(String(r.obj.plan_semaine || '').trim()).slice(0, 4000);
     const mois = aerer(String(r.obj.plan_mois || '').trim()).slice(0, 4000);
@@ -368,9 +370,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       }
       // Une tâche qui regarde dehors (veille, événements, prospects,
       // concurrents): une recherche sur Internet, sources comprises.
-      const web = aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
+      const web = !gratuite && aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
       const consigneLivrable = inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + (web ? blocWeb(web) : '') + enLangue;
-      const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE);
+      const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 4000);
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }

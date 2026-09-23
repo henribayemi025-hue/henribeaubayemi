@@ -20,6 +20,7 @@ const NOMS = {
 };
 
 export function Depense({ entreprise, t }) {
+  const [formule, setFormule] = useState(entreprise.formule || null);
   const [d, setD] = useState(null);
   const [plafond, setPlafond] = useState('');
   const [enregistre, setEnregistre] = useState(false);
@@ -45,6 +46,11 @@ export function Depense({ entreprise, t }) {
   const max = d.plafond_eur != null ? Number(d.plafond_eur) : null;
   const part = max ? Math.min(100, (total / max) * 100) : null;
   const euros = (n) => `${n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
+  async function choisirFormule(k) {
+    setFormule(k);
+    await supabase.from('legion_entreprises').update({ formule: k }).eq('id', entreprise.id);
+  }
 
   return (
     <section className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">
@@ -81,6 +87,20 @@ export function Depense({ entreprise, t }) {
             {enregistre ? '✓' : t('legion.fixer', 'Fixer')}
           </button>
         </form>
+      )}
+      {/* La formule (0170): gratuite = Flash seulement, sans recherche sur
+          Internet; complète = Pro pour le complexe, recherche comprise. */}
+      {proprietaire && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-legion-line pt-3">
+          <span className="text-[12px] text-legion-muted">{t('legion.formule', 'Formule')}</span>
+          {[['complete', t('legion.formuleComplete', 'Complète')], ['gratuite', t('legion.formuleGratuite', 'Gratuite')]].map(([k, l]) => (
+            <button key={k} type="button" onClick={() => choisirFormule(k)}
+              className={`rounded-pill px-3 py-1 text-[12px] font-semibold ${(formule || 'complete') === k ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted hover:text-legion-ink'}`}>{l}</button>
+          ))}
+          <span className="w-full text-[11px] leading-snug text-legion-muted">{(formule || 'complete') === 'gratuite'
+            ? t('legion.formuleGratuiteAide', 'Gratuite : les agents répondent avec le modèle rapide (Flash), sans recherche sur Internet.')
+            : t('legion.formuleCompleteAide', 'Complète : le modèle Pro pour tout ce qui est complexe, et la recherche sur Internet.')}</span>
+        </div>
       )}
       <p className="text-[11px] leading-snug text-legion-muted">{t('legion.depenseAide', 'Au-delà du plafond, les agents s’arrêtent jusqu’au mois suivant. La vraie facture reste celle de Google AI Studio.')}</p>
     </section>
