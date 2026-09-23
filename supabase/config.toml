@@ -1,0 +1,12 @@
+# Réglages lus par la CLI Supabase au déploiement des fonctions edge
+# (.github/workflows/edge-functions.yml). Le reste de la configuration vit
+# dans le tableau de bord Supabase; ici, seulement ce qui doit suivre le code.
+
+project_id = "bokwivwizghdlaedczbw"
+
+# Le serveur MCP de Legion (0174) est appelé par des assistants extérieurs
+# (Claude.ai, ChatGPT…) qui n'ont ni clé Supabase ni JWT: la passerelle ne
+# doit pas exiger de JWT. La fonction vérifie elle-même le jeton personnel
+# (lg_…) avant de répondre quoi que ce soit.
+[functions.legion-mcp]
+verify_jwt = false

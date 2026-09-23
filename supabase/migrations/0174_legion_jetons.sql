@@ -63,7 +63,8 @@ language plpgsql security definer set search_path = public
 as $$
 declare v_id uuid; v_user uuid;
 begin
-  if current_setting('request.jwt.claim.role', true) is distinct from 'service_role' then
+  -- Même test que 0010/0057: PostgREST pose les revendications en JSON.
+  if coalesce(current_setting('request.jwt.claims', true)::jsonb ->> 'role', '') <> 'service_role' then
     raise exception 'forbidden' using errcode = '42501';
   end if;
   select id, user_id into v_id, v_user from legion_jetons
