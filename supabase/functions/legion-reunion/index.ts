@@ -78,6 +78,18 @@ const COLS_MSG = 'id, entreprise_id, canal_id, auteur_id, user_id, texte, genre,
 
 const reunionDe = (m: Message | null) => (m?.meta as { reunion?: Record<string, unknown> } | null)?.reunion ?? null;
 
+// Un agent désigné par le modèle: son nom complet OU son seul prénom (« Nadia »
+// pour « Nadia Benali »). Vu au premier essai (23/09): les agents se citent
+// par le prénom, et la comparaison au nom complet perdait qui contestait qui,
+// et toutes les tâches du compte rendu.
+function designe(nom: string, parmi: Agent[]): Agent | null {
+  const n = sansAccent(nom).trim();
+  if (!n) return null;
+  return parmi.find((a) => sansAccent(a.nom) === n)
+    || parmi.find((a) => sansAccent(a.nom).split(/\s+/)[0] === n.split(/\s+/)[0])
+    || null;
+}
+
 // ——— Qui vient à la réunion ———
 // La même équipe que celle qui répond dans le salon (legion-repondre) :
 // le département du même nom et les agents ajoutés à la main ; en Direction,
@@ -242,7 +254,7 @@ ${REGLES_REUNION(langue, !!ctx.mesures)}`;
     return false;
   }
   const conteste = typeof rendu.obj.conteste === 'string' ? rendu.obj.conteste.trim() : '';
-  const vise = conteste ? participants.find((p) => p.id !== a.id && sansAccent(p.nom) === sansAccent(conteste)) : null;
+  const vise = conteste ? designe(conteste, participants.filter((p) => p.id !== a.id)) : null;
   const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: a.id, user_id: null,
     texte: aerer(rendu.obj.texte.trim()).slice(0, 3000), genre: 'info',
@@ -290,13 +302,15 @@ Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone. Exactement ce
 - une à trois questions précises, chacune avec les options qui ont été défendues
 Une partie vide : « — rien ».
 Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'argent, un prix, le juridique, le recrutement ou une personne : tu poses la question avec les options. Aucun chiffre ni fait qui n'a pas été dit en réunion. Pas d'introduction, pas de formule de fin. Écris en ${langue}.
-"taches" : une à cinq tâches concrètes DÉCIDÉES en réunion, chacune confiée à UN participant ("agent" = son prénom exact), avec la priorité. Rien qui n'ait pas été décidé ; [] s'il n'y en a pas.
+"taches" : une à cinq tâches concrètes DÉCIDÉES en réunion (celles de la partie « Décidé »), chacune confiée à UN participant ("agent" = son nom tel qu'écrit dans la liste des participants), avec la priorité. Rien qui n'ait pas été décidé ; [] s'il n'y en a pas.
 "question" : la question la plus importante pour ${convocant}, en une phrase, ou "".`;
 
   const gratuite = ctx.entreprise?.formule === 'gratuite';
   const rendu = await generer(apiKey, texte, SCHEMA_COMPTE_RENDU, {
     temperature: 0.4, reflexion: 2048, maxSortie: 6144, delaiMs: 60_000,
-    modeles: gratuite ? moteursSimples() : [...moteurs().slice(0, 1), ...moteursSimples()],
+    // Pro d'abord (le compte rendu est ce que l'humain lit), Flash en dernier
+    // recours: la liste de moteurs() se termine déjà par Flash.
+    modeles: gratuite ? moteursSimples() : moteurs(),
   });
   if ('erreur' in rendu || typeof rendu.obj.texte !== 'string' || !rendu.obj.texte.trim()) {
     console.error('réunion, compte rendu:', 'erreur' in rendu ? rendu.erreur : 'texte vide');
@@ -306,7 +320,14 @@ Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'a
     return;
   }
   const question = typeof rendu.obj.question === 'string' ? rendu.obj.question.trim().slice(0, 400) : '';
-  const titre = `${anglais ? 'Minutes' : 'Compte rendu'} — ${r.sujet.replace(/\s+/g, ' ').slice(0, 90)}`;
+  // Le sujet en tête (c'est aussi le texte de la notification), coupé sur un
+  // mot et pas au milieu.
+  const sujetCourt = (() => {
+    const x = r.sujet.replace(/\s+/g, ' ').trim();
+    if (x.length <= 90) return x;
+    return `${x.slice(0, 90).replace(/\s+\S*$/, '')}…`;
+  })();
+  const titre = `${anglais ? 'Minutes' : 'Compte rendu'} — ${sujetCourt}`;
   const { data: cr, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: president.id, user_id: null,
     texte: `${titre}\n\n${aerer(rendu.obj.texte.trim())}`.slice(0, 5000), genre: 'decision',
@@ -328,7 +349,7 @@ Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'a
   let creees = 0;
   for (const t of taches.slice(0, 5)) {
     const titreT = String(t.titre || '').trim().slice(0, 200);
-    const qui = participants.find((p) => sansAccent(p.nom) === sansAccent(String(t.agent || '')));
+    const qui = designe(String(t.agent || ''), participants);
     if (!titreT || !qui) continue;
     if ((ouvertes || []).some((x: { texte: string; assigne_a: string | null }) => x.assigne_a === qui.id && semblable(x.texte, titreT))) continue;
     const { error: e } = await service.from('legion_messages').insert({
