@@ -260,7 +260,7 @@ export default function VendorDashboard() {
           {/* Le carnet de crédit (« qui me doit combien ») et l'agenda des
               rendez-vous existent déjà dans Finjaro Accounting, avec le même
               compte: on y mène, on ne les réécrit pas ici (idées 57 et 62). */}
-          <div className={`grid gap-2 ${isServiceShop(shop) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className="grid gap-2">
             <a href="https://accounting.finjaro.net/#/dettes" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-card p-3 transition active:scale-[0.99]">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal"><IconNotebook size={20} /></span>
               <span className="min-w-0">
