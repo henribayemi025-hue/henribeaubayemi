@@ -53,7 +53,7 @@ function cors(origin: string | null): Record<string, string> {
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; moteur: string };
-type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string } | null; created_at: string };
+type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string } } | null; created_at: string };
 type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
 
@@ -137,8 +137,10 @@ const SCHEMA_LIVRABLE = {
     livrable: { type: 'STRING' },
     statut: { type: 'STRING', enum: ['termine', 'bloque'] },
     besoin: { type: 'STRING' },
+    suite_titre: { type: 'STRING' },
+    suite_agent: { type: 'STRING' },
   },
-  required: ['livrable', 'statut', 'besoin'],
+  required: ['livrable', 'statut', 'besoin', 'suite_titre', 'suite_agent'],
 };
 
 const REGLES_COMMUNES = `RÈGLES ABSOLUES:
@@ -206,7 +208,8 @@ ${REGLES_COMMUNES}
 ÉCRIS:
 "livrable": le résultat de la tâche, complet et utilisable tel quel, 800 à 2500 signes. Selon la tâche: une analyse (les chiffres, ce qu'ils disent, ce qu'on fait), une proposition (le quoi, le pourquoi, les étapes, ce que ça coûte en effort), un brouillon (texte prêt à l'emploi), une liste précise. Commence par « ## » et le titre de la tâche. Termine par « ## Et maintenant »: la prochaine étape concrète et qui la fait.
 "statut": "termine" si tu as pu livrer; "bloque" si la tâche demande quelque chose que tu n'as pas (un accès, une décision, un outil d'écriture) — dans ce cas "livrable" contient ce que tu as quand même pu faire.
-"besoin": si bloqué, en une phrase, ce qu'il te faut et de qui; sinon "".`;
+"besoin": si bloqué, en une phrase, ce qu'il te faut et de qui; sinon "".
+"suite_titre" et "suite_agent": LE RELAIS. Si ta tâche est terminée et que ton livrable appelle une étape suivante qu'un AUTRE agent ALLUMÉ de l'équipe doit faire (le texte est écrit → la relecture; l'analyse est faite → la maquette), l'intitulé court et précis de cette tâche, et le nom exact de cet agent. Sinon "" et "". Une seule suite, et seulement si elle est vraiment nécessaire.`;
 }
 
 // Supabase coupe une fonction qui n'a rien envoyé pendant 150 s (vu le
@@ -372,7 +375,14 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';
       const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, boutique, !!mesures) : [];
-      const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + enLangue, SCHEMA_LIVRABLE);
+      // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
+      let recu = '';
+      if (tache.meta?.suite_de?.tache_id) {
+        const { data: avant } = await service.from('legion_messages').select('texte').eq('entreprise_id', entrepriseId)
+          .eq('meta->livrable->>tache_id', tache.meta.suite_de.tache_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (avant?.texte) recu = `\n\nCETTE TÂCHE T'EST PASSÉE EN RELAIS par ${tache.meta.suite_de.par}, qui vient de livrer « ${tache.meta.suite_de.tache} ». SON LIVRABLE (pars de là, ne le refais pas):\n${String(avant.texte).slice(0, 3000)}`;
+      }
+      const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + enLangue, SCHEMA_LIVRABLE);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }
@@ -385,7 +395,21 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       });
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
       await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
-      journal.push(`${entreprise.nom}: ${a.nom} a livré « ${tache.texte.slice(0, 60)} » (${bloque ? 'bloqué' : 'terminé'}, ${r.modele})`);
+      // LE RELAIS (plan complet, B6-5): un livrable fini passe la suite au bon
+      // agent — une tâche nouvelle, dans le salon de son département, qui
+      // dit d'où elle vient. Il la prendra à sa prochaine journée.
+      let relais = '';
+      const suiteTitre = String(r.obj.suite_titre || '').trim().slice(0, 200);
+      const suivant = !bloque && suiteTitre.length >= 6
+        ? machines.find((x) => x.id !== a.id && sansAccent(x.nom) === sansAccent(String(r.obj.suite_agent || ''))) : null;
+      if (suivant && !ouvertes.some((x) => semblable(x.texte, suiteTitre))) {
+        const { data: suite } = await service.from('legion_messages').insert({
+          entreprise_id: entrepriseId, canal_id: canalDe(suivant.departement).id, auteur_id: a.id, user_id: null, texte: suiteTitre, genre: 'tache', assigne_a: suivant.id,
+          meta: { par_ia: true, statut: 'a_faire', priorite: tache.meta?.priorite || 'moyenne', suite_de: { tache_id: tache.id, tache: tache.texte, par: a.nom } },
+        }).select('id, texte, assigne_a, canal_id, meta, created_at').single();
+        if (suite) { ouvertes.push(suite as Tache); relais = `, relais à ${suivant.nom}`; }
+      }
+      journal.push(`${entreprise.nom}: ${a.nom} a livré « ${tache.texte.slice(0, 60)} » (${bloque ? 'bloqué' : 'terminé'}, ${r.modele}${relais})`);
       dejaLivre.add(a.id);
     }));
   }
