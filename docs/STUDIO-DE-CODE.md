@@ -29,6 +29,16 @@ déjà autour du dépôt :
 Rien ne part en ligne sans son clic. Une branche jamais validée ne touche
 jamais finjaro.net.
 
+## Plusieurs codeurs en même temps, sans conflit (Beau, 23/09 : la vidéo « Claude Squad »)
+
+Le principe de Claude Squad, repris tel quel : **un agent = une branche = un
+dossier de travail**. L'agent « serveur » travaille sur `studio/<tâche>-serveur`,
+l'agent « écran » sur `studio/<tâche>-ecran`, l'agent « connexion » sur
+`studio/<tâche>-connexion`. Aucun n'écrit dans la branche d'un autre : ils
+avancent en même temps sans jamais se marcher dessus. L'assembleur fusionne
+les branches une par une dans une branche d'assemblage, les tests tournent
+à chaque fusion ; un conflit s'arrête là et revient à l'agent concerné.
+
 ## Qui fait quoi (les agents)
 
 | Rôle | Agent | Ce qu'il fait |

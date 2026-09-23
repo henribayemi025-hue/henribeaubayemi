@@ -135,6 +135,12 @@ Sa consigne : « je ne veux pas que tu balaies ça, regarde ça en profondeur »
 | I5 | « Auditum, agent IA expert en audit : si quelqu'un veut, on le branche au truc de l'entreprise et il fait — agent intérim » | Des **experts à la mission**, prêts à brancher : audit, contrôle de gestion, paie, conformité, service client… On les « recrute » pour une mission, ils lisent les données branchées de l'entreprise (boutique, comptabilité, dépôt, fichiers) et rendent leur rapport. 🔧 le catalogue « Intérim » (G9) : chaque expert a son mandat, sa méthode, son livrable type |
 | I6 | « Faire communiquer et **disputer** les agents » | Qu'ils ne soient pas toujours d'accord : dans une réunion, un tour **contradictoire** (chacun doit dire ce qui ne va pas dans la proposition de l'autre, avec ses raisons), puis le responsable tranche en disant ce qu'il retient et ce qu'il écarte. Un agent peut aussi contester un livrable d'un collègue. 🔧 G2 (réunions) |
 
+## J. La vidéo « Claude Squad » (envoyée par Beau le 23/09)
+
+| # | Ce qu'elle montre | Pour Legion |
+| --- | --- | --- |
+| J1 | Plusieurs agents Claude Code travaillent **en même temps** sur un même projet (l'un le serveur, l'autre l'écran, un troisième la connexion) sans se marcher dessus : **chacun sa branche et son dossier**, zéro conflit ; une commande pour ouvrir une nouvelle session par tâche | C'est le principe du **studio de code** de Legion (`STUDIO-DE-CODE.md`, mis à jour) : l'architecte découpe, chaque agent codeur a sa branche, les tests passent sur chaque branche, l'assembleur fusionne, l'aperçu s'ouvre, Beau valide. ⏸ une seule chose manque : le jeton GitHub **en écriture** (Beau) |
+
 ## Ordre de construction
 
 B5 (vocal entendu) → B3 + I6 (réunions qui débattent) → B4 (questions) →
