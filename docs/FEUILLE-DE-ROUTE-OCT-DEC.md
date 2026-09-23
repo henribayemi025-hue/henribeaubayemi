@@ -89,13 +89,13 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 
 | # | Idée | État |
 | --- | --- | --- |
-| 57 | Carnet de crédit (« qui me doit combien ») | ✅ existe déjà dans Accounting (page « Dettes ») ; 📅 un lien depuis l'espace vendeur |
-| 58 | Preuve de livraison (photo + confirmation de la cliente) | 📅 |
-| 59 | Prix conseillé | 📅 |
-| 60 | Traduction des fiches articles | 📅 |
-| 61 | Photo → fiche article complète | 📅 |
-| 62 | Rendez-vous pour les prestataires | ✅ existe déjà dans Accounting (« Rendez-vous ») ; 📅 un lien depuis la page Services |
-| 63 | Dépôt ouvert d'applications pour les développeurs | 📅 |
+| 57 | Carnet de crédit (« qui me doit combien ») | ✅ existe déjà dans Accounting (page « Dettes ») ; ✅ « Carnet de crédit » sur le tableau de bord vendeur y mène (même compte) |
+| 58 | Preuve de livraison (photo + confirmation de la cliente) | ✅ la vendeuse joint une photo en marquant « livrée » ; la cliente la voit et confirme « J'ai bien reçu » |
+| 59 | Prix conseillé | ✅ dès qu'un rayon est choisi : la médiane des articles en ligne de la même famille (mesurée, jamais inventée ; rien sous 3 articles) |
+| 60 | Traduction des fiches articles | ✅ une fiche en français se lit en anglais (et inversement), traduite une fois puis gardée ; « voir l'original » ; vérifiée en ligne sur une vraie fiche |
+| 61 | Photo → fiche article complète | ✅ existait déjà : « Remplir depuis la photo » dans la fiche article |
+| 62 | Rendez-vous pour les prestataires | ✅ existe déjà dans Accounting (« Rendez-vous ») ; ✅ « Rendez-vous » sur le tableau de bord des prestataires y mène |
+| 63 | Dépôt ouvert d'applications pour les développeurs | ✅ finjaro.net/apps : « Proposer mon application » ; l'équipe accepte ou refuse depuis la console |
 | 64 | Écart de caisse du soir | 📅 Claudinette (Accounting) |
 | 65 | Achat groupé, vente en direct, commande vocale, appel vidéo depuis la fiche | 📅 après les précédentes |
 | — | Avance sur ventes, microfinance | ❌ métier réglementé : pas sans avis juridique |

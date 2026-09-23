@@ -13,7 +13,7 @@ import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
 import { ImageUpload } from '../../components/ImageUpload';
 import { Spinner } from '../../components/Spinner';
-import { attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadFor, defaultPublishCategory } from '../../lib/categories';
+import { attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadFor, categoryQueryIds, defaultPublishCategory } from '../../lib/categories';
 import { CategoryPicker } from '../../components/CategoryPicker';
 import { currencyForCountry } from '../../lib/currency';
 import { convertFromFcfa, toFcfa } from '../../lib/currency';
@@ -115,6 +115,26 @@ export default function VendorProductEdit() {
   const [priceHint, setPriceHint] = useState(null); // { fcfa, samples } — médiane catalogue
   const [scriptLoading, setScriptLoading] = useState(false);
   const [reelScript, setReelScript] = useState(null);
+
+  // Le repère de prix sans passer par la photo (idée 59 du 22/09): dès
+  // qu'un rayon est choisi, la médiane des articles en ligne de la même
+  // famille (le rayon et ses sous-catégories). C'est une mesure du
+  // catalogue, jamais un chiffre inventé; rien n'est montré sous 3 articles.
+  useEffect(() => {
+    const head = categoryHeadFor(form.category);
+    if (!head) { setPriceHint(null); return undefined; }
+    let cancelled = false;
+    supabase.from('products').select('id, price_fcfa').in('category', categoryQueryIds(head)).eq('is_active', true).gt('price_fcfa', 0).limit(200)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const nums = (data ?? []).filter((p) => p.id !== id).map((p) => Number(p.price_fcfa)).filter((n) => n > 0).sort((a, b) => a - b);
+        if (nums.length < 3) { setPriceHint(null); return; }
+        const n = nums.length;
+        const mediane = n % 2 ? nums[(n - 1) / 2] : (nums[n / 2 - 1] + nums[n / 2]) / 2;
+        setPriceHint({ fcfa: Math.round(mediane), samples: n });
+      });
+    return () => { cancelled = true; };
+  }, [form.category, id]);
 
   // Auto-Listing (Finou 2.0 #12, partie texte): la première photo déjà
   // uploadée → titre + description + catégorie proposés d'un coup. Tout

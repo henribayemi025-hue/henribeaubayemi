@@ -1547,7 +1547,11 @@
     "quoteSent": "Prix envoyé à la cliente.",
     "deliveryProofTitle": "Marquer livrée",
     "deliveryProofHint": "Une photo du colis remis, c’est ta preuve en cas de doute. Facultatif : tu peux marquer livrée sans photo.",
-    "deliveryProofAdd": "Prendre ou choisir une photo"
+    "deliveryProofAdd": "Prendre ou choisir une photo",
+    "creditBook": "Carnet de crédit",
+    "creditBookHint": "Qui me doit combien — dans Finjaro Accounting",
+    "appointments": "Rendez-vous",
+    "appointmentsHint": "Ton agenda de prestations — dans Finjaro Accounting"
   },
   "orderStatus": {
     "new": "En attente de validation",

@@ -1547,7 +1547,11 @@
     "quoteSent": "Price sent to the customer.",
     "deliveryProofTitle": "Mark as delivered",
     "deliveryProofHint": "A photo of the handed-over parcel is your proof if there is ever a doubt. Optional: you can mark as delivered without one.",
-    "deliveryProofAdd": "Take or choose a photo"
+    "deliveryProofAdd": "Take or choose a photo",
+    "creditBook": "Credit book",
+    "creditBookHint": "Who owes me what — in Finjaro Accounting",
+    "appointments": "Appointments",
+    "appointmentsHint": "Your service schedule — in Finjaro Accounting"
   },
   "orderStatus": {
     "new": "Awaiting validation",

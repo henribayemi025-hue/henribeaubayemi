@@ -4,7 +4,7 @@ import {
   IconSwitchHorizontal, IconChartBar, IconAlertCircle, IconChevronRight,
   IconArrowUpRight, IconArrowDownRight, IconWallet, IconPlus, IconShare2,
   IconMovie, IconTrophy, IconAward, IconBuildingStore, IconCircleCheck, IconSparkles,
-  IconPhotoPlus, IconCrown,
+  IconPhotoPlus, IconCrown, IconNotebook, IconCalendarEvent,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -19,6 +19,7 @@ import { timeAgo } from '../../lib/format';
 import { estEnAvant } from '../../lib/featured';
 import { estPremium } from '../../lib/premium';
 import { currencyForCountry, formatPrice } from '../../lib/currency';
+import { isServiceShop } from '../../lib/categories';
 
 function pct(cur, prev) {
   if (!prev) return cur > 0 ? 100 : 0;
@@ -254,6 +255,28 @@ export default function VendorDashboard() {
             <Action icon={IconShare2} label={t('vendor.actionShare')} onClick={shareShopLink} />
             <Action icon={IconMovie} label={t('nav.reels')} onClick={() => navigate('/vendor/reels')} />
             <Action icon={IconTrophy} label={t('vendor.leaderboard')} onClick={() => navigate('/vendor/leaderboard')} />
+          </div>
+
+          {/* Le carnet de crédit (« qui me doit combien ») et l'agenda des
+              rendez-vous existent déjà dans Finjaro Accounting, avec le même
+              compte: on y mène, on ne les réécrit pas ici (idées 57 et 62). */}
+          <div className={`grid gap-2 ${isServiceShop(shop) ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <a href="https://accounting.finjaro.net/#/dettes" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-card p-3 transition active:scale-[0.99]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal"><IconNotebook size={20} /></span>
+              <span className="min-w-0">
+                <span className="block text-body font-semibold text-ink">{t('vendor.creditBook', 'Carnet de crédit')}</span>
+                <span className="block text-caption text-muted">{t('vendor.creditBookHint', 'Qui me doit combien — dans Finjaro Accounting')}</span>
+              </span>
+            </a>
+            {isServiceShop(shop) && (
+              <a href="https://accounting.finjaro.net/#/rendez-vous" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 rounded-card border border-hairline bg-card p-3 transition active:scale-[0.99]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass"><IconCalendarEvent size={20} /></span>
+                <span className="min-w-0">
+                  <span className="block text-body font-semibold text-ink">{t('vendor.appointments', 'Rendez-vous')}</span>
+                  <span className="block text-caption text-muted">{t('vendor.appointmentsHint', 'Ton agenda de prestations — dans Finjaro Accounting')}</span>
+                </span>
+              </a>
+            )}
           </div>
 
           <Link
