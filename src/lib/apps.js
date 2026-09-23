@@ -23,6 +23,10 @@ export const APPS_FALLBACK = [
     name: 'Finjaro Accounting',
     tagline: 'Caisse, stock, factures et comptabilité pour ta boutique.',
     url: 'https://accounting.finjaro.net',
+    // Page d'arrivée du relais de connexion (0173), confirmée par Accounting
+    // le 23/09: sans elle dans le filet, un clic fait avant la première
+    // lecture de la table ouvrait Accounting sans la session.
+    relais: 'https://accounting.finjaro.net/#/relais',
     emoji: '📒',
     accent: 'brass',
     audience: 'tous',

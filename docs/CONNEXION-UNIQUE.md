@@ -75,8 +75,12 @@ utilisateurs aussi.
   `creer` sans session refusé.
 - ✅ Page `/relais` sur finjaro.net et le sélecteur (staging ; production au
   prochain oui de Beau).
-- 🔧 La page d'arrivée d'Accounting : Claudinette, quand elle veut. Dès
-  qu'elle existe, `finjaro_apps.relais` prend son adresse et le sélecteur
-  s'en sert sans déploiement.
+- ✅ La page d'arrivée d'Accounting (`#/relais`, Claudinette, 23/09) ;
+  `finjaro_apps.relais` posé. **Test réel de bout en bout réussi** (navigateur
+  neuf, compte de test) : connecté sur finjaro → sélecteur → « Finjaro
+  Accounting » → un seul échange → session posée chez Accounting
+  (`finia.auth`), écran connecté. Le premier essai avait échoué à cause d'un
+  rechargement fantôme du service worker d'Accounting, corrigé par
+  Claudinette (84bbbac).
 - Limite connue : un compte inscrit par téléphone, sans e-mail (20 sur 108),
   n'est pas relayé — il se connecte comme avant à l'arrivée.

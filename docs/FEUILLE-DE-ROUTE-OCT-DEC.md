@@ -74,7 +74,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 44 | E-mails de prospection | ⏸ pas maintenant (Beau) |
 | 45 | Connecteurs Google pour **chaque utilisateur** (Gmail…) | ⏸ les cinq gestes de Beau sont écrits (`LEGION-CONNECTEURS.md`) |
 | 46 | « Vas-y » à Claudinette ; elle choisit, elle montre ; un vrai expert design | ✅ transmis le 23/09 |
-| 47 | Une seule connexion pour toutes les applications Finjaro | ✅ côté place de marché : table, fonction `sso-relais` (déployée, échange réel vérifié), page `/relais`, sélecteur ; 🔧 la page d'arrivée d'Accounting (Claudinette) |
+| 47 | Une seule connexion pour toutes les applications Finjaro | ✅ finjaro.net → Accounting sans se reconnecter : vérifié en vrai le 23/09 (sélecteur → Accounting connecté). Le sens Accounting → finjaro.net : Claudinette, maintenant que `/relais` est en ligne sur finjaro.net |
 | 48 | Jeton GitHub — **pour tous les utilisateurs**, pas seulement Beau | ✅ « Mon dépôt GitHub » : chaque entreprise branche le sien, jeton au coffre ; celui de Finjaro est branché |
 | 49 | Une version gratuite / standard de Legion | ✅ formule gratuite (Flash seulement, sans recherche) / complète, choisie par le propriétaire ; ⏸ le prix, à décider par Beau |
 | 50 | Pas de clé Anthropic | ✅ |
