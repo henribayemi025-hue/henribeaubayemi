@@ -49,6 +49,10 @@ export default function Fonder() {
   const [effectif, setEffectif] = useState(25);
   const [nom, setNom] = useState('');
   const [projet, setProjet] = useState('');
+  // Beau, 23/09: « je choisis mon entreprise ou mon projet, je dis qui je
+  // suis, ce que je veux ». Les agents le lisent avec le projet.
+  const [quiJeSuis, setQuiJeSuis] = useState('');
+  const [objectif, setObjectif] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [secteur, setSecteur] = useState('');
   const [generation, setGeneration] = useState(false);
@@ -122,11 +126,14 @@ export default function Fonder() {
     setEnvoi(true);
     try {
       const { data: id, error: err } = await supabase.rpc('legion_creer_entreprise', {
-        p_nom: nom.trim(), p_modele: modele.cle, p_taille: taille, p_projet: projet.trim() || null,
+        p_nom: nom.trim(), p_modele: modele.cle, p_taille: taille,
+        p_projet: [projet.trim(), quiJeSuis.trim() && `Qui je suis : ${quiJeSuis.trim()}`, objectif.trim() && `Ce que je veux obtenir : ${objectif.trim()}`].filter(Boolean).join('\n') || null,
         p_effectif: Math.max(1, Math.min(10000, Number(effectif) || 1)),
       });
       if (err) throw err;
-      navigate(`/legion/${id}`);
+      // Les agents choisissent leurs compétences dès l'arrivée (Beau: « chaque
+      // type d'entreprise arrive avec ses agents et leurs compétences »).
+      navigate(`/legion/${id}?equiper=1`);
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setEnvoi(false); }
   }
@@ -268,6 +275,12 @@ export default function Fonder() {
             <div className="mt-6 space-y-3">
               <Field label={t('legion.nomEntreprise')} required>
                 {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} placeholder={t('legion.nomExemple')} />}
+              </Field>
+              <Field label={t('legion.quiJeSuis', 'Qui es-tu ?')} hint={t('legion.quiJeSuisAide', 'Ex. : fondateur d’une boutique en ligne, étudiante en droit, comptable indépendant…')}>
+                {(id) => <TextInput id={id} value={quiJeSuis} maxLength={200} onChange={(e) => setQuiJeSuis(e.target.value)} />}
+              </Field>
+              <Field label={t('legion.objectif', 'Ce que tu veux obtenir')} hint={t('legion.objectifAide', 'Ex. : 300 clients d’ici fin octobre, réussir mes examens, lancer mon application.')}>
+                {(id) => <TextInput id={id} value={objectif} maxLength={300} onChange={(e) => setObjectif(e.target.value)} />}
               </Field>
               <Field label={t('legion.projet')} hint={t('legion.projetAide')}>
                 {(id) => <TextArea id={id} rows={3} value={projet} onChange={(e) => setProjet(e.target.value)} />}

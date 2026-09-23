@@ -134,6 +134,15 @@ export function EquiperEquipe({ entrepriseId, agents, t }) {
     setSans(agents.filter((a) => !a.user_id && a.moteur !== 'claude-code' && !equipes.has(a.id)).length);
   }, [entrepriseId, agents]);
   useEffect(() => { compter(); }, [compter]);
+  // Une entreprise qui vient d'être fondée (?equiper=1): l'équipe s'équipe
+  // toute seule, une fois.
+  useEffect(() => {
+    let parti = false;
+    try { parti = new URLSearchParams(window.location.search).get('equiper') === '1'; } catch { parti = false; }
+    if (!parti || !agents.length) return;
+    try { const u = new URL(window.location.href); u.searchParams.delete('equiper'); window.history.replaceState(null, '', u.toString()); } catch { /* vieux navigateur */ }
+    lancer();
+  }, [agents.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function lancer() {
     setOccupe(true); setBilan('');
