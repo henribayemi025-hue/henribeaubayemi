@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera } from '@tabler/icons-react';
+import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil } from '@tabler/icons-react';
 import { Modal } from '../../../components/Modal';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
@@ -10,10 +10,63 @@ import { CompetencesAgent } from './Competences';
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
 // personne ».
-export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEcrireA, onAutreTete, onVraiePhoto, photosEnCours, t }) {
+export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer, onAutonomie, onEcrireA, onAutreTete, onVraiePhoto, onModifier, onCreer, photosEnCours, t }) {
   const [change, setChange] = useState(false);
   const [enGrand, setEnGrand] = useState(false);
+  const [edition, setEdition] = useState(null); // null | { nom, poste, departement, mandat, personnalite }
   if (!agent) return null;
+
+  // Beau, 23/09: « ils peuvent créer ou modifier les agents pour eux ». Un
+  // agent appartient à UNE entreprise: le modifier ici ne change jamais
+  // l'agent d'une autre entreprise, même du même secteur.
+  const nouveau = !agent.id;
+  const champs = edition || (nouveau ? { nom: '', poste: '', departement: agent.departement || departements[0]?.nom || '', mandat: '', personnalite: '' } : null);
+  if (champs) {
+    const maj = (k, v) => setEdition({ ...champs, [k]: v });
+    const valide = champs.nom.trim().length >= 2 && champs.poste.trim().length >= 2;
+    async function enregistrer(e) {
+      e.preventDefault();
+      if (!valide || change) return;
+      setChange(true);
+      try {
+        const propre = Object.fromEntries(Object.entries(champs).map(([k, v]) => [k, String(v || '').trim()]));
+        if (nouveau) { await onCreer(propre); setEdition(null); onFermer(); } else { await onModifier(agent, propre); setEdition(null); }
+      } finally { setChange(false); }
+    }
+    const champ = 'w-full rounded-input border border-legion-line bg-legion-card px-3 py-2 text-caption text-legion-ink outline-none focus:border-legion-gold';
+    return (
+      <Modal open onClose={() => (nouveau ? onFermer() : setEdition(null))} title={nouveau ? t('legion.nouvelAgent', 'Nouvel agent') : t('legion.modifierAgent', 'Modifier l’agent')} className="legion-modale">
+        <form onSubmit={enregistrer} className="space-y-3 text-legion-ink">
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.champNom', 'Son nom')}
+            <input className={`${champ} mt-1`} value={champs.nom} maxLength={40} onChange={(e) => maj('nom', e.target.value)} autoFocus />
+          </label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.champPoste', 'Son poste')}
+            <input className={`${champ} mt-1`} value={champs.poste} maxLength={80} onChange={(e) => maj('poste', e.target.value)} placeholder={t('legion.champPosteEx', 'Ex. : Responsable des réseaux sociaux')} />
+          </label>
+          {departements.length > 0 && (
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.champDepartement', 'Son département')}
+              <select className={`${champ} mt-1`} value={champs.departement} onChange={(e) => maj('departement', e.target.value)}>
+                {departements.map((d) => <option key={d.id} value={d.nom}>{d.nom}</option>)}
+              </select>
+            </label>
+          )}
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.mandat', 'Ce qu’on attend de lui')}
+            <textarea className={`${champ} mt-1`} rows={3} value={champs.mandat} maxLength={600} onChange={(e) => maj('mandat', e.target.value)} />
+          </label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.personnalite', 'Sa personnalité')}
+            <textarea className={`${champ} mt-1`} rows={2} value={champs.personnalite} maxLength={300} onChange={(e) => maj('personnalite', e.target.value)} placeholder={t('legion.champPersoEx', 'Ex. : chaleureux, direct, adore les chiffres')} />
+          </label>
+          <p className="text-[11px] text-legion-muted">{t('legion.agentAToi', 'Cet agent n’existe que dans ton entreprise : le modifier ne change rien ailleurs.')}</p>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={() => (nouveau ? onFermer() : setEdition(null))} className="rounded-input px-3 py-2 text-caption text-legion-muted hover:text-legion-ink">{t('common.cancel')}</button>
+            <button type="submit" disabled={!valide || change} className="rounded-input bg-legion-gold px-3.5 py-2 text-caption font-semibold text-legion-bg disabled:opacity-50">
+              {nouveau ? t('legion.creerAgent', 'Créer l’agent') : t('common.save')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
 
   // Beau, 22/09: « par erreur j'ai enlevé la belle photo de Claudinette,
   // je voulais juste la voir ». Toucher le visage le montre en grand; il ne
@@ -51,6 +104,12 @@ export function FicheAgent({ agent, dept, onFermer, onAllumer, onAutonomie, onEc
                 )}
               </div>
               <p className="text-caption font-semibold text-legion-muted">{agent.poste}</p>
+              {onModifier && !agent.user_id && agent.moteur !== 'claude-code' && (
+                <button type="button" onClick={() => setEdition({ nom: agent.nom || '', poste: agent.poste || '', departement: agent.departement || '', mandat: agent.mandat || '', personnalite: agent.personnalite || '' })}
+                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-legion-gold hover:brightness-110">
+                  <IconPencil size={12} /> {t('legion.modifier', 'Modifier')}
+                </button>
+              )}
               <p className="mt-1 flex items-center gap-1 text-[11px] text-legion-muted">
                 {agent.choisi_par_lui
                   ? <><IconCircleCheck size={12} className="text-legion-success" /> {t('legion.aChoisiLuiMeme', 'Il a choisi lui-même sa tête et son caractère')}</>

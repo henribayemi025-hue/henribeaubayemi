@@ -337,6 +337,25 @@ export default function Entreprise() {
       setData((d) => d && ({ ...d, agents: d.agents.map((x) => (x.user_id ? x : { ...x, actif })) }));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
+  async function modifierAgent(a, champs) {
+    const { error: err } = await supabase.from('legion_agents').update(champs).eq('id', a.id);
+    if (err) { toast.error(err.message); return; }
+    setData((d) => d && ({ ...d, agents: d.agents.map((x) => (x.id === a.id ? { ...x, ...champs } : x)) }));
+    setFiche((f) => (f && f.id === a.id ? { ...f, ...champs } : f));
+    toast.success(t('legion.agentModifie', 'Enregistré'));
+  }
+  async function creerAgent(champs) {
+    const base = sansAccent(champs.nom).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
+    const pris = new Set(data.agents.map((x) => x.cle));
+    let cle = base; for (let i = 2; pris.has(cle); i += 1) cle = `${base}-${i}`;
+    const { data: cree, error: err } = await supabase.from('legion_agents').insert({
+      entreprise_id: entrepriseId, cle, ...champs, departement: champs.departement || null, mandat: champs.mandat || champs.poste,
+      personnalite: champs.personnalite || null, actif: true, ordre: 900, autonomie: 'supervise',
+    }).select().single();
+    if (err) { toast.error(err.message); return; }
+    setData((d) => d && ({ ...d, agents: [...d.agents, cree] }));
+    toast.success(t('legion.agentCree', { nom: cree.nom, defaultValue: '{{nom}} rejoint l’équipe' }));
+  }
   async function autonomie(a, niveau) {
     const { error: err } = await supabase.from('legion_agents').update({ autonomie: niveau }).eq('id', a.id);
     if (err) { toast.error(err.message); return; }
@@ -577,8 +596,11 @@ export default function Entreprise() {
         ))}
       </nav>
 
-      <FicheAgent agent={fiche} dept={departements.find((d) => d.nom === fiche?.departement)} onFermer={() => setFiche(null)}
+      {/* Une clé par agent: la fiche repart de zéro à chaque ouverture (sinon
+          un formulaire à moitié rempli passait d'un agent à l'autre). */}
+      <FicheAgent key={fiche ? fiche.id || 'nouveau' : 'aucun'} agent={fiche} dept={departements.find((d) => d.nom === fiche?.departement)} departements={departements} onFermer={() => setFiche(null)}
         onAllumer={allumer} onAutonomie={autonomie} onEcrireA={(a) => { ecrireA(a); }} onAutreTete={autreTete}
+        onModifier={modifierAgent} onCreer={creerAgent}
         onVraiePhoto={vraiesPhotos} photosEnCours={photos} t={t} />
     </div>
   );
