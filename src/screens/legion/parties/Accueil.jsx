@@ -12,6 +12,7 @@ import { EquiperEquipe } from './Competences';
 import { Depense } from './Depense';
 import { Plans } from './Plans';
 import { Connecteurs } from './Connecteurs';
+import { Inviter } from './Inviter';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -326,6 +327,7 @@ export function Accueil({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><Memoire entrepriseId={entreprise.id} t={t} /></div>
         <div className="space-y-6">
+          {entreprise.owner_id === moi?.user_id && <Inviter entreprise={entreprise} t={t} />}
           <Connecteurs entreprise={entreprise} t={t} />
           <Depense entreprise={entreprise} t={t} />
         </div>

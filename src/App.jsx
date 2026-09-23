@@ -125,6 +125,7 @@ const Equipe = lazyWithReload(() => import('./screens/Equipe'));
 // zéro. Trois écrans: mes entreprises, en fonder une, et l'entreprise.
 const LegionMes = lazyWithReload(() => import('./screens/legion/MesEntreprises'));
 const LegionFonder = lazyWithReload(() => import('./screens/legion/Fonder'));
+const LegionRejoindre = lazyWithReload(() => import('./screens/legion/Rejoindre'));
 const LegionEntreprise = lazyWithReload(() => import('./screens/legion/Entreprise'));
 const InviteFriend = lazyWithReload(() => import('./screens/buyer/InviteFriend'));
 const Help = lazyWithReload(() => import('./screens/buyer/Help'));
@@ -258,6 +259,7 @@ export default function App() {
                         inconnu comprend où il est, et entre chez lui. */}
                     <Route path="/legion" element={<Porte app="legion"><LegionMes /></Porte>} />
                     <Route path="/legion/fonder" element={<Porte app="legion"><LegionFonder /></Porte>} />
+                    <Route path="/legion/rejoindre/:jeton" element={<Porte app="legion"><LegionRejoindre /></Porte>} />
                     <Route path="/legion/:id" element={<Porte app="legion"><LegionEntreprise /></Porte>} />
                     {/* La démonstration complète — acheter, vendre, voir
                         l'écriture. Hors layout et hors base: les boutiques
