@@ -248,9 +248,12 @@ const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul
 // moteur, la première demande de tableau a été coupée à 150 s, sans réponse).
 async function demander(apiKey: string, texte: string, complexe = true, tableur = false): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
-  const liste = tableur ? moteursSimples().slice(0, 2) : complexe ? moteurs() : moteursSimples();
+  // Tableau: les trois moteurs simples (Flash, Flash, puis Pro en dernier
+  // recours: le 23/09 au soir, les deux Flash répondaient « 503, forte
+  // demande »). 45 s chacun au plus: une saturation répond en une seconde.
+  const liste = tableur ? moteursSimples().slice(0, 3) : complexe ? moteurs() : moteursSimples();
   for (const nom of liste) {
-    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: tableur ? 55_000 : 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom] });
+    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom] });
     if ('erreur' in r) { derniere = r.erreur; continue; }
     if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
     derniere = `${nom}: texte vide`;
