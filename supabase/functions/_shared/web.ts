@@ -27,10 +27,11 @@ const MODELES = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 
 export async function chercherWeb(apiKey: string, question: string): Promise<Trouvaille | null> {
   const aujourdhui = new Date().toISOString().slice(0, 10);
-  const texte = `Nous sommes le ${aujourdhui}. Fais une recherche sur Internet pour répondre, avec des faits récents et vérifiables, à cette demande d'une équipe d'entreprise:
+  const texte = `Nous sommes le ${aujourdhui}. Une équipe d'entreprise a besoin de FAITS EXTÉRIEURS pour cette demande:
 ${question}
 
-Rends un résumé en français de 800 à 2000 signes: les faits trouvés (qui, quoi, quand, où, combien, lien d'inscription ou date limite quand il y en a), du plus utile au moins utile. N'invente rien: ce que tu n'as pas trouvé, dis-le. Pas de préambule.`;
+Cherche sur Internet ce qui se passe DEHORS: événements, concours, prix, financements, concurrents et leurs lancements, entreprises à démarcher, tendances, chiffres publics. Ne résume PAS la demande elle-même.
+Rends en français, 800 à 2000 signes, les faits trouvés (qui, quoi, quand, où, combien, lien d'inscription ou date limite quand il y en a), du plus utile au moins utile. N'invente rien: ce que tu n'as pas trouvé, dis-le. Pas de préambule.`;
   for (const model of MODELES) {
     try {
       const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -54,6 +55,10 @@ Rends un résumé en français de 800 à 2000 signes: les faits trouvés (qui, q
         .filter((s: { url: string }) => s.url && !vus.has(s.url) && vus.add(s.url))
         .slice(0, 8);
       if (resume.length < 40) { console.error(`web ${model}: résumé vide`); continue; }
+      // Sans source, ce n'est pas une recherche: c'est le modèle qui parle de
+      // mémoire (vu le 23/09: il avait résumé la demande). On ne le fait pas
+      // passer pour « j'ai cherché ».
+      if (!sources.length) { console.error(`web ${model}: aucune source — ignoré`); return null; }
       return { resume: resume.slice(0, 3000), sources };
     } catch (e) { console.error(`web ${model}: ${(e as Error).message}`); }
   }
