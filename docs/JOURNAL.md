@@ -23,6 +23,11 @@ pour Finjaro. Aucune donnée personnelle (le dépôt est public).
   à un collègue (le texte est écrit → la relecture), il lui crée la tâche
   dans son salon ; le collègue lit le livrable reçu avant de s'y mettre. La
   carte du tableau dit « Relais de … ».
+- **Hors ligne, l'écriture** : dans Mon argent, une ligne de budget ou un
+  mouvement d'espace saisi sans réseau est gardé sur le téléphone, affiché
+  « en attente d'envoi », et part tout seul quand le réseau revient (une
+  seule fois, à l'heure du geste). Le bandeau dit combien attendent. Règle :
+  hors ligne on ajoute, on ne modifie pas.
 - Captures de Legion pour LinkedIn faites sur une boutique d'exemple, sans
   les chiffres internes de Finjaro.
 

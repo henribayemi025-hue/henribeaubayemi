@@ -40,10 +40,14 @@ Le 23/09 au matin: un responsable par département · les postes en
 français · inviter d'autres personnes (B7) · les non-lus sur la liste des
 salons (B4) · choisir sa langue, FR / EN, écran et plans du matin (C) ·
 « tout s'enregistre tout seul » dans Mon argent · le relais: un livrable
-fini passe la suite au bon agent (B6-5).
+fini passe la suite au bon agent (B6-5) · hors ligne, l'écriture: Mon
+argent ajoute sans réseau et ça part tout seul (D).
 
 ### 🔧 À moi, sans t'attendre
-1. Hors ligne — pouvoir agir sans réseau (D).
+La liste est vide. Reste, quand tu le décides: l'audit page par page de
+toutes les plateformes, et les gros chantiers ci-dessous (plan et coût
+d'abord). Le hors ligne s'étendra au point de vente d'Accounting quand
+Claudinette y sera: la même file, côté Accounting.
 
 ### ⏸ À toi (une décision ou un geste)
 - 6 agents ont été éteints dans la nuit (Claudinette, Vigie, Écho, Traque,
