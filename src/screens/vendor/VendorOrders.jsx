@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconCheck, IconX, IconTruckDelivery, IconBuildingStore,
-  IconPackage, IconPhone, IconMapPin, IconBan, IconChevronRight, IconLoader2,
+  IconPackage, IconPhone, IconMapPin, IconBan, IconChevronRight, IconLoader2, IconCamera, IconBrandWhatsapp,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -16,6 +16,7 @@ import { Field, TextArea, TextInput } from '../../components/Field';
 import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatusBadge';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { compressForUpload } from '../../lib/image';
 
 // Le VRAI flux marketplace (avant, un seul bouton sautait de « nouvelle » à
 // « envoyée » sans validation ni refus — le constat exact de Beau):
@@ -92,8 +93,32 @@ export default function VendorOrders() {
     transition(o, { status: 'confirmed', confirmed_at: new Date().toISOString() });
   const ship = (o) =>
     transition(o, { status: 'shipped', shipped_at: new Date().toISOString() });
-  const deliver = (o) =>
-    transition(o, { status: 'delivered', delivered_at: new Date().toISOString() });
+  // La preuve de livraison (idée 12 du 22/09, faite le 23/09): au moment de
+  // marquer « livrée », la vendeuse peut joindre une photo; la cliente la
+  // voit dans ses commandes et confirme « J'ai bien reçu ».
+  const [delivering, setDelivering] = useState(null);
+  const [preuve, setPreuve] = useState(null);
+  const deliver = (o) => { setPreuve(null); setDelivering(o); };
+  async function confirmDeliver() {
+    const o = delivering;
+    if (!o) return;
+    let delivery_photo_url = null;
+    if (preuve) {
+      setBusyId(o.id);
+      try {
+        const { blob, contentType, ext } = await compressForUpload(preuve, { maxDim: 1200, quality: 0.72 });
+        const path = `${shop.owner_id}/preuves/${o.id}.${ext}`;
+        const { error: e } = await supabase.storage.from('products').upload(path, blob, { upsert: true, contentType });
+        if (e) throw e;
+        delivery_photo_url = supabase.storage.from('products').getPublicUrl(path).data.publicUrl;
+      } catch (e) {
+        setBusyId(null);
+        return toast.error(e.message || t('errors.generic'));
+      }
+    }
+    setDelivering(null); setPreuve(null);
+    await transition(o, { status: 'delivered', delivered_at: new Date().toISOString(), ...(delivery_photo_url ? { delivery_photo_url } : {}) });
+  }
 
   // Refus (commande jamais acceptée) ET annulation (commande déjà validée ou
   // en livraison) partagent le même geste — seul le libellé change, parce
@@ -369,6 +394,22 @@ export default function VendorOrders() {
       {/* Refus/annulation: le label du champ dit "(optionnel)" en toutes
           lettres — Beau: "il y a une raison optionnelle mais ça ne précise
           pas optionnel", ça ne pouvait rester dans une phrase d'aide à part. */}
+      <Modal open={!!delivering} onClose={() => setDelivering(null)} title={t('vendor.deliveryProofTitle', 'Marquer livrée')}>
+        <p className="mb-3 text-caption text-muted">{t('vendor.deliveryProofHint', 'Une photo du colis remis, c’est ta preuve en cas de doute. Facultatif : tu peux marquer livrée sans photo.')}</p>
+        <label className="flex cursor-pointer items-center gap-3 rounded-card border border-dashed border-hairline p-3 text-body text-ink">
+          <IconCamera size={20} className="shrink-0 text-teal" />
+          <span className="min-w-0 flex-1 truncate">{preuve ? preuve.name : t('vendor.deliveryProofAdd', 'Prendre ou choisir une photo')}</span>
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setPreuve(e.target.files?.[0] || null)} />
+        </label>
+        {preuve && <img src={URL.createObjectURL(preuve)} alt="" className="mt-2 max-h-48 w-full rounded-card object-cover" />}
+        <div className="mt-3 flex gap-2">
+          <Button variant="secondary" onClick={() => setDelivering(null)} className="flex-1">{t('common.cancel')}</Button>
+          <Button onClick={confirmDeliver} loading={busyId === delivering?.id} className="flex-1">
+            <IconCheck size={18} /> {t('vendor.markDelivered')}
+          </Button>
+        </div>
+      </Modal>
+
       <Modal open={!!cancelling} onClose={() => setCancelling(null)} title={t(wasAccepted ? 'vendor.cancelTitle' : 'vendor.declineTitle')}>
         <p className="mb-3 text-caption text-muted">{t(wasAccepted ? 'vendor.cancelHint' : 'vendor.declineHint')}</p>
         <Field label={`${t('vendor.declineReasonLabel')} ${t('common.optional')}`}>

@@ -168,7 +168,6 @@
     "autreEmoji": "Another emoji",
     "repondre": "Reply",
     "enFaireUneTache": "Make it a task",
-    "copier": "Copy",
     "reponseA": "Replying to",
     "sonne": "Rings the phone",
     "mentionner": "Mention someone",
@@ -225,7 +224,6 @@
     "reluCorrige": "Reviewed and corrected",
     "toi": "you",
     "retour": "Back",
-    "copie": "Copied",
     "ecrireCourt": "Message",
     "ouEnEsTu": "@{{nom}}, where are you on “{{tache}}”?",
     "choisisUnSalon": "Pick a room.",
@@ -724,7 +722,19 @@
     "subtitle": "One account, every Finjaro tool.",
     "current": "Open",
     "intro": "Finjaro is more than a marketplace. These apps all work with the same account.",
-    "sameAccount": "Your Finjaro account opens every app here. You sign in once per app."
+    "sameAccount": "Your Finjaro account opens every app here. You sign in once per app.",
+    "proposeTitle": "Developers: propose your app",
+    "proposeIntro": "Built something useful for merchants, creators or entrepreneurs? Propose it: if accepted, it joins the Finjaro environment and opens with the same account.",
+    "proposeButton": "Propose my app",
+    "proposeName": "App name",
+    "proposeUrl": "Address",
+    "proposeTagline": "In one sentence, what it does",
+    "proposeDescription": "For whom, and why it belongs in Finjaro",
+    "proposeContact": "How to reach you",
+    "proposeContactHint": "An email or a number, seen only by the Finjaro team.",
+    "proposeSend": "Send",
+    "proposeSent": "Received. The team will look and get back to you.",
+    "proposeMissing": "Name and address (https://…) are required."
   },
   "product": {
     "addToCart": "Add to cart",
@@ -760,7 +770,9 @@
     "askSeller": "Ask the seller a question",
     "askSellerMessage": "Hello, I'm writing from Finjaro about \"{{name}}\". Is it available?\n{{url}}",
     "addToCartOnRequest": "Ask for the price",
-    "priceOnRequestHow": "Add it to your cart: the shop sends you its price, you accept or not. Nothing is reserved before that."
+    "priceOnRequestHow": "Add it to your cart: the shop sends you its price, you accept or not. Nothing is reserved before that.",
+    "translated": "Translated automatically · see original",
+    "seeTranslation": "See translation"
   },
   "shop": {
     "products": "Products",
@@ -1532,7 +1544,10 @@
     "quoteModalHint": "Price for ONE item, in your shop's currency. The total is worked out for you.",
     "quoteUnitPrice": "Unit price",
     "quotePriceRequired": "Every item needs a price above zero.",
-    "quoteSent": "Price sent to the customer."
+    "quoteSent": "Price sent to the customer.",
+    "deliveryProofTitle": "Mark as delivered",
+    "deliveryProofHint": "A photo of the handed-over parcel is your proof if there is ever a doubt. Optional: you can mark as delivered without one.",
+    "deliveryProofAdd": "Take or choose a photo"
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -1561,7 +1576,8 @@
     "quoteReadyBody": "Accept to start the order, or decline — it is then cancelled, at no cost.",
     "quoteAccept": "Accept",
     "quoteDecline": "Decline",
-    "quoteAccepted": "Order started."
+    "quoteAccepted": "Order started.",
+    "deliveryPhoto": "Delivery photo, left by the seller."
   },
   "stats": {
     "period7d": "7d",
@@ -2106,7 +2122,11 @@
       "show": "Show",
       "saved": "Saved.",
       "missing": "Name, identifier and address are required.",
-      "badUrl": "The address must start with https://"
+      "badUrl": "The address must start with https://",
+      "propositions": "{{count}} developer proposal(s)",
+      "propositionContact": "Contact",
+      "accept": "Accept",
+      "refuse": "Decline"
     },
     "noBanner": "No banner",
     "publier": {

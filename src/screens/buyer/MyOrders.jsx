@@ -220,6 +220,13 @@ export default function MyOrders() {
                 ) : (
                   <OrderTimeline order={o} />
                 )}
+                {/* La preuve de livraison laissée par la vendeuse (0171). */}
+                {o.delivery_photo_url && (
+                  <a href={o.delivery_photo_url} target="_blank" rel="noopener noreferrer" className="mt-3 block">
+                    <img src={o.delivery_photo_url} alt="" className="max-h-40 w-full rounded-card object-cover" loading="lazy" />
+                    <span className="mt-1 block text-caption text-muted">{t('orderStatus.deliveryPhoto', 'Photo de la livraison, laissée par la vendeuse.')}</span>
+                  </a>
+                )}
 
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
                   {o.status === 'shipped' && !o.buyer_received && (

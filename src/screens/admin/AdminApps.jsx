@@ -24,13 +24,24 @@ export default function AdminApps() {
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error, retry } = useAsync(async () => {
-    const { data: rows, error: e } = await supabase
-      .from('finjaro_apps')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    const [{ data: rows, error: e }, { data: props }] = await Promise.all([
+      supabase.from('finjaro_apps').select('*').order('sort_order', { ascending: true }),
+      supabase.from('finjaro_apps_propositions').select('*').eq('statut', 'proposee').order('created_at'),
+    ]);
     if (e) throw e;
-    return rows || [];
+    return { apps: rows || [], propositions: props || [] };
   }, []);
+
+  // Le dépôt ouvert (0171): une proposition acceptée pré-remplit le
+  // formulaire (l'équipe complète et enregistre); refusée, elle le reste.
+  async function repondre(pr, statut) {
+    const { error: e } = await supabase.from('finjaro_apps_propositions').update({ statut }).eq('id', pr.id);
+    if (e) return toast.error(e.message);
+    if (statut === 'acceptee') {
+      setEdit({ ...VIDE, name: pr.nom, tagline: pr.accroche || '', url: pr.url, key: pr.nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30) });
+    }
+    retry();
+  }
 
   async function enregistrer() {
     const ligne = {
@@ -72,8 +83,28 @@ export default function AdminApps() {
     <div className="p-4">
       <p className="mb-3 text-caption text-muted">{t('admin.apps.intro')}</p>
 
+      {data?.propositions?.length > 0 && (
+        <div className="mb-4 rounded-card border border-brass/40 bg-brass/10 p-3">
+          <p className="mb-2 text-caption font-semibold text-ink">{t('admin.apps.propositions', { count: data.propositions.length, defaultValue: '{{count}} proposition(s) de développeurs' })}</p>
+          <ul className="space-y-2">
+            {data.propositions.map((pr) => (
+              <li key={pr.id} className="rounded-card bg-card p-3 text-caption">
+                <p className="text-body font-semibold text-ink">{pr.nom} <a href={pr.url} target="_blank" rel="noopener noreferrer" className="ml-1 font-normal text-teal underline">{pr.url}</a></p>
+                {pr.accroche && <p className="text-ink">{pr.accroche}</p>}
+                {pr.description && <p className="mt-1 whitespace-pre-wrap text-muted">{pr.description}</p>}
+                {pr.contact && <p className="mt-1 text-muted">{t('admin.apps.propositionContact', 'Contact')} : {pr.contact}</p>}
+                <div className="mt-2 flex gap-2">
+                  <Button onClick={() => repondre(pr, 'acceptee')}>{t('admin.apps.accept', 'Accepter')}</Button>
+                  <Button variant="secondary" onClick={() => repondre(pr, 'refusee')}>{t('admin.apps.refuse', 'Refuser')}</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <ul className="space-y-2">
-        {(data || []).map((a) => (
+        {(data?.apps || []).map((a) => (
           <li key={a.id} className={`card flex items-center gap-3 p-3 ${a.is_active ? '' : 'opacity-60'}`}>
             <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-input text-[20px] ${accentClass(a.accent)}`}>
               {a.emoji || (a.name || '?').charAt(0)}

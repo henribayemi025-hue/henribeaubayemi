@@ -37,6 +37,8 @@ export default function ProductDetail() {
   const sizeRef = useRef(null);
   const [starting, setStarting] = useState(false);
   const [mirrorOpen, setMirrorOpen] = useState(false);
+  // La fiche traduite (0171): « voir l'original » la remet telle quelle.
+  const [original, setOriginal] = useState(false);
 
   const [similar, setSimilar] = useState([]);
   // « Me prévenir » (migration 0114): une ligne dans product_alerts par
@@ -284,7 +286,7 @@ export default function ProductDetail() {
       )}
 
       <div className="p-4">
-        <h1 className="text-title text-ink">{p.name}</h1>
+        <h1 className="text-title text-ink"><NomTraduit p={p} langue={i18n.language} original={original} /></h1>
         {quote ? (
           <>
             <p className="mt-1 text-section font-semibold text-brass">{t('product.priceOnRequest')}</p>
@@ -361,7 +363,8 @@ export default function ProductDetail() {
         {p.description && (
           <div className="mt-4">
             <h2 className="text-section text-ink">{t('product.description')}</h2>
-            <p className="mt-1 whitespace-pre-wrap text-body text-muted">{p.description}</p>
+            <p className="mt-1 whitespace-pre-wrap text-body text-muted"><DescriptionTraduite p={p} langue={i18n.language} original={original} /></p>
+            <NoteTraduction p={p} langue={i18n.language} original={original} onBascule={() => setOriginal((v) => !v)} t={t} />
           </div>
         )}
 
@@ -522,5 +525,47 @@ function Variant({ label, options, value, onChange }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// LA FICHE TRADUITE (0171). Finjaro est mondiale: une fiche écrite en
+// français se lit en anglais chez une acheteuse anglophone, et l'inverse.
+// La traduction vient du serveur (traduire-fiche), une fois par langue,
+// puis reste en cache; ici, un seul appel par fiche et par langue, partagé
+// entre le titre et la description. Si la fiche est déjà dans la langue de
+// l'écran, on ne touche à rien.
+const traductions = new Map();
+function useTraduction(p, langue) {
+  const [trad, setTrad] = useState(null);
+  const cle = `${p?.id}|${langue?.slice(0, 2)}`;
+  useEffect(() => {
+    let vivant = true;
+    const l = String(langue || '').slice(0, 2);
+    if (!p?.id || !['fr', 'en'].includes(l)) { setTrad(null); return undefined; }
+    if (!traductions.has(cle)) {
+      traductions.set(cle, supabase.functions.invoke('traduire-fiche', { body: { product_id: p.id, langue: l } })
+        .then(({ data }) => (data && !data.erreur && data.langue_source && data.langue_source !== l && data.name ? data : null))
+        .catch(() => null));
+    }
+    traductions.get(cle).then((d) => { if (vivant) setTrad(d); });
+    return () => { vivant = false; };
+  }, [cle, p?.id, langue]);
+  return trad;
+}
+function NomTraduit({ p, langue, original }) {
+  const trad = useTraduction(p, langue);
+  return trad && !original ? trad.name : p.name;
+}
+function DescriptionTraduite({ p, langue, original }) {
+  const trad = useTraduction(p, langue);
+  return trad && !original && trad.description ? trad.description : p.description;
+}
+function NoteTraduction({ p, langue, original, onBascule, t }) {
+  const trad = useTraduction(p, langue);
+  if (!trad) return null;
+  return (
+    <button type="button" onClick={onBascule} className="mt-1 text-caption text-muted underline">
+      {original ? t('product.seeTranslation', 'Voir la traduction') : t('product.translated', 'Traduit automatiquement · voir l’original')}
+    </button>
   );
 }

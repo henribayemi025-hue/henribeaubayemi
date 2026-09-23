@@ -168,7 +168,6 @@
     "autreEmoji": "Un autre emoji",
     "repondre": "Répondre",
     "enFaireUneTache": "En faire une tâche",
-    "copier": "Copier",
     "reponseA": "Réponse à",
     "sonne": "Fait sonner le téléphone",
     "mentionner": "Nommer quelqu’un",
@@ -225,7 +224,6 @@
     "reluCorrige": "Relu et corrigé",
     "toi": "toi",
     "retour": "Retour",
-    "copie": "Copié",
     "ecrireCourt": "Message",
     "ouEnEsTu": "@{{nom}}, où en es-tu sur « {{tache}} » ?",
     "choisisUnSalon": "Choisis un salon.",
@@ -724,7 +722,19 @@
     "subtitle": "Un seul compte, tous les outils Finjaro.",
     "current": "Ouvert",
     "intro": "Finjaro, ce n'est pas qu'une place de marché. Voici les applications qui marchent avec le même compte.",
-    "sameAccount": "Ton compte Finjaro ouvre toutes ces applications. La connexion se fait une fois par application."
+    "sameAccount": "Ton compte Finjaro ouvre toutes ces applications. La connexion se fait une fois par application.",
+    "proposeTitle": "Développeurs : proposez votre application",
+    "proposeIntro": "Vous avez construit une application utile aux commerçants, aux créateurs ou aux entrepreneurs ? Proposez-la : si elle est acceptée, elle rejoint l’environnement Finjaro et s’ouvre avec le même compte.",
+    "proposeButton": "Proposer mon application",
+    "proposeName": "Nom de l’application",
+    "proposeUrl": "Adresse",
+    "proposeTagline": "En une phrase, ce qu’elle fait",
+    "proposeDescription": "Pour qui, et pourquoi elle a sa place dans Finjaro",
+    "proposeContact": "Comment vous joindre",
+    "proposeContactHint": "Un e-mail ou un numéro, vu seulement par l’équipe Finjaro.",
+    "proposeSend": "Envoyer",
+    "proposeSent": "Reçu. L’équipe regarde et vous répond.",
+    "proposeMissing": "Le nom et l’adresse (https://…) sont obligatoires."
   },
   "product": {
     "addToCart": "Ajouter au panier",
@@ -760,7 +770,9 @@
     "askSeller": "Poser une question à la vendeuse",
     "askSellerMessage": "Bonjour, je vous écris depuis Finjaro au sujet de « {{name}} ». Est-il disponible ?\n{{url}}",
     "addToCartOnRequest": "Demander le prix",
-    "priceOnRequestHow": "Mets-le au panier : la boutique t'envoie son prix, tu acceptes ou non. Rien n'est réservé avant."
+    "priceOnRequestHow": "Mets-le au panier : la boutique t'envoie son prix, tu acceptes ou non. Rien n'est réservé avant.",
+    "translated": "Traduit automatiquement · voir l’original",
+    "seeTranslation": "Voir la traduction"
   },
   "shop": {
     "products": "Produits",
@@ -1532,7 +1544,10 @@
     "quoteModalHint": "Prix pour UN article, dans la monnaie de ta boutique. Le total est calculé tout seul.",
     "quoteUnitPrice": "Prix à l'unité",
     "quotePriceRequired": "Chaque article doit avoir un prix supérieur à zéro.",
-    "quoteSent": "Prix envoyé à la cliente."
+    "quoteSent": "Prix envoyé à la cliente.",
+    "deliveryProofTitle": "Marquer livrée",
+    "deliveryProofHint": "Une photo du colis remis, c’est ta preuve en cas de doute. Facultatif : tu peux marquer livrée sans photo.",
+    "deliveryProofAdd": "Prendre ou choisir une photo"
   },
   "orderStatus": {
     "new": "En attente de validation",
@@ -1561,7 +1576,8 @@
     "quoteReadyBody": "Accepte pour lancer la commande, ou refuse — dans ce cas elle est annulée, sans frais.",
     "quoteAccept": "Accepter",
     "quoteDecline": "Refuser",
-    "quoteAccepted": "Commande lancée."
+    "quoteAccepted": "Commande lancée.",
+    "deliveryPhoto": "Photo de la livraison, laissée par la vendeuse."
   },
   "stats": {
     "period7d": "7j",
@@ -2106,7 +2122,11 @@
       "show": "Afficher",
       "saved": "Enregistré.",
       "missing": "Nom, identifiant et adresse sont obligatoires.",
-      "badUrl": "L'adresse doit commencer par https://"
+      "badUrl": "L'adresse doit commencer par https://",
+      "propositions": "{{count}} proposition(s) de développeurs",
+      "propositionContact": "Contact",
+      "accept": "Accepter",
+      "refuse": "Refuser"
     },
     "noBanner": "Pas de bannière",
     "publier": {
