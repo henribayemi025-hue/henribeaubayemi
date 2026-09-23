@@ -76,7 +76,142 @@ const peut = (a: Agent, source: string) => !Array.isArray(a.peut_lire) || a.peut
 // « qu'on demande à la commission de réfléchir » sur les taux de change — une
 // réunion qui raisonne sans faits ne sert à rien sur un tel sujet).
 type Reunion = { ouverture: true; sujet: string; participants: string[]; president: string; tours: number; conclure?: boolean; terminee?: boolean;
-  recherche?: boolean; web?: Trouvaille | null };
+  recherche?: boolean; web?: Trouvaille | null; format?: string };
+
+// ——— Les formats de réunion (23/09, idées 6, 16, 20, 72, 78, 93, 120, 125,
+// 175, 181, 184, 186 et 190 des 200 de Gemini, que Beau a demandé de faire) ———
+// Une réunion n'est pas toujours un débat entre collègues : on peut voter,
+// faire jouer à un agent l'avocat du diable, simuler une conférence de presse,
+// des clients, une négociation, des investisseurs, une crise, un « et si »,
+// une rétrospective, un arbitrage de budget ou une étude d'impact. Chaque
+// format donne un RÔLE à certains participants, remplace les consignes des
+// tours, et titre le compte rendu à sa façon. Toujours les mêmes garde-fous :
+// aucun chiffre inventé, l'humain tranche.
+type Format = {
+  // Le rôle joué par un participant (son rang parmi ceux qui ne président pas, et s'il préside).
+  role?: (rang: number, preside: boolean) => string | null;
+  tour1?: string; tour2?: string;
+  vote?: boolean;
+  contexte?: 'taches' | 'plans';
+  titres: [string, string, string, string]; titresEn: [string, string, string, string];
+  cr: string;
+};
+const FORMATS: Record<string, Format> = {
+  vote: {
+    vote: true,
+    tour2: `C'EST TON TOUR — TOUR 2, LE DÉBAT PUIS LE VOTE. Conteste nommément le point le plus faible d'un collègue avec un argument de TON métier, dis ce que tu changes si on t'a convaincu, puis VOTE sur la proposition du sujet : "vote" = pour, contre ou abstention, et dis ta raison en une phrase à la fin de ton texte. Entre 60 et 140 mots.
+"conteste" : le prénom exact du collègue que tu contestes, ou "".`,
+    titres: ['Décidé', 'Écarté, et pourquoi', 'Les désaccords qui restent', 'À toi de trancher'], titresEn: ['Decided', 'Dropped, and why', 'Disagreements that remain', 'For you to decide'],
+    cr: `C'était une réunion avec VOTE : le décompte est affiché à part, ne le recopie pas. Dans "a_trancher", rappelle que le vote éclaire la décision mais ne la prend pas : c'est l'humain qui décide.`,
+  },
+  avocat: {
+    role: (rang) => (rang === 0 ? `TU ES L'AVOCAT DU DIABLE de cette réunion : tu contestes la position qui domine, à chaque tour, avec des arguments sérieux de ton métier — même si, en temps normal, tu serais d'accord. Dis-le franchement au début de ta première prise de parole.` : null),
+    titres: ['Décidé', 'Écarté, et pourquoi', 'Les objections qui tiennent encore', 'À toi de trancher'], titresEn: ['Decided', 'Dropped, and why', 'Objections still standing', 'For you to decide'],
+    cr: `Un participant jouait l'avocat du diable : garde ses objections qui n'ont pas trouvé de réponse dans "desaccords".`,
+  },
+  presse: {
+    role: (rang, preside) => (preside
+      ? `TU ES LE PORTE-PAROLE de l'entreprise face à la presse : tu réponds à chaque question posée, franchement, sans langue de bois et sans rien promettre qu'on ne peut pas tenir.`
+      : `TU JOUES UN OU UNE JOURNALISTE (un média ${['économique', 'tech', 'grand public', 'spécialisé', 'local'][rang % 5]}) : tu poses des questions difficiles et précises, celles qui mettent l'entreprise en difficulté. Tu ne fais pas de discours.`),
+    tour1: `C'EST TON TOUR — TOUR 1. Si tu es journaliste : UNE question dure et précise sur le sujet, avec ce qui la motive (une ligne). Si tu es le porte-parole : réponds à chaque question posée depuis l'ouverture, une à une, en citant qui l'a posée. Entre 40 et 160 mots.
+"conteste" : "".`,
+    tour2: `C'EST TON TOUR — TOUR 2, LES RELANCES. Si tu es journaliste : relance sur la réponse la plus faible du porte-parole (cite-la), ou pose la question qu'il esquive. Si tu es le porte-parole : réponds aux relances, et reconnais ce que tu ne sais pas. Entre 40 et 160 mots.
+"conteste" : le prénom exact de celui ou celle que tu relances, ou "".`,
+    titres: ['Réponses solides', 'Phrases à éviter', 'Questions qui ont mis en difficulté', 'À préparer avant une vraie interview'], titresEn: ['Solid answers', 'Phrases to avoid', 'Questions that hurt', 'To prepare before a real interview'],
+    cr: `C'était une CONFÉRENCE DE PRESSE SIMULÉE. "decide" = les réponses du porte-parole qui ont tenu ; "ecarte" = les formulations maladroites ou risquées à ne plus dire (et pourquoi) ; "desaccords" = les questions qui ont mis en difficulté, nommément ; "a_trancher" = ce qu'il faut préparer ou décider avant une vraie interview. Les tâches : préparer les réponses manquantes.`,
+  },
+  clients: {
+    role: (rang, preside) => (preside
+      ? `TU ANIMES L'ENTRETIEN avec des clients : tu poses les questions, tu relances, tu ne vends rien.`
+      : `TU JOUES UN CLIENT OU UNE CLIENTE TYPE de l'entreprise — choisis un profil réaliste et DIFFÉRENT des autres (âge, situation, usage, budget). Tu parles avec tes mots de client, pas ceux d'un expert : ce que tu attends, ce qui te fait hésiter, ce qui te ferait acheter ou revenir. Aucun chiffre de marché inventé.`),
+    tour1: `C'EST TON TOUR — TOUR 1. Client ou cliente : présente-toi en une ligne (ton profil), puis ce que tu attends et ce qui te fait hésiter. Animateur : pose la question qui fera parler (ce qui manque, ce qui gêne). Entre 50 et 150 mots.
+"conteste" : "".`,
+    tour2: `C'EST TON TOUR — TOUR 2. Client ou cliente : réagis à ce qu'a dit un autre client (d'accord ou pas, pourquoi) et dis ce qui te ferait acheter. Animateur : relance sur la contradiction la plus utile. Entre 50 et 150 mots.
+"conteste" : le prénom exact d'un participant avec qui tu n'es pas d'accord, ou "".`,
+    titres: ['Ce qu’ils attendent', 'Ce qui les fait hésiter', 'Ce qui les divise', 'À vérifier auprès de vrais clients'], titresEn: ['What they expect', 'What makes them hesitate', 'Where they disagree', 'To check with real customers'],
+    cr: `C'était un ENTRETIEN AVEC DES CLIENTS SIMULÉS : rappelle en une ligne dans "a_trancher" que ce sont des profils imaginés, à confirmer auprès de vrais clients.`,
+  },
+  negociation: {
+    role: (rang) => (rang === 0 ? `TU JOUES LA PARTIE D'EN FACE (le fournisseur, le partenaire ou le gros client dont parle le sujet) : tu défends SES intérêts, durement mais de bonne foi. Tu ne fais pas de cadeau.` : `Tu négocies POUR l'entreprise, depuis ton métier.`),
+    titres: ['Points d’accord possibles', 'Concessions à ne pas faire', 'Ce qui bloque', 'À trancher avant la vraie négociation'], titresEn: ['Possible agreements', 'Concessions not to make', 'What blocks', 'To decide before the real negotiation'],
+    cr: `C'était une NÉGOCIATION SIMULÉE (un participant jouait la partie d'en face). Aucun montant qui n'a pas été donné.`,
+  },
+  investisseurs: {
+    role: (rang, preside) => (preside
+      ? `TU REPRÉSENTES L'ENTREPRISE devant des investisseurs : tu réponds aux questions, sans enjoliver, et tu dis quand un chiffre manque.`
+      : `TU JOUES UN INVESTISSEUR (${['fonds de capital-risque', 'business angel', 'fonds à impact', 'investisseur du secteur'][rang % 4]}) qui étudie le dossier : questions dures sur le marché, l'équipe, les chiffres, le modèle, les risques.`),
+    tour2: `C'EST TON TOUR — TOUR 2. Investisseur : ton VERDICT — tu investirais ou pas, et la raison principale ; ce qu'il faudrait pour que tu changes d'avis. Représentant de l'entreprise : réponds aux objections qui restent. Entre 50 et 150 mots.
+"conteste" : le prénom exact d'un participant que tu contestes, ou "".`,
+    titres: ['Ce qui convainc', 'Ce qui fait fuir', 'Questions sans bonne réponse', 'À préparer avant de lever des fonds'], titresEn: ['What convinces', 'What scares them off', 'Questions without a good answer', 'To prepare before raising'],
+    cr: `C'était un COMITÉ D'INVESTISSEMENT SIMULÉ : donne dans "decide" le verdict de chaque investisseur, nommément.`,
+  },
+  crise: {
+    tour1: `C'EST TON TOUR — TOUR 1. LE SUJET EST UN SCÉNARIO DE CRISE. Depuis TON métier : ce que tu fais dans la première heure, puis le premier jour — concret (qui prévient qui, quoi dire, quoi arrêter). Entre 70 et 160 mots.
+"conteste" : "".`,
+    titres: ['Premières actions (qui, quand)', 'Ce qu’il ne faut surtout pas faire', 'Les désaccords', 'À décider par toi si ça arrive'], titresEn: ['First actions (who, when)', 'What not to do', 'Disagreements', 'For you to decide if it happens'],
+    cr: `C'était un EXERCICE DE CRISE : "decide" = le plan d'action, dans l'ordre, avec qui fait quoi.`,
+  },
+  etsi: {
+    contexte: 'plans',
+    tour1: `C'EST TON TOUR — TOUR 1. LE SUJET EST UN « ET SI » : compare avec ce qui a été décidé et fait (les plans et décisions plus haut). Depuis TON métier : ce qui aurait changé, en bien ou en mal, et ce qui n'aurait rien changé. Entre 70 et 160 mots.
+"conteste" : "".`,
+    tour2: `C'EST TON TOUR — TOUR 2. Conteste nommément l'analyse d'un collègue qui te paraît fausse, puis dis LA leçon pour la suite. Entre 60 et 140 mots.
+"conteste" : le prénom exact du collègue que tu contestes, ou "".`,
+    titres: ['Ce qui aurait changé', 'Ce qui n’aurait rien changé', 'Là où on n’est pas d’accord', 'Leçons à retenir'], titresEn: ['What would have changed', 'What would not have changed', 'Where we disagree', 'Lessons'],
+    cr: `C'était une réunion « ET SI ». Les tâches : seulement si une leçon demande d'agir maintenant.`,
+  },
+  retro: {
+    contexte: 'taches',
+    tour1: `C'EST TON TOUR — TOUR 1, LA RÉTROSPECTIVE des sept derniers jours (les tâches plus haut). Depuis TON métier : ce qui a marché, ce qui a coincé — avec des faits (les tâches), jamais d'impression vague. Entre 60 et 150 mots.
+"conteste" : "".`,
+    tour2: `C'EST TON TOUR — TOUR 2. UNE chose à changer, concrète, et conteste la proposition d'un collègue qui ne réglerait rien. Entre 50 et 130 mots.
+"conteste" : le prénom exact du collègue que tu contestes, ou "".`,
+    titres: ['On garde', 'On arrête', 'Ce qui divise', 'À changer — à toi de valider'], titresEn: ['Keep', 'Stop', 'What divides us', 'To change — for you to approve'],
+    cr: `C'était une RÉTROSPECTIVE : "decide" = ce qu'on garde, "ecarte" = ce qu'on arrête (et pourquoi).`,
+  },
+  budget: {
+    tour1: `C'EST TON TOUR — TOUR 1, L'ARBITRAGE DE BUDGET. Défends ce dont TON département a besoin, par ordre de priorité, et ce que tu peux sacrifier. AUCUN montant qui n'a pas été donné : parle en priorités et en parts (« la moitié », « d'abord »). Entre 60 et 150 mots.
+"conteste" : "".`,
+    tour2: `C'EST TON TOUR — TOUR 2. Conteste nommément la demande qui te semble la moins justifiée, et dis ce que tu céderais pour débloquer. Entre 50 et 130 mots.
+"conteste" : le prénom exact du collègue que tu contestes, ou "".`,
+    titres: ['Priorités qui font consensus', 'Demandes écartées, et pourquoi', 'Arbitrages disputés', 'À toi de fixer (montants)'], titresEn: ['Agreed priorities', 'Dropped requests, and why', 'Disputed trade-offs', 'For you to set (amounts)'],
+    cr: `C'était un ARBITRAGE DE BUDGET : aucun montant qui n'a pas été donné ; les montants sont dans "a_trancher", pour l'humain.`,
+  },
+  impact: {
+    tour1: `C'EST TON TOUR — TOUR 1, L'ÉTUDE D'IMPACT de ce que propose le sujet. Depuis TON métier : les effets sur les clients, les équipes, la société, la loi, l'environnement — bons et mauvais. Entre 60 et 150 mots.
+"conteste" : "".`,
+    tour2: `C'EST TON TOUR — TOUR 2. Le risque que l'équipe sous-estime, nommément contre l'analyse d'un collègue, et le garde-fou qui le couvrirait. Entre 50 et 130 mots.
+"conteste" : le prénom exact du collègue que tu contestes, ou "".`,
+    titres: ['Effets positifs', 'Risques à éviter', 'Désaccords', 'Garde-fous à décider'], titresEn: ['Positive effects', 'Risks to avoid', 'Disagreements', 'Safeguards to decide'],
+    cr: `C'était une ÉTUDE D'IMPACT : "decide" = les effets positifs retenus, "ecarte" = les risques à éviter et comment.`,
+  },
+};
+const formatDe = (r: Reunion) => (r.format && FORMATS[r.format]) || null;
+
+// Ce qu'un format demande de relire : les tâches des sept derniers jours
+// (rétrospective), ou les plans et décisions passés (« et si »).
+async function contexteDuFormat(service: Service, o: Message, f: Format | null, agents: Agent[]): Promise<string> {
+  if (!f?.contexte) return '';
+  const nomDe = (id: string | null) => agents.find((a) => a.id === id)?.nom || '?';
+  if (f.contexte === 'taches') {
+    const depuis = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const { data } = await service.from('legion_messages').select('texte, assigne_a, meta, created_at, termine_le')
+      .eq('entreprise_id', o.entreprise_id).eq('genre', 'tache').or(`created_at.gte.${depuis},termine_le.gte.${depuis}`).order('created_at').limit(80);
+    const lignes = (data || []).map((x: { texte: string; assigne_a: string | null; meta: { statut?: string; echeance?: string } | null; termine_le: string | null }) =>
+      `- ${String(x.texte).slice(0, 160)} — ${nomDe(x.assigne_a)} — ${x.termine_le ? 'fait' : (x.meta?.statut || 'a_faire')}`);
+    return lignes.length ? `
+LES TÂCHES DES SEPT DERNIERS JOURS :
+${lignes.join('\n')}
+` : "\n(Aucune tâche ces sept derniers jours.)\n";
+  }
+  const { data: plans } = await service.from('legion_plans').select('departement, horizon, contenu, created_at')
+    .eq('entreprise_id', o.entreprise_id).order('created_at', { ascending: false }).limit(6);
+  const { data: decisions } = await service.from('legion_messages').select('texte, created_at')
+    .eq('entreprise_id', o.entreprise_id).eq('genre', 'decision').order('created_at', { ascending: false }).limit(6);
+  const p = (plans || []).map((x: { departement: string; horizon: string; contenu: string; created_at: string }) => `(${x.created_at.slice(0, 10)}, ${x.departement}, ${x.horizon}) ${String(x.contenu).slice(0, 700)}`);
+  const d = (decisions || []).map((x: { texte: string; created_at: string }) => `(${x.created_at.slice(0, 10)}) ${String(x.texte).slice(0, 700)}`);
+  return `\nCE QUI A ÉTÉ PLANIFIÉ ET DÉCIDÉ (les plus récents d'abord) :\n${[...p, ...d].join('\n\n') || '(rien encore)'}\n`;
+}
 type Message = { id: string; entreprise_id: string; canal_id: string; auteur_id: string; user_id: string | null; texte: string; genre: string; created_at: string;
   meta: Record<string, unknown> | null };
 // deno-lint-ignore no-explicit-any
@@ -187,6 +322,11 @@ const SCHEMA_PAROLE = {
   properties: { texte: { type: 'STRING' }, conteste: { type: 'STRING' } },
   required: ['texte', 'conteste'],
 };
+const SCHEMA_PAROLE_VOTE = {
+  type: 'OBJECT',
+  properties: { texte: { type: 'STRING' }, conteste: { type: 'STRING' }, vote: { type: 'STRING', enum: ['pour', 'contre', 'abstention'] } },
+  required: ['texte', 'conteste', 'vote'],
+};
 // Les quatre parties en champs séparés, mises en page ici (23/09, deuxième
 // essai: le modèle avait rendu le compte rendu d'un seul bloc, les points
 // collés aux titres — « ## Décidé - — rien »).
@@ -245,7 +385,13 @@ async function prendreLaParole(service: Service, apiKey: string, o: Message, r: 
   const interventions = ctx.fil.filter((m) => m.user_id && m.id !== o.id && m.created_at > depuis);
   const langue = ctx.entreprise?.langue === 'en' ? 'anglais' : 'français';
 
-  const consigneTour = tour === 1
+  const f = formatDe(r);
+  const rangs = participants.filter((p) => p.id !== president.id);
+  const role = f?.role ? f.role(rangs.findIndex((p) => p.id === a.id), a.id === president.id) : null;
+  const extra = await contexteDuFormat(service, o, f, ctx.agents);
+  const voteIci = !!f?.vote && tour === (r.tours || TOURS);
+  const consigneFormat = tour === 1 ? f?.tour1 : f?.tour2;
+  const consigneTour = consigneFormat || (tour === 1
     ? `C'EST TON TOUR — TOUR 1, TA POSITION. Depuis TON métier : ce que tu recommandes (concret : quoi, qui, quand), pourquoi (l'argument de ton métier), le risque principal que tu vois, et ce qu'il te faudrait pour avancer. Si des collègues ont déjà parlé, ne commence PAS par dire que tu es d'accord : apporte d'abord ce que TON métier voit et qu'ils n'ont pas dit, puis situe-toi — d'accord sur quoi, pas d'accord sur quoi, nommément. Entre 70 et 160 mots.
 "conteste" : le prénom exact d'un collègue avec qui tu n'es pas d'accord, ou "".`
     : `C'EST TON TOUR — TOUR 2, LE DÉBAT. On ne se félicite pas : on se dispute sur le fond, comme une vraie équipe qui veut la meilleure décision.
@@ -253,13 +399,13 @@ async function prendreLaParole(service: Service, apiKey: string, o: Message, r: 
 2. Reprends-le en une ligne (« Plume, tu proposes… »), puis conteste-le avec un argument de TON métier : un risque, un coût, une contrainte, un exemple, un chiffre DÉJÀ DONNÉ.
 3. Propose mieux : une alternative, ou une idée neuve que personne n'a encore mise sur la table.
 Si on t'a contesté et que l'autre a raison, dis-le franchement et dis ce que tu changes. Interdit : « je suis d'accord avec tout le monde », les compliments, la langue de bois. Ferme sur le fond, courtois dans la forme. Entre 60 et 140 mots.
-"conteste" : le prénom exact du collègue que tu contestes (obligatoire à ce tour, sauf si tu reconnais qu'on avait raison contre toi : alors "").`;
+"conteste" : le prénom exact du collègue que tu contestes (obligatoire à ce tour, sauf si tu reconnais qu'on avait raison contre toi : alors "").`);
 
   const texte = `${entete(a, ctx.entreprise, ctx.feuille, ctx.memoire, peut(a, 'mesures') ? ctx.mesures : null, competences)}
 TU ES EN RÉUNION, dans le salon « ${ctx.salon?.nom} », convoquée par ${convocant}. Le sujet :
 « ${r.sujet} »
 Autour de la table : ${participants.map((p) => `${p.nom} (${p.poste})`).join(', ')}. Préside : ${president.nom}.
-${ctx.salon?.resume ? `\nLA MÉMOIRE DE CE SALON (ce qui s'est dit avant) :\n${String(ctx.salon.resume).slice(0, 2000)}\n` : ''}
+${role ? `\n${role}\n` : ''}${extra}${ctx.salon?.resume ? `\nLA MÉMOIRE DE CE SALON (ce qui s'est dit avant) :\n${String(ctx.salon.resume).slice(0, 2000)}\n` : ''}
 ${r.web && peut(a, 'web') ? `${blocWeb(r.web)}\n` : ''}CE QUI S'EST DIT DEPUIS L'OUVERTURE, dans l'ordre :
 ${lignes.join('\n')}
 
@@ -267,17 +413,18 @@ ${consigneTour}
 ${interventions.length ? `\n${interventions.map((m) => ctx.agents.find((x) => x.id === m.auteur_id)?.nom || 'Un humain').join(', ')} vient d'intervenir (plus haut, « humain, intervient ») : réponds-lui D'ABORD, en une ou deux phrases, puis fais ton tour.\n` : ''}
 ${REGLES_REUNION(langue, !!ctx.mesures)}`;
 
-  const rendu = await generer(apiKey, texte, SCHEMA_PAROLE, { temperature: 0.85, reflexion: 1024, maxSortie: 2048, delaiMs: 45_000, modeles: moteursSimples() });
+  const rendu = await generer(apiKey, texte + (voteIci && !consigneFormat?.includes('"vote"') ? `\n"vote" : pour, contre ou abstention sur la proposition du sujet.` : ''), voteIci ? SCHEMA_PAROLE_VOTE : SCHEMA_PAROLE, { temperature: 0.85, reflexion: 1024, maxSortie: 2048, delaiMs: 45_000, modeles: moteursSimples() });
   if ('erreur' in rendu || typeof rendu.obj.texte !== 'string' || !rendu.obj.texte.trim()) {
     console.error('réunion, parole:', 'erreur' in rendu ? rendu.erreur : 'texte vide');
     return false;
   }
   const conteste = typeof rendu.obj.conteste === 'string' ? rendu.obj.conteste.trim() : '';
+  const vote = voteIci && ['pour', 'contre', 'abstention'].includes(String(rendu.obj.vote)) ? String(rendu.obj.vote) : null;
   const vise = conteste ? designe(conteste, participants.filter((p) => p.id !== a.id)) : null;
   const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: a.id, user_id: null,
     texte: aerer(rendu.obj.texte.trim()).slice(0, 3000), genre: 'info',
-    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, tour, ordre, ...(vise ? { conteste: vise.nom } : {}) } },
+    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, tour, ordre, ...(vise ? { conteste: vise.nom } : {}), ...(vote ? { vote } : {}), ...(role ? { role: true } : {}) } },
   }).select('id').single();
   if (error) { console.error('réunion, écrire:', error.message); return false; }
   await garder(service, { entreprise_id: o.entreprise_id, message_id: ecrit.id, fonction: 'legion_reunion', modele: rendu.modele, consigne: texte, sortie: JSON.stringify(rendu.obj) });
@@ -302,12 +449,17 @@ async function conclure(service: Service, apiKey: string, o: Message, r: Reunion
   const convocant = ctx.agents.find((x) => x.id === o.auteur_id)?.nom || 'le fondateur';
   const lignes = transcription(ctx.fil, o, ctx.agents);
   const langue = anglais ? 'anglais' : 'français';
+  const f = formatDe(r);
+  const extra = await contexteDuFormat(service, o, f, ctx.agents);
+  // Le décompte du vote : compté ici, jamais par le modèle.
+  const votes = f?.vote ? ctx.fil.filter((m) => reunionDe(m)?.id === o.id && typeof reunionDe(m)?.vote === 'string').map((m) => String(reunionDe(m)!.vote)) : [];
+  const decompte = votes.length ? { pour: votes.filter((v) => v === 'pour').length, contre: votes.filter((v) => v === 'contre').length, abstention: votes.filter((v) => v === 'abstention').length } : null;
   const texte = `${entete(president, ctx.entreprise, ctx.feuille, ctx.memoire, ctx.mesures, [])}
 Tu PRÉSIDES la réunion, dans le salon « ${ctx.salon?.nom} », convoquée par ${convocant}. Le sujet :
 « ${r.sujet} »
 Participants : ${participants.map((p) => `${p.nom} (${p.poste})`).join(', ')}.
 
-${r.web ? `${blocWeb(r.web)}\n` : ''}TOUT CE QUI S'EST DIT, dans l'ordre :
+${extra}${r.web ? `${blocWeb(r.web)}\n` : ''}TOUT CE QUI S'EST DIT, dans l'ordre :
 ${lignes.join('\n')}
 ${r.conclure ? `\n${convocant} a demandé de conclure maintenant : conclus avec ce qui a été dit.\n` : ''}
 Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone : quatre listes, un point par élément, une phrase courte chacun, sans puce ni titre (la mise en page est faite ailleurs).
@@ -318,7 +470,7 @@ Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone : quatre liste
 Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'argent, un prix, le juridique, le recrutement ou une personne : tu poses la question avec les options. Aucun chiffre ni fait qui n'a pas été dit en réunion. Pas d'introduction, pas de formule de fin. Écris en ${langue}.
 Un agent ne code pas, ne teste pas, n'envoie rien : une décision qui demande ce travail va dans "a_trancher" (qui le fait : Claude le développeur, ou le fondateur), jamais dans les tâches d'un agent. Aucun délai que personne n'a fixé.
 "taches" : une à cinq tâches concrètes DÉCIDÉES en réunion (celles de la partie « Décidé »), que l'agent peut faire lui-même (analyser, écrire, comparer, préparer), chacune confiée à UN participant ("agent" = son nom tel qu'écrit dans la liste des participants), avec la priorité. Rien qui n'ait pas été décidé ; [] s'il n'y en a pas.
-"question" : la question la plus importante pour ${convocant}, en une phrase, ou "".`;
+"question" : la question la plus importante pour ${convocant}, en une phrase, ou "".${f ? `\n\nFORMAT DE CETTE RÉUNION : ${f.cr}${decompte ? ` Décompte : ${decompte.pour} pour, ${decompte.contre} contre, ${decompte.abstention} abstention(s).` : ''}` : ''}`;
 
   const gratuite = ctx.entreprise?.formule === 'gratuite';
   const rendu = await generer(apiKey, texte, SCHEMA_COMPTE_RENDU, {
@@ -345,15 +497,20 @@ Un agent ne code pas, ne teste pas, n'envoie rien : une décision qui demande ce
     return `${x.slice(0, 90).replace(/\s+\S*$/, '')}…`;
   })();
   const titre = `${anglais ? 'Minutes' : 'Compte rendu'} — ${sujetCourt}`;
-  const titres = anglais
-    ? ['Decided', 'Dropped, and why', 'Disagreements that remain', `For you to decide, ${convocant}`]
-    : ['Décidé', 'Écarté, et pourquoi', 'Les désaccords qui restent', `À toi de trancher, ${convocant}`];
+  const titres = f
+    ? (anglais ? f.titresEn : f.titres).map((t, i) => (i === 3 ? `${t}, ${convocant}` : t))
+    : anglais
+      ? ['Decided', 'Dropped, and why', 'Disagreements that remain', `For you to decide, ${convocant}`]
+      : ['Décidé', 'Écarté, et pourquoi', 'Les désaccords qui restent', `À toi de trancher, ${convocant}`];
   const vide = anglais ? '- nothing' : '- rien';
-  const corpsCR = titres.map((t, i) => `## ${t}\n${listes[i].length ? listes[i].map((x) => `- ${x}`).join('\n') : vide}`).join('\n\n');
+  const ligneVote = decompte ? (anglais
+    ? `## Vote\n- ${decompte.pour} for · ${decompte.contre} against · ${decompte.abstention} abstention(s) — the vote informs, you decide.\n\n`
+    : `## Vote\n- ${decompte.pour} pour · ${decompte.contre} contre · ${decompte.abstention} abstention(s) — le vote éclaire, c'est toi qui décides.\n\n`) : '';
+  const corpsCR = ligneVote + titres.map((t, i) => `## ${t}\n${listes[i].length ? listes[i].map((x) => `- ${x}`).join('\n') : vide}`).join('\n\n');
   const { data: cr, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: president.id, user_id: null,
     texte: `${titre}\n\n${corpsCR}`.slice(0, 5000), genre: 'decision',
-    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id) }, ...(question ? { question } : {}), ...(r.web?.sources.length ? { sources: r.web.sources } : {}) },
+    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id), ...(r.format ? { format: r.format } : {}), ...(decompte ? { votes: decompte } : {}) }, ...(question ? { question } : {}), ...(r.web?.sources.length ? { sources: r.web.sources } : {}) },
   }).select('id').single();
   if (error) { console.error('réunion, compte rendu:', error.message); return; }
   await garder(service, { entreprise_id: o.entreprise_id, message_id: cr.id, fonction: 'legion_reunion', modele: rendu.modele, consigne: texte, sortie: JSON.stringify(rendu.obj) });
@@ -455,7 +612,7 @@ Deno.serve(compter('legion_reunion', async (req: Request) => {
   if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-  let corps: { canal_id?: string; sujet?: string; participants?: string[]; reunion_id?: string; etape?: number; conclure?: boolean; recherche?: boolean };
+  let corps: { canal_id?: string; sujet?: string; participants?: string[]; reunion_id?: string; etape?: number; conclure?: boolean; recherche?: boolean; format?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
 
   // Porte 1 : la réunion elle-même, d'une prise de parole à la suivante.
@@ -528,7 +685,8 @@ Deno.serve(compter('legion_reunion', async (req: Request) => {
 
   const { data: ent } = await service.from('legion_entreprises').select('formule').eq('id', salon.entreprise_id).maybeSingle();
   const recherche = ent?.formule !== 'gratuite' && (corps.recherche === true || aBesoinDuWeb(sujet));
-  const reunion: Reunion = { ouverture: true, sujet, participants: ordre.map((a) => a.id), president: president.id, tours: TOURS, ...(recherche ? { recherche: true } : {}) };
+  const format = corps.format && FORMATS[corps.format] ? corps.format : undefined;
+  const reunion: Reunion = { ouverture: true, sujet, participants: ordre.map((a) => a.id), president: president.id, tours: TOURS, ...(recherche ? { recherche: true } : {}), ...(format ? { format } : {}) };
   const { data: ouverture, error } = await personne.from('legion_messages').insert({
     entreprise_id: salon.entreprise_id, canal_id: salon.id, auteur_id: moi.id, user_id: user.id,
     texte: sujet, genre: 'reunion', meta: { sans_reponse: true, reunion },

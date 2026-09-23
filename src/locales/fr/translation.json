@@ -321,7 +321,75 @@
       "intervention": "Intervention",
       "interventionNotee": "Réunion en cours : le prochain qui parle te répond d'abord.",
       "recherche": "Chercher des faits sur Internet avant de commencer",
-      "rechercheAide": "Une recherche, faite une fois, que tous les participants lisent ; ses sources s'affichent sous le compte rendu."
+      "rechercheAide": "Une recherche, faite une fois, que tous les participants lisent ; ses sources s'affichent sous le compte rendu.",
+      "format": "Le format",
+      "formats": {
+        "debat": {
+          "nom": "Débat (classique)",
+          "aide": "Chacun donne sa position depuis son métier, puis ils se contredisent sur le fond. Le compte rendu dit ce qui est décidé, écarté, ce qui divise, et ce que tu tranches.",
+          "exemple": "Ex. : comment trouver nos vingt premiers clients avant la fin du mois ?"
+        },
+        "vote": {
+          "nom": "Vote",
+          "aide": "Un débat, puis chacun vote pour, contre ou abstention sur la proposition. Le décompte est fait par Legion, pas par un agent. Le vote éclaire : c'est toi qui décides.",
+          "exemple": "Ex. : faut-il remplacer l'agent X, qui rend des livrables trop courts ?"
+        },
+        "avocat": {
+          "nom": "Avocat du diable",
+          "aide": "Un participant a pour rôle de contester la position qui domine, à chaque tour, même s'il serait d'accord. Ses objections sans réponse restent dans le compte rendu.",
+          "exemple": "Ex. : lancer notre offre payante dès novembre"
+        },
+        "presse": {
+          "nom": "Conférence de presse simulée",
+          "aide": "Celui qui préside est le porte-parole ; les autres jouent des journalistes et posent les questions qui fâchent. Tu repars avec les réponses solides, les phrases à éviter et ce qu'il faut préparer.",
+          "exemple": "Ex. : nous lançons notre application — questions sur la sécurité des paiements"
+        },
+        "clients": {
+          "nom": "Entretiens clients simulés",
+          "aide": "Les agents jouent des clients types, chacun un profil différent ; celui qui préside anime. Ce qu'ils attendent, ce qui les fait hésiter — à vérifier ensuite auprès de vrais clients.",
+          "exemple": "Ex. : pourquoi une cliente mettrait-elle un article au panier sans commander ?"
+        },
+        "negociation": {
+          "nom": "Négociation simulée",
+          "aide": "Un agent joue la partie d'en face (fournisseur, partenaire, gros client) ; les autres négocient pour toi. Points d'accord possibles, concessions à ne pas faire.",
+          "exemple": "Ex. : négocier les frais de livraison avec un transporteur"
+        },
+        "investisseurs": {
+          "nom": "Comité d'investissement",
+          "aide": "Les agents jouent des investisseurs qui étudient ton dossier ; celui qui préside représente l'entreprise. Au second tour, chacun donne son verdict.",
+          "exemple": "Ex. : notre dossier pour une première levée de fonds"
+        },
+        "crise": {
+          "nom": "Exercice de crise",
+          "aide": "Le sujet est un scénario de crise. Chacun dit ce que son métier fait dans la première heure et le premier jour ; le plan d'action sort dans l'ordre, avec qui fait quoi.",
+          "exemple": "Ex. : le site est inaccessible un samedi soir pendant une promotion"
+        },
+        "etsi": {
+          "nom": "Et si… ?",
+          "aide": "Les agents relisent ce qui a été planifié et décidé, et comparent avec une autre voie : ce qui aurait changé, et la leçon pour la suite.",
+          "exemple": "Ex. : et si nous avions commencé par les services plutôt que par la mode ?"
+        },
+        "retro": {
+          "nom": "Rétrospective de la semaine",
+          "aide": "À partir des tâches des sept derniers jours : ce qu'on garde, ce qu'on arrête, et une chose concrète à changer.",
+          "exemple": "Ex. : la semaine du lancement"
+        },
+        "budget": {
+          "nom": "Arbitrage de budget",
+          "aide": "Chaque responsable défend ses priorités et dit ce qu'il peut sacrifier — en parts et en priorités, sans montant inventé. Les montants, c'est toi.",
+          "exemple": "Ex. : comment répartir le budget du trimestre"
+        },
+        "impact": {
+          "nom": "Étude d'impact",
+          "aide": "Les effets d'une décision sur les clients, les équipes, la société, la loi et l'environnement ; les risques sous-estimés, et les garde-fous à décider.",
+          "exemple": "Ex. : utiliser un agent pour répondre seul aux clients la nuit"
+        }
+      },
+      "vote_pour": "pour",
+      "vote_contre": "contre",
+      "vote_abstention": "abstention",
+      "ecouter": "Écouter la réunion",
+      "arreterEcoute": "Arrêter"
     },
     "sources": "Sources",
     "appel": {

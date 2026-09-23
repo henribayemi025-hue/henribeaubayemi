@@ -3,6 +3,7 @@ import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
   IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop, IconPhone, IconPaperclip, IconFileSpreadsheet, IconFileText,
+  IconVolume, IconPlayerStop,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
@@ -318,7 +319,7 @@ export function Conversation({
                           {genre.emoji} {t(`legion.genre.${genre.cle}`)}
                         </span>
                       )}
-                      <EtiquetteReunion m={m} mien={mien} agents={agents} t={t} />
+                      <EtiquetteReunion m={m} mien={mien} agents={agents} t={t} messages={messages} langue={langue} />
                       {pieces.length > 0 && (
                         <div className="mb-1 mt-0.5 space-y-1.5">
                           {pieces.map((p, i) => (
@@ -575,8 +576,14 @@ function participantsParDefaut(salon, agents) {
   return choisis.map((a) => a.id);
 }
 
+// Les formats de réunion (idées 6, 16, 20, 72, 78, 93, 120, 125, 175, 181,
+// 184, 186, 190 des 200) : le serveur (legion-reunion) donne les rôles et
+// titre le compte rendu ; ici, on choisit.
+const FORMATS_REUNION = ['debat', 'vote', 'avocat', 'presse', 'clients', 'negociation', 'investisseurs', 'crise', 'etsi', 'retro', 'budget', 'impact'];
+
 function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
   const [sujet, setSujet] = useState('');
+  const [format, setFormat] = useState('debat');
   const [choisis, setChoisis] = useState(() => participantsParDefaut(salon, agents));
   const [envoi, setEnvoi] = useState(false);
   const [recherche, setRecherche] = useState(false);
@@ -587,7 +594,7 @@ function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
     e.preventDefault();
     if (!pret) return;
     setEnvoi(true);
-    try { await onOuvrir({ sujet: sujet.trim(), participants: choisis, recherche }); } finally { setEnvoi(false); }
+    try { await onOuvrir({ sujet: sujet.trim(), participants: choisis, recherche, format: format === 'debat' ? undefined : format }); } finally { setEnvoi(false); }
   }
   return (
     <form onSubmit={ouvrir} className="max-h-[60%] shrink-0 overflow-y-auto border-b border-legion-line bg-legion-panel px-3 py-3">
@@ -595,10 +602,15 @@ function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
         <p className="text-[15px] font-semibold text-legion-ink">{t('legion.reunion.titre')}</p>
         <button type="button" onClick={onFermer} aria-label={t('legion.retour', 'Retour')} className="rounded-full p-1 text-legion-muted"><IconX size={18} /></button>
       </div>
-      <p className="mb-2.5 text-[12.5px] leading-snug text-legion-muted">{t('legion.reunion.aide')}</p>
+      <label className="mb-1 block text-[12px] font-semibold text-legion-muted" htmlFor="format-reunion">{t('legion.reunion.format', 'Le format')}</label>
+      <select id="format-reunion" value={format} onChange={(e) => setFormat(e.target.value)}
+        className="mb-1 w-full rounded-input border border-legion-line bg-legion-card px-3 py-2 text-[15px] text-legion-ink focus:border-legion-gold focus:outline-none">
+        {FORMATS_REUNION.map((f) => <option key={f} value={f}>{t(`legion.reunion.formats.${f}.nom`)}</option>)}
+      </select>
+      <p className="mb-2.5 text-[12.5px] leading-snug text-legion-muted">{t(`legion.reunion.formats.${format}.aide`)}</p>
       <label className="mb-1 block text-[12px] font-semibold text-legion-muted" htmlFor="sujet-reunion">{t('legion.reunion.sujet')}</label>
       <textarea id="sujet-reunion" value={sujet} onChange={(e) => setSujet(e.target.value)} rows={2} maxLength={800}
-        placeholder={t('legion.reunion.sujetPlaceholder')}
+        placeholder={t(`legion.reunion.formats.${format}.exemple`)}
         className="mb-2.5 w-full resize-none rounded-input border border-legion-line bg-legion-card px-3 py-2 text-[16px] text-legion-ink placeholder:text-legion-muted focus:border-legion-gold focus:outline-none" />
       <p className="mb-1 text-[12px] font-semibold text-legion-muted">{t('legion.reunion.participants')} · {t('legion.reunion.participantsAide')}</p>
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -637,7 +649,7 @@ function BandeauReunion({ reunion, agents, t, onConclure }) {
     <div className="flex shrink-0 items-center gap-2 border-b border-legion-line bg-legion-gold/10 px-3 py-2">
       <IconUsersGroup size={18} className="shrink-0 text-legion-gold" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold text-legion-ink">{t('legion.reunion.enCours')} · {reunion.sujet}</p>
+        <p className="truncate text-[13px] font-semibold text-legion-ink">{reunion.format ? t(`legion.reunion.formats.${reunion.format}.nom`) : t('legion.reunion.enCours')} · {reunion.sujet}</p>
         <p className="truncate text-[12px] text-legion-muted">
           {fini
             ? t('legion.reunion.redige', { nom: president?.nom || '' })
@@ -656,7 +668,7 @@ function BandeauReunion({ reunion, agents, t, onConclure }) {
 
 // Ce qu'un message est dans la réunion: l'ouverture, un tour (et qui il
 // conteste), une intervention humaine, le compte rendu.
-function EtiquetteReunion({ m, mien, agents, t }) {
+function EtiquetteReunion({ m, mien, agents, t, messages = [], langue = 'fr' }) {
   const r = m.meta?.reunion;
   const base = `mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-gold/15 text-legion-gold'}`;
   if (m.meta?.dans_reunion) return <span className={base}><IconHandStop size={12} /> {t('legion.reunion.intervention')}</span>;
@@ -666,21 +678,68 @@ function EtiquetteReunion({ m, mien, agents, t }) {
     const president = agents.find((a) => a.id === r.president)?.nom || '';
     return (
       <div className="mb-1">
-        <span className={base}><IconUsersGroup size={12} /> {t('legion.reunion.convoquee')}</span>
+        <span className={base}><IconUsersGroup size={12} /> {r.format ? t(`legion.reunion.formats.${r.format}.nom`) : t('legion.reunion.convoquee')}</span>
         <p className={`text-[12px] ${mien ? 'text-white/85' : 'text-legion-muted'}`}>{t('legion.reunion.autourDeLaTable', { noms, president })}</p>
       </div>
     );
   }
-  if (r.fin && !r.interrompue && !r.annulee && !r.echec) return <span className={base}>📋 {t('legion.reunion.compteRendu')}</span>;
+  if (r.fin && !r.interrompue && !r.annulee && !r.echec) {
+    return (
+      <span className="inline-flex flex-wrap items-center">
+        <span className={base}>📋 {t('legion.reunion.compteRendu')}</span>
+        <EcouterReunion reunionId={r.id} messages={messages} agents={agents} langue={langue} t={t} mien={mien} />
+      </span>
+    );
+  }
   if (typeof r.tour === 'number') {
     return (
       <span className="inline-flex flex-wrap items-center">
         <span className={base}>{t(`legion.reunion.tour${Math.min(r.tour, 2)}`)}</span>
         {r.conteste && <span className="mb-1 mr-1 inline-flex items-center gap-1 rounded-pill bg-legion-danger/15 px-1.5 py-0.5 text-[11px] font-semibold text-legion-danger"><IconSwords size={12} /> {t('legion.reunion.conteste', { nom: r.conteste })}</span>}
+        {r.vote && <span className={`mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${r.vote === 'pour' ? 'bg-emerald-500/15 text-emerald-400' : r.vote === 'contre' ? 'bg-legion-danger/15 text-legion-danger' : 'bg-legion-bg text-legion-muted'}`}>🗳️ {t(`legion.reunion.vote_${r.vote}`)}</span>}
       </span>
     );
   }
   return null;
+}
+
+// Écouter une réunion à plusieurs voix (idée 187 des 200) : chaque agent a
+// sa voix (celles du téléphone, dans la langue de l'entreprise), le sujet
+// puis chaque prise de parole puis le compte rendu. Rien ne part au serveur.
+function EcouterReunion({ reunionId, messages, agents, langue, t, mien }) {
+  const [joue, setJoue] = useState(false);
+  const peut = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  useEffect(() => () => { if (joue && peut) window.speechSynthesis.cancel(); }, [joue, peut]);
+  if (!peut) return null;
+  function lire() {
+    const synth = window.speechSynthesis;
+    if (joue) { synth.cancel(); setJoue(false); return; }
+    const suite = messages.filter((x) => x.id === reunionId || x.meta?.reunion?.id === reunionId).filter((x) => !x.meta?.reunion?.rate)
+      .sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+    const code = langue === 'en' ? 'en' : 'fr';
+    const voix = synth.getVoices().filter((v) => v.lang?.toLowerCase().startsWith(code));
+    const ordre = [...new Set(suite.map((x) => x.auteur_id))];
+    const nettoyer = (txt) => String(txt || '').replace(/[#*_>`]/g, '').replace(/\s+-\s+/g, '. ').replace(/https?:\/\/\S+/g, '');
+    synth.cancel();
+    suite.forEach((x, i) => {
+      const a = agents.find((y) => y.id === x.auteur_id);
+      const rang = ordre.indexOf(x.auteur_id);
+      const u = new SpeechSynthesisUtterance(`${a?.nom || ''}. ${nettoyer(x.texte).slice(0, 1800)}`);
+      u.lang = code === 'en' ? 'en-US' : 'fr-FR';
+      if (voix.length) u.voice = voix[rang % voix.length];
+      u.pitch = 0.85 + ((rang * 0.13) % 0.4);
+      u.rate = 1.02;
+      if (i === suite.length - 1) u.onend = () => setJoue(false);
+      synth.speak(u);
+    });
+    setJoue(true);
+  }
+  return (
+    <button type="button" onClick={lire}
+      className={`mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-bg text-legion-ink'}`}>
+      {joue ? <IconPlayerStop size={12} /> : <IconVolume size={12} />} {joue ? t('legion.reunion.arreterEcoute', 'Arrêter') : t('legion.reunion.ecouter', 'Écouter la réunion')}
+    </button>
+  );
 }
 
 function Action({ icone: I, label, onClick }) {

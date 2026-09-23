@@ -321,7 +321,75 @@
       "intervention": "Interjection",
       "interventionNotee": "Meeting in progress: the next speaker answers you first.",
       "recherche": "Look up facts on the internet before starting",
-      "rechercheAide": "One search, done once, read by every participant; its sources show under the minutes."
+      "rechercheAide": "One search, done once, read by every participant; its sources show under the minutes.",
+      "format": "Format",
+      "formats": {
+        "debat": {
+          "nom": "Debate (classic)",
+          "aide": "Everyone states a position from their field, then they challenge each other. The minutes say what is decided, dropped, what divides, and what you decide.",
+          "exemple": "E.g.: how do we find our first twenty customers before the end of the month?"
+        },
+        "vote": {
+          "nom": "Vote",
+          "aide": "A debate, then everyone votes for, against or abstains on the proposal. Legion counts, not an agent. The vote informs: you decide.",
+          "exemple": "E.g.: should we replace agent X, whose deliverables are too thin?"
+        },
+        "avocat": {
+          "nom": "Devil's advocate",
+          "aide": "One participant must challenge the dominant view every round, even if they would agree. Unanswered objections stay in the minutes.",
+          "exemple": "E.g.: launching our paid plan in November"
+        },
+        "presse": {
+          "nom": "Simulated press conference",
+          "aide": "The chair is the spokesperson; the others play journalists and ask the hard questions. You get the solid answers, the phrases to avoid and what to prepare.",
+          "exemple": "E.g.: we launch our app — questions about payment security"
+        },
+        "clients": {
+          "nom": "Simulated customer interviews",
+          "aide": "Agents play typical customers, each a different profile; the chair moderates. What they expect, what makes them hesitate — to check with real customers afterwards.",
+          "exemple": "E.g.: why would a customer add an item to the cart without ordering?"
+        },
+        "negociation": {
+          "nom": "Simulated negotiation",
+          "aide": "One agent plays the other side (supplier, partner, big client); the others negotiate for you. Possible agreements, concessions not to make.",
+          "exemple": "E.g.: negotiating delivery fees with a carrier"
+        },
+        "investisseurs": {
+          "nom": "Investment committee",
+          "aide": "Agents play investors reviewing your case; the chair represents the company. In round two, each gives a verdict.",
+          "exemple": "E.g.: our case for a first fundraising round"
+        },
+        "crise": {
+          "nom": "Crisis drill",
+          "aide": "The topic is a crisis scenario. Each says what their field does in the first hour and the first day; the action plan comes out in order, with who does what.",
+          "exemple": "E.g.: the site goes down on a Saturday night during a promotion"
+        },
+        "etsi": {
+          "nom": "What if…?",
+          "aide": "Agents reread what was planned and decided, and compare with another path: what would have changed, and the lesson for what comes next.",
+          "exemple": "E.g.: what if we had started with services rather than fashion?"
+        },
+        "retro": {
+          "nom": "Weekly retrospective",
+          "aide": "From the last seven days' tasks: what we keep, what we stop, and one concrete thing to change.",
+          "exemple": "E.g.: launch week"
+        },
+        "budget": {
+          "nom": "Budget trade-off",
+          "aide": "Each lead defends priorities and says what they can give up — in shares and priorities, no invented amounts. You set the amounts.",
+          "exemple": "E.g.: how to split this quarter's budget"
+        },
+        "impact": {
+          "nom": "Impact review",
+          "aide": "The effects of a decision on customers, teams, society, the law and the environment; underestimated risks, and safeguards to decide.",
+          "exemple": "E.g.: letting an agent answer customers alone at night"
+        }
+      },
+      "vote_pour": "for",
+      "vote_contre": "against",
+      "vote_abstention": "abstention",
+      "ecouter": "Listen to the meeting",
+      "arreterEcoute": "Stop"
     },
     "sources": "Sources",
     "appel": {
