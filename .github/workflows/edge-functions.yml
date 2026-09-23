@@ -23,6 +23,7 @@ on:
     branches: [staging]
     paths:
       - 'supabase/functions/**'
+      - supabase/config.toml
 
 concurrency:
   group: edge-functions

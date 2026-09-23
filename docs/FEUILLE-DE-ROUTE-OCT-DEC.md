@@ -46,7 +46,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 21 | **N types d'entreprises** | ✅ « Ton secteur n'est pas là ? » : Legion écrit le modèle |
 | 22 | « Nouvelle entreprise » ouvrait une **page blanche** | ✅ corrigé, en ligne sur finjaro.net le 23/09 |
 | 23 | Un simple utilisateur qui **code son application** | ✅ modèle « Créateur solo de logiciel » |
-| 24 | Brancher **Claude, Astra, ses propres outils** (connecteurs et compétences) | 🔧 le serveur MCP de Legion (en cours, 23/09 soir) |
+| 24 | Brancher **Claude, Astra, ses propres outils** (connecteurs et compétences) | ✅ Legion parle MCP : Connecteurs → « Mon assistant » donne une adresse à coller dans Claude.ai, ChatGPT ou Claude Code ; vérifié en vrai (lecture des salons, tâches, feuille de route ; refus d'une entreprise étrangère et d'un mauvais jeton) |
 | 25 | Un agent qui dit « **tel concurrent a lancé ça**, on ne l'a pas » | ✅ Vigie + recherche sur Internet |
 | 26 | …et qui **le construit et le montre sur un panneau de test** | ✅ plan et coût écrits (`STUDIO-DE-CODE.md`) ; ⏸ un jeton GitHub en écriture + le oui de Beau pour commencer |
 | 27 | Un agent qui fait les **rappels** | ✅ Orchestre (allumé) |
