@@ -62,8 +62,10 @@ export function Renfort({ entrepriseId, departements, t, onFermer, onEngager }) 
   async function engager() {
     if (!choisis.length) return;
     setEtat('engage');
+    // Un expert a son propre salon « Experts » (le choix de service est
+    // caché en mode expert: vu le 23/09, l'expert atterrissait en Direction).
     const ok = await onEngager(choisis.map((i) => reponse.agents[i]), {
-      departement: deptFinal || (mode === 'expert' ? t('legion.renfort.deptExperts') : ''),
+      departement: mode === 'expert' ? t('legion.renfort.deptExperts') : deptFinal,
       finMission: finMission || null, mode, objectif: mode === 'expert' ? objectif.trim() : description.trim(), expert: expertFinal,
     });
     if (ok) onFermer(); else setEtat('propositions');
