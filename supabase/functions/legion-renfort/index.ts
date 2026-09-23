@@ -139,8 +139,17 @@ ${pouvoirs}
 Aucun chiffre inventé. Écris en ${anglais ? 'anglais' : 'français'}.`;
 
   const gratuite = entreprise.formule === 'gratuite';
-  const r = await generer(apiKey, consigne, SCHEMA, { temperature: 0.6, reflexion: 2048, delaiMs: 60_000, maxSortie: 8192, modeles: gratuite ? ['gemini-2.5-flash', 'gemini-3.5-flash'] : moteurs().slice(0, 3) });
-  if ('erreur' in r) return json({ erreur: `Pas de proposition cette fois (${r.erreur}). Réessaie.` });
+  // Tous les moteurs, Flash en dernier recours (23/09: un soir de saturation
+  // chez Google, trois moteurs sur trois ont répondu « 503 »). 35 s chacun au
+  // plus: une saturation répond en une seconde.
+  const r = await generer(apiKey, consigne, SCHEMA, { temperature: 0.6, reflexion: 2048, delaiMs: 35_000, maxSortie: 8192, modeles: gratuite ? ['gemini-2.5-flash', 'gemini-3.5-flash'] : moteurs() });
+  if ('erreur' in r) {
+    console.error('renfort:', r.erreur);
+    const sature = /503|UNAVAILABLE|high demand|429|RESOURCE_EXHAUSTED/i.test(r.erreur);
+    return json({ erreur: sature
+      ? (anglais ? 'Google\'s models are overloaded right now. Try again in a minute.' : 'Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.')
+      : (anglais ? 'No proposal this time. Try again.' : 'Pas de proposition cette fois. Réessaie.') });
+  }
   const agents = (Array.isArray(r.obj.agents) ? r.obj.agents : []).slice(0, mode === 'expert' ? 1 : 5)
     .map((a: Record<string, unknown>) => ({
       nom: String(a.nom || '').slice(0, 60), poste: String(a.poste || '').slice(0, 120), mandat: String(a.mandat || '').slice(0, 600),

@@ -137,15 +137,18 @@ export function ColonneSalons({
 
         <div>
           <div className="flex items-center justify-between px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">
-            <span className="flex items-center gap-1"><IconRobot size={12} className="text-legion-gold" /> {t('legion.agents', 'Agents')} ({filtres.length})
-              <button type="button" onClick={() => onFiche({ departement: dept?.nom || null })} title={t('legion.nouvelAgent', 'Nouvel agent')}
-                className="ml-1 rounded-pill border border-legion-line px-1.5 text-[10px] normal-case tracking-normal text-legion-gold hover:border-legion-gold">+ {t('legion.agentCourt', 'Agent')}</button>
-              {onRenfort && (
-                <button type="button" onClick={onRenfort} title={t('legion.renfort.titre')}
-                  className="ml-1 rounded-pill border border-legion-line px-1.5 text-[10px] normal-case tracking-normal text-legion-gold hover:border-legion-gold">{t('legion.renfort.bouton')}</button>
-              )}
-            </span>
+            <span className="flex items-center gap-1"><IconRobot size={12} className="text-legion-gold" /> {t('legion.agents', 'Agents')} ({filtres.length})</span>
             <span className="font-mono text-[10px] normal-case tracking-normal">{t('legion.interrupteur', 'Interrupteur')}</span>
+          </div>
+          {/* Ajouter un agent, ou renforcer un service (23/09): sur une ligne à
+              eux, sinon « + Agent » passait sur deux lignes. */}
+          <div className="flex flex-wrap gap-1.5 px-2 pb-1">
+            <button type="button" onClick={() => onFiche({ departement: dept?.nom || null })} title={t('legion.nouvelAgent', 'Nouvel agent')}
+              className="whitespace-nowrap rounded-pill border border-legion-line px-2 py-0.5 text-[11px] font-semibold text-legion-gold hover:border-legion-gold">+ {t('legion.agentCourt', 'Agent')}</button>
+            {onRenfort && (
+              <button type="button" onClick={onRenfort} title={t('legion.renfort.titre')}
+                className="whitespace-nowrap rounded-pill border border-legion-line px-2 py-0.5 text-[11px] font-semibold text-legion-gold hover:border-legion-gold">{t('legion.renfort.bouton')}</button>
+            )}
           </div>
           <ul className="mt-1 space-y-1.5">
             {filtres.length === 0 && (
