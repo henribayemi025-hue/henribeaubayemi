@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
-  IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop, IconPhone,
+  IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop, IconPhone, IconPaperclip, IconFileSpreadsheet, IconFileText,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
@@ -282,7 +282,7 @@ export function Conversation({
             );
           }
 
-          const seulementPiece = pieces.length && (m.texte === '📷' || m.texte === '🎤');
+          const seulementPiece = pieces.length && (m.texte === '📷' || m.texte === '🎤' || m.texte === '📎');
           const citeAuteur = m.meta?.reponse_a && agents.find((x) => x.nom === m.meta.reponse_a.nom);
           return (
             <div key={m.id} className={premier ? 'mt-2.5' : 'mt-0.5'}>
@@ -333,7 +333,14 @@ export function Conversation({
                                 {p.transcription && <p className="mt-1 text-[12px] italic opacity-80">« {p.transcription} »</p>}
                               </div>
                             ) : (
-                              <a key={i} href={p.url} target="_blank" rel="noreferrer" className="block rounded-input bg-black/10 px-2 py-1 text-[13px] underline">{p.nom || 'Fichier'}</a>
+                              <a key={i} href={p.url} target="_blank" rel="noreferrer" download={p.nom || undefined}
+                                className="flex items-center gap-2 rounded-[12px] bg-black/10 px-2.5 py-2 text-[13px]">
+                                {/\.(xlsx|xls|csv)$/i.test(p.nom || '') ? <IconFileSpreadsheet size={22} className="shrink-0" /> : <IconFileText size={22} className="shrink-0" />}
+                                <span className="min-w-0">
+                                  <span className="block truncate font-semibold">{p.nom || t('legion.fichier', 'Fichier')}</span>
+                                  <span className="block text-[11px] opacity-75">{p.texte ? t('legion.fichierLu', 'lu par l’équipe') : ''}{p.cree_par_agent ? t('legion.fichierCree', 'préparé par l’agent — télécharger') : ''}</span>
+                                </span>
+                              </a>
                             )
                           ))}
                         </div>
@@ -775,6 +782,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
   const [depot, setDepot] = useState(null); // 'photo' | 'vocal' pendant l'envoi
   const zone = useRef(null);
   const fichier = useRef(null);
+  const document_ = useRef(null); // Excel, CSV, PDF, texte (23/09)
   const enregistreur = useRef(null);
   const morceaux = useRef([]);
   const chrono = useRef(null);
@@ -841,6 +849,26 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
       const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
       const url = await deposer(f, ext, f.type || 'image/jpeg');
       await onEnvoyer({ texte: texte.trim() || '📷', genre, meta: { pieces: [{ type: 'image', url, nom: f.name }] } });
+      setTexte('');
+    } catch (err) { alert(err.message); }
+    finally { setDepot(null); }
+  }
+
+  // Un fichier de travail (Beau, 23/09: « connecter mes agents avec Excel »,
+  // « capable d'ouvrir Excel et modifier »): il part tel quel; le serveur le
+  // lit (feuilles en CSV, PDF en texte) avant que l'agent réponde.
+  async function documentChoisi(e) {
+    const f = e.target.files?.[0]; e.target.value = '';
+    if (!f) return;
+    if (f.size > MAX_OCTETS) { alert(t('legion.tropLourd', 'Trop lourd: 10 Mo au plus.')); return; }
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    const MIMES = { xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv', pdf: 'application/pdf', txt: 'text/plain' };
+    const mime = MIMES[ext];
+    if (!mime) { alert(t('legion.fichierNonPris', 'Excel, CSV, PDF ou texte seulement.')); return; }
+    setDepot('fichier');
+    try {
+      const url = await deposer(f, ext, mime);
+      await onEnvoyer({ texte: texte.trim() || '📎', genre, meta: { pieces: [{ type: 'fichier', url, nom: f.name, mime }] } });
       setTexte('');
     } catch (err) { alert(err.message); }
     finally { setDepot(null); }
@@ -924,6 +952,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
           <button type="button" aria-label="✕" className="fixed inset-0 z-20 cursor-default" onClick={() => setPlus(false)} />
           <div className="absolute bottom-full left-2 z-30 mb-2 w-60 overflow-hidden rounded-card border border-legion-line bg-legion-card shadow-2xl">
             <Action icone={IconPhoto} label={t('legion.photo', 'Photo')} onClick={() => { setPlus(false); fichier.current?.click(); }} />
+            <Action icone={IconPaperclip} label={t('legion.fichier', 'Fichier (Excel, CSV, PDF)')} onClick={() => { setPlus(false); document_.current?.click(); }} />
             <Action icone={IconAt} label={t('legion.mentionner', 'Nommer quelqu’un')} onClick={() => { setPlus(false); setTexte((v) => `${v}@`); setMentions(true); setFiltreMention(''); zone.current?.focus(); }} />
             <div className="border-t border-legion-line" />
             {GENRES.filter((g) => g.cle !== 'info').map((g) => (
@@ -977,6 +1006,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
           </button>
         )}
         <input ref={fichier} type="file" accept="image/*" className="hidden" onChange={photoChoisie} />
+        <input ref={document_} type="file" accept=".xlsx,.xls,.csv,.pdf,.txt" className="hidden" onChange={documentChoisi} />
         {aEcrit ? (
           <button type="submit" disabled={!moi} aria-label={t('equipe.envoyer')}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-legion-gold text-legion-bg shadow-md transition active:scale-95 disabled:opacity-50">

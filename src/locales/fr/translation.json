@@ -336,7 +336,11 @@
       "raccrocher": "Raccrocher",
       "pasDeMicro": "Ce navigateur ne donne pas accès au micro.",
       "pasDeReponse": "Pas de réponse cette fois. Réessaie."
-    }
+    },
+    "fichier": "Fichier (Excel, CSV, PDF)",
+    "fichierNonPris": "Excel, CSV, PDF ou texte seulement.",
+    "fichierLu": "lu par l’équipe",
+    "fichierCree": "préparé par l’agent — télécharger"
   },
   "equipe": {
     "titre": "L'équipe",

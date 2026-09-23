@@ -31,6 +31,7 @@ import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
+import { classeurEnTexte, creerClasseur, MIME_XLSX, type Feuille } from '../_shared/tableur.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -225,10 +226,27 @@ Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corri
 // Le moteur (_shared/moteur.ts): la liste vient du réglage LEGION_MOTEURS
 // (par défaut, le premier Pro de Google, Flash en dernier recours). Un
 // moteur qui rend un texte vide passe la main au suivant.
-async function demander(apiKey: string, texte: string, complexe = true): Promise<Rendu> {
+// Le même schéma, plus un tableur (23/09): quand on lui demande un tableau,
+// l'agent le rend en feuilles et en lignes, et Legion en fait un .xlsx.
+const SCHEMA_TABLEUR = {
+  ...SCHEMA,
+  properties: {
+    ...SCHEMA.properties,
+    fichier: {
+      type: 'OBJECT',
+      properties: {
+        nom: { type: 'STRING' },
+        feuilles: { type: 'ARRAY', items: { type: 'OBJECT', properties: { nom: { type: 'STRING' }, lignes: { type: 'ARRAY', items: { type: 'ARRAY', items: { type: 'STRING' } } } } } },
+      },
+    },
+  },
+};
+const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul|spreadsheet|classeur|colonne/i;
+
+async function demander(apiKey: string, texte: string, complexe = true, tableur = false): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
   for (const nom of complexe ? moteurs() : moteursSimples()) {
-    const r = await generer(apiKey, texte, SCHEMA, { temperature: 0.7, reflexion: 4096, delaiMs: 45_000, modeles: [nom] });
+    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, { temperature: tableur ? 0.3 : 0.7, reflexion: 4096, delaiMs: tableur ? 80_000 : 45_000, maxSortie: tableur ? 24_576 : 8192, modeles: [nom] });
     if ('erreur' in r) { derniere = r.erreur; continue; }
     if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
     derniere = `${nom}: texte vide`;
@@ -334,6 +352,14 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const appelVocal = !!(msg.meta as { appel?: boolean } | null)?.appel;
   if (appelVocal) {
     lignes.push("[Consigne de Legion] Cette conversation est un APPEL VOCAL: ta réponse sera LUE À VOIX HAUTE. Réponds comme au téléphone, en une à quatre phrases parlées, sans titres, sans listes, sans emoji, sans lien, sans chiffres en rafale. Si la demande appelle un document long, dis-le en une phrase et propose de l'écrire dans le salon.");
+  }
+  // Un tableau à lire ou à rendre (23/09, « connecter mes agents avec
+  // Excel », « capable d'ouvrir Excel et modifier »).
+  const aUnClasseur = ((msg.meta as { pieces?: Array<{ type?: string; nom?: string }> } | null)?.pieces || [])
+    .some((p) => p.type === 'fichier' && /\.(xlsx|xls|csv)$/i.test(p.nom || ''));
+  const tableur = !appelVocal && (aUnClasseur || PARLE_DE_TABLEUR.test(String(msg.texte)));
+  if (tableur) {
+    lignes.push(`[Consigne de Legion] TABLEUR. Si le message te demande de créer, compléter, corriger, trier ou transformer un tableau (Excel, CSV), rends-le ENTIER dans "fichier": "nom" = un nom de fichier court sans extension; "feuilles" = une ou plusieurs feuilles, chacune avec "nom" et "lignes" (la première ligne = les en-têtes, une case par valeur, les nombres sans unité ni espace). Une formule Excel commence par = et utilise les références des cases, en anglais (=SUM(B2:B9), =B2-C2, =IF(…)). Ne mets JAMAIS un chiffre qui n'était pas dans son tableau ou dans ses messages: ce qui doit être calculé l'est par une formule. Dans "texte", dis en deux ou trois phrases ce que tu as fait et ce qu'il doit vérifier. Si on ne te demande pas de tableau, laisse "fichier" vide.`);
   }
   // Qui a parlé récemment (les huit derniers messages, hors celui-ci).
   const ontParle = new Set(fil.slice(-9, -1).filter((m) => !m.user_id).map((m) => m.auteur_id));
@@ -546,7 +572,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
     const laConsigne = consigne(cible, entrepriseVue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null, web);
-    const r = await demander(apiKey, laConsigne, complexe);
+    const r = await demander(apiKey, laConsigne, complexe || tableur, tableur);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
@@ -583,12 +609,27 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
         action = { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
       }
     }
+    // Le tableau rendu par l'agent → un vrai fichier .xlsx, joint à sa réponse.
+    let pieceClasseur: Record<string, unknown> | null = null;
+    const f0 = (r.obj.fichier || null) as { nom?: string; feuilles?: Feuille[] } | null;
+    if (tableur && f0 && Array.isArray(f0.feuilles) && f0.feuilles.some((x) => Array.isArray(x?.lignes) && x.lignes.length)) {
+      try {
+        const octets = creerClasseur(f0.feuilles);
+        if (octets) {
+          const nomFichier = `${String(f0.nom || 'tableau').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 60) || 'tableau'}.xlsx`;
+          const chemin = `${msg.entreprise_id}/${crypto.randomUUID()}.xlsx`;
+          const { error: eUp } = await service.storage.from('legion').upload(chemin, octets, { contentType: MIME_XLSX, upsert: false });
+          if (eUp) console.error('classeur:', eUp.message);
+          else pieceClasseur = { type: 'fichier', url: service.storage.from('legion').getPublicUrl(chemin).data.publicUrl, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, texte: classeurEnTexte(octets) };
+        }
+      } catch (e) { console.error('classeur:', (e as Error).message); }
+    }
     // Débloqué: la réponse EST le livrable de la tâche (le tableau la met
     // « à revoir », comme un livrable du matin).
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...(web?.sources.length ? { sources: web.sources } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...(web?.sources.length ? { sources: web.sources } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

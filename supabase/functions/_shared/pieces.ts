@@ -11,8 +11,9 @@
 // jamais deux fois, et la conversation suivante le relit.
 
 import { gemini } from './cout.ts';
+import { classeurEnTexte } from './tableur.ts';
 
-type Piece = { type?: string; url?: string; nom?: string; transcription?: string; description?: string; texte?: string; mime?: string };
+type Piece = { type?: string; url?: string; nom?: string; transcription?: string; description?: string; texte?: string; mime?: string; cree_par_agent?: boolean };
 
 const MODELES = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 
@@ -30,7 +31,7 @@ function mimeDe(url: string, reponse: Response, type: string): string {
   return table[ext] || (type === 'audio' ? 'audio/wav' : 'image/jpeg');
 }
 
-async function lireAvec(apiKey: string, consigne: string, mime: string, donnees: string): Promise<string | null> {
+async function lireAvec(apiKey: string, consigne: string, mime: string, donnees: string, maxSortie = 2048): Promise<string | null> {
   for (const modele of MODELES) {
     try {
       const r = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent`, {
@@ -38,7 +39,7 @@ async function lireAvec(apiKey: string, consigne: string, mime: string, donnees:
         headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: consigne }, { inline_data: { mime_type: mime, data: donnees } }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
+          generationConfig: { temperature: 0.1, maxOutputTokens: maxSortie, thinkingConfig: { thinkingBudget: 0 } },
         }),
         signal: AbortSignal.timeout(40_000),
       });
@@ -82,6 +83,27 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
           }
         }
       } catch (e) { console.error('image:', (e as Error).message); }
+    }
+    // Un fichier de travail (23/09, « connecter mes agents avec Excel ») :
+    // Excel et CSV lus feuille par feuille, texte tel quel, PDF recopié par le
+    // modèle (texte et tableaux). Rangé dans la pièce : jamais relu deux fois.
+    if (p.type === 'fichier' && !p.texte && p.url) {
+      try {
+        const r = await fetch(p.url, { signal: AbortSignal.timeout(20_000) });
+        if (r.ok) {
+          const octets = new Uint8Array(await r.arrayBuffer());
+          const ext = String(p.nom || p.url).split('?')[0].split('.').pop()?.toLowerCase() || '';
+          const mime = p.mime || mimeDe(p.url, r, 'fichier');
+          let t: string | null = null;
+          if (octets.length > 15 * 1024 * 1024) t = null;
+          else if (['xlsx', 'xls', 'csv'].includes(ext) || /spreadsheet|excel|csv/.test(mime)) t = classeurEnTexte(octets);
+          else if (ext === 'txt' || mime.startsWith('text/')) t = new TextDecoder().decode(octets);
+          else if (ext === 'pdf' || mime === 'application/pdf') {
+            t = await lireAvec(apiKey, "Recopie fidèlement le contenu de ce document pour une équipe qui ne le voit pas : tout le texte, dans l'ordre, et chaque tableau en lignes CSV (séparateur virgule). Les chiffres exactement comme écrits. Pas de résumé, pas de commentaire.", 'application/pdf', enBase64(octets), 8192);
+          }
+          if (t) { p.texte = t.slice(0, 14_000); change = true; }
+        }
+      } catch (e) { console.error('fichier:', (e as Error).message); }
     }
     if (p.type === 'audio' && p.transcription) morceaux.push(`[Message vocal, transcrit] ${p.transcription}`);
     if (p.type === 'image' && p.description) morceaux.push(`[Photo jointe${p.nom ? ` « ${p.nom} »` : ''}] ${p.description}`);

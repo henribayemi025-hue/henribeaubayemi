@@ -336,7 +336,11 @@
       "raccrocher": "Hang up",
       "pasDeMicro": "This browser gives no access to the microphone.",
       "pasDeReponse": "No answer this time. Try again."
-    }
+    },
+    "fichier": "File (Excel, CSV, PDF)",
+    "fichierNonPris": "Excel, CSV, PDF or text only.",
+    "fichierLu": "read by the team",
+    "fichierCree": "prepared by the agent — download"
   },
   "equipe": {
     "titre": "The team",
