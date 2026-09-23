@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
-  IconChevronDown, IconCamera, IconUserPlus,
+  IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
@@ -41,6 +41,7 @@ function couleurNom(a) {
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
   onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
+  reunion, onReunion, onConclureReunion,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -109,6 +110,7 @@ export function Conversation({
     return agents.filter((a) => !a.user_id && a.actif && (sansAccent(a.departement) === n || ajoutes.includes(a.cle)));
   }, [agents, salon, agentPrive]);
   const [gererMembres, setGererMembres] = useState(false);
+  const [convoquer, setConvoquer] = useState(false);
 
   function copier(m) {
     navigator.clipboard?.writeText(m.texte).catch(() => {});
@@ -176,8 +178,15 @@ export function Conversation({
           {agentPrive && (
             <Interrupteur petit on={!!agentPrive.actif} onChange={(v) => onAllumer(agentPrive, v)} label={t('legion.interrupteur')} />
           )}
+          {!agentPrive && onReunion && (
+            <button type="button" onClick={() => { setConvoquer((v) => !v); setGererMembres(false); }} disabled={!!reunion}
+              title={reunion ? t('legion.reunion.enCours') : t('legion.reunion.titre')}
+              className={`rounded-full p-2 transition disabled:opacity-40 ${convoquer ? 'text-legion-gold' : 'text-legion-ink'}`}>
+              <IconUsersGroup size={20} />
+            </button>
+          )}
           {!agentPrive && onMembres && (
-            <button type="button" onClick={() => setGererMembres((v) => !v)} title={t('legion.gererMembres', 'Qui est dans ce salon')}
+            <button type="button" onClick={() => { setGererMembres((v) => !v); setConvoquer(false); }} title={t('legion.gererMembres', 'Qui est dans ce salon')}
               className={`rounded-full p-2 transition ${gererMembres ? 'text-legion-gold' : 'text-legion-ink'}`}>
               <IconUserPlus size={20} />
             </button>
@@ -223,6 +232,16 @@ export function Conversation({
             })}
           </ul>
         </div>
+      )}
+
+      {/* Convoquer une réunion (legion-reunion, 23/09) */}
+      {convoquer && !agentPrive && salon && !reunion && (
+        <ConvoquerReunion salon={salon} agents={agents} t={t} onFermer={() => setConvoquer(false)}
+          onOuvrir={async (x) => { const ok = await onReunion(x); if (ok) { setConvoquer(false); colle.current = true; } return ok; }} />
+      )}
+      {/* La réunion en cours: qui parle, où on en est, et « conclure » */}
+      {reunion && !agentPrive && (
+        <BandeauReunion reunion={reunion} agents={agents} t={t} onConclure={() => onConclureReunion(reunion.id)} />
       )}
 
       {/* Le fil */}
@@ -287,11 +306,12 @@ export function Conversation({
                           <div className="line-clamp-2 text-[13px] opacity-80">{m.meta.reponse_a.texte}</div>
                         </div>
                       )}
-                      {genre && genre.cle !== 'info' && (
+                      {genre && genre.cle !== 'info' && !m.meta?.reunion?.fin && (
                         <span className={`mb-0.5 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15' : 'bg-legion-bg text-legion-muted'}`}>
                           {genre.emoji} {t(`legion.genre.${genre.cle}`)}
                         </span>
                       )}
+                      <EtiquetteReunion m={m} mien={mien} agents={agents} t={t} />
                       {pieces.length > 0 && (
                         <div className="mb-1 mt-0.5 space-y-1.5">
                           {pieces.map((p, i) => (
@@ -499,6 +519,128 @@ function PropositionsVeilleur({ propositions, entrepriseId, t }) {
       })}
     </div>
   );
+}
+
+// ——— Les réunions (legion-reunion, 23/09) ———
+// Beau: « faire communiquer et disputer les agents »; « on va voir comment
+// ils sont en train de le faire ». Les participants par défaut sont ceux qui
+// répondent dans ce salon (le département, les ajoutés à la main; en
+// Direction, les responsables), cinq au plus: on peut en retirer ou en
+// ajouter.
+function participantsParDefaut(salon, agents) {
+  const machines = agents.filter((a) => !a.user_id && a.moteur !== 'claude-code' && a.actif);
+  const n = sansAccent(salon.nom);
+  const ajoutes = salon.membres || [];
+  const duSalon = machines.filter((a) => sansAccent(a.departement) === n || ajoutes.includes(a.cle));
+  const vivier = n === 'direction'
+    ? [...duSalon.filter((a) => a.est_directeur), ...machines.filter((a) => a.est_directeur && !duSalon.includes(a)), ...duSalon.filter((a) => !a.est_directeur)]
+    : [...duSalon.filter((a) => a.est_directeur), ...duSalon.filter((a) => !a.est_directeur)];
+  const choisis = vivier.slice(0, 5);
+  for (const a of machines.filter((x) => x.est_directeur)) if (choisis.length < 3 && !choisis.includes(a)) choisis.push(a);
+  return choisis.map((a) => a.id);
+}
+
+function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
+  const [sujet, setSujet] = useState('');
+  const [choisis, setChoisis] = useState(() => participantsParDefaut(salon, agents));
+  const [envoi, setEnvoi] = useState(false);
+  const allumes = agents.filter((a) => !a.user_id && a.moteur !== 'claude-code' && a.actif);
+  const basculer = (id) => setChoisis((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length >= 5 ? c : [...c, id]));
+  const pret = sujet.trim().length >= 3 && choisis.length >= 2 && !envoi;
+  async function ouvrir(e) {
+    e.preventDefault();
+    if (!pret) return;
+    setEnvoi(true);
+    try { await onOuvrir({ sujet: sujet.trim(), participants: choisis }); } finally { setEnvoi(false); }
+  }
+  return (
+    <form onSubmit={ouvrir} className="max-h-[60%] shrink-0 overflow-y-auto border-b border-legion-line bg-legion-panel px-3 py-3">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <p className="text-[15px] font-semibold text-legion-ink">{t('legion.reunion.titre')}</p>
+        <button type="button" onClick={onFermer} aria-label={t('legion.retour', 'Retour')} className="rounded-full p-1 text-legion-muted"><IconX size={18} /></button>
+      </div>
+      <p className="mb-2.5 text-[12.5px] leading-snug text-legion-muted">{t('legion.reunion.aide')}</p>
+      <label className="mb-1 block text-[12px] font-semibold text-legion-muted" htmlFor="sujet-reunion">{t('legion.reunion.sujet')}</label>
+      <textarea id="sujet-reunion" value={sujet} onChange={(e) => setSujet(e.target.value)} rows={2} maxLength={800}
+        placeholder={t('legion.reunion.sujetPlaceholder')}
+        className="mb-2.5 w-full resize-none rounded-input border border-legion-line bg-legion-card px-3 py-2 text-[16px] text-legion-ink placeholder:text-legion-muted focus:border-legion-gold focus:outline-none" />
+      <p className="mb-1 text-[12px] font-semibold text-legion-muted">{t('legion.reunion.participants')} · {t('legion.reunion.participantsAide')}</p>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {allumes.map((a) => {
+          const pris = choisis.includes(a.id);
+          return (
+            <button key={a.id} type="button" onClick={() => basculer(a.id)} aria-pressed={pris}
+              className={`flex items-center gap-1.5 rounded-pill py-1 pl-1 pr-2.5 text-[13px] transition ${pris ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>
+              <Visage a={a} taille={22} point={false} />
+              <span className="font-semibold">{a.nom}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button type="submit" disabled={!pret}
+        className="w-full rounded-pill bg-legion-accent px-4 py-2.5 text-[15px] font-semibold text-white transition disabled:opacity-40">
+        {envoi ? t('legion.reunion.ouverture') : t('legion.reunion.ouvrir')}
+      </button>
+    </form>
+  );
+}
+
+function BandeauReunion({ reunion, agents, t, onConclure }) {
+  const [demande, setDemande] = useState(false);
+  const participants = (reunion.participants || []).map((id) => agents.find((a) => a.id === id)).filter(Boolean);
+  const president = agents.find((a) => a.id === reunion.president);
+  const total = (reunion.tours || 2) * participants.length;
+  const fini = reunion.conclure || demande || reunion.prochain >= total;
+  const suivant = !fini && participants.length ? participants[reunion.prochain % participants.length] : null;
+  const tour = participants.length ? Math.min(Math.floor(reunion.prochain / participants.length) + 1, reunion.tours || 2) : 1;
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-b border-legion-line bg-legion-gold/10 px-3 py-2">
+      <IconUsersGroup size={18} className="shrink-0 text-legion-gold" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-semibold text-legion-ink">{t('legion.reunion.enCours')} · {reunion.sujet}</p>
+        <p className="truncate text-[12px] text-legion-muted">
+          {fini
+            ? t('legion.reunion.redige', { nom: president?.nom || '' })
+            : `${t(`legion.reunion.tour${tour}`)} · ${t('legion.reunion.auTourDe', { nom: suivant?.nom || '' })} · ${t('legion.reunion.paroles', { n: Math.min(reunion.prochain, total), total })}`}
+        </p>
+      </div>
+      {!fini && (
+        <button type="button" onClick={() => { setDemande(true); onConclure(); }}
+          className="shrink-0 rounded-pill border border-legion-line bg-legion-card px-2.5 py-1 text-[12px] font-semibold text-legion-ink">
+          {t('legion.reunion.conclure')}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Ce qu'un message est dans la réunion: l'ouverture, un tour (et qui il
+// conteste), une intervention humaine, le compte rendu.
+function EtiquetteReunion({ m, mien, agents, t }) {
+  const r = m.meta?.reunion;
+  const base = `mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-gold/15 text-legion-gold'}`;
+  if (m.meta?.dans_reunion) return <span className={base}><IconHandStop size={12} /> {t('legion.reunion.intervention')}</span>;
+  if (!r) return null;
+  if (r.ouverture) {
+    const noms = (r.participants || []).map((id) => agents.find((a) => a.id === id)?.nom).filter(Boolean).join(', ');
+    const president = agents.find((a) => a.id === r.president)?.nom || '';
+    return (
+      <div className="mb-1">
+        <span className={base}><IconUsersGroup size={12} /> {t('legion.reunion.convoquee')}</span>
+        <p className={`text-[12px] ${mien ? 'text-white/85' : 'text-legion-muted'}`}>{t('legion.reunion.autourDeLaTable', { noms, president })}</p>
+      </div>
+    );
+  }
+  if (r.fin && !r.interrompue && !r.annulee && !r.echec) return <span className={base}>📋 {t('legion.reunion.compteRendu')}</span>;
+  if (typeof r.tour === 'number') {
+    return (
+      <span className="inline-flex flex-wrap items-center">
+        <span className={base}>{t(`legion.reunion.tour${Math.min(r.tour, 2)}`)}</span>
+        {r.conteste && <span className="mb-1 mr-1 inline-flex items-center gap-1 rounded-pill bg-legion-danger/15 px-1.5 py-0.5 text-[11px] font-semibold text-legion-danger"><IconSwords size={12} /> {t('legion.reunion.conteste', { nom: r.conteste })}</span>}
+      </span>
+    );
+  }
+  return null;
 }
 
 function Action({ icone: I, label, onClick }) {

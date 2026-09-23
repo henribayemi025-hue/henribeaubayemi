@@ -160,7 +160,8 @@
       "question": "Question",
       "proposition": "Proposition",
       "decision": "À trancher",
-      "tache": "Tâche"
+      "tache": "Tâche",
+      "reunion": "Réunion"
     },
     "videPrive": "Rien encore entre {{nom}} et toi. Écris-lui.",
     "videSalon": "Personne n’a encore écrit ici. Commence.",
@@ -295,7 +296,31 @@
     "revoquer": "Révoquer",
     "jetonNom": "Nom (ex. Claude sur mon téléphone)",
     "creerJeton": "Créer un jeton",
-    "tropDeJetons": "Cinq jetons au plus : révoque-en un d’abord."
+    "tropDeJetons": "Cinq jetons au plus : révoque-en un d’abord.",
+    "reunion": {
+      "titre": "Convoquer une réunion",
+      "aide": "Chacun donne sa position depuis son métier, puis ils se contredisent sur le fond. Celui qui préside rédige le compte rendu : ce qui est décidé, ce qui est écarté et pourquoi, les désaccords, et ce que tu dois trancher. Tu peux intervenir à tout moment.",
+      "sujet": "Le sujet",
+      "sujetPlaceholder": "Ex. : comment trouver nos vingt premiers clients avant la fin du mois ?",
+      "participants": "Autour de la table",
+      "participantsAide": "deux à cinq agents allumés",
+      "ouvrir": "Ouvrir la réunion",
+      "ouverture": "Ouverture…",
+      "enCours": "Réunion en cours",
+      "auTourDe": "au tour de {{nom}}",
+      "paroles": "{{n}} / {{total}} prises de parole",
+      "conclure": "Conclure",
+      "conclusionDemandee": "C'est noté : celui qui préside rédige le compte rendu avec ce qui a été dit.",
+      "redige": "{{nom}} rédige le compte rendu…",
+      "convoquee": "Réunion",
+      "autourDeLaTable": "Autour de la table : {{noms}} · préside : {{president}}",
+      "tour1": "Tour 1 · position",
+      "tour2": "Tour 2 · débat",
+      "conteste": "conteste {{nom}}",
+      "compteRendu": "Compte rendu",
+      "intervention": "Intervention",
+      "interventionNotee": "Réunion en cours : le prochain qui parle te répond d'abord."
+    }
   },
   "equipe": {
     "titre": "L'équipe",

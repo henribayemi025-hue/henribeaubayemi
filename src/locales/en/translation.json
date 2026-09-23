@@ -160,7 +160,8 @@
       "question": "Question",
       "proposition": "Proposal",
       "decision": "To decide",
-      "tache": "Task"
+      "tache": "Task",
+      "reunion": "Meeting"
     },
     "videPrive": "Nothing yet between you and {{nom}}. Write.",
     "videSalon": "Nobody wrote here yet. Start.",
@@ -295,7 +296,31 @@
     "revoquer": "Revoke",
     "jetonNom": "Name (e.g. Claude on my phone)",
     "creerJeton": "Create a token",
-    "tropDeJetons": "Five tokens at most: revoke one first."
+    "tropDeJetons": "Five tokens at most: revoke one first.",
+    "reunion": {
+      "titre": "Call a meeting",
+      "aide": "Each one gives a position from their own trade, then they challenge each other on substance. The chair writes the minutes: what is decided, what is dropped and why, the disagreements, and what you need to decide. You can step in at any time.",
+      "sujet": "Topic",
+      "sujetPlaceholder": "E.g.: how do we find our first twenty customers before the end of the month?",
+      "participants": "Around the table",
+      "participantsAide": "two to five active agents",
+      "ouvrir": "Open the meeting",
+      "ouverture": "Opening…",
+      "enCours": "Meeting in progress",
+      "auTourDe": "{{nom}}'s turn",
+      "paroles": "{{n}} / {{total}} turns",
+      "conclure": "Wrap up",
+      "conclusionDemandee": "Noted: the chair is writing the minutes from what has been said.",
+      "redige": "{{nom}} is writing the minutes…",
+      "convoquee": "Meeting",
+      "autourDeLaTable": "Around the table: {{noms}} · chair: {{president}}",
+      "tour1": "Round 1 · position",
+      "tour2": "Round 2 · debate",
+      "conteste": "challenges {{nom}}",
+      "compteRendu": "Minutes",
+      "intervention": "Interjection",
+      "interventionNotee": "Meeting in progress: the next speaker answers you first."
+    }
   },
   "equipe": {
     "titre": "The team",

@@ -115,6 +115,17 @@ export default function Entreprise() {
   const moi = data?.agents.find((a) => a.user_id === user?.id) || null;
   const agentPrive = useMemo(() => (salon?.prive_entre?.length ? data?.agents.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== moi?.cle) || null : null), [salon, data?.agents, moi]);
   const messagesDuSalon = useMemo(() => (data?.messages || []).filter((m) => m.canal_id === salonId), [data?.messages, salonId]);
+  // La réunion en cours dans ce salon (legion-reunion, 23/09): ouverte il y a
+  // moins de 45 minutes, ni terminée, ni close par un compte rendu.
+  const reunion = useMemo(() => {
+    const ouverture = [...messagesDuSalon].reverse().find((m) => m.genre === 'reunion' && m.meta?.reunion?.ouverture);
+    if (!ouverture || ouverture.meta.reunion.terminee) return null;
+    if (Date.now() - Date.parse(ouverture.created_at) > 45 * 60_000) return null;
+    const paroles = messagesDuSalon.filter((m) => m.meta?.reunion?.id === ouverture.id);
+    if (paroles.some((m) => m.meta.reunion.fin)) return null;
+    const ordres = paroles.map((m) => m.meta.reunion.ordre).filter((x) => typeof x === 'number');
+    return { id: ouverture.id, ...ouverture.meta.reunion, prochain: ordres.length ? Math.max(...ordres) + 1 : 0 };
+  }, [messagesDuSalon]);
   const taches = useMemo(() => (data?.messages || []).filter((m) => m.genre === 'tache'), [data?.messages]);
   const machines = useMemo(() => (data?.agents || []).filter((a) => !a.user_id), [data?.agents]);
   const allumes = machines.filter((a) => a.actif).length;
@@ -206,12 +217,18 @@ export default function Entreprise() {
   async function envoyer({ texte, genre, meta }, canalForce) {
     const canal = canalForce || salonId;
     if (!moi || !canal) return;
+    // Pendant une réunion, un message du salon est une INTERVENTION: le
+    // prochain qui parle y répond d'abord (legion-reunion). Personne d'autre
+    // ne répond en parallèle, sinon deux conversations se croisent.
+    const enReunion = !!reunion && canal === salonId && genre !== 'tache';
+    const metaFinale = { ...(meta || {}), ...(enReunion ? { dans_reunion: reunion.id } : {}) };
     const { data: ligne, error: err } = await supabase.from('legion_messages')
-      .insert({ entreprise_id: entrepriseId, canal_id: canal, auteur_id: moi.id, user_id: user.id, texte, genre, meta: meta && Object.keys(meta).length ? meta : null })
+      .insert({ entreprise_id: entrepriseId, canal_id: canal, auteur_id: moi.id, user_id: user.id, texte, genre, meta: Object.keys(metaFinale).length ? metaFinale : null })
       .select().single();
     if (err) { toast.error(err.message || t('errors.generic')); throw err; }
     setData((d) => (d && !d.messages.some((m) => m.id === ligne.id) ? { ...d, messages: [...d.messages, ligne] } : d));
     if (genre === 'tache') return;
+    if (enReunion) { toast.info(t('legion.reunion.interventionNotee')); return; }
 
     const cible = quiRepond(texte, meta);
     if (!cible) return;
@@ -234,6 +251,24 @@ export default function Entreprise() {
       if (arrives.length) setData((d) => (d ? { ...d, messages: [...d.messages, ...arrives.filter((x) => !d.messages.some((m) => m.id === x.id))] } : d));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setTape(null); }
+  }
+
+  // Les réunions (legion-reunion, 23/09). La fonction répond tout de suite;
+  // les prises de parole arrivent ensuite une par une, en temps réel.
+  async function raisonDe(e) {
+    try { const j = await e?.context?.json?.(); return j?.erreur || null; } catch { return null; }
+  }
+  async function ouvrirReunion({ sujet, participants }) {
+    if (!salonId) return false;
+    const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { canal_id: salonId, sujet, participants } });
+    if (e || r?.erreur) { toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic')); return false; }
+    if (r?.message) setData((d) => (d && !d.messages.some((m) => m.id === r.message.id) ? { ...d, messages: [...d.messages, r.message] } : d));
+    return true;
+  }
+  async function conclureReunion(id) {
+    const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { reunion_id: id, conclure: true } });
+    if (e || r?.erreur) toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic'));
+    else toast.info(t('legion.reunion.conclusionDemandee'));
   }
 
   // Une directive depuis l'accueil: c'est un message « à trancher » posé
@@ -566,6 +601,7 @@ export default function Entreprise() {
               reactions={data.reactions} langue={langue} tape={tape} brouillon={brouillon} onBrouillonPris={() => setBrouillon('')}
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
               onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon} onMembres={membresSalon}
+              reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion}
               entrepriseId={entrepriseId} t={t}
             />
           ) : (

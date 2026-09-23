@@ -86,3 +86,24 @@ export function compter(fn: string, traiter: (req: Request) => Promise<Response>
     }
   });
 }
+
+// Le travail qui continue APRÈS la réponse (EdgeRuntime.waitUntil). compter()
+// écrit sa ligne au moment où la réponse part: ce qui se dépense ensuite
+// serait perdu. Ici, un compteur à part, écrit quand le travail finit.
+// Première utilisatrice: legion-reunion (23/09), dont chaque prise de parole
+// répond tout de suite puis parle en arrière-plan.
+export function enFond(fn: string, entreprise: string | null, travail: () => Promise<void>): Promise<void> {
+  return suivi.run({ eur: 0, fn, entreprise }, async () => {
+    try {
+      await travail();
+    } catch (e) {
+      console.error(`${fn}:`, (e as Error).message);
+    } finally {
+      const s = suivi.getStore();
+      if (s && s.eur > 0) {
+        const { error } = await service().from('ai_usage').insert({ fn: s.fn, cost_eur: Number(s.eur.toFixed(6)), entreprise_id: s.entreprise });
+        if (error) console.error('ai_usage:', error.message);
+      }
+    }
+  });
+}
