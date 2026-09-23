@@ -57,6 +57,51 @@ function ChercherCatalogue({ onChoisir, t }) {
   );
 }
 
+// Ce que sa consigne CONTIENT, dans l'ordre où il le reçoit avant chaque
+// réponse (E4, 23/09: « voir exactement ce qu'un agent reçoit »). Chaque
+// partie avec son vrai contenu: rien d'inventé, rien de caché.
+function SaConsigne({ agent, t }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [regles, setRegles] = useState(null);
+  const [competences, setCompetences] = useState(null);
+  useEffect(() => {
+    if (!ouvert || regles) return;
+    supabase.from('legion_memoire').select('regle').eq('entreprise_id', agent.entreprise_id).eq('actif', true).order('created_at').limit(60)
+      .then(({ data }) => setRegles((data || []).map((x) => x.regle)), () => setRegles([]));
+    supabase.from('legion_competences').select('nom').eq('agent_id', agent.id).eq('actif', true).limit(4)
+      .then(({ data }) => setCompetences((data || []).map((x) => x.nom)), () => setCompetences([]));
+  }, [ouvert, regles, agent.entreprise_id, agent.id]);
+  const lire = Array.isArray(agent.peut_lire)
+    ? (agent.peut_lire.length ? agent.peut_lire.map((x) => t(`legion.source.${x}`)).join(', ') : t('legion.peutLireRien'))
+    : t('legion.peutLireTout');
+  const parties = [
+    [t('legion.consigne.identite', 'Qui il est'), `${agent.nom}, ${agent.poste}${agent.departement ? ` — ${agent.departement}` : ''}`],
+    [t('legion.mandat'), agent.mandat || '—'],
+    [t('legion.personnalite'), agent.personnalite || '—'],
+    agent.mission?.objectif ? [t('legion.mission'), agent.mission.objectif] : null,
+    [t('legion.jamais'), agent.jamais || t('legion.jamaisDefaut')],
+    [t('legion.peutLire'), lire],
+    [t('legion.consigne.regles', 'Les règles de la maison'), regles === null ? '…' : (regles.length ? regles.map((r) => `• ${r}`).join('\n') : '—')],
+    [t('legion.consigne.competences', 'Ses compétences (4 au plus)'), competences === null ? '…' : (competences.length ? competences.join(', ') : '—')],
+    [t('legion.consigne.contexte', 'Le contexte'), t('legion.consigne.contexteTexte', 'Le projet de l’entreprise et sa feuille de route ; les derniers messages du salon et sa mémoire ; ce qui s’est dit ailleurs et le concerne ; ses tâches ouvertes et le plan de son département ; l’équipe (qui est allumé).')],
+    [t('legion.consigne.fixes', 'Les règles fixes de Legion'), t('legion.consigne.fixesTexte', 'Répondre à la question posée, dans la langue du message ; livrer plutôt que proposer ; ton chaleureux d’expert ; aucun chiffre ni travail inventé ; ne rien dire fait qui ne l’est pas (seul ton bouton « Confirmer » exécute une action) ; poser une vraie question quand il lui manque quelque chose. Une relecture vérifie les chiffres avant envoi.')],
+  ].filter(Boolean);
+  return (
+    <div>
+      <button type="button" onClick={() => setOuvert((v) => !v)} className="text-[11px] font-semibold uppercase tracking-wider text-legion-gold">
+        {ouvert ? '▾' : '▸'} {t('legion.consigne.titre', 'Ce qu’il reçoit avant chaque réponse')}
+      </button>
+      {ouvert && (
+        <ol className="mt-1.5 space-y-1.5 rounded-card border border-legion-line bg-legion-card p-3 text-caption leading-relaxed">
+          {parties.map(([titre, texte], i) => (
+            <li key={i}><b className="text-legion-ink">{i + 1}. {titre}</b><span className="block whitespace-pre-wrap text-legion-muted">{texte}</span></li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 // La fiche d'un agent: qui il est, ce qu'on attend de lui, comment il parle,
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
@@ -269,6 +314,8 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
         </div>
 
         {agent.moteur !== 'claude-code' && <CompetencesAgent agent={agent} t={t} />}
+
+        {!agent.user_id && agent.moteur !== 'claude-code' && <SaConsigne agent={agent} t={t} />}
 
         <div className="flex items-center justify-between gap-2 border-t border-legion-line pt-3">
           <div className="flex items-center gap-3">

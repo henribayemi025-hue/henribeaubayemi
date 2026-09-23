@@ -393,7 +393,20 @@
     "jusquau": "Intérim jusqu’au {{date}}",
     "sesLimites": "Ses limites",
     "catalogueChercher": "Chercher parmi {{n}} postes (ex. : paie, audit, réseaux sociaux)",
-    "catalogueChercherSimple": "Chercher un poste dans le catalogue"
+    "catalogueChercherSimple": "Chercher un poste dans le catalogue",
+    "outils": "Tes outils de travail",
+    "outilsAide": "Les agents rendent leurs livrables dans ces formats : un tableau pour Excel, un message court pour WhatsApp…",
+    "outilsAutres": "D’autres ? (séparés par des virgules)",
+    "consigne": {
+      "identite": "Qui il est",
+      "regles": "Les règles de la maison",
+      "competences": "Ses compétences (4 au plus)",
+      "contexte": "Le contexte",
+      "contexteTexte": "Le projet de l’entreprise et sa feuille de route ; les derniers messages du salon et sa mémoire ; ce qui s’est dit ailleurs et le concerne ; ses tâches ouvertes et le plan de son département ; l’équipe (qui est allumé).",
+      "fixes": "Les règles fixes de Legion",
+      "fixesTexte": "Répondre à la question posée, dans la langue du message ; livrer plutôt que proposer ; ton chaleureux d’expert ; aucun chiffre ni travail inventé ; ne rien dire fait qui ne l’est pas (seul ton bouton « Confirmer » exécute une action) ; poser une vraie question quand il lui manque quelque chose. Une relecture vérifie les chiffres avant envoi.",
+      "titre": "Ce qu’il reçoit avant chaque réponse"
+    }
   },
   "equipe": {
     "titre": "L'équipe",

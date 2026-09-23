@@ -393,7 +393,20 @@
     "jusquau": "Temp until {{date}}",
     "sesLimites": "Their limits",
     "catalogueChercher": "Search {{n}} roles (e.g. payroll, audit, social media)",
-    "catalogueChercherSimple": "Search the role catalogue"
+    "catalogueChercherSimple": "Search the role catalogue",
+    "outils": "Your work tools",
+    "outilsAide": "Agents deliver in these formats: a spreadsheet for Excel, a short message for WhatsApp…",
+    "outilsAutres": "Others? (comma-separated)",
+    "consigne": {
+      "identite": "Who they are",
+      "regles": "House rules",
+      "competences": "Their skills (4 at most)",
+      "contexte": "The context",
+      "contexteTexte": "The company project and roadmap; the latest room messages and its memory; what was said elsewhere that concerns them; their open tasks and their department plan; the team (who is on).",
+      "fixes": "Legion’s fixed rules",
+      "fixesTexte": "Answer the question asked, in the message’s language; deliver rather than offer; warm expert tone; no invented figure or work; never claim something is done when it is not (only your “Confirm” button runs an action); ask a real question when something is missing. A review checks figures before sending.",
+      "titre": "What they receive before each answer"
+    }
   },
   "equipe": {
     "titre": "The team",

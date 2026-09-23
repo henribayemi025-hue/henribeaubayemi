@@ -39,6 +39,9 @@ function parDepartement(postes) {
 }
 const tailleDe = (n) => (n <= 5 ? 'cocon' : n <= 40 ? 'startup' : n <= 300 ? 'scaleup' : 'megacorp');
 
+// Les outils les plus courants; « D'autres ? » laisse écrire le reste.
+const OUTILS = ['Excel', 'Google Sheets', 'Word', 'Google Docs', 'PowerPoint', 'WhatsApp', 'Gmail', 'Outlook', 'Notion', 'Trello', 'Slack', 'Microsoft Teams', 'Power BI', 'Tableau', 'Canva', 'Finjaro Accounting'];
+
 export default function Fonder() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -53,6 +56,10 @@ export default function Fonder() {
   // suis, ce que je veux ». Les agents le lisent avec le projet.
   const [quiJeSuis, setQuiJeSuis] = useState('');
   const [objectif, setObjectif] = useState('');
+  // « Tes outils » (E1, 23/09): Excel, WhatsApp, Notion… Les agents le lisent
+  // avec le projet et rendent leurs livrables dans ces formats.
+  const [outils, setOutils] = useState([]);
+  const [autresOutils, setAutresOutils] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [secteur, setSecteur] = useState('');
   const [generation, setGeneration] = useState(false);
@@ -127,7 +134,8 @@ export default function Fonder() {
     try {
       const { data: id, error: err } = await supabase.rpc('legion_creer_entreprise', {
         p_nom: nom.trim(), p_modele: modele.cle, p_taille: taille,
-        p_projet: [projet.trim(), quiJeSuis.trim() && `Qui je suis : ${quiJeSuis.trim()}`, objectif.trim() && `Ce que je veux obtenir : ${objectif.trim()}`].filter(Boolean).join('\n') || null,
+        p_projet: [projet.trim(), quiJeSuis.trim() && `Qui je suis : ${quiJeSuis.trim()}`, objectif.trim() && `Ce que je veux obtenir : ${objectif.trim()}`,
+          (outils.length || autresOutils.trim()) && `Mes outils de travail : ${[...outils, ...autresOutils.split(',').map((x) => x.trim()).filter(Boolean)].join(', ')} (rends tes livrables dans ces formats quand c'est utile)`].filter(Boolean).join('\n') || null,
         p_effectif: Math.max(1, Math.min(10000, Number(effectif) || 1)),
       });
       if (err) throw err;
@@ -281,6 +289,24 @@ export default function Fonder() {
               </Field>
               <Field label={t('legion.objectif', 'Ce que tu veux obtenir')} hint={t('legion.objectifAide', 'Ex. : 300 clients d’ici fin octobre, réussir mes examens, lancer mon application.')}>
                 {(id) => <TextInput id={id} value={objectif} maxLength={300} onChange={(e) => setObjectif(e.target.value)} />}
+              </Field>
+              <Field label={t('legion.outils', 'Tes outils de travail')} hint={t('legion.outilsAide', 'Les agents rendent leurs livrables dans ces formats : un tableau pour Excel, un message court pour WhatsApp…')}>
+                {(id) => (
+                  <div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {OUTILS.map((o) => {
+                        const pris = outils.includes(o);
+                        return (
+                          <button key={o} type="button" aria-pressed={pris} onClick={() => setOutils((x) => (pris ? x.filter((y) => y !== o) : [...x, o]))}
+                            className={`rounded-pill px-2.5 py-1 text-[13px] font-semibold transition ${pris ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted hover:text-legion-ink'}`}>
+                            {o}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <TextInput id={id} value={autresOutils} maxLength={200} onChange={(e) => setAutresOutils(e.target.value)} placeholder={t('legion.outilsAutres', 'D’autres ? (séparés par des virgules)')} className="mt-2" />
+                  </div>
+                )}
               </Field>
               <Field label={t('legion.projet')} hint={t('legion.projetAide')}>
                 {(id) => <TextArea id={id} rows={3} value={projet} onChange={(e) => setProjet(e.target.value)} />}
