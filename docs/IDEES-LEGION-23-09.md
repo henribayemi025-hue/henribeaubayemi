@@ -135,6 +135,11 @@ Sa consigne : « je ne veux pas que tu balaies ça, regarde ça en profondeur »
 | I5 | « Auditum, agent IA expert en audit : si quelqu'un veut, on le branche au truc de l'entreprise et il fait — agent intérim » | Des **experts à la mission**, prêts à brancher : audit, contrôle de gestion, paie, conformité, service client… On les « recrute » pour une mission, ils lisent les données branchées de l'entreprise (boutique, comptabilité, dépôt, fichiers) et rendent leur rapport. 🔧 le catalogue « Intérim » (G9) : chaque expert a son mandat, sa méthode, son livrable type |
 | I6 | « Faire communiquer et **disputer** les agents » | Qu'ils ne soient pas toujours d'accord : dans une réunion, un tour **contradictoire** (chacun doit dire ce qui ne va pas dans la proposition de l'autre, avec ses raisons), puis le responsable tranche en disant ce qu'il retient et ce qu'il écarte. Un agent peut aussi contester un livrable d'un collègue. 🔧 G2 (réunions) |
 
+L'étude complète de l'intérim (I3 à I5, J2) — ce qui existe ailleurs, ce
+qui a mal tourné, ce que la loi demande, les trois offres possibles — est
+dans `LEGION-INTERIM-ETUDE.md`, avec ses sources. Beau : « ne te base pas
+uniquement sur ce que je dis ».
+
 ## J. La vidéo « Claude Squad » (envoyée par Beau le 23/09)
 
 | # | Ce qu'elle montre | Pour Legion |
