@@ -2518,5 +2518,10 @@
     "chatEmptyHint": "Write the first message of this space.",
     "chatPlaceholder": "Write a message",
     "chatSend": "Send the message"
+  },
+  "relais": {
+    "enCours": "Signing you in…",
+    "echec": "The hand-off has expired.",
+    "echecAide": "Sign in here with the same account as on the other Finjaro apps."
   }
 }

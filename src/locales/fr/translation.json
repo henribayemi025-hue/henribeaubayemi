@@ -2518,5 +2518,10 @@
     "chatEmptyHint": "Écris le premier message de cet espace.",
     "chatPlaceholder": "Écrire un message",
     "chatSend": "Envoyer le message"
+  },
+  "relais": {
+    "enCours": "Connexion en cours…",
+    "echec": "Le relais a expiré.",
+    "echecAide": "Connecte-toi ici, avec le même compte que sur les autres applications Finjaro."
   }
 }

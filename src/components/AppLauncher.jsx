@@ -6,6 +6,7 @@ import { useVendorStatus } from '../hooks/useVendorStatus';
 import { useAsync } from '../hooks/useAsync';
 import { Modal } from './Modal';
 import { fetchApps, appsFromCache, visibleApps, accentClass } from '../lib/apps';
+import { supabase } from '../lib/supabase';
 
 // « Finjaro » → F, « Finjaro Accounting » → FA, « Console Finjaro » → CF.
 // Deux lettres au plus: au-delà, ça ne se lit plus dans un carré de 44 px.
@@ -59,8 +60,29 @@ export function AppsSheet({ open, onClose, currentKey }) {
 
 // Réutilisée telle quelle par la page /apps: une seule mise en forme à tenir.
 export function AppsList({ currentKey }) {
+  // LE RELAIS DE CONNEXION (0173): si la personne est connectée ici et que
+  // l'application d'arrivée sait recevoir un code (finjaro_apps.relais), on
+  // demande le code puis on ouvre son adresse d'arrivée. L'onglet s'ouvre
+  // tout de suite (dans le geste du clic, sinon le navigateur le bloque) et
+  // reçoit l'adresse une fois le code obtenu. Au moindre souci: l'adresse
+  // normale, comme avant.
+  async function ouvrirAvecRelais(e, a) {
+    if (!a.relais || !user) return;
+    e.preventDefault();
+    // Sans « noopener » ici: avec, le navigateur ne rend pas la poignée de
+    // l'onglet, et on ne pourrait plus lui donner son adresse. On coupe le
+    // lien nous-mêmes juste après.
+    const onglet = window.open('', '_blank');
+    if (onglet) onglet.opener = null;
+    let destination = a.url;
+    try {
+      const { data, error } = await supabase.functions.invoke('sso-relais', { body: { action: 'creer', cible: a.key } });
+      if (!error && data?.code) destination = `${a.relais}?code=${encodeURIComponent(data.code)}&vers=${encodeURIComponent('/')}`;
+    } catch { /* l'adresse normale */ }
+    if (onglet) onglet.location.href = destination; else window.open(destination, '_blank', 'noopener');
+  }
   const { t } = useTranslation();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { status } = useVendorStatus();
 
   // Rendu immédiat depuis le cache, rafraîchi en tâche de fond: ouvrir le
@@ -121,6 +143,7 @@ export function AppsList({ currentKey }) {
                 // remplacer une caisse ouverte par la place de marché.
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => ouvrirAvecRelais(e, a)}
                 className="flex items-center gap-3 rounded-card border border-hairline p-3 transition active:scale-[0.99] hover:bg-base"
               >
                 {contenu}

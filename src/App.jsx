@@ -141,6 +141,7 @@ const Privacy = lazyWithReload(() => import('./screens/Privacy'));
 const AccountDeletion = lazyWithReload(() => import('./screens/AccountDeletion'));
 const ResetPassword = lazyWithReload(() => import('./screens/ResetPassword'));
 const Landing = lazyWithReload(() => import('../landing/Landing'));
+const Relais = lazyWithReload(() => import('./screens/Relais'));
 
 const VendorDashboard = lazyWithReload(() => import('./screens/vendor/VendorDashboard'));
 const VendorProducts = lazyWithReload(() => import('./screens/vendor/VendorProducts'));
@@ -247,6 +248,10 @@ export default function App() {
                     {/* L'environnement Finjaro: la liste des applications, publique
                         et partageable par un lien. */}
                     <Route path="/apps" element={<Apps />} />
+                    {/* L'arrivée du relais de connexion depuis une autre
+                        application Finjaro (0173): échange le code, pose la
+                        session, continue. */}
+                    <Route path="/relais" element={<Relais />} />
                     {/* « Mon argent »: application à part entière, hors de
                         BuyerLayout — Beau, 22/09: « ce n'est pas possible que
                         je voie ça dans Finjaro avec Services et tout ». */}
