@@ -286,7 +286,16 @@
     "vueEnsemble": "Vue d’ensemble",
     "tachesOuvertes": "Tâches ouvertes",
     "actionsRapides": "Actions rapides",
-    "reprendre": "Reprendre {{nom}}"
+    "reprendre": "Reprendre {{nom}}",
+    "connecteurAssistant": "Mon assistant (Claude, ChatGPT, Claude Code…)",
+    "connecteurAssistantAide": "Ton assistant lit tes salons, tes tâches et ta feuille de route, et peut écrire dans un salon à ton nom — avec tes droits, rien de plus. Crée un jeton, colle l’adresse dans ton assistant (connecteur « sans authentification »).",
+    "jetonUneFois": "Copie cette adresse maintenant : elle ne s’affichera plus.",
+    "jetonUsage": "utilisé le {{quand}}",
+    "jetonJamais": "jamais utilisé",
+    "revoquer": "Révoquer",
+    "jetonNom": "Nom (ex. Claude sur mon téléphone)",
+    "creerJeton": "Créer un jeton",
+    "tropDeJetons": "Cinq jetons au plus : révoque-en un d’abord."
   },
   "equipe": {
     "titre": "L'équipe",

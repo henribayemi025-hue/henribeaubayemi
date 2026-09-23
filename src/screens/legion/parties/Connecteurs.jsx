@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub } from '@tabler/icons-react';
+import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub, IconRobot, IconCopy } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 
 // LEGION — les connecteurs: ce que les agents ont le droit de lire.
@@ -20,6 +20,33 @@ export function Connecteurs({ entreprise, t }) {
   const [depot, setDepot] = useState('');
   const [jeton, setJeton] = useState('');
   const [erreurGit, setErreurGit] = useState('');
+  // MON ASSISTANT (0174): les jetons pour brancher Claude, ChatGPT, Claude
+  // Code… sur Legion (fonction legion-mcp). Le jeton en clair ne s'affiche
+  // qu'une fois, à la création; ensuite on ne voit que le nom et l'usage.
+  const [jetons, setJetons] = useState([]);
+  const [nomJeton, setNomJeton] = useState('');
+  const [jetonClair, setJetonClair] = useState('');
+  const [erreurJeton, setErreurJeton] = useState('');
+  const [copie, setCopie] = useState(false);
+  const chargerJetons = useCallback(async () => {
+    const { data } = await supabase.from('legion_jetons').select('id, nom, cree_le, dernier_usage_le').is('revoque_le', null).order('cree_le', { ascending: false });
+    setJetons(data || []);
+  }, []);
+  useEffect(() => { chargerJetons(); }, [chargerJetons]);
+  const adresseMcp = (clair) => `${supabase.supabaseUrl}/functions/v1/legion-mcp/${clair}`;
+  async function creerJeton(e) {
+    e.preventDefault(); setErreurJeton(''); setBusy(true);
+    const { data, error } = await supabase.rpc('legion_creer_jeton', { p_nom: nomJeton.trim() || null });
+    setBusy(false);
+    if (error) return setErreurJeton(error.message === 'trop_de_jetons' ? t('legion.tropDeJetons', 'Cinq jetons au plus : révoque-en un d’abord.') : error.message);
+    setJetonClair(data); setNomJeton(''); setCopie(false); chargerJetons();
+  }
+  async function revoquerJeton(id) {
+    setBusy(true); await supabase.rpc('legion_revoquer_jeton', { p_id: id }); setBusy(false); chargerJetons();
+  }
+  async function copierAdresse() {
+    try { await navigator.clipboard.writeText(adresseMcp(jetonClair)); setCopie(true); } catch { setCopie(false); }
+  }
 
   const charger = useCallback(async () => {
     const [{ data: c }, { data: { user } }] = await Promise.all([
@@ -117,6 +144,36 @@ export function Connecteurs({ entreprise, t }) {
               {t('legion.connecteurGithubAide', 'Les agents lisent les derniers changements et les tickets ouverts de TON dépôt, en lecture seule. Pour un dépôt privé : sur GitHub, Paramètres › Developer settings › Personal access tokens › Fine-grained, accès à ce seul dépôt, droits « Contents » et « Issues » en lecture. Le jeton est rangé au coffre et ne s’affiche plus jamais.')}
             </p>
             {erreurGit && <p className="text-[11px] text-legion-danger">{erreurGit}</p>}
+          </div>
+        </li>
+        <li className="flex items-start gap-2">
+          <IconRobot size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-legion-ink">{t('legion.connecteurAssistant', 'Mon assistant (Claude, ChatGPT, Claude Code…)')}</p>
+            <p className="text-legion-muted">{t('legion.connecteurAssistantAide', 'Ton assistant lit tes salons, tes tâches et ta feuille de route, et peut écrire dans un salon à ton nom — avec tes droits, rien de plus. Crée un jeton, colle l’adresse dans ton assistant (connecteur « sans authentification »).')}</p>
+            {jetonClair && (
+              <div className="mt-2 rounded-xl border border-legion-gold/40 bg-legion-bg p-2">
+                <p className="text-[11px] font-semibold text-legion-gold">{t('legion.jetonUneFois', 'Copie cette adresse maintenant : elle ne s’affichera plus.')}</p>
+                <p className="mt-1 break-all font-mono text-[11px] text-legion-ink">{adresseMcp(jetonClair)}</p>
+                <button type="button" onClick={copierAdresse} className="mt-1 inline-flex items-center gap-1 rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg"><IconCopy size={13} /> {copie ? t('legion.copie', 'Copié') : t('legion.copier', 'Copier')}</button>
+              </div>
+            )}
+            {jetons.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {jetons.map((j) => (
+                  <li key={j.id} className="flex flex-wrap items-center gap-x-2 text-[12px] text-legion-muted">
+                    <span className="font-semibold text-legion-ink">{j.nom}</span>
+                    <span>{j.dernier_usage_le ? t('legion.jetonUsage', { quand: new Date(j.dernier_usage_le).toLocaleDateString(), defaultValue: 'utilisé le {{quand}}' }) : t('legion.jetonJamais', 'jamais utilisé')}</span>
+                    <button type="button" disabled={busy} onClick={() => revoquerJeton(j.id)} className="font-semibold text-legion-danger">{t('legion.revoquer', 'Révoquer')}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form onSubmit={creerJeton} className="mt-2 flex flex-wrap items-center gap-2">
+              <input value={nomJeton} onChange={(e) => setNomJeton(e.target.value)} maxLength={60} placeholder={t('legion.jetonNom', 'Nom (ex. Claude sur mon téléphone)')} className="input min-w-0 flex-1 text-[13px]" />
+              <button type="submit" disabled={busy} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.creerJeton', 'Créer un jeton')}</button>
+            </form>
+            {erreurJeton && <p className="text-[11px] text-legion-danger">{erreurJeton}</p>}
           </div>
         </li>
         <li className="flex items-start gap-2">

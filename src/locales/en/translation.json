@@ -286,7 +286,16 @@
     "vueEnsemble": "Overview",
     "tachesOuvertes": "Open tasks",
     "actionsRapides": "Quick actions",
-    "reprendre": "Back to {{nom}}"
+    "reprendre": "Back to {{nom}}",
+    "connecteurAssistant": "My assistant (Claude, ChatGPT, Claude Code…)",
+    "connecteurAssistantAide": "Your assistant reads your channels, tasks and roadmap, and can write in a channel in your name — with your rights, nothing more. Create a token, paste the address into your assistant (“no authentication” connector).",
+    "jetonUneFois": "Copy this address now: it will not be shown again.",
+    "jetonUsage": "used on {{quand}}",
+    "jetonJamais": "never used",
+    "revoquer": "Revoke",
+    "jetonNom": "Name (e.g. Claude on my phone)",
+    "creerJeton": "Create a token",
+    "tropDeJetons": "Five tokens at most: revoke one first."
   },
   "equipe": {
     "titre": "The team",

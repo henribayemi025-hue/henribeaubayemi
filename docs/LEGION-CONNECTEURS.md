@@ -68,3 +68,32 @@ Google ; plan et coût présentés avant.
 3. 📅 Le serveur MCP de Legion (brancher son Claude).
 4. 📅 Accounting dans Legion : les quatre fonctions de lecture de
    Claudinette (feu vert de Beau le 23/09).
+
+## Brancher son assistant (Claude, ChatGPT, Claude Code…) — fait le 23/09
+
+Legion parle **MCP**, le protocole que ces assistants comprennent. Dans
+Legion → Connecteurs → « Mon assistant », la personne crée un **jeton**
+(montré une seule fois) et obtient une adresse :
+
+```
+https://bokwivwizghdlaedczbw.supabase.co/functions/v1/legion-mcp/<jeton>
+```
+
+- **Claude.ai** : Paramètres → Connecteurs → Ajouter un connecteur
+  personnalisé → coller l'adresse (sans authentification : le jeton est
+  dans l'adresse).
+- **ChatGPT** : Paramètres → Connecteurs → Créer → même adresse, « sans
+  authentification ».
+- **Claude Code** : `claude mcp add legion --transport http <adresse>`
+  (ou l'en-tête `Authorization: Bearer <jeton>` sans le jeton dans
+  l'adresse).
+
+Ce que l'assistant peut faire, avec les droits de la personne et rien de
+plus : lire ses entreprises, l'équipe, les salons, les messages, les tâches
+et la feuille de route ; écrire dans un salon **à son nom** (les agents
+répondent comme à elle), créer une tâche, cocher une ligne de la feuille de
+route. Rien de destructif, rien sur les réglages, les jetons ou les
+connecteurs. Le jeton se révoque d'un geste ; cinq au plus par personne.
+
+Le jeton n'est jamais en base en clair (haché). Il désigne une personne, pas
+une entreprise : l'assistant voit exactement ce qu'elle voit.
