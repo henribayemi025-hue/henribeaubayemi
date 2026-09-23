@@ -192,6 +192,19 @@ export default function MesEntreprises() {
             </dl>
           </div>
 
+          {/* Beau, 23/09: « comment ça marche dans un cabinet, une entreprise
+              qui n'utilise pas Finjaro Accounting ? ». La réponse, en quatre
+              temps, et en disant ce qui est déjà là et ce qui arrive. */}
+          <div className="rounded-2xl border border-legion-line bg-legion-panel p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.commentCaMarche', 'Comment Legion travaille chez toi')}</p>
+            <ol className="space-y-2 text-[12px] leading-snug text-legion-ink">
+              <li><b className="text-legion-gold">1.</b> {t('legion.etape1', 'Tu choisis ton métier parmi plus de 50 modèles (cabinet comptable, cabinet d’avocats, laboratoire, entreprise tech, école, projet personnel…) ou tu le décris : Legion pose l’organigramme, chaque poste devient un agent.')}</li>
+              <li><b className="text-legion-gold">2.</b> {t('legion.etape2', 'Tu branches TES outils : ta boutique Finjaro, ton dépôt GitHub — et bientôt ton Google (Agenda, Drive). Pas besoin d’utiliser Finjaro Accounting : les agents lisent ce que tu branches, rien d’autre.')}</li>
+              <li><b className="text-legion-gold">3.</b> {t('legion.etape3', 'Tu fixes la feuille de route : le trimestre, le mois, la semaine, le jour. Chaque matin, chaque responsable écrit son plan et chaque agent rend un livrable.')}</li>
+              <li><b className="text-legion-gold">4.</b> {t('legion.etape4', 'Tu valides ou tu renvoies avec une remarque. Rien ne part en ton nom sans ton clic, et tu fixes toi-même le budget du mois.')}</li>
+            </ol>
+          </div>
+
           <div className="rounded-2xl border border-legion-line bg-legion-panel p-4">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.actionsRapides')}</p>
             <div className="grid grid-cols-2 gap-2">
