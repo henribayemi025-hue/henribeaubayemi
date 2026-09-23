@@ -343,9 +343,22 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // un message précis (glisser, ou la flèche), c'est son auteur qui répond.
   const citeId = (msg.meta as { reponse_a?: { id?: string } } | null)?.reponse_a?.id;
   let cite: Agent | null = null;
+  // Le fondateur répond à la question d'un agent BLOQUÉ sur une tâche (le
+  // travail du matin la pose en « question », et le téléphone sonne). Avant
+  // le 23/09, l'agent répondait, mais la tâche restait bloquée jusqu'au
+  // lendemain matin. Maintenant, avec la réponse, il livre tout de suite.
+  let blocage: { tache_id: string; tache: string; meta: Record<string, unknown> | null } | null = null;
   if (citeId) {
-    const { data: m } = await service.from('legion_messages').select('auteur_id').eq('id', citeId).maybeSingle();
+    const { data: m } = await service.from('legion_messages').select('auteur_id, meta').eq('id', citeId).maybeSingle();
     cite = m ? (agents as Agent[]).find((a) => a.id === m.auteur_id && !a.user_id) || null : null;
+    const liv = (m?.meta as { livrable?: { statut?: string; tache_id?: string; tache?: string } } | null)?.livrable;
+    if (cite && liv?.statut === 'bloque' && liv.tache_id) {
+      const { data: tb } = await service.from('legion_messages').select('id, texte, meta, termine_le').eq('id', liv.tache_id).maybeSingle();
+      if (tb && !tb.termine_le && (tb.meta as { statut?: string } | null)?.statut !== 'fait') {
+        blocage = { tache_id: tb.id, tache: String(tb.texte), meta: tb.meta as Record<string, unknown> | null };
+        lignes.push(`[Consigne de Legion] Le fondateur vient de répondre à ta question de BLOCAGE sur la tâche « ${blocage.tache} ». Avec sa réponse, livre MAINTENANT la tâche, complète (titres et points, retours à la ligne), comme un livrable fini. Pas de « merci, je m'y mets »: le livrable, ici. Si sa réponse ne suffit vraiment pas, dis précisément ce qui manque encore ("genre": "question").`);
+      }
+    }
   }
   const pourClaude = !!claude && !estClaude && (cite?.id === claude.id
     || (prive && salon.prive_entre.includes(claude.cle))
@@ -512,7 +525,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const depot = PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '';
   const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
-  const complexe = !gratuite && (questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
+  const complexe = !gratuite && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
     || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte)));
 
   const ecrits: unknown[] = [];
@@ -564,9 +577,12 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
         action = { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
       }
     }
+    // Débloqué: la réponse EST le livrable de la tâche (le tableau la met
+    // « à revoir », comme un livrable du matin).
+    const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(action ? { action } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...(web?.sources.length ? { sources: web.sources } : {}) },
+      texte, genre, meta: { ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...(web?.sources.length ? { sources: web.sources } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est
@@ -575,8 +591,13 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     ecrits.push(ecrit);
     ont_repondu.push(cible.nom);
     lignes.push(`${cible.nom}: ${texte}`);
+    if (debloque) {
+      const { bloque: _b, ...reste } = (blocage!.meta || {}) as Record<string, unknown>;
+      const { error: eT } = await service.from('legion_messages').update({ meta: { ...reste, statut: 'revue', livre_le: new Date().toISOString(), debloque_le: new Date().toISOString() } }).eq('id', blocage!.tache_id);
+      if (eT) console.error('déblocage:', eT.message);
+    }
 
-    let intitule = action ? '' : (typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '');
+    let intitule = action || debloque ? '' : (typeof r.obj.tache === 'string' ? r.obj.tache.trim().slice(0, 200) : '');
     // Une tâche qu'il a déjà (même intitulé, ou presque) n'est pas recréée.
     if (intitule && (tachesOuvertes || []).some((x: { texte: string; assigne_a: string | null }) => x.assigne_a === cible.id && semblable(x.texte, intitule))) intitule = '';
     if (intitule) {
