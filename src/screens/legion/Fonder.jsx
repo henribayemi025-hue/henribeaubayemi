@@ -55,13 +55,6 @@ export default function Fonder() {
   const [generationErreur, setGenerationErreur] = useState('');
   const [filtre, setFiltre] = useState('');
   const [tous, setTous] = useState(false);
-  const plat = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const modelesFiltres = (data?.modeles || []).filter((m) => {
-    if (modele?.cle === m.cle) return true;
-    const q = plat(filtre.trim());
-    return !q || plat(`${m.nom} ${m.promesse} ${m.niveau} ${m.secteur_demande || ''}`).includes(q);
-  });
-  const modelesVisibles = tous || filtre.trim() ? modelesFiltres : modelesFiltres.slice(0, 12);
 
   // Un nouveau modèle, écrit pour le secteur décrit; puis la liste se
   // recharge et le modèle est sélectionné.
@@ -73,7 +66,7 @@ export default function Fonder() {
       const { data: r, error: err } = await supabase.functions.invoke('legion-modele', { body: { secteur: secteur.trim() } });
       if (err) throw err;
       if (r?.erreur) throw new Error(r.erreur);
-      try { localStorage.removeItem('legion:modeles:v2'); } catch { /* sans stockage */ }
+      try { localStorage.removeItem('legion:modeles:v3'); } catch { /* sans stockage */ }
       await retry();
       setSecteur('');
       setTimeout(() => { const m = document.querySelector(`[data-modele="${r.cle}"]`); if (m) { m.click(); m.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, 300);
@@ -83,13 +76,38 @@ export default function Fonder() {
   }
 
   const { data, loading, error, retry } = useAsync(async () => {
-    const [m, p] = await Promise.all([
+    // La base ne rend que 1 000 lignes par demande, et les 54 secteurs en
+    // ont plus de 3 000: on les lit par pages, sinon la plupart des secteurs
+    // s'affichaient sans leurs métiers.
+    const lirePostes = async () => {
+      const tout = [];
+      for (let de = 0; de < 20000; de += 1000) {
+        const { data: page, error: e } = await supabase.from('studio_modele_postes')
+          .select('modele, departement, poste, des_la_taille, a_ecrire, est_directeur').order('modele').order('ordre').range(de, de + 999);
+        if (e) throw e;
+        tout.push(...(page || []));
+        if (!page || page.length < 1000) break;
+      }
+      return tout;
+    };
+    const [m, postes] = await Promise.all([
       supabase.from('studio_modeles').select('*').eq('actif', true).order('ordre'),
-      supabase.from('studio_modele_postes').select('modele, departement, poste, des_la_taille, a_ecrire, est_directeur').order('ordre'),
+      lirePostes(),
     ]);
     if (m.error) throw m.error;
-    return { modeles: m.data || [], postes: p.data || [] };
-  }, [], { cacheKey: 'legion:modeles:v2' });
+    return { modeles: m.data || [], postes };
+  }, [], { cacheKey: 'legion:modeles:v3' });
+
+  // Après useAsync: la liste filtrée lit `data`. Placée avant, elle
+  // faisait planter la page (« Cannot access before initialization »):
+  // la page « Fonder » restait blanche. Vu par Beau le 23/09.
+  const plat = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const modelesFiltres = (data?.modeles || []).filter((m) => {
+    if (modele?.cle === m.cle) return true;
+    const q = plat(filtre.trim());
+    return !q || plat(`${m.nom} ${m.promesse} ${m.niveau} ${m.secteur_demande || ''}`).includes(q);
+  });
+  const modelesVisibles = tous || filtre.trim() ? modelesFiltres : modelesFiltres.slice(0, 12);
 
   if (loading) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><Skeleton className="h-40 w-full" /></div>;
   if (error) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><ErrorState onRetry={retry} /></div>;
