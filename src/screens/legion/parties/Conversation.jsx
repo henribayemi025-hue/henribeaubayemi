@@ -3,7 +3,7 @@ import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
   IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop, IconPhone, IconPaperclip, IconFileSpreadsheet, IconFileText,
-  IconVolume, IconPlayerStop,
+  IconVolume, IconPlayerStop, IconNews,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
@@ -42,7 +42,7 @@ function couleurNom(a) {
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
   onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
-  reunion, onReunion, onConclureReunion, onAppeler,
+  reunion, onReunion, onConclureReunion, onAppeler, onRapport,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -112,6 +112,7 @@ export function Conversation({
   }, [agents, salon, agentPrive]);
   const [gererMembres, setGererMembres] = useState(false);
   const [convoquer, setConvoquer] = useState(false);
+  const [rapport, setRapport] = useState(false);
 
   function copier(m) {
     navigator.clipboard?.writeText(m.texte).catch(() => {});
@@ -186,8 +187,15 @@ export function Conversation({
           {agentPrive && (
             <Interrupteur petit on={!!agentPrive.actif} onChange={(v) => onAllumer(agentPrive, v)} label={t('legion.interrupteur')} />
           )}
+          {!agentPrive && onRapport && (
+            <button type="button" onClick={() => { setRapport((v) => !v); setConvoquer(false); setGererMembres(false); }}
+              title={t('legion.rapport.titre')} aria-label={t('legion.rapport.titre')}
+              className={`rounded-full p-2 transition ${rapport ? 'text-legion-gold' : 'text-legion-ink'}`}>
+              <IconNews size={20} />
+            </button>
+          )}
           {!agentPrive && onReunion && (
-            <button type="button" onClick={() => { setConvoquer((v) => !v); setGererMembres(false); }} disabled={!!reunion}
+            <button type="button" onClick={() => { setConvoquer((v) => !v); setGererMembres(false); setRapport(false); }} disabled={!!reunion}
               title={reunion ? t('legion.reunion.enCours') : t('legion.reunion.titre')}
               className={`rounded-full p-2 transition disabled:opacity-40 ${convoquer ? 'text-legion-gold' : 'text-legion-ink'}`}>
               <IconUsersGroup size={20} />
@@ -242,6 +250,11 @@ export function Conversation({
         </div>
       )}
 
+      {/* Le rapport tout de suite (legion-rapport, 23/09) */}
+      {rapport && !agentPrive && onRapport && (
+        <DemanderRapport t={t} onFermer={() => setRapport(false)}
+          onDemander={async (mode) => { const ok = await onRapport(mode); if (ok) { setRapport(false); colle.current = true; } return ok; }} />
+      )}
       {/* Convoquer une réunion (legion-reunion, 23/09) */}
       {convoquer && !agentPrive && salon && !reunion && (
         <ConvoquerReunion salon={salon} agents={agents} t={t} onFermer={() => setConvoquer(false)}
@@ -581,6 +594,37 @@ function participantsParDefaut(salon, agents) {
 // titre le compte rendu ; ici, on choisit.
 const FORMATS_REUNION = ['debat', 'vote', 'avocat', 'presse', 'clients', 'negociation', 'investisseurs', 'crise', 'etsi', 'retro', 'budget', 'impact'];
 
+// Le rapport du soir arrive seul chaque soir; ici, on le demande tout de suite —
+// la journée, la semaine, ou la transparence du mois écoulé.
+function DemanderRapport({ t, onFermer, onDemander }) {
+  const [enCours, setEnCours] = useState(null);
+  async function demander(mode) {
+    if (enCours) return;
+    setEnCours(mode);
+    try { await onDemander(mode); } finally { setEnCours(null); }
+  }
+  return (
+    <div className="shrink-0 border-b border-legion-line bg-legion-panel px-3 py-3">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[14px] font-semibold text-legion-ink">{t('legion.rapport.titre')}</p>
+          <p className="text-[12px] text-legion-muted">{t('legion.rapport.aide')}</p>
+        </div>
+        <button type="button" onClick={onFermer} aria-label={t('common.close', 'Fermer')} className="rounded-full p-1 text-legion-muted"><IconX size={18} /></button>
+      </div>
+      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
+        {['soir', 'semaine', 'mois'].map((mode) => (
+          <button key={mode} type="button" onClick={() => demander(mode)} disabled={!!enCours}
+            className="rounded-card border border-legion-line bg-legion-card px-3 py-2 text-left transition hover:border-legion-gold disabled:opacity-60">
+            <span className="block text-[13px] font-semibold text-legion-ink">{t(`legion.rapport.${mode}`)}</span>
+            <span className="block text-[11px] text-legion-muted">{enCours === mode ? t('legion.rapport.enCours') : t(`legion.rapport.${mode}Aide`)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
   const [sujet, setSujet] = useState('');
   const [format, setFormat] = useState('debat');
@@ -672,6 +716,16 @@ function EtiquetteReunion({ m, mien, agents, t, messages = [], langue = 'fr' }) 
   const r = m.meta?.reunion;
   const base = `mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-gold/15 text-legion-gold'}`;
   if (m.meta?.dans_reunion) return <span className={base}><IconHandStop size={12} /> {t('legion.reunion.intervention')}</span>;
+  const rap = m.meta?.rapport;
+  if (rap) {
+    return (
+      <span className="inline-flex flex-wrap items-center">
+        <span className={base}><IconNews size={12} /> {t(`legion.rapport.${rap.type}`)}</span>
+        {rap.alertes > 0 && <span className="mb-1 mr-1 inline-flex items-center gap-1 rounded-pill bg-legion-danger/15 px-1.5 py-0.5 text-[11px] font-semibold text-legion-danger">{t('legion.rapport.alertes', { count: rap.alertes })}</span>}
+        <EcouterReunion seul={m} messages={messages} agents={agents} langue={langue} t={t} mien={mien} libelle={t('legion.rapport.ecouter')} />
+      </span>
+    );
+  }
   if (!r) return null;
   if (r.ouverture) {
     const noms = (r.participants || []).map((id) => agents.find((a) => a.id === id)?.nom).filter(Boolean).join(', ');
@@ -706,7 +760,7 @@ function EtiquetteReunion({ m, mien, agents, t, messages = [], langue = 'fr' }) 
 // Écouter une réunion à plusieurs voix (idée 187 des 200) : chaque agent a
 // sa voix (celles du téléphone, dans la langue de l'entreprise), le sujet
 // puis chaque prise de parole puis le compte rendu. Rien ne part au serveur.
-function EcouterReunion({ reunionId, messages, agents, langue, t, mien }) {
+function EcouterReunion({ reunionId, seul, messages, agents, langue, t, mien, libelle }) {
   const [joue, setJoue] = useState(false);
   const peut = typeof window !== 'undefined' && 'speechSynthesis' in window;
   useEffect(() => () => { if (joue && peut) window.speechSynthesis.cancel(); }, [joue, peut]);
@@ -714,7 +768,7 @@ function EcouterReunion({ reunionId, messages, agents, langue, t, mien }) {
   function lire() {
     const synth = window.speechSynthesis;
     if (joue) { synth.cancel(); setJoue(false); return; }
-    const suite = messages.filter((x) => x.id === reunionId || x.meta?.reunion?.id === reunionId).filter((x) => !x.meta?.reunion?.rate)
+    const suite = seul ? [seul] : messages.filter((x) => x.id === reunionId || x.meta?.reunion?.id === reunionId).filter((x) => !x.meta?.reunion?.rate)
       .sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
     const code = langue === 'en' ? 'en' : 'fr';
     const voix = synth.getVoices().filter((v) => v.lang?.toLowerCase().startsWith(code));
@@ -737,7 +791,7 @@ function EcouterReunion({ reunionId, messages, agents, langue, t, mien }) {
   return (
     <button type="button" onClick={lire}
       className={`mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-bg text-legion-ink'}`}>
-      {joue ? <IconPlayerStop size={12} /> : <IconVolume size={12} />} {joue ? t('legion.reunion.arreterEcoute', 'Arrêter') : t('legion.reunion.ecouter', 'Écouter la réunion')}
+      {joue ? <IconPlayerStop size={12} /> : <IconVolume size={12} />} {joue ? t('legion.reunion.arreterEcoute', 'Arrêter') : (libelle || t('legion.reunion.ecouter', 'Écouter la réunion'))}
     </button>
   );
 }

@@ -513,7 +513,22 @@
     "connecteurComptaAide": "Agents read the TOTALS of your books: a month’s summary, sales, expenses by category, what is still to be collected and paid — never a customer’s name or a single line. If you leave this workspace, they read nothing more.",
     "depenseMoinsDunCentime": "less than €0.01",
     "googleSature": "Google's models are overloaded right now. Try again in a minute.",
-    "reessaie": "A small connection problem with the models. Try again in a moment."
+    "reessaie": "A small connection problem with the models. Try again in a moment.",
+    "rapport": {
+      "titre": "The report, right now",
+      "aide": "It arrives on its own every evening in this room. Here, you ask for it now.",
+      "soir": "Tonight's report",
+      "soirAide": "The last 24 hours",
+      "semaine": "The week",
+      "semaineAide": "The last seven days, to listen to",
+      "mois": "Monthly transparency",
+      "moisAide": "Last month: cost, rereads, confirmed actions",
+      "enCours": "The director is writing the report…",
+      "ecouter": "Listen",
+      "alertes_one": "{{count}} alert",
+      "alertes_other": "{{count}} alerts",
+      "plafond": "Monthly cap reached: no AI-written report today."
+    }
   },
   "equipe": {
     "titre": "The team",

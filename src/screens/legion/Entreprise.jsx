@@ -116,6 +116,8 @@ export default function Entreprise() {
   const salonId = canalDemande || departements[0]?.id || null;
   const salon = useMemo(() => departements.find((s) => s.id === salonId) || prives.find((s) => s.id === salonId) || null, [departements, prives, salonId]);
   const dept = departements.find((d) => d.id === deptId) || null;
+  // Le salon où le rapport du soir se lit: le même choix que legion-rapport.
+  const salonRapport = useMemo(() => departements.find((s) => sansAccent(s.nom) === 'direction' || sansAccent(s.cle || '') === 'direction') || departements[0] || null, [departements]);
   const moi = data?.agents.find((a) => a.user_id === user?.id) || null;
   const agentPrive = useMemo(() => (salon?.prive_entre?.length ? data?.agents.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== moi?.cle) || null : null), [salon, data?.agents, moi]);
   const messagesDuSalon = useMemo(() => (data?.messages || []).filter((m) => m.canal_id === salonId), [data?.messages, salonId]);
@@ -273,6 +275,16 @@ export default function Entreprise() {
     const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { reunion_id: id, conclure: true } });
     if (e || r?.erreur) toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic'));
     else toast.info(t('legion.reunion.conclusionDemandee'));
+  }
+
+  // Le rapport du soir tout de suite (legion-rapport, 23/09). La fonction
+  // l'écrit avant de répondre; il arrive dans le salon en temps réel.
+  async function faireRapport(mode) {
+    const { data: r, error: e } = await supabase.functions.invoke('legion-rapport', { body: { entreprise_id: entrepriseId, mode } });
+    if (e || r?.erreur) { toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic')); return false; }
+    const ligne = (r?.journal || [])[0] || '';
+    if (/plafond/.test(ligne)) { toast.error(t('legion.rapport.plafond')); return false; }
+    return true;
   }
 
   // Appeler un agent (23/09): l'appel se passe dans son salon privé, et tout
@@ -663,6 +675,7 @@ export default function Entreprise() {
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
               onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon} onMembres={membresSalon}
               reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion} onAppeler={appeler}
+              onRapport={salonRapport && salon.id === salonRapport.id ? faireRapport : null}
               entrepriseId={entrepriseId} t={t}
             />
           ) : (

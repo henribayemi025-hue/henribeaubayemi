@@ -513,7 +513,22 @@
     "connecteurComptaAide": "Les agents lisent les TOTAUX de tes livres : le résumé d’un mois, les ventes, les dépenses par catégorie, ce qui reste à encaisser et à payer — jamais le nom d’un client ni le détail d’une ligne. Si tu quittes cet espace, ils ne lisent plus rien.",
     "depenseMoinsDunCentime": "moins de 0,01 €",
     "googleSature": "Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.",
-    "reessaie": "Petit souci de connexion avec les modèles. Réessaie dans un instant."
+    "reessaie": "Petit souci de connexion avec les modèles. Réessaie dans un instant.",
+    "rapport": {
+      "titre": "Le rapport, tout de suite",
+      "aide": "Il arrive seul chaque soir dans ce salon. Ici, tu le demandes maintenant.",
+      "soir": "Rapport du soir",
+      "soirAide": "Les dernières 24 heures",
+      "semaine": "La semaine",
+      "semaineAide": "Les sept derniers jours, à écouter",
+      "mois": "Transparence du mois",
+      "moisAide": "Le mois écoulé : coût, relectures, actions confirmées",
+      "enCours": "Le directeur écrit le rapport…",
+      "ecouter": "Écouter",
+      "alertes_one": "{{count}} alerte",
+      "alertes_other": "{{count}} alertes",
+      "plafond": "Plafond du mois atteint : pas de rapport écrit par l'IA aujourd'hui."
+    }
   },
   "equipe": {
     "titre": "L'équipe",
