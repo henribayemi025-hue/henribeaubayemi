@@ -52,6 +52,7 @@ type Msg = { id: string; auteur_id: string; user_id: string | null; texte: strin
 const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const court = (t: string, n = 160) => { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length <= n ? x : `${x.slice(0, n).replace(/\s+\S*$/, '')}…`; };
 const JOUR_MS = 86_400_000;
+const euros = (n: number, anglais = false) => `${anglais ? n.toFixed(2) : n.toFixed(2).replace('.', ',')} €`;
 
 // ——— Les faits d'une période, et les alertes : tout vient de la base ———
 async function faits(service: Service, entrepriseId: string, depuis: Date, agents: Agent[], anglais = false) {
@@ -76,8 +77,12 @@ async function faits(service: Service, entrepriseId: string, depuis: Date, agent
   const revueLongue = enRevue.filter((x) => age(String((x.meta as { livre_le?: string } | null)?.livre_le || x.created_at)) > 2);
   const vieilles = ouvertes.filter((x) => statut(x) === 'a_faire' && age(x.created_at) > 7);
   const livrables = ms.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable && !m.user_id);
-  const decisions = ms.filter((m) => m.genre === 'decision');
-  const reunions = ms.filter((m) => m.genre === 'reunion');
+  // Une réunion = son ouverture; son compte rendu n'est pas une « décision »
+  // de plus (le premier essai, le 24/09, comptait six réunions ET six décisions).
+  const reunion = (m: Msg) => (m.meta as { reunion?: { ouverture?: boolean; fin?: boolean; interrompue?: boolean; annulee?: boolean; echec?: boolean } } | null)?.reunion;
+  const comptesRendus = ms.filter((m) => { const r = reunion(m); return !!r?.fin && !r.interrompue && !r.annulee && !r.echec; });
+  const decisions = ms.filter((m) => m.genre === 'decision' && !reunion(m));
+  const reunions = ms.filter((m) => !!reunion(m)?.ouverture);
   const questions = ms.filter((m) => m.genre === 'question' && !m.user_id);
   const reponsesAgents = ms.filter((m) => !m.user_id && (m.meta as { par_ia?: boolean } | null)?.par_ia);
   const messagesHumains = ms.filter((m) => m.user_id);
@@ -112,11 +117,11 @@ async function faits(service: Service, entrepriseId: string, depuis: Date, agent
   }
 
   return {
-    ms, ouvertes, faites, creees, bloquees, enRevue, livrables, decisions, reunions, questions, reponsesAgents, messagesHumains, parAgent,
+    ms, ouvertes, faites, creees, bloquees, enRevue, livrables, decisions, reunions, comptesRendus, questions, reponsesAgents, messagesHumains, parAgent,
     depensePeriode, plafond, alertes, nomDe,
     chiffres: {
       reponses: reponsesAgents.length, messages_humains: messagesHumains.length, livrables: livrables.length, decisions: decisions.length,
-      reunions: reunions.length, taches_creees: creees.length, taches_faites: faites.length, taches_ouvertes: ouvertes.length,
+      reunions: reunions.length, comptes_rendus: comptesRendus.length, taches_creees: creees.length, taches_faites: faites.length, taches_ouvertes: ouvertes.length,
       bloquees: bloquees.length, en_revue: enRevue.length, depense_eur: Number(depensePeriode.toFixed(4)),
       mois_eur: Number(plafond.depense.toFixed(4)), plafond_eur: plafond.plafond,
     },
@@ -167,7 +172,8 @@ async function rapportSoir(service: Service, apiKey: string, entrepriseId: strin
     `Période : ${semaine ? 'les sept derniers jours' : 'les dernières 24 heures'}.`,
     `Chiffres (mesurés) : ${JSON.stringify(f.chiffres)}.`,
     f.livrables.length ? `Livrables rendus :\n${f.livrables.slice(0, 12).map((m) => `- ${f.nomDe(m.auteur_id)} : ${court(m.texte, 220)}`).join('\n')}` : 'Aucun livrable rendu.',
-    f.decisions.length ? `Décisions et comptes rendus :\n${f.decisions.slice(0, 8).map((m) => `- ${court(m.texte, 240)}`).join('\n')}` : '',
+    f.decisions.length ? `Décisions :\n${f.decisions.slice(0, 8).map((m) => `- ${court(m.texte, 240)}`).join('\n')}` : '',
+    f.comptesRendus.length ? `Comptes rendus de réunion :\n${f.comptesRendus.slice(0, 6).map((m) => `- ${court(m.texte, 320)}`).join('\n')}` : '',
     f.faites.length ? `Tâches terminées :\n${f.faites.slice(0, 12).map((x) => `- ${court(x.texte, 120)} (${f.nomDe(x.assigne_a)})`).join('\n')}` : 'Aucune tâche terminée.',
     f.ouvertes.length ? `Tâches ouvertes (${f.ouvertes.length}) :\n${f.ouvertes.slice(0, 12).map((x) => `- ${court(x.texte, 110)} (${f.nomDe(x.assigne_a)}, ${String((x.meta as { statut?: string } | null)?.statut || 'a_faire')})`).join('\n')}` : '',
     f.questions.length ? `Questions posées au fondateur :\n${f.questions.slice(0, 6).map((m) => `- ${f.nomDe(m.auteur_id)} : ${court(m.texte, 200)}`).join('\n')}` : '',
@@ -190,9 +196,10 @@ Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'ang
   const t = anglais
     ? { auj: semaine ? 'This week' : 'Today', dem: 'Next', toi: 'For you', al: 'Alerts', ch: 'Figures' }
     : { auj: semaine ? 'Cette semaine' : "Aujourd'hui", dem: 'Ensuite', toi: 'Pour toi', al: 'Alertes', ch: 'Les chiffres' };
+  const eur = (n: number) => euros(n, anglais);
   const chiffres = anglais
-    ? `- ${f.chiffres.reponses} agent replies, ${f.chiffres.livrables} deliverables, ${f.chiffres.decisions} decisions, ${f.chiffres.reunions} meetings\n- Tasks: ${f.chiffres.taches_faites} done, ${f.chiffres.taches_creees} created, ${f.chiffres.taches_ouvertes} open (${f.chiffres.en_revue} awaiting you)\n- Cost: ${f.depensePeriode.toFixed(2)} € over the period, ${f.plafond.depense.toFixed(2)} € this month${f.plafond.plafond != null ? ` of ${f.plafond.plafond} €` : ''}`
-    : `- ${f.chiffres.reponses} réponses d'agents, ${f.chiffres.livrables} livrables, ${f.chiffres.decisions} décisions, ${f.chiffres.reunions} réunions\n- Tâches : ${f.chiffres.taches_faites} faites, ${f.chiffres.taches_creees} créées, ${f.chiffres.taches_ouvertes} ouvertes (dont ${f.chiffres.en_revue} à valider)\n- Coût : ${f.depensePeriode.toFixed(2)} € sur la période, ${f.plafond.depense.toFixed(2)} € ce mois-ci${f.plafond.plafond != null ? ` sur ${f.plafond.plafond} €` : ''}`;
+    ? `- ${f.chiffres.reponses} agent replies, ${f.chiffres.livrables} deliverables, ${f.chiffres.reunions} meetings, ${f.chiffres.decisions} decisions\n- Tasks: ${f.chiffres.taches_faites} done, ${f.chiffres.taches_creees} created, ${f.chiffres.taches_ouvertes} open (${f.chiffres.en_revue} awaiting you)\n- Cost: ${eur(f.depensePeriode)} over the period, ${eur(f.plafond.depense)} this month${f.plafond.plafond != null ? ` of ${eur(f.plafond.plafond)}` : ''}`
+    : `- ${f.chiffres.reponses} réponses d'agents, ${f.chiffres.livrables} livrables, ${f.chiffres.reunions} réunions, ${f.chiffres.decisions} décisions\n- Tâches : ${f.chiffres.taches_faites} faites, ${f.chiffres.taches_creees} créées, ${f.chiffres.taches_ouvertes} ouvertes (dont ${f.chiffres.en_revue} à valider)\n- Coût : ${eur(f.depensePeriode)} sur la période, ${eur(f.plafond.depense)} ce mois-ci${f.plafond.plafond != null ? ` sur ${eur(f.plafond.plafond)}` : ''}`;
 
   const r = await generer(apiKey, consigne, SCHEMA_RAPPORT, { temperature: 0.4, reflexion: 512, maxSortie: 2048, delaiMs: 40_000, modeles: moteursSimples() });
   const recit = 'erreur' in r ? null : r.obj as { aujourdhui?: string; demain?: string; pour_toi?: string };
@@ -208,7 +215,7 @@ Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'ang
   const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: entrepriseId, canal_id: canal, auteur_id: directeur.id, user_id: null,
     texte: aerer(blocs.join('\n\n')).slice(0, 5000), genre: 'info',
-    meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, chiffres: f.chiffres } },
+    meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, chiffres: f.chiffres, demande: force } },
   }).select('id').single();
   if (error) return `${e.nom}: ${error.message}`;
   if (recit && !('erreur' in r)) await garder(service, { entreprise_id: entrepriseId, message_id: ecrit.id, fonction: 'legion_rapport', modele: r.modele, consigne, sortie: JSON.stringify(r.obj) });
@@ -251,13 +258,13 @@ async function rapportMois(service: Service, entrepriseId: string, force: boolea
   const total = Object.values(parFn).reduce((a, b) => a + b, 0);
   const anglais = e.langue === 'en';
   const directeur = agents.find((a) => a.est_directeur && !a.user_id && a.moteur !== 'claude-code') || agents.find((a) => !a.user_id) || agents[0];
-  const euros = (n: number) => `${n.toFixed(2)} €`;
+  const eur = (n: number) => euros(n, anglais);
   const texte = anglais
-    ? `Transparency report — ${moisNom}\n\n## What Legion cost\n- ${euros(total)} (estimate from public prices; the real bill is Google's)\n${Object.entries(parFn).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k}: ${euros(v)}`).join('\n')}\n\n## What the agents did\n- ${reponses.length} replies, ${lignes.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable).length} deliverables, ${lignes.filter((m) => m.genre === 'reunion').length} meetings, ${lignes.filter((m) => m.genre === 'tache' && m.termine_le).length} tasks done\n\n## What was checked\n- ${relues.length} replies reread before sending, ${corrigees.length} corrected (invented figure, promise, fact)\n- ${actions.length} actions proposed, ${confirmees.length} confirmed by a human — nothing runs without "Confirm"\n- ${(regles || []).length} house rules added, ${(docs || []).length} documents added`
-    : `Rapport de transparence — ${moisNom}\n\n## Ce que Legion a coûté\n- ${euros(total)} (estimation d'après les prix publics ; la vraie facture est celle de Google)\n${Object.entries(parFn).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k} : ${euros(v)}`).join('\n')}\n\n## Ce que les agents ont fait\n- ${reponses.length} réponses, ${lignes.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable).length} livrables, ${lignes.filter((m) => m.genre === 'reunion').length} réunions, ${lignes.filter((m) => m.genre === 'tache' && m.termine_le).length} tâches terminées\n\n## Ce qui a été vérifié\n- ${relues.length} réponses relues avant de partir, ${corrigees.length} corrigées (chiffre inventé, promesse, fait)\n- ${actions.length} actions proposées, ${confirmees.length} confirmées par un humain — rien ne s'exécute sans « Confirmer »\n- ${(regles || []).length} règles de la maison ajoutées, ${(docs || []).length} documents ajoutés`;
+    ? `Transparency report — ${moisNom}\n\n## What Legion cost\n- ${eur(total)} (estimate from public prices; the real bill is Google's)${Object.keys(parFn).length ? '\n' : ''}${Object.entries(parFn).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k}: ${eur(v)}`).join('\n')}\n\n## What the agents did\n- ${reponses.length} replies, ${lignes.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable).length} deliverables, ${lignes.filter((m) => (m.meta as { reunion?: { ouverture?: boolean } } | null)?.reunion?.ouverture).length} meetings, ${lignes.filter((m) => m.genre === 'tache' && m.termine_le).length} tasks done\n\n## What was checked\n- ${relues.length} replies reread before sending, ${corrigees.length} corrected (invented figure, promise, fact)\n- ${actions.length} actions proposed, ${confirmees.length} confirmed by a human — nothing runs without "Confirm"\n- ${(regles || []).length} house rules added, ${(docs || []).length} documents added`
+    : `Rapport de transparence — ${moisNom}\n\n## Ce que Legion a coûté\n- ${eur(total)} (estimation d'après les prix publics ; la vraie facture est celle de Google)${Object.keys(parFn).length ? '\n' : ''}${Object.entries(parFn).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k} : ${eur(v)}`).join('\n')}\n\n## Ce que les agents ont fait\n- ${reponses.length} réponses, ${lignes.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable).length} livrables, ${lignes.filter((m) => (m.meta as { reunion?: { ouverture?: boolean } } | null)?.reunion?.ouverture).length} réunions, ${lignes.filter((m) => m.genre === 'tache' && m.termine_le).length} tâches terminées\n\n## Ce qui a été vérifié\n- ${relues.length} réponses relues avant de partir, ${corrigees.length} corrigées (chiffre inventé, promesse, fait)\n- ${actions.length} actions proposées, ${confirmees.length} confirmées par un humain — rien ne s'exécute sans « Confirmer »\n- ${(regles || []).length} règles de la maison ajoutées, ${(docs || []).length} documents ajoutés`;
   const { error } = await service.from('legion_messages').insert({
     entreprise_id: entrepriseId, canal_id: canal, auteur_id: directeur.id, user_id: null, texte, genre: 'info',
-    meta: { sans_reponse: true, rapport: { type: 'mois', mois: debut.toISOString().slice(0, 7), total_eur: Number(total.toFixed(4)), relues: relues.length, corrigees: corrigees.length, actions: actions.length, confirmees: confirmees.length } },
+    meta: { sans_reponse: true, rapport: { type: 'mois', demande: force, mois: debut.toISOString().slice(0, 7), total_eur: Number(total.toFixed(4)), relues: relues.length, corrigees: corrigees.length, actions: actions.length, confirmees: confirmees.length } },
   });
   return error ? `${e.nom}: ${error.message}` : `${e.nom}: rapport du mois écrit`;
 }
@@ -282,6 +289,9 @@ Deno.serve(compter('legion_rapport', async (req: Request) => {
     if (!sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
     const { data } = await service.from('legion_agents').select('entreprise_id').eq('actif', true).is('user_id', null).neq('moteur', 'claude-code');
     entreprises = [...new Set((data || []).map((x: { entreprise_id: string }) => x.entreprise_id))] as string[];
+    // Pour essayer la tâche planifiée sur une seule entreprise (l'entreprise
+    // de test), sans écrire dans les vraies.
+    if (corps.entreprise_id) entreprises = entreprises.filter((x) => x === corps.entreprise_id);
   } else {
     const auth = req.headers.get('Authorization');
     if (!auth || !corps.entreprise_id) return json({ erreur: 'Il faut être connecté.' }, 401);
