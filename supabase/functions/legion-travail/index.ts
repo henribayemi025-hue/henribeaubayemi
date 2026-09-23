@@ -227,7 +227,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return false; }
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
-    service.from('legion_entreprises').select('id, nom, projet').eq('id', entrepriseId).single(),
+    service.from('legion_entreprises').select('id, nom, projet, langue').eq('id', entrepriseId).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur').eq('entreprise_id', entrepriseId).order('ordre'),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
@@ -238,6 +238,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   if (!machines.length) { journal.push(`${entreprise.nom}: personne d'allumé`); return false; }
   const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
   let projet = String(entreprise.projet || entreprise.nom);
+  // La langue de l'entreprise (0166, bouton FR / EN de Legion): les plans et
+  // les livrables s'écrivent dans celle-là. Vide = français. Pas la langue du
+  // profil: celui de Beau est en anglais, il lit ses agents en français.
+  const anglais = entreprise.langue === 'en';
+  const enLangue = anglais ? '\n\nLANGUE: le fondateur lit en anglais. Écris TOUT ce que tu rends en anglais (English), titres compris — même si les consignes et le fil sont en français.' : '';
 
   let mesures: string | null = null;
   if (branche) {
@@ -324,7 +329,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       ? [...plansDuJour, ...(plansRecents || []).filter((x: { departement: string; horizon: string; created_at: string }) => x.horizon === 'semaine' && sansAccent(x.departement) !== 'direction' && (Date.now() - new Date(x.created_at).getTime()) / 86_400_000 < 6 && !plansDuJour.some((p) => p.startsWith(`[${x.departement}]`))).map((x: { departement: string; contenu: string }) => `[${x.departement}]\n${String(x.contenu).slice(0, 1500)}`)]
       : [];
     const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', boutique, !!mesures) : [];
-    const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans), SCHEMA_PLAN);
+    const r = await ecrire(apiKey, invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans) + enLangue, SCHEMA_PLAN);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = String(r.obj.plan_semaine || '').trim().slice(0, 4000);
     const mois = String(r.obj.plan_mois || '').trim().slice(0, 4000);
@@ -332,7 +337,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'semaine', contenu: semaine });
     plansDuJour.push(`[${dept}]\n${semaine.slice(0, 1500)}`);
     if (besoinMois && mois.length >= 100) await service.from('legion_plans').insert({ entreprise_id: entrepriseId, departement: dept, agent_id: d.id, horizon: 'mois', contenu: mois });
-    const texte = `## Plan de la semaine — ${dept}\n${semaine.replace(/^##\s*plan[^\n]*\n/i, '')}${besoinMois && mois.length >= 100 ? `\n\n## Plan du mois — ${dept}\n${mois.replace(/^##\s*plan[^\n]*\n/i, '')}` : ''}`;
+    const sansTitre = (x: string) => x.replace(/^##\s*(plan|weekly|monthly)[^\n]*\n/i, '');
+    const texte = `## ${anglais ? 'Weekly plan' : 'Plan de la semaine'} — ${dept}\n${sansTitre(semaine)}${besoinMois && mois.length >= 100 ? `\n\n## ${anglais ? 'Monthly plan' : 'Plan du mois'} — ${dept}\n${sansTitre(mois)}` : ''}`;
     await service.from('legion_messages').insert({
       entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: d.id, user_id: null, texte, genre: 'info',
       meta: { par_ia: true, modele: r.modele, plan: { horizon: besoinMois ? 'semaine+mois' : 'semaine', departement: dept }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
@@ -366,7 +372,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';
       const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, boutique, !!mesures) : [];
-      const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans), SCHEMA_LIVRABLE);
+      const r = await ecrire(apiKey, inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + enLangue, SCHEMA_LIVRABLE);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }

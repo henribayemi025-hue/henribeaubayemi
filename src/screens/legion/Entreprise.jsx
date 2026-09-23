@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
 import { useEcranVisible } from './parties/useEcranVisible';
 import { useAuth } from '../../hooks/useAuth';
+import { useSettings } from '../../hooks/useSettings';
 import { IconLogout } from '@tabler/icons-react';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -43,6 +44,7 @@ const MAX_MESSAGES = 500;
 export default function Entreprise() {
   const { t, i18n } = useTranslation();
   const { user, loading: authLoading, signOut } = useAuth();
+  const { language, setLanguage } = useSettings();
   useFondLegion();
   useEcranVisible();
   const toast = useToast();
@@ -153,6 +155,16 @@ export default function Entreprise() {
     }
     return n;
   }, [data?.messages, lus, user?.id, moi]);
+
+  // Le bouton FR / EN: la langue de l'écran, et — pour le propriétaire —
+  // celle dans laquelle les agents écrivent les plans du matin (0166).
+  const estProprietaire = data?.entreprise?.owner_id === user?.id;
+  const changerLangue = useCallback(async (code) => {
+    setLanguage(code);
+    if (!estProprietaire || data?.entreprise?.langue === code) return;
+    const { error: err } = await supabase.from('legion_entreprises').update({ langue: code }).eq('id', entrepriseId);
+    if (!err) setData((d) => (d ? { ...d, entreprise: { ...d.entreprise, langue: code } } : d));
+  }, [setLanguage, estProprietaire, data?.entreprise?.langue, entrepriseId, setData]);
 
   const choisirSalon = useCallback((id) => { setParams({ canal: id }); setVue('chat'); setTape(null); }, [setParams]);
   const entrer = useCallback((ou) => setVue(ou || 'chat'), []);
@@ -455,6 +467,22 @@ export default function Entreprise() {
                 onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) maPhoto(f); }} />
             </label>
           )}
+          {/* La langue (plan complet, C): Legion, et les plans et livrables du
+              matin, suivent ce choix. Chaque code dans sa propre langue. */}
+          {/* Sur téléphone la place manque: un seul bouton, la langue d'en face. */}
+          <button type="button" onClick={() => changerLangue(language === 'en' ? 'fr' : 'en')}
+            lang={language === 'en' ? 'fr' : 'en'} title={language === 'en' ? 'Français' : 'English'}
+            className="flex h-8 min-w-8 items-center justify-center rounded-full border border-legion-line px-1.5 text-[10px] font-bold text-legion-muted sm:hidden">
+            {language === 'en' ? 'FR' : 'EN'}
+          </button>
+          <div className="hidden items-center rounded-full border border-legion-line p-0.5 sm:flex" role="group" aria-label="Langue / Language">
+            {[['fr', 'FR', 'Français'], ['en', 'EN', 'English']].map(([code, court, nom]) => (
+              <button key={code} type="button" lang={code} title={nom} aria-pressed={language === code} onClick={() => changerLangue(code)}
+                className={`rounded-full px-2 py-1 text-[10px] font-bold transition ${language === code ? 'bg-legion-gold text-legion-bg' : 'text-legion-muted hover:text-legion-ink'}`}>
+                {court}
+              </button>
+            ))}
+          </div>
           {/* Beau, 22/09: « j'arrive même pas à me déconnecter dans Legion ». */}
           <button type="button" onClick={() => signOut()} title={t('legion.seDeconnecter', 'Se déconnecter')} aria-label={t('legion.seDeconnecter', 'Se déconnecter')}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-legion-line text-legion-muted transition hover:text-legion-danger">
