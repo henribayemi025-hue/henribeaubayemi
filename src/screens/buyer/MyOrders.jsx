@@ -9,7 +9,7 @@ import { useCart } from '../../hooks/useCart';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
-import { Price } from '../../components/Price';
+import { Price, CashPrice } from '../../components/Price';
 import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatusBadge';
 import { ReviewModal } from '../../components/ReviewModal';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
@@ -38,7 +38,7 @@ export default function MyOrders() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: orders, error: err } = await supabase
       .from('orders')
-      .select('*, shops(name), order_items(product_id, name, qty, price_fcfa, price_pending), reviews(id)')
+      .select('*, shops(name, country), order_items(product_id, name, qty, price_fcfa, price_pending), reviews(id)')
       .eq('buyer_id', user.id)
       .order('created_at', { ascending: false });
     if (err) throw err;
@@ -167,7 +167,12 @@ export default function MyOrders() {
                   {o.status === 'awaiting_price' ? (
                     <span className="text-body font-semibold text-brass">{t('cart.priceToConfirm')}</span>
                   ) : (
-                    <Price fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                    // Payée par carte: sa banque débite dans SA monnaie. Sinon
+                    // (espèces à la livraison), le montant à tendre est dans la
+                    // monnaie de la boutique — comme au moment de commander.
+                    o.payment_status === 'paid' && o.payment_provider === 'stripe'
+                      ? <Price fcfa={o.total_fcfa} className="text-section font-semibold text-teal" />
+                      : <CashPrice fcfa={o.total_fcfa} shopCountry={o.shops?.country} className="text-section font-semibold text-teal" />
                   )}
                 </div>
 
