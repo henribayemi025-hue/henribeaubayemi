@@ -6,6 +6,26 @@ entrée par jour, les faits vérifiés, ce qui est en ligne et ce qui attend.
 Le détail du code est dans les messages de commit ; ici, ce que ça change
 pour Finjaro. Aucune donnée personnelle (le dépôt est public).
 
+## 23/09 (matin) — la suite de la liste
+
+- **Les non-lus** : une pastille dorée à côté de chaque salon, avec le
+  nombre de messages arrivés depuis la dernière ouverture ; l'aperçu passe
+  en gras. Le moment de lecture est gardé en base, donc le téléphone et
+  l'ordinateur disent la même chose.
+- **Choisir sa langue dans Legion** : un bouton FR / EN dans l'en-tête. Il
+  change l'écran et, pour le propriétaire, la langue des plans et
+  livrables du matin. Cette langue est réglée par entreprise, pas par
+  profil : le profil de Beau est en anglais alors qu'il lit ses agents en
+  français. Tant qu'on ne touche pas le bouton, tout reste en français.
+- **Mon argent** : une ligne dit que tout s'enregistre tout seul, sur tous
+  les appareils (« où sauvegarder ? »).
+- **Le relais** : quand un agent termine une tâche et que la suite revient
+  à un collègue (le texte est écrit → la relecture), il lui crée la tâche
+  dans son salon ; le collègue lit le livrable reçu avant de s'y mettre. La
+  carte du tableau dit « Relais de … ».
+- Captures de Legion pour LinkedIn faites sur une boutique d'exemple, sans
+  les chiffres internes de Finjaro.
+
 ## 22/09 → 23/09 (la nuit) — « le matin, je veux voir que tout est fait »
 
 Beau, avant de dormir : « lis tout ce que j'ai dit depuis le matin, point

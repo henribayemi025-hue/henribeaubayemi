@@ -104,6 +104,7 @@
     "actifs": "Allumés",
     "salonsCollectifs": "Salons",
     "interrupteur": "Interrupteur",
+    "relaisDe": "Relais de {{nom}}",
     "nonLus_one": "{{count}} non lu",
     "nonLus_other": "{{count}} non lus",
     "interrupteurGeneral": "Interrupteur général",

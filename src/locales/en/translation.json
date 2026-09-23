@@ -104,6 +104,7 @@
     "actifs": "On",
     "salonsCollectifs": "Rooms",
     "interrupteur": "Switch",
+    "relaisDe": "Handed over by {{nom}}",
     "nonLus_one": "{{count}} unread",
     "nonLus_other": "{{count}} unread",
     "interrupteurGeneral": "Master switch",

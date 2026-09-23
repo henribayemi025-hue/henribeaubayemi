@@ -112,6 +112,12 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
                       <span className="rounded border px-1.5 py-0.5 font-mono font-semibold uppercase" style={{ color: COULEUR_PRIORITE[prio], borderColor: COULEUR_PRIORITE[prio] + '55', backgroundColor: COULEUR_PRIORITE[prio] + '14' }}>{t(`legion.priorite.${prio}`)}</span>
                     </div>
                     <p className="text-caption font-semibold leading-snug text-legion-ink group-hover:text-legion-gold">{x.texte}</p>
+                    {/* Le relais (B6-5): cette tâche vient du livrable d'un autre agent. */}
+                    {x.meta?.suite_de?.par && (
+                      <p className="truncate text-[10px] text-legion-muted" title={x.meta.suite_de.tache}>
+                        ↪ {t('legion.relaisDe', { nom: x.meta.suite_de.par, defaultValue: 'Relais de {{nom}}' })} · {x.meta.suite_de.tache}
+                      </p>
+                    )}
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-legion-bg">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct === 100 ? '#2A9D8F' : (d?.couleur || '#E09F3E') }} />
                     </div>

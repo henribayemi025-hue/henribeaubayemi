@@ -36,17 +36,14 @@ règles, revue des livrables) · B8 la boutique branchée à Legion · B9 le
 compteur et le plafond · B10 54 secteurs, et « ton secteur n'est pas là ? »
 · la mémoire des salons · se déconnecter · commander sans compte · la
 vendeuse prévenue d'un ajout au panier.
+Le 23/09 au matin: un responsable par département · les postes en
+français · inviter d'autres personnes (B7) · les non-lus sur la liste des
+salons (B4) · choisir sa langue, FR / EN, écran et plans du matin (C) ·
+« tout s'enregistre tout seul » dans Mon argent · le relais: un livrable
+fini passe la suite au bon agent (B6-5).
 
-### 🔧 À moi, sans t'attendre — dans cet ordre
-1. Un responsable dans chaque département des 7 premiers modèles (49
-   départements n'en ont pas: pas de plan pour eux).
-2. Traduire les intitulés restés en anglais (« Devils Advocate »…).
-3. Inviter d'autres personnes dans une entreprise (B7).
-4. Le nombre de non-lus sur la liste des salons (B4).
-5. Choisir sa langue dans Legion (C).
-6. Mon argent: dire que tout s'enregistre tout seul (« où sauvegarder ? »).
-7. Enchaîner les tâches: un livrable fini passe la suite au bon agent (B6-5).
-8. Hors ligne — pouvoir agir sans réseau (D).
+### 🔧 À moi, sans t'attendre
+1. Hors ligne — pouvoir agir sans réseau (D).
 
 ### ⏸ À toi (une décision ou un geste)
 - 6 agents ont été éteints dans la nuit (Claudinette, Vigie, Écho, Traque,
