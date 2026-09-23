@@ -96,7 +96,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 61 | Photo → fiche article complète | ✅ existait déjà : « Remplir depuis la photo » dans la fiche article |
 | 62 | Rendez-vous pour les prestataires | ✅ existe déjà dans Accounting (« Rendez-vous ») ; ✅ « Rendez-vous » sur le tableau de bord des prestataires y mène |
 | 63 | Dépôt ouvert d'applications pour les développeurs | ✅ finjaro.net/apps : « Proposer mon application » ; l'équipe accepte ou refuse depuis la console |
-| 64 | Écart de caisse du soir | 📅 Claudinette (Accounting) |
+| 64 | Écart de caisse du soir | ✅ fait par Claudinette dans Accounting le 23/09 (commit fc44ce6) |
 | 65a | Achat groupé | ✅ un prix par pièce dès N pièces dans la même commande, fixé par la vendeuse ; appliqué par le serveur (vérifié en base), affiché sur la fiche et dans le panier |
 | 65b | Vente en direct | ✅ la boutique annonce son direct (Instagram, TikTok, Facebook…) avec le lien : « En direct » sur sa page et sur l'accueil pendant 4 h au plus. Finjaro ne diffuse pas la vidéo elle-même (un serveur de flux se paie ; voir 55) |
 | 65c | Commande vocale | ✅ existait déjà : le micro de Finou (message vocal → elle cherche, ajoute au panier, suit la commande) |
