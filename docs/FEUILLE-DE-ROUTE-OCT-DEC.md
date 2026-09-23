@@ -33,7 +33,7 @@ sans être fait ou sans une raison écrite.
 | 15 | Quelqu'un **sur le terrain** pour aller voir les entreprises | ✅ tâche de Beau |
 | 16 | Planifier les événements où être présent | ✅ Radar |
 | 17 | Le tout **en forme de clic** : une chose faite → « fait », puis un commentaire | ✅ la feuille de route de Legion : chaque ligne se coche et se commente |
-| 18 | Le produit **propre** cette semaine et la prochaine | 🔧 premier passage fait le 23/09 sur 63 pages, 3 points de vue (`AUDIT-PAGES-23-09.md`) : rien ne plante ; 6 défauts de texte corrigés ; deuxième passage bouton par bouton sur la vraie base à suivre, avec la liste d'Alpha |
+| 18 | Le produit **propre** cette semaine et la prochaine | ✅ deux passages le 23/09 (`AUDIT-PAGES-23-09.md`) : 63 pages, 3 points de vue, rien ne plante, 6 textes corrigés ; puis les vrais parcours sur la vraie base (commande → validée → prête → livrée avec photo → « J'ai bien reçu », Mon argent, Legion) sans erreur ; 🔧 la liste d'Alpha quand elle arrive, et le relais vers Accounting après la correction de Claudinette |
 
 ## 3. Legion — ce que Beau attend
 

@@ -56,3 +56,29 @@ chaque écran s'affiche et se lit, pas que chaque bouton aboutit en vrai.
 Le deuxième passage — **bouton par bouton, sur la vraie base de test**,
 dans l'ordre des parcours (acheter, vendre, Legion, Mon argent) — suit,
 avec la liste des défauts d'Alpha quand elle arrive.
+
+## Deuxième passage — bouton par bouton, sur la vraie base (23/09 soir)
+
+Fait sur staging, contre la vraie base, avec **un compte de test** (`is_test`,
+exclu de tous les chiffres) qui est vendeuse ET acheteuse de sa propre
+boutique — parce qu'une boutique de test est invisible pour tout le monde
+sauf sa propriétaire (règle RLS voulue). Les sessions viennent du relais de
+connexion (codes posés en base).
+
+| Parcours | Résultat |
+| --- | --- |
+| Fiche → « Ajouter au panier » → panier → commande (retrait, paiement à la livraison) | ✅ commande FJ-4KQU4 créée, visible dans « Mes commandes » (En attente) |
+| Vendeuse : « Nouvelles » → « Valider la commande » → « En cours » → « Commande prête (retrait) » | ✅ validée 16:57:02, prête 16:57:08 |
+| Vendeuse : « Marquer livrée » **avec photo** (FJ-QXPCGQ) | ✅ photo envoyée dans `products/<vendeuse>/preuves/`, `delivery_photo_url` posé, livrée 17:00:24 |
+| Acheteuse : la photo dans « Mes commandes », « J'ai bien reçu » | ✅ photo visible ; `buyer_received` posé (FJ-4KQU4) |
+| Liaison Accounting à la livraison | ✅ s'est déclenchée pour la première fois en vrai : `finia_liaison_log` = `espace_absent` (compte sans espace), comportement attendu ; Claudinette prévenue |
+| Mon argent | ✅ s'ouvre connecté (« Bonjour, … ») |
+| Legion | ✅ s'ouvre connecté (« Mes entreprises ») |
+| Relais de connexion finjaro → Accounting (sélecteur) | 🔧 le code est créé et l'onglet arrive sur `#/relais` chez Accounting ; sa page échange le code deux fois (le second reçoit 410) — signalé à Claudinette, à rejouer après sa correction |
+
+Aucune réponse en erreur (≥ 400) de la base pendant ces parcours. Les deux
+seuls accrocs venaient de mon script : un clic « Refuser » (même mot que le
+bandeau des cookies) qui a annulé la commande FJ-SSSND3, et une photo
+envoyée dans le champ de Finou au lieu de celui de la modale. Trois
+commandes de test restent sur ce compte (une annulée, deux livrées) ; elles
+ne comptent nulle part.
