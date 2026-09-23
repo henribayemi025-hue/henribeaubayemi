@@ -8,12 +8,17 @@
 //     colonnes, et on en fait un vrai .xlsx (formules comprises : une case
 //     qui commence par « = » reste une formule).
 //
-// SheetJS vient de son site officiel, en version 0.20.3 : la version publiée
-// sur npm (0.18.5) a une faille connue à la LECTURE de fichiers piégés
-// (CVE-2023-30533), et ici on lit des fichiers envoyés par des gens.
-
-// @deno-types="https://cdn.sheetjs.com/xlsx-0.20.3/package/types/index.d.ts"
-import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs';
+// SheetJS 0.20.3, copié tel quel depuis son site officiel dans
+// vendor/sheetjs (licence Apache 2.0 à côté) : la version publiée sur npm
+// (0.18.5) a une faille connue à la LECTURE de fichiers piégés
+// (CVE-2023-30533), et ici on lit des fichiers envoyés par des gens. Copié
+// et non importé à distance : le paquetage de Supabase refuse les imports
+// depuis cdn.sheetjs.com (vu au déploiement du 23/09).
+// deno-lint-ignore-file no-explicit-any
+// @ts-ignore: module JavaScript sans types
+import * as XLSXmod from './vendor/sheetjs/xlsx.mjs';
+const XLSX: any = XLSXmod;
+type Cellule = { t: string; v?: unknown; f?: string };
 
 export const MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -45,7 +50,7 @@ export type Feuille = { nom?: string; lignes?: unknown[][] };
 
 // Une case telle que le modèle l'a écrite → une vraie case Excel : nombre,
 // formule, ou texte.
-function caseDe(v: unknown): XLSX.CellObject {
+function caseDe(v: unknown): Cellule {
   const s = v == null ? '' : String(v).trim();
   if (s.startsWith('=') && s.length > 1) return { t: 'n', f: s.slice(1) };
   const nombre = s.replace(/\s/g, '').replace(/,(\d{1,2})$/, '.$1');
@@ -60,7 +65,7 @@ export function creerClasseur(feuilles: Feuille[]): Uint8Array | null {
   for (const f of feuilles.slice(0, MAX_FEUILLES)) {
     const lignes = (Array.isArray(f.lignes) ? f.lignes : []).filter(Array.isArray).slice(0, 2000) as unknown[][];
     if (!lignes.length) continue;
-    const ws: XLSX.WorkSheet = {};
+    const ws: Record<string, unknown> = {};
     let largeur = 0;
     lignes.forEach((ligne, r) => {
       ligne.slice(0, 60).forEach((v, c) => {
