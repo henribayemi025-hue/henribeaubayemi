@@ -9,7 +9,9 @@
 -- ici HACHÉ (sha256). Le jeton en clair n'est jamais en base. Révocable
 -- d'un geste. Additif: une table, deux fonctions.
 
-create extension if not exists pgcrypto;
+-- pgcrypto vit dans le schéma `extensions` (Supabase): on qualifie, parce que
+-- les fonctions ci-dessous fixent search_path = public.
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.legion_jetons (
   id uuid primary key default gen_random_uuid(),
@@ -36,9 +38,9 @@ begin
   if auth.uid() is null then raise exception 'not_authenticated' using errcode = 'P0001'; end if;
   select count(*) into v_actifs from legion_jetons where user_id = auth.uid() and revoque_le is null;
   if v_actifs >= 5 then raise exception 'trop_de_jetons' using errcode = 'P0001'; end if;
-  v_clair := 'lg_' || encode(gen_random_bytes(24), 'hex');
+  v_clair := 'lg_' || encode(extensions.gen_random_bytes(24), 'hex');
   insert into legion_jetons (user_id, nom, hache)
-  values (auth.uid(), left(coalesce(nullif(trim(p_nom), ''), 'Mon assistant'), 60), encode(digest(v_clair, 'sha256'), 'hex'));
+  values (auth.uid(), left(coalesce(nullif(trim(p_nom), ''), 'Mon assistant'), 60), encode(extensions.digest(v_clair, 'sha256'), 'hex'));
   return v_clair;
 end $$;
 revoke all on function public.legion_creer_jeton(text) from public;
@@ -65,7 +67,7 @@ begin
     raise exception 'forbidden' using errcode = '42501';
   end if;
   select id, user_id into v_id, v_user from legion_jetons
-   where hache = encode(digest(p_clair, 'sha256'), 'hex') and revoque_le is null;
+   where hache = encode(extensions.digest(p_clair, 'sha256'), 'hex') and revoque_le is null;
   if v_id is null then return null; end if;
   update legion_jetons set dernier_usage_le = now() where id = v_id;
   return v_user;
