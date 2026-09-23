@@ -14,6 +14,7 @@ import { Skeleton, ErrorState } from '../../components/states';
 import { Rail, RailPastilles } from './parties/Rail';
 import { ColonneSalons } from './parties/ColonneSalons';
 import { Conversation } from './parties/Conversation';
+import { Appel } from './parties/Appel';
 import { Kanban } from './parties/Kanban';
 import { FicheAgent } from './parties/FicheAgent';
 import { Accueil } from './parties/Accueil';
@@ -60,6 +61,7 @@ export default function Entreprise() {
   const [tape, setTape] = useState(null);
   const [brouillon, setBrouillon] = useState('');
   const [photos, setPhotos] = useState(false);
+  const [appel, setAppel] = useState(null); // l'agent qu'on appelle (23/09)
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
     if (!user?.id || !entrepriseId) return null;
@@ -270,6 +272,18 @@ export default function Entreprise() {
     if (e || r?.erreur) toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic'));
     else toast.info(t('legion.reunion.conclusionDemandee'));
   }
+
+  // Appeler un agent (23/09): l'appel se passe dans son salon privé, et tout
+  // ce qui s'y dit y reste écrit.
+  async function appeler(a) {
+    if (!a || a.user_id || !a.actif) return;
+    await ecrireA(a);
+    setVue('chat');
+    setAppel(a);
+  }
+  const ajouterMessages = useCallback((liste) => {
+    setData((d) => (d ? { ...d, messages: [...d.messages, ...liste.filter((x) => !d.messages.some((m) => m.id === x.id))] } : d));
+  }, [setData]);
 
   // Une directive depuis l'accueil: c'est un message « à trancher » posé
   // dans le salon visé, et l'agent du département répond comme d'habitude.
@@ -601,13 +615,19 @@ export default function Entreprise() {
               reactions={data.reactions} langue={langue} tape={tape} brouillon={brouillon} onBrouillonPris={() => setBrouillon('')}
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
               onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon} onMembres={membresSalon}
-              reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion}
+              reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion} onAppeler={appeler}
               entrepriseId={entrepriseId} t={t}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
           )}
         </div>
+
+        {/* L'appel à la voix, par-dessus tout, tant qu'on est dans le salon privé de l'agent */}
+        {appel && moi && agentPrive?.id === appel.id && salon && (
+          <Appel agent={agentPrive} salon={salon} moi={moi} entrepriseId={entrepriseId} langue={langue} t={t}
+            onMessages={ajouterMessages} onRaccrocher={() => setAppel(null)} />
+        )}
 
         <Kanban
           taches={taches} agents={data.agents} departements={departements}

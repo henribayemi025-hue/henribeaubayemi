@@ -323,7 +323,20 @@
       "recherche": "Chercher des faits sur Internet avant de commencer",
       "rechercheAide": "Une recherche, faite une fois, que tous les participants lisent ; ses sources s'affichent sous le compte rendu."
     },
-    "sources": "Sources"
+    "sources": "Sources",
+    "appel": {
+      "appeler": "Appeler {{nom}}",
+      "enParler": "En parler avec {{nom}} de vive voix",
+      "titre": "Appel avec {{nom}}",
+      "toucherPourParler": "Touche le micro et parle",
+      "ecoute": "Je t'écoute… (le silence arrête l'écoute)",
+      "envoi": "Envoi…",
+      "reflechit": "{{nom}} réfléchit…",
+      "parle": "{{nom}} te répond — touche le micro pour l'interrompre",
+      "raccrocher": "Raccrocher",
+      "pasDeMicro": "Ce navigateur ne donne pas accès au micro.",
+      "pasDeReponse": "Pas de réponse cette fois. Réessaie."
+    }
   },
   "equipe": {
     "titre": "L'équipe",

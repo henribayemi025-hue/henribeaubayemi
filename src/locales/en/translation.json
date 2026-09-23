@@ -323,7 +323,20 @@
       "recherche": "Look up facts on the internet before starting",
       "rechercheAide": "One search, done once, read by every participant; its sources show under the minutes."
     },
-    "sources": "Sources"
+    "sources": "Sources",
+    "appel": {
+      "appeler": "Call {{nom}}",
+      "enParler": "Talk it over with {{nom}}",
+      "titre": "Call with {{nom}}",
+      "toucherPourParler": "Tap the mic and speak",
+      "ecoute": "Listening… (silence stops it)",
+      "envoi": "Sending…",
+      "reflechit": "{{nom}} is thinking…",
+      "parle": "{{nom}} is answering — tap the mic to interrupt",
+      "raccrocher": "Hang up",
+      "pasDeMicro": "This browser gives no access to the microphone.",
+      "pasDeReponse": "No answer this time. Try again."
+    }
   },
   "equipe": {
     "titre": "The team",

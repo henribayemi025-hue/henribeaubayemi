@@ -329,6 +329,12 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   if ((msg.meta as { renvoi?: unknown } | null)?.renvoi) {
     lignes.push('[Consigne de Legion] Le message ci-dessus RENVOIE ton livrable avec une remarque. Réponds par le livrable refait, complet, corrigé selon la remarque (titres et points, retours à la ligne). Pas d\'excuses, pas de « je vais le refaire »: le voici.');
   }
+  // Un APPEL à la voix (écran « Appeler », 23/09): la réponse sera lue à
+  // voix haute par le téléphone. Courte, parlée, et vite (Flash).
+  const appelVocal = !!(msg.meta as { appel?: boolean } | null)?.appel;
+  if (appelVocal) {
+    lignes.push("[Consigne de Legion] Cette conversation est un APPEL VOCAL: ta réponse sera LUE À VOIX HAUTE. Réponds comme au téléphone, en une à quatre phrases parlées, sans titres, sans listes, sans emoji, sans lien, sans chiffres en rafale. Si la demande appelle un document long, dis-le en une phrase et propose de l'écrire dans le salon.");
+  }
   // Qui a parlé récemment (les huit derniers messages, hors celui-ci).
   const ontParle = new Set(fil.slice(-9, -1).filter((m) => !m.user_id).map((m) => m.auteur_id));
   const t = sansAccent(msg.texte);
@@ -525,7 +531,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const depot = PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '';
   const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
-  const complexe = !gratuite && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
+  const complexe = !gratuite && !appelVocal && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
     || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte)));
 
   const ecrits: unknown[] = [];

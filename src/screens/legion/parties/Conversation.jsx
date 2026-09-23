@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
-  IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop,
+  IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop, IconPhone,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
@@ -41,7 +41,7 @@ function couleurNom(a) {
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
   onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
-  reunion, onReunion, onConclureReunion,
+  reunion, onReunion, onConclureReunion, onAppeler,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -175,6 +175,13 @@ export function Conversation({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          {agentPrive && onAppeler && agentPrive.moteur !== 'claude-code' && (
+            <button type="button" onClick={() => onAppeler(agentPrive)} disabled={!agentPrive.actif}
+              title={agentPrive.actif ? t('legion.appel.appeler', { nom: agentPrive.nom }) : t('legion.enVeille', 'En veille')}
+              className="rounded-full p-2 text-legion-ink transition disabled:opacity-40">
+              <IconPhone size={20} />
+            </button>
+          )}
           {agentPrive && (
             <Interrupteur petit on={!!agentPrive.actif} onChange={(v) => onAllumer(agentPrive, v)} label={t('legion.interrupteur')} />
           )}
@@ -354,6 +361,14 @@ export function Conversation({
                         </p>
                       )}
                       {m.meta?.action && <ActionProposee message={m} t={t} />}
+                      {/* « S'ils ne comprennent pas, ils m'appellent, on parle » (Beau) :
+                          une question d'un agent se règle aussi de vive voix. */}
+                      {m.genre === 'question' && !mien && a && !a.user_id && a.actif && a.moteur !== 'claude-code' && onAppeler && (
+                        <button type="button" onClick={() => onAppeler(a)}
+                          className="mb-3 mt-1 inline-flex items-center gap-1.5 rounded-pill border border-legion-line bg-legion-bg px-2.5 py-1 text-[12px] font-semibold text-legion-ink">
+                          <IconPhone size={13} /> {t('legion.appel.enParler', { nom: a.nom })}
+                        </button>
+                      )}
                       {Array.isArray(m.meta?.propositions) && m.meta.propositions.length > 0 && (
                         <PropositionsVeilleur propositions={m.meta.propositions} entrepriseId={entrepriseId} t={t} />
                       )}
