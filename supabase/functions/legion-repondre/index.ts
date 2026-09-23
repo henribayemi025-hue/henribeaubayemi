@@ -29,6 +29,7 @@ import { enqueter, type Boutique } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
+import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -491,7 +492,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
 
   // La feuille de route du fondateur (0168), lue avec le projet.
   const feuille = await lireFeuille(service, msg.entreprise_id, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
-  const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}` };
+  // Son dépôt GitHub (0169), quand la question parle de code ou de produit.
+  const depot = PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '';
+  const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
   const complexe = questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
     || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte));

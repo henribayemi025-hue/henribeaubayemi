@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconPlugConnected, IconBuildingStore, IconChartBar } from '@tabler/icons-react';
+import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 
 // LEGION — les connecteurs: ce que les agents ont le droit de lire.
@@ -17,6 +17,9 @@ export function Connecteurs({ entreprise, t }) {
   const [choix, setChoix] = useState('');
   const [busy, setBusy] = useState(false);
   const [erreur, setErreur] = useState('');
+  const [depot, setDepot] = useState('');
+  const [jeton, setJeton] = useState('');
+  const [erreurGit, setErreurGit] = useState('');
 
   const charger = useCallback(async () => {
     const [{ data: c }, { data: { user } }] = await Promise.all([
@@ -35,12 +38,27 @@ export function Connecteurs({ entreprise, t }) {
   if (!connecteurs) return null;
   const mesures = connecteurs.find((c) => c.type === 'finjaro-mesures' && c.actif);
   const boutique = connecteurs.find((c) => c.type === 'finjaro-boutique' && c.actif);
+  const github = connecteurs.find((c) => c.type === 'github' && c.actif);
 
   async function brancher(actif, shopId) {
     setBusy(true); setErreur('');
     const { error } = await supabase.rpc('legion_brancher_boutique', { p_entreprise: entreprise.id, p_shop: shopId, p_actif: actif });
     setBusy(false);
     if (error) setErreur(error.message); else charger();
+  }
+
+  // GitHub (0169): chaque entreprise branche SON dépôt. Le jeton part dans
+  // le coffre du serveur et ne revient jamais à l'écran.
+  async function brancherGithub(actif) {
+    setBusy(true); setErreurGit('');
+    const { error } = await supabase.rpc('legion_brancher_github', { p_entreprise: entreprise.id, p_depot: actif ? depot : (github?.config?.depot || ''), p_jeton: actif ? jeton : null, p_actif: actif });
+    setBusy(false);
+    if (error) setErreurGit(error.message); else { setJeton(''); charger(); }
+  }
+  async function oublierJeton() {
+    setBusy(true);
+    await supabase.rpc('legion_oublier_jeton_github', { p_entreprise: entreprise.id });
+    setBusy(false); charger();
   }
 
   return (
@@ -75,6 +93,30 @@ export function Connecteurs({ entreprise, t }) {
             )}
             <p className="mt-1 text-[11px] leading-snug text-legion-muted">{t('legion.connecteurBoutiqueAide', 'Les agents lisent ses ventes, son stock, ses avis et ses messages en attente — jamais le numéro ni l’adresse d’une cliente, jamais les autres boutiques.')}</p>
             {erreur && <p className="text-[11px] text-legion-danger">{erreur}</p>}
+          </div>
+        </li>
+        <li className="flex items-start gap-2">
+          <IconBrandGithub size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-legion-ink">{t('legion.connecteurGithub', 'Mon dépôt GitHub')}</p>
+            {github ? (
+              <p className="text-legion-muted">
+                {t('legion.connecteurGithubBranche', { depot: github.config?.depot, defaultValue: '« {{depot}} » est branché : derniers changements et tickets ouverts.' })}
+                {github.config?.avec_jeton ? ` ${t('legion.connecteurGithubJeton', 'Jeton gardé au coffre.')} ` : ' '}
+                {github.config?.avec_jeton && <button type="button" disabled={busy} onClick={oublierJeton} className="mr-2 font-semibold text-legion-muted underline">{t('legion.oublierJeton', 'Effacer le jeton')}</button>}
+                <button type="button" disabled={busy} onClick={() => brancherGithub(false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button>
+              </p>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); brancherGithub(true); }} className="mt-1 flex flex-wrap items-center gap-2">
+                <input value={depot} onChange={(e) => setDepot(e.target.value)} placeholder={t('legion.depotExemple', 'propriétaire/dépôt')} className="input min-w-0 flex-1 text-[13px]" />
+                <input type="password" value={jeton} onChange={(e) => setJeton(e.target.value)} autoComplete="off" placeholder={t('legion.jetonFacultatif', 'Jeton (facultatif si le dépôt est public)')} className="input min-w-0 flex-1 text-[13px]" />
+                <button type="submit" disabled={busy || !depot.trim()} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.brancher', 'Brancher')}</button>
+              </form>
+            )}
+            <p className="mt-1 text-[11px] leading-snug text-legion-muted">
+              {t('legion.connecteurGithubAide', 'Les agents lisent les derniers changements et les tickets ouverts de TON dépôt, en lecture seule. Pour un dépôt privé : sur GitHub, Paramètres › Developer settings › Personal access tokens › Fine-grained, accès à ce seul dépôt, droits « Contents » et « Issues » en lecture. Le jeton est rangé au coffre et ne s’affiche plus jamais.')}
+            </p>
+            {erreurGit && <p className="text-[11px] text-legion-danger">{erreurGit}</p>}
           </div>
         </li>
         <li className="flex items-start gap-2">

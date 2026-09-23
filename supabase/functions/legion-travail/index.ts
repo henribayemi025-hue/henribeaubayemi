@@ -33,6 +33,7 @@ import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout
 import { aerer, generer, garder, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
+import { lireGithub } from '../_shared/github.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -237,6 +238,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const peutEnqueter = !!(mesures || boutique);
   // La feuille de route du fondateur (0168): chacun travaille pour elle.
   projet += await lireFeuille(service, entrepriseId, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
+  // Son dépôt GitHub, s'il est branché (0169): une lecture par journée.
+  projet += await lireGithub(service, entrepriseId);
 
   const publics = (canaux as Canal[]).filter((c) => !(Array.isArray(c.prive_entre) && c.prive_entre.length));
   const canalDe = (dept: string | null) => publics.find((c) => sansAccent(c.cle) === sansAccent(dept || '') || sansAccent(c.nom) === sansAccent(dept || ''))
