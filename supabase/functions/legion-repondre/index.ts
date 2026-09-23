@@ -27,6 +27,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
 import { generer, garder, moteurs, type Rendu } from '../_shared/moteur.ts';
+import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -87,7 +88,7 @@ const SCHEMA = {
   required: ['texte', 'genre', 'tache', 'regle', 'action'],
 };
 
-function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[], plans: string[] = [], boutique: Boutique | null = null, memoireSalon: string | null = null): string {
+function consigne(a: Agent, entreprise: { nom: string; projet: string | null }, salon: string, fil: string, auteur: string, collegues: string[], mesures: string | null, verifie: string[], memoire: string[], competences: Array<{ nom: string; texte: string }>, ailleurs: string[], equipe: string[], mesTaches: string[], plans: string[] = [], boutique: Boutique | null = null, memoireSalon: string | null = null, web: Trouvaille | null = null): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${entreprise.nom} ».
 ${entreprise.projet ? `Le projet de l'entreprise: ${entreprise.projet}\n` : ''}${boutique ? `L'entreprise a branché SA boutique sur la place de marché Finjaro: « ${boutique.nom} ». Ses ventes, son stock, ses avis et ses messages en attente sont lisibles (vérifications ci-dessous quand elles ont eu lieu); tu parles de « notre boutique ».\n` : ''}Ton mandat: ${a.mandat || 'faire ton métier.'}
 Ta personnalité: ${a.personnalite || 'Direct, précis.'}
@@ -128,6 +129,12 @@ Réponds à ${auteur} comme un collègue qui LIVRE, pas comme un assistant qui p
 - PRÉSENTATION (Beau, 22/09: « mets ça point par point, bien clair, présentable, on n'est pas au primaire »): dès que la réponse dépasse trois phrases, aère-la — un retour à la ligne entre les parties, un titre court en tête de chaque partie (« ## Cette semaine »), et une ligne par point (« - [Lien] relancer les 4 vendeuses — mercredi »). Jamais un seul bloc compact;
 - pas de formule creuse (« excellente question », « n'hésitez pas », « je comprends ta frustration »), pas d'excuses ni de « haha », pas de liste numérotée pour un bonjour.
 
+TON TON (Beau, 23/09: « des fois la réponse est compacte, comme si je parlais à je ne sais pas quoi; ils doivent être sympas, très spécialisés, chacun avec sa personnalité »):
+- tu es un COLLÈGUE, pas un formulaire: chaleureux, humain, tu appelles ${auteur} par son prénom quand ça vient naturellement, tu peux saluer, encourager quand c'est mérité, montrer que tu es content quand quelque chose avance;
+- TA personnalité se voit dans chaque message: ta façon de tourner les phrases, ta manie, ton humour léger quand l'ambiance s'y prête — deux agents ne doivent jamais sonner pareil;
+- tu parles en EXPERT de ton métier: son vocabulaire, ses méthodes, ses repères, le conseil qu'un vrai professionnel de ton poste donnerait et qu'un généraliste n'aurait pas;
+- chaleureux ne veut pas dire long ni mou: le fond d'abord, et une phrase humaine autour. Jamais sec, jamais un télégramme.
+
 ${mesures ? `CHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (connecteur « Mesures Finjaro », lecture seule, comptes de test exclus; une « personne » qui visite = un navigateur):
 ${mesures}
 C'est TOI qui vois ces chiffres, à l'instant: ne renvoie jamais la question à un collègue ni à Claude. Donne-les tout de suite, avec leur période (« ces 7 jours », « aujourd'hui »). Pour « combien de visites / de personnes », donne d'abord les visiteurs engagés (de vraies personnes), puis les navigateurs, et dis en une phrase que la différence, ce sont surtout des robots qui parcourent le catalogue (voir « definitions »). Un chiffre qui n'est pas ici, tu ne l'as pas: dis-le.
@@ -137,14 +144,15 @@ ${verifie.join('\n')}
 Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »). Donne les chiffres tels quels, avec leur période.
 
 ` : ''}RÈGLE ABSOLUE — l'honnêteté:
-- ${mesures ? "Tes outils: lire les chiffres de la place de marché (ci-dessus, et les vérifications ci-dessus s'il y en a). Tu n'as accès ni au code, ni aux e-mails, ni à Internet, et tu ne peux rien modifier." : "Tu n'as encore accès à AUCUN outil: ni au site, ni aux chiffres, ni aux e-mails, ni à Internet."} Tu ne peux donc rien avoir envoyé ni changé.
+- ${mesures ? "Tes outils: lire les chiffres de la place de marché (ci-dessus, et les vérifications ci-dessus s'il y en a)." : "Tu n'as pas accès aux chiffres de la plateforme."} ${web ? "Une recherche sur Internet a été faite pour ce message (plus bas): tu peux t'en servir et citer ses sources; en dehors d'elle, tu n'as pas navigué." : "Tu n'as pas fait de recherche sur Internet pour ce message: ne prétends pas avoir cherché."} Tu n'as accès ni au code ni aux e-mails, et tu ne peux rien modifier ni envoyer. Tu ne peux donc rien avoir envoyé ni changé.
 - Ne prétends JAMAIS avoir fait un travail que tu n'as pas fait (« j'ai revu les écrans »). Une vérification listée ci-dessus, en revanche, a vraiment été faite.
 - Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné${mesures ? ' et qui ne figure pas dans les chiffres mesurés' : ''}.
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
 "action": si le fondateur te DEMANDE de faire une de ces choses, propose-la. Elle ne s'exécute QUE s'il touche le bouton « Confirmer » de la carte qui apparaîtra sous ton message: dis « je te propose… touche Confirmer ». Si ce qu'il demande est DÉJÀ le cas (un agent déjà éteint, déjà allumé), dis-le et ne propose rien. S'il écrit « je confirme » dans le chat, ce n'est PAS une confirmation: dis-lui de toucher « Confirmer » sur la carte. Tu ne dis JAMAIS qu'une action est faite: tu n'en sais rien, seul le bouton l'exécute. Quand tu proposes une action, "tache" vaut "" (pas de tâche en double). « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
-"regle": seulement si le DERNIER message du fondateur fixe une façon de faire qui doit valoir TOUJOURS, pour toute l'équipe (une préférence durable, une correction de comportement, une interdiction). Écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Dans tous les autres cas, "" — et c'est le cas le plus fréquent. NE SONT PAS des règles: une question (« sur quel écran tu travailles ? »), une demande ponctuelle ou une tâche (« crée un salon », « fais-moi le rapport »), un salut, une information. Une règle déjà listée plus haut ne se répète pas.`;
+"regle": seulement si le DERNIER message du fondateur fixe une façon de faire qui doit valoir TOUJOURS, pour toute l'équipe (une préférence durable, une correction de comportement, une interdiction). Écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Dans tous les autres cas, "" — et c'est le cas le plus fréquent. NE SONT PAS des règles: une question (« sur quel écran tu travailles ? »), une demande ponctuelle ou une tâche (« crée un salon », « fais-moi le rapport »), un salut, une information. Une règle déjà listée plus haut ne se répète pas.${web ? `
+${blocWeb(web)}` : ''}`;
 }
 
 // L'agent critique. Beau: « je ne veux plus le travail bâclé ». Avant qu'une
@@ -474,6 +482,12 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const questionDeFond =/strat|plan|bilan|object|priorit|analy|résultat|resultat|semaine|mois|trimestre|décembre|decembre|chiffre|combien|pourquoi/i.test(String(msg.texte)) || String(msg.texte).length > 120;
   const mesuresPour = verifie.length || questionDeFond ? mesures : null;
 
+  // Chercher sur Internet (Beau, 23/09): une fois par message, seulement
+  // quand la demande regarde dehors (concurrents, événements, prospects…).
+  const web = aBesoinDuWeb(String(msg.texte))
+    ? await chercherWeb(apiKey, `${String(msg.texte).slice(0, 800)}\n(Contexte: l'entreprise « ${entreprise.nom} »${entreprise.projet ? ` — ${String(entreprise.projet).slice(0, 300)}` : ''}.)`)
+    : null;
+
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
   let pourquoi = '';
@@ -485,7 +499,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
-    const laConsigne = consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null);
+    const laConsigne = consigne(cible, entreprise, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null, web);
     const r = await demander(apiKey, laConsigne);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
@@ -525,7 +539,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     }
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(action ? { action } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}) },
+      texte, genre, meta: { ...(action ? { action } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...(web?.sources.length ? { sources: web.sources } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

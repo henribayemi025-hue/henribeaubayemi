@@ -31,6 +31,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { generer, garder, type Rendu } from '../_shared/moteur.ts';
+import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { enqueter, type Boutique } from '../_shared/enquete.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -119,11 +120,11 @@ const SCHEMA_LIVRABLE = {
 };
 
 const REGLES_COMMUNES = `RÈGLES ABSOLUES:
-- Tu n'as que des outils de LECTURE sur la base de la place de marché (les vérifications ci-dessous). Tu n'as accès ni au code, ni aux e-mails, ni à Internet, et tu ne peux rien modifier ni envoyer. Tu ne prétends donc JAMAIS avoir fait, changé, envoyé ou publié quoi que ce soit.
+- Tu n'as que des outils de LECTURE: la base de la place de marché (les vérifications ci-dessous) et, s'il y en a une plus bas, UNE recherche sur Internet faite pour ta tâche (sans elle, tu n'as pas navigué). Tu n'as accès ni au code ni aux e-mails, et tu ne peux rien modifier ni envoyer. Tu ne prétends donc JAMAIS avoir fait, changé, envoyé ou publié quoi que ce soit.
 - Jamais de chiffre, de pourcentage ou de date qui ne figure pas dans les chiffres mesurés ou les vérifications. Un chiffre que tu n'as pas, tu dis que tu ne l'as pas.
 - Aucune phrase qui enferme la place de marché dans un pays; jamais de « diaspora ».
 - Pas de formule creuse, pas de « on travaille dessus »: du concret — qui, quoi, pour quand, et ce que ça demande au fondateur.
-- Ton: professionnel et direct. Pas d'excuses, pas de « haha », pas de « désolé pour la tension », pas d'exclamations enthousiastes, pas de digressions (« mais je me disperse »). Le document commence par le fond.
+- Ton: chaleureux et direct, en EXPERT de ton métier, avec TA personnalité (ta façon d'écrire se reconnaît); une phrase humaine d'ouverture est bienvenue, puis le fond. Pas d'excuses, pas de « haha », pas de « désolé pour la tension », pas de digressions (« mais je me disperse »). Jamais sec ni télégraphique.
 - Écris en français, en Markdown léger (titres courts avec ##, listes avec -), sans tableau. Un retour à la ligne AVANT chaque titre et chaque point de liste (le texte est affiché tel quel: un bloc compact est illisible).
 - Legion, l'application où tu travailles, existe déjà: le fondateur y allume et éteint les agents, y lit les salons, le tableau des tâches, les plans, la mémoire des règles, les compétences et la dépense. Ne propose jamais de construire un outil qui fait déjà ça; propose ce qui manque, précisément.
 - Les faits sur l'offre: la place de marché est gratuite pour les boutiques inscrites avant fin octobre 2026 (gratuit à vie pour elles), payante ensuite pour les nouvelles. Ne dis rien d'autre sur les prix.`;
@@ -359,7 +360,10 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
           .eq('meta->livrable->>tache_id', tache.meta.suite_de.tache_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (avant?.texte) recu = `\n\nCETTE TÂCHE T'EST PASSÉE EN RELAIS par ${tache.meta.suite_de.par}, qui vient de livrer « ${tache.meta.suite_de.tache} ». SON LIVRABLE (pars de là, ne le refais pas):\n${String(avant.texte).slice(0, 3000)}`;
       }
-      const consigneLivrable = inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + enLangue;
+      // Une tâche qui regarde dehors (veille, événements, prospects,
+      // concurrents): une recherche sur Internet, sources comprises.
+      const web = aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
+      const consigneLivrable = inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + (web ? blocWeb(web) : '') + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = String(r.obj.livrable || '').trim().slice(0, 4000);
@@ -369,7 +373,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
       const { data: livrablePublie } = await service.from('legion_messages').insert({
         entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: a.id, user_id: null, texte, genre: bloque ? 'question' : 'info',
-        meta: { par_ia: true, modele: r.modele, livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+        meta: { par_ia: true, modele: r.modele, livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(web?.sources.length ? { sources: web.sources } : {}), ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
       }).select('id').single();
       await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
