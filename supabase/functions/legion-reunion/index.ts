@@ -178,10 +178,17 @@ const SCHEMA_PAROLE = {
   properties: { texte: { type: 'STRING' }, conteste: { type: 'STRING' } },
   required: ['texte', 'conteste'],
 };
+// Les quatre parties en champs séparés, mises en page ici (23/09, deuxième
+// essai: le modèle avait rendu le compte rendu d'un seul bloc, les points
+// collés aux titres — « ## Décidé - — rien »).
+const LISTE = { type: 'ARRAY', items: { type: 'STRING' } };
 const SCHEMA_COMPTE_RENDU = {
   type: 'OBJECT',
   properties: {
-    texte: { type: 'STRING' },
+    decide: LISTE,
+    ecarte: LISTE,
+    desaccords: LISTE,
+    a_trancher: LISTE,
     taches: {
       type: 'ARRAY',
       items: {
@@ -192,7 +199,7 @@ const SCHEMA_COMPTE_RENDU = {
     },
     question: { type: 'STRING' },
   },
-  required: ['texte', 'taches', 'question'],
+  required: ['decide', 'ecarte', 'desaccords', 'a_trancher', 'taches', 'question'],
 };
 
 function entete(a: Agent, e: { nom: string; projet: string | null }, feuille: string, memoire: string[], mesures: string | null, competences: Array<{ nom: string; texte: string }>): string {
@@ -291,16 +298,11 @@ Participants : ${participants.map((p) => `${p.nom} (${p.poste})`).join(', ')}.
 TOUT CE QUI S'EST DIT, dans l'ordre :
 ${lignes.join('\n')}
 ${r.conclure ? `\n${convocant} a demandé de conclure maintenant : conclus avec ce qui a été dit.\n` : ''}
-Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone. Exactement ces quatre parties, titres courts, une ligne par point :
-## Décidé
-- ce sur quoi l'équipe converge — qui fait quoi (prénom), et quand si ça a été dit
-## Écarté, et pourquoi
-- l'idée écartée — la raison donnée en réunion, et par qui
-## Les désaccords qui restent
-- qui pense quoi, nommément ; ne les efface pas pour faire propre
-## À toi de trancher, ${convocant}
-- une à trois questions précises, chacune avec les options qui ont été défendues
-Une partie vide : « — rien ».
+Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone : quatre listes, un point par élément, une phrase courte chacun, sans puce ni titre (la mise en page est faite ailleurs).
+"decide" : ce sur quoi l'équipe converge — qui fait quoi (prénom), et quand si ça a été dit. [] si rien n'a été décidé.
+"ecarte" : chaque idée écartée — la raison donnée en réunion, et par qui.
+"desaccords" : ce qui divise encore — qui pense quoi, nommément ; ne les efface pas pour faire propre.
+"a_trancher" : une à trois questions précises pour ${convocant}, chacune avec les options qui ont été défendues (et par qui).
 Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'argent, un prix, le juridique, le recrutement ou une personne : tu poses la question avec les options. Aucun chiffre ni fait qui n'a pas été dit en réunion. Pas d'introduction, pas de formule de fin. Écris en ${langue}.
 "taches" : une à cinq tâches concrètes DÉCIDÉES en réunion (celles de la partie « Décidé »), chacune confiée à UN participant ("agent" = son nom tel qu'écrit dans la liste des participants), avec la priorité. Rien qui n'ait pas été décidé ; [] s'il n'y en a pas.
 "question" : la question la plus importante pour ${convocant}, en une phrase, ou "".`;
@@ -312,8 +314,10 @@ Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'a
     // recours: la liste de moteurs() se termine déjà par Flash.
     modeles: gratuite ? moteursSimples() : moteurs(),
   });
-  if ('erreur' in rendu || typeof rendu.obj.texte !== 'string' || !rendu.obj.texte.trim()) {
-    console.error('réunion, compte rendu:', 'erreur' in rendu ? rendu.erreur : 'texte vide');
+  const listes = 'erreur' in rendu ? null : (['decide', 'ecarte', 'desaccords', 'a_trancher'] as const).map((k) =>
+    (Array.isArray(rendu.obj[k]) ? (rendu.obj[k] as unknown[]) : []).map((x) => String(x).replace(/^[\s\-–•*]+/, '').trim()).filter(Boolean).slice(0, 8));
+  if ('erreur' in rendu || !listes || listes.every((l) => !l.length)) {
+    console.error('réunion, compte rendu:', 'erreur' in rendu ? rendu.erreur : 'listes vides');
     await fin(anglais
       ? 'I could not write the minutes (the model did not answer). Everything said is above.'
       : "Je n'ai pas pu rédiger le compte rendu (le modèle n'a pas répondu). Tout ce qui s'est dit est au-dessus.", { echec: true });
@@ -328,9 +332,14 @@ Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'a
     return `${x.slice(0, 90).replace(/\s+\S*$/, '')}…`;
   })();
   const titre = `${anglais ? 'Minutes' : 'Compte rendu'} — ${sujetCourt}`;
+  const titres = anglais
+    ? ['Decided', 'Dropped, and why', 'Disagreements that remain', `For you to decide, ${convocant}`]
+    : ['Décidé', 'Écarté, et pourquoi', 'Les désaccords qui restent', `À toi de trancher, ${convocant}`];
+  const vide = anglais ? '- nothing' : '- rien';
+  const corpsCR = titres.map((t, i) => `## ${t}\n${listes[i].length ? listes[i].map((x) => `- ${x}`).join('\n') : vide}`).join('\n\n');
   const { data: cr, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: president.id, user_id: null,
-    texte: `${titre}\n\n${aerer(rendu.obj.texte.trim())}`.slice(0, 5000), genre: 'decision',
+    texte: `${titre}\n\n${corpsCR}`.slice(0, 5000), genre: 'decision',
     meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id) }, ...(question ? { question } : {}) },
   }).select('id').single();
   if (error) { console.error('réunion, compte rendu:', error.message); return; }
