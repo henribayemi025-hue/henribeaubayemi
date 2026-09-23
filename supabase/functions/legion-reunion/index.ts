@@ -220,6 +220,9 @@ const REGLES_REUNION = (langue: string, mesures: boolean) => `RÈGLES DE LA RÉU
 - c'est une conversation, pas un exposé : tu réagis à ce qui vient d'être dit, tu t'adresses aux collègues par leur prénom ;
 - pas de salut, pas de « merci pour ce point », pas de résumé de ce que les autres ont dit, pas de flatterie ;
 - HONNÊTETÉ : aucun chiffre, pourcentage, date ou fait que personne n'a donné (ni le sujet, ni la mémoire, ni ce qui s'est dit${mesures ? ', ni les chiffres mesurés' : ''}). Si ton argument a besoin d'un chiffre qu'on n'a pas, dis-le (« il faudrait mesurer… »). Tu n'as rien fait entre deux messages : ne prétends jamais avoir vérifié, testé, préparé ou envoyé quoi que ce soit ;
+- tu ne peux ni coder, ni tester, ni envoyer, ni modifier quoi que ce soit : ne promets AUCUN travail ni délai (« un prototype sous 7 jours ») ; ce qui demande du code revient à Claude, le développeur, ou au fondateur ;
+- sur les concurrents, le marché ou une technologie, seulement ce que dit la recherche ci-dessus, avec le numéro de sa source ; sinon, dis que c'est à vérifier ;
+- pense à la TAILLE réelle de l'entreprise : ne propose pas l'outil d'un géant quand une solution simple suffit ;
 - sur l'argent, un prix, le juridique, le recrutement ou une personne, tu RECOMMANDES : c'est l'humain qui tranche ;
 - écris en ${langue}.`;
 
@@ -240,7 +243,7 @@ async function prendreLaParole(service: Service, apiKey: string, o: Message, r: 
   const langue = ctx.entreprise?.langue === 'en' ? 'anglais' : 'français';
 
   const consigneTour = tour === 1
-    ? `C'EST TON TOUR — TOUR 1, TA POSITION. Depuis TON métier : ce que tu recommandes (concret : quoi, qui, quand), pourquoi (l'argument de ton métier), le risque principal que tu vois, et ce qu'il te faudrait pour avancer. Si des collègues ont déjà parlé, situe-toi : d'accord sur quoi, pas d'accord sur quoi — nommément. Entre 70 et 160 mots.
+    ? `C'EST TON TOUR — TOUR 1, TA POSITION. Depuis TON métier : ce que tu recommandes (concret : quoi, qui, quand), pourquoi (l'argument de ton métier), le risque principal que tu vois, et ce qu'il te faudrait pour avancer. Si des collègues ont déjà parlé, ne commence PAS par dire que tu es d'accord : apporte d'abord ce que TON métier voit et qu'ils n'ont pas dit, puis situe-toi — d'accord sur quoi, pas d'accord sur quoi, nommément. Entre 70 et 160 mots.
 "conteste" : le prénom exact d'un collègue avec qui tu n'es pas d'accord, ou "".`
     : `C'EST TON TOUR — TOUR 2, LE DÉBAT. On ne se félicite pas : on se dispute sur le fond, comme une vraie équipe qui veut la meilleure décision.
 1. Choisis LE point le plus faible, le plus risqué ou le plus coûteux avancé par UN collègue nommé (ou une critique qu'on t'a faite).
@@ -310,7 +313,8 @@ Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone : quatre liste
 "desaccords" : ce qui divise encore — qui pense quoi, nommément ; ne les efface pas pour faire propre.
 "a_trancher" : une à trois questions précises pour ${convocant}, chacune avec les options qui ont été défendues (et par qui).
 Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'argent, un prix, le juridique, le recrutement ou une personne : tu poses la question avec les options. Aucun chiffre ni fait qui n'a pas été dit en réunion. Pas d'introduction, pas de formule de fin. Écris en ${langue}.
-"taches" : une à cinq tâches concrètes DÉCIDÉES en réunion (celles de la partie « Décidé »), chacune confiée à UN participant ("agent" = son nom tel qu'écrit dans la liste des participants), avec la priorité. Rien qui n'ait pas été décidé ; [] s'il n'y en a pas.
+Un agent ne code pas, ne teste pas, n'envoie rien : une décision qui demande ce travail va dans "a_trancher" (qui le fait : Claude le développeur, ou le fondateur), jamais dans les tâches d'un agent. Aucun délai que personne n'a fixé.
+"taches" : une à cinq tâches concrètes DÉCIDÉES en réunion (celles de la partie « Décidé »), que l'agent peut faire lui-même (analyser, écrire, comparer, préparer), chacune confiée à UN participant ("agent" = son nom tel qu'écrit dans la liste des participants), avec la priorité. Rien qui n'ait pas été décidé ; [] s'il n'y en a pas.
 "question" : la question la plus importante pour ${convocant}, en une phrase, ou "".`;
 
   const gratuite = ctx.entreprise?.formule === 'gratuite';
