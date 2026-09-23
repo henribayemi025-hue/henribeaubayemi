@@ -67,10 +67,14 @@ export function creerClasseur(feuilles: Feuille[]): Uint8Array | null {
     if (!lignes.length) continue;
     const ws: Record<string, unknown> = {};
     let largeur = 0;
+    // Une colonne de taux (« Taux de marge », « % ») s'affiche en pourcentage :
+    // 0,33 devient 33,0 % (vu au premier essai, 23/09).
+    const pourcent = (lignes[0] || []).map((x) => /taux|%|pourcent|rate|ratio/i.test(String(x ?? '')));
     lignes.forEach((ligne, r) => {
       ligne.slice(0, 60).forEach((v, c) => {
-        const cellule = caseDe(v);
+        const cellule = caseDe(v) as Cellule & { z?: string };
         if (cellule.t === 's' && cellule.v === '') return;
+        if (r > 0 && pourcent[c] && cellule.t === 'n') cellule.z = '0.0%';
         ws[XLSX.utils.encode_cell({ r, c })] = cellule;
       });
       largeur = Math.max(largeur, Math.min(60, ligne.length));

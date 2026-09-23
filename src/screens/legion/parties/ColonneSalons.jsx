@@ -13,7 +13,7 @@ import { dernierMessage, quand, sansAccent, iconeDept } from './outils';
 // département comptent aussi.
 export function ColonneSalons({
   dept, departements, salons, prives, courant, onChoisirSalon, agents, moi, messages, langue,
-  onAllumer, onFiche, onEcrireA, agentPrive, nonLus = {}, t, className = '', ongletInitial = 'mixte',
+  onAllumer, onFiche, onEcrireA, agentPrive, nonLus = {}, t, className = '', ongletInitial = 'mixte', onRenfort,
 }) {
   const [q, setQ] = useState('');
   const [onglet, setOnglet] = useState(ongletInitial); // 'mixte' | 'agents'
@@ -140,6 +140,10 @@ export function ColonneSalons({
             <span className="flex items-center gap-1"><IconRobot size={12} className="text-legion-gold" /> {t('legion.agents', 'Agents')} ({filtres.length})
               <button type="button" onClick={() => onFiche({ departement: dept?.nom || null })} title={t('legion.nouvelAgent', 'Nouvel agent')}
                 className="ml-1 rounded-pill border border-legion-line px-1.5 text-[10px] normal-case tracking-normal text-legion-gold hover:border-legion-gold">+ {t('legion.agentCourt', 'Agent')}</button>
+              {onRenfort && (
+                <button type="button" onClick={onRenfort} title={t('legion.renfort.titre')}
+                  className="ml-1 rounded-pill border border-legion-line px-1.5 text-[10px] normal-case tracking-normal text-legion-gold hover:border-legion-gold">{t('legion.renfort.bouton')}</button>
+              )}
             </span>
             <span className="font-mono text-[10px] normal-case tracking-normal">{t('legion.interrupteur', 'Interrupteur')}</span>
           </div>

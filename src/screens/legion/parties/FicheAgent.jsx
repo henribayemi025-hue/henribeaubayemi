@@ -6,6 +6,10 @@ import { Interrupteur } from './Interrupteur';
 import { AUTONOMIES } from './outils';
 import { CompetencesAgent } from './Competences';
 
+// Ce qu'un agent peut lire parmi ce que l'entreprise a branché (0177, E4).
+// Vide = tout. Les fonctions des agents s'y tiennent.
+const SOURCES = ['mesures', 'boutique', 'web', 'github', 'documents'];
+
 // La fiche d'un agent: qui il est, ce qu'on attend de lui, comment il parle,
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
@@ -20,7 +24,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
   // agent appartient à UNE entreprise: le modifier ici ne change jamais
   // l'agent d'une autre entreprise, même du même secteur.
   const nouveau = !agent.id;
-  const champs = edition || (nouveau ? { nom: '', poste: '', departement: agent.departement || departements[0]?.nom || '', mandat: '', personnalite: '' } : null);
+  const champs = edition || (nouveau ? { nom: '', poste: '', departement: agent.departement || departements[0]?.nom || '', mandat: '', personnalite: '', jamais: '', peut_lire: null, fin_mission: '' } : null);
   if (champs) {
     const maj = (k, v) => setEdition({ ...champs, [k]: v });
     const valide = champs.nom.trim().length >= 2 && champs.poste.trim().length >= 2;
@@ -29,7 +33,12 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
       if (!valide || change) return;
       setChange(true);
       try {
-        const propre = Object.fromEntries(Object.entries(champs).map(([k, v]) => [k, String(v || '').trim()]));
+        const propre = Object.fromEntries(['nom', 'poste', 'departement', 'mandat', 'personnalite', 'jamais'].map((k) => [k, String(champs[k] || '').trim()]));
+        propre.jamais = propre.jamais || null;
+        propre.peut_lire = Array.isArray(champs.peut_lire) ? champs.peut_lire : null;
+        propre.fin_mission = champs.fin_mission || null;
+        // Une date de fin fait de lui un intérimaire: il s'éteint seul le lendemain.
+        propre.interim = !!champs.fin_mission;
         if (nouveau) { await onCreer(propre); setEdition(null); onFermer(); } else { await onModifier(agent, propre); setEdition(null); }
       } finally { setChange(false); }
     }
@@ -55,6 +64,33 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
           </label>
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.personnalite', 'Sa personnalité')}
             <textarea className={`${champ} mt-1`} rows={2} value={champs.personnalite} maxLength={300} onChange={(e) => maj('personnalite', e.target.value)} placeholder={t('legion.champPersoEx', 'Ex. : chaleureux, direct, adore les chiffres')} />
+          </label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.jamais', 'Ce qu’il ne fait jamais')}
+            <textarea className={`${champ} mt-1`} rows={2} value={champs.jamais || ''} maxLength={800} onChange={(e) => maj('jamais', e.target.value)} placeholder={t('legion.jamaisEx', 'Ex. : promettre un remboursement ; parler des salaires ; envoyer quoi que ce soit sans validation')} />
+          </label>
+          <fieldset>
+            <legend className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.peutLire', 'Ce qu’il peut lire')}</legend>
+            <label className="mt-1 flex items-center gap-2 text-caption">
+              <input type="checkbox" checked={!Array.isArray(champs.peut_lire)} onChange={(e) => maj('peut_lire', e.target.checked ? null : [])} className="h-4 w-4 accent-legion-gold" />
+              {t('legion.peutLireTout', 'Tout ce que l’entreprise a branché')}
+            </label>
+            {Array.isArray(champs.peut_lire) && (
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {SOURCES.map((x) => {
+                  const pris = champs.peut_lire.includes(x);
+                  return (
+                    <button key={x} type="button" aria-pressed={pris} onClick={() => maj('peut_lire', pris ? champs.peut_lire.filter((y) => y !== x) : [...champs.peut_lire, x])}
+                      className={`rounded-pill px-2.5 py-1 text-[12px] font-semibold ${pris ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>
+                      {t(`legion.source.${x}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </fieldset>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.finMission', 'Fin de mission (intérim)')}
+            <input type="date" className={`${champ} mt-1`} value={champs.fin_mission || ''} onChange={(e) => maj('fin_mission', e.target.value)} />
+            <span className="mt-0.5 block text-[10.5px] normal-case tracking-normal">{t('legion.finMissionAide', 'Vide : il reste. Une date : il s’éteint seul le lendemain matin, et le dit.')}</span>
           </label>
           <p className="text-[11px] text-legion-muted">{t('legion.agentAToi', 'Cet agent n’existe que dans ton entreprise : le modifier ne change rien ailleurs.')}</p>
           <div className="flex justify-end gap-2 pt-1">
@@ -105,7 +141,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
               </div>
               <p className="text-caption font-semibold text-legion-muted">{agent.poste}</p>
               {onModifier && !agent.user_id && agent.moteur !== 'claude-code' && (
-                <button type="button" onClick={() => setEdition({ nom: agent.nom || '', poste: agent.poste || '', departement: agent.departement || '', mandat: agent.mandat || '', personnalite: agent.personnalite || '' })}
+                <button type="button" onClick={() => setEdition({ nom: agent.nom || '', poste: agent.poste || '', departement: agent.departement || '', mandat: agent.mandat || '', personnalite: agent.personnalite || '', jamais: agent.jamais || '', peut_lire: Array.isArray(agent.peut_lire) ? agent.peut_lire : null, fin_mission: agent.fin_mission || '' })}
                   className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-legion-gold hover:brightness-110">
                   <IconPencil size={12} /> {t('legion.modifier', 'Modifier')}
                 </button>
@@ -137,6 +173,31 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
           <div>
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.personnalite', 'Sa personnalité')}</p>
             <p className="rounded-card border border-legion-line bg-legion-card p-3 text-caption italic leading-relaxed text-legion-gold">{agent.personnalite}</p>
+          </div>
+        )}
+
+        {/* La fiche de mission (renfort d'un service, expert, intérim — 0177) */}
+        {(agent.mission || agent.fin_mission) && (
+          <div>
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.mission', 'Sa mission')}</p>
+            <div className="space-y-1 rounded-card border border-legion-line bg-legion-card p-3 text-caption leading-relaxed">
+              {agent.mission?.objectif && <p>{agent.mission.objectif}</p>}
+              {agent.mission?.prend?.length > 0 && <p className="text-legion-muted"><b className="text-legion-ink">{t('legion.renfort.prend')}</b> {agent.mission.prend.join(' · ')}</p>}
+              {agent.mission?.relais_humain && <p className="text-legion-muted"><b className="text-legion-ink">{t('legion.renfort.relais')}</b> {agent.mission.relais_humain}</p>}
+              {agent.fin_mission && <p className="font-semibold text-legion-gold">{t('legion.jusquau', { date: new Date(`${agent.fin_mission}T12:00:00`).toLocaleDateString(), defaultValue: 'Intérim jusqu’au {{date}}' })}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Ce qu'il ne fait jamais, et ce qu'il peut lire (E3, E4): les
+            fonctions des agents s'y tiennent avant chaque réponse. */}
+        {!agent.user_id && agent.moteur !== 'claude-code' && (
+          <div>
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.sesLimites', 'Ses limites')}</p>
+            <div className="space-y-1 rounded-card border border-legion-line bg-legion-card p-3 text-caption leading-relaxed">
+              <p><b className="text-legion-danger">{t('legion.jamais', 'Ce qu’il ne fait jamais')}</b> — {agent.jamais || t('legion.jamaisDefaut', 'rien de précisé : les règles de la maison et celles de Legion s’appliquent (rien d’envoyé ni de modifié sans ton clic).')}</p>
+              <p><b className="text-legion-ink">{t('legion.peutLire', 'Ce qu’il peut lire')}</b> — {Array.isArray(agent.peut_lire) ? (agent.peut_lire.length ? agent.peut_lire.map((x) => t(`legion.source.${x}`)).join(', ') : t('legion.peutLireRien', 'rien au-delà de la conversation')) : t('legion.peutLireTout', 'Tout ce que l’entreprise a branché')}</p>
+            </div>
           </div>
         )}
 

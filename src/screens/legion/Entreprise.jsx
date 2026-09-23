@@ -15,6 +15,7 @@ import { Rail, RailPastilles } from './parties/Rail';
 import { ColonneSalons } from './parties/ColonneSalons';
 import { Conversation } from './parties/Conversation';
 import { Appel } from './parties/Appel';
+import { Renfort } from './parties/Renfort';
 import { Kanban } from './parties/Kanban';
 import { FicheAgent } from './parties/FicheAgent';
 import { Accueil } from './parties/Accueil';
@@ -62,6 +63,7 @@ export default function Entreprise() {
   const [brouillon, setBrouillon] = useState('');
   const [photos, setPhotos] = useState(false);
   const [appel, setAppel] = useState(null); // l'agent qu'on appelle (23/09)
+  const [renfort, setRenfort] = useState(false); // renforcer un service / un expert (23/09)
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
     if (!user?.id || !entrepriseId) return null;
@@ -405,6 +407,51 @@ export default function Entreprise() {
     setData((d) => d && ({ ...d, agents: [...d.agents, cree] }));
     toast.success(t('legion.agentCree', { nom: cree.nom, defaultValue: '{{nom}} rejoint l’équipe' }));
   }
+  // Engager les agents proposés par « Renforcer » (legion-renfort): chacun
+  // avec sa fiche de mission, ce qu'il ne fait jamais, et ses premières
+  // tâches au tableau. Un service qui n'a pas encore de salon en reçoit un.
+  async function engager(propositions, { departement, finMission, mode, objectif, expert }) {
+    try {
+      let salon = departement ? data.salons.find((x) => !x.prive_entre?.length && sansAccent(x.nom) === sansAccent(departement)) : null;
+      if (departement && !salon) {
+        const cleSalon = sansAccent(departement).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'service';
+        const { data: cree, error: e0 } = await supabase.from('legion_canaux').insert({
+          entreprise_id: entrepriseId, cle: data.salons.some((x) => x.cle === cleSalon) ? `${cleSalon}-${Date.now() % 1000}` : cleSalon,
+          nom: departement, a_quoi_ca_sert: objectif.slice(0, 200), emoji: mode === 'expert' ? '🧭' : '🧩', ordre: 500,
+        }).select().single();
+        if (e0) throw e0;
+        salon = cree;
+        setData((d) => (d ? { ...d, salons: [...d.salons, cree] } : d));
+      }
+      const canalTaches = salon?.id || departements[0]?.id;
+      const pris = new Set(data.agents.map((x) => x.cle));
+      const nouveaux = [];
+      for (const p of propositions) {
+        const base = sansAccent(p.nom).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
+        let cle = base; for (let i = 2; pris.has(cle); i += 1) cle = `${base}-${i}`;
+        pris.add(cle);
+        const { data: a, error: e1 } = await supabase.from('legion_agents').insert({
+          entreprise_id: entrepriseId, cle, nom: p.nom, poste: p.poste, departement: departement || null,
+          mandat: p.mandat || p.poste, personnalite: p.personnalite || null, jamais: p.jamais || null,
+          actif: true, ordre: 800, autonomie: 'supervise', interim: !!finMission, fin_mission: finMission || null,
+          mission: { type: mode, objectif, expert: mode === 'expert' ? expert : null, prend: p.prend || [], relais_humain: p.relais_humain || null, debut: new Date().toISOString().slice(0, 10) },
+        }).select().single();
+        if (e1) throw e1;
+        nouveaux.push(a);
+        for (const titre of (p.premieres_taches || []).slice(0, 4)) {
+          if (!canalTaches || String(titre).trim().length < 4) continue;
+          await supabase.from('legion_messages').insert({
+            entreprise_id: entrepriseId, canal_id: canalTaches, auteur_id: moi.id, user_id: user.id, texte: String(titre).slice(0, 200),
+            genre: 'tache', assigne_a: a.id, meta: { statut: 'a_faire', priorite: 'moyenne', mission: true },
+          });
+        }
+      }
+      setData((d) => (d ? { ...d, agents: [...d.agents, ...nouveaux] } : d));
+      toast.success(t('legion.renfort.engages', { n: nouveaux.length }));
+      return true;
+    } catch (e) { toast.error(e.message || t('errors.generic')); return false; }
+  }
+
   async function autonomie(a, niveau) {
     const { error: err } = await supabase.from('legion_agents').update({ autonomie: niveau }).eq('id', a.id);
     if (err) { toast.error(err.message); return; }
@@ -504,7 +551,7 @@ export default function Entreprise() {
   const propsColonne = {
     dept, departements, salons: departements, prives, courant: salonId, onChoisirSalon: choisirSalon,
     agents: data.agents, moi, messages: data.messages, langue, onAllumer: allumer, onFiche: setFiche, onEcrireA: ecrireA,
-    agentPrive: agentPrive?.id || null, nonLus, t,
+    agentPrive: agentPrive?.id || null, nonLus, t, onRenfort: () => setRenfort(true),
   };
 
   return (
@@ -622,6 +669,10 @@ export default function Entreprise() {
             <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
           )}
         </div>
+
+        {renfort && (
+          <Renfort entrepriseId={entrepriseId} departements={departements} t={t} onFermer={() => setRenfort(false)} onEngager={engager} />
+        )}
 
         {/* L'appel à la voix, par-dessus tout, tant qu'on est dans le salon privé de l'agent */}
         {appel && moi && agentPrive?.id === appel.id && salon && (

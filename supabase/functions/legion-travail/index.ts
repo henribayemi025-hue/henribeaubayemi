@@ -56,7 +56,15 @@ function cors(origin: string | null): Record<string, string> {
 }
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
-  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; moteur: string };
+  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; moteur: string;
+  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null };
+// Ce qu'un agent a le droit de lire (0177): vide = tout ce qui est branché.
+const peut = (a: Agent, source: string) => !Array.isArray(a.peut_lire) || a.peut_lire.includes(source);
+// Sa mission et ce qu'il ne fait jamais (0177).
+function contrat(a: Agent): string {
+  const m = a.mission;
+  return `${m?.objectif ? `Ta mission: ${m.objectif}${m.prend?.length ? ` — tu prends: ${m.prend.join(' ; ')}` : ''}${m.relais_humain ? `. Tu passes la main à un humain quand: ${m.relais_humain}` : ''}.\n` : ''}${a.fin_mission ? `Tu es en intérim jusqu'au ${a.fin_mission}.\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat): ${a.jamais}\n` : ''}`;
+}
 type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string } } | null; created_at: string };
 type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
@@ -137,7 +145,7 @@ function invitePlan(a: Agent, projet: string, dept: string, equipe: string[], ta
   const direction = plansDepartements.length > 0;
   return `Tu es ${a.nom}, ${a.poste}, responsable du département « ${dept} ». ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
 Ton mandat: ${a.mandat || '(non précisé)'}.
-L'entreprise: ${projet}
+${contrat(a)}L'entreprise: ${projet}
 Nous sommes le ${aujourdhui}. C'est le matin: tu écris le PLAN de ${direction ? "L'ENTREPRISE — le seul que le fondateur lira: il reprend les plans des départements ci-dessous, tranche entre eux, et fixe l'objectif commun" : 'ton département, comme un vrai responsable qui sait ce que son équipe fait aujourd\'hui, demain et cette semaine'}.
 ${direction ? `\nLES PLANS DES DÉPARTEMENTS, écrits ce matin par leurs responsables (à reprendre, pas à répéter: un objectif commun, les 5 à 7 actions qui comptent le plus toutes équipes confondues, chacune avec son responsable):\n${plansDepartements.join('\n\n')}\n` : ''}
 
@@ -166,7 +174,7 @@ function inviteLivrable(a: Agent, projet: string, tache: Tache, equipe: string[]
   const aujourdhui = new Date().toISOString().slice(0, 10);
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? `, département « ${a.departement} »` : ''}. ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
 Ton mandat: ${a.mandat || '(non précisé)'}.
-L'entreprise: ${projet}
+${contrat(a)}L'entreprise: ${projet}
 Nous sommes le ${aujourdhui}. Tu prends ta tâche du jour et tu la LIVRES maintenant, par écrit. Le fondateur veut un résultat, pas « on y travaille ».
 
 TA TÂCHE: « ${tache.texte} » (ouverte depuis le ${tache.created_at.slice(0, 10)}${tache.meta?.priorite ? `, priorité ${tache.meta.priorite}` : ''}).
@@ -210,7 +218,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet, langue, formule').eq('id', entrepriseId).single(),
-    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur').eq('entreprise_id', entrepriseId).order('ordre'),
+    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur, jamais, peut_lire, mission, fin_mission').eq('entreprise_id', entrepriseId).order('ordre'),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
     service.from('legion_connecteurs').select('id').eq('entreprise_id', entrepriseId).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
@@ -236,12 +244,18 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const { data: brancheBoutique } = await service.from('legion_connecteurs').select('config')
     .eq('entreprise_id', entrepriseId).eq('type', 'finjaro-boutique').eq('actif', true).maybeSingle();
   const boutique: Boutique | null = brancheBoutique?.config?.shop_id ? { shop_id: String(brancheBoutique.config.shop_id), nom: String(brancheBoutique.config.nom || 'ma boutique') } : null;
+  const projetNu = projet;
   if (boutique) projet += `\nL'entreprise a branché SA boutique sur la place de marché Finjaro: « ${boutique.nom} » — ses ventes, son stock, ses avis, ses messages en attente sont lisibles par les outils ma_boutique_* (vérifications ci-dessous); on dit « notre boutique ».`;
   const peutEnqueter = !!(mesures || boutique);
+  const texteBoutique = projet.slice(projetNu.length);
   // La feuille de route du fondateur (0168): chacun travaille pour elle.
-  projet += await lireFeuille(service, entrepriseId, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
+  const feuille = await lireFeuille(service, entrepriseId, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
+  projet += feuille;
   // Son dépôt GitHub, s'il est branché (0169): une lecture par journée.
-  projet += await lireGithub(service, entrepriseId);
+  const depot = await lireGithub(service, entrepriseId);
+  projet += depot;
+  // Le contexte d'UN agent, selon ce qu'il a le droit de lire (0177).
+  const projetPour = (a: Agent) => `${projetNu}${peut(a, 'boutique') ? texteBoutique : ''}${feuille}${peut(a, 'github') ? depot : ''}`;
 
   const publics = (canaux as Canal[]).filter((c) => !(Array.isArray(c.prive_entre) && c.prive_entre.length));
   const canalDe = (dept: string | null) => publics.find((c) => sansAccent(c.cle) === sansAccent(dept || '') || sansAccent(c.nom) === sansAccent(dept || ''))
@@ -360,7 +374,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';
-      const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, boutique, !!mesures) : [];
+      const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique);
+      const verifie = peutEnqueter && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures) : [];
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
       let recu = '';
       if (tache.meta?.suite_de?.tache_id) {
@@ -370,8 +385,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       }
       // Une tâche qui regarde dehors (veille, événements, prospects,
       // concurrents): une recherche sur Internet, sources comprises.
-      const web = !gratuite && aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
-      const consigneLivrable = inviteLivrable(a, projet, tache, equipe, memoire, competences, fil, mesures, verifie, plans) + recu + (web ? blocWeb(web) : '') + enLangue;
+      const web = !gratuite && peut(a, 'web') && aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
+      const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 4000);

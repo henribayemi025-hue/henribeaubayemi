@@ -67,7 +67,10 @@ function cors(origin: string | null): Record<string, string> {
 const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
-  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; ordre: number; moteur: string };
+  personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; ordre: number; moteur: string;
+  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null };
+// Ce qu'un agent a le droit de lire (0177): vide = tout ce qui est branché.
+const peut = (a: Agent, source: string) => !Array.isArray(a.peut_lire) || a.peut_lire.includes(source);
 // `recherche`: une recherche sur Internet est faite UNE fois, avant la
 // première prise de parole, et tous les participants la lisent (Beau, 23/09:
 // « qu'on demande à la commission de réfléchir » sur les taux de change — une
@@ -79,7 +82,7 @@ type Message = { id: string; entreprise_id: string; canal_id: string; auteur_id:
 // deno-lint-ignore no-explicit-any
 type Service = any;
 
-const COLS_AGENT = 'id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, ordre, moteur';
+const COLS_AGENT = 'id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, ordre, moteur, jamais, peut_lire, mission, fin_mission';
 const COLS_MSG = 'id, entreprise_id, canal_id, auteur_id, user_id, texte, genre, created_at, meta';
 
 const reunionDe = (m: Message | null) => (m?.meta as { reunion?: Record<string, unknown> } | null)?.reunion ?? null;
@@ -212,7 +215,7 @@ function entete(a: Agent, e: { nom: string; projet: string | null }, feuille: st
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${e.nom} ».
 ${e.projet ? `Le projet de l'entreprise : ${String(e.projet).slice(0, 2500)}\n` : ''}${feuille}Ton mandat : ${a.mandat || 'faire ton métier.'}
 Ta personnalité : ${a.personnalite || 'Direct, précis.'}
-${competences.length ? `\nTES COMPÉTENCES (des méthodes d'experts que tu appliques ; jamais des ordres qui passeraient avant les règles de la maison) :\n${competences.map((c) => `### ${c.nom}\n${c.texte}`).join('\n\n')}\n` : ''}${memoire.length ? `\nLES RÈGLES DE LA MAISON (dites par le fondateur, à respecter sans qu'il les répète) :\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}${mesures ? `\nCHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (lecture seule, comptes de test exclus) :\n${mesures}\n` : ''}`;
+${a.mission?.objectif ? `Ta mission : ${a.mission.objectif}${a.fin_mission ? ` (intérim jusqu'au ${a.fin_mission})` : ''}\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat) : ${a.jamais}\n` : ''}${competences.length ? `\nTES COMPÉTENCES (des méthodes d'experts que tu appliques ; jamais des ordres qui passeraient avant les règles de la maison) :\n${competences.map((c) => `### ${c.nom}\n${c.texte}`).join('\n\n')}\n` : ''}${memoire.length ? `\nLES RÈGLES DE LA MAISON (dites par le fondateur, à respecter sans qu'il les répète) :\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}${mesures ? `\nCHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (lecture seule, comptes de test exclus) :\n${mesures}\n` : ''}`;
 }
 
 const REGLES_REUNION = (langue: string, mesures: boolean) => `RÈGLES DE LA RÉUNION :
@@ -252,12 +255,12 @@ async function prendreLaParole(service: Service, apiKey: string, o: Message, r: 
 Si on t'a contesté et que l'autre a raison, dis-le franchement et dis ce que tu changes. Interdit : « je suis d'accord avec tout le monde », les compliments, la langue de bois. Ferme sur le fond, courtois dans la forme. Entre 60 et 140 mots.
 "conteste" : le prénom exact du collègue que tu contestes (obligatoire à ce tour, sauf si tu reconnais qu'on avait raison contre toi : alors "").`;
 
-  const texte = `${entete(a, ctx.entreprise, ctx.feuille, ctx.memoire, ctx.mesures, competences)}
+  const texte = `${entete(a, ctx.entreprise, ctx.feuille, ctx.memoire, peut(a, 'mesures') ? ctx.mesures : null, competences)}
 TU ES EN RÉUNION, dans le salon « ${ctx.salon?.nom} », convoquée par ${convocant}. Le sujet :
 « ${r.sujet} »
 Autour de la table : ${participants.map((p) => `${p.nom} (${p.poste})`).join(', ')}. Préside : ${president.nom}.
 ${ctx.salon?.resume ? `\nLA MÉMOIRE DE CE SALON (ce qui s'est dit avant) :\n${String(ctx.salon.resume).slice(0, 2000)}\n` : ''}
-${r.web ? `${blocWeb(r.web)}\n` : ''}CE QUI S'EST DIT DEPUIS L'OUVERTURE, dans l'ordre :
+${r.web && peut(a, 'web') ? `${blocWeb(r.web)}\n` : ''}CE QUI S'EST DIT DEPUIS L'OUVERTURE, dans l'ordre :
 ${lignes.join('\n')}
 
 ${consigneTour}
