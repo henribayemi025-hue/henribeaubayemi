@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Vérifier le jeton
         env:
@@ -51,16 +53,51 @@ jobs:
       # --use-api: le paquetage se fait chez Supabase, comme avant. Depuis que
       # supabase/config.toml existe (verify_jwt de legion-mcp), la CLI
       # paquetait dans Docker, et finou-chat y plantait (exit 135, 23/09).
+      #
+      # Sur une poussée: seulement les fonctions touchées (23/09). Avant, chaque
+      # poussée redéployait les trente fonctions, communes à la production, et
+      # Supabase refusait par moments les redéploiements trop rapprochés
+      # (« internal error » sur send-push, moderation-sweep, legion-veilleur,
+      # dont le code n'avait pas changé). Un changement dans _shared ou dans
+      # config.toml redéploie tout, comme avant. Chaque déploiement est retenté
+      # deux fois en cas d'erreur passagère.
       - name: Déployer
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: bokwivwizghdlaedczbw
+          AVANT: ${{ github.event.before }}
+          APRES: ${{ github.sha }}
         run: |
+          deployer() {
+            for essai in 1 2 3; do
+              if supabase functions deploy "$@" --project-ref "$PROJECT_REF" --use-api; then return 0; fi
+              echo "::warning::échec de l'essai $essai ($*), nouvel essai dans 15 s"
+              sleep 15
+            done
+            return 1
+          }
           FN="${{ github.event.inputs.function }}"
+          if [ "${{ github.event_name }}" = "push" ]; then
+            FN=""
+            TOUT=1
+            if [ -n "$AVANT" ] && ! echo "$AVANT" | grep -qE '^0+$' && git cat-file -e "$AVANT" 2>/dev/null; then
+              CHANGES=$(git diff --name-only "$AVANT" "$APRES" -- supabase/)
+              echo "Fichiers changés:"; echo "$CHANGES"
+              if ! echo "$CHANGES" | grep -qE '^supabase/(functions/_shared/|config\.toml)'; then TOUT=0; fi
+            fi
+            if [ "$TOUT" = "0" ]; then
+              LISTE=$(echo "$CHANGES" | grep -oE '^supabase/functions/[^/]+/' | cut -d/ -f3 | sort -u)
+              ECHECS=0
+              for f in $LISTE; do
+                if [ -f "supabase/functions/$f/index.ts" ]; then echo "Déploiement de $f"; deployer "$f" || ECHECS=1; fi
+              done
+              exit $ECHECS
+            fi
+          fi
           if [ -n "$FN" ]; then
             echo "Déploiement de $FN"
-            supabase functions deploy "$FN" --project-ref "$PROJECT_REF" --use-api
+            deployer "$FN"
           else
             echo "Déploiement de toutes les fonctions"
-            supabase functions deploy --project-ref "$PROJECT_REF" --use-api
+            deployer
           fi
