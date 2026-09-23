@@ -50,7 +50,7 @@ de bord.
 | C1 | Un orchestrateur reçoit l'objectif, le découpe, distribue | ✅ le directeur + les plans de chaque matin + Orchestre ; ✅ « Confirmer » pour les actions |
 | C2 | Des spécialistes avec leur consigne, leurs données, leurs outils | ✅ mandat + personnalité + compétences + connecteurs |
 | C3 | Une mémoire partagée (contexte, décisions) | ✅ mémoire de l'entreprise, résumé de chaque salon, feuille de route |
-| C4 | Accès sécurisés aux données + gouvernance (valider / rejeter) | ✅ « Valider » / « Renvoyer » au tableau, « Confirmer » ; 🔧 le connecteur Accounting (les 4 fonctions de Claudinette sont prêtes) |
+| C4 | Accès sécurisés aux données + gouvernance (valider / rejeter) | ✅ « Valider » / « Renvoyer » au tableau, « Confirmer » ; ✅ 23/09 (staging) : « Ma comptabilité sur Finjaro Accounting » dans Connecteurs — on branche SON espace (membre des deux, vérifié par la règle d'Accounting) ; les agents qui en ont le droit lisent les totaux (résumé du mois, ventes, dépenses, impayés), jamais une ligne de client, et plus rien si la personne quitte l'espace. Essayé en vrai : le directeur financier a donné le résultat et les créances de septembre au franc près ; un agent sans le droit n'a rien consulté |
 | C5 | Points de validation humaine, alertes quand un agent a besoin de clarifier | ✅ validation ; ✅ alertes (B4) ; ✅ la réponse débloque le travail |
 | C6 | Une étape finie déclenche la suivante (enchaînement) | ✅ relais : un livrable peut confier la suite à un autre agent |
 
@@ -68,8 +68,8 @@ de bord.
 | D8 | « 1 000 postes exhaustifs » | ✅ 3 535 postes, 2 694 intitulés différents |
 | D9 | Les 100 postes de Gemini (10 départements × 10) | ✅ 98 déjà là ; ✅ 23/09 : les 2 manquants ajoutés (responsable de l'innovation, asset manager immobilier) |
 | D10 | Les 200 rôles pour construire une application de A à Z (idée, design, front, back, base, paiement, croissance, juridique, support, déploiement) | ✅ 23/09 : le modèle « Construire une application de A à Z » : 10 départements, 200 postes écrits à la main, un responsable par département, 17 postes dès la plus petite taille |
-| D11 | **200 propositions pour l'application** : tout ce que l'application peut avoir | 🔧 `LEGION-200-PROPOSITIONS.md`, chacune avec son état |
-| D12 | Les 20 fonctionnalités de place de marché que Gemini a listées : Finjaro les a-t-il ? | 🔧 section H |
+| D11 | **200 propositions pour l'application** : tout ce que l'application peut avoir | ✅ 23/09 : `LEGION-200-PROPOSITIONS.md` — les 200, chacune regardée dans le code : 55 faites, 59 en partie, 33 à faire, 18 en attente de Beau, 35 écartées avec leur raison ; et les huit à faire ensuite |
+| D12 | Les 20 fonctionnalités de place de marché que Gemini a listées : Finjaro les a-t-il ? | ✅ 23/09 : vérifiées dans le code — 9 faites, 11 en partie, aucune absente (tableau en bas de `LEGION-200-PROPOSITIONS.md`) |
 
 ## E. La personnalisation
 
