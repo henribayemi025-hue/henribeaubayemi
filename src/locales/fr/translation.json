@@ -104,6 +104,8 @@
     "actifs": "Allumés",
     "salonsCollectifs": "Salons",
     "interrupteur": "Interrupteur",
+    "nonLus_one": "{{count}} non lu",
+    "nonLus_other": "{{count}} non lus",
     "interrupteurGeneral": "Interrupteur général",
     "personneNeCorrespond": "Personne ne correspond.",
     "enVeille": "En veille",

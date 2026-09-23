@@ -77,7 +77,11 @@ export default function Entreprise() {
     const { data: reactions } = ids.length
       ? await supabase.from('legion_reactions').select('*').in('message_id', ids.slice(-300))
       : { data: [] };
-    return { entreprise, agents: agents.data || [], salons: salons.data || [], messages: liste, reactions: reactions || [] };
+    // Où chacun s'est arrêté dans chaque salon (non-lus). Sans la table —
+    // ou en cas d'erreur — rien ne s'affiche, rien ne casse.
+    const { data: lectures } = await supabase.from('legion_lectures').select('canal_id, lu_le').eq('entreprise_id', entrepriseId);
+    const lus = Object.fromEntries((lectures || []).map((l) => [l.canal_id, l.lu_le]));
+    return { entreprise, agents: agents.data || [], salons: salons.data || [], messages: liste, reactions: reactions || [], lus };
   }, [user?.id, entrepriseId], { cacheKey: `legion:v2:${entrepriseId}` });
 
   // Le temps réel: les messages, les réactions, les agents (leur interrupteur
@@ -115,6 +119,40 @@ export default function Entreprise() {
   // Claude (moteur « claude-code ») ne se fait pas faire de visage par Gemini.
   const aChoisir = machines.filter((a) => !a.choisi_par_lui && a.moteur !== 'claude-code').length;
   const sansPhoto = machines.filter((a) => a.apparence?.famille !== 'photo' && a.moteur !== 'claude-code').length;
+
+  // Les non-lus, comme WhatsApp: ce qui est arrivé dans un salon depuis la
+  // dernière fois qu'on l'a ouvert, sauf ses propres messages. Un salon
+  // jamais ouvert part de maintenant (sinon tout l'historique compterait).
+  const lus = data?.lus;
+  const marquerLu = useCallback(async (canaux) => {
+    if (!user?.id || !canaux.length) return;
+    const maintenant = new Date().toISOString();
+    setData((d) => (d ? { ...d, lus: { ...d.lus, ...Object.fromEntries(canaux.map((c) => [c, maintenant])) } } : d));
+    await supabase.from('legion_lectures').upsert(canaux.map((c) => ({ user_id: user.id, canal_id: c, entreprise_id: entrepriseId, lu_le: maintenant })));
+  }, [user?.id, entrepriseId, setData]);
+  useEffect(() => {
+    if (!lus || !data?.salons) return;
+    const jamais = data.salons.filter((s) => !lus[s.id]).map((s) => s.id);
+    if (jamais.length) marquerLu(jamais);
+  }, [lus, data?.salons, marquerLu]);
+  const salonOuvert = vue === 'chat' || (vue !== 'accueil' && typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const dernierDuSalon = messagesDuSalon[messagesDuSalon.length - 1]?.created_at;
+  useEffect(() => {
+    if (!salonOuvert || !salonId || !lus || !dernierDuSalon) return;
+    if (lus[salonId] && dernierDuSalon <= lus[salonId]) return;
+    if (document.visibilityState === 'hidden') return;
+    marquerLu([salonId]);
+  }, [salonOuvert, salonId, dernierDuSalon, lus, marquerLu]);
+  const nonLus = useMemo(() => {
+    const n = {};
+    if (!lus) return n;
+    for (const m of data?.messages || []) {
+      const lu = lus[m.canal_id];
+      if (!lu || m.created_at <= lu || m.user_id === user?.id || (moi && m.auteur_id === moi.id)) continue;
+      n[m.canal_id] = (n[m.canal_id] || 0) + 1;
+    }
+    return n;
+  }, [data?.messages, lus, user?.id, moi]);
 
   const choisirSalon = useCallback((id) => { setParams({ canal: id }); setVue('chat'); setTape(null); }, [setParams]);
   const entrer = useCallback((ou) => setVue(ou || 'chat'), []);
@@ -381,7 +419,7 @@ export default function Entreprise() {
   const propsColonne = {
     dept, departements, salons: departements, prives, courant: salonId, onChoisirSalon: choisirSalon,
     agents: data.agents, moi, messages: data.messages, langue, onAllumer: allumer, onFiche: setFiche, onEcrireA: ecrireA,
-    agentPrive: agentPrive?.id || null, t,
+    agentPrive: agentPrive?.id || null, nonLus, t,
   };
 
   return (

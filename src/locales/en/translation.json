@@ -104,6 +104,8 @@
     "actifs": "On",
     "salonsCollectifs": "Rooms",
     "interrupteur": "Switch",
+    "nonLus_one": "{{count}} unread",
+    "nonLus_other": "{{count}} unread",
     "interrupteurGeneral": "Master switch",
     "personneNeCorrespond": "Nobody matches.",
     "enVeille": "Asleep",

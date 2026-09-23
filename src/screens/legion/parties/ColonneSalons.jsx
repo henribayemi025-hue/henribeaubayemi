@@ -13,7 +13,7 @@ import { dernierMessage, quand, sansAccent, iconeDept } from './outils';
 // département comptent aussi.
 export function ColonneSalons({
   dept, departements, salons, prives, courant, onChoisirSalon, agents, moi, messages, langue,
-  onAllumer, onFiche, onEcrireA, agentPrive, t, className = '', ongletInitial = 'mixte',
+  onAllumer, onFiche, onEcrireA, agentPrive, nonLus = {}, t, className = '', ongletInitial = 'mixte',
 }) {
   const [q, setQ] = useState('');
   const [onglet, setOnglet] = useState(ongletInitial); // 'mixte' | 'agents'
@@ -100,11 +100,12 @@ export function ColonneSalons({
                           <span className="truncate text-caption font-semibold text-legion-ink">{s.nom}</span>
                           {dernier && <span className="shrink-0 text-[10px] text-legion-muted">{quand(dernier.created_at, langue)}</span>}
                         </span>
-                        <span className="block truncate text-[11px] text-legion-muted">
+                        <span className={`block truncate text-[11px] ${nonLus[s.id] ? 'font-semibold text-legion-ink' : 'text-legion-muted'}`}>
                           {dernier ? dernier.texte : s.a_quoi_ca_sert}
                         </span>
                       </span>
-                      {n > 0 && <span className="shrink-0 font-mono text-[10px] text-legion-muted">{n}</span>}
+                      {nonLus[s.id] ? <NonLus n={nonLus[s.id]} t={t} />
+                        : n > 0 && <span className="shrink-0 font-mono text-[10px] text-legion-muted">{n}</span>}
                     </button>
                   </li>
                 );
@@ -123,8 +124,9 @@ export function ColonneSalons({
                           <span className="truncate text-caption font-semibold text-legion-ink">{s.nom}</span>
                           {dernier && <span className="shrink-0 text-[10px] text-legion-muted">{quand(dernier.created_at, langue)}</span>}
                         </span>
-                        <span className="block truncate text-[11px] text-legion-muted">{dernier ? dernier.texte : autre?.poste}</span>
+                        <span className={`block truncate text-[11px] ${nonLus[s.id] ? 'font-semibold text-legion-ink' : 'text-legion-muted'}`}>{dernier ? dernier.texte : autre?.poste}</span>
                       </span>
+                      {nonLus[s.id] > 0 && <NonLus n={nonLus[s.id]} t={t} />}
                     </button>
                   </li>
                 );
@@ -178,5 +180,15 @@ export function ColonneSalons({
         <span className="flex items-center gap-1 font-mono"><IconUsers size={11} /> {machines.length}</span>
       </div>
     </div>
+  );
+}
+
+// La pastille des non-lus, dorée comme le reste de Legion.
+function NonLus({ n, t }) {
+  return (
+    <span title={t('legion.nonLus', { count: n, defaultValue: '{{count}} non lus' })}
+      className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-legion-gold px-1.5 text-[11px] font-bold text-legion-bg">
+      {n > 99 ? '99+' : n}
+    </span>
   );
 }
