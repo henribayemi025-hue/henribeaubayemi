@@ -618,7 +618,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     let relu: { corrige: boolean; raison?: string } | null = null;
     const aRelire = genre !== 'info' || /\d/.test(texte) || (typeof r.obj.tache === 'string' && r.obj.tache.trim() !== '');
     if (aRelire) {
-      const faits = [mesures ? `Chiffres mesurés: ${mesures}` : '', ...verifie].filter(Boolean).join('\n');
+      // Les documents de l'entreprise sont des faits: sans eux, la relecture
+      // retirait un prix écrit dans la FAQ comme « inventé » (vu le 23/09).
+      const faits = [mesures ? `Chiffres mesurés: ${mesures}` : '', ...verifie, ...sesDocs.map((x) => `Document « ${x.titre} »: ${x.texte}`)].filter(Boolean).join('\n');
       const c = await critiquer(apiKey, cible, texte, faits, memoire, lignes.join('\n'));
       if (c) { texte = c.texte; relu = { corrige: true, raison: c.raison }; } else relu = { corrige: false };
     }

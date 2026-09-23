@@ -128,11 +128,24 @@ ${blocDocuments(passages) || "\n(L'entreprise n'a aucun document qui parle de ce
       const sature = /503|UNAVAILABLE|high demand|429/i.test(r.erreur);
       return json({ erreur: sature ? 'Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.' : 'Pas de tri cette fois. Réessaie.' });
     }
-    // Les sources citables: un document par titre.
+    const client = r.obj.categorie === 'demande_client';
+    // Le brouillon, présentable: la salutation sur sa ligne, et la mention IA
+    // (AI Act, article 50) en paragraphe à part — le modèle collait tout
+    // (« Bonjour,Oui… », vu le 23/09).
+    let brouillon = client ? String(r.obj.brouillon || '').trim() : '';
+    if (brouillon) {
+      const mention = /r[ée]ponse pr[ée]par[ée]e avec l.aide d.un assistant ia\.?|answer prepared with the help of an ai assistant\.?/i;
+      const anglais = /^(hello|hi|dear|good (morning|afternoon|evening))\b/i.test(brouillon);
+      brouillon = brouillon.replace(mention, '').trim()
+        .replace(/^((?:bonjour|bonsoir|hello|hi|dear)[^,\n]{0,40},)(?=\S)/i, '$1\n\n')
+        .replace(/([.!?])(?=[A-ZÀ-ÖØ-Þ])/g, '$1 ');
+      brouillon = `${brouillon}\n\n${anglais ? 'Answer prepared with the help of an AI assistant.' : "Réponse préparée avec l'aide d'un assistant IA."}`;
+    }
+    // Les sources citables (une par document), pour une demande client seulement.
     const vus = new Set<string>();
-    const sources = passages.filter((x) => { if (vus.has(x.document_id)) return false; vus.add(x.document_id); return true; })
-      .map((x) => ({ titre: x.titre, url: x.url }));
-    return json({ ok: true, ...r.obj, sources, modele: r.modele });
+    const sources = client ? passages.filter((x) => { if (vus.has(x.document_id)) return false; vus.add(x.document_id); return true; })
+      .map((x) => ({ titre: x.titre, url: x.url })) : [];
+    return json({ ok: true, categorie: r.obj.categorie, sujet: r.obj.sujet, urgence: r.obj.urgence, brouillon, manque: client ? String(r.obj.manque || '') : '', sources, modele: r.modele });
   }
 
   return json({ erreur: 'Action inconnue.' }, 400);
