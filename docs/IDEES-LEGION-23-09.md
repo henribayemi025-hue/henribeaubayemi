@@ -122,9 +122,23 @@ valide ou renvoie. Rien ne part vers un client sans lui.
 Voir le tableau en bas de `LEGION-200-PROPOSITIONS.md` : chacune vérifiée
 dans le code de Finjaro.
 
+## I. Les autres idées de Beau (ses notes du 23/09, 16 h 56 → 18 h 38)
+
+Sa consigne : « je ne veux pas que tu balaies ça, regarde ça en profondeur ».
+
+| # | Sa note | Ce que ça veut dire, et ce qu'on fait |
+| --- | --- | --- |
+| I1 | « Connecter mes agents avec Excel » | Déposer un fichier Excel ou CSV dans un salon ; les agents le lisent (toutes les feuilles, en tableau), répondent dessus, citent les cellules. 🔧 G5 |
+| I2 | « Capable d'ouvrir Excel et de le modifier » | Pas seulement lire : l'agent rend **le fichier modifié** (colonnes ajoutées, formules, corrections, une feuille de synthèse), téléchargeable en .xlsx, avec la liste de ce qu'il a changé. Le fichier d'origine n'est jamais écrasé. 🔧 G5 |
+| I3 | « Agents IA par service : vous avez 20 personnes au service X ? On vous envoie les agents qui font ceci et ceci » | Une offre **par service** pour une entreprise qui existe déjà : elle dit « mon service client, 20 personnes, voilà ce qu'ils font » ; Legion propose les agents qui renforcent ce service (depuis les 3 535 postes), elle en choisit, ils rejoignent son entreprise dans ce service. 🔧 « Renforcer un service » (G9) |
+| I4 | « Une boîte d'intérim de service client, donc il y aura plusieurs entreprises » | Un **modèle d'entreprise** : une agence d'intérim d'agents dont les clients sont plusieurs entreprises. Dans Legion : le modèle « Agence d'intérim d'agents IA » (recrutement, placement, suivi des missions, qualité) ; et côté client, l'agent intérimaire arrive avec une **mission** (objectif, date de fin) et s'éteint seul à la fin. 🔧 G9. ⏸ La facturation de l'intérim (prix, contrat) : Beau. Répondre aux clients d'une entreprise sur WhatsApp ou par e-mail : ⏸ (compte WhatsApp Business, e-mails : pas maintenant). |
+| I5 | « Auditum, agent IA expert en audit : si quelqu'un veut, on le branche au truc de l'entreprise et il fait — agent intérim » | Des **experts à la mission**, prêts à brancher : audit, contrôle de gestion, paie, conformité, service client… On les « recrute » pour une mission, ils lisent les données branchées de l'entreprise (boutique, comptabilité, dépôt, fichiers) et rendent leur rapport. 🔧 le catalogue « Intérim » (G9) : chaque expert a son mandat, sa méthode, son livrable type |
+| I6 | « Faire communiquer et **disputer** les agents » | Qu'ils ne soient pas toujours d'accord : dans une réunion, un tour **contradictoire** (chacun doit dire ce qui ne va pas dans la proposition de l'autre, avec ses raisons), puis le responsable tranche en disant ce qu'il retient et ce qu'il écarte. Un agent peut aussi contester un livrable d'un collègue. 🔧 G2 (réunions) |
+
 ## Ordre de construction
 
-B5 (vocal entendu) → B3 (réunions) → B4 (questions) → B5 (appeler) → B2
-(fichiers) → D7 (+ Agent depuis le catalogue) → D9 + D10 (catalogue) → E1-E2
+B5 (vocal entendu) → B3 + I6 (réunions qui débattent) → B4 (questions) →
+B5 (appeler) → B2 + I1 + I2 (Excel lu et modifié) → I3 + I4 + I5 (renforcer
+un service, intérim, experts à la mission) → D7 (+ Agent depuis le catalogue) → D9 + D10 (catalogue) → E1-E2
 (outils) → E3 (droits par agent) → E4 (consigne visible) → C4 (connecteur
 Accounting) → D11 / D12 (les 200 propositions et le tableau de Finjaro).

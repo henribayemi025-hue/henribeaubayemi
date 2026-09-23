@@ -30,6 +30,7 @@ import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
+import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -298,6 +299,19 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const estClaude = parLaBase && auteur?.moteur === 'claude-code';
   if (!auteur || (!auteur.user_id && !estClaude)) return json({ ignore: 'pas un humain', messages: [] });
 
+  // Ce que le message contient VRAIMENT (23/09): un vocal est transcrit, une
+  // photo décrite, un fichier lu — avant, l'agent recevait « 🎤 » et ne
+  // voyait pas la photo. Rangé dans la pièce: jamais refait deux fois.
+  {
+    const lu = await comprendrePieces(apiKey, msg.meta);
+    if (lu.pieces) {
+      const meta = { ...(msg.meta || {}), pieces: lu.pieces };
+      await service.from('legion_messages').update({ meta }).eq('id', msg.id);
+      msg.meta = meta;
+    }
+    if (lu.texte) msg.texte = (['🎤', '📷', '📎'].includes(msg.texte) ? '' : `${msg.texte}\n\n`) + lu.texte;
+  }
+
   // Claude (moteur « claude-code ») répond lui-même, à ses passages: Gemini ne
   // parle jamais à sa place.
   const machines = (agents as Agent[]).filter((a) => !a.user_id && a.moteur !== 'claude-code');
@@ -305,11 +319,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
 
   const nomDe = (id: string) => (agents as Agent[]).find((a) => a.id === id)?.nom || 'Quelqu\'un';
   const { data: filBrut } = await service.from('legion_messages')
-    .select('auteur_id, texte, created_at, genre, user_id').eq('canal_id', msg.canal_id)
+    .select('id, auteur_id, texte, created_at, genre, user_id, meta').eq('canal_id', msg.canal_id)
     .neq('genre', 'tache')
     .order('created_at', { ascending: false }).limit(CONTEXTE);
   const fil = (filBrut || []).reverse();
-  const lignes = fil.map((m) => `${nomDe(m.auteur_id)}: ${String(m.texte).slice(0, 500)}`);
+  const lignes = fil.map((m) => `${nomDe(m.auteur_id)}: ${m.id === msg.id ? msg.texte.slice(0, 6000) : texteAvecPieces(String(m.texte), m.meta as Record<string, unknown> | null, 500)}`);
   // Le fondateur renvoie un livrable (bouton « Renvoyer » du tableau):
   // l'agent le refait ici même, corrigé, en entier — pas une excuse.
   if ((msg.meta as { renvoi?: unknown } | null)?.renvoi) {

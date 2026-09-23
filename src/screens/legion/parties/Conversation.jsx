@@ -5,6 +5,7 @@ import {
   IconChevronDown, IconCamera, IconUserPlus,
 } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
+import { blobToWavDataUrl } from '../../../lib/audioWav';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { ChoixEmoji } from './ChoixEmoji';
@@ -299,7 +300,11 @@ export function Conversation({
                                 <img src={p.url} alt="" className="min-h-[96px] min-w-[140px] max-h-72 w-auto max-w-full rounded-[12px] bg-black/10 object-cover" loading="lazy" />
                               </a>
                             ) : p.type === 'audio' ? (
-                              <audio key={i} controls preload="metadata" src={p.url} className="h-10 w-60 max-w-full" />
+                              <div key={i}>
+                                <audio controls preload="metadata" src={p.url} className="h-10 w-60 max-w-full" />
+                                {/* Ce que l'agent a entendu (transcrit côté serveur, 23/09). */}
+                                {p.transcription && <p className="mt-1 text-[12px] italic opacity-80">« {p.transcription} »</p>}
+                              </div>
                             ) : (
                               <a key={i} href={p.url} target="_blank" rel="noreferrer" className="block rounded-input bg-black/10 px-2 py-1 text-[13px] underline">{p.nom || 'Fichier'}</a>
                             )
@@ -690,8 +695,15 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
         if (blob.size < 1000) return; // un clic sans parler
         setDepot('vocal');
         try {
-          const ext = (rec.mimeType || '').includes('mp4') ? 'm4a' : 'webm';
-          const url = await deposer(blob, ext, rec.mimeType || 'audio/webm');
+          // En WAV (16 kHz mono): c'est le format que le modèle comprend à coup
+          // sûr — un vocal WebM arrivait chez l'agent sans être entendu — et il
+          // se lit sur tous les téléphones. Échec de conversion: l'original.
+          let fichier = blob; let ext = (rec.mimeType || '').includes('mp4') ? 'm4a' : 'webm'; let mime = rec.mimeType || 'audio/webm';
+          try {
+            const dataUrl = await blobToWavDataUrl(blob);
+            fichier = await (await fetch(dataUrl)).blob(); ext = 'wav'; mime = 'audio/wav';
+          } catch { /* on garde l'original */ }
+          const url = await deposer(fichier, ext, mime);
           await onEnvoyer({ texte: '🎤', genre: 'info', meta: { pieces: [{ type: 'audio', url, duree }] } });
         } catch (err) { alert(err.message); }
         finally { setDepot(null); }
