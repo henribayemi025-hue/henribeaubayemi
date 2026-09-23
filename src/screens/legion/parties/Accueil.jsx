@@ -13,6 +13,7 @@ import { Depense } from './Depense';
 import { Plans } from './Plans';
 import { FeuilleDeRoute } from './FeuilleDeRoute';
 import { Connecteurs } from './Connecteurs';
+import { Documents } from './Documents';
 import { Inviter } from './Inviter';
 
 // LEGION — la page d'accueil, la tour de contrôle.
@@ -331,6 +332,7 @@ export function Accueil({
         <div className="space-y-6">
           {entreprise.owner_id === moi?.user_id && <Inviter entreprise={entreprise} t={t} />}
           <Connecteurs entreprise={entreprise} t={t} />
+          <Documents entreprise={entreprise} t={t} />
           <Depense entreprise={entreprise} t={t} />
         </div>
       </div>

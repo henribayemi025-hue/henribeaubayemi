@@ -107,3 +107,10 @@ export function enFond(fn: string, entreprise: string | null, travail: () => Pro
     }
   });
 }
+
+// Un coût connu autrement que par la réponse de Gemini (les vecteurs de
+// recherche ne rendent pas toujours leurs jetons, 23/09): ajouté à la main.
+export function ajouterCout(eur: number) {
+  const s = suivi.getStore();
+  if (s && Number.isFinite(eur) && eur > 0) s.eur += eur;
+}

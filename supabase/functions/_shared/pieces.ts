@@ -52,6 +52,21 @@ async function lireAvec(apiKey: string, consigne: string, mime: string, donnees:
   return null;
 }
 
+// Le texte d'un fichier de travail (Excel, CSV, texte, PDF). `max` signes au
+// plus: 14 000 pour une pièce jointe, bien plus pour un document de
+// l'entreprise (0179).
+export async function texteDeFichier(apiKey: string, octets: Uint8Array, nom: string, mime: string, max = 14_000): Promise<string | null> {
+  const ext = String(nom || '').split('?')[0].split('.').pop()?.toLowerCase() || '';
+  if (octets.length > 15 * 1024 * 1024) return null;
+  if (['xlsx', 'xls', 'csv'].includes(ext) || /spreadsheet|excel|csv/.test(mime)) return classeurEnTexte(octets, max, max > 14_000 ? 5000 : 300);
+  if (ext === 'txt' || ext === 'md' || mime.startsWith('text/')) return new TextDecoder().decode(octets).slice(0, max);
+  if (ext === 'pdf' || mime === 'application/pdf') {
+    const t = await lireAvec(apiKey, "Recopie fidèlement le contenu de ce document pour une équipe qui ne le voit pas : tout le texte, dans l'ordre, et chaque tableau en lignes CSV (séparateur virgule). Les chiffres exactement comme écrits. Pas de résumé, pas de commentaire.", 'application/pdf', enBase64(octets), max > 14_000 ? 32_768 : 8192);
+    return t ? t.slice(0, max) : null;
+  }
+  return null;
+}
+
 // Rend les pièces complétées (ou null si rien n'a changé) et un texte à
 // joindre au message pour les agents.
 export async function comprendrePieces(apiKey: string, meta: Record<string, unknown> | null): Promise<{ pieces: Piece[] | null; texte: string }> {
@@ -92,15 +107,7 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
         const r = await fetch(p.url, { signal: AbortSignal.timeout(20_000) });
         if (r.ok) {
           const octets = new Uint8Array(await r.arrayBuffer());
-          const ext = String(p.nom || p.url).split('?')[0].split('.').pop()?.toLowerCase() || '';
-          const mime = p.mime || mimeDe(p.url, r, 'fichier');
-          let t: string | null = null;
-          if (octets.length > 15 * 1024 * 1024) t = null;
-          else if (['xlsx', 'xls', 'csv'].includes(ext) || /spreadsheet|excel|csv/.test(mime)) t = classeurEnTexte(octets);
-          else if (ext === 'txt' || mime.startsWith('text/')) t = new TextDecoder().decode(octets);
-          else if (ext === 'pdf' || mime === 'application/pdf') {
-            t = await lireAvec(apiKey, "Recopie fidèlement le contenu de ce document pour une équipe qui ne le voit pas : tout le texte, dans l'ordre, et chaque tableau en lignes CSV (séparateur virgule). Les chiffres exactement comme écrits. Pas de résumé, pas de commentaire.", 'application/pdf', enBase64(octets), 8192);
-          }
+          const t = await texteDeFichier(apiKey, octets, String(p.nom || p.url), p.mime || mimeDe(p.url, r, 'fichier'));
           if (t) { p.texte = t.slice(0, 14_000); change = true; }
         }
       } catch (e) { console.error('fichier:', (e as Error).message); }

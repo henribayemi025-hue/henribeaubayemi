@@ -32,6 +32,7 @@ import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 import { classeurEnTexte, creerClasseur, MIME_XLSX, type Feuille } from '../_shared/tableur.ts';
+import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
 
 const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
@@ -582,6 +583,14 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const complexe = !gratuite && !appelVocal && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
     || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte)));
 
+  // Les documents de l'entreprise (0179): les passages utiles à ce message,
+  // cherchés une fois, pour les agents qui ont le droit de les lire.
+  let passages: Passage[] = [];
+  if (allumees.some((a) => peut(a, 'documents'))) {
+    try { passages = await chercherPassages(service, apiKey, msg.entreprise_id, String(msg.texte), 5); } catch (e) { console.error('documents:', (e as Error).message); }
+  }
+  const sourcesDocs = [...new Map(passages.filter((x) => x.url).map((x) => [x.document_id, { titre: x.titre, url: x.url as string }])).values()];
+
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
   let pourquoi = '';
@@ -598,7 +607,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const vue = peut(cible, 'github') ? entrepriseVue : { ...entreprise, projet: `${entreprise.projet || ''}${feuille}` };
     const sesVerifs = peut(cible, 'mesures') || peut(cible, 'boutique') ? verifie : [];
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);
-    const r = await demander(apiKey, laConsigne, complexe, tableur);
+    const sesDocs = peut(cible, 'documents') ? passages : [];
+    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs), complexe, tableur);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
@@ -655,7 +665,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...(web?.sources.length ? { sources: web.sources } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

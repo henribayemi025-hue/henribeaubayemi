@@ -23,11 +23,9 @@ type Cellule = { t: string; v?: unknown; f?: string };
 export const MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const MAX_FEUILLES = 6;
-const MAX_LIGNES = 300;
-const MAX_SIGNES = 14_000;
 
 // Un classeur (xlsx, xls, csv) en texte lisible par un modèle.
-export function classeurEnTexte(octets: Uint8Array): string {
+export function classeurEnTexte(octets: Uint8Array, MAX_SIGNES = 14_000, MAX_LIGNES = 300): string {
   const wb = XLSX.read(octets, { type: 'array', cellDates: true, dense: true });
   const morceaux: string[] = [];
   let total = 0;
