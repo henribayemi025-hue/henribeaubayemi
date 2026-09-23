@@ -243,10 +243,14 @@ const SCHEMA_TABLEUR = {
 };
 const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul|spreadsheet|classeur|colonne/i;
 
+// Un tableau: Flash d'abord, deux moteurs au plus, et un délai qui tient
+// dans les 150 secondes d'une fonction (23/09: avec Pro d'abord et 80 s par
+// moteur, la première demande de tableau a été coupée à 150 s, sans réponse).
 async function demander(apiKey: string, texte: string, complexe = true, tableur = false): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
-  for (const nom of complexe ? moteurs() : moteursSimples()) {
-    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, { temperature: tableur ? 0.3 : 0.7, reflexion: 4096, delaiMs: tableur ? 80_000 : 45_000, maxSortie: tableur ? 24_576 : 8192, modeles: [nom] });
+  const liste = tableur ? moteursSimples().slice(0, 2) : complexe ? moteurs() : moteursSimples();
+  for (const nom of liste) {
+    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: tableur ? 55_000 : 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom] });
     if ('erreur' in r) { derniere = r.erreur; continue; }
     if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
     derniere = `${nom}: texte vide`;
@@ -572,7 +576,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
     const laConsigne = consigne(cible, entrepriseVue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, mesuresPour, verifie, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), boutique, (salon as { resume?: string | null }).resume || null, web);
-    const r = await demander(apiKey, laConsigne, complexe || tableur, tableur);
+    const r = await demander(apiKey, laConsigne, complexe, tableur);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
