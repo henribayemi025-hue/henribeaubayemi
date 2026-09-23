@@ -258,9 +258,9 @@ export default function Entreprise() {
   async function raisonDe(e) {
     try { const j = await e?.context?.json?.(); return j?.erreur || null; } catch { return null; }
   }
-  async function ouvrirReunion({ sujet, participants }) {
+  async function ouvrirReunion({ sujet, participants, recherche }) {
     if (!salonId) return false;
-    const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { canal_id: salonId, sujet, participants } });
+    const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { canal_id: salonId, sujet, participants, recherche } });
     if (e || r?.erreur) { toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic')); return false; }
     if (r?.message) setData((d) => (d && !d.messages.some((m) => m.id === r.message.id) ? { ...d, messages: [...d.messages, r.message] } : d));
     return true;

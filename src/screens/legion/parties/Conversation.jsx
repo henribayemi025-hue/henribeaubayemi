@@ -357,6 +357,19 @@ export function Conversation({
                       {Array.isArray(m.meta?.propositions) && m.meta.propositions.length > 0 && (
                         <PropositionsVeilleur propositions={m.meta.propositions} entrepriseId={entrepriseId} t={t} />
                       )}
+                      {/* Les sources d'une recherche sur Internet (23/09): gardées en
+                          base depuis le début, jamais montrées jusqu'ici. Une
+                          réponse qui s'appuie sur le web doit dire d'où. */}
+                      {Array.isArray(m.meta?.sources) && m.meta.sources.some((x) => /^https?:\/\//.test(x?.url || '')) && (
+                        <div className="mb-3 mt-1 border-t border-legion-line/60 pt-1.5 text-[12px] text-legion-muted">
+                          <p className="mb-0.5">🔗 {t('legion.sources', 'Sources')}</p>
+                          <ol className="list-decimal space-y-0.5 pl-4">
+                            {m.meta.sources.filter((x) => /^https?:\/\//.test(x?.url || '')).slice(0, 6).map((x, i) => (
+                              <li key={i}><a href={x.url} target="_blank" rel="noreferrer" className="break-words underline">{x.titre || x.url}</a></li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
                       {(m.meta?.verifie?.length > 0 || m.meta?.retenu || m.meta?.relu?.corrige) && (
                         <div className="mb-3 mt-1 space-y-1 border-t border-legion-line/60 pt-1.5 text-[12px] text-legion-muted">
                           {m.meta?.verifie?.length > 0 && <p>🔎 {t('legion.verifieBase', 'Vérifié dans la base')} · {m.meta.verifie.map((v) => v.split('(')[0].replaceAll('_', ' ')).join(', ')}</p>}
@@ -544,6 +557,7 @@ function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
   const [sujet, setSujet] = useState('');
   const [choisis, setChoisis] = useState(() => participantsParDefaut(salon, agents));
   const [envoi, setEnvoi] = useState(false);
+  const [recherche, setRecherche] = useState(false);
   const allumes = agents.filter((a) => !a.user_id && a.moteur !== 'claude-code' && a.actif);
   const basculer = (id) => setChoisis((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length >= 5 ? c : [...c, id]));
   const pret = sujet.trim().length >= 3 && choisis.length >= 2 && !envoi;
@@ -551,7 +565,7 @@ function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
     e.preventDefault();
     if (!pret) return;
     setEnvoi(true);
-    try { await onOuvrir({ sujet: sujet.trim(), participants: choisis }); } finally { setEnvoi(false); }
+    try { await onOuvrir({ sujet: sujet.trim(), participants: choisis, recherche }); } finally { setEnvoi(false); }
   }
   return (
     <form onSubmit={ouvrir} className="max-h-[60%] shrink-0 overflow-y-auto border-b border-legion-line bg-legion-panel px-3 py-3">
@@ -577,6 +591,10 @@ function ConvoquerReunion({ salon, agents, t, onFermer, onOuvrir }) {
           );
         })}
       </div>
+      <label className="mb-3 flex items-start gap-2 text-[13px] text-legion-ink">
+        <input type="checkbox" checked={recherche} onChange={(e) => setRecherche(e.target.checked)} className="mt-0.5 h-4 w-4 accent-legion-gold" />
+        <span>{t('legion.reunion.recherche')}<span className="block text-[12px] text-legion-muted">{t('legion.reunion.rechercheAide')}</span></span>
+      </label>
       <button type="submit" disabled={!pret}
         className="w-full rounded-pill bg-legion-accent px-4 py-2.5 text-[15px] font-semibold text-white transition disabled:opacity-40">
         {envoi ? t('legion.reunion.ouverture') : t('legion.reunion.ouvrir')}

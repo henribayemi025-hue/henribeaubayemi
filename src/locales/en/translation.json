@@ -319,8 +319,11 @@
       "conteste": "challenges {{nom}}",
       "compteRendu": "Minutes",
       "intervention": "Interjection",
-      "interventionNotee": "Meeting in progress: the next speaker answers you first."
-    }
+      "interventionNotee": "Meeting in progress: the next speaker answers you first.",
+      "recherche": "Look up facts on the internet before starting",
+      "rechercheAide": "One search, done once, read by every participant; its sources show under the minutes."
+    },
+    "sources": "Sources"
   },
   "equipe": {
     "titre": "The team",

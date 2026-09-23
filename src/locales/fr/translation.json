@@ -319,8 +319,11 @@
       "conteste": "conteste {{nom}}",
       "compteRendu": "Compte rendu",
       "intervention": "Intervention",
-      "interventionNotee": "Réunion en cours : le prochain qui parle te répond d'abord."
-    }
+      "interventionNotee": "Réunion en cours : le prochain qui parle te répond d'abord.",
+      "recherche": "Chercher des faits sur Internet avant de commencer",
+      "rechercheAide": "Une recherche, faite une fois, que tous les participants lisent ; ses sources s'affichent sous le compte rendu."
+    },
+    "sources": "Sources"
   },
   "equipe": {
     "titre": "L'équipe",

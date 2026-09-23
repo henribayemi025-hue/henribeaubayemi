@@ -34,6 +34,7 @@ import { compter, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout
 import { aerer, generer, garder, moteurs, moteursSimples } from '../_shared/moteur.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { texteAvecPieces } from '../_shared/pieces.ts';
+import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
@@ -67,7 +68,12 @@ const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g,
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; ordre: number; moteur: string };
-type Reunion = { ouverture: true; sujet: string; participants: string[]; president: string; tours: number; conclure?: boolean; terminee?: boolean };
+// `recherche`: une recherche sur Internet est faite UNE fois, avant la
+// première prise de parole, et tous les participants la lisent (Beau, 23/09:
+// « qu'on demande à la commission de réfléchir » sur les taux de change — une
+// réunion qui raisonne sans faits ne sert à rien sur un tel sujet).
+type Reunion = { ouverture: true; sujet: string; participants: string[]; president: string; tours: number; conclure?: boolean; terminee?: boolean;
+  recherche?: boolean; web?: Trouvaille | null };
 type Message = { id: string; entreprise_id: string; canal_id: string; auteur_id: string; user_id: string | null; texte: string; genre: string; created_at: string;
   meta: Record<string, unknown> | null };
 // deno-lint-ignore no-explicit-any
@@ -248,7 +254,7 @@ TU ES EN RÉUNION, dans le salon « ${ctx.salon?.nom} », convoquée par ${convo
 « ${r.sujet} »
 Autour de la table : ${participants.map((p) => `${p.nom} (${p.poste})`).join(', ')}. Préside : ${president.nom}.
 ${ctx.salon?.resume ? `\nLA MÉMOIRE DE CE SALON (ce qui s'est dit avant) :\n${String(ctx.salon.resume).slice(0, 2000)}\n` : ''}
-CE QUI S'EST DIT DEPUIS L'OUVERTURE, dans l'ordre :
+${r.web ? `${blocWeb(r.web)}\n` : ''}CE QUI S'EST DIT DEPUIS L'OUVERTURE, dans l'ordre :
 ${lignes.join('\n')}
 
 ${consigneTour}
@@ -295,7 +301,7 @@ Tu PRÉSIDES la réunion, dans le salon « ${ctx.salon?.nom} », convoquée par 
 « ${r.sujet} »
 Participants : ${participants.map((p) => `${p.nom} (${p.poste})`).join(', ')}.
 
-TOUT CE QUI S'EST DIT, dans l'ordre :
+${r.web ? `${blocWeb(r.web)}\n` : ''}TOUT CE QUI S'EST DIT, dans l'ordre :
 ${lignes.join('\n')}
 ${r.conclure ? `\n${convocant} a demandé de conclure maintenant : conclus avec ce qui a été dit.\n` : ''}
 Rédige le COMPTE RENDU que ${convocant} lira sur son téléphone : quatre listes, un point par élément, une phrase courte chacun, sans puce ni titre (la mise en page est faite ailleurs).
@@ -340,7 +346,7 @@ Tu ne tranches pas à la place de ${convocant} quand un désaccord porte sur l'a
   const { data: cr, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: president.id, user_id: null,
     texte: `${titre}\n\n${corpsCR}`.slice(0, 5000), genre: 'decision',
-    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id) }, ...(question ? { question } : {}) },
+    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id) }, ...(question ? { question } : {}), ...(r.web?.sources.length ? { sources: r.web.sources } : {}) },
   }).select('id').single();
   if (error) { console.error('réunion, compte rendu:', error.message); return; }
   await garder(service, { entreprise_id: o.entreprise_id, message_id: cr.id, fonction: 'legion_reunion', modele: rendu.modele, consigne: texte, sortie: JSON.stringify(rendu.obj) });
@@ -404,6 +410,14 @@ async function avancer(service: Service, apiKey: string, reunionId: string, etap
     return;
   }
 
+  // La recherche sur Internet, une seule fois, avant la première parole.
+  if (etape === 0 && r.recherche && r.web === undefined) {
+    const t = await chercherWeb(apiKey, `Sujet d'une réunion de l'entreprise « ${ctx.entreprise.nom} »${ctx.entreprise.projet ? ` (${String(ctx.entreprise.projet).slice(0, 300)})` : ''} :\n${r.sujet}\nTrouve les faits, les pratiques, les prix et les règles publiques qui permettent de trancher.`);
+    r.web = t;
+    await service.from('legion_messages').update({ meta: { ...(o.meta || {}), reunion: { ...r } } }).eq('id', o.id);
+    o.meta = { ...(o.meta || {}), reunion: { ...r } };
+  }
+
   const n = participants.length;
   const total = (r.tours || TOURS) * n;
   let place = etape;
@@ -434,7 +448,7 @@ Deno.serve(compter('legion_reunion', async (req: Request) => {
   if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-  let corps: { canal_id?: string; sujet?: string; participants?: string[]; reunion_id?: string; etape?: number; conclure?: boolean };
+  let corps: { canal_id?: string; sujet?: string; participants?: string[]; reunion_id?: string; etape?: number; conclure?: boolean; recherche?: boolean };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
 
   // Porte 1 : la réunion elle-même, d'une prise de parole à la suivante.
@@ -505,7 +519,9 @@ Deno.serve(compter('legion_reunion', async (req: Request) => {
   // Le président parle en dernier à chaque tour : il écoute avant de conclure.
   const ordre = [...participants.filter((a) => a.id !== president.id), president];
 
-  const reunion: Reunion = { ouverture: true, sujet, participants: ordre.map((a) => a.id), president: president.id, tours: TOURS };
+  const { data: ent } = await service.from('legion_entreprises').select('formule').eq('id', salon.entreprise_id).maybeSingle();
+  const recherche = ent?.formule !== 'gratuite' && (corps.recherche === true || aBesoinDuWeb(sujet));
+  const reunion: Reunion = { ouverture: true, sujet, participants: ordre.map((a) => a.id), president: president.id, tours: TOURS, ...(recherche ? { recherche: true } : {}) };
   const { data: ouverture, error } = await personne.from('legion_messages').insert({
     entreprise_id: salon.entreprise_id, canal_id: salon.id, auteur_id: moi.id, user_id: user.id,
     texte: sujet, genre: 'reunion', meta: { sans_reponse: true, reunion },
