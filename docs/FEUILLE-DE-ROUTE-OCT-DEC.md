@@ -48,7 +48,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 23 | Un simple utilisateur qui **code son application** | ✅ modèle « Créateur solo de logiciel » |
 | 24 | Brancher **Claude, Astra, ses propres outils** (connecteurs et compétences) | ✅ plan écrit (`LEGION-CONNECTEURS.md`) : son assistant se branche sur Legion (MCP) ; 📅 à construire après Google |
 | 25 | Un agent qui dit « **tel concurrent a lancé ça**, on ne l'a pas » | ✅ Vigie + recherche sur Internet |
-| 26 | …et qui **le construit et le montre sur un panneau de test** | 📅 le studio de code (plan et coût d'abord) |
+| 26 | …et qui **le construit et le montre sur un panneau de test** | ✅ plan et coût écrits (`STUDIO-DE-CODE.md`) ; ⏸ un jeton GitHub en écriture + le oui de Beau pour commencer |
 | 27 | Un agent qui fait les **rappels** | ✅ Orchestre (allumé) |
 | 28 | Un agent qui va chercher sur Internet les **compétences, la RH et la formation des agents** | ✅ Mentor (nouvel agent) |
 | 29 | Un agent qui **entraîne notre IA Finjaro** | ✅ Forge (allumé) + les exemples (ia_traces) |
@@ -76,7 +76,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 46 | « Vas-y » à Claudinette ; elle choisit, elle montre ; un vrai expert design | ✅ transmis le 23/09 |
 | 47 | Une seule connexion pour toutes les applications Finjaro | 🔧 plan avec Claudinette |
 | 48 | Jeton GitHub — **pour tous les utilisateurs**, pas seulement Beau | ✅ « Mon dépôt GitHub » : chaque entreprise branche le sien, jeton au coffre ; celui de Finjaro est branché |
-| 49 | Une version gratuite / standard de Legion | 📅 moteur Flash pour la gratuite — prix à décider par Beau |
+| 49 | Une version gratuite / standard de Legion | ✅ formule gratuite (Flash seulement, sans recherche) / complète, choisie par le propriétaire ; ⏸ le prix, à décider par Beau |
 | 50 | Pas de clé Anthropic | ✅ |
 | 51 | RH : Claudinette commence par ce qu'elle veut | ✅ transmis |
 | 52 | Logos | ✅ en place |
@@ -89,12 +89,12 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 
 | # | Idée | État |
 | --- | --- | --- |
-| 57 | Carnet de crédit (« qui me doit combien ») | 📅 |
+| 57 | Carnet de crédit (« qui me doit combien ») | ✅ existe déjà dans Accounting (page « Dettes ») ; 📅 un lien depuis l'espace vendeur |
 | 58 | Preuve de livraison (photo + confirmation de la cliente) | 📅 |
 | 59 | Prix conseillé | 📅 |
 | 60 | Traduction des fiches articles | 📅 |
 | 61 | Photo → fiche article complète | 📅 |
-| 62 | Rendez-vous pour les prestataires | 📅 |
+| 62 | Rendez-vous pour les prestataires | ✅ existe déjà dans Accounting (« Rendez-vous ») ; 📅 un lien depuis la page Services |
 | 63 | Dépôt ouvert d'applications pour les développeurs | 📅 |
 | 64 | Écart de caisse du soir | 📅 Claudinette (Accounting) |
 | 65 | Achat groupé, vente en direct, commande vocale, appel vidéo depuis la fiche | 📅 après les précédentes |
