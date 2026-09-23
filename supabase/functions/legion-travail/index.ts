@@ -34,7 +34,7 @@ import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/m
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
-import { enqueter, type Boutique } from '../_shared/enquete.ts';
+import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -246,8 +246,14 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const boutique: Boutique | null = brancheBoutique?.config?.shop_id ? { shop_id: String(brancheBoutique.config.shop_id), nom: String(brancheBoutique.config.nom || 'ma boutique') } : null;
   const projetNu = projet;
   if (boutique) projet += `\nL'entreprise a branché SA boutique sur la place de marché Finjaro: « ${boutique.nom} » — ses ventes, son stock, ses avis, ses messages en attente sont lisibles par les outils ma_boutique_* (vérifications ci-dessous); on dit « notre boutique ».`;
-  const peutEnqueter = !!(mesures || boutique);
   const texteBoutique = projet.slice(projetNu.length);
+  // « Se connecter avec Finjaro Accounting » (0180): la comptabilité branchée.
+  const { data: brancheCompta } = await service.from('legion_connecteurs').select('config')
+    .eq('entreprise_id', entrepriseId).eq('type', 'finjaro-accounting').eq('actif', true).maybeSingle();
+  const compta: Compta | null = brancheCompta?.config?.espace_id ? { entreprise_id: entrepriseId, nom: String(brancheCompta.config.nom || 'Finjaro Accounting') } : null;
+  const texteCompta = compta ? `\nL'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les totaux de ses livres (mois, ventes, dépenses, impayés) sont lisibles par les outils ma_compta_* (vérifications ci-dessous); on dit « nos comptes ». Un montant se donne avec la devise de l'espace, jamais converti de tête.` : '';
+  projet += texteCompta;
+  const peutEnqueter = !!(mesures || boutique || compta);
   // La feuille de route du fondateur (0168): chacun travaille pour elle.
   const feuille = await lireFeuille(service, entrepriseId, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
   projet += feuille;
@@ -255,7 +261,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const depot = await lireGithub(service, entrepriseId);
   projet += depot;
   // Le contexte d'UN agent, selon ce qu'il a le droit de lire (0177).
-  const projetPour = (a: Agent) => `${projetNu}${peut(a, 'boutique') ? texteBoutique : ''}${feuille}${peut(a, 'github') ? depot : ''}`;
+  const projetPour = (a: Agent) => `${projetNu}${peut(a, 'boutique') ? texteBoutique : ''}${peut(a, 'comptabilite') ? texteCompta : ''}${feuille}${peut(a, 'github') ? depot : ''}`;
 
   const publics = (canaux as Canal[]).filter((c) => !(Array.isArray(c.prive_entre) && c.prive_entre.length));
   const canalDe = (dept: string | null) => publics.find((c) => sansAccent(c.cle) === sansAccent(dept || '') || sansAccent(c.nom) === sansAccent(dept || ''))
@@ -329,8 +335,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const autresPlans = estDirection(d)
       ? [...plansDuJour, ...(plansRecents || []).filter((x: { departement: string; horizon: string; created_at: string }) => x.horizon === 'semaine' && sansAccent(x.departement) !== 'direction' && (Date.now() - new Date(x.created_at).getTime()) / 86_400_000 < 6 && !plansDuJour.some((p) => p.startsWith(`[${x.departement}]`))).map((x: { departement: string; contenu: string }) => `[${x.departement}]\n${String(x.contenu).slice(0, 1500)}`)]
       : [];
-    const verifie = peutEnqueter ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', boutique, !!mesures) : [];
-    const consignePlan = invitePlan(d, projet, dept, equipeDept, tachesDept, memoire, fil, mesures, verifie, precedents, besoinMois, autresPlans) + enLangue;
+    // Le responsable ne lit que ce à quoi il a droit (0177), plan compris.
+    const verifie = peutEnqueter ? verifsPour(await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', peut(d, 'boutique') ? boutique : null, peut(d, 'mesures') && !!mesures, peut(d, 'comptabilite') ? compta : null), (source) => peut(d, source)) : [];
+    const consignePlan = invitePlan(d, projetPour(d), dept, equipeDept, tachesDept, memoire, fil, peut(d, 'mesures') ? mesures : null, verifie, precedents, besoinMois, autresPlans) + enLangue;
     const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN, gratuite);
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = aerer(String(r.obj.plan_semaine || '').trim()).slice(0, 4000);
@@ -374,8 +381,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';
-      const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique);
-      const verifie = peutEnqueter && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures) : [];
+      const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique) || (peut(a, 'comptabilite') && !!compta);
+      const verifie = peutEnqueter && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null) : [];
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
       let recu = '';
       if (tache.meta?.suite_de?.tache_id) {

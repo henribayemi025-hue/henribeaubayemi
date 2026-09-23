@@ -385,7 +385,8 @@
       "boutique": "The shop",
       "web": "The internet",
       "github": "The code repository",
-      "documents": "The documents"
+      "documents": "The documents",
+      "comptabilite": "The accounts"
     },
     "finMission": "End of mission (temp)",
     "finMissionAide": "Empty: they stay. A date: they switch off on their own the next morning, and say so.",
@@ -436,7 +437,12 @@
       "brouillon": "Draft answer",
       "copier": "Copy the answer",
       "manque": "Missing:"
-    }
+    },
+    "connecteurCompta": "My books on Finjaro Accounting",
+    "connecteurComptaBranchee": "“{{nom}}” is connected: month summary, sales, expenses, unpaid amounts.",
+    "connecteurSansCompta": "You don’t have a Finjaro Accounting workspace yet.",
+    "ouvrirAccounting": "Open Finjaro Accounting",
+    "connecteurComptaAide": "Agents read the TOTALS of your books: a month’s summary, sales, expenses by category, what is still to be collected and paid — never a customer’s name or a single line. If you leave this workspace, they read nothing more."
   },
   "equipe": {
     "titre": "The team",

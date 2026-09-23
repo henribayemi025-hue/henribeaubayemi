@@ -385,7 +385,8 @@
       "boutique": "La boutique",
       "web": "Internet",
       "github": "Le dépôt de code",
-      "documents": "Les documents"
+      "documents": "Les documents",
+      "comptabilite": "La comptabilité"
     },
     "finMission": "Fin de mission (intérim)",
     "finMissionAide": "Vide : il reste. Une date : il s’éteint seul le lendemain matin, et le dit.",
@@ -436,7 +437,12 @@
       "brouillon": "Brouillon de réponse",
       "copier": "Copier la réponse",
       "manque": "Il manque :"
-    }
+    },
+    "connecteurCompta": "Ma comptabilité sur Finjaro Accounting",
+    "connecteurComptaBranchee": "« {{nom}} » est branchée : résumé du mois, ventes, dépenses, impayés.",
+    "connecteurSansCompta": "Tu n’as pas encore d’espace sur Finjaro Accounting.",
+    "ouvrirAccounting": "Ouvrir Finjaro Accounting",
+    "connecteurComptaAide": "Les agents lisent les TOTAUX de tes livres : le résumé d’un mois, les ventes, les dépenses par catégorie, ce qui reste à encaisser et à payer — jamais le nom d’un client ni le détail d’une ligne. Si tu quittes cet espace, ils ne lisent plus rien."
   },
   "equipe": {
     "titre": "L'équipe",

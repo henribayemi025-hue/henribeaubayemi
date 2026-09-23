@@ -25,7 +25,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
-import { enqueter, type Boutique } from '../_shared/enquete.ts';
+import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
@@ -489,6 +489,12 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const { data: brancheBoutique } = await service.from('legion_connecteurs').select('config')
     .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-boutique').eq('actif', true).maybeSingle();
   const boutique: Boutique | null = brancheBoutique?.config?.shop_id ? { shop_id: String(brancheBoutique.config.shop_id), nom: String(brancheBoutique.config.nom || 'ma boutique') } : null;
+  // « Se connecter avec Finjaro Accounting » (0180): la comptabilité branchée,
+  // lue seulement si un des agents qui répondent y a droit.
+  const { data: brancheCompta } = await service.from('legion_connecteurs').select('config')
+    .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-accounting').eq('actif', true).maybeSingle();
+  const compta: Compta | null = brancheCompta?.config?.espace_id && allumees.some((a) => peut(a, 'comptabilite'))
+    ? { entreprise_id: msg.entreprise_id, nom: String(brancheCompta.config.nom || 'Finjaro Accounting') } : null;
 
   // L'état de l'équipe: pour qu'un agent ne propose pas d'éteindre quelqu'un
   // qui l'est déjà, ni ne prétende l'avoir fait (Beau, 22/09: Alpha a dit
@@ -546,7 +552,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // avec un agent de la Direction.
   const enDirection = nomSalon === 'direction'
     || (prive && machines.some((a) => salon.prive_entre.includes(a.cle) && (sansAccent(a.departement || '') === 'direction')));
-  const verifie = (mesures || boutique) ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures) : [];
+  const verifie = (mesures || boutique || compta) ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta) : [];
   // Les chiffres mesurés partent avec la consigne quand la question le
   // demande: une vérification a eu lieu, ou c'est une question de fond
   // (plan, stratégie, bilan, priorités). Beau, 22/09: la « stratégie »
@@ -604,8 +610,10 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
     // Ce qu'IL a le droit de lire (0177): les chiffres, la boutique,
     // Internet, le dépôt de code — chacun seulement s'il y a droit.
-    const vue = peut(cible, 'github') ? entrepriseVue : { ...entreprise, projet: `${entreprise.projet || ''}${feuille}` };
-    const sesVerifs = peut(cible, 'mesures') || peut(cible, 'boutique') ? verifie : [];
+    const saCompta = compta && peut(cible, 'comptabilite') ? `\nL'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les totaux de ses livres sont lisibles (vérifications ci-dessous quand elles ont eu lieu); tu parles de « nos comptes ». Un montant se donne avec la devise de l'espace, jamais converti de tête.` : '';
+    const vue0 = peut(cible, 'github') ? entrepriseVue : { ...entreprise, projet: `${entreprise.projet || ''}${feuille}` };
+    const vue = saCompta ? { ...vue0, projet: `${vue0.projet || ''}${saCompta}` } : vue0;
+    const sesVerifs = verifsPour(verifie, (source) => peut(cible, source));
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);
     const sesDocs = peut(cible, 'documents') ? passages : [];
     const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs), complexe, tableur);
@@ -620,7 +628,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     if (aRelire) {
       // Les documents de l'entreprise sont des faits: sans eux, la relecture
       // retirait un prix écrit dans la FAQ comme « inventé » (vu le 23/09).
-      const faits = [mesures ? `Chiffres mesurés: ${mesures}` : '', ...verifie, ...sesDocs.map((x) => `Document « ${x.titre} »: ${x.texte}`)].filter(Boolean).join('\n');
+      const faits = [mesures && peut(cible, 'mesures') ? `Chiffres mesurés: ${mesures}` : '', ...sesVerifs, ...sesDocs.map((x) => `Document « ${x.titre} »: ${x.texte}`)].filter(Boolean).join('\n');
       const c = await critiquer(apiKey, cible, texte, faits, memoire, lignes.join('\n'));
       if (c) { texte = c.texte; relu = { corrige: true, raison: c.raison }; } else relu = { corrige: false };
     }
@@ -667,7 +675,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

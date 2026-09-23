@@ -66,26 +66,51 @@ const OUTILS_BOUTIQUE = [
 ];
 const OUTILS_MA_BOUTIQUE = new Set(OUTILS_BOUTIQUE.map((o) => o.name));
 
+// « Se connecter avec Finjaro Accounting » (0180): l'entreprise a branché SA
+// comptabilité; ses agents lisent les TOTAUX de ses livres (résumé du mois,
+// ventes, dépenses par catégorie, impayés) par les fonctions d'Accounting —
+// jamais une ligne de client. La base revérifie à chaque lecture que la
+// personne qui a branché est toujours membre de l'espace.
+export type Compta = { entreprise_id: string; nom: string };
+const OUTILS_COMPTA = [
+  { name: 'ma_compta_resume_mois', description: "Le résumé d'un mois dans NOTRE comptabilité (Finjaro Accounting): ventes confirmées, dépenses, résultat simplifié, encaissé net, créances clients et dettes fournisseurs impayées, dans la devise de l'espace.",
+    parameters: { type: 'OBJECT', properties: { mois: { type: 'STRING', description: 'Le mois, au format AAAA-MM (le mois en cours par défaut).' } } } },
+  { name: 'ma_compta_ventes', description: 'Les ventes confirmées de NOTRE comptabilité sur une période: nombre, total, panier moyen, répartition par moyen de paiement.',
+    parameters: { type: 'OBJECT', properties: { jours: { type: 'INTEGER', description: 'Les N derniers jours, de 1 à 366 (30 par défaut).' } } } },
+  { name: 'ma_compta_depenses', description: 'Les dépenses de NOTRE comptabilité par catégorie sur une période.',
+    parameters: { type: 'OBJECT', properties: { jours: { type: 'INTEGER', description: 'Les N derniers jours, de 1 à 366 (30 par défaut).' } } } },
+  { name: 'ma_compta_impayes', description: "Ce qui reste à encaisser (clients: nombre, total, dont plus de 30 jours) et à payer (fournisseurs), dans NOTRE comptabilité." },
+];
+const OUTILS_MA_COMPTA = new Set(OUTILS_COMPTA.map((o) => o.name));
+
+// Une vérification est-elle lisible par CET agent (0177, droits par agent)?
+// Chaque ligne commence par le nom de l'outil: ma_boutique_* → « boutique »,
+// ma_compta_* → « comptabilite », le reste → « mesures ».
+export function verifsPour(verifs: string[], peut: (source: string) => boolean): string[] {
+  return verifs.filter((v) => peut(v.startsWith('ma_boutique_') ? 'boutique' : v.startsWith('ma_compta_') ? 'comptabilite' : 'mesures'));
+}
+
 // Une enquête par message, faite une fois pour toute l'équipe: le modèle
 // choisit les outils, la base répond, et les résultats entrent dans la
 // consigne de chaque agent qui répond. Rien à vérifier → liste vide.
-export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true): Promise<string[]> {
+export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true, compta: Compta | null = null): Promise<string[]> {
   const declarations = [
     ...(mesures ? OUTILS[0].functionDeclarations : []),
     ...(direction ? OUTILS_DIRECTION : []),
     ...(boutique ? OUTILS_BOUTIQUE : []),
+    ...(compta ? OUTILS_COMPTA : []),
   ];
   if (!declarations.length) return [];
   const outils = [{ functionDeclarations: declarations }];
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const contents: unknown[] = [{ role: 'user', parts: [{ text:
 `Tu prépares la réponse d'une équipe à son fondateur${mesures ? ', sur la place de marché Finjaro' : ''}. Nous sommes le ${aujourdhui}.
-${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}La conversation récente:
+${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}${compta ? `L'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les outils ma_compta_* lisent les totaux de ses livres (mois, ventes, dépenses, impayés).\n` : ''}La conversation récente:
 ${fil}
 
 Le dernier message, auquel il faut répondre: « ${question} »
 
-Si y répondre demande un chiffre ou une vérification dans la base de la place de marché, appelle les outils nécessaires (${MAX_APPELS} appels au plus). Sinon n'appelle rien et réponds seulement « rien ».` }] }];
+Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' ou dans la comptabilité' : ''}, appelle les outils nécessaires (${MAX_APPELS} appels au plus). Sinon n'appelle rien et réponds seulement « rien ».` }] }];
   const resultats: string[] = [];
   for (let tour = 0; tour < 3 && resultats.length < MAX_APPELS; tour += 1) {
     let parts: Array<{ functionCall?: { name: string; args?: Record<string, unknown> } }> = [];
@@ -107,7 +132,9 @@ Si y répondre demande un chiffre ou une vérification dans la base de la place 
       const nom = functionCall!.name;
       const args = functionCall!.args ?? {};
       let appel: Promise<{ data: unknown; error: { message: string } | null }>;
-      if (OUTILS_MA_BOUTIQUE.has(nom)) {
+      if (OUTILS_MA_COMPTA.has(nom)) {
+        appel = compta ? service.rpc('legion_outil_comptabilite', { p_nom: nom.replace('ma_compta_', ''), p_params: args, p_entreprise: compta.entreprise_id }) : Promise.resolve({ data: null, error: { message: 'aucune comptabilité branchée' } });
+      } else if (OUTILS_MA_BOUTIQUE.has(nom)) {
         appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
       } else if (OUTILS_PERSONNES.has(nom)) {
         appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });

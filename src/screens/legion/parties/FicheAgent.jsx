@@ -9,7 +9,7 @@ import { CompetencesAgent } from './Competences';
 
 // Ce qu'un agent peut lire parmi ce que l'entreprise a branché (0177, E4).
 // Vide = tout. Les fonctions des agents s'y tiennent.
-const SOURCES = ['mesures', 'boutique', 'web', 'github', 'documents'];
+const SOURCES = ['mesures', 'boutique', 'comptabilite', 'web', 'github', 'documents'];
 
 // Chercher un poste dans le catalogue (studio_modele_postes) au lieu de
 // partir d'une page blanche (D7, 23/09). Toucher un résultat remplit le

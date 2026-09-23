@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub, IconRobot, IconCopy } from '@tabler/icons-react';
+import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub, IconRobot, IconCopy, IconCalculator } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 
 // LEGION — les connecteurs: ce que les agents ont le droit de lire.
@@ -20,6 +20,12 @@ export function Connecteurs({ entreprise, t }) {
   const [depot, setDepot] = useState('');
   const [jeton, setJeton] = useState('');
   const [erreurGit, setErreurGit] = useState('');
+  // Finjaro Accounting (0180): les espaces dont la personne est membre, lus
+  // avec SES droits (la règle d'Accounting: finia_is_member) — l'identifiant
+  // et le nom, rien d'autre.
+  const [espaces, setEspaces] = useState([]);
+  const [espace, setEspace] = useState('');
+  const [erreurCompta, setErreurCompta] = useState('');
   // MON ASSISTANT (0174): les jetons pour brancher Claude, ChatGPT, Claude
   // Code… sur Legion (fonction legion-mcp). Le jeton en clair ne s'affiche
   // qu'une fois, à la création; ensuite on ne voit que le nom et l'usage.
@@ -58,6 +64,9 @@ export function Connecteurs({ entreprise, t }) {
       const { data: s } = await supabase.from('shops').select('id, name').eq('owner_id', user.id).order('created_at');
       setBoutiques(s || []);
       if (!choix && s?.length) setChoix(s[0].id);
+      const { data: w } = await supabase.from('finia_workspaces').select('id, name').order('created_at');
+      setEspaces(w || []);
+      if (w?.length) setEspace((x) => x || w[0].id);
     }
   }, [entreprise.id, choix]);
   useEffect(() => { charger(); }, [charger]);
@@ -66,6 +75,7 @@ export function Connecteurs({ entreprise, t }) {
   const mesures = connecteurs.find((c) => c.type === 'finjaro-mesures' && c.actif);
   const boutique = connecteurs.find((c) => c.type === 'finjaro-boutique' && c.actif);
   const github = connecteurs.find((c) => c.type === 'github' && c.actif);
+  const compta = connecteurs.find((c) => c.type === 'finjaro-accounting' && c.actif);
 
   async function brancher(actif, shopId) {
     setBusy(true); setErreur('');
@@ -81,6 +91,14 @@ export function Connecteurs({ entreprise, t }) {
     const { error } = await supabase.rpc('legion_brancher_github', { p_entreprise: entreprise.id, p_depot: actif ? depot : (github?.config?.depot || ''), p_jeton: actif ? jeton : null, p_actif: actif });
     setBusy(false);
     if (error) setErreurGit(error.message); else { setJeton(''); charger(); }
+  }
+  async function brancherCompta(actif) {
+    setBusy(true); setErreurCompta('');
+    const id = actif ? espace : compta?.config?.espace_id;
+    const nom = espaces.find((w) => w.id === id)?.name || null;
+    const { error } = await supabase.rpc('legion_brancher_comptabilite', { p_entreprise: entreprise.id, p_espace: id, p_nom: nom, p_actif: actif });
+    setBusy(false);
+    if (error) setErreurCompta(error.message); else charger();
   }
   async function oublierJeton() {
     setBusy(true);
@@ -120,6 +138,35 @@ export function Connecteurs({ entreprise, t }) {
             )}
             <p className="mt-1 text-[11px] leading-snug text-legion-muted">{t('legion.connecteurBoutiqueAide', 'Les agents lisent ses ventes, son stock, ses avis et ses messages en attente — jamais le numéro ni l’adresse d’une cliente, jamais les autres boutiques.')}</p>
             {erreur && <p className="text-[11px] text-legion-danger">{erreur}</p>}
+          </div>
+        </li>
+        <li className="flex items-start gap-2">
+          <IconCalculator size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-legion-ink">{t('legion.connecteurCompta', 'Ma comptabilité sur Finjaro Accounting')}</p>
+            {compta ? (
+              <p className="text-legion-muted">
+                {t('legion.connecteurComptaBranchee', { nom: compta.config?.nom, defaultValue: '« {{nom}} » est branchée : résumé du mois, ventes, dépenses, impayés.' })}
+                {' '}<button type="button" disabled={busy} onClick={() => brancherCompta(false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button>
+              </p>
+            ) : espaces.length === 0 ? (
+              <p className="text-legion-muted">
+                {t('legion.connecteurSansCompta', 'Tu n’as pas encore d’espace sur Finjaro Accounting.')}
+                {' '}<a href="https://accounting.finjaro.net" target="_blank" rel="noreferrer" className="font-semibold text-legion-gold underline">{t('legion.ouvrirAccounting', 'Ouvrir Finjaro Accounting')}</a>
+              </p>
+            ) : (
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <select value={espace} onChange={(e) => setEspace(e.target.value)} className="input min-w-0 flex-1 text-[13px]">
+                  {espaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
+                <button type="button" disabled={busy || !espace} onClick={() => brancherCompta(true)}
+                  className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">
+                  {t('legion.brancher', 'Brancher')}
+                </button>
+              </div>
+            )}
+            <p className="mt-1 text-[11px] leading-snug text-legion-muted">{t('legion.connecteurComptaAide', 'Les agents lisent les TOTAUX de tes livres : le résumé d’un mois, les ventes, les dépenses par catégorie, ce qui reste à encaisser et à payer — jamais le nom d’un client ni le détail d’une ligne. Si tu quittes cet espace, ils ne lisent plus rien.')}</p>
+            {erreurCompta && <p className="text-[11px] text-legion-danger">{erreurCompta}</p>}
           </div>
         </li>
         <li className="flex items-start gap-2">
