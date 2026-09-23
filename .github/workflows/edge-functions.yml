@@ -48,6 +48,9 @@ jobs:
         with:
           version: latest
 
+      # --use-api: le paquetage se fait chez Supabase, comme avant. Depuis que
+      # supabase/config.toml existe (verify_jwt de legion-mcp), la CLI
+      # paquetait dans Docker, et finou-chat y plantait (exit 135, 23/09).
       - name: Déployer
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -56,8 +59,8 @@ jobs:
           FN="${{ github.event.inputs.function }}"
           if [ -n "$FN" ]; then
             echo "Déploiement de $FN"
-            supabase functions deploy "$FN" --project-ref "$PROJECT_REF"
+            supabase functions deploy "$FN" --project-ref "$PROJECT_REF" --use-api
           else
             echo "Déploiement de toutes les fonctions"
-            supabase functions deploy --project-ref "$PROJECT_REF"
+            supabase functions deploy --project-ref "$PROJECT_REF" --use-api
           fi
