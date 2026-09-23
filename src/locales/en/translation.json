@@ -446,8 +446,9 @@
     "byEmail": "Email",
     "byPhone": "Phone",
     "phone": "Phone number",
-    "phoneHint": "Include the country code, e.g. +237 6XX XXX XXX.",
-    "phoneInvalid": "Invalid number — don't forget the country code (e.g. +237).",
+    "phoneHint": "Include the country code.",
+    "phoneExample": "E.g. {{example}}",
+    "phoneInvalid": "Invalid number — don't forget the country code.",
     "or": "or",
     "continueWithGoogle": "Continue with Google",
     "dontCreateSecondAccount": "⚠️ Don't create a second account. Signing in with Google or Apple would make a BRAND-NEW, empty account: your shop, your items and your photos would stay on this one.",
@@ -676,7 +677,7 @@
     "followed": "You follow",
     "items": "Items",
     "becomeVendorCta": "Become a Finjaro seller",
-    "becomeVendorHint": "Open your shop and list your items. Free."
+    "becomeVendorHint": "Open your shop and list your items. Free until November."
   },
   "help": {
     "contactCta": "Email us",
@@ -1119,9 +1120,9 @@
     "deleteAccountConfirm": "Delete permanently",
     "deleteAccountSent": "Your request has been recorded. You're now signed out — the Finjaro team will process it.",
     "sellCardTitle": "Open your Finjaro shop",
-    "sellCardHint": "Free. Post your items and videos, receive your orders.",
+    "sellCardHint": "Free until November. Post your items and videos, receive your orders.",
     "sellCardKicker": "Do you sell things?",
-    "sellCardCta": "Open my free shop"
+    "sellCardCta": "Open my shop"
   },
   "referral": {
     "navLabel": "Invite friends",
@@ -1132,7 +1133,7 @@
     "notFeatured": "Your shop isn't featured yet",
     "vendorsBrought": "{{count}} shop opened thanks to you",
     "vendorsBrought_other": "{{count}} shops opened thanks to you",
-    "shareText": "Open your shop on Finjaro — it's free.",
+    "shareText": "Open your shop on Finjaro — it's free until November.",
     "yourLink": "Your invite link",
     "copy": "Copy",
     "copied": "Link copied!",
@@ -2257,7 +2258,7 @@
     "buyTitle": "I'm here to buy",
     "buyHint": "Find an item, order, pay on delivery.",
     "sellTitle": "I'm here to sell",
-    "sellHint": "Open my shop and post my items. It's free.",
+    "sellHint": "Open my shop and post my items. It's free until November.",
     "askBuy": "I'm new and I'm here to buy. Explain how it works.",
     "askSell": "I'm new and I want to sell on Finjaro. Explain how it works.",
     "skip": "Later"
@@ -2280,7 +2281,7 @@
       "body": "Pick what you want, order, and pay on delivery or when you collect it."
     },
     "sell": {
-      "title": "Sell, for free",
+      "title": "Sell, free until November",
       "body": "Open your shop and post your items. Finia walks you through it."
     },
     "replayIntro": "Replay the intro"

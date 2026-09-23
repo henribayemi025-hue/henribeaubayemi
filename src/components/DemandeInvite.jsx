@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { IconBrandWhatsapp, IconX, IconCircleCheckFilled } from '@tabler/icons-react';
 import { useCart } from '../hooks/useCart';
 import { useToast } from '../hooks/useToast';
+import { useSettings } from '../hooks/useSettings';
+import { phoneExample } from '../lib/phone';
 import { supabase } from '../lib/supabase';
 import { track, getAnonId } from '../lib/track';
 import { Button } from './Button';
@@ -22,6 +24,9 @@ function lire() {
 }
 
 export default function DemandeInvite() {
+  // L'exemple de numéro suit le pays de la personne (CLAUDE.md §1): pas
+  // d'indicatif imposé dans une place de marché mondiale.
+  const { country } = useSettings();
   const { t } = useTranslation();
   const toast = useToast();
   const { demande, fermerDemande, clearShop, dismissJustAdded } = useCart();
@@ -103,7 +108,7 @@ export default function DemandeInvite() {
             </label>
             <label className="block">
               <span className="text-caption font-semibold text-ink">{t('guest.phone', 'Ton numéro WhatsApp')}</span>
-              <input type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" placeholder="+237 6…"
+              <input type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" placeholder={phoneExample(country)}
                 className="mt-1 w-full rounded-input border border-hairline bg-white px-3 py-2.5 text-[16px] text-ink outline-none focus:border-teal" />
               {form.phone && !phoneOk && <span className="text-caption text-danger">{t('checkout.invalidPhone')}</span>}
             </label>

@@ -238,7 +238,7 @@ export default function Auth({ consoleMode = false }) {
               {(id) => <TextInput id={id} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required autoComplete="name" />}
             </Field>
           )}
-          <Field label={t('auth.phone')} hint={t('auth.phoneHint')}>
+          <Field label={t('auth.phone')} hint={[t('auth.phoneHint'), phoneExample(country) && t('auth.phoneExample', { example: phoneExample(country) })].filter(Boolean).join(' ')}>
             {(id) => (
               <TextInput
                 id={id}

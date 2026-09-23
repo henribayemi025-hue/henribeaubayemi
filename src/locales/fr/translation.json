@@ -446,8 +446,9 @@
     "byEmail": "E-mail",
     "byPhone": "Téléphone",
     "phone": "Numéro de téléphone",
-    "phoneHint": "Avec l'indicatif du pays, ex. +237 6XX XXX XXX.",
-    "phoneInvalid": "Numéro invalide — n'oublie pas l'indicatif du pays (ex. +237).",
+    "phoneHint": "Avec l'indicatif du pays.",
+    "phoneExample": "Ex. {{example}}",
+    "phoneInvalid": "Numéro invalide — n'oublie pas l'indicatif du pays.",
     "or": "ou",
     "continueWithGoogle": "Continuer avec Google",
     "dontCreateSecondAccount": "⚠️ Ne crée pas un deuxième compte. Un compte Google ou Apple serait un compte NEUF et vide : ta boutique, tes articles et tes photos resteraient sur celui-ci.",
@@ -676,7 +677,7 @@
     "followed": "Tu suis",
     "items": "Articles",
     "becomeVendorCta": "Devenir vendeur sur Finjaro",
-    "becomeVendorHint": "Ouvre ta boutique, mets tes articles en ligne. Gratuit."
+    "becomeVendorHint": "Ouvre ta boutique, mets tes articles en ligne. Gratuit jusqu'en novembre."
   },
   "help": {
     "contactCta": "Nous écrire",
@@ -1119,9 +1120,9 @@
     "deleteAccountConfirm": "Supprimer définitivement",
     "deleteAccountSent": "Ta demande a été enregistrée. Tu es déconnecté(e) — l'équipe Finjaro va la traiter.",
     "sellCardTitle": "Ouvre ta boutique Finjaro",
-    "sellCardHint": "Gratuit. Publie tes articles et tes vidéos, reçois tes commandes.",
+    "sellCardHint": "Gratuit jusqu'en novembre. Publie tes articles et tes vidéos, reçois tes commandes.",
     "sellCardKicker": "Tu vends des articles ?",
-    "sellCardCta": "Ouvrir ma boutique gratuite"
+    "sellCardCta": "Ouvrir ma boutique"
   },
   "referral": {
     "navLabel": "Inviter des amis",
@@ -1132,7 +1133,7 @@
     "notFeatured": "Ta boutique n'est pas encore mise en avant",
     "vendorsBrought": "{{count}} boutique ouverte grâce à toi",
     "vendorsBrought_other": "{{count}} boutiques ouvertes grâce à toi",
-    "shareText": "Ouvre ta boutique sur Finjaro, c'est gratuit.",
+    "shareText": "Ouvre ta boutique sur Finjaro, c'est gratuit jusqu'en novembre.",
     "yourLink": "Ton lien d'invitation",
     "copy": "Copier",
     "copied": "Lien copié !",
@@ -2257,7 +2258,7 @@
     "buyTitle": "Je viens acheter",
     "buyHint": "Trouver un article, commander, payer à la livraison.",
     "sellTitle": "Je viens vendre",
-    "sellHint": "Ouvrir ma boutique et publier mes articles. C'est gratuit.",
+    "sellHint": "Ouvrir ma boutique et publier mes articles. C'est gratuit jusqu'en novembre.",
     "askBuy": "Je suis nouveau et je viens pour acheter. Explique-moi comment ça marche.",
     "askSell": "Je suis nouveau et je veux vendre sur Finjaro. Explique-moi comment ça marche.",
     "skip": "Plus tard"
@@ -2280,7 +2281,7 @@
       "body": "Tu choisis, tu commandes, et tu paies à la livraison ou au moment du retrait."
     },
     "sell": {
-      "title": "Vends, gratuitement",
+      "title": "Vends, gratuitement jusqu'en novembre",
       "body": "Ouvre ta boutique et publie tes articles. Finia t'accompagne pas à pas."
     },
     "replayIntro": "Revoir la présentation"

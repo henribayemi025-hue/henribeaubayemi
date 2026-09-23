@@ -11,7 +11,7 @@ export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
 
 const fr = {
   title: 'À propos de Finjaro',
-  tagline: 'La marketplace intelligente — mode, beauté, parfum et décoration d’événement.',
+  tagline: 'La place de marché des boutiques indépendantes — mode, beauté, maison, high-tech, alimentation, services, et bien plus.',
   intro: [
     'Finjaro met en relation des boutiques vérifiées et des clientes, avec une assistante IA qui aide à trouver le bon article et à publier plus vite. L’objectif : rendre le shopping en ligne aussi simple et sûr que possible, pour les acheteuses comme pour les vendeuses.',
   ],
@@ -56,7 +56,7 @@ const fr = {
 
 const en = {
   title: 'About Finjaro',
-  tagline: 'The smart marketplace — fashion, beauty, perfume and event decor.',
+  tagline: 'The marketplace of independent shops — fashion, beauty, home, tech, food, services, and more.',
   intro: [
     'Finjaro connects verified shops with buyers, backed by an AI assistant that helps find the right item and helps sellers publish faster. The goal: make online shopping as simple and safe as possible, for buyers and sellers alike.',
   ],

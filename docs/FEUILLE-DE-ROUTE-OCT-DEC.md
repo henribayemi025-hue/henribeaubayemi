@@ -33,7 +33,7 @@ sans être fait ou sans une raison écrite.
 | 15 | Quelqu'un **sur le terrain** pour aller voir les entreprises | ✅ tâche de Beau |
 | 16 | Planifier les événements où être présent | ✅ Radar |
 | 17 | Le tout **en forme de clic** : une chose faite → « fait », puis un commentaire | ✅ la feuille de route de Legion : chaque ligne se coche et se commente |
-| 18 | Le produit **propre** cette semaine et la prochaine | 🔧 tâche d'Alpha (liste des défauts) ; l'audit page par page |
+| 18 | Le produit **propre** cette semaine et la prochaine | 🔧 premier passage fait le 23/09 sur 63 pages, 3 points de vue (`AUDIT-PAGES-23-09.md`) : rien ne plante ; 6 défauts de texte corrigés ; deuxième passage bouton par bouton sur la vraie base à suivre, avec la liste d'Alpha |
 
 ## 3. Legion — ce que Beau attend
 
@@ -57,7 +57,7 @@ Et la feuille de route elle-même est DANS Legion (accueil de l'entreprise) : tr
 | 32 | Un agent qui regarde nos pages et dit **franchement ce qui ne va pas** | ✅ Miroir (nouvel agent) |
 | 33 | Ne plus sentir la pression : se lever et que l'équipe ait avancé | ✅ journée de travail chaque matin + agents allumés |
 | 34 | Comment ça marche dans un **cabinet ou une entreprise qui n'utilise pas Accounting** | ✅ « Comment Legion travaille chez toi » sur la page d'entrée de Legion |
-| 35 | Le **design** ne plaît pas | 📅 l'audit page par page, bouton par bouton, à la fin |
+| 35 | Le **design** ne plaît pas | 🔧 captures de chaque page relues (`AUDIT-PAGES-23-09.md`) ; deux détails soumis à Beau (bouton flottant qui recouvre « Voir tout », page « introuvable ») ; l'expert design : Claudinette a le feu vert |
 | 36 | Créer ou **modifier ses agents**, pour soi seul | ✅ « + Agent » et « Modifier » ; un agent n'existe que dans son entreprise |
 | 37 | Un **budget** que chacun fixe | ✅ plafond par entreprise (5 € pour Finjaro) |
 | 38 | Des agents **sympas, très spécialisés, avec leur personnalité** | ✅ en ligne |
