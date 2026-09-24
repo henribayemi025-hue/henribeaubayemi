@@ -4,6 +4,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { gemini } from './cout.ts';
+import { generer, moteursSimples } from './moteur.ts';
 
 const MODELE_ENQUETE = 'gemini-2.5-flash';
 const TIMEOUT_MS = 25_000;
@@ -112,6 +113,23 @@ Le dernier message, auquel il faut répondre: « ${question} »
 
 Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' ou dans la comptabilité' : ''}, appelle les outils nécessaires (${MAX_APPELS} appels au plus). Sinon n'appelle rien et réponds seulement « rien ».` }] }];
   const resultats: string[] = [];
+  // Un outil, sa source (la place de marché, SA boutique, SA comptabilité,
+  // les personnes pour la Direction) : toujours une requête fixe côté base.
+  const executer = async (nom: string, args: Record<string, unknown>): Promise<unknown> => {
+    let appel: Promise<{ data: unknown; error: { message: string } | null }>;
+    if (OUTILS_MA_COMPTA.has(nom)) {
+      appel = compta ? service.rpc('legion_outil_comptabilite', { p_nom: nom.replace('ma_compta_', ''), p_params: args, p_entreprise: compta.entreprise_id }) : Promise.resolve({ data: null, error: { message: 'aucune comptabilité branchée' } });
+    } else if (OUTILS_MA_BOUTIQUE.has(nom)) {
+      appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
+    } else if (OUTILS_PERSONNES.has(nom)) {
+      appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });
+    } else {
+      appel = service.rpc('legion_outil', { p_nom: nom, p_params: args });
+    }
+    const { data, error } = await appel;
+    return error ? { erreur: error.message } : data;
+  };
+  let googleMuet = false;
   for (let tour = 0; tour < 3 && resultats.length < MAX_APPELS; tour += 1) {
     let parts: Array<{ functionCall?: { name: string; args?: Record<string, unknown> } }> = [];
     try {
@@ -121,9 +139,9 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
         body: JSON.stringify({ contents, tools: outils, generationConfig: { temperature: 0.1, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } } }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      if (!resp.ok) { console.error('enquête:', resp.status, (await resp.text()).slice(0, 200)); break; }
+      if (!resp.ok) { console.error('enquête:', resp.status, (await resp.text()).slice(0, 200)); googleMuet = tour === 0; break; }
       parts = (await resp.json())?.candidates?.[0]?.content?.parts ?? [];
-    } catch (e) { console.error('enquête:', (e as Error).message); break; }
+    } catch (e) { console.error('enquête:', (e as Error).message); googleMuet = tour === 0; break; }
     const appels = parts.filter((x) => x.functionCall).slice(0, MAX_APPELS - resultats.length);
     if (!appels.length) break;
     contents.push({ role: 'model', parts });
@@ -131,22 +149,38 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
     for (const { functionCall } of appels) {
       const nom = functionCall!.name;
       const args = functionCall!.args ?? {};
-      let appel: Promise<{ data: unknown; error: { message: string } | null }>;
-      if (OUTILS_MA_COMPTA.has(nom)) {
-        appel = compta ? service.rpc('legion_outil_comptabilite', { p_nom: nom.replace('ma_compta_', ''), p_params: args, p_entreprise: compta.entreprise_id }) : Promise.resolve({ data: null, error: { message: 'aucune comptabilité branchée' } });
-      } else if (OUTILS_MA_BOUTIQUE.has(nom)) {
-        appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
-      } else if (OUTILS_PERSONNES.has(nom)) {
-        appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });
-      } else {
-        appel = service.rpc('legion_outil', { p_nom: nom, p_params: args });
-      }
-      const { data, error } = await appel;
-      const resultat = error ? { erreur: error.message } : data;
+      const resultat = await executer(nom, args);
       resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
       reponses.push({ functionResponse: { name: nom, response: { resultat } } });
     }
     contents.push({ role: 'user', parts: reponses });
+  }
+  // Google ne répond pas (plafond de dépense atteint le 24/09, vu dans les
+  // journaux : chaque « enquête » tombait en 429 et les agents se disaient
+  // « bloqués » faute de chiffres). Relais par le moteur commun (DeepSeek,
+  // Kimi…) : il ne sait pas appeler les outils à la manière de Google, alors
+  // il choisit en une fois les vérifications à faire, et la base y répond.
+  if (googleMuet && !resultats.length) {
+    const permis = new Map(declarations.map((d) => [d.name, d]));
+    const liste = declarations.map((d) => `- ${d.name} : ${d.description} Paramètres : ${JSON.stringify(d.parameters?.properties ?? {})}`).join('\n');
+    const r = await generer(apiKey, `${(contents[0] as { parts: { text: string }[] }).parts[0].text}
+
+Les outils disponibles (et SEULEMENT ceux-là) :
+${liste}
+
+Réponds par la liste des appels à faire (${MAX_APPELS} au plus), chacun avec le nom exact de l'outil et ses paramètres en JSON (par exemple {"date":"${aujourdhui}"}). S'il n'y a rien à vérifier, une liste vide.`,
+      { type: 'OBJECT', properties: { appels: { type: 'ARRAY', items: { type: 'OBJECT', properties: { nom: { type: 'STRING' }, parametres: { type: 'STRING' } }, required: ['nom', 'parametres'] } } }, required: ['appels'] },
+      { temperature: 0.1, maxSortie: 800, modeles: moteursSimples() });
+    if (!('erreur' in r)) {
+      for (const a of (Array.isArray(r.obj.appels) ? r.obj.appels : []).slice(0, MAX_APPELS) as { nom: string; parametres: string }[]) {
+        const nom = String(a.nom || '').trim();
+        if (!permis.has(nom)) continue;
+        let args: Record<string, unknown> = {};
+        try { const x = JSON.parse(String(a.parametres || '{}')); if (x && typeof x === 'object' && !Array.isArray(x)) args = x; } catch { /* paramètres illisibles : l'outil prend ses valeurs par défaut */ }
+        const resultat = await executer(nom, args);
+        resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
+      }
+    } else console.error('enquête (relais):', r.erreur);
   }
   return resultats;
 }
