@@ -24,6 +24,7 @@
 // refuse d'appeler Gemini une fois BUDGET_EUR atteint sur le mois.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { relaisConversation } from '../_shared/relais.ts';
 
 // 2.5-flash en tête: c'est le seul des deux à répondre de façon fiable en ce
 // moment (3.5-flash renvoie régulièrement 503 "high demand"), et il gère
@@ -322,6 +323,14 @@ l'écraser, laisse tomber ce qui est devenu inutile). N'appelle JAMAIS cet outil
 pour un détail ponctuel de cette seule conversation ("elle cherche une robe
 aujourd'hui" n'est pas stable; "elle vend des vêtements enfants à Douala" l'est).
 Silencieux pour la personne — ne dis jamais que tu mémorises quoi que ce soit.${blocMemoire}`;
+}
+
+// LA consigne de Finia, une seule source (Beau, 24/09 : les modèles du relais
+// « doivent être entraînés comme on avait entraîné Finia »). Gemini et le
+// relais reçoivent exactement ce texte-là — personnalité, règles, monnaie,
+// interdits, destinations, applications — jamais une copie qui dériverait.
+function consigneFinia(memoire?: string | null): string {
+  return systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() + applicationsPromptSection();
 }
 
 function systemPromptTools(): string {
@@ -1751,7 +1760,9 @@ Deno.serve(async (req: Request) => {
         });
       }
     }
-    contents.push({ role: 'user', parts: userParts });
+    const tourUtilisateur: Json = { role: 'user', parts: userParts };
+    contents.push(tourUtilisateur);
+    const consigne = consigneFinia(memoire);
 
     // `noThinking` n'est vrai qu'en REPLI: si un modèle refusait le champ
     // thinkingConfig, on rejouerait l'appel sans lui plutôt que de laisser
@@ -1763,7 +1774,7 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey!, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() + applicationsPromptSection() }] },
+            systemInstruction: { parts: [{ text: consigne }] },
             contents,
             tools: [{ functionDeclarations: toolDeclarations() }],
             generationConfig: {
@@ -1817,6 +1828,9 @@ Deno.serve(async (req: Request) => {
     // effectivement renvoyé par l'outil est rejeté avant d'atteindre le
     // client, même s'il existe ailleurs dans la table.
     const metiersDisponibles: string[] = [];
+    // Google n'a pas répondu (plafond de dépenses, 5xx, délai dépassé…) :
+    // le relais prend la même conversation (voir plus bas).
+    let googleEnPanne = false;
 
     outer:
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -1841,7 +1855,7 @@ Deno.serve(async (req: Request) => {
           console.error('finou-chat: gemini call failed', model, e);
         }
       }
-      if (!res?.ok) break;
+      if (!res?.ok) { googleEnPanne = true; break; }
 
       data = res.body as Json;
       const parts = (data?.candidates as Array<Json> | undefined)?.[0]?.content?.parts as Array<Json> | undefined;
@@ -1860,6 +1874,42 @@ Deno.serve(async (req: Request) => {
     }
 
     sb.from('ai_usage').insert({ fn: 'finou_chat', cost_eur: FINOU_CALL_COST_EUR * Math.max(calls, 1) }).then(() => {}, () => {});
+
+    // LE RELAIS (Beau, 24/09 : « Branchons Finia aussi avec Kimi et les autres
+    // si Google échoue »). Seulement quand Google a échoué : sinon, rien ne
+    // change. Kimi (qui lit les photos) puis DeepSeek reprennent la MÊME
+    // conversation — même consigne, même historique, y compris les outils
+    // déjà appelés chez Google avant la panne — avec les mêmes outils,
+    // exécutés par le même runTool. Leur coût réel s'écrit dans ai_usage
+    // sous 'finou_chat', dans le même plafond du mois.
+    //
+    // Le vocal : personne ne l'écoute en relais. Finia le dit honnêtement et
+    // demande d'écrire (la note est posée par relais.ts à la place du son).
+    // Sans texte ni historique, la langue de l'appareil lui dit dans quelle
+    // langue le dire.
+    if (googleEnPanne) {
+      const langueAppareil = (req.headers.get('accept-language') || '').split(',')[0].trim();
+      const tourRelais: Json = {
+        role: 'user',
+        parts: userParts.map((p, i) => i === 0 && audioMatch && !message
+          ? { text: `(message vocal)${ctxLine}${langueAppareil ? `\n[Langue de l'appareil: ${langueAppareil}]` : ''}` }
+          : p),
+      };
+      const relais = await relaisConversation({
+        fn: 'finou_chat',
+        systeme: consigne,
+        contents: contents.map((c) => (c === tourUtilisateur ? tourRelais : c)),
+        declarations: toolDeclarations() as Array<{ name: string; description?: string; parameters?: unknown }>,
+        executer: (nom, args) => runTool(nom, args, userClient, user?.id ?? null, cartActions, vitrine, metiersDisponibles, context ?? null),
+        maxTours: MAX_TOOL_ROUNDS,
+      });
+      if ('texte' in relais) {
+        console.log('finou-chat: réponse du relais', relais.modele);
+        data = { candidates: [{ content: { parts: [{ text: relais.texte }] } }] };
+      } else {
+        console.error('finou-chat: relais en échec', relais.erreur);
+      }
+    }
 
     let reply =
       ((data?.candidates as Array<Json> | undefined)?.[0]?.content?.parts as Array<Json> | undefined)

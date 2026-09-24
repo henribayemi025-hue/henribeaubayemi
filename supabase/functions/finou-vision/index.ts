@@ -13,6 +13,7 @@
 // service_role mais ne touche que des produits is_active (déjà publics).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { relaisDepuisGemini } from '../_shared/relais.ts';
 
 const MODEL = 'gemini-2.5-flash';
 const BUDGET_EUR = 20;
@@ -125,32 +126,46 @@ Deno.serve(async (req: Request) => {
       if (CATEGORY_IDS.length === 0) CATEGORY_IDS = ['mode_femme'];
     }
 
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: "Identifie l'objet principal de cette photo pour une recherche sur la marketplace Finjaro." },
-              { inline_data: { mime_type: typeof mimeType === 'string' ? mimeType : 'image/jpeg', data: imageBase64 } },
-            ],
-          }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: analysisSchema(CATEGORY_IDS),
-            temperature: 0.2,
-          },
-        }),
-        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-      }
-    );
-    if (!resp.ok) {
-      console.error('finou-vision: gemini error', resp.status, (await resp.text()).slice(0, 300));
-      return json({ error: 'gemini_error' }, 502);
+    const requete = {
+      contents: [{
+        parts: [
+          { text: "Identifie l'objet principal de cette photo pour une recherche sur la marketplace Finjaro." },
+          { inline_data: { mime_type: typeof mimeType === 'string' ? mimeType : 'image/jpeg', data: imageBase64 } },
+        ],
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: analysisSchema(CATEGORY_IDS),
+        temperature: 0.2,
+      },
+    };
+    let resp: Response | null = null;
+    try {
+      resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify(requete),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+        }
+      );
+    } catch (e) {
+      console.error('finou-vision: gemini call failed', String(e));
     }
-    const body = await resp.json();
+    // Google en échec (plafond de dépenses du 24/09, 5xx, délai) : la même
+    // requête part au relais — Kimi, qui lit les photos, puis Claude si sa
+    // clé existe (voir _shared/relais.ts). Le schéma reste le même, validé
+    // par le relais comme Google le faisait. Quand Google répond, rien ne
+    // change.
+    // deno-lint-ignore no-explicit-any
+    let body: any = null;
+    if (resp?.ok) body = await resp.json();
+    else {
+      if (resp) console.error('finou-vision: gemini error', resp.status, (await resp.text()).slice(0, 300));
+      body = await relaisDepuisGemini(requete, { fn: 'finou_vision' });
+      if (!body) return json({ error: 'gemini_error' }, 502);
+    }
     let analysis: { keywords?: string[]; category?: string; description?: string } = {};
     try {
       analysis = JSON.parse(body?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}');

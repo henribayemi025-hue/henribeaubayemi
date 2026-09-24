@@ -133,7 +133,7 @@ async function viaGemini(apiKey: string, model: string, texte: string, schema: u
 // Prix DeepSeek publiés le 24/09 (dollars le million de jetons, tarif des
 // heures pleines — le plus cher, pour ne jamais sous-compter) :
 // [entrée déjà en cache, entrée, sortie].
-const PRIX_DS: Record<string, [number, number, number]> = {
+export const PRIX_DS: Record<string, [number, number, number]> = {
   'deepseek-flash': [0.006, 0.30, 1.20],
   'deepseek-v4-pro': [0.044, 1.32, 3.96],
   // Kimi K2.6, prix relevés le 24/09 (OpenRouter).

@@ -12,6 +12,7 @@
 // aucun bucket) — même flux et mêmes bornes que le selfie de miroir-ia.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { relaisDepuisGemini } from '../_shared/relais.ts';
 
 const BUDGET_EUR = 20;
 const TROC_CALL_COST_EUR = 0.002;
@@ -120,52 +121,61 @@ Deno.serve(async (req: Request) => {
       },
     };
 
-    const res = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [
-              { text: 'Photo A:' },
-              { inlineData: { mimeType: mime_a || 'image/jpeg', data: image_a } },
-              { text: 'Photo B:' },
-              { inlineData: { mimeType: mime_b || 'image/jpeg', data: image_b } },
-              { text: prompt },
-            ],
-          }],
-          generationConfig: {
-            temperature: 0.2,
-            // Même piège que sur finou-chat: gemini-2.5-flash réfléchit avant
-            // de répondre, et cette réflexion se prend sur maxOutputTokens.
-            // À 400, l'évaluation d'un troc — deux objets à comparer, donc du
-            // raisonnement — pouvait revenir vide, sans erreur ni trace.
-            // On coupe la réflexion et on laisse de la marge au JSON attendu.
-            maxOutputTokens: 1024,
-            thinkingConfig: { thinkingBudget: 0 },
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              required: ['item_a', 'item_b', 'soulte_fcfa', 'en_faveur_de', 'conseil'],
-              properties: {
-                item_a: itemSchema,
-                item_b: itemSchema,
-                soulte_fcfa: { type: 'NUMBER' },
-                en_faveur_de: { type: 'STRING', enum: ['a', 'b', 'aucun'] },
-                conseil: { type: 'STRING' },
-              },
-            },
+    const requete = {
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: 'Photo A:' },
+          { inlineData: { mimeType: mime_a || 'image/jpeg', data: image_a } },
+          { text: 'Photo B:' },
+          { inlineData: { mimeType: mime_b || 'image/jpeg', data: image_b } },
+          { text: prompt },
+        ],
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        // Même piège que sur finou-chat: gemini-2.5-flash réfléchit avant
+        // de répondre, et cette réflexion se prend sur maxOutputTokens.
+        // À 400, l'évaluation d'un troc — deux objets à comparer, donc du
+        // raisonnement — pouvait revenir vide, sans erreur ni trace.
+        // On coupe la réflexion et on laisse de la marge au JSON attendu.
+        maxOutputTokens: 1024,
+        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          required: ['item_a', 'item_b', 'soulte_fcfa', 'en_faveur_de', 'conseil'],
+          properties: {
+            item_a: itemSchema,
+            item_b: itemSchema,
+            soulte_fcfa: { type: 'NUMBER' },
+            en_faveur_de: { type: 'STRING', enum: ['a', 'b', 'aucun'] },
+            conseil: { type: 'STRING' },
           },
-        }),
+        },
       },
-    );
-    if (!res.ok) {
-      console.error('Gemini error', res.status, await res.text());
-      return json({ error: 'gemini_error' }, 502);
+    };
+    let res: Response | null = null;
+    try {
+      res = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requete) },
+      );
+    } catch (e) {
+      console.error('Gemini call failed', String(e));
     }
-    const data = await res.json();
+    // Google en échec (plafond de dépenses du 24/09, 5xx…) : la même requête,
+    // les deux photos dans le même ordre, part au relais (Kimi lit les
+    // images ; voir _shared/relais.ts), avec le même schéma validé. Quand
+    // Google répond, rien ne change.
+    // deno-lint-ignore no-explicit-any
+    let data: any;
+    if (res?.ok) data = await res.json();
+    else {
+      if (res) console.error('Gemini error', res.status, await res.text());
+      data = await relaisDepuisGemini(requete, { fn: 'troc_eval' });
+      if (!data) return json({ error: 'gemini_error' }, 502);
+    }
     const text =
       (data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).join('') || '').trim();
     try {

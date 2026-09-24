@@ -24,6 +24,7 @@
 // quitte jamais le serveur.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { relaisDepuisGemini } from '../_shared/relais.ts';
 
 const BUDGET_EUR = 20;
 const COPILOT_CALL_COST_EUR = 0.0005;
@@ -85,9 +86,18 @@ const GEMINI_TIMEOUT_MS = 30_000;
 const RETRY_WAITS_MS = [1500, 4000, 9000];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Quand Google a tout refusé, la même requête part au relais (Beau, 24/09 :
+// « Kimi et les autres si Google échoue ») — Kimi lit la photo de 'listing',
+// DeepSeek fait le texte des autres modes (voir _shared/relais.ts). La
+// réponse revient sous la forme de Google : rien d'autre ne change ici.
 // deno-lint-ignore no-explicit-any
 async function gemini(apiKey: string, body: unknown): Promise<any | null> {
+  // Le plafond de dépenses du projet Google (atteint le 24/09) vaut pour tous
+  // ses modèles et ne passe pas en attendant : inutile de réessayer 8 fois
+  // pendant une demi-minute, on passe tout de suite au relais.
+  let plafondGoogle = false;
   for (const model of MODELS) {
+    if (plafondGoogle) break;
     for (let attempt = 0; attempt <= RETRY_WAITS_MS.length; attempt++) {
       try {
         const res = await fetch(
@@ -109,8 +119,10 @@ async function gemini(apiKey: string, body: unknown): Promise<any | null> {
           if (attempt < RETRY_WAITS_MS.length) await sleep(RETRY_WAITS_MS[attempt]);
           continue;
         }
-        const detail = (await res.text()).slice(0, 200);
+        const complet = await res.text();
+        const detail = complet.slice(0, 200);
         console.error('vendor-copilot: gemini error', model, res.status, detail);
+        if (res.status === 429 && /spending cap/i.test(complet)) { plafondGoogle = true; break; }
         const temporary = res.status === 429 || res.status >= 500;
         if (!temporary) break; // refus définitif: passer au modèle suivant
         if (attempt < RETRY_WAITS_MS.length) await sleep(RETRY_WAITS_MS[attempt]);
@@ -120,7 +132,7 @@ async function gemini(apiKey: string, body: unknown): Promise<any | null> {
       }
     }
   }
-  return null;
+  return await relaisDepuisGemini(body as Record<string, unknown>, { fn: 'vendor_copilot' });
 }
 
 // deno-lint-ignore no-explicit-any
@@ -207,11 +219,11 @@ Deno.serve(async (req: Request) => {
       if (catIds.length === 0) return json({ error: 'no_categories' }, 503);
 
       const prompt = isFr
-        ? `Tu prépares une fiche article pour une marketplace africaine (Finjaro) à partir de cette photo. ` +
+        ? `Tu prépares une fiche article pour Finjaro, une place de marché mondiale à partir de cette photo. ` +
           `Titre: court et vendeur (max 60 caractères), sans marque inventée. ` +
           `Description: 2-3 phrases chaleureuses et concrètes (max 60 mots), sans prix ni disponibilité inventés. ` +
           `Keywords: 3 à 6 mots de recherche. Category: l'id qui correspond le mieux à l'objet.`
-        : `You are drafting a product listing for an African marketplace (Finjaro) from this photo. ` +
+        : `You are drafting a product listing for Finjaro, a global marketplace from this photo. ` +
           `Title: short and appealing (max 60 chars), no invented brand. ` +
           `Description: 2-3 warm, concrete sentences (max 60 words), no invented price or availability. ` +
           `Keywords: 3-6 search words. Category: the best-matching id.`;
@@ -305,11 +317,11 @@ Deno.serve(async (req: Request) => {
       if (!name || typeof name !== 'string') return json({ error: 'missing_name' }, 400);
       const prompt = isFr
         ? `Écris un script de vidéo courte (Reel/TikTok, 20-30 s) pour vendre cet article sur Finjaro, ` +
-          `marketplace africaine. Article: "${name}"${description ? ` — ${description}` : ''}. ` +
+          `place de marché mondiale. Article: "${name}"${description ? ` — ${description}` : ''}. ` +
           `hook: phrase d'accroche parlée (1 phrase). scenes: 3 à 4 plans, chacun avec "shot" ` +
           `(ce qu'on filme, concret et faisable au téléphone) et "text" (ce qu'on dit ou affiche). ` +
           `cta: appel à l'action final. hashtags: 4 à 6, sans le #. Ton naturel, pas d'anglicismes forcés.`
-        : `Write a short-video script (Reel/TikTok, 20-30s) to sell this item on Finjaro, an African ` +
+        : `Write a short-video script (Reel/TikTok, 20-30s) to sell this item on Finjaro, a global ` +
           `marketplace. Item: "${name}"${description ? ` — ${description}` : ''}. ` +
           `hook: spoken opening line. scenes: 3-4 shots, each with "shot" (what to film, phone-doable) ` +
           `and "text" (what is said or shown). cta: final call to action. hashtags: 4-6, without #.`;
@@ -362,7 +374,7 @@ Deno.serve(async (req: Request) => {
       if (!text) return json({ error: 'missing_text' }, 400);
       const prompt = isFr
         ? `Corrige UNIQUEMENT l'orthographe et la grammaire de cette description ` +
-          `d'article (marketplace africaine Finjaro). Si elle dépasse 3 phrases ` +
+          `d'article (Finjaro, place de marché mondiale). Si elle dépasse 3 phrases ` +
           `ou 60 mots, raccourcis-la à l'essentiel SANS perdre d'information ` +
           `réelle (aucun fait — prix, taille, matière, quantité — ne doit ` +
           `disparaître ni être inventé). Garde le ton et les mots de la ` +
@@ -370,7 +382,7 @@ Deno.serve(async (req: Request) => {
           `Réponds UNIQUEMENT avec le texte corrigé, sans guillemets ni ` +
           `commentaire.\n\nTexte: "${text}"`
         : `Fix ONLY the spelling and grammar of this product description ` +
-          `(Finjaro, an African marketplace). If it's longer than 3 sentences ` +
+          `(Finjaro, a global marketplace). If it's longer than 3 sentences ` +
           `or 60 words, tighten it to the essentials WITHOUT losing any real ` +
           `information (no fact — price, size, material, quantity — should ` +
           `disappear or be invented). Keep the seller's tone and words as much ` +
@@ -484,12 +496,12 @@ Deno.serve(async (req: Request) => {
     const priceLine = price ? ` Prix indicatif: ${price} ${currency || ''}.` : '';
     const prompt = isFr
       ? `Rédige une description produit courte et vendeuse (2 à 3 phrases, 60 mots max) ` +
-        `en français pour une marketplace africaine (Finjaro). Produit: "${name}"` +
+        `en français pour Finjaro, une place de marché mondiale. Produit: "${name}"` +
         `${category ? `, catégorie: ${category}` : ''}.${priceLine} ` +
         `Ton chaleureux et concret, met en valeur la qualité et le style. ` +
         `N'invente pas de prix ni de disponibilité. Réponds UNIQUEMENT avec le texte, sans guillemets ni titre.`
       : `Write a short, persuasive product description (2-3 sentences, max 60 words) ` +
-        `in English for an African marketplace (Finjaro). Product: "${name}"` +
+        `in English for Finjaro, a global marketplace. Product: "${name}"` +
         `${category ? `, category: ${category}` : ''}.${priceLine} ` +
         `Warm, concrete tone highlighting quality and style. ` +
         `Do not invent price or availability. Reply ONLY with the text, no quotes or title.`;
