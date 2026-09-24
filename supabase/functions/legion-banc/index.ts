@@ -10,6 +10,7 @@
 import { cleOpenAI, clesPresentes, compter, coutEnCours } from '../_shared/cout.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { generer } from '../_shared/moteur.ts';
+import { transcrire } from '../_shared/relais.ts';
 
 const SCHEMA = { type: 'OBJECT', properties: { texte: { type: 'STRING' } }, required: ['texte'] };
 
@@ -35,6 +36,18 @@ Deno.serve(compter('legion_banc', async (req: Request) => {
       } catch (e) { modelesOpenAI = (e as Error).message; }
     }
     return json({ ok: true, cles: clesPresentes(), modelesOpenAI });
+  }
+  // L'écoute des vocaux par OpenAI (le relais quand Google tombe) : OpenAI
+  // dit une phrase, puis la transcrit — sans aucun vrai vocal de personne.
+  if (corps.diagnostic === 'voix') {
+    const cle = cleOpenAI();
+    if (!cle) return json({ ok: false, erreur: 'pas de clé OpenAI' });
+    const phrase = 'Bonjour Finia, je cherche une robe rouge pour un mariage samedi.';
+    const tts = await fetch('https://api.openai.com/v1/audio/speech', { method: 'POST', headers: { Authorization: `Bearer ${cle}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-4o-mini-tts', voice: 'alloy', input: phrase, response_format: 'mp3' }), signal: AbortSignal.timeout(30_000) });
+    if (!tts.ok) return json({ ok: false, etape: 'voix', erreur: `HTTP ${tts.status} ${(await tts.text()).slice(0, 200)}` });
+    const octets = new Uint8Array(await tts.arrayBuffer());
+    const t = await transcrire({ mime: 'audio/mpeg', donnees: octets }, { fn: 'legion_banc' });
+    return json({ ok: !('erreur' in t), phrase, octets: octets.length, ...t });
   }
   const consigne = String(corps.consigne || '').slice(0, 12_000);
   const liste = (corps.moteurs || []).filter((m) => /^(ds|km|an|oa):|^gemini/.test(m)).slice(0, 4);
