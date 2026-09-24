@@ -26,13 +26,26 @@ async function evenements(service: Service, type: string, depuis: string): Promi
   return (data || []) as Evt[];
 }
 
-// Retire les robots (trop de fiches le même jour) et les comptes de test.
+// Retire les robots et les comptes de test. Deux signes de robot :
+// - un même navigateur qui ouvre plus de 40 fiches le même jour ;
+// - une RAFALE : plus de 60 « navigateurs » différents qui ouvrent chacun UNE
+//   seule fiche le même jour (un jour normal en compte au plus 40). Les pics
+//   des 18 et 20/09 changeaient d'identifiant à chaque fiche (296 navigateurs
+//   pour 302 vues), étalés sur plusieurs heures : le premier signe seul n'en
+//   retirait que 7 (Rigo, 25/09 : « l'outil se tait »).
+const SEUIL_RAFALE = 60;
 function nettoyer(evts: Evt[], test: Set<string>): { gardes: Evt[]; robots: number } {
+  const qui = (e: Evt) => e.user_id || e.meta?.anon_id || `?${e.created_at}`;
   const parJour = new Map<string, number>();
-  const cle = (e: Evt) => `${e.user_id || e.meta?.anon_id || '?'}|${e.created_at.slice(0, 10)}`;
-  for (const e of evts) parJour.set(cle(e), (parJour.get(cle(e)) || 0) + 1);
-  const gardes = evts.filter((e) => !(e.user_id && test.has(e.user_id)) && (parJour.get(cle(e)) || 0) <= SEUIL_ROBOT);
-  return { gardes, robots: evts.length - gardes.length };
+  const cleJour = (e: Evt) => `${qui(e)}|${e.created_at.slice(0, 10)}`;
+  for (const e of evts) parJour.set(cleJour(e), (parJour.get(cleJour(e)) || 0) + 1);
+  const seulsParJour = new Map<string, number>();
+  const jour = (e: Evt) => e.created_at.slice(0, 10);
+  for (const e of evts) if (!e.user_id && parJour.get(cleJour(e)) === 1) seulsParJour.set(jour(e), (seulsParJour.get(jour(e)) || 0) + 1);
+  const robot = (e: Evt) => (parJour.get(cleJour(e)) || 0) > SEUIL_ROBOT
+    || (!e.user_id && parJour.get(cleJour(e)) === 1 && (seulsParJour.get(jour(e)) || 0) > SEUIL_RAFALE);
+  const gardes = evts.filter((e) => !(e.user_id && test.has(e.user_id)) && !robot(e));
+  return { gardes, robots: evts.filter(robot).length };
 }
 
 function prixLisible(p: Record<string, unknown>): string {
@@ -59,10 +72,17 @@ export async function classerFiches(service: Service, args: Record<string, unkno
   for (const e of ajouts) if (e.target_id) paniers.set(e.target_id, (paniers.get(e.target_id) || 0) + 1);
   const ids = [...vues.keys()];
   if (!ids.length) return { periode_jours: jours, vues_gardees: 0, vues_robots_retirees: robots, fiches: [] };
-  const { data: prods } = await service.from('products')
-    .select('id, name, price_fcfa, price_on_request, prix_saisi, devise_saisie, images, description, stock, is_active, shop_id, shops(name, slug, country)')
-    .in('id', ids.slice(0, 1000));
-  let liste = (prods || []).map((p: Record<string, unknown>) => ({
+  // Par paquets de 100 : 400 identifiants dans une seule adresse dépassaient
+  // la longueur permise, et la liste revenait vide sans le dire.
+  const prods: Record<string, unknown>[] = [];
+  for (let i = 0; i < Math.min(ids.length, 1000); i += 100) {
+    const { data, error } = await service.from('products')
+      .select('id, name, price_fcfa, price_on_request, prix_saisi, devise_saisie, images, description, stock, is_active, shop_id, shops(name, slug, country)')
+      .in('id', ids.slice(i, i + 100));
+    if (error) throw new Error(`lecture des fiches : ${error.message}`);
+    prods.push(...((data || []) as Record<string, unknown>[]));
+  }
+  let liste = prods.map((p: Record<string, unknown>) => ({
     lien: `${SITE}/product/${p.id}`,
     nom: p.name,
     boutique: (p.shops as { name?: string } | null)?.name ?? null,
@@ -82,7 +102,7 @@ export async function classerFiches(service: Service, args: Record<string, unkno
   liste.sort((a, b) => b.vues - a.vues || b.ajouts_panier - a.ajouts_panier);
   return {
     periode_jours: jours,
-    regle: `comptes de test exclus ; un navigateur qui ouvre plus de ${SEUIL_ROBOT} fiches le même jour est compté comme robot et retiré`,
+    regle: `comptes de test exclus ; robots retirés : un navigateur qui ouvre plus de ${SEUIL_ROBOT} fiches le même jour, ou plus de ${SEUIL_RAFALE} navigateurs qui ouvrent chacun une seule fiche le même jour`,
     vues_gardees: gardes.length,
     vues_robots_retirees: robots,
     fiches_vues: ids.length,
