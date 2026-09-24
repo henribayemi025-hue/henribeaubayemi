@@ -675,6 +675,35 @@
       "badge": "Challenges {{nom}}'s deliverable",
       "demander": "Have {{nom}} review it",
       "consigne": "review {{nom}}'s deliverable above with your professional eye. If there is a real problem (unsourced figure, unproven conclusion, broken rule, missed risk), say exactly what and what should change; otherwise just say you have nothing to add."
+    },
+    "missions": {
+      "titre": "The mission library",
+      "aide": "Ready-made missions: choose who does it, launch it once, or have it come back on its own every week, month or year. It lands on the agent's board, to be taken on their next work day.",
+      "enCours": "Recurring missions",
+      "prochaine": "next on {{date}}",
+      "arreter": "Stop",
+      "rythme": {
+        "semaine": "every week",
+        "mois": "every month",
+        "an": "every year"
+      },
+      "uneFois": "once",
+      "source": {
+        "github": "needs the connected GitHub repository",
+        "web": "searches the web"
+      },
+      "qui": "Who:",
+      "lancer": "Launch",
+      "activer": {
+        "semaine": "Every week",
+        "mois": "Every month",
+        "an": "Every year"
+      },
+      "dejaActive": "already recurring",
+      "lancee": "On {{nom}}'s board: to be taken on their next work day.",
+      "activee": "On {{nom}}'s board, and it will come back on its own.",
+      "toutes": "See all {{n}} missions",
+      "moins": "Less"
     }
   },
   "equipe": {

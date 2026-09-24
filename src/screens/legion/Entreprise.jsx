@@ -693,7 +693,7 @@ export default function Entreprise() {
             messages={data.messages} taches={taches} moi={moi}
             onEntrer={entrer} onOuvrirSalon={choisirSalon} onEcrireA={ecrireA} onFiche={setFiche}
             onKanban={() => { setKanban(true); if (window.innerWidth < 1024) setVue('taches'); else setVue('chat'); }}
-            onAllumer={allumer} onAllumerTous={allumerTous} onAllumerDepartement={allumerDepartement} onVoteRemplacement={voteRemplacement} onDirective={directive}
+            onAllumer={allumer} onAllumerTous={allumerTous} onAllumerDepartement={allumerDepartement} onVoteRemplacement={voteRemplacement} onMissionLancee={(l) => ajouterMessages([l])} onDirective={directive}
             onVraiesPhotos={vraiesPhotos} photosEnCours={photos}
             sansPhoto={sansPhoto} aChoisir={aChoisir} t={t}
           />

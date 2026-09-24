@@ -16,6 +16,7 @@ import { Connecteurs } from './Connecteurs';
 import { Documents } from './Documents';
 import { Inviter } from './Inviter';
 import { TableauDeBord } from './TableauDeBord';
+import { Missions } from './Missions';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -37,7 +38,7 @@ import { TableauDeBord } from './TableauDeBord';
 export function Accueil({
   entreprise, departements, agents, messages, taches, moi,
   onEntrer, onOuvrirSalon, onEcrireA, onFiche, onKanban,
-  onAllumer, onAllumerTous, onAllumerDepartement, onVoteRemplacement, onDirective, onVraiesPhotos, photosEnCours,
+  onAllumer, onAllumerTous, onAllumerDepartement, onVoteRemplacement, onMissionLancee, onDirective, onVraiesPhotos, photosEnCours,
   sansPhoto, aChoisir, t,
 }) {
   const [directive, setDirective] = useState('');
@@ -329,6 +330,9 @@ export function Accueil({
 
       {/* 5 bis. Le tableau de bord : chaque agent, compté (24/09) */}
       <TableauDeBord entreprise={entreprise} agents={agents} onFiche={onFiche} onVoteRemplacement={onVoteRemplacement} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
+
+      {/* 5 ter. La bibliothèque de missions (24/09) */}
+      <Missions entreprise={entreprise} agents={agents} departements={departements} moi={moi} onLancee={onMissionLancee} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
 
       {/* 6. Les plans par département, et « Au travail maintenant » */}
       <FeuilleDeRoute entreprise={entreprise} agents={agents} langue={typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined} t={t} />

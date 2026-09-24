@@ -675,6 +675,35 @@
       "badge": "Conteste le livrable de {{nom}}",
       "demander": "Faire relire par {{nom}}",
       "consigne": "relis le livrable de {{nom}} ci-dessus avec l'œil de ton métier. S'il y a un vrai problème (chiffre sans source, conclusion non démontrée, règle enfreinte, risque oublié), dis-le précisément et ce qu'il faudrait changer ; sinon dis simplement que tu n'as rien à redire."
+    },
+    "missions": {
+      "titre": "La bibliothèque de missions",
+      "aide": "Des missions prêtes : choisis qui la fait, lance-la une fois, ou fais-la revenir seule chaque semaine, mois ou année. Elle arrive au tableau de l'agent, qui la prend à sa prochaine journée de travail.",
+      "enCours": "Missions qui reviennent",
+      "prochaine": "prochaine le {{date}}",
+      "arreter": "Arrêter",
+      "rythme": {
+        "semaine": "chaque semaine",
+        "mois": "chaque mois",
+        "an": "chaque année"
+      },
+      "uneFois": "une fois",
+      "source": {
+        "github": "demande le dépôt GitHub branché",
+        "web": "cherche sur Internet"
+      },
+      "qui": "Qui :",
+      "lancer": "Lancer",
+      "activer": {
+        "semaine": "Chaque semaine",
+        "mois": "Chaque mois",
+        "an": "Chaque année"
+      },
+      "dejaActive": "revient déjà seule",
+      "lancee": "Au tableau de {{nom}} : il la prendra à sa prochaine journée de travail.",
+      "activee": "Au tableau de {{nom}}, et elle reviendra seule.",
+      "toutes": "Voir les {{n}} missions",
+      "moins": "Moins"
     }
   },
   "equipe": {
