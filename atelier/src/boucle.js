@@ -316,7 +316,7 @@ export async function continuer(etat, deps) {
         await deps.sauver();
         return etat;
       }
-      const decision = ev.decision === 'auto' ? (ev.regle ? 'regle_existante' : 'auto_lecture') : (ev.liste ? 'refuse_par_liste' : 'refuse_par_outil');
+      const decision = ev.decision === 'auto' ? (ev.regle ? 'regle_existante' : /^mode /.test(ev.raison || '') ? `auto_${etat.mode}` : 'auto_lecture') : (ev.liste ? 'refuse_par_liste' : 'refuse_par_outil');
       const r = await traiter(etat, deps, appel, outil, args || {}, decision, ev);
       etat.file.shift();
       if (r.stop === 'echecs') { arreter(etat, deps, 'arrete', `Arrêt : la même action a échoué ${MAX_ECHECS_IDENTIQUES} fois de suite.`); await deps.sauver(); return etat; }

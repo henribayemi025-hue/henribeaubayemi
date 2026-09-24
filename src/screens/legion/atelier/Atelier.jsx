@@ -180,7 +180,14 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     setOnglet('conversation');
     agir(() => appel(`/projets/${pid}/message`, { methode: 'POST', corps: { texte: m, modele } }));
   };
-  const decider = (choix) => agir(() => appel(`/projets/${pid}/decision`, { methode: 'POST', corps: { demande_id: vue.demande.id, choix } }));
+  // « Tout autoriser » : le mode Auto pour la suite, puis cette carte autorisée une fois.
+  const decider = (choix) => agir(async () => {
+    if (choix === 'tout') {
+      await appel(`/projets/${pid}/mode`, { methode: 'POST', corps: { mode: 'auto' } });
+      choix = 'une_fois';
+    }
+    return appel(`/projets/${pid}/decision`, { methode: 'POST', corps: { demande_id: vue.demande.id, choix } });
+  });
   const presenter = () => { setOnglet('conversation'); agir(() => appel(`/projets/${pid}/presenter`, { methode: 'POST', corps: { texte: t('legion.atelier.presenteMoiTexte') } })); };
   // Stop passe même quand une requête est en cours : c'est le but.
   const stop = async () => { try { setVue(await appel(`/projets/${pid}/stop`, { methode: 'POST', corps: {} })); } catch (e) { signaler(e); } };
@@ -252,6 +259,10 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   const [docApercu, setDocApercu] = useState(null);
   const [pageApercu, setPageApercu] = useState(null);
   const [grandTerminal, setGrandTerminal] = useState(false);
+  const [basOuvert, setBasOuvert] = useState(true);
+  const [panneauBas, setPanneauBas] = useState('agent');
+  const [terminaux, setTerminaux] = useState([]);
+  const [saisieTerminal, setSaisieTerminal] = useState('');
   const fichierJoint = useRef(null);
   const [etroit, setEtroit] = useState(false);
   const apercuVisible = onglet === 'apercu';
@@ -420,26 +431,73 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   // La console en direct, sous l'éditeur (Beau, 25/09 : « je veux voir les
   // logs, comment ça défile ») : chaque geste de l'agent, à la seconde.
   const lignesConsole = (vue?.affichage || []).filter((a) => a.qui === 'action' || a.qui === 'agent').slice(-40);
-  const console_ = (
-    <div className={`${grandTerminal ? 'h-[42vh]' : 'h-[150px]'} relative shrink-0 overflow-y-auto border-t border-legion-line bg-[#070b14] px-3 py-1.5 font-mono text-[11px] leading-relaxed`} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
-      <button type="button" onClick={() => setGrandTerminal((x) => !x)} className="sticky top-0 float-right rounded-pill border border-legion-line bg-[#070b14] px-2 text-[10px] text-legion-muted hover:text-legion-gold">{t(grandTerminal ? 'legion.atelier.terminalPetit' : 'legion.atelier.terminalGrand')}</button>
-      {!lignesConsole.length && <p className="text-legion-muted">{t('legion.atelier.consoleVide')}</p>}
-      {lignesConsole.map((a) => (a.terminal ? (
-        <div key={a.id} className="py-0.5">
-          <p className="truncate"><span className="text-legion-muted">{a.quand ? new Date(a.quand).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''} </span><span className="text-legion-gold">$</span> <span className="text-legion-ink">{a.resume}</span></p>
-          {a.terminal.sortie && <pre className={`whitespace-pre-wrap break-all pl-4 ${a.terminal.code === 0 ? 'text-[#b9c6d8]' : 'text-legion-danger'}`}>{a.terminal.sortie}</pre>}
-          <p className={`pl-4 ${a.terminal.code === 0 ? 'text-legion-success' : 'text-legion-danger'}`}>{t('legion.atelier.codeSortie', { code: a.terminal.code })}</p>
-        </div>
-      ) : (
-        <p key={a.id} className="truncate">
-          <span className="text-legion-muted">{a.quand ? new Date(a.quand).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''} </span>
-          {a.qui === 'action'
-            ? <><span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>{a.outil}</span> <span className="text-legion-ink">{a.resume}</span> <span className="text-legion-muted">· {t(`legion.atelier.decision_${a.decision}`, a.decision)}</span></>
-            : <><span className="text-legion-gold">{nomCodeur}</span> <span className="text-legion-ink">{String(a.texte || '').replace(/[*#`]+/g, '').replace(/\s+/g, ' ').slice(0, 160)}</span></>}
-        </p>
-      )))}
-      {travaille && <p className="text-legion-gold">▍</p>}
+  // Le panneau du bas, façon VS Code (Beau, 25/09 : « je ne peux pas fermer
+  // ou ajouter le terminal ») : l'onglet « Agent » (ce qu'il fait, à la
+  // seconde) et autant de terminaux qu'on veut, où l'on tape soi-même.
+  const heure = (q) => (q ? new Date(q).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
+  const blocCommande = (a) => (
+    <div key={a.id} className="py-0.5">
+      <p className="truncate"><span className="text-legion-muted">{heure(a.quand)} </span><span className={a.par === 'humain' ? 'text-legion-success' : 'text-legion-gold'}>{a.par === 'humain' ? '›' : '$'}</span> <span className="text-legion-ink">{a.resume}</span></p>
+      {a.terminal?.sortie && <pre className={`whitespace-pre-wrap break-all pl-4 ${a.terminal.code === 0 ? 'text-[#b9c6d8]' : 'text-legion-danger'}`}>{a.terminal.sortie}</pre>}
+      {a.terminal && <p className={`pl-4 ${a.terminal.code === 0 ? 'text-legion-success' : 'text-legion-danger'}`}>{t('legion.atelier.codeSortie', { code: a.terminal.code })}</p>}
     </div>
+  );
+  const ongletActif = terminaux.find((x) => x.id === panneauBas) || null;
+  const lancerCommande = async (e) => {
+    e.preventDefault();
+    const c = saisieTerminal.trim();
+    if (!c || !ongletActif || !pid) return;
+    setSaisieTerminal('');
+    const r = await agir(() => appel(`/projets/${pid}/commande`, { methode: 'POST', corps: { commande: c } }));
+    const derniere = [...(r?.affichage || [])].reverse().find((a) => a.par === 'humain');
+    if (derniere) setTerminaux((ts) => ts.map((x) => (x.id === ongletActif.id ? { ...x, ids: [...x.ids, derniere.id] } : x)));
+  };
+  const console_ = basOuvert ? (
+    <div className={`${grandTerminal ? 'h-[42vh]' : 'h-[170px]'} flex shrink-0 flex-col border-t border-legion-line bg-[#070b14]`}>
+      <div className="flex items-center gap-1 border-b border-legion-line px-2 py-1 text-[11px]">
+        <button type="button" onClick={() => setPanneauBas('agent')} className={`rounded px-2 py-0.5 ${panneauBas === 'agent' ? 'bg-legion-card text-legion-gold' : 'text-legion-muted'}`}>{t('legion.atelier.ongletAgent', { nom: nomCodeur })}</button>
+        {terminaux.map((x, n) => (
+          <span key={x.id} className={`flex items-center rounded ${panneauBas === x.id ? 'bg-legion-card text-legion-gold' : 'text-legion-muted'}`}>
+            <button type="button" onClick={() => setPanneauBas(x.id)} className="px-2 py-0.5">{t('legion.atelier.terminalN', { n: n + 1 })}</button>
+            <button type="button" aria-label={t('legion.atelier.fermerTerminal')} onClick={() => { setTerminaux((ts) => ts.filter((y) => y.id !== x.id)); if (panneauBas === x.id) setPanneauBas('agent'); }} className="pr-1.5 hover:text-legion-danger">×</button>
+          </span>
+        ))}
+        <button type="button" onClick={() => { const id = `t${Date.now()}`; setTerminaux((ts) => [...ts, { id, ids: [] }]); setPanneauBas(id); }} title={t('legion.atelier.nouveauTerminal')} className="rounded px-2 py-0.5 text-legion-muted hover:text-legion-gold">+</button>
+        <span className="ml-auto" />
+        <button type="button" onClick={() => setGrandTerminal((x) => !x)} className="rounded px-2 py-0.5 text-legion-muted hover:text-legion-gold">{t(grandTerminal ? 'legion.atelier.terminalPetit' : 'legion.atelier.terminalGrand')}</button>
+        <button type="button" onClick={() => setBasOuvert(false)} aria-label={t('legion.atelier.fermerPanneau')} className="rounded px-2 py-0.5 text-legion-muted hover:text-legion-danger">×</button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-1.5 font-mono text-[11px] leading-relaxed" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+        {!ongletActif ? (
+          <>
+            {!lignesConsole.length && <p className="text-legion-muted">{t('legion.atelier.consoleVide')}</p>}
+            {lignesConsole.map((a) => (a.terminal ? blocCommande(a) : (
+              <p key={a.id} className="truncate">
+                <span className="text-legion-muted">{heure(a.quand)} </span>
+                {a.qui === 'action'
+                  ? <><span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>{a.outil}</span> <span className="text-legion-ink">{a.resume}</span> <span className="text-legion-muted">· {t(`legion.atelier.decision_${a.decision}`, a.decision)}</span></>
+                  : <><span className="text-legion-gold">{nomCodeur}</span> <span className="text-legion-ink">{String(a.texte || '').replace(/[*#`]+/g, '').replace(/\s+/g, ' ').slice(0, 160)}</span></>}
+              </p>
+            )))}
+            {travaille && <p className="text-legion-gold">▍</p>}
+          </>
+        ) : (
+          <>
+            {!ongletActif.ids.length && <p className="text-legion-muted">{t('legion.atelier.terminalVide')}</p>}
+            {(vue?.affichage || []).filter((a) => ongletActif.ids.includes(a.id)).map(blocCommande)}
+          </>
+        )}
+      </div>
+      {ongletActif && (
+        <form onSubmit={lancerCommande} className="flex items-center gap-2 border-t border-legion-line px-3 py-1 font-mono text-[12px]">
+          <span className="text-legion-success">›</span>
+          <input value={saisieTerminal} onChange={(e) => setSaisieTerminal(e.target.value)} disabled={travaille || statut === 'attente'} placeholder={t('legion.atelier.terminalSaisie')} spellCheck={false}
+            className="min-w-0 flex-1 bg-transparent text-legion-ink outline-none placeholder:text-legion-muted disabled:opacity-50" />
+        </form>
+      )}
+    </div>
+  ) : (
+    <button type="button" onClick={() => setBasOuvert(true)} className="shrink-0 border-t border-legion-line bg-[#070b14] px-3 py-1 text-left font-mono text-[11px] text-legion-muted hover:text-legion-gold">▸ {t('legion.atelier.ouvrirPanneau')}</button>
   );
 
   const colonneApercu = (
@@ -536,7 +594,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
         {vue && (
           <>
             <div className="flex overflow-hidden rounded-pill border border-legion-line text-[12px]" role="radiogroup" aria-label={t('legion.atelier.mode')}>
-              {['demander', 'reflechir'].map((m) => (
+              {['demander', 'accepter', 'auto', 'reflechir'].map((m) => (
                 <button key={m} type="button" role="radio" aria-checked={vue.mode === m} disabled={travaille} onClick={() => vue.mode !== m && changerMode(m)}
                   title={t(`legion.atelier.modeAide_${m}`)}
                   className={`px-3 py-1.5 font-semibold ${vue.mode === m ? 'bg-legion-gold text-legion-bg' : 'text-legion-muted'}`}>

@@ -1048,7 +1048,23 @@
       "jointTropGros": "File too large (1 MB max for now).",
       "jointBinaire": "“{{nom}}” is not a text file: Excel, PDF and images are coming to the workshop soon.",
       "jointMention": "(Attached file: {{nom}} — it is in the project.)",
-      "ouvrirAPart": "Open the page on its own, full size"
+      "ouvrirAPart": "Open the page on its own, full size",
+      "mode_accepter": "Accept edits",
+      "modeAide_accepter": "Files are written without asking; commands wait for your OK.",
+      "mode_auto": "Allow all",
+      "modeAide_auto": "The agent writes and runs commands without asking, inside its sandbox only. Dangerous actions stay refused; nothing leaves the sandbox without Confirm.",
+      "toutAutoriser": "Allow all",
+      "toutAutoriserAide": "Switch to “Allow all” for the rest (you can switch back at the top anytime), and allow this action.",
+      "decision_auto_auto": "allowed (all)",
+      "decision_auto_accepter": "edits accepted",
+      "ongletAgent": "{{nom}} live",
+      "terminalN": "Terminal {{n}}",
+      "nouveauTerminal": "New terminal",
+      "fermerTerminal": "Close this terminal",
+      "fermerPanneau": "Close the panel",
+      "ouvrirPanneau": "Open the panel (live agent, terminals)",
+      "terminalVide": "Type a command below: it runs in the project sandbox (e.g. ls, node tests.js, python3 main.py).",
+      "terminalSaisie": "Type a command, then Enter…"
     }
   },
   "equipe": {

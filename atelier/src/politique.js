@@ -16,7 +16,15 @@
 // Ce module est pur (aucune dépendance) : il est testé tel quel
 // (atelier/test/politique.test.js).
 
-export const MODES = ['demander', 'reflechir', 'visite'];
+// 25/09 (Beau : « Autoriser, autoriser… ça me fatigue ») : deux modes en plus,
+// choisis par l'humain seulement.
+// - « accepter » : les fichiers s'écrivent sans carte ; les commandes demandent.
+// - « auto » : fichiers ET commandes sans carte, DANS le bac à sable seulement.
+// La liste « toujours refusé » (plus bas) vaut dans tous les modes ; le réseau
+// du bac reste limité (npm, PyPI, GitHub en lecture) ; rien ne sort du bac
+// (pas de GitHub en écriture, pas de mise en ligne) sans Confirmer.
+export const MODES = ['demander', 'accepter', 'auto', 'reflechir', 'visite'];
+export const MODES_ACTION = ['demander', 'accepter', 'auto'];
 // « montrer » ne touche à rien : il demande à l'écran d'ouvrir l'aperçu ou un
 // fichier (Beau, 25/09 : « il doit tout faire lui-même »).
 export const OUTILS_LECTURE = ['lister', 'lire_fichier', 'chercher', 'montrer'];
@@ -24,7 +32,7 @@ export const OUTILS_ECRITURE = ['ecrire_fichier', 'supprimer_fichier'];
 export const OUTILS_COMMANDE = ['commande'];
 
 export function outilsPourMode(mode) {
-  if (mode === 'demander') return [...OUTILS_LECTURE, ...OUTILS_ECRITURE, ...OUTILS_COMMANDE];
+  if (MODES_ACTION.includes(mode)) return [...OUTILS_LECTURE, ...OUTILS_ECRITURE, ...OUTILS_COMMANDE];
   return [...OUTILS_LECTURE];
 }
 
@@ -202,7 +210,7 @@ export function evaluer(outil, args, { mode = 'demander', regles = [] } = {}) {
     return { decision: 'auto', raison: 'lecture' };
   }
   if (![...OUTILS_ECRITURE, ...OUTILS_COMMANDE].includes(outil)) return { decision: 'refuser', raison: `outil inconnu (${outil})` };
-  if (mode !== 'demander') return { decision: 'refuser', raison: 'mode lecture seule : rien ne se modifie ni ne s\'exécute' };
+  if (!MODES_ACTION.includes(mode)) return { decision: 'refuser', raison: 'mode lecture seule : rien ne se modifie ni ne s\'exécute' };
 
   if (outil === 'commande') {
     const commande = normaliserCommande(args?.commande);
@@ -210,6 +218,7 @@ export function evaluer(outil, args, { mode = 'demander', regles = [] } = {}) {
     if (interdite) return { decision: 'refuser', raison: `toujours refusé : ${interdite}`, liste: true, commande };
     const regle = regleCorrespond(regles, outil, args);
     if (regle) return { decision: 'auto', raison: 'règle « Toujours » de ce projet', regle, commande };
+    if (mode === 'auto') return { decision: 'auto', raison: 'mode Auto', commande };
     return { decision: 'demander', raison: 'commande', commande, reseau: reseauProbable(commande) };
   }
 
@@ -221,6 +230,7 @@ export function evaluer(outil, args, { mode = 'demander', regles = [] } = {}) {
   }
   const regle = regleCorrespond(regles, outil, args);
   if (regle) return { decision: 'auto', raison: 'règle « Toujours » de ce projet', regle, chemin };
+  if (mode === 'accepter' || mode === 'auto') return { decision: 'auto', raison: mode === 'auto' ? 'mode Auto' : 'mode Accepter les modifications', chemin };
   return { decision: 'demander', raison: outil === 'ecrire_fichier' ? 'modification de fichier' : 'suppression de fichier', chemin };
 }
 

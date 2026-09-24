@@ -101,6 +101,11 @@ export function Carte({ demande, occupe, onDecider, t, nom }) {
           className="rounded-pill border border-legion-gold px-4 py-2 text-caption font-semibold text-legion-gold disabled:opacity-50">
           {commande ? t('legion.atelier.toujoursCommande') : t('legion.atelier.toujoursFichier')}
         </button>
+        {/* Beau, 25/09 : « je peux aller à tout autoriser, et elle avance ». */}
+        <button type="button" disabled={occupe} onClick={() => onDecider('tout')} title={t('legion.atelier.toutAutoriserAide')}
+          className="rounded-pill border border-legion-success px-4 py-2 text-caption font-semibold text-legion-success disabled:opacity-50">
+          {t('legion.atelier.toutAutoriser')}
+        </button>
         <button type="button" disabled={occupe} onClick={() => onDecider('refuser')}
           className="rounded-pill border border-legion-danger px-4 py-2 text-caption font-semibold text-legion-danger disabled:opacity-50">
           {t('legion.atelier.refuser')}

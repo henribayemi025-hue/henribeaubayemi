@@ -15,7 +15,7 @@ import { nouvelEtat, nouvelleSession, envoyer, decider, arreter, coutSession, co
 import { executant } from './bac.js';
 import { disponibles, modelesRelais, MODELES } from './moteur.js';
 import { prixMachineParSeconde, arrondi } from './cout.js';
-import { cheminSur, MODES } from './politique.js';
+import { cheminSur, MODES, normaliserCommande, commandeInterdite } from './politique.js';
 import { diff } from './diff.js';
 import { fabriquerZip } from './zip.js';
 import { DEPARTS } from './departs.js';
@@ -269,6 +269,29 @@ export class Atelier extends DurableObject {
         return json(this.vue(pid, e, this.env));
       }
 
+      // Le terminal de l'humain (Beau, 25/09) : il tape lui-même une commande
+      // dans SON bac à sable. Pas de carte (c'est lui), mais la liste
+      // « toujours refusé » tient, le plafond de la session aussi, et tout
+      // s'écrit au journal et dans le terminal.
+      if (action === 'commande' && methode === 'POST') {
+        if (['en_cours', 'attente'].includes(e.session.statut)) return erreur('L\'agent travaille : attends ou appuie sur Stop avant de taper une commande.', 409);
+        const commande = normaliserCommande(corps.commande);
+        if (!commande) return erreur('commande vide');
+        const interdite = commandeInterdite(commande);
+        if (interdite) return erreur(`Toujours refusé : ${interdite}`, 403);
+        if (coutSession(e.session) >= e.session.plafond) return erreur(`Plafond de la session atteint (${e.session.plafond} $).`, 402);
+        const d = this.deps(pid, e, trace, {});
+        const r = await d.bac.executer(commande, {});
+        const secondes = Number(r.secondes || 0);
+        e.session.secondesMachine += secondes;
+        e.session.coutMachine += secondes * d.prixMachineSeconde;
+        const sortie = `${r.stdout || ''}${r.stderr ? `\n${r.stderr}` : ''}`.trim();
+        e.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil: 'commande', resume: commande, decision: 'humain', ok: r.code === 0, quand: new Date().toISOString(), par: 'humain', terminal: { code: r.code, sortie: sortie.length > 4000 ? `…\n${sortie.slice(-4000)}` : sortie } });
+        await this.journaliser(pid, e, { acteur: 'humain', outil: 'commande', entree_resumee: commande.slice(0, 500), resultat_resume: `code ${r.code}`, decision: 'humain', mode: e.mode, cout_usd: secondes * d.prixMachineSeconde }, trace);
+        await this.sauver(pid, e);
+        return json(this.vue(pid, e, this.env));
+      }
+
       if (action === 'message' && methode === 'POST') {
         if (corps.modele && (corps.modele === 'auto' || MODELES.includes(corps.modele))) e.modele = corps.modele;
         await this.tourner(pid, e, trace, (deps) => envoyer(e, deps, corps.texte), acces);
@@ -313,8 +336,8 @@ export class Atelier extends DurableObject {
       }
 
       if (action === 'mode' && methode === 'POST') {
-        // Seul l'humain authentifié change le mode, ici. V0 : pas de mode automatique.
-        if (!['demander', 'reflechir'].includes(corps.mode) || !MODES.includes(corps.mode)) return erreur('Mode inconnu (V0 : « demander » ou « reflechir »).');
+        // Seul l'humain authentifié change le mode, ici (jamais l'agent, jamais un fichier).
+        if (!['demander', 'accepter', 'auto', 'reflechir'].includes(corps.mode) || !MODES.includes(corps.mode)) return erreur('Mode inconnu (« demander », « accepter », « auto » ou « reflechir »).');
         e.mode = corps.mode;
         await this.journaliser(pid, e, { acteur: 'humain', outil: 'mode', entree_resumee: corps.mode, resultat_resume: null, decision: null, mode: e.mode, cout_usd: 0 }, trace);
         await this.sauver(pid, e);

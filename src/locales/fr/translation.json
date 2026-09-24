@@ -1048,7 +1048,23 @@
       "jointTropGros": "Fichier trop gros (1 Mo au plus pour l'instant).",
       "jointBinaire": "« {{nom}} » n'est pas un fichier texte : les Excel, PDF et images arrivent bientôt dans l'atelier.",
       "jointMention": "(Fichier joint : {{nom}} — il est dans le projet.)",
-      "ouvrirAPart": "Ouvrir la page à part, en grand"
+      "ouvrirAPart": "Ouvrir la page à part, en grand",
+      "mode_accepter": "Accepter les modifs",
+      "modeAide_accepter": "Les fichiers s'écrivent sans te demander ; les commandes attendent ton accord.",
+      "mode_auto": "Tout autoriser",
+      "modeAide_auto": "L'agent écrit et lance ses commandes sans te demander, dans son bac à sable seulement. Les actions dangereuses restent refusées ; rien ne sort du bac sans Confirmer.",
+      "toutAutoriser": "Tout autoriser",
+      "toutAutoriserAide": "Passe en mode « Tout autoriser » pour la suite (réversible à tout moment en haut), et autorise cette action.",
+      "decision_auto_auto": "tout autorisé",
+      "decision_auto_accepter": "modifs acceptées",
+      "ongletAgent": "{{nom}} en direct",
+      "terminalN": "Terminal {{n}}",
+      "nouveauTerminal": "Nouveau terminal",
+      "fermerTerminal": "Fermer ce terminal",
+      "fermerPanneau": "Fermer le panneau",
+      "ouvrirPanneau": "Ouvrir le panneau (agent en direct, terminaux)",
+      "terminalVide": "Tape une commande ci-dessous : elle s'exécute dans le bac à sable du projet (ex. ls, node tests.js, python3 main.py).",
+      "terminalSaisie": "Tape une commande puis Entrée…"
     }
   },
   "equipe": {
