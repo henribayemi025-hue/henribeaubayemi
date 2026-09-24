@@ -44,13 +44,15 @@ const DS_FORT = () => `ds:${Deno.env.get('LEGION_MODELE_DS') || 'deepseek-v4-pro
 const DS_RAPIDE = () => `ds:${Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepseek-flash'}`;
 const kimi = () => !!Deno.env.get('KIMI_API_KEY');
 const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
-// La relève, dans l'ordre : DeepSeek fort, Kimi, DeepSeek rapide, puis Google
-// (redéployé le 24/09 : le premier déploiement avait échoué côté GitHub).
+// La relève, dans l'ordre : DeepSeek rapide, puis le fort, puis Kimi, puis
+// Google. Le rapide d'abord partout (24/09, premier essai réel) : v4-pro
+// réfléchit longtemps et a dépassé les 45 s d'une réponse de salon, puis
+// flash a répondu — 75 s en tout. Flash seul répond en 10 à 30 s, et sa
+// réponse était la meilleure des deux à l'essai.
 const releve = (fort: boolean) => [
-  ...(deepseek() && fort ? [DS_FORT()] : []),
-  ...(kimi() && fort ? [KIMI()] : []),
   ...(deepseek() ? [DS_RAPIDE()] : []),
-  ...(kimi() && !fort ? [KIMI()] : []),
+  ...(deepseek() && fort ? [DS_FORT()] : []),
+  ...(kimi() ? [KIMI()] : []),
 ];
 
 export function moteurs(): string[] {
