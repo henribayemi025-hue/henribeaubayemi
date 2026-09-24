@@ -24,7 +24,7 @@
 // message n'a qu'une série de réponses; un agent ne répond jamais à un agent.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { budgetAgentAtteint, compter, coutEnCours, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { blocSouvenirs, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
@@ -37,7 +37,6 @@ import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 import { classeurEnTexte, creerClasseur, MIME_XLSX, type Feuille } from '../_shared/tableur.ts';
 import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
 
-const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
 const TIMEOUT_MS = 25_000;
 const CONTEXTE = 20;
@@ -214,19 +213,10 @@ Vérifie, dans cet ordre:
 
 Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original (sauf les cas 5 et 6); raison = en une courte phrase, ce que tu as corrigé.`;
   try {
-    const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
-      method: 'POST',
-      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: invite }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 512 }, responseMimeType: 'application/json', responseSchema: SCHEMA_CRITIQUE },
-      }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (!resp.ok) { console.error('critique:', resp.status); return null; }
-    const body = await resp.json();
-    const txt = body?.candidates?.[0]?.content?.parts?.filter((x: { thought?: boolean }) => !x.thought).map((x: { text?: string }) => x.text ?? '').join('') ?? '';
-    const obj = JSON.parse(txt);
+    // Par le moteur commun (24/09) : DeepSeek d'abord quand sa clé existe.
+    const r = await generer(apiKey, invite, SCHEMA_CRITIQUE, { temperature: 0.2, maxSortie: 8192, reflexion: 512, delaiMs: TIMEOUT_MS, modeles: moteursSimples().slice(0, 1) });
+    if ('erreur' in r) { console.error('critique:', r.erreur); return null; }
+    const obj = r.obj;
     if (obj.verdict === 'corrige' && typeof obj.texte === 'string' && obj.texte.trim()) {
       return { texte: obj.texte.trim().slice(0, 4000), raison: String(obj.raison || '').slice(0, 200) };
     }

@@ -14,7 +14,8 @@
 // ou le jeton de la base pour remplir le catalogue en série.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, gemini } from '../_shared/cout.ts';
+import { compter } from '../_shared/cout.ts';
+import { generer, moteurs } from '../_shared/moteur.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -35,7 +36,6 @@ function cors(origin: string | null): Record<string, string> {
   };
 }
 
-const MODELES = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 const TAILLES = ['cocon', 'startup', 'scaleup', 'megacorp'];
 const SCHEMA = {
   type: 'OBJECT',
@@ -115,23 +115,12 @@ Deno.serve(compter('legion_modele', async (req: Request) => {
   const { data: existant } = await service.from('studio_modeles').select('cle, nom').or(`cle.eq.${cle0},nom.ilike.${secteur.replace(/[%,]/g, ' ')}`).maybeSingle();
   if (existant) return json({ ok: true, deja: true, cle: existant.cle, nom: existant.nom });
 
+  // Par le moteur commun (24/09) : DeepSeek d'abord quand sa clé existe,
+  // Google ensuite — c'était l'appel le plus cher de Legion (Pro, le 22/09).
   let obj: Record<string, unknown> | null = null; let modele = '';
   let derniere = 'aucun modèle joignable';
-  for (const m of MODELES) {
-    try {
-      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-        method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: invite(secteur) }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 16384, thinkingConfig: { thinkingBudget: 2048 }, responseMimeType: 'application/json', responseSchema: SCHEMA } }),
-        signal: AbortSignal.timeout(120_000),
-      });
-      if (!resp.ok) { derniere = `${m}: HTTP ${resp.status} ${(await resp.text()).slice(0, 160)}`; console.error(derniere); continue; }
-      const body = await resp.json();
-      const txt = body?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-      if (!txt) { derniere = `${m}: réponse vide`; continue; }
-      try { obj = JSON.parse(txt); modele = m; break; } catch { derniere = `${m}: JSON illisible`; }
-    } catch (e) { derniere = `${m}: ${(e as Error).message}`; console.error(derniere); }
-  }
+  const r = await generer(apiKey, invite(secteur), SCHEMA, { temperature: 0.5, maxSortie: 16384, reflexion: 2048, delaiMs: 120_000, modeles: moteurs() });
+  if ('erreur' in r) derniere = r.erreur; else { obj = r.obj; modele = r.modele; }
   if (!obj) return json({ erreur: derniere });
 
   const postes = (Array.isArray(obj.postes) ? obj.postes : []) as Array<{ departement: string; poste: string; mandat: string; des_la_taille: string; est_directeur: boolean; poids: number }>;

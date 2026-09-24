@@ -29,7 +29,7 @@
 // dans sa propre session.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { aPart, budgetAgentAtteint, compter, coutEnCours, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { aPart, budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
@@ -98,16 +98,9 @@ ${ancien ? `\nLE RÉSUMÉ PRÉCÉDENT (à fusionner, en gardant ce qui compte en
 LES NOUVEAUX MESSAGES À RÉSUMER, du plus ancien au plus récent:
 ${messages}`;
   try {
-    const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, {
-      method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json', responseSchema: SCHEMA_RESUME } }),
-      signal: AbortSignal.timeout(40_000),
-    });
-    if (!resp.ok) { console.error('résumé:', resp.status); return null; }
-    const body = await resp.json();
-    const txt = body?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-    const r = String(JSON.parse(txt).resume || '').replace(/\\r\\n|\\n/g, '\n').trim();
+    const g = await generer(apiKey, texte, SCHEMA_RESUME, { temperature: 0.2, maxSortie: 2048, reflexion: 0, delaiMs: 40_000, modeles: moteursSimples().slice(0, 1) });
+    if ('erreur' in g) { console.error('résumé:', g.erreur); return null; }
+    const r = String(g.obj.resume || '').replace(/\\r\\n|\\n/g, '\n').trim();
     return r.length >= 80 ? r.slice(0, 2500) : null;
   } catch (e) { console.error('résumé:', (e as Error).message); return null; }
 }

@@ -18,6 +18,12 @@
 //   modèles de Google ont échoué (saturés, « 503 »), si une clé Anthropic ou
 //   une adresse OpenAI est configurée, le moteur essaie encore celui-là au
 //   lieu de rendre une erreur. Sans ces secrets, rien ne change.
+// - « ds:<modèle> » (24/09, choix de Beau) : DeepSeek, par son API (secret
+//   DEEPSEEK_API_KEY, serveurs en Chine — Beau l'accepte). Dès que la clé
+//   existe, DeepSeek passe EN PREMIER pour tout ce qui est texte (plans,
+//   livrables, réponses, rapports) et Google devient le secours ; sans elle,
+//   rien ne change. La voix, les images et la recherche sur Internet restent
+//   chez Google : elles ne passent pas par ce moteur.
 //
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
@@ -26,9 +32,18 @@ import { ajouterCout, gemini } from './cout.ts';
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
+// DeepSeek d'abord quand sa clé existe (le modèle fort pour les plans et
+// livrables, le rapide pour le reste). Les noms suivent leur tarif publié
+// (api-docs.deepseek.com, lu le 24/09) : quand ils en changent, on change
+// ces deux lignes ou le réglage LEGION_MODELE_DS / LEGION_MODELE_DS_RAPIDE.
+const deepseek = () => !!Deno.env.get('DEEPSEEK_API_KEY');
+const DS_FORT = () => `ds:${Deno.env.get('LEGION_MODELE_DS') || 'deepseek-v4-pro'}`;
+const DS_RAPIDE = () => `ds:${Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepseek-flash'}`;
+
 export function moteurs(): string[] {
   const reglage = (Deno.env.get('LEGION_MOTEURS') || '').split(',').map((s) => s.trim()).filter(Boolean);
-  return reglage.length ? reglage : MOTEURS_PAR_DEFAUT;
+  if (reglage.length) return reglage;
+  return deepseek() ? [DS_FORT(), DS_RAPIDE(), ...MOTEURS_PAR_DEFAUT] : MOTEURS_PAR_DEFAUT;
 }
 
 // Beau, 23/09: « on peut utiliser Flash pour les trucs simples, et ça part
@@ -38,7 +53,8 @@ export function moteurs(): string[] {
 export const MOTEURS_SIMPLES_PAR_DEFAUT = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-pro-preview'];
 export function moteursSimples(): string[] {
   const reglage = (Deno.env.get('LEGION_MOTEURS_SIMPLES') || '').split(',').map((s) => s.trim()).filter(Boolean);
-  return reglage.length ? reglage : MOTEURS_SIMPLES_PAR_DEFAUT;
+  if (reglage.length) return reglage;
+  return deepseek() ? [DS_RAPIDE(), ...MOTEURS_SIMPLES_PAR_DEFAUT] : MOTEURS_SIMPLES_PAR_DEFAUT;
 }
 
 type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[] };
@@ -68,9 +84,15 @@ async function viaGemini(apiKey: string, model: string, texte: string, schema: u
   return txt;
 }
 
-async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
-  const url = Deno.env.get('MOTEUR_OA_URL');
-  const cle = Deno.env.get('MOTEUR_OA_CLE');
+// Prix DeepSeek publiés le 24/09 (dollars le million de jetons, tarif des
+// heures pleines — le plus cher, pour ne jamais sous-compter) :
+// [entrée déjà en cache, entrée, sortie].
+const PRIX_DS: Record<string, [number, number, number]> = {
+  'deepseek-flash': [0.006, 0.30, 1.20],
+  'deepseek-v4-pro': [0.044, 1.32, 3.96],
+};
+
+async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL'), cle = Deno.env.get('MOTEUR_OA_CLE')): Promise<string> {
   if (!url) throw new Error('MOTEUR_OA_URL absent');
   const resp = await fetch(`${url.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
@@ -89,9 +111,16 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
   const body = await resp.json();
-  const txt = body?.choices?.[0]?.message?.content ?? '';
+  const prix = PRIX_DS[model];
+  if (prix) {
+    const u = body?.usage ?? {};
+    const cache = u.prompt_cache_hit_tokens ?? 0;
+    const entree = (u.prompt_tokens ?? 0) - cache;
+    ajouterCout(((cache * prix[0] + entree * prix[1] + (u.completion_tokens ?? 0) * prix[2]) / 1_000_000) * 0.92);
+  }
+  const txt = String(body?.choices?.[0]?.message?.content ?? '').trim();
   if (!txt) throw new Error('réponse vide');
-  return txt;
+  return txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
 }
 
 async function viaAnthropic(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
@@ -137,9 +166,10 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
   for (const nom of [...liste, ...secours().filter((x) => !liste.includes(x))]) {
     // Le plafond de dépenses du projet Google vaut pour tous ses modèles
     // (vu le 24/09) : inutile de les essayer un par un, on passe au secours.
-    if (plafondGoogle && !nom.startsWith('oa:') && !nom.startsWith('an:')) continue;
+    if (plafondGoogle && /^gemini/.test(nom)) continue;
     try {
-      const txt = nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
+      const txt = nom.startsWith('ds:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.deepseek.com', Deno.env.get('DEEPSEEK_API_KEY'))
+        : nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { return { obj: nettoyer(JSON.parse(txt)), modele: nom }; } catch { derniere = `${nom}: JSON illisible`; }
