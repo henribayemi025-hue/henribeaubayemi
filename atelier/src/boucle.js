@@ -231,12 +231,16 @@ async function executer(outil, args, etat, deps) {
       ok: r.code === 0,
       texte: `Code de sortie : ${r.code}${r.fichiersChanges?.length ? `\nFichiers changés par la commande : ${r.fichiersChanges.slice(0, 50).join(', ')}` : ''}\n${DONNEES}${couper(sortie || '(aucune sortie)', MAX_SORTIE_COMMANDE)}`,
       cout: usd,
+      // Pour le terminal de l'écran (Beau, 25/09 : « voir EXACTEMENT ce qu'elle a fait ») :
+      // la fin de la sortie, là où sont les résultats.
+      terminal: { code: r.code, sortie: sortie.length > MAX_TERMINAL ? `…\n${sortie.slice(-MAX_TERMINAL)}` : sortie },
     };
   }
   return { ok: false, texte: `Outil inconnu : ${outil}` };
 }
 
 const MAX_CONTENU_CARTE = 100_000;
+const MAX_TERMINAL = 4000;
 
 // La carte montrée à l'humain.
 async function carte(appel, outil, args, ev, deps) {
@@ -265,7 +269,7 @@ async function traiter(etat, deps, appel, outil, args, decision, ev) {
   }
   etat.conversation.push({ role: 'tool', tool_call_id: appel.id, content: resultat.texte });
   const quand = deps.maintenant().toISOString();
-  etat.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil, resume: resumeAppel(outil, args), decision, ok: resultat.ok, quand });
+  etat.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil, resume: resumeAppel(outil, args), decision, ok: resultat.ok, quand, ...(resultat.terminal ? { terminal: resultat.terminal } : {}) });
   await deps.journal({
     acteur: decision === 'refuse' || decision.startsWith('autorise') ? 'humain' : 'outil',
     outil, entree_resumee: resumer(resumeAppel(outil, args), 500), resultat_resume: resumer(resultat.texte.replace(DONNEES, ''), 500),

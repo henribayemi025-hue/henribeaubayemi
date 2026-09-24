@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink } from '@tabler/icons-react';
 import { appel, ErreurAtelier } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
@@ -44,11 +44,36 @@ const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch { /* naviga
 // Les réponses de l'agent mises en forme (Beau, 25/09 : « il y a les étoiles,
 // ce n'est pas beau, pas pro ») : titres, listes, gras, et les blocs de code
 // dans un encadré.
+// Un tableau Markdown (| a | b |) devient un vrai tableau (25/09 : les « | »
+// s'affichaient tels quels).
+function enBlocs(texte) {
+  const blocs = [];
+  let tableau = null;
+  let texteCourant = [];
+  const vider = () => { if (texteCourant.length) { blocs.push({ t: 'texte', v: texteCourant.join('\n') }); texteCourant = []; } };
+  for (const l of texte.split('\n')) {
+    if (/^\s*\|.*\|\s*$/.test(l)) {
+      vider();
+      if (!tableau) { tableau = { t: 'tableau', lignes: [] }; blocs.push(tableau); }
+      if (!/^\s*\|[\s:|-]+\|\s*$/.test(l)) tableau.lignes.push(l.trim().slice(1, -1).split('|').map((c) => c.trim()));
+    } else { tableau = null; texteCourant.push(l); }
+  }
+  vider();
+  return blocs;
+}
 function Riche({ texte }) {
   const morceaux = String(texte || '').split(/```[\w-]*\n?/);
   return morceaux.map((m, i) => (i % 2
     ? <pre key={i} className="my-1.5 overflow-x-auto rounded-md border border-legion-line bg-legion-bg p-2 font-mono text-[12px] text-legion-gold-soft">{m.replace(/\n$/, '')}</pre>
-    : m.trim() ? <Texte key={i} contenu={m.replace(/`([^`\n]+)`/g, '$1')} className="text-caption leading-snug text-legion-ink" /> : null));
+    : enBlocs(m.replace(/`([^`\n]+)`/g, '$1')).map((b, j) => (b.t === 'tableau'
+      ? (
+        <div key={`${i}-${j}`} className="my-1.5 overflow-x-auto">
+          <table className="w-full border-collapse text-[12px]">
+            <tbody>{b.lignes.map((l, k) => <tr key={k} className={k === 0 ? 'font-semibold text-legion-gold' : 'border-t border-legion-line'}>{l.map((c, n) => <td key={n} className="px-2 py-1 align-top text-legion-ink">{c.replace(/\*\*/g, '')}</td>)}</tr>)}</tbody>
+          </table>
+        </div>
+      )
+      : b.v.trim() ? <Texte key={`${i}-${j}`} contenu={b.v} className="text-caption leading-snug text-legion-ink" /> : null))));
 }
 
 function Visage({ codeur, taille = 28 }) {
@@ -197,7 +222,12 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     const geste = [...nouveaux].reverse().find((a) => a.qui === 'action' && ['lire_fichier', 'ecrire_fichier'].includes(a.outil) && a.ok && a.resume && a.resume !== '.');
     if (!geste) return;
     setActivite({ verbe: geste.outil === 'lire_fichier' ? 'lit' : 'ecrit', chemin: geste.resume });
-    if (suivre && fichier?.chemin !== geste.resume && (!fichier || fichier.brouillon === fichier.contenu)) ouvrir(geste.resume, false);
+    if (suivre && fichier?.chemin !== geste.resume && (!fichier || fichier.brouillon === fichier.contenu)) {
+      // Un fichier qu'elle vient d'ÉCRIRE s'ouvre vide, puis se tape sous nos
+      // yeux en descendant là où elle écrit (25/09 : « la barre reste à 1 »).
+      if (geste.outil === 'ecrire_fichier') { setFichier({ chemin: geste.resume, contenu: '', brouillon: '' }); setTimeout(() => ouvrir(geste.resume, false), 120); }
+      else ouvrir(geste.resume, false);
+    }
     // Le fil est tronqué à 200 lignes par le serveur : on suit le DERNIER
     // élément, pas la longueur (25/09 : au-delà de 200, l'éditeur ne suivait plus).
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,6 +251,8 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   // proposition : on voit le résultat avant de dire oui.
   const [docApercu, setDocApercu] = useState(null);
   const [pageApercu, setPageApercu] = useState(null);
+  const [grandTerminal, setGrandTerminal] = useState(false);
+  const fichierJoint = useRef(null);
   const [etroit, setEtroit] = useState(false);
   const apercuVisible = onglet === 'apercu';
   const signature = (vue?.fichiers || []).map((f) => `${f.chemin}:${f.taille}`).join('|');
@@ -249,12 +281,47 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apercuVisible, signature, vue?.demande?.id, fichier?.brouillon, pid, pageApercu]);
 
+  // La page ouverte à part, en grand (un « artefact » cliquable) : toujours
+  // dans un cadre isolé, pour qu'elle ne voie jamais la session de Léo.
+  const ouvrirAPart = () => {
+    if (!docApercu?.doc) return;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.opener = null;
+    const cadre = w.document.createElement('iframe');
+    cadre.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals');
+    cadre.srcdoc = docApercu.doc;
+    cadre.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff';
+    w.document.title = docApercu.page || 'Aperçu';
+    w.document.body.style.margin = '0';
+    w.document.body.appendChild(cadre);
+  };
   const basculerSuivre = () => setSuivre((x) => { ecrire('atelier:suivre2', x ? '0' : '1'); return !x; });
   const enregistrer = () => fichier && agir(async () => {
     const r = await appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: fichier.chemin, contenu: fichier.brouillon } });
     setFichier((f) => ({ ...f, contenu: f.brouillon }));
     return r;
   });
+
+  function telecharger(chemin, contenu) {
+    const url = URL.createObjectURL(new Blob([contenu ?? ''], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = chemin.split('/').pop(); document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
+  // Joindre un fichier à sa demande : il est déposé dans le projet, et la
+  // demande le mentionne (25/09 : « je ne peux pas joindre un fichier »).
+  // Textes seulement pour l'instant (code, CSV, JSON, Markdown…).
+  async function joindre(e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || !pid) return;
+    if (f.size > 1_000_000) { setErreur(t('legion.atelier.jointTropGros')); return; }
+    const texteF = await f.text();
+    if (/\u0000/.test(texteF.slice(0, 2000))) { setErreur(t('legion.atelier.jointBinaire', { nom: f.name })); return; }
+    await agir(() => appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: f.name, contenu: texteF } }));
+    setTexte((x) => `${x}${x ? '\n' : ''}${t('legion.atelier.jointMention', { nom: f.name })}`);
+  }
 
   async function exporter() {
     try {
@@ -329,6 +396,8 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
               className={`ml-auto shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${suivre ? 'border-legion-gold text-legion-gold' : 'border-legion-line text-legion-muted'}`}>
               {suivre ? '● ' : '○ '}{t(suivre ? 'legion.atelier.suivreOui' : 'legion.atelier.suivreNon', { nom: nomCodeur })}
             </button>
+            <button type="button" onClick={() => telecharger(fichier.chemin, fichier.brouillon)} title={t('legion.atelier.telecharger')}
+              className="shrink-0 rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold"><IconDownload size={14} /></button>
             <button type="button" onClick={enregistrer} disabled={!sale || travaille || enProposition}
               className="flex shrink-0 items-center gap-1 rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-40">
               <IconDeviceFloppy size={14} /> {t('legion.atelier.enregistrer')}
@@ -352,16 +421,23 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   // logs, comment ça défile ») : chaque geste de l'agent, à la seconde.
   const lignesConsole = (vue?.affichage || []).filter((a) => a.qui === 'action' || a.qui === 'agent').slice(-40);
   const console_ = (
-    <div className="h-[132px] shrink-0 overflow-y-auto border-t border-legion-line bg-[#070b14] px-3 py-1.5 font-mono text-[11px] leading-relaxed" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+    <div className={`${grandTerminal ? 'h-[42vh]' : 'h-[150px]'} relative shrink-0 overflow-y-auto border-t border-legion-line bg-[#070b14] px-3 py-1.5 font-mono text-[11px] leading-relaxed`} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+      <button type="button" onClick={() => setGrandTerminal((x) => !x)} className="sticky top-0 float-right rounded-pill border border-legion-line bg-[#070b14] px-2 text-[10px] text-legion-muted hover:text-legion-gold">{t(grandTerminal ? 'legion.atelier.terminalPetit' : 'legion.atelier.terminalGrand')}</button>
       {!lignesConsole.length && <p className="text-legion-muted">{t('legion.atelier.consoleVide')}</p>}
-      {lignesConsole.map((a) => (
+      {lignesConsole.map((a) => (a.terminal ? (
+        <div key={a.id} className="py-0.5">
+          <p className="truncate"><span className="text-legion-muted">{a.quand ? new Date(a.quand).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''} </span><span className="text-legion-gold">$</span> <span className="text-legion-ink">{a.resume}</span></p>
+          {a.terminal.sortie && <pre className={`whitespace-pre-wrap break-all pl-4 ${a.terminal.code === 0 ? 'text-[#b9c6d8]' : 'text-legion-danger'}`}>{a.terminal.sortie}</pre>}
+          <p className={`pl-4 ${a.terminal.code === 0 ? 'text-legion-success' : 'text-legion-danger'}`}>{t('legion.atelier.codeSortie', { code: a.terminal.code })}</p>
+        </div>
+      ) : (
         <p key={a.id} className="truncate">
           <span className="text-legion-muted">{a.quand ? new Date(a.quand).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''} </span>
           {a.qui === 'action'
             ? <><span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>{a.outil}</span> <span className="text-legion-ink">{a.resume}</span> <span className="text-legion-muted">· {t(`legion.atelier.decision_${a.decision}`, a.decision)}</span></>
             : <><span className="text-legion-gold">{nomCodeur}</span> <span className="text-legion-ink">{String(a.texte || '').replace(/[*#`]+/g, '').replace(/\s+/g, ' ').slice(0, 160)}</span></>}
         </p>
-      ))}
+      )))}
       {travaille && <p className="text-legion-gold">▍</p>}
     </div>
   );
@@ -381,8 +457,10 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
           className="ml-auto hidden rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold lg:block">
           {etroit ? <IconDeviceDesktop size={14} /> : <IconDeviceMobile size={14} />}
         </button>
+        <button type="button" onClick={ouvrirAPart} disabled={!docApercu?.doc} title={t('legion.atelier.ouvrirAPart')}
+          className="rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold disabled:opacity-40 max-lg:ml-auto"><IconExternalLink size={14} /></button>
         <button type="button" onClick={rafraichirApercu} title={t('legion.atelier.actualiser')}
-          className="rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold max-lg:ml-auto"><IconRefresh size={14} /></button>
+          className="rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold"><IconRefresh size={14} /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto bg-[#1a2030] p-2">
         {docApercu?.doc ? (
@@ -411,7 +489,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
           <div key={a.id} className="flex max-w-[96%] items-start gap-2">
             <Visage codeur={codeur} />
             <div className="min-w-0">
-              <p className="mb-0.5 text-[11px] font-semibold text-legion-gold">{codeur?.nom || nomCodeur}</p>
+              <p className="mb-0.5 text-[11px] font-semibold text-legion-gold">{codeur?.nom || nomCodeur}{a.modele && <span className="ml-1.5 font-normal text-legion-muted">· {NOMS_MODELES[a.modele] || a.modele}</span>}</p>
               <div className="rounded-card bg-legion-card px-3 py-2"><Riche texte={a.texte} /></div>
             </div>
           </div>
@@ -428,6 +506,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
       </div>
       <form onSubmit={envoyer} className="border-t border-legion-line p-2">
         <div className="flex items-end gap-2">
+          <input ref={fichierJoint} type="file" className="hidden" onChange={joindre} />
+          <button type="button" onClick={() => fichierJoint.current?.click()} disabled={!vue || travaille} aria-label={t('legion.atelier.joindre')} title={t('legion.atelier.joindre')}
+            className="self-center rounded-full border border-legion-line p-2 text-legion-muted hover:text-legion-gold disabled:opacity-40"><IconPaperclip size={16} /></button>
           <textarea value={texte} onChange={(e) => setTexte(e.target.value)} rows={2}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) envoyer(e); }}
             placeholder={statut === 'attente' ? t('legion.atelier.reponds') : t('legion.atelier.ecris')}

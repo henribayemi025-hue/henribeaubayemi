@@ -1039,7 +1039,16 @@
       "rejoueAide": "{{nom}} wrote the whole proposal at once; the editor replays it letter by letter so you can see what changes. Nothing is saved until you agree.",
       "suivreOui": "Following {{nom}}",
       "suivreNon": "Follow {{nom}}",
-      "consoleVide": "The console: every move the agent makes will show up here, live."
+      "consoleVide": "The console: every move the agent makes will show up here, live.",
+      "codeSortie": "exit code {{code}}",
+      "terminalGrand": "expand",
+      "terminalPetit": "shrink",
+      "telecharger": "Download this file",
+      "joindre": "Attach a file (it goes into the project)",
+      "jointTropGros": "File too large (1 MB max for now).",
+      "jointBinaire": "“{{nom}}” is not a text file: Excel, PDF and images are coming to the workshop soon.",
+      "jointMention": "(Attached file: {{nom}} — it is in the project.)",
+      "ouvrirAPart": "Open the page on its own, full size"
     }
   },
   "equipe": {

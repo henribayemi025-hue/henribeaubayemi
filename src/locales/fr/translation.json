@@ -1039,7 +1039,16 @@
       "rejoueAide": "{{nom}} a écrit toute sa proposition d'un coup ; l'éditeur la rejoue lettre par lettre pour que tu voies ce qui change. Rien n'est enregistré avant ton accord.",
       "suivreOui": "Je suis {{nom}}",
       "suivreNon": "Suivre {{nom}}",
-      "consoleVide": "La console : chaque geste de l'agent s'affichera ici, en direct."
+      "consoleVide": "La console : chaque geste de l'agent s'affichera ici, en direct.",
+      "codeSortie": "code de sortie {{code}}",
+      "terminalGrand": "agrandir",
+      "terminalPetit": "réduire",
+      "telecharger": "Télécharger ce fichier",
+      "joindre": "Joindre un fichier (il est déposé dans le projet)",
+      "jointTropGros": "Fichier trop gros (1 Mo au plus pour l'instant).",
+      "jointBinaire": "« {{nom}} » n'est pas un fichier texte : les Excel, PDF et images arrivent bientôt dans l'atelier.",
+      "jointMention": "(Fichier joint : {{nom}} — il est dans le projet.)",
+      "ouvrirAPart": "Ouvrir la page à part, en grand"
     }
   },
   "equipe": {
