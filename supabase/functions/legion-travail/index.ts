@@ -29,6 +29,7 @@
 // dans sa propre session.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { competencesPour } from '../_shared/competences.ts';
 import { aPart, budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
@@ -395,8 +396,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
       if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); dejaLivre.add(a.id); return; }
       const canal = canalDe(a.departement);
-      const { data: comp } = await service.from('legion_competences').select('nom, description, contenu').eq('agent_id', a.id).eq('actif', true).order('created_at').limit(4);
-      const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) => ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
+      const competences = await competencesPour(service, a.id, String(tache.texte || ''), 4, 2500);
       const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';

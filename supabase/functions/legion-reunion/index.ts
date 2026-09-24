@@ -30,6 +30,7 @@
 // jamais de chiffre inventé ni de travail prétendu.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { competencesPour } from '../_shared/competences.ts';
 import { budgetAgentAtteint, compter, coutEnCours, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteurs, moteursSimples } from '../_shared/moteur.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
@@ -375,10 +376,7 @@ const REGLES_REUNION = (langue: string, mesures: boolean) => `RÈGLES DE LA RÉU
 async function prendreLaParole(service: Service, apiKey: string, o: Message, r: Reunion, a: Agent, tour: number, ordre: number,
   ctx: Awaited<ReturnType<typeof contexte>>, participants: Agent[], president: Agent) {
   const avant = coutEnCours();
-  const { data: comp } = await service.from('legion_competences').select('nom, description, contenu')
-    .eq('agent_id', a.id).eq('actif', true).order('created_at').limit(3);
-  const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
-    ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 1500) }));
+  const competences = await competencesPour(service, a.id, String(r.sujet || ''), 3, 1500);
   const lignes = transcription(ctx.fil, o, ctx.agents);
   const convocant = ctx.agents.find((x) => x.id === o.auteur_id)?.nom || 'le fondateur';
   // L'humain est intervenu depuis la dernière prise de parole de cet agent :

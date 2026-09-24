@@ -31,6 +31,7 @@ import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
+import { competencesPour } from '../_shared/competences.ts';
 import { lireTickets, PARLE_DE_TICKETS } from '../_shared/tickets.ts';
 import { blocMarche, blocWiki } from '../_shared/contexte.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
@@ -645,10 +646,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     if (await budgetAgentAtteint(cible)) { pourquoi = pourquoi || `${cible.nom} : budget du mois atteint.`; continue; }
     // Ses compétences (chantier 2): 4 fiches au plus, tronquées, pour que le
     // coût reste petit.
-    const { data: comp } = await service.from('legion_competences').select('nom, description, contenu')
-      .eq('agent_id', cible.id).eq('actif', true).order('created_at').limit(4);
-    const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
-      ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
+    // Les 4 fiches qui servent le plus à CE message (24/09), pas les 4 plus anciennes.
+    const competences = await competencesPour(service, cible.id, String(msg.texte || ''), 4, 2500);
     // Ce qu'IL a le droit de lire (0177): les chiffres, la boutique,
     // Internet, le dépôt de code — chacun seulement s'il y a droit.
     const saCompta = compta && peut(cible, 'comptabilite') ? `\nL'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les totaux de ses livres sont lisibles (vérifications ci-dessous quand elles ont eu lieu); tu parles de « nos comptes ». Un montant se donne avec la devise de l'espace, jamais converti de tête.` : '';
