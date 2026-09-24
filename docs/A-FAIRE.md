@@ -32,6 +32,10 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Beau (22 h 15) : « si je veux faire par exemple Finjaro Learn, je vais sur mes agents, ils me le font en 5 minutes, avec tout » → objectif de l'atelier | V1 atelier |
 | 24/09 | Beau (22 h 15) : l'apprentissage de Finia **allumé par défaut** (pas éteint) → transmis au chantier Finia commune, avec message clair et refus d'un toucher | en cours |
 | 24/09 | Clé OpenAI de Beau (« Leo ») **vérifiée** : /v1/models répond ; GPT-5.4 mini et GPT-6 Astra ont répondu au banc d'essai. OpenAI rejoint les secours du moteur et le choix du modèle dans Léo. Vocaux en relais par la transcription OpenAI : chantier en cours. À noter : `FISH_AUDIO_API_KEY` est posée mais a la forme d'une clé OpenAI (« sk- ») : à vérifier avec Beau | ✅ 24/09 22 h 40 |
+| 24/09 | Beau (22 h 45) : sur Fish Audio, il a demandé à l'agent du site « je veux une clé API » et l'agent a cliqué et ouvert les écrans à sa place jusqu'à la clé : « on doit faire aussi Finia faire ça, dans Finjaro Accounting comme dans la place de marché » → **Finia qui guide en agissant** (ouvre le bon écran, remplit, montre où cliquer) | à concevoir (Finia commune V1) |
+| 24/09 | Beau (22 h 45) : Fish Audio « c'est bon » | ✅ (clé posée ; à tester à l'essai des voix) |
+| 24/09 | Beau (22 h 45) : quelqu'un qui aime ChatGPT doit pouvoir choisir le type (GPT-5, Astra…) ; **Astra doit être présent quand il veut coder** → GPT-6 Astra dans le choix de Léo (fait) et dans l'atelier de code (à faire) | atelier : à faire |
+| 24/09 | Beau (22 h 45) : « guide-moi pour Cloudflare » → guide pas à pas donné | en cours avec Beau |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 
