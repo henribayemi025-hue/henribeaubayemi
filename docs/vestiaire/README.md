@@ -1,0 +1,23 @@
+# Vestiaire d'entraînement des agents de Léo
+
+Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'est jeté : chaque ressource a sa fiche (ce que c'est, licence, ce qui sert, pour quel agent, compétences à tirer pour Mentor, verdict motivé). Gabarit : GABARIT.md.
+
+- [01 — Unlazy : « la compétence qui empêche l'agent de dire que c'est fini alors que ce n'est pas vrai »](01-unlazy-ne-pas-dire-fini-sans-preuve.md)
+- [02 — Anthropic Skills (le dépôt officiel des compétences de Claude)](02-anthropic-skills.md)
+- [03 — « Publier ton application sur l'App Store en 3 étapes » (Expo + Claude Code)](03-guide-app-store-expo.md)
+- [04 — Consignes « Karpathy » contre les travers des IA qui codent](04-karpathy-skills.md)
+- [05 — MiniMax H3, « le modèle vidéo gratuit » (guide Loucash)](05-minimax-h3-guide-loucash.md)
+- [06 — Les 4 plugins Claude Code à installer avant de coder (Agentic eSchool)](06-plugins-claude-code-agentic-eschool.md)
+- [07 — Jarvis, assistant vocal local (et sa doctrine « un agent pense, l'autre agit »)](07-jarvis-assistant-vocal.md)
+- [08 — « Comment utiliser MiniMax H3 gratuitement » (Patreon, guide PDF)](08-minimax-h3-patreon-unefilleia.md)
+- [09 — « 5 nouveaux skills Claude Code pour remplacer ton équipe » (BuildYourSaaS)](09-cinq-skills-equipe-buildyoursaas.md)
+- [10 — PDF « 15 compétences qui travaillent pour toi »](10-pdf-15-competences.md)
+- [11 — « ECC : par où commencer quand tu as 284 compétences devant toi » (page Notion)](11-ecc-par-ou-commencer-notion.md)
+- [12 — « i-have-adhd » : des réponses qui commencent par l'action](12-i-have-adhd.md)
+- [13 — « The On-Brand Ad Machine » (Pletor + Jev)](13-machine-a-pubs-fideles-a-la-marque.md)
+- [14 — AI Vault (boutique de « systèmes IA prêts à l'emploi »)](14-ai-vault-boutique-systemes-ia.md)
+- [15 — ECC : une très grosse boîte à outils d'agents (68 agents, 292 compétences)](15-ecc.md)
+- [16 — Koban : « Kit Projet CRM » gratuit](16-koban-kit-projet-crm.md)
+- [17 — seb.ai : « une équipe de 6 agents Claude Code pour trouver des clients »](17-seb-ai-equipe-6-agents-contenu.md)
+- [18 — Compositor : un éditeur d'images libre, « l'alternative à Photoshop »](18-compositor-photoshop-libre.md)
+- [19 — École Cube : publicité « Formation Claude Code »](19-ecole-cube-formation-claude-code.md)
