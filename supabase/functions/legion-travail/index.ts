@@ -614,7 +614,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
-      const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 4000);
+      // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
+      // tentatives de Rigo, grille de Mentor) s'arrêtaient en pleine phrase.
+      const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 16000);
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
