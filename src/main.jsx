@@ -89,6 +89,19 @@ if ('serviceWorker' in navigator) {
 // délai n'existe que pour les cas où le stockage traîne ou ne répond jamais
 // (Firefox en navigation privée). Mieux vaut une application qui démarre
 // sans son cache qu'une application qui ne démarre pas.
+// Après une mise en ligne, un onglet resté ouvert réclame des morceaux de
+// l'ancienne version qui n'existent plus : l'écran restait BLANC (Beau, 25/09,
+// en ouvrant un fichier dans l'atelier). On recharge alors la page une fois,
+// pour prendre la nouvelle version.
+window.addEventListener('vite:preloadError', (ev) => {
+  let deja = false;
+  try { deja = sessionStorage.getItem('finjaro:recharge-version') === '1'; sessionStorage.setItem('finjaro:recharge-version', '1'); } catch { /* stockage bloqué */ }
+  if (deja) return;
+  ev.preventDefault();
+  window.location.reload();
+});
+window.addEventListener('load', () => { setTimeout(() => { try { sessionStorage.removeItem('finjaro:recharge-version'); } catch { /* rien */ } }, 10_000); });
+
 function demarrer() {
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>

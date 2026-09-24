@@ -4,6 +4,7 @@ import { appel, ErreurAtelier } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
+import { Texte } from '../parties/Plans';
 
 // L'ATELIER DE CODE de Léo — V0 (Beau, 24/09 : « oui atelier »).
 //
@@ -40,6 +41,16 @@ const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch { /* naviga
 // visage et le nom de l'agent développeur de l'entreprise (peut_coder), et
 // l'éditeur SUIT l'agent : il ouvre le fichier qu'il lit, et tape sous nos
 // yeux ce qu'il propose d'écrire, pendant que la carte attend l'accord.
+// Les réponses de l'agent mises en forme (Beau, 25/09 : « il y a les étoiles,
+// ce n'est pas beau, pas pro ») : titres, listes, gras, et les blocs de code
+// dans un encadré.
+function Riche({ texte }) {
+  const morceaux = String(texte || '').split(/```[\w-]*\n?/);
+  return morceaux.map((m, i) => (i % 2
+    ? <pre key={i} className="my-1.5 overflow-x-auto rounded-md border border-legion-line bg-legion-bg p-2 font-mono text-[12px] text-legion-gold-soft">{m.replace(/\n$/, '')}</pre>
+    : m.trim() ? <Texte key={i} contenu={m.replace(/`([^`\n]+)`/g, '$1')} className="text-caption leading-snug text-legion-ink" /> : null));
+}
+
 function Visage({ codeur, taille = 28 }) {
   if (codeur?.avatar_url) return <img src={codeur.avatar_url} alt="" width={taille} height={taille} className="shrink-0 rounded-full object-cover" style={{ width: taille, height: taille }} />;
   return <span className="flex shrink-0 items-center justify-center rounded-full bg-legion-gold/20 text-legion-gold" style={{ width: taille, height: taille }}><IconCode size={taille * 0.55} /></span>;
@@ -372,7 +383,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
             <Visage codeur={codeur} />
             <div className="min-w-0">
               <p className="mb-0.5 text-[11px] font-semibold text-legion-gold">{codeur?.nom || nomCodeur}</p>
-              <div className="whitespace-pre-wrap rounded-card bg-legion-card px-3 py-2 text-caption text-legion-ink">{a.texte}</div>
+              <div className="rounded-card bg-legion-card px-3 py-2"><Riche texte={a.texte} /></div>
             </div>
           </div>
         ) : (
