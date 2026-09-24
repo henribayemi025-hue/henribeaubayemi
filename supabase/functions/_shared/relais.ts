@@ -26,11 +26,19 @@
 //   ne l'envoie donc pas. On coupe la réflexion (« thinking: disabled ») :
 //   Finia doit répondre en quelques secondes, pas en une minute.
 // - DeepSeek (DEEPSEEK_API_KEY) : texte seul, outils au format OpenAI.
+// - OpenAI (24/09, 22 h 30 : clé de Beau rangée sous « Leo », lue par
+//   cleOpenAI()) : GPT-5.4 mini, après Kimi. Texte, IMAGES et outils (fiche
+//   officielle du modèle, lue le 24/09 : entrée « text, image », function
+//   calling, structured outputs). Pas de température imposée ni de
+//   « thinking » : GPT-5 refuse l'une et ne connaît pas l'autre ;
+//   max_completion_tokens au lieu de max_tokens.
 // - Claude (ANTHROPIC_API_KEY, seulement si elle existe) : texte et images.
-// - L'audio : personne ne l'écoute en relais. Pas de relais pour la voix.
+// - L'audio : Beau, 24/09 : « si Gemini ne donne pas les messages vocaux,
+//   OpenAI peut ». Le vocal est TRANSCRIT par OpenAI (transcrire(), plus
+//   bas), puis la conversation continue sur le texte comme d'habitude.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { signalerCoupure } from './cout.ts';
+import { ajouterCout, cleOpenAI, signalerCoupure } from './cout.ts';
 import { PRIX_DS } from './moteur.ts';
 
 type Json = Record<string, unknown>;
@@ -38,7 +46,7 @@ export type Image = { mime: string; data: string }; // base64 SANS le préfixe d
 export type Morceau = { texte: string } | { image: Image };
 export type OutilGemini = { name: string; description?: string; parameters?: unknown };
 
-type Fournisseur = { nom: string; url: string; cle: string; modele: string; images: boolean; kimi: boolean };
+type Fournisseur = { nom: string; url: string; cle: string; modele: string; images: boolean; kimi: boolean; openai?: boolean };
 
 const kimi = (): Fournisseur | null => {
   const cle = Deno.env.get('KIMI_API_KEY');
@@ -48,6 +56,10 @@ const deepseek = (): Fournisseur | null => {
   const cle = Deno.env.get('DEEPSEEK_API_KEY');
   return cle ? { nom: 'ds', url: 'https://api.deepseek.com', cle, modele: Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepseek-flash', images: false, kimi: false } : null;
 };
+const openai = (): Fournisseur | null => {
+  const cle = cleOpenAI();
+  return cle ? { nom: 'oa', url: 'https://api.openai.com/v1', cle, modele: Deno.env.get('LEGION_MODELE_OA') || 'gpt-5.4-mini', images: true, kimi: false, openai: true } : null;
+};
 const anthropicCle = () => Deno.env.get('ANTHROPIC_API_KEY');
 const anthropicModele = () => Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude-sonnet-5';
 
@@ -55,8 +67,21 @@ const anthropicModele = () => Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude
 // de la fonction appelante — il entre donc dans le même plafond du mois que
 // les appels à Google. ———
 const USD_EN_EUR = 0.92;
+// Prix OpenAI lus sur la page officielle (developers.openai.com/api/docs/pricing,
+// 24/09), en dollars le million de jetons : [entrée en cache, entrée, sortie].
+// Un modèle absent d'ici est compté à 0 — on n'invente pas un prix.
+const PRIX_OPENAI: Record<string, [number, number, number]> = {
+  'gpt-5.4-mini': [0.075, 0.75, 4.5],
+};
+// Transcription, en dollars la MINUTE (même page, 24/09).
+const PRIX_TRANSCRIPTION: Record<string, number> = {
+  'gpt-4o-mini-transcribe': 0.003,
+  'gpt-4o-transcribe': 0.006,
+  'gpt-transcribe': 0.0045,
+  'whisper-1': 0.006,
+};
 function coutOpenAI(modele: string, u: Json | undefined): number {
-  const prix = PRIX_DS[modele];
+  const prix = PRIX_DS[modele] ?? PRIX_OPENAI[modele];
   if (!prix || !u) return 0;
   const details = u.prompt_tokens_details as Json | undefined;
   const cache = Number(u.prompt_cache_hit_tokens ?? u.cached_tokens ?? details?.cached_tokens ?? 0);
@@ -67,8 +92,11 @@ function coutOpenAI(modele: string, u: Json | undefined): number {
 // comme dans moteur.ts : on ne sous-compte jamais.
 const coutAnthropic = (u: Json | undefined) => (((Number(u?.input_tokens ?? 0)) * 3 + Number(u?.output_tokens ?? 0) * 15) / 1_000_000) * USD_EN_EUR;
 
+// Sans nom de fonction (les agents de Léo, qui comptent leur coût par
+// compter() dans cout.ts), le coût va au compteur de la requête en cours.
 async function noterCout(fn: string | null, eur: number) {
-  if (!fn || !(eur > 0)) return;
+  if (!(eur > 0)) return;
+  if (!fn) { ajouterCout(eur); return; }
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const { error } = await db.from('ai_usage').insert({ fn, cost_eur: Number(eur.toFixed(6)) });
@@ -82,6 +110,7 @@ async function surErreur(f: { nom: string }, message: string) {
   if (!/HTTP 402|insufficient balance|exceeded your current quota/i.test(message)) return;
   if (f.nom === 'ds') await signalerCoupure('DeepSeek', 'le solde du compte est épuisé', 'https://platform.deepseek.com/top_up');
   else if (f.nom === 'km') await signalerCoupure('Kimi', 'le solde du compte est épuisé', 'https://platform.moonshot.ai');
+  else if (f.nom === 'oa') await signalerCoupure('OpenAI', 'le crédit du compte est épuisé', 'https://platform.openai.com/settings/organization/billing');
 }
 
 // ——— Les schémas : Google écrit les types en majuscules (OBJECT, STRING…),
@@ -153,8 +182,11 @@ async function appelOpenAI(f: Fournisseur, corps: Json, delaiMs: number): Promis
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${f.cle}` },
     // Pas de température : Kimi K2.6 l'impose et refuse toute autre valeur.
     // Réflexion coupée : plus rapide, et plus besoin de renvoyer le
-    // raisonnement (reasoning_content) à chaque tour d'outils.
-    body: JSON.stringify({ model: f.modele, thinking: { type: 'disabled' }, ...corps }),
+    // raisonnement (reasoning_content) à chaque tour d'outils. OpenAI ne
+    // connaît pas « thinking » et veut max_completion_tokens.
+    body: JSON.stringify(f.openai
+      ? (({ max_tokens, ...reste }) => ({ model: f.modele, ...reste, ...(max_tokens ? { max_completion_tokens: max_tokens } : {}) }))(corps)
+      : { model: f.modele, thinking: { type: 'disabled' }, ...corps }),
     signal: AbortSignal.timeout(delaiMs),
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
@@ -184,8 +216,8 @@ const dataUrl = (i: Image) => `data:${i.mime};base64,${i.data}`;
 //
 // Pour la lecture des photos (finou-vision, vendor-copilot, troc-eval) et les
 // travaux de texte (modération, réponse automatique). Ordre : avec des
-// images, Kimi puis Claude ; en texte seul, DeepSeek d'abord (le moins cher,
-// comme la relève de Léo), puis Kimi, puis Claude.
+// images, Kimi, OpenAI puis Claude ; en texte seul, DeepSeek d'abord (le
+// moins cher, comme la relève de Léo), puis Kimi, OpenAI, Claude.
 // Avec un `schema` (à la manière de Google), la réponse est validée comme le
 // ferait responseSchema : un modèle qui s'en écarte passe la main au suivant.
 export type OptionsGenerer = {
@@ -204,6 +236,7 @@ export async function relaisGenerer(o: OptionsGenerer): Promise<Genere> {
   const liste: Array<Fournisseur | 'an'> = [];
   if (!avecImages) { const d = deepseek(); if (d) liste.push(d); }
   const k = kimi(); if (k) liste.push(k);
+  const g = openai(); if (g) liste.push(g);
   if (anthropicCle()) liste.push('an');
   if (!liste.length) return { erreur: 'aucun relais configuré' };
 
@@ -374,8 +407,8 @@ function pourFournisseur(messages: Json[], f: Fournisseur): Json[] {
     if (!f.images && Array.isArray(reste.content)) {
       reste.content = (reste.content as Json[]).map((c) => c.type === 'image_url' ? NOTE_IMAGE : String(c.text ?? '')).join('\n');
     }
-    // Kimi veut le nom de l'outil sur chaque réponse d'outil ; DeepSeek ne
-    // l'attend pas (format OpenAI strict).
+    // Kimi veut le nom de l'outil sur chaque réponse d'outil ; DeepSeek et
+    // OpenAI ne l'attendent pas (format OpenAI strict).
     if (reste.role === 'tool' && !f.kimi) delete reste.name;
     return reste;
   });
@@ -392,12 +425,13 @@ export type OptionsConversation = {
   delaiMs?: number;
 };
 
-// Kimi d'abord (il lit les photos), DeepSeek ensuite (texte seul). Un outil
+// Kimi d'abord (il lit les photos), OpenAI ensuite (photos aussi), DeepSeek
+// en dernier (texte seul). Un outil
 // déjà exécuté ne l'est jamais deux fois : si Kimi tombe en plein milieu,
 // DeepSeek reprend la MÊME conversation, résultats d'outils compris — un
 // message envoyé à une boutique ne part pas en double.
 export async function relaisConversation(o: OptionsConversation): Promise<{ texte: string; modele: string } | { erreur: string }> {
-  const liste = [kimi(), deepseek()].filter(Boolean) as Fournisseur[];
+  const liste = [kimi(), openai(), deepseek()].filter(Boolean) as Fournisseur[];
   if (!liste.length) return { erreur: 'aucun relais configuré' };
   const tools = outilsOpenAI(o.declarations);
   const maxTours = o.maxTours ?? 4;
@@ -448,4 +482,76 @@ export async function relaisConversation(o: OptionsConversation): Promise<{ text
   } finally {
     await noterCout(o.fn, cout);
   }
+}
+
+// ——— 3. Transcrire un vocal (OpenAI) ———
+//
+// Beau, 24/09 : « si Gemini ne donne pas les messages vocaux, OpenAI peut ;
+// entraînons aussi ça ». Vérifié à la source le 24/09
+// (developers.openai.com : guide « speech to text » et référence
+// « Create transcription ») : POST /v1/audio/transcriptions en
+// multipart/form-data (champs file et model) ; formats flac, mp3, mp4, mpeg,
+// mpga, m4a, ogg, wav, webm ; 25 Mo au plus ; réponse JSON avec `text`.
+// Le format se lit au nom du fichier : on lui donne donc la bonne extension.
+// gpt-4o-mini-transcribe d'abord (le moins cher), whisper-1 en repli.
+const EXTENSIONS_AUDIO: Record<string, string> = {
+  'audio/webm': 'webm', 'video/webm': 'webm', 'audio/ogg': 'ogg', 'audio/opus': 'ogg',
+  'audio/mp4': 'm4a', 'audio/m4a': 'm4a', 'audio/x-m4a': 'm4a', 'audio/aac': 'm4a', 'video/mp4': 'mp4',
+  'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/mpga': 'mpga',
+  'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/wave': 'wav', 'audio/flac': 'flac', 'audio/x-flac': 'flac',
+};
+const MAX_AUDIO = 25 * 1024 * 1024;
+
+function octetsDe(donnees: Uint8Array | string): Uint8Array {
+  if (typeof donnees !== 'string') return donnees;
+  const bin = atob(donnees);
+  const o = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i);
+  return o;
+}
+
+export async function transcrire(
+  audio: { mime: string; donnees: Uint8Array | string }, // octets, ou base64 sans préfixe
+  o: { fn: string | null; delaiMs?: number },
+): Promise<{ texte: string; modele: string } | { erreur: string }> {
+  const cle = cleOpenAI();
+  if (!cle) return { erreur: 'pas de clé OpenAI' };
+  const mime = audio.mime.split(';')[0].trim().toLowerCase();
+  const ext = EXTENSIONS_AUDIO[mime];
+  if (!ext) return { erreur: `format audio non pris en charge (${mime})` };
+  const octets = octetsDe(audio.donnees);
+  if (!octets.length) return { erreur: 'vocal vide' };
+  if (octets.length > MAX_AUDIO) return { erreur: 'vocal trop long (plus de 25 Mo)' };
+  let derniere = 'transcription impossible';
+  for (const modele of ['gpt-4o-mini-transcribe', 'whisper-1']) {
+    try {
+      const form = new FormData();
+      form.append('file', new Blob([octets], { type: mime }), `vocal.${ext}`);
+      form.append('model', modele);
+      form.append('response_format', 'json');
+      const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cle}` },
+        body: form,
+        signal: AbortSignal.timeout(o.delaiMs ?? 45_000),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
+      const body = await resp.json();
+      // Le prix est à la minute. La durée vient de la réponse quand elle la
+      // donne (usage.seconds) ; sinon on l'estime au débit le plus bas d'une
+      // voix compressée (16 kbit/s, 2 Ko par seconde) : on surestime plutôt
+      // qu'on ne sous-compte.
+      const secondes = Number(body?.usage?.seconds ?? body?.duration ?? 0) || octets.length / 2000;
+      await noterCout(o.fn, (secondes / 60) * (PRIX_TRANSCRIPTION[modele] ?? 0) * USD_EN_EUR);
+      const texte = String(body?.text ?? '').trim();
+      if (!texte) throw new Error('transcription vide');
+      console.log('relais: vocal transcrit par', modele);
+      return { texte, modele: `oa:${modele}` };
+    } catch (e) {
+      derniere = `oa:${modele}: ${(e as Error).message}`;
+      console.error('relais:', derniere);
+      await surErreur({ nom: 'oa' }, derniere);
+    }
+  }
+  return { erreur: derniere };
 }

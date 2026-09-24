@@ -24,7 +24,7 @@
 // refuse d'appeler Gemini une fois BUDGET_EUR atteint sur le mois.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
-import { relaisConversation } from '../_shared/relais.ts';
+import { relaisConversation, transcrire } from '../_shared/relais.ts';
 
 // 2.5-flash en tête: c'est le seul des deux à répondre de façon fiable en ce
 // moment (3.5-flash renvoie régulièrement 503 "high demand"), et il gère
@@ -1877,23 +1877,39 @@ Deno.serve(async (req: Request) => {
 
     // LE RELAIS (Beau, 24/09 : « Branchons Finia aussi avec Kimi et les autres
     // si Google échoue »). Seulement quand Google a échoué : sinon, rien ne
-    // change. Kimi (qui lit les photos) puis DeepSeek reprennent la MÊME
+    // change. Kimi (qui lit les photos), puis OpenAI (photos aussi, clé de
+    // Beau « Leo »), puis DeepSeek reprennent la MÊME
     // conversation — même consigne, même historique, y compris les outils
     // déjà appelés chez Google avant la panne — avec les mêmes outils,
     // exécutés par le même runTool. Leur coût réel s'écrit dans ai_usage
     // sous 'finou_chat', dans le même plafond du mois.
     //
-    // Le vocal : personne ne l'écoute en relais. Finia le dit honnêtement et
-    // demande d'écrire (la note est posée par relais.ts à la place du son).
-    // Sans texte ni historique, la langue de l'appareil lui dit dans quelle
+    // Le vocal (Beau, 24/09 : « si Gemini ne donne pas les messages vocaux,
+    // OpenAI peut ») : OpenAI le TRANSCRIT, et la conversation continue sur
+    // ce texte, avec la même consigne, comme un message écrit. Si la
+    // transcription échoue aussi, Finia le dit honnêtement et demande
+    // d'écrire (la note est posée par relais.ts à la place du son) ; sans
+    // texte ni historique, la langue de l'appareil lui dit dans quelle
     // langue le dire.
     if (googleEnPanne) {
       const langueAppareil = (req.headers.get('accept-language') || '').split(',')[0].trim();
+      let transcription: string | null = null;
+      if (audioMatch) {
+        const t = await transcrire({ mime: audioMatch[1], donnees: audioMatch[2] }, { fn: 'finou_chat' });
+        if ('texte' in t) transcription = t.texte;
+        else console.error('finou-chat: vocal non transcrit', t.erreur);
+      }
       const tourRelais: Json = {
         role: 'user',
-        parts: userParts.map((p, i) => i === 0 && audioMatch && !message
-          ? { text: `(message vocal)${ctxLine}${langueAppareil ? `\n[Langue de l'appareil: ${langueAppareil}]` : ''}` }
-          : p),
+        parts: transcription
+          ? [
+            { text: `${message ? `${message}\n` : ''}[Message vocal de la personne, transcrit mot pour mot — réponds-y comme à un message écrit, dans sa langue et son registre] ${transcription}${ctxLine}` },
+            // Les photos restent ; le son, déjà transcrit, part.
+            ...userParts.slice(1).filter((p) => !String(((p.inline_data as Json | undefined)?.mime_type) ?? '').startsWith('audio/')),
+          ]
+          : userParts.map((p, i) => i === 0 && audioMatch && !message
+            ? { text: `(message vocal)${ctxLine}${langueAppareil ? `\n[Langue de l'appareil: ${langueAppareil}]` : ''}` }
+            : p),
       };
       const relais = await relaisConversation({
         fn: 'finou_chat',

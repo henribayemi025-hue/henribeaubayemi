@@ -12,6 +12,7 @@
 
 import { gemini } from './cout.ts';
 import { classeurEnTexte } from './tableur.ts';
+import { transcrire } from './relais.ts';
 
 type Piece = { type?: string; url?: string; nom?: string; transcription?: string; description?: string; texte?: string; mime?: string; cree_par_agent?: boolean };
 
@@ -81,7 +82,17 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
         if (r.ok) {
           const octets = new Uint8Array(await r.arrayBuffer());
           if (octets.length <= 15 * 1024 * 1024) {
-            const t = await lireAvec(apiKey, "Transcris fidèlement ce message vocal, dans la langue parlée. Rends seulement le texte dit, sans commentaire. S'il n'y a rien d'audible, rends « (inaudible) ».", mimeDe(p.url, r, 'audio'), enBase64(octets));
+            const mime = mimeDe(p.url, r, 'audio');
+            let t = await lireAvec(apiKey, "Transcris fidèlement ce message vocal, dans la langue parlée. Rends seulement le texte dit, sans commentaire. S'il n'y a rien d'audible, rends « (inaudible) ».", mime, enBase64(octets));
+            // Google en échec (plafond de dépenses du 24/09…) : OpenAI
+            // transcrit à sa place (Beau : « si Gemini ne donne pas les
+            // messages vocaux, OpenAI peut »). Le coût va au compteur de la
+            // requête (compter() de cout.ts), comme celui de Gemini.
+            if (!t) {
+              const o = await transcrire({ mime, donnees: octets }, { fn: null });
+              if ('texte' in o) t = o.texte;
+              else console.error('audio (relais):', o.erreur);
+            }
             if (t) { p.transcription = t.slice(0, 4000); change = true; }
           }
         }
