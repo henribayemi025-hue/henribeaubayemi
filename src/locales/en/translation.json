@@ -671,6 +671,22 @@
       "fait_one": "{{count}} skill from {{nom}} fetched from its source.",
       "fait_other": "{{count}} skills from {{nom}} fetched from their source."
     },
+    "examen": {
+      "enCours": "Exam in progress… (one to two minutes)",
+      "garde": "Proven: {{gagnes}}/{{total}}",
+      "aRevoir": "To review: {{gagnes}}/{{total}}",
+      "jamais": "Never examined",
+      "notes": "{{avec}}/10 with the skill · {{sans}}/10 without",
+      "bouton": "Run the exam",
+      "interrompu": "Last exam interrupted: {{raison}}",
+      "raisonInconnue": "time limit exceeded",
+      "infraction": "Rule broken with the skill: {{raison}}",
+      "gagnant": {
+        "avec": "The skill wins",
+        "sans": "Better without the skill",
+        "egalite": "Tie"
+      }
+    },
     "exporter": "Export",
     "exporterAide": "Their profile and skills in a file, to recreate them in another Léo company.",
     "importer": {

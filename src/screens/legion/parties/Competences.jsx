@@ -1,6 +1,91 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconBook2, IconPlus, IconSearch, IconSparkles, IconX, IconExternalLink } from '@tabler/icons-react';
+import { IconBook2, IconPlus, IconSearch, IconSparkles, IconX, IconExternalLink, IconFlask, IconCircleCheck, IconAlertTriangle } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
+
+// Un examen « en cours » plus vieux que ça a été interrompu (la fonction
+// legion-examen a dépassé son temps) : on ne le montre plus comme en cours.
+const EN_COURS_MAX_MS = 10 * 60_000;
+const enCours = (x) => x?.verdict === 'en_cours' && Date.now() - Date.parse(x.created_at) < EN_COURS_MAX_MS;
+const note = (n) => (n == null ? '—' : Number(n).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+
+// L'examen d'une compétence (legion-examen, 24/09) : Rigo fait traiter 3 cas
+// par l'agent, sans puis avec la fiche, et un correcteur les note à
+// l'aveugle. Ici : le dernier verdict, le bouton pour le relancer, et le
+// détail des cas à la demande. Le verdict est une proposition : rien n'est
+// désactivé tout seul, c'est la croix à côté qui retire une fiche.
+function ExamenCompetence({ competence, examens, agent, t, onLance }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [cas, setCas] = useState(null);
+  const [erreur, setErreur] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const dernier = examens[0];
+  const conclu = examens.find((x) => x.verdict === 'garde' || x.verdict === 'a_revoir');
+  const tourne = enCours(dernier) || envoi;
+  // Un essai interrompu APRÈS le dernier verdict : on le dit, sans effacer le verdict.
+  const interrompu = dernier && dernier !== conclu && !enCours(dernier) ? dernier : null;
+
+  async function lancer() {
+    setEnvoi(true); setErreur('');
+    try {
+      const { data, error } = await supabase.functions.invoke('legion-examen', { body: { entreprise_id: agent.entreprise_id, competence_id: competence.id } });
+      if (error) throw error;
+      if (data?.erreur) throw new Error(data.erreur);
+      await onLance();
+    } catch (e) { setErreur(e.message); } finally { setEnvoi(false); }
+  }
+  async function voirCas() {
+    if (ouvert) { setOuvert(false); return; }
+    setOuvert(true);
+    if (!conclu) return;
+    const { data } = await supabase.from('legion_examens').select('cas').eq('id', conclu.id).maybeSingle();
+    setCas(Array.isArray(data?.cas) ? data.cas : []);
+  }
+
+  return (
+    <div className="mt-1.5 border-t border-legion-line/60 pt-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px]">
+          {tourne ? (
+            <span className="text-legion-muted">{t('legion.examen.enCours')}</span>
+          ) : conclu?.verdict === 'garde' ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-legion-success"><IconCircleCheck size={12} /> {t('legion.examen.garde', { gagnes: conclu.gagnes ?? 0, total: conclu.nb_cas ?? 3 })}</span>
+          ) : conclu?.verdict === 'a_revoir' ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-legion-gold" title={conclu.raison || undefined}><IconAlertTriangle size={12} /> {t('legion.examen.aRevoir', { gagnes: conclu.gagnes ?? 0, total: conclu.nb_cas ?? 3 })}</span>
+          ) : (
+            <span className="text-legion-muted">{t('legion.examen.jamais')}</span>
+          )}
+          {!tourne && conclu && (
+            <button type="button" onClick={voirCas} className="text-legion-muted underline decoration-dotted hover:text-legion-ink">
+              {t('legion.examen.notes', { avec: note(conclu.score_avec), sans: note(conclu.score_sans) })}
+            </button>
+          )}
+        </p>
+        <button type="button" onClick={lancer} disabled={tourne}
+          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-semibold text-legion-gold hover:brightness-110 disabled:opacity-40">
+          <IconFlask size={12} /> {t('legion.examen.bouton')}
+        </button>
+      </div>
+      {!tourne && interrompu && <p className="mt-0.5 text-[11px] text-legion-danger">{t('legion.examen.interrompu', { raison: interrompu.raison || t('legion.examen.raisonInconnue') })}</p>}
+      {conclu?.verdict === 'a_revoir' && conclu.raison && !tourne && <p className="mt-0.5 text-[11px] text-legion-muted">{t('legion.examen.infraction', { raison: conclu.raison })}</p>}
+      {erreur && <p className="mt-0.5 text-[11px] text-legion-danger">{erreur}</p>}
+      {ouvert && conclu && (
+        cas === null ? <p className="mt-1 text-[11px] text-legion-muted">…</p> : (
+          <ol className="mt-1.5 space-y-1.5">
+            {cas.map((k, i) => (
+              <li key={i} className="rounded-lg bg-legion-bg/60 px-2.5 py-1.5 text-[11px] leading-snug">
+                <p className="text-legion-ink">{i + 1}. {k.demande}</p>
+                <p className={k.gagnant === 'avec' ? 'text-legion-success' : k.gagnant === 'sans' ? 'text-legion-gold' : 'text-legion-muted'}>
+                  {t(`legion.examen.gagnant.${k.gagnant || 'egalite'}`)} · {t('legion.examen.notes', { avec: note(k.note_avec), sans: note(k.note_sans) })}
+                </p>
+                {k.pourquoi && <p className="text-legion-muted">{k.pourquoi}</p>}
+              </li>
+            ))}
+          </ol>
+        )
+      )}
+    </div>
+  );
+}
 
 // LEGION — les compétences (chantier 2). Voir docs/LEGION-COMPETENCES.md.
 //
@@ -30,6 +115,26 @@ export function CompetencesAgent({ agent, t }) {
     setListe(data || []);
   }, [agent.id]);
   useEffect(() => { charger(); }, [charger]);
+
+  // Les examens de ses compétences, du plus récent au plus ancien (sans le
+  // détail des cas, lu seulement quand on l'ouvre). Un humain de l'équipe ne
+  // passe pas d'examen : ses réponses ne viennent pas d'un modèle.
+  const examinable = !agent.user_id;
+  const [examens, setExamens] = useState([]);
+  const chargerExamens = useCallback(async () => {
+    if (!examinable) return;
+    const { data } = await supabase.from('legion_examens').select('id, competence_id, verdict, gagnes, nb_cas, score_avec, score_sans, raison, created_at')
+      .eq('agent_id', agent.id).order('created_at', { ascending: false }).limit(100);
+    setExamens(data || []);
+  }, [agent.id, examinable]);
+  useEffect(() => { chargerExamens(); }, [chargerExamens]);
+  // Tant qu'un examen tourne, on relit toutes les 8 secondes : le verdict
+  // arrive en une à deux minutes.
+  useEffect(() => {
+    if (!examens.some(enCours)) return undefined;
+    const minuteur = setTimeout(chargerExamens, 8000);
+    return () => clearTimeout(minuteur);
+  }, [examens, chargerExamens]);
 
   useEffect(() => {
     const q = cherche.trim();
@@ -91,6 +196,9 @@ export function CompetencesAgent({ agent, t }) {
                   <IconX size={14} />
                 </button>
               </div>
+              {examinable && (c.contenu || c.description) && (
+                <ExamenCompetence competence={c} examens={examens.filter((x) => x.competence_id === c.id)} agent={agent} t={t} onLance={chargerExamens} />
+              )}
             </li>
           ))}
         </ul>

@@ -671,6 +671,22 @@
       "fait_one": "{{count}} compétence de {{nom}} reprise à sa source.",
       "fait_other": "{{count}} compétences de {{nom}} reprises à leur source."
     },
+    "examen": {
+      "enCours": "Examen en cours… (une à deux minutes)",
+      "garde": "A fait ses preuves : {{gagnes}}/{{total}}",
+      "aRevoir": "À revoir : {{gagnes}}/{{total}}",
+      "jamais": "Jamais examinée",
+      "notes": "{{avec}}/10 avec la fiche · {{sans}}/10 sans",
+      "bouton": "Faire passer l’examen",
+      "interrompu": "Dernier examen interrompu : {{raison}}",
+      "raisonInconnue": "délai dépassé",
+      "infraction": "Règle enfreinte avec la fiche : {{raison}}",
+      "gagnant": {
+        "avec": "La fiche gagne",
+        "sans": "Mieux sans la fiche",
+        "egalite": "Égalité"
+      }
+    },
     "exporter": "Exporter",
     "exporterAide": "Sa fiche et ses compétences dans un fichier, pour le recréer dans une autre entreprise Léo.",
     "importer": {
