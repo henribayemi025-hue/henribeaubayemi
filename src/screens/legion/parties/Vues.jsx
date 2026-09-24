@@ -16,7 +16,8 @@ const JOUR = 86_400_000;
 
 export function PleinEcran({ titre, onFermer, actions, children, t }) {
   useEffect(() => {
-    const k = (e) => { if (e.key === 'Escape') onFermer(); };
+    // Échap dans l'éditeur de l'atelier (CodeMirror) ne ferme pas la vue.
+    const k = (e) => { if (e.key === 'Escape' && !e.target?.closest?.('.cm-editor')) onFermer(); };
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
   }, [onFermer]);

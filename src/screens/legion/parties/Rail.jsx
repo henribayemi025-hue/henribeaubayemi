@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { IconSparkles, IconArrowLeft, IconBuildingSkyscraper } from '@tabler/icons-react';
+import { IconSparkles, IconArrowLeft, IconBuildingSkyscraper, IconCode } from '@tabler/icons-react';
 import { iconeDept } from './outils';
 
 // Le rail des départements — la colonne de gauche de la maquette que Beau
@@ -8,7 +8,7 @@ import { iconeDept } from './outils';
 //
 // Terre & Or: terracotta profond, pas le gris ardoise de la maquette. C'est
 // le style que les gens ont aimé (CLAUDE.md §6), on ne le rabote pas.
-export function Rail({ entreprise, departements, courant, onChoisir, agents, onTous, t }) {
+export function Rail({ entreprise, departements, courant, onChoisir, agents, onTous, onAtelier, t }) {
   return (
     <aside className="hidden w-[68px] shrink-0 flex-col items-center bg-legion-panel py-3 text-legion-ink lg:flex">
       <Link to="/legion" title={t('legion.mesEntreprises')} className="mb-3 block h-11 w-11 overflow-hidden rounded-2xl shadow-lg">
@@ -57,6 +57,18 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
         })}
       </div>
 
+      {/* L'Atelier de code (V0, 24/09) : seulement là où il est ouvert. */}
+      {onAtelier && (
+        <button
+          type="button"
+          onClick={onAtelier}
+          title={t('legion.atelier.entree')}
+          className="mt-2 flex h-11 w-11 items-center justify-center rounded-2xl border border-legion-gold/50 bg-legion-card text-legion-gold transition hover:bg-legion-card-haut"
+        >
+          <IconCode size={20} />
+        </button>
+      )}
+
       <Link
         to="/apps"
         className="mt-2 flex w-[52px] flex-col items-center gap-0.5 rounded-card bg-legion-gold px-1 py-2 text-center text-[10px] font-semibold leading-tight text-legion-ink shadow-md transition hover:brightness-105"
@@ -73,7 +85,7 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
 }
 
 // Sur téléphone, le même rail à plat: des pastilles qui défilent.
-export function RailPastilles({ departements, courant, onChoisir, onTous, agents, t }) {
+export function RailPastilles({ departements, courant, onChoisir, onTous, agents, onAtelier, t }) {
   return (
     <div className="flex gap-2 overflow-x-auto border-b border-legion-line bg-legion-card px-3 py-2 lg:hidden" style={{ scrollbarWidth: 'none' }}>
       <button
@@ -83,6 +95,15 @@ export function RailPastilles({ departements, courant, onChoisir, onTous, agents
       >
         <IconSparkles size={14} /> {t('legion.tous', 'Tous')}
       </button>
+      {onAtelier && (
+        <button
+          type="button"
+          onClick={onAtelier}
+          className="flex shrink-0 items-center gap-1 rounded-pill border border-legion-gold/60 px-3 py-1.5 text-caption font-semibold text-legion-gold"
+        >
+          <IconCode size={14} /> {t('legion.atelier.entreeCourte')}
+        </button>
+      )}
       {departements.map((d) => {
         const Icone = iconeDept(d.cle);
         const choisi = courant === d.id;

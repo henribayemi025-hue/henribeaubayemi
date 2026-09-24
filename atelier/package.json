@@ -1,0 +1,18 @@
+{
+  "name": "finjaro-atelier",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Atelier de code de Léo (V0) : Worker Cloudflare séparé du site, avec un bac à sable par projet.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "verifier": "wrangler deploy --dry-run --outdir .verif",
+    "demo": "node scripts/demo-locale.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "0.12.10"
+  },
+  "devDependencies": {
+    "wrangler": "4.138.0"
+  }
+}

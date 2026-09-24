@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Navigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera, IconHome } from '@tabler/icons-react';
@@ -24,6 +24,11 @@ import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
 import { Visage } from './parties/Visage';
 import { couleurDept, clePrivee, sansAccent, raisonLisible } from './parties/outils';
+import { ATELIER_ENTREPRISE } from './atelier/api';
+
+// L'Atelier de code (V0, 24/09) : chargé seulement quand on l'ouvre (l'éditeur
+// CodeMirror ne pèse rien sur le reste de Léo).
+const Atelier = lazy(() => import('./atelier/Atelier'));
 
 // LEGION — l'entreprise, sur le téléphone et sur l'ordinateur de celui qui
 // l'a fondée.
@@ -66,7 +71,7 @@ export default function Entreprise() {
   const [photos, setPhotos] = useState(false);
   const [appel, setAppel] = useState(null); // l'agent qu'on appelle (23/09)
   const [renfort, setRenfort] = useState(false); // renforcer un service / un expert (23/09)
-  const [outil, setOutil] = useState(null); // 'bureau' | 'frise' | 'presentation' | 'idees' (24/09)
+  const [outil, setOutil] = useState(null); // 'bureau' | 'frise' | 'presentation' | 'idees' | 'atelier' (24/09)
   const [aideClavier, setAideClavier] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
@@ -643,6 +648,8 @@ export default function Entreprise() {
     function touche(e) {
       const cible = e.target;
       const ecrit = cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA' || cible.isContentEditable);
+      // Échap dans l'éditeur de l'atelier ferme ses suggestions, pas l'atelier.
+      if (e.key === 'Escape' && cible?.closest?.('.cm-editor')) return;
       if (e.key === 'Escape') { setAideClavier(false); setOutil(null); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault(); setVue((v) => (v === 'accueil' ? 'salons' : v));
@@ -676,6 +683,9 @@ export default function Entreprise() {
   if (data.refuse) return <Navigate to="/legion" replace />;
 
   const langue = i18n.language;
+  // V0 : l'atelier n'apparaît que dans l'entreprise Finjaro, pour son
+  // propriétaire. Le Worker de l'atelier refait la vérification de son côté.
+  const atelierOuvert = data.entreprise.id === ATELIER_ENTREPRISE && data.role === 'proprietaire';
   const propsColonne = {
     dept, departements, salons: departements, prives, courant: salonId, onChoisirSalon: choisirSalon,
     agents: data.agents, moi, messages: data.messages, langue, onAllumer: allumer, onFiche: setFiche, onEcrireA: ecrireA,
@@ -764,10 +774,10 @@ export default function Entreprise() {
         </div>
       )}
 
-      {vue !== 'chat' && <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} t={t} />}
+      {vue !== 'chat' && <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} onAtelier={atelierOuvert ? () => setOutil('atelier') : null} t={t} />}
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <Rail entreprise={data.entreprise} departements={departements} courant={vue === 'accueil' ? null : deptId} onChoisir={choisirDept} onTous={() => { setDeptId(null); setVue('accueil'); }} agents={data.agents} t={t} />
+        <Rail entreprise={data.entreprise} departements={departements} courant={vue === 'accueil' ? null : deptId} onChoisir={choisirDept} onTous={() => { setDeptId(null); setVue('accueil'); }} agents={data.agents} onAtelier={atelierOuvert ? () => setOutil('atelier') : null} t={t} />
 
         {vue === 'accueil' && (
           <Accueil
@@ -839,6 +849,11 @@ export default function Entreprise() {
           {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={setFiche} t={t} />}
           {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
+          {outil === 'atelier' && (
+            <Suspense fallback={<div className="p-6 text-caption text-legion-muted">…</div>}>
+              <Atelier t={t} langue={langue} />
+            </Suspense>
+          )}
           {outil === 'presentation' && <Presentation entreprise={data.entreprise} agents={data.agents} departements={departements} langue={langue} t={t} />}
           {outil === 'idees' && (
             <Idees entreprise={data.entreprise} moi={moi} departements={departements} t={t}

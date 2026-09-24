@@ -1,0 +1,63 @@
+// finjaro-atelier — un Worker À PART du site (le site, c'est wrangler.toml à
+// la racine du dépôt ; on n'y touche pas).
+//
+// Mise en place (Beau, dans le tableau de bord Cloudflare) : voir
+// docs/ATELIER-V0.md. En bref : offre payante Workers, un Worker
+// « finjaro-atelier » branché sur ce dépôt avec le dossier racine
+// « atelier » et la branche « staging », puis les secrets des modèles.
+//
+// AUCUNE clé ici. Les secrets se posent dans le tableau de bord
+// (Paramètres → Variables et secrets) :
+//   DEEPSEEK_API_KEY   (conseillé : c'est le premier modèle essayé)
+//   KIMI_API_KEY       (facultatif : la relève)
+//   GEMINI_API_KEY     (facultatif : en dernier ; bloqué tant que son
+//                       plafond de dépense Google est atteint)
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "finjaro-atelier",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+
+  // Des valeurs PUBLIQUES seulement (la clé publique de Supabase est déjà
+  // dans chaque navigateur qui ouvre finjaro.net).
+  "vars": {
+    "SUPABASE_URL": "https://bokwivwizghdlaedczbw.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_UMnuj2_xJ7uZt76TspkBAA_EiAMg6zt",
+    // V0 : réservé au PROPRIÉTAIRE de l'entreprise Finjaro dans Léo…
+    "ATELIER_ENTREPRISE": "44bb201b-6787-4de0-8f7f-f9145d5c03e7",
+    // …ou aux identifiants listés ici (séparés par des virgules).
+    "ATELIER_UTILISATEURS": "",
+    // Les pages qui peuvent parler à l'atelier.
+    "ATELIER_ORIGINES": "https://staging-finjaro.finjaro.workers.dev,https://finjaro.net,http://localhost:5173",
+    // Le plafond DUR d'une session, en dollars US (prix publiés des modèles
+    // et de Cloudflare). Au-delà, l'agent s'arrête et le dit.
+    "ATELIER_PLAFOND_SESSION_USD": "1",
+    // La taille du bac à sable (doit être la même que instance_type plus bas)
+    // et sa mise en veille après inactivité.
+    "ATELIER_TAILLE": "standard-1",
+    "ATELIER_VEILLE": "10m"
+  },
+
+  // Le bac à sable : un conteneur par projet actif, jetable.
+  "containers": [
+    {
+      "class_name": "AtelierSandbox",
+      "image": "./Dockerfile",
+      "instance_type": "standard-1",
+      // Plafond de conteneurs en même temps : V0, une seule personne.
+      "max_instances": 3
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "class_name": "AtelierSandbox", "name": "Sandbox" },
+      { "class_name": "Atelier", "name": "ATELIER" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AtelierSandbox", "Atelier"] }
+  ]
+}
