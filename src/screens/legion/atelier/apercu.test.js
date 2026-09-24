@@ -19,8 +19,12 @@ describe('aperçu de l’atelier', () => {
     expect(doc).toContain('<\\/script>');
     expect(doc).not.toContain('href="style.css"');
   });
+  it('prête un stockage à la page, avant ses scripts', () => {
+    const doc = assembler('index.html', '<html><head><title>x</title></head><body><script src="a.js"></script></body></html>', { 'a.js': 'localStorage.setItem(1,2)' });
+    expect(doc.indexOf('localStorage')).toBeLessThan(doc.indexOf('<title>'));
+  });
   it('laisse tel quel ce qui manque', () => {
     const html = '<link rel="stylesheet" href="absent.css">';
-    expect(assembler('index.html', html, {})).toBe(html);
+    expect(assembler('index.html', html, {})).toContain(html);
   });
 });

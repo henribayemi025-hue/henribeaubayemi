@@ -30,6 +30,12 @@ export function dependances(page, html) {
   return [...new Set(res)];
 }
 
+// Le cadre isolé n'a pas le droit au stockage du navigateur : une page qui
+// enregistre sa progression (localStorage) plantait et l'aperçu restait vide
+// (Finjaro Learn d'Ada, 25/09). On lui prête un stockage en mémoire, le temps
+// de l'aperçu.
+const STOCKAGE_PRETE = `<script>(function(){function faux(){var m={};return{getItem:function(k){return Object.prototype.hasOwnProperty.call(m,k)?m[k]:null},setItem:function(k,v){m[k]=String(v)},removeItem:function(k){delete m[k]},clear:function(){m={}},key:function(i){return Object.keys(m)[i]||null},get length(){return Object.keys(m).length}}}['localStorage','sessionStorage'].forEach(function(n){try{window[n].getItem('x')}catch(e){try{Object.defineProperty(window,n,{value:faux(),configurable:true})}catch(e2){}}})})();</script>`;
+
 // La page assemblée : chaque <link> et <script src> local remplacé par son contenu.
 export function assembler(page, html, contenus) {
   const dossier = page.includes('/') ? page.replace(/[^/]+$/, '') : '';
@@ -42,5 +48,7 @@ export function assembler(page, html, contenus) {
     const js = contenus[cle(src)];
     return js === undefined ? tout : `<script${avant}${apres}>\n${js.replace(/<\/script/gi, '<\\/script')}\n</script>`;
   });
+  // Le stockage prêté, avant tout script de la page.
+  doc = /<head[^>]*>/i.test(doc) ? doc.replace(/<head[^>]*>/i, (h) => `${h}${STOCKAGE_PRETE}`) : `${STOCKAGE_PRETE}${doc}`;
   return doc;
 }

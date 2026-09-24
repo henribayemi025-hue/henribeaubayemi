@@ -188,7 +188,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     // L'agent veut MONTRER quelque chose (l'aperçu ou un fichier) : on l'ouvre.
     const montre = [...nouveaux].reverse().find((a) => a.qui === 'action' && a.outil === 'montrer' && a.ok);
     if (montre) {
-      if (montre.resume === 'apercu') setOnglet('apercu');
+      // Une page web (tests.html…) se montre dans l'aperçu, un autre fichier dans l'éditeur.
+      if (montre.resume === 'apercu') { setPageApercu(null); setOnglet('apercu'); }
+      else if (/\.html?$/i.test(montre.resume)) { setPageApercu(montre.resume); setOnglet('apercu'); }
       else ouvrir(montre.resume, true);
       return;
     }
@@ -218,12 +220,14 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   // Si l'agent attend un accord sur un fichier, on montre la page AVEC sa
   // proposition : on voit le résultat avant de dire oui.
   const [docApercu, setDocApercu] = useState(null);
+  const [pageApercu, setPageApercu] = useState(null);
   const [etroit, setEtroit] = useState(false);
   const apercuVisible = onglet === 'apercu';
   const signature = (vue?.fichiers || []).map((f) => `${f.chemin}:${f.taille}`).join('|');
   const rafraichirApercu = useCallback(async () => {
     if (!pid) return;
-    const page = pageDeDepart((vue?.fichiers || []).map((f) => f.chemin));
+    const chemins = (vue?.fichiers || []).map((f) => f.chemin);
+    const page = pageApercu && chemins.includes(pageApercu) ? pageApercu : pageDeDepart(chemins);
     if (!page) { setDocApercu({ vide: true }); return; }
     const prop = vue?.demande?.outil === 'ecrire_fichier' && typeof vue.demande.contenu === 'string' ? vue.demande : null;
     const lireF = async (c) => {
@@ -237,13 +241,13 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
       await Promise.all(dependances(page, html).map(async (c) => { try { contenus[c] = await lireF(c); } catch { /* fichier absent */ } }));
       setDocApercu({ page, doc: assembler(page, html, contenus), proposition: !!prop });
     } catch (e) { setDocApercu({ page, erreur: e?.message || String(e) }); }
-  }, [pid, vue?.fichiers, vue?.demande, fichier]);
+  }, [pid, vue?.fichiers, vue?.demande, fichier, pageApercu]);
   useEffect(() => {
     if (!apercuVisible) return undefined;
     const m = setTimeout(rafraichirApercu, 350);
     return () => clearTimeout(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apercuVisible, signature, vue?.demande?.id, fichier?.brouillon, pid]);
+  }, [apercuVisible, signature, vue?.demande?.id, fichier?.brouillon, pid, pageApercu]);
 
   const basculerSuivre = () => setSuivre((x) => { ecrire('atelier:suivre2', x ? '0' : '1'); return !x; });
   const enregistrer = () => fichier && agir(async () => {
@@ -366,7 +370,12 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 border-b border-legion-line px-3 py-1.5 text-[12px]">
         <IconEye size={14} className="shrink-0 text-legion-gold" />
-        <span className="min-w-0 truncate font-mono text-legion-ink">{docApercu?.page || t('legion.atelier.apercu')}</span>
+        {(vue?.fichiers || []).filter((f) => /\.html?$/i.test(f.chemin)).length > 1 ? (
+          <select value={docApercu?.page || ''} onChange={(e) => setPageApercu(e.target.value)} aria-label={t('legion.atelier.apercu')}
+            className="min-w-0 rounded-input border border-legion-line bg-legion-bg px-1.5 py-0.5 font-mono text-[12px] text-legion-ink">
+            {(vue?.fichiers || []).filter((f) => /\.html?$/i.test(f.chemin)).map((f) => <option key={f.chemin} value={f.chemin}>{f.chemin}</option>)}
+          </select>
+        ) : <span className="min-w-0 truncate font-mono text-legion-ink">{docApercu?.page || t('legion.atelier.apercu')}</span>}
         {docApercu?.proposition && <span className="shrink-0 text-legion-gold-soft">· {t('legion.atelier.apercuProposition', { nom: nomCodeur })}</span>}
         <button type="button" onClick={() => setEtroit((x) => !x)} title={t(etroit ? 'legion.atelier.apercuLarge' : 'legion.atelier.apercuTelephone')}
           className="ml-auto hidden rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold lg:block">

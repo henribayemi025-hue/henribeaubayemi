@@ -107,14 +107,22 @@ export function executant({ sandbox, etat, fichiers, veilleSecondes = 600, horlo
       await assurer(sandbox, etat, fichiers);
       let r;
       try {
-        r = await sandbox.exec(commande, {
+        // Le signal d'arrêt ne traverse PAS l'appel au bac à sable (« AbortSignal
+        // serialization is not enabled » : TOUTES les commandes échouaient,
+        // vu par Ada le 25/09). On attend la commande OU le Stop, le premier des deux.
+        const execution = sandbox.exec(commande, {
           cwd: RACINE,
           timeout: 120_000,
-          signal,
           // npm n'a pas besoin de parler à son service d'audit (requête POST,
           // refusée par le relais de sortie, qui n'autorise que la lecture).
           env: { npm_config_audit: 'false', npm_config_fund: 'false', npm_config_update_notifier: 'false', CI: '1' },
         });
+        r = signal
+          ? await Promise.race([execution, new Promise((_, rejeter) => {
+            if (signal.aborted) rejeter(new Error('arrêtée (Stop)'));
+            signal.addEventListener?.('abort', () => rejeter(new Error('arrêtée (Stop)')), { once: true });
+          })])
+          : await execution;
       } catch (e) {
         r = { exitCode: 124, stdout: '', stderr: `La commande n'a pas abouti : ${e.message}` };
       }
