@@ -31,6 +31,7 @@ import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
+import { lireTickets, PARLE_DE_TICKETS } from '../_shared/tickets.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 import { classeurEnTexte, creerClasseur, MIME_XLSX, type Feuille } from '../_shared/tableur.ts';
 import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
@@ -584,7 +585,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // La feuille de route du fondateur (0168), lue avec le projet.
   const feuille = await lireFeuille(service, msg.entreprise_id, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
   // Son dépôt GitHub (0169), quand la question parle de code ou de produit.
-  const depot = PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '';
+  // Et ses tickets Linear / Jira (0188), quand la question en parle.
+  const depot = (PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '')
+    + (PARLE_DE_TICKETS.test(String(msg.texte)) || PARLE_DE_CODE.test(String(msg.texte)) ? await lireTickets(service, msg.entreprise_id) : '');
   const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
   const complexe = !gratuite && !appelVocal && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160

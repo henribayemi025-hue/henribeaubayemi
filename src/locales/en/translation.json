@@ -791,6 +791,29 @@
         "nom": "rule",
         "aide": "/regle text — a rule for the whole team"
       }
+    },
+    "flux": {
+      "salon": "In the room:",
+      "salonDefaut": "Direction (default)",
+      "reunionTicket": "A new ticket opens a meeting",
+      "reunionTicketAide": "Every hour, Legion checks the repository's tickets; a NEW ticket opens a meeting (what is it, how serious, who takes it, what do we answer). One per hour; older tickets open nothing.",
+      "rss": "My watch (RSS feeds)",
+      "rssPlaceholder": "One feed per line (https://…/feed)",
+      "rssAide": "Every hour, never-seen articles from your feeds (5 at most) are posted as a list in the room, with their links. No model is called: nothing is charged.",
+      "luLe": "Read on {{quand}}",
+      "pasEncoreLu": "Not read yet",
+      "enErreur": "{{n}} feed(s) failing",
+      "lireMaintenant": "Read now",
+      "rien": "Nothing new.",
+      "linearBranche": "Connected (team: {{equipe}}): agents see open tickets, read-only.",
+      "cleLinear": "Linear personal API key",
+      "equipeLinear": "Team (e.g. ENG)",
+      "toutes": "all",
+      "jiraBranche": "“{{site}}” is connected (project: {{projet}}), read-only.",
+      "projetJira": "Project (e.g. SHOP), optional",
+      "emailJira": "Your Atlassian email",
+      "jetonJira": "Atlassian API token",
+      "ticketsAide": "Agents read open tickets when asked about code, tickets or priorities. The token goes to the vault and is never shown again."
     }
   },
   "equipe": {

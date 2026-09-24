@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub, IconRobot, IconCopy, IconCalculator } from '@tabler/icons-react';
+import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub, IconRobot, IconCopy, IconCalculator, IconRss, IconListCheck } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 
 // LEGION — les connecteurs: ce que les agents ont le droit de lire.
@@ -10,6 +10,128 @@ import { supabase } from '../../../lib/supabase';
 // ceux des autres, jamais un numéro ni une adresse de cliente. Le
 // connecteur « Mesures Finjaro » (les chiffres de toute la plateforme)
 // reste réservé à l'équipe Finjaro.
+
+// La veille RSS, Linear, Jira, et la réunion sur ticket GitHub (0188, 24/09).
+function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onChange, t }) {
+  const [salons, setSalons] = useState([]);
+  const [flux, setFlux] = useState('');
+  const [cleLinear, setCleLinear] = useState('');
+  const [equipeLinear, setEquipeLinear] = useState('');
+  const [jira, setJira] = useState({ site: '', email: '', jeton: '', projet: '' });
+  const [erreur, setErreur] = useState({});
+  const [bilan, setBilan] = useState('');
+  useEffect(() => {
+    supabase.from('legion_canaux').select('id, nom, prive_entre').eq('entreprise_id', entreprise.id).order('ordre')
+      .then(({ data }) => setSalons((data || []).filter((s) => !s.prive_entre?.length)), () => {});
+  }, [entreprise.id]);
+  const rss = connecteurs.find((c) => c.type === 'rss' && c.actif);
+  const linear = connecteurs.find((c) => c.type === 'linear' && c.actif);
+  const jiraC = connecteurs.find((c) => c.type === 'jira' && c.actif);
+  async function brancher(type, config, jeton, actif = true) {
+    setBusy(true); setErreur((e) => ({ ...e, [type]: '' }));
+    const { error } = await supabase.rpc('legion_brancher_outil', { p_entreprise: entreprise.id, p_type: type, p_config: config || {}, p_jeton: jeton || null, p_actif: actif });
+    setBusy(false);
+    if (error) setErreur((e) => ({ ...e, [type]: error.message })); else { setCleLinear(''); setJira((j) => ({ ...j, jeton: '' })); onChange(); }
+  }
+  async function options(type, o) {
+    setBusy(true);
+    await supabase.rpc('legion_connecteur_options', { p_entreprise: entreprise.id, p_type: type, p_options: o });
+    setBusy(false); onChange();
+  }
+  async function lireMaintenant() {
+    setBusy(true); setBilan('');
+    const { data, error } = await supabase.functions.invoke('legion-flux', { body: { entreprise_id: entreprise.id } });
+    setBusy(false);
+    setBilan(error || data?.erreur ? (data?.erreur || error.message) : (data?.journal || []).map((l) => l.split(' ').slice(1).join(' ')).join(' · ') || t('legion.flux.rien'));
+    onChange();
+  }
+  const SalonChoix = ({ c, type }) => (
+    <label className="mt-1 flex items-center gap-1.5 text-[12px] text-legion-muted">{t('legion.flux.salon')}
+      <select value={c?.config?.salon_id || ''} onChange={(e) => options(type, { salon_id: e.target.value || null })} disabled={busy}
+        className="rounded-input border border-legion-line bg-legion-bg px-1.5 py-0.5 text-[16px] text-legion-ink sm:text-[12px]">
+        <option value="">{t('legion.flux.salonDefaut')}</option>
+        {salons.map((s) => <option key={s.id} value={s.id}>{s.nom}</option>)}
+      </select>
+    </label>
+  );
+  return (
+    <>
+      {github && (
+        <li className="flex items-start gap-2">
+          <IconBrandGithub size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+          <div className="min-w-0 flex-1">
+            <label className="flex items-center gap-2 font-semibold text-legion-ink">
+              <input type="checkbox" checked={!!github.config?.reunion_sur_ticket} disabled={busy} onChange={(e) => options('github', { reunion_sur_ticket: e.target.checked })} />
+              {t('legion.flux.reunionTicket')}
+            </label>
+            <p className="text-[11px] leading-snug text-legion-muted">{t('legion.flux.reunionTicketAide')}</p>
+            {github.config?.reunion_sur_ticket && <SalonChoix c={github} type="github" />}
+          </div>
+        </li>
+      )}
+      <li className="flex items-start gap-2">
+        <IconRss size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-legion-ink">{t('legion.flux.rss')}</p>
+          {rss ? (
+            <>
+              <ul className="mt-0.5 space-y-0.5 text-[12px] text-legion-muted">{(rss.config?.flux || []).map((u) => <li key={u} className="truncate">• {u}</li>)}</ul>
+              <p className="text-[11px] text-legion-muted">{rss.config?.lu_le ? t('legion.flux.luLe', { quand: new Date(rss.config.lu_le).toLocaleString() }) : t('legion.flux.pasEncoreLu')}{(rss.config?.erreurs || []).length ? ` · ${t('legion.flux.enErreur', { n: rss.config.erreurs.length })}` : ''}</p>
+              <SalonChoix c={rss} type="rss" />
+              <div className="mt-1 flex gap-3">
+                <button type="button" disabled={busy} onClick={lireMaintenant} className="text-[12px] font-semibold text-legion-gold">{t('legion.flux.lireMaintenant')}</button>
+                <button type="button" disabled={busy} onClick={() => brancher('rss', null, null, false)} className="text-[12px] font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button>
+              </div>
+            </>
+          ) : (
+            <form onSubmit={(e) => { e.preventDefault(); brancher('rss', { flux: flux.split(/\s+/).filter(Boolean) }); }} className="mt-1 flex flex-col gap-2">
+              <textarea value={flux} onChange={(e) => setFlux(e.target.value)} rows={2} placeholder={t('legion.flux.rssPlaceholder')} className="input text-[13px]" />
+              <button type="submit" disabled={busy || !flux.trim()} className="self-start rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.brancher', 'Brancher')}</button>
+            </form>
+          )}
+          <p className="mt-1 text-[11px] leading-snug text-legion-muted">{t('legion.flux.rssAide')}</p>
+          {bilan && <p className="text-[11px] text-legion-success">{bilan}</p>}
+          {erreur.rss && <p className="text-[11px] text-legion-danger">{erreur.rss}</p>}
+        </div>
+      </li>
+      <li className="flex items-start gap-2">
+        <IconListCheck size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-legion-ink">Linear</p>
+          {linear ? (
+            <p className="text-legion-muted">{t('legion.flux.linearBranche', { equipe: linear.config?.equipe || t('legion.flux.toutes') })} <button type="button" disabled={busy} onClick={() => brancher('linear', null, null, false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button></p>
+          ) : (
+            <form onSubmit={(e) => { e.preventDefault(); brancher('linear', { equipe: equipeLinear }, cleLinear); }} className="mt-1 flex flex-wrap items-center gap-2">
+              <input type="password" value={cleLinear} onChange={(e) => setCleLinear(e.target.value)} autoComplete="off" placeholder={t('legion.flux.cleLinear')} className="input min-w-0 flex-1 text-[13px]" />
+              <input value={equipeLinear} onChange={(e) => setEquipeLinear(e.target.value)} placeholder={t('legion.flux.equipeLinear')} className="input w-28 text-[13px]" />
+              <button type="submit" disabled={busy || !cleLinear.trim()} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.brancher', 'Brancher')}</button>
+            </form>
+          )}
+          {erreur.linear && <p className="text-[11px] text-legion-danger">{erreur.linear}</p>}
+        </div>
+      </li>
+      <li className="flex items-start gap-2">
+        <IconListCheck size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-legion-ink">Jira</p>
+          {jiraC ? (
+            <p className="text-legion-muted">{t('legion.flux.jiraBranche', { site: jiraC.config?.site, projet: jiraC.config?.projet || t('legion.flux.toutes') })} <button type="button" disabled={busy} onClick={() => brancher('jira', null, null, false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button></p>
+          ) : (
+            <form onSubmit={(e) => { e.preventDefault(); brancher('jira', { site: jira.site, email: jira.email, projet: jira.projet }, jira.jeton); }} className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input value={jira.site} onChange={(e) => setJira((j) => ({ ...j, site: e.target.value }))} placeholder="https://monequipe.atlassian.net" className="input text-[13px]" />
+              <input value={jira.projet} onChange={(e) => setJira((j) => ({ ...j, projet: e.target.value }))} placeholder={t('legion.flux.projetJira')} className="input text-[13px]" />
+              <input value={jira.email} onChange={(e) => setJira((j) => ({ ...j, email: e.target.value }))} placeholder={t('legion.flux.emailJira')} className="input text-[13px]" />
+              <input type="password" value={jira.jeton} onChange={(e) => setJira((j) => ({ ...j, jeton: e.target.value }))} autoComplete="off" placeholder={t('legion.flux.jetonJira')} className="input text-[13px]" />
+              <button type="submit" disabled={busy || !jira.site.trim()} className="justify-self-start rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.brancher', 'Brancher')}</button>
+            </form>
+          )}
+          <p className="mt-1 text-[11px] leading-snug text-legion-muted">{t('legion.flux.ticketsAide')}</p>
+          {erreur.jira && <p className="text-[11px] text-legion-danger">{erreur.jira}</p>}
+        </div>
+      </li>
+    </>
+  );
+}
 
 export function Connecteurs({ entreprise, t }) {
   const [connecteurs, setConnecteurs] = useState(null);
@@ -193,6 +315,7 @@ export function Connecteurs({ entreprise, t }) {
             {erreurGit && <p className="text-[11px] text-legion-danger">{erreurGit}</p>}
           </div>
         </li>
+        <ConnecteursFlux entreprise={entreprise} connecteurs={connecteurs} github={github} busy={busy} setBusy={setBusy} onChange={charger} t={t} />
         <li className="flex items-start gap-2">
           <IconRobot size={16} className="mt-0.5 shrink-0 text-legion-gold" />
           <div className="min-w-0 flex-1">

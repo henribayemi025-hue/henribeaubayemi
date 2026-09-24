@@ -609,6 +609,32 @@ async function avancer(service: Service, apiKey: string, reunionId: string, etap
   await lancer(service, o.id, place + 1);
 }
 
+async function ouvrirParLegion(service: Service, corps: { canal_id: string; sujet: string; participants?: string[]; format?: string }) {
+  const sujet = String(corps.sujet).trim().slice(0, 800);
+  const { data: salon } = await service.from('legion_canaux').select('id, entreprise_id, nom, membres, prive_entre').eq('id', corps.canal_id).maybeSingle();
+  if (!salon || (Array.isArray(salon.prive_entre) && salon.prive_entre.length)) return { erreur: 'Salon inconnu ou privé.' };
+  const { data: recentes } = await service.from('legion_messages').select(COLS_MSG).eq('canal_id', salon.id).eq('genre', 'reunion')
+    .gte('created_at', new Date(Date.now() - DUREE_MAX_MS).toISOString()).order('created_at', { ascending: false }).limit(5);
+  if (((recentes || []) as Message[]).some((m) => { const r = reunionDe(m); return r?.ouverture && !r.terminee; })) return { erreur: 'Une réunion est déjà en cours dans ce salon.' };
+  pourEntreprise(salon.entreprise_id);
+  const p = await plafondAtteint(salon.entreprise_id);
+  if (p.atteint) return { erreur: 'Plafond du mois atteint.' };
+  const { data: agents } = await service.from('legion_agents').select(COLS_AGENT).eq('entreprise_id', salon.entreprise_id).order('ordre');
+  const participants = choisirParticipants(salon, (agents || []) as Agent[], corps.participants);
+  if (participants.length < MIN_PARTICIPANTS) return { erreur: 'Il faut au moins deux agents allumés.' };
+  const president = choisirPresident(salon, participants);
+  const ordre = [...participants.filter((a) => a.id !== president.id), president];
+  const format = corps.format && FORMATS[corps.format] ? corps.format : undefined;
+  const reunion: Reunion = { ouverture: true, sujet, participants: ordre.map((a) => a.id), president: president.id, tours: TOURS, ...(format ? { format } : {}) };
+  const { data: ouverture, error } = await service.from('legion_messages').insert({
+    entreprise_id: salon.entreprise_id, canal_id: salon.id, auteur_id: president.id, user_id: null,
+    texte: sujet, genre: 'reunion', meta: { sans_reponse: true, reunion, par_legion: true },
+  }).select().single();
+  if (error || !ouverture) return { erreur: error?.message || 'Impossible d\'ouvrir la réunion.' };
+  await lancer(service, ouverture.id, 0);
+  return { ok: true, message_id: ouverture.id };
+}
+
 Deno.serve(compter('legion_reunion', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
@@ -626,6 +652,12 @@ Deno.serve(compter('legion_reunion', async (req: Request) => {
   if (jeton) {
     const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_reunion').maybeSingle();
     if (!sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
+    // Porte 1 bis (24/09) : Legion ouvre une réunion d'elle-même — un nouveau
+    // ticket sur le dépôt branché (legion-flux). Elle est ouverte au nom du
+    // président de séance, jamais au nom du fondateur.
+    if (!corps.reunion_id && corps.canal_id && String(corps.sujet || '').trim().length >= 3) {
+      return json(await ouvrirParLegion(service, corps as { canal_id: string; sujet: string; participants?: string[]; format?: string }));
+    }
     if (!corps.reunion_id || typeof corps.etape !== 'number') return json({ erreur: 'étape manquante' }, 400);
     const { data: o } = await service.from('legion_messages').select('entreprise_id').eq('id', corps.reunion_id).maybeSingle();
     const travail = enFond('legion_reunion', o?.entreprise_id ?? null, () => avancer(service, apiKey, corps.reunion_id!, corps.etape!));

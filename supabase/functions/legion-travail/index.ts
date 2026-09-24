@@ -34,6 +34,7 @@ import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/m
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
+import { lireTickets } from '../_shared/tickets.ts';
 import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 
@@ -274,7 +275,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const feuille = await lireFeuille(service, entrepriseId, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
   projet += feuille;
   // Son dépôt GitHub, s'il est branché (0169): une lecture par journée.
-  const depot = await lireGithub(service, entrepriseId);
+  const depot = (await lireGithub(service, entrepriseId)) + (await lireTickets(service, entrepriseId));
   projet += depot;
   // Le contexte d'UN agent, selon ce qu'il a le droit de lire (0177).
   const projetPour = (a: Agent) => `${projetNu}${peut(a, 'boutique') ? texteBoutique : ''}${peut(a, 'comptabilite') ? texteCompta : ''}${feuille}${peut(a, 'github') ? depot : ''}`;
