@@ -58,6 +58,13 @@ lues par Léo et transformées en compétences pour les agents :
 25 Claw Code (mis de côté : né de la fuite du code de Claude Code) ·
 26 Hermes Agent (boucle d'apprentissage). Doublon : la pub Koban (= fiche 16).
 
+Envoi du 24/09, 20 h 40 (5 liens) :
+- page Notion « Top 5 Sites pour Vibe Coders » : déjà traitée (= fiche 22) ✅
+- guide Google Docs « Hermes Agent » : déjà traité (= fiche 26) ✅
+- 27 skilltree.altari.ai/plan : en cours d'étude (le lien reçu contenait un jeton personnel `mcp_token` : il n'est recopié nulle part)
+- 28 page Notion « Public APIs — Guide complet » : en cours d'étude
+- 29 github.com/addyosmani/agent-skills : en cours d'étude
+
 ---
 
 _Fichier maître, tenu à jour à chaque cycle. Dernière mise à jour : 4 août
