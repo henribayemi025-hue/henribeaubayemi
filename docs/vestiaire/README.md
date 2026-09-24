@@ -28,3 +28,6 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [24 — theaiagents : « 4 agents IA qui valent la peine d'être construits »](24-theaiagents-4-agents-a-construire.md)
 - [25 — Claw Code : un « Claude Code » réécrit par d'autres](25-claw-code.md)
 - [26 — Hermes Agent : « l'agent IA qui apprend de toi » (guide de Dany, @danyltn)](26-hermes-agent-boucle-apprentissage.md)
+- [27 — SkillTree (Altari) : « quels trois agents construire en premier »](27-skilltree-plan-agents.md)
+- [28 — « Public APIs — Guide complet » (page Notion) et le dépôt public-apis](28-public-apis-guide-notion.md)
+- [29 — Agent Skills (Addy Osmani) : 25 méthodes d'ingénieur pour les agents qui codent](29-agent-skills-addy-osmani.md)

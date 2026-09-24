@@ -43,6 +43,9 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») · 24/09 : code écrit sur staging (migration 0198, legion-travail, legion-examen, legion-action, fiche de l'agent, carte du salon, point de la semaine). **Pas encore en service** : 0198 à appliquer, puis les 3 fonctions à déployer ; essai réel à faire |
 | 24/09 | **Atelier de code V0** (plan §1.8) : Worker `finjaro-atelier` + bac à sable Cloudflare sans aucune clé, mode Demander seulement (+ Réfléchir d'abord), écran Atelier (arbre, éditeur, conversation, cartes d'autorisation, modifications, journal, coût, Stop), « Présente-moi comment ça marche », export .zip, **pas d'envoi GitHub** | lancé le 24/09 au soir |
 | 24/09 | Vérifier finjaro.net après la mise en ligne (bundle, /kit, Retirer le fond, Studio de contenu) | ✅ 24/09 soir : finjaro.net sert 8d559ad — /kit, classeur, modèle et moteur de détourage, textes Léo présents |
+| 24/09 | Léo apprend tout seul : **en service** (0198 appliquée, fonctions déployées). Essai réel dans Maison Kora : la chaîne tourne ; aucune proposition encore, car le seul livrable « difficile » a été contesté par un collègue (règle voulue). Première vraie proposition attendue au prochain passage (4 tâches bloquées aujourd'hui) | à vérifier demain matin |
+| 24/09 | **Corrigé** : l'enquête (vérifier les chiffres) appelait Google en dur → 429 → agents « bloqués ». Relais par le moteur commun | ✅ 24/09, à vérifier au prochain passage |
+| 24/09 | Rappel à Beau à 22 h (heure de son téléphone) : essai Fish Audio + bilan + points du carnet | programmé (20 h UTC) |
 | 24/09 | Essayer « Déposer une ressource » avec un vrai lien, dans Léo | à faire au prochain lien de Beau |
 | 24/09 | Bouton « Retirer le fond » dans l'**import en masse** (`VendorProductsBulk.jsx`) | pas fait |
 | 24/09 | Studio de contenu : l'export puis l'import d'un agent **ne reprend pas** ses compétences du modèle | pas fait |
@@ -64,9 +67,9 @@ lues par Léo et transformées en compétences pour les agents :
 Envoi du 24/09, 20 h 40 (5 liens) :
 - page Notion « Top 5 Sites pour Vibe Coders » : déjà traitée (= fiche 22) ✅
 - guide Google Docs « Hermes Agent » : déjà traité (= fiche 26) ✅
-- 27 skilltree.altari.ai/plan : en cours d'étude (le lien reçu contenait un jeton personnel `mcp_token` : il n'est recopié nulle part)
-- 28 page Notion « Public APIs — Guide complet » : en cours d'étude
-- 29 github.com/addyosmani/agent-skills : en cours d'étude
+- 27 skilltree.altari.ai/plan : ✅ fiche 27 (gardé en réserve ; produit payant, chiffres contradictoires ; 1 compétence) (le lien reçu contenait un jeton personnel `mcp_token` : il n'est recopié nulle part)
+- 28 page Notion « Public APIs — Guide complet » : ✅ fiche 28 (annuaire de référence, dépôt MIT ; 1 compétence)
+- 29 github.com/addyosmani/agent-skills : ✅ fiche 29 (MIT ; 5 compétences pour les agents qui codent et Rigo)
 
 ---
 
