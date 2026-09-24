@@ -24,6 +24,9 @@
 //   livrables, réponses, rapports) et Google devient le secours ; sans elle,
 //   rien ne change. La voix, les images et la recherche sur Internet restent
 //   chez Google : elles ne passent pas par ce moteur.
+// - « km:<modèle> » (24/09, Beau : « ils se prennent le relais ») : Kimi, de
+//   Moonshot AI (secret KIMI_API_KEY, API compatible OpenAI). Quand sa clé
+//   existe, il se place après DeepSeek et avant Google.
 //
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
@@ -39,11 +42,20 @@ export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', '
 const deepseek = () => !!Deno.env.get('DEEPSEEK_API_KEY');
 const DS_FORT = () => `ds:${Deno.env.get('LEGION_MODELE_DS') || 'deepseek-v4-pro'}`;
 const DS_RAPIDE = () => `ds:${Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepseek-flash'}`;
+const kimi = () => !!Deno.env.get('KIMI_API_KEY');
+const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
+// La relève, dans l'ordre : DeepSeek fort, Kimi, DeepSeek rapide, puis Google.
+const releve = (fort: boolean) => [
+  ...(deepseek() && fort ? [DS_FORT()] : []),
+  ...(kimi() && fort ? [KIMI()] : []),
+  ...(deepseek() ? [DS_RAPIDE()] : []),
+  ...(kimi() && !fort ? [KIMI()] : []),
+];
 
 export function moteurs(): string[] {
   const reglage = (Deno.env.get('LEGION_MOTEURS') || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (reglage.length) return reglage;
-  return deepseek() ? [DS_FORT(), DS_RAPIDE(), ...MOTEURS_PAR_DEFAUT] : MOTEURS_PAR_DEFAUT;
+  return [...releve(true), ...MOTEURS_PAR_DEFAUT];
 }
 
 // Beau, 23/09: « on peut utiliser Flash pour les trucs simples, et ça part
@@ -54,7 +66,7 @@ export const MOTEURS_SIMPLES_PAR_DEFAUT = ['gemini-2.5-flash', 'gemini-3.5-flash
 export function moteursSimples(): string[] {
   const reglage = (Deno.env.get('LEGION_MOTEURS_SIMPLES') || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (reglage.length) return reglage;
-  return deepseek() ? [DS_RAPIDE(), ...MOTEURS_SIMPLES_PAR_DEFAUT] : MOTEURS_SIMPLES_PAR_DEFAUT;
+  return [...releve(false), ...MOTEURS_SIMPLES_PAR_DEFAUT];
 }
 
 type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[] };
@@ -90,6 +102,8 @@ async function viaGemini(apiKey: string, model: string, texte: string, schema: u
 const PRIX_DS: Record<string, [number, number, number]> = {
   'deepseek-flash': [0.006, 0.30, 1.20],
   'deepseek-v4-pro': [0.044, 1.32, 3.96],
+  // Kimi K2.6, prix relevés le 24/09 (OpenRouter).
+  'kimi-k2.6': [0.1284, 0.4972, 2.97],
 };
 
 async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL'), cle = Deno.env.get('MOTEUR_OA_CLE')): Promise<string> {
@@ -114,7 +128,7 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   const prix = PRIX_DS[model];
   if (prix) {
     const u = body?.usage ?? {};
-    const cache = u.prompt_cache_hit_tokens ?? 0;
+    const cache = u.prompt_cache_hit_tokens ?? u.cached_tokens ?? u.prompt_tokens_details?.cached_tokens ?? 0;
     const entree = (u.prompt_tokens ?? 0) - cache;
     ajouterCout(((cache * prix[0] + entree * prix[1] + (u.completion_tokens ?? 0) * prix[2]) / 1_000_000) * 0.92);
   }
@@ -169,6 +183,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
     if (plafondGoogle && /^gemini/.test(nom)) continue;
     try {
       const txt = nom.startsWith('ds:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.deepseek.com', Deno.env.get('DEEPSEEK_API_KEY'))
+        : nom.startsWith('km:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.moonshot.ai/v1', Deno.env.get('KIMI_API_KEY'))
         : nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
         : await viaGemini(apiKey, nom, texte, schema, o);
