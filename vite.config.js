@@ -18,6 +18,12 @@ export default defineConfig({
   esbuild: {
     supported: { bigint: true },
   },
+  // « Retirer le fond » (lib/detourage.worker.js) est un worker « module »:
+  // le moteur ONNX Runtime qu'il charge découpe son code, ce que le format
+  // iife par défaut refuse.
+  worker: {
+    format: 'es',
+  },
   build: {
     target: 'es2018',
     cssCodeSplit: true,

@@ -11,7 +11,8 @@ import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea, Select } from '../../components/Field';
-import { ImageUpload } from '../../components/ImageUpload';
+import { ImageUpload, uploadImageFile } from '../../components/ImageUpload';
+import { RetirerFond } from '../../components/RetirerFond';
 import { Spinner } from '../../components/Spinner';
 import { attributeFieldsFor, SELECTABLE_SUBCATEGORIES, categoryHeadFor, categoryQueryIds, defaultPublishCategory } from '../../lib/categories';
 import { CategoryPicker } from '../../components/CategoryPicker';
@@ -115,6 +116,8 @@ export default function VendorProductEdit() {
   const [priceHint, setPriceHint] = useState(null); // { fcfa, samples } — médiane catalogue
   const [scriptLoading, setScriptLoading] = useState(false);
   const [reelScript, setReelScript] = useState(null);
+  // « Retirer le fond »: index de la photo en cours de détourage (null = fermé).
+  const [detourage, setDetourage] = useState(null);
 
   // Le repère de prix sans passer par la photo (idée 59 du 22/09): dès
   // qu'un rayon est choisi, la médiane des articles en ligne de la même
@@ -372,6 +375,23 @@ export default function VendorProductEdit() {
     });
   }
 
+  // La photo au fond retiré REMPLACE celle de la case, envoyée par le même
+  // chemin qu'une photo de la galerie (uploadImageFile). L'ancienne n'est
+  // pas effacée du stockage — comme lors d'un remplacement ordinaire.
+  async function keepDetourage(blob) {
+    const idx = detourage;
+    setUploads((n) => n + 1);
+    try {
+      const path = await uploadImageFile('products', user.id, blob);
+      setImage(idx, path);
+      setDetourage(null);
+    } catch (err) {
+      toast.error(err.message || t('errors.generic'));
+    } finally {
+      setUploads((n) => Math.max(0, n - 1));
+    }
+  }
+
   // Pick many photos at once from the gallery and upload them in parallel.
   // Uses allSettled so one bad file never blocks the others, and unique UUID
   // names so two uploads can't collide.
@@ -503,9 +523,17 @@ export default function VendorProductEdit() {
                 onBusyChange={(b) => setUploads((n) => Math.max(0, n + (b ? 1 : -1)))}
                 shape="square"
                 onAddMany={() => multiRef.current?.click()}
+                onRemoveBackground={() => setDetourage(i)}
               />
             ))}
           </div>
+          {detourage !== null && form.images[detourage] && (
+            <RetirerFond
+              source={storageUrl('products', form.images[detourage])}
+              onClose={() => setDetourage(null)}
+              onKeep={keepDetourage}
+            />
+          )}
           {form.video_url && (
             <div className="relative mt-2 w-1/3 overflow-hidden rounded-card border border-hairline bg-black">
               <video
@@ -529,6 +557,7 @@ export default function VendorProductEdit() {
           <p className="mt-1 text-caption text-muted">
             {t('vendor.productImagesHint', { count: MAX_IMAGES })} {t('vendor.productVideoHint', { seconds: MAX_VIDEO_SECONDS })}
           </p>
+          {form.images.length > 0 && <p className="mt-1 text-caption text-muted">{t('vendor.removeBgHint')}</p>}
           {/* Cet écran sert à UN article: les 10 photos sont 10 vues du même
               produit. Qui arrive ici avec 70 photos d'articles différents
               doit trouver la sortie ICI, pas repartir chercher un bouton

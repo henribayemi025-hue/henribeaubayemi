@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconUpload, IconX, IconLoader2 } from '@tabler/icons-react';
+import { IconUpload, IconX, IconLoader2, IconEraser } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { supabase, storageUrl } from '../lib/supabase';
 import { compressForUploadWithThumb } from '../lib/image';
@@ -17,6 +17,37 @@ const PRIVATE_BUCKETS = new Set(['ids']);
 // contre la limite du serveur.
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
+// Le chemin d'envoi d'une photo, partagé: compression + vignette (lib/image.js)
+// puis dépôt dans le bucket sous `<user>/<uuid>.<ext>`. Sorti du composant
+// pour que « Retirer le fond » (fiche article) envoie l'image gardée
+// EXACTEMENT comme une photo choisie dans la galerie. Renvoie le chemin.
+export async function uploadImageFile(bucket, userId, file) {
+  // Downscale + re-encode before upload — phone photos routinely arrive at
+  // several MB, which is what makes images feel slow to load later,
+  // independent of how much data is in the app. Les réglages (1200 px,
+  // WebP) vivent dans lib/image.js, pas ici.
+  //
+  // Une vignette légère est envoyée EN PLUS de l'image normale, sous le
+  // même nom + `_thumb` (voir storageThumbUrl côté lecture) — c'est elle
+  // qui s'affiche dans les avatars/listes, la pleine taille ne sert qu'aux
+  // grandes bannières. Si le fichier ne se décode pas en canvas (HEIC…),
+  // compressForUploadWithThumb renvoie le fichier original et thumb=null
+  // plutôt que d'échouer — voir lib/image.js.
+  const { full, thumb } = await compressForUploadWithThumb(file);
+  const uuid = uid();
+  const path = `${userId}/${uuid}.${full.ext}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, full.blob, { upsert: false, contentType: full.contentType });
+  if (error) throw error;
+  // Meilleur effort: si la vignette échoue (ou n'existe pas), SmartImage
+  // retombe sur la pleine taille (404 géré côté lecture) — ça ne doit
+  // jamais bloquer l'envoi de la photo elle-même.
+  if (thumb) {
+    const thumbPath = `${userId}/${uuid}_thumb.${full.ext}`;
+    supabase.storage.from(bucket).upload(thumbPath, thumb.blob, { upsert: false, contentType: thumb.contentType }).catch(() => {});
+  }
+  return path;
+}
+
 // Uploads a single image to a Supabase Storage bucket and returns its path
 // via onChange. `shape` = 'wide' | 'square' | 'round'.
 //
@@ -24,7 +55,10 @@ const MAX_FILE_BYTES = 20 * 1024 * 1024;
 // sélecteur multiple — c'est la case sur laquelle on tape naturellement, et
 // personne ne devrait rouvrir la galerie photo par photo. La case déjà
 // remplie garde le remplacement à l'unité.
-export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shape = 'square', accept = 'image/*', onAddMany }) {
+//
+// `onRemoveBackground`: si fourni, une case remplie montre un bouton « Fond »
+// (retirer le fond — voir components/RetirerFond.jsx).
+export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shape = 'square', accept = 'image/*', onAddMany, onRemoveBackground }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
@@ -69,30 +103,7 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
     }
     setBusy(true);
     try {
-      // Downscale + re-encode before upload — phone photos routinely arrive at
-      // several MB, which is what makes images feel slow to load later,
-      // independent of how much data is in the app. Les réglages (1200 px,
-      // WebP) vivent dans lib/image.js, pas ici.
-      //
-      // Une vignette légère est envoyée EN PLUS de l'image normale, sous le
-      // même nom + `_thumb` (voir storageThumbUrl côté lecture) — c'est elle
-      // qui s'affiche dans les avatars/listes, la pleine taille ne sert qu'aux
-      // grandes bannières. Si le fichier ne se décode pas en canvas (HEIC…),
-      // compressForUploadWithThumb renvoie le fichier original et thumb=null
-      // plutôt que d'échouer — voir lib/image.js.
-      const { full, thumb } = await compressForUploadWithThumb(file);
-      const uuid = uid();
-      const path = `${user.id}/${uuid}.${full.ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(path, full.blob, { upsert: false, contentType: full.contentType });
-      if (error) throw error;
-      // Meilleur effort: si la vignette échoue (ou n'existe pas), SmartImage
-      // retombe sur la pleine taille (404 géré côté lecture) — ça ne doit
-      // jamais bloquer l'envoi de la photo elle-même.
-      if (thumb) {
-        const thumbPath = `${user.id}/${uuid}_thumb.${full.ext}`;
-        supabase.storage.from(bucket).upload(thumbPath, thumb.blob, { upsert: false, contentType: thumb.contentType }).catch(() => {});
-      }
-      onChange(path);
+      onChange(await uploadImageFile(bucket, user.id, file));
     } catch (err) {
       toast.error(err.message || t('errors.generic'));
     } finally {
@@ -129,6 +140,18 @@ export function ImageUpload({ bucket, value, onChange, onBusyChange, label, shap
             aria-label={t('common.delete')}
           >
             <IconX size={16} />
+          </button>
+        )}
+        {preview && !busy && onRemoveBackground && (
+          <button
+            type="button"
+            onClick={onRemoveBackground}
+            className="absolute bottom-1 left-1 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-semibold text-white"
+            aria-label={t('vendor.removeBg')}
+            title={t('vendor.removeBg')}
+          >
+            <IconEraser size={14} />
+            {t('vendor.removeBgShort')}
           </button>
         )}
       </div>
