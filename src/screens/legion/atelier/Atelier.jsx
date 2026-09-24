@@ -289,6 +289,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
             {t(`legion.atelier.activite_${activite.verbe}`, { nom: nomCodeur, chemin: activite.chemin })}
             {enProposition && <span className="text-legion-gold-soft"> · {t('legion.atelier.attendTonAccord')}</span>}
           </span>
+          {enProposition && (
+            <span title={t('legion.atelier.rejoueAide', { nom: nomCodeur })} className="shrink-0 rounded-pill border border-legion-line px-2 py-0.5 text-[10px] text-legion-muted">{t('legion.atelier.rejoue')}</span>
+          )}
           <span className="ml-auto flex shrink-0 gap-0.5" aria-hidden="true">
             {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 animate-pulse rounded-full bg-legion-gold" style={{ animationDelay: `${k * 200}ms` }} />)}
           </span>

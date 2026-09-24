@@ -1034,7 +1034,9 @@
       "apercuVide": "Pas encore de page web à montrer (il faut un fichier index.html). Pour un programme Python, l'agent le lance et le résultat s'affiche dans la conversation.",
       "apercuProposition": "avec la proposition de {{nom}}, pas encore acceptée",
       "apercuTelephone": "Voir en taille téléphone",
-      "apercuLarge": "Voir en grand"
+      "apercuLarge": "Voir en grand",
+      "rejoue": "▶ rejoué",
+      "rejoueAide": "{{nom}} a écrit toute sa proposition d'un coup ; l'éditeur la rejoue lettre par lettre pour que tu voies ce qui change. Rien n'est enregistré avant ton accord."
     }
   },
   "equipe": {
