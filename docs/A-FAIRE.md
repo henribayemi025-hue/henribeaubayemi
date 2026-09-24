@@ -1,5 +1,65 @@
 # Finjaro — LA liste de tout ce qui reste à faire
 
+## 0. CARNET DE BEAU — tout ce qui attend (tenu à jour depuis le 24/09)
+
+_Règle de Beau (24/09, soir) : « Tout ce que je t'envoie, note ça. Note, note,
+note. » Chaque demande, chaque lien, chaque idée de Beau arrive ici **le jour
+même**, avec sa date, même quand on est occupé ailleurs. On coche ✅ avec la
+date quand c'est fait, on ne supprime jamais. Les ressources reçues sont en plus
+rangées dans `docs/vestiaire/` (une fiche chacune)._
+
+### 0.1 En attente d'une réponse de Beau
+
+| Date | Quoi | Ce qu'il faut de Beau |
+|---|---|---|
+| 24/09 | **Mettre en ligne sur finjaro.net** le lot de staging (tout ce qui suit 6bacb72 : choix du modèle d'IA, alertes, relais de recherche, examen de Rigo, Déposer une ressource, modèle Studio de contenu, Retirer le fond, kit /kit, vestiaire 20–26). La mise en ligne a été **bloquée par le contrôle de sécurité** : il faut un « oui, pousse ce lot sur finjaro.net » explicite. | « oui, pousse » — ou d'abord l'essai sur son téléphone (Retirer le fond, /kit) |
+| 24/09 | **Atelier de code** V0 (plan `docs/plans/2026-09-24-atelier-de-code-et-jarvis.md`) : OpenHands (MIT), modes Demander / Accepter les modifications / Auto, Confirmer obligatoire | « oui atelier » |
+| 24/09 | **Jarvis** V0 (réveil par bouton ou geste, puis voix) ; espace « Moi » de l'assistant personnel ; proposition 10 « Hé Léo » | son accord sur le plan |
+| 24/09 | **Réceptionniste vocale** pour les clients de Léo (fiche 24) : prototype sans téléphone, puis numéro Twilio (payant) | décision + budget |
+| 24/09 | **Essai à l'aveugle Fish Audio contre ElevenLabs** pour les voix de Léo (Fish : environ 11 $/mois avec les droits commerciaux, API gratuite jusqu'au 30/11/2026 sans garantie) | « oui essai » |
+| 24/09 | **Essai à l'aveugle Wan 2.6 / LTX 2 contre Kling** pour la vidéo (environ 1 $) | « oui » |
+| 24/09 | **Bouton du kit → Accounting déjà connecté** (relais SSO) : touche l'authentification commune, donc Accounting aussi | accord |
+| 24/09 | **Vidéo Accounting v2** : retours attendus (prononciation « Accounting », raccord de la voix vers 16 s, longueur de la fin). La version HQ (35 Mo) dépasse la limite d'envoi : proposer une version compressée | ses retours |
+| 24/09 | **Agents qui codent** : le correctif est gardé de côté (`scratchpad/leo-agents-codent-complet.patch`), repris dans le plan de l'atelier en version sûre (Confirmer). Ne pas contourner le blocage de sécurité | décision avec l'atelier |
+
+### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
+
+| Date | Quoi | Pourquoi |
+|---|---|---|
+| 24/09 | Relever le **plafond de dépense Google** (ai.studio/spend) | photos des agents, lecture des documents par le sens, recherche Gemini : bloquées depuis le 24/09 à 01 h 18 UTC |
+| 24/09 | **Recréer la clé Tavily** et remettre la nouvelle dans les secrets Supabase (`TAVILY_API_KEY`) | l'ancienne a été écrite en clair dans la conversation. La recherche marche (testée le 24/09 : Kwame a répondu avec des sources) |
+| 24/09 | Clé **OpenAI** (facultative) dans les secrets Supabase (`OPENAI_API_KEY`) | relais pour les photos des agents tant que Google est bloqué |
+| 24/09 | Faire tourner la **clé DeepSeek** | hygiène |
+| 24/09 | **GitHub App ou jeton** pour l'atelier et les agents | atelier de code |
+| 24/09 | Un vrai clic **Accounting → finjaro.net** avec un vrai compte | vérifier la connexion unique en conditions réelles |
+| 24/09 | Essayer sur téléphone **« Retirer le fond »** (staging, fiche article) et ouvrir le **classeur du kit** dans Excel ou Google Sheets | pas encore testé sur un vrai téléphone ni dans Excel |
+
+### 0.3 À faire de mon côté (pas encore fait)
+
+| Date | Quoi | État |
+|---|---|---|
+| 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») |
+| 24/09 | Vérifier finjaro.net après la mise en ligne (bundle, /kit, Retirer le fond, Studio de contenu) | après le « oui » de Beau |
+| 24/09 | Essayer « Déposer une ressource » avec un vrai lien, dans Léo | à faire au prochain lien de Beau |
+| 24/09 | Bouton « Retirer le fond » dans l'**import en masse** (`VendorProductsBulk.jsx`) | pas fait |
+| 24/09 | Studio de contenu : l'export puis l'import d'un agent **ne reprend pas** ses compétences du modèle | pas fait |
+| 24/09 | Fiche 26 : **mode silencieux** pour Vigie et les rapports (ne parler que s'il y a du nouveau) et **chaînage** collecter → trier → rédiger | pas fait |
+| 24/09 | Fiche 24 : dans le Studio de contenu, **noter les idées** avant de produire, et **tirer la leçon** du lot publié | pas fait |
+| 24/09 | Réunions longues : **résumer à mi-parcours** pour tenir le coût | à vérifier |
+| 24/09 | Essayer une vraie **photo d'agent** dès que Google ou OpenAI répond | attend la clé ou le plafond |
+| 24/09 | Dire à Claudinette ce qui touche la base commune | ✅ 24/09 (kit, 0196, legion-vestiaire) |
+
+### 0.4 Ressources reçues de Beau (vestiaire)
+
+Toutes étudiées, une fiche chacune dans `docs/vestiaire/` (voir son README),
+lues par Léo et transformées en compétences pour les agents :
+01 à 19 (24/09 après-midi) · 20 agency-agents · 21 stack design Loucash ·
+22 Top 5 sites vibe coders · 23 PDF bencodezero · 24 theaiagents « 4 agents » ·
+25 Claw Code (mis de côté : né de la fuite du code de Claude Code) ·
+26 Hermes Agent (boucle d'apprentissage). Doublon : la pub Koban (= fiche 16).
+
+---
+
 _Fichier maître, tenu à jour à chaque cycle. Dernière mise à jour : 4 août
 2026. Si un point est traité, il passe en ✅ avec la date — rien n'est
 supprimé, pour garder l'historique des décisions de Beau._

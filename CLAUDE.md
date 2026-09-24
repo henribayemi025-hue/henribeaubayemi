@@ -169,3 +169,14 @@ Un changement qui touche l'authentification, le Site URL, les redirections,
 `auth.users`, une fonction edge ou une migration **concerne les deux
 applications**. On le dit à Beau avant, en nommant l'autre application qui
 peut être affectée. Il n'a pas à arbitrer entre deux avis qui s'ignorent.
+
+## 9. Tout noter — ordre de Beau (24/09)
+
+« Tout ce que je t'envoie, note ça. Note, note, note. » Chaque demande,
+lien, capture ou idée de Beau est écrite **le jour même** dans
+`docs/A-FAIRE.md`, section 0 « Carnet de Beau », même si on est occupé
+ailleurs, et même si elle ne sera traitée que plus tard. Y figurent aussi ce
+qu'on attend de lui (décisions, clés, essais sur téléphone) et ce qu'on a
+promis sans l'avoir encore fait. On coche ✅ avec la date, on ne supprime
+jamais. Les ressources d'entraînement ont en plus leur fiche dans
+`docs/vestiaire/`.
