@@ -639,7 +639,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     if (aRelire) {
       // Les documents de l'entreprise sont des faits: sans eux, la relecture
       // retirait un prix écrit dans la FAQ comme « inventé » (vu le 23/09).
-      const faits = [mesures && peut(cible, 'mesures') ? `Chiffres mesurés: ${mesures}` : '', ...sesVerifs, ...sesDocs.map((x) => `Document « ${x.titre} »: ${x.texte}`)].filter(Boolean).join('\n');
+      // Ce qu'il a lu du dépôt, des tickets (Linear, Jira) et de la feuille de
+      // route est un fait aussi : sans lui, la relecture retirait des clés de
+      // tickets bien réelles comme « inventées » (vu le 24/09 sur Jira).
+      const faits = [mesures && peut(cible, 'mesures') ? `Chiffres mesurés: ${mesures}` : '', ...sesVerifs, ...sesDocs.map((x) => `Document « ${x.titre} »: ${x.texte}`),
+        peut(cible, 'github') && depot ? `Lu à l'instant (dépôt, tickets): ${depot}` : '', feuille ? `Feuille de route: ${feuille}` : ''].filter(Boolean).join('\n');
       const c = await critiquer(apiKey, cible, texte, faits, memoire, lignes.join('\n'));
       if (c) { texte = c.texte; relu = { corrige: true, raison: c.raison }; } else relu = { corrige: false };
     }
