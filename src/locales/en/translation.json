@@ -3176,5 +3176,65 @@
     "tauxDuJour": "Rates of {{date}}, updated daily",
     "tauxSource": "Rates By Exchange Rate API",
     "tauxFcfa": "The CFA franc keeps its fixed parity with the euro."
+  },
+  "kit": {
+    "title": "Free kit",
+    "eyebrow": "Free · no sign-up",
+    "heading": "Keep track of your stock and cash",
+    "lead": "A ready-to-fill workbook and a one-page guide to know, every evening, how much you sold, what is in the till and what is running out on the shelf.",
+    "forWho": "For a shop, a pharmacy, a garage, a workshop, a restaurant — in the currency of your choice.",
+    "downloadSheet": "Download the workbook",
+    "sheetHint": "Excel, Google Sheets, LibreOffice or Numbers",
+    "openGuide": "Open the printable guide",
+    "guideHint": "One page: the morning and evening routine",
+    "otherLang": "En français :",
+    "otherSheet": "classeur",
+    "otherGuide": "guide",
+    "insideTitle": "What's inside",
+    "sheets": {
+      "articles": {
+        "name": "Items",
+        "desc": "Your purchase and selling prices, stock that calculates itself, and “Reorder” when it runs low."
+      },
+      "entrees": {
+        "name": "Stock received",
+        "desc": "Every delivery received, and what you still owe suppliers."
+      },
+      "ventes": {
+        "name": "Daily sales",
+        "desc": "One row per sale: the price fills itself in, and so does the margin."
+      },
+      "caisse": {
+        "name": "Daily cash",
+        "desc": "The morning float, the cash counted in the evening, and the difference to explain."
+      },
+      "recap": {
+        "name": "Summary",
+        "desc": "The day, the month, the stock value: where you stand, at a glance."
+      },
+      "guide": {
+        "name": "The one-page guide",
+        "desc": "10 minutes a day: the routine, the 5 mistakes that lose money, and when to move to a tool."
+      }
+    },
+    "howTitle": "To get started",
+    "how1": "Type your currency in the yellow “My currency” box: you choose it, the workbook assumes none.",
+    "how2": "Copy in your items and count what is on the shelf: that is your opening stock. Delete the EXAMPLE rows.",
+    "how3": "Every evening, count the till. The workbook tells you if anything is missing.",
+    "privacy": "Nothing to give to get it: no email address, no account. The file stays with you.",
+    "nextEyebrow": "The next step",
+    "nextTitle": "When the workbook is not enough: Finjaro Accounting",
+    "nextBody": "The same method, with nothing to copy out, and shared if several of you run the till.",
+    "features": {
+      "f1": "A till with a barcode scanner",
+      "f2": "Stock, purchases and reorder alerts",
+      "f3": "The sales journal, debts and credits",
+      "f4": "Your customers' subscriptions",
+      "f5": "Receipts sent on WhatsApp",
+      "f6": "The mobile payment messages you share with it, read and recorded",
+      "f7": "A dashboard, in your currency"
+    },
+    "nextImport": "Your items import from this workbook. Free to start, with the same account as Finjaro.",
+    "nextCta": "Try Finjaro Accounting"
   }
 }

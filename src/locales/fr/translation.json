@@ -3176,5 +3176,65 @@
     "tauxDuJour": "Taux du {{date}}, mis à jour chaque jour",
     "tauxSource": "Rates By Exchange Rate API",
     "tauxFcfa": "Le franc CFA suit sa parité fixe avec l’euro."
+  },
+  "kit": {
+    "title": "Kit gratuit",
+    "eyebrow": "Gratuit · sans inscription",
+    "heading": "Tenir son stock et sa caisse",
+    "lead": "Un classeur prêt à remplir et un guide d'une page pour savoir, chaque soir, combien tu as vendu, ce qu'il y a dans la caisse et ce qui manque sur l'étagère.",
+    "forWho": "Pour une boutique, une pharmacie, un garage, un atelier, un restaurant — dans la monnaie de ton choix.",
+    "downloadSheet": "Télécharger le classeur",
+    "sheetHint": "Excel, Google Sheets, LibreOffice ou Numbers",
+    "openGuide": "Ouvrir le guide à imprimer",
+    "guideHint": "Une page : la routine du matin et du soir",
+    "otherLang": "In English:",
+    "otherSheet": "workbook",
+    "otherGuide": "guide",
+    "insideTitle": "Ce qu'il y a dedans",
+    "sheets": {
+      "articles": {
+        "name": "Articles",
+        "desc": "Tes prix d'achat et de vente, le stock qui se calcule tout seul, et « À commander » quand il en reste trop peu."
+      },
+      "entrees": {
+        "name": "Entrées de stock",
+        "desc": "Chaque livraison reçue, et ce que tu dois encore aux fournisseurs."
+      },
+      "ventes": {
+        "name": "Ventes du jour",
+        "desc": "Une ligne par vente : le prix se remplit tout seul, la marge aussi."
+      },
+      "caisse": {
+        "name": "Caisse du jour",
+        "desc": "Le fond de caisse du matin, la caisse comptée le soir, et l'écart à expliquer."
+      },
+      "recap": {
+        "name": "Récap",
+        "desc": "La journée, le mois, la valeur du stock : où tu en es, d'un coup d'œil."
+      },
+      "guide": {
+        "name": "Le guide d’une page",
+        "desc": "10 minutes par jour : la routine, les 5 erreurs qui font perdre de l'argent, et quand passer à un outil."
+      }
+    },
+    "howTitle": "Pour commencer",
+    "how1": "Écris ta monnaie dans la case jaune « Ma monnaie » : c'est toi qui la choisis, le classeur n'en suppose aucune.",
+    "how2": "Recopie tes articles et compte ce qu'il y a sur l'étagère : c'est ton stock de départ. Efface les lignes EXEMPLE.",
+    "how3": "Chaque soir, compte la caisse. Le classeur te dit s’il manque quelque chose.",
+    "privacy": "Rien à donner pour l'avoir : ni adresse e-mail, ni compte. Le fichier reste chez toi.",
+    "nextEyebrow": "L'étape suivante",
+    "nextTitle": "Quand le classeur ne suffit plus : Finjaro Accounting",
+    "nextBody": "La même méthode, sans rien recopier, et à plusieurs si vous êtes plusieurs à la caisse.",
+    "features": {
+      "f1": "Une caisse avec lecteur de codes-barres",
+      "f2": "Le stock, les achats et les alertes de réapprovisionnement",
+      "f3": "Le journal des ventes, les dettes et les crédits",
+      "f4": "Les abonnements de tes clients",
+      "f5": "Le reçu envoyé sur WhatsApp",
+      "f6": "Les messages de paiement mobile que tu lui partages, lus et enregistrés",
+      "f7": "Un tableau de bord, dans ta monnaie"
+    },
+    "nextImport": "Tes articles s'importent depuis ce classeur. Gratuit pour démarrer, avec le même compte que Finjaro.",
+    "nextCta": "Essayer Finjaro Accounting"
   }
 }

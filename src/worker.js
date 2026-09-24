@@ -219,7 +219,7 @@ async function servirAvecSonEnTete(request, url, env, fiche) {
 // Le plan de site, fabriqué à partir de la base
 // ---------------------------------------------------------------------------
 
-const PAGES_FIXES = ['/', '/search', '/services', '/a-propos', '/legal/terms', '/legal/confidentialite'];
+const PAGES_FIXES = ['/', '/search', '/services', '/a-propos', '/kit', '/legal/terms', '/legal/confidentialite'];
 
 // La clé de cache porte un numéro de version. Le 15/09, une version fautive
 // du plan du site (six pages, aucune boutique) s'est retrouvée en cache pour

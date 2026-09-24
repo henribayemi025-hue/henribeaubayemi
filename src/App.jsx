@@ -136,6 +136,7 @@ const Auth = lazyWithReload(() => import('./screens/Auth'));
 const Terms = lazyWithReload(() => import('./screens/Terms'));
 const About = lazyWithReload(() => import('./screens/About'));
 const Apps = lazyWithReload(() => import('./screens/Apps'));
+const Kit = lazyWithReload(() => import('./screens/Kit'));
 const Demo = lazyWithReload(() => import('./screens/Demo'));
 const Privacy = lazyWithReload(() => import('./screens/Privacy'));
 const AccountDeletion = lazyWithReload(() => import('./screens/AccountDeletion'));
@@ -248,6 +249,10 @@ export default function App() {
                     {/* L'environnement Finjaro: la liste des applications, publique
                         et partageable par un lien. */}
                     <Route path="/apps" element={<Apps />} />
+                    {/* Le kit gratuit « Tenir son stock et sa caisse »: public,
+                        sans compte, sans aucune collecte. Ses fichiers sont
+                        dans public/kit/ (même préfixe, servis tels quels). */}
+                    <Route path="/kit" element={<Kit />} />
                     {/* L'arrivée du relais de connexion depuis une autre
                         application Finjaro (0173): échange le code, pose la
                         session, continue. */}

@@ -15,7 +15,13 @@ const SHELL_CACHE = 'finjaro-shell-v3';
 // Adresses servies par le worker Cloudflare, PAS par l'application: le plan du
 // site, le fichier des robots, le manifeste. Elles ne doivent jamais être
 // détournées vers index.html.
-const HORS_APPLICATION = /^\/(sitemap\.xml|robots\.txt|manifest\.webmanifest|sw\.js|img\/)/;
+//
+// `kit/` (le préfixe AVEC la barre): le guide imprimable et le classeur du kit
+// gratuit sont des fichiers, pas des pages de l'application. Sans cette
+// exclusion, ouvrir /kit/guide.html enregistrait ce guide comme coque de
+// l'application — exactement le défaut du plan du site décrit plus bas. La
+// page /kit elle-même (sans barre) reste une page de l'application.
+const HORS_APPLICATION = /^\/(sitemap\.xml|robots\.txt|manifest\.webmanifest|sw\.js|img\/|kit\/)/;
 
 self.addEventListener('install', () => {
   self.skipWaiting();
