@@ -26,6 +26,11 @@ export const PRIX_MODELES = {
   'gm:gemini-3.5-flash': [0.15, 1.50, 9.00],
   // Prix pour une requête de 200 000 jetons au plus ; l'atelier coupe bien avant.
   'gm:gemini-3.1-pro-preview': [0.20, 2.00, 12.00],
+  // OpenAI, page officielle des prix lue le 24/09/2026 (Beau : « Astra doit
+  // être présent quand il veut coder »).
+  'oa:gpt-6-astra': [1.00, 10.00, 50.00],
+  'oa:gpt-6-sol': [0.20, 2.00, 10.00],
+  'oa:gpt-5.4-mini': [0.075, 0.75, 4.50],
 };
 
 // Cloudflare Containers, offre payante Workers (dollars par seconde et par unité).

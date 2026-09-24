@@ -25,6 +25,9 @@ const NOMS_MODELES = {
   'gm:gemini-3.5-flash': 'Gemini 3.5 Flash',
   'gm:gemini-2.5-flash': 'Gemini 2.5 Flash',
   'gm:gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+  'oa:gpt-6-astra': 'GPT-6 Astra',
+  'oa:gpt-6-sol': 'GPT-6 Sol',
+  'oa:gpt-5.4-mini': 'GPT-5.4 mini',
 };
 
 const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };

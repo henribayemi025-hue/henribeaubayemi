@@ -24,15 +24,23 @@ export const FOURNISSEURS = {
   ds: { url: 'https://api.deepseek.com/chat/completions', cle: 'DEEPSEEK_API_KEY', nom: 'DeepSeek' },
   km: { url: 'https://api.moonshot.ai/v1/chat/completions', cle: 'KIMI_API_KEY', nom: 'Kimi' },
   gm: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', cle: 'GEMINI_API_KEY', nom: 'Gemini' },
+  // OpenAI (24/09) : la clé peut porter le nom que Beau lui donne (« Leo ») ;
+  // on la reconnaît à sa forme « sk- » (voir cleDe).
+  oa: { url: 'https://api.openai.com/v1/chat/completions', cle: 'OPENAI_API_KEY', nom: 'OpenAI' },
 };
 
-export const MODELES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gm:gemini-3.5-flash', 'gm:gemini-2.5-flash', 'gm:gemini-3.1-pro-preview'];
+export const MODELES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gm:gemini-3.5-flash', 'gm:gemini-2.5-flash', 'gm:gemini-3.1-pro-preview', 'oa:gpt-6-astra', 'oa:gpt-6-sol', 'oa:gpt-5.4-mini'];
 const AUTO_PAR_DEFAUT = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gm:gemini-3.5-flash'];
 
 const fournisseur = (m) => FOURNISSEURS[String(m).split(':')[0]];
 export const cleDe = (env, m) => {
   const f = fournisseur(m);
-  return f ? env?.[f.cle] || null : null;
+  if (!f) return null;
+  if (env?.[f.cle]) return env[f.cle];
+  if (String(m).startsWith('oa:')) {
+    for (const nom of ['Leo', 'LEO', 'leo', 'Léo']) if (String(env?.[nom] || '').startsWith('sk-')) return env[nom];
+  }
+  return null;
 };
 
 export function disponibles(env, { geminiCoupe = false } = {}) {
@@ -76,9 +84,12 @@ export async function appeler({ modele, messages, outils, env, maxSortie = 8000,
   const corps = {
     model: nom,
     messages: preparer(messages, prefixe),
-    max_tokens: maxSortie,
-    // Kimi K2.6 n'accepte que 1 (vu au banc de Léo le 24/09).
-    temperature: prefixe === 'km' ? 1 : 0.3,
+    // OpenAI (GPT-5/6) : max_completion_tokens, et pas d'autre température
+    // que la sienne (24/09).
+    ...(prefixe === 'oa'
+      ? { max_completion_tokens: maxSortie }
+      // Kimi K2.6 n'accepte que 1 (vu au banc de Léo le 24/09).
+      : { max_tokens: maxSortie, temperature: prefixe === 'km' ? 1 : 0.3 }),
     ...(outils?.length ? { tools: outils, tool_choice: 'auto' } : {}),
   };
   // DeepSeek : réflexion coupée par défaut (plus rapide, coût prévisible) ;
