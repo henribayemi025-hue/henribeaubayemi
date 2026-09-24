@@ -128,6 +128,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 | Date | Quoi | État |
 |---|---|---|
+| 25/09 | Les agents n'ont **aucun outil pour ouvrir une page** de finjaro.net (Rigo bloqué deux fois sur « fiche vue → panier ») → outil « voir la fiche » en lecture : prix, photos, description, livraison, et une capture téléphone. Pour tous les utilisateurs de Léo : « voir une page de MON site ». Ada : « livrable vide » quand on lui demande du code → le code reprend maintenant tout texte long rendu, et note les champs reçus au journal | à faire (outil) · ✅ 25/09 (livrable vide, à vérifier au prochain passage) |
 | 25/09 | Beau (nuit) : « quand tu as un gros plan, tu ne dois pas le garder : tu en prends une bonne partie, tu divises et tu envoies aux agents dans Léo, dans Finjaro ; quand j'entre, je dois voir comment ils sentent le travail, les crises… Je te l'ai dit 20 fois. » → chantier « Atelier façon VS Code » (15 éléments des 5 prototypes, test de sécurité, entretien d'embauche, Meta) découpé entre Ada, Rigo, Mentor, Orchestre, Plume, Forge, Alpha : tâches **haute priorité** au tableau, message de lancement et réunion de lancement en direct dans Direction. `legion-travail` : une tâche haute ou urgente passe avant les plus anciennes (point 7 des agents autonomes) | ✅ 25/09 23 h 07 : 8 tâches urgentes, message de lancement, réunion en direct (vrai désaccord : produit d'abord). `legion-travail` : urgente > haute > ancienne, et une urgente pas livrée n'attend pas le passage suivant. 7 livrables en 6 min, relus un par un dans les salons (corrections dites à Alpha, Rigo, Mentor, Forge, Plume). Défaut trouvé et corrigé : les livrables étaient coupés à 4 000 caractères (16 000 maintenant). Rigo débloqué avec le classement par fiche. Ada n'a pas encore rendu la palette |
 | 25/09 | ✅ 25/09 : finjaro.net sert la version avec le terminal (texte trouvé dans le code servi). Vérifié en vrai puis mis en ligne (d011b90) : terminal où l'humain tape (sortie, code 0), bouton « Tout autoriser » sur la carte → la commande suivante passe sans carte. Défaut vu : Ada ne sait pas dans quel mode elle est (« je continue à demander ») → ✅ 25/09, le mode est dans sa consigne (d2e685e, staging). La liste des terminaux se perd au rechargement ; `cd` ne tient pas ; pas de flèche haut ni d'arrêt (rapport des 5 prototypes) | à faire |
 | 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») · 24/09 : code écrit sur staging (migration 0198, legion-travail, legion-examen, legion-action, fiche de l'agent, carte du salon, point de la semaine). **Pas encore en service** : 0198 à appliquer, puis les 3 fonctions à déployer ; essai réel à faire |
@@ -158,6 +159,16 @@ lues par Léo et transformées en compétences pour les agents :
 22 Top 5 sites vibe coders · 23 PDF bencodezero · 24 theaiagents « 4 agents » ·
 25 Claw Code (mis de côté : né de la fuite du code de Claude Code) ·
 26 Hermes Agent (boucle d'apprentissage). Doublon : la pub Koban (= fiche 16).
+**25/09 (liens renvoyés dans la nuit, jetons `mcp_token` jamais recopiés)** :
+Hermes Agent, SkillTree, Public APIs, agent-skills = déjà fiches 26 à 29 ·
+nouveaux : **30 Twenty** (CRM libre, AGPL : par ses API seulement → Alpha),
+**31 youtube-automation-agent** et **32 MoneyPrinterTurbo** (MIT, machines à
+vidéos → comparaison confiée à Forge), **33 Arcads** (méthode retenue pour
+Plume, outil payant mis de côté : pas de faux témoignages), **34 Higgsfield**
+(visages persistants des agents, payant, en réserve), **35 prompt.pdf** (« une
+question à la fois, tester avec 1 puis 10 » → compétence confiée à Mentor, et
+accueil de « Construire une application » dans l'atelier). Doublon : le guide
+Arcads, envoyé deux fois.
 
 Envoi du 24/09, 20 h 40 (5 liens) :
 - page Notion « Top 5 Sites pour Vibe Coders » : déjà traitée (= fiche 22) ✅

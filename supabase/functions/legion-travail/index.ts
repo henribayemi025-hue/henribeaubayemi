@@ -616,8 +616,19 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
       // tentatives de Rigo, grille de Mentor) s'arrêtaient en pleine phrase.
-      const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 16000);
-      if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide`); return; }
+      // 25/09 : Ada (code React demandé) rendait un « livrable vide » : le
+      // modèle rangeait son code sous un autre champ, ou en objet. On reprend
+      // tout texte long qu'il a rendu, plutôt que de perdre le travail.
+      const brut = r.obj.livrable;
+      let corpsLivrable = typeof brut === 'string' ? brut : brut ? JSON.stringify(brut, null, 2) : '';
+      if (corpsLivrable.trim().length < 80) {
+        const autres = Object.entries(r.obj as Record<string, unknown>)
+          .filter(([k, v]) => !['statut', 'besoin', 'suite_titre', 'suite_agent', 'livrable'].includes(k) && typeof v === 'string' && v.length > 80)
+          .map(([k, v]) => `### ${k}\n${v}`);
+        if (autres.length) corpsLivrable = [corpsLivrable, ...autres].filter(Boolean).join('\n\n');
+      }
+      const livrable = aerer(corpsLivrable.trim()).slice(0, 16000);
+      if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide (champs rendus : ${Object.keys(r.obj || {}).join(', ')} ; livrable de ${String(brut ?? '').length} caractères)`); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
       const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
