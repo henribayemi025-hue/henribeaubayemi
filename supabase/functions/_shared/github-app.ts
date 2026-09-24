@@ -12,7 +12,10 @@ export const GITHUB_APP_ID = Deno.env.get('GITHUB_APP_ID') || '5066102';
 // clé privée PEM.
 export function clePriveeGithub(): { nom: string; pem: string } | null {
   const direct = Deno.env.get('GITHUB_APP_PRIVATE_KEY');
-  if (direct && /PRIVATE KEY/.test(direct)) return { nom: 'GITHUB_APP_PRIVATE_KEY', pem: direct };
+  // Collée sans ses lignes « -----BEGIN… » et « -----END… » (c'est ce que
+  // Beau a fait le 24/09 : l'empreinte montrée par Supabase correspond au
+  // corps seul du fichier .pem) : on la lit quand même.
+  if (direct && (/PRIVATE KEY/.test(direct) || /^\s*MII[A-Za-z0-9+/=\s]+$/.test(direct))) return { nom: 'GITHUB_APP_PRIVATE_KEY', pem: direct };
   for (const [nom, v] of Object.entries(Deno.env.toObject())) if (/-----BEGIN (RSA )?PRIVATE KEY-----/.test(v)) return { nom, pem: v };
   return null;
 }
@@ -33,7 +36,13 @@ function pkcs8Depuis(pem: string): Uint8Array {
   // Collée dans un formulaire, la clé perd parfois ses retours à la ligne.
   const corps = pem.replace(/-----(BEGIN|END)[^-]+-----/g, '').replace(/\\n/g, '').replace(/\s+/g, '');
   const der = Uint8Array.from(atob(corps), (c) => c.charCodeAt(0));
-  if (!/BEGIN RSA PRIVATE KEY/.test(pem)) return der;
+  // PKCS#1 ou PKCS#8 ? On le lit dans la structure, pas dans l'en-tête (qui
+  // peut manquer) : SEQUENCE, version 0, puis un entier (PKCS#1) ou une
+  // SEQUENCE d'algorithme (PKCS#8).
+  let i = 1;
+  i += der[i] & 0x80 ? 1 + (der[i] & 0x7f) : 1;
+  const pkcs1 = der[0] === 0x30 && der[i] === 0x02 && der[i + 1] === 0x01 && der[i + 2] === 0x00 && der[i + 3] === 0x02;
+  if (!pkcs1) return der;
   const algo = [0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00];
   const octet = [0x04, ...longueur(der.length)];
   const contenu = [0x02, 0x01, 0x00, ...algo, ...octet];
