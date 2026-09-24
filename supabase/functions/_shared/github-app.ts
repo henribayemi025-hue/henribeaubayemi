@@ -6,6 +6,9 @@
 // jamais renvoyée ni écrite dans un journal.
 
 export const GITHUB_APP_ID = Deno.env.get('GITHUB_APP_ID') || '5066102';
+// L'identifiant OAuth de l'application (public, affiché par GitHub) ; son
+// secret, lui, ne vit que dans les secrets Supabase (GITHUB_APP_CLIENT_SECRET).
+export const GITHUB_CLIENT_ID = Deno.env.get('GITHUB_APP_CLIENT_ID') || 'Iv23liHNYpWLEocZCgAe';
 
 // Le nom du secret peut varier (Beau pose parfois sous un autre nom) : on
 // prend GITHUB_APP_PRIVATE_KEY, sinon le premier secret qui A LA FORME d'une
@@ -85,5 +88,5 @@ export async function verifierApplication(): Promise<Record<string, unknown>> {
     }
     detail.push({ compte: i.account?.login, choix: i.repository_selection, depots });
   }
-  return { ok: true, secret: cle.nom, app_id: GITHUB_APP_ID, nom: a.name, slug: a.slug, permissions: a.permissions, installations: detail };
+  return { ok: true, secret: cle.nom, app_id: GITHUB_APP_ID, client_id: GITHUB_CLIENT_ID, client_secret: Deno.env.get('GITHUB_APP_CLIENT_SECRET') ? 'présent' : 'absent', nom: a.name, slug: a.slug, permissions: a.permissions, installations: detail };
 }
