@@ -120,7 +120,7 @@ describe('le mode Demander', () => {
 describe('les modes lecture seule', () => {
   for (const mode of ['reflechir', 'visite']) {
     it(`${mode} : on lit, on ne touche à rien`, () => {
-      expect(outilsPourMode(mode)).toEqual(['lister', 'lire_fichier', 'chercher']);
+      expect(outilsPourMode(mode)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer']);
       expect(evaluer('lire_fichier', { chemin: 'a' }, { mode }).decision).toBe('auto');
       expect(evaluer('ecrire_fichier', { chemin: 'a', contenu: '' }, { mode }).decision).toBe('refuser');
       expect(evaluer('commande', { commande: 'ls' }, { mode }).decision).toBe('refuser');

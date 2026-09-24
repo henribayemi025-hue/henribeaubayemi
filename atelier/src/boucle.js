@@ -30,6 +30,10 @@ export const OUTILS = {
     description: 'Liste les fichiers du projet (ou d\'un dossier du projet).',
     parameters: { type: 'object', properties: { chemin: { type: 'string', description: 'Dossier relatif au projet, « . » pour tout.' } } },
   },
+  montrer: {
+    description: 'Montre quelque chose à l\'humain sur SON écran, tout de suite : « apercu » ouvre l\'aperçu de la page web du projet ; « fichier » ouvre un fichier dans l\'éditeur. Quand l\'humain veut voir la page ou un fichier, fais-le avec cet outil au lieu de lui dire où toucher.',
+    parameters: { type: 'object', properties: { quoi: { type: 'string', enum: ['apercu', 'fichier'] }, chemin: { type: 'string', description: 'Pour « fichier » : le fichier à ouvrir.' } }, required: ['quoi'] },
+  },
   lire_fichier: {
     description: 'Lit un fichier du projet.',
     parameters: { type: 'object', properties: { chemin: { type: 'string' } }, required: ['chemin'] },
@@ -83,7 +87,7 @@ Règles qui ne changent jamais :
 - Pour ecrire_fichier, donne toujours le contenu COMPLET du fichier et une « explication » en français simple.
 - Travaille par petites étapes vérifiables. Quand tu as fini, dis en quelques lignes ce que tu as fait, ce qui reste, et comment le vérifier. Ne prétends jamais qu'une chose marche si tu ne l'as pas vérifiée.
 - Réponds dans la langue de l'humain, simplement : il ne code pas forcément.
-- L'écran de l'atelier a un bouton « Aperçu » qui affiche la page web du projet (le fichier index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page, ne dis pas que c'est impossible : dis-lui de toucher « Aperçu ». Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.`;
+- L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.`;
   if (etat.mode === 'reflechir') {
     return `${base}
 
@@ -131,6 +135,7 @@ export function compacter(msgs, limite = MAX_CONVERSATION) {
 function resumeAppel(outil, args) {
   if (outil === 'commande') return normaliserCommande(args?.commande);
   if (outil === 'chercher') return `« ${args?.texte ?? ''} » dans ${args?.chemin || '.'}`;
+  if (outil === 'montrer') return args?.quoi === 'fichier' ? (args?.chemin || '.') : 'apercu';
   return args?.chemin || '.';
 }
 
@@ -164,6 +169,14 @@ async function executer(outil, args, etat, deps) {
     if (!liste.length) return { ok: true, texte: 'Aucun fichier ici.' };
     const lignes = liste.slice(0, 500).map((x) => `${x.chemin} (${x.taille} o)`);
     return { ok: true, texte: DONNEES + lignes.join('\n') + (liste.length > 500 ? `\n… et ${liste.length - 500} autres` : '') };
+  }
+  if (outil === 'montrer') {
+    if (args?.quoi === 'fichier') {
+      const { chemin } = cheminSur(args.chemin);
+      if (await f.lire(chemin) == null) return { ok: false, texte: `Fichier introuvable : ${chemin}` };
+      return { ok: true, texte: `Le fichier ${chemin} est ouvert sous les yeux de l'humain.` };
+    }
+    return { ok: true, texte: 'L\'aperçu de la page est ouvert sous les yeux de l\'humain. Tu ne vois pas son écran : ne décris pas le rendu comme si tu l\'avais vu.' };
   }
   if (outil === 'lire_fichier') {
     const { chemin } = cheminSur(args.chemin);

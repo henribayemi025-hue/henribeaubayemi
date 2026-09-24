@@ -17,7 +17,9 @@
 // (atelier/test/politique.test.js).
 
 export const MODES = ['demander', 'reflechir', 'visite'];
-export const OUTILS_LECTURE = ['lister', 'lire_fichier', 'chercher'];
+// « montrer » ne touche à rien : il demande à l'écran d'ouvrir l'aperçu ou un
+// fichier (Beau, 25/09 : « il doit tout faire lui-même »).
+export const OUTILS_LECTURE = ['lister', 'lire_fichier', 'chercher', 'montrer'];
 export const OUTILS_ECRITURE = ['ecrire_fichier', 'supprimer_fichier'];
 export const OUTILS_COMMANDE = ['commande'];
 

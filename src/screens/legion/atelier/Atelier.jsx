@@ -174,6 +174,13 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     const i = liste.findIndex((a) => a.id === vuJusqua.current);
     const nouveaux = liste.slice(i + 1);
     vuJusqua.current = dernier.id;
+    // L'agent veut MONTRER quelque chose (l'aperçu ou un fichier) : on l'ouvre.
+    const montre = [...nouveaux].reverse().find((a) => a.qui === 'action' && a.outil === 'montrer' && a.ok);
+    if (montre) {
+      if (montre.resume === 'apercu') setOnglet('apercu');
+      else ouvrir(montre.resume, true);
+      return;
+    }
     const geste = [...nouveaux].reverse().find((a) => a.qui === 'action' && ['lire_fichier', 'ecrire_fichier'].includes(a.outil) && a.ok && a.resume && a.resume !== '.');
     if (!geste) return;
     setActivite({ verbe: geste.outil === 'lire_fichier' ? 'lit' : 'ecrit', chemin: geste.resume });

@@ -141,7 +141,7 @@ describe('la boucle en mode Demander', () => {
     const m = monter([{ texte: 'Plan : 1. … 2. …' }]);
     m.etat.mode = 'reflechir';
     await envoyer(m.etat, m.deps, 'que proposes-tu ?');
-    expect(m.modele.requetes[0].corps.tools.map((t) => t.function.name)).toEqual(['lister', 'lire_fichier', 'chercher']);
+    expect(m.modele.requetes[0].corps.tools.map((t) => t.function.name)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer']);
   });
 
   it('un clic ne l\'emporte pas sur un mode passé en lecture seule entre-temps', async () => {
