@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
   const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
   const { data: { user } } = await personne.auth.getUser();
-  const { data: msg } = await personne.from('legion_messages').select('id, entreprise_id, meta').eq('id', corps.message_id).maybeSingle();
+  const { data: msg } = await personne.from('legion_messages').select('id, entreprise_id, auteur_id, meta').eq('id', corps.message_id).maybeSingle();
   if (!msg || !user) return json({ erreur: "Message inconnu, ou tu n'es pas membre." }, 403);
   const action = (msg.meta as { action?: Record<string, string> } | null)?.action;
   if (!action || action.statut !== 'a_confirmer') return json({ erreur: 'Rien à confirmer ici (déjà fait ou refusé).' }, 409);
@@ -93,6 +93,30 @@ Deno.serve(async (req: Request) => {
       });
       const b = await r.json().catch(() => ({}));
       return b?.ok ? marquer('faite', `${a.nom} est équipé.`) : marquer('echec', b?.erreur || `HTTP ${r.status}`);
+    }
+    case 'engager_agent': {
+      // Un responsable a proposé une fiche (idée 3 des 200, 24/09) :
+      // « Prénom Nom | Poste | Département | Ce qu'il fera ». Le fondateur a
+      // confirmé : l'agent rejoint l'équipe, allumé, supervisé.
+      const [nom, poste, dep, mandat] = String(action.valeur || '').split('|').map((x) => x.trim());
+      if (!nom || !poste) return marquer('echec', 'Fiche incomplète (il faut au moins un nom et un poste).');
+      const [{ data: agents }, { data: salons }, { data: auteur }] = await Promise.all([
+        service.from('legion_agents').select('cle').eq('entreprise_id', msg.entreprise_id),
+        service.from('legion_canaux').select('nom, prive_entre').eq('entreprise_id', msg.entreprise_id),
+        service.from('legion_agents').select('nom, departement').eq('id', msg.auteur_id).maybeSingle(),
+      ]);
+      const sans = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      // Un département qui existe; sinon celui du responsable qui propose.
+      const departement = (salons || []).find((s: { nom: string; prive_entre: string[] | null }) => !s.prive_entre?.length && sans(s.nom) === sans(dep || ''))?.nom || auteur?.departement || null;
+      const base = sans(nom).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
+      const pris = new Set((agents || []).map((x: { cle: string }) => x.cle));
+      let cle = base; for (let i = 2; pris.has(cle); i += 1) cle = `${base}-${i}`;
+      const { error } = await service.from('legion_agents').insert({
+        entreprise_id: msg.entreprise_id, cle, nom: nom.slice(0, 80), poste: poste.slice(0, 120), departement,
+        mandat: (mandat || poste).slice(0, 600), actif: true, ordre: 850, autonomie: 'supervise',
+        mission: { type: 'engage', par: auteur?.nom || null, debut: new Date().toISOString().slice(0, 10) },
+      });
+      return error ? marquer('echec', error.message) : marquer('faite', `${nom} rejoint l'équipe${departement ? ` (${departement})` : ''}, allumé et supervisé.`);
     }
     default:
       return marquer('echec', 'Action inconnue.');

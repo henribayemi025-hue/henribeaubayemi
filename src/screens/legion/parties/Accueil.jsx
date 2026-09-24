@@ -37,7 +37,7 @@ import { TableauDeBord } from './TableauDeBord';
 export function Accueil({
   entreprise, departements, agents, messages, taches, moi,
   onEntrer, onOuvrirSalon, onEcrireA, onFiche, onKanban,
-  onAllumer, onAllumerTous, onDirective, onVraiesPhotos, photosEnCours,
+  onAllumer, onAllumerTous, onAllumerDepartement, onVoteRemplacement, onDirective, onVraiesPhotos, photosEnCours,
   sansPhoto, aChoisir, t,
 }) {
   const [directive, setDirective] = useState('');
@@ -228,8 +228,15 @@ export function Accueil({
                       </span>
                       <h3 className="truncate text-caption font-bold text-legion-ink transition group-hover:text-legion-gold">{d.nom}</h3>
                     </div>
-                    <span className={`shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-medium ${actifs > 0 ? 'border-legion-success/40 bg-legion-success/15 text-legion-success' : 'border-legion-line bg-legion-card text-legion-muted'}`}>
-                      {actifs}/{siens.length}
+                    {/* L'interrupteur du département (idée 110 des 200, 24/09) :
+                        tout le service s'allume ou s'éteint d'un coup. */}
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <span className={`rounded-pill border px-2 py-0.5 text-[10px] font-medium ${actifs > 0 ? 'border-legion-success/40 bg-legion-success/15 text-legion-success' : 'border-legion-line bg-legion-card text-legion-muted'}`}>
+                        {actifs}/{siens.length}
+                      </span>
+                      {onAllumerDepartement && siens.length > 0 && (
+                        <Interrupteur petit on={actifs > 0} onChange={(v) => onAllumerDepartement(d.nom, v)} label={t('legion.interrupteurDepartement', { nom: d.nom })} />
+                      )}
                     </span>
                   </div>
                   <p className="mt-2.5 line-clamp-2 text-[12px] leading-relaxed text-legion-muted">{d.a_quoi_ca_sert}</p>
@@ -321,7 +328,7 @@ export function Accueil({
       </div>
 
       {/* 5 bis. Le tableau de bord : chaque agent, compté (24/09) */}
-      <TableauDeBord entreprise={entreprise} agents={agents} onFiche={onFiche} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
+      <TableauDeBord entreprise={entreprise} agents={agents} onFiche={onFiche} onVoteRemplacement={onVoteRemplacement} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
 
       {/* 6. Les plans par département, et « Au travail maintenant » */}
       <FeuilleDeRoute entreprise={entreprise} agents={agents} langue={typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined} t={t} />

@@ -277,6 +277,24 @@ export default function Entreprise() {
     else toast.info(t('legion.reunion.conclusionDemandee'));
   }
 
+  // Un agent en difficulté (tableau de bord) : l'équipe en débat en réunion
+  // « vote » — faut-il le remplacer ? Le vote éclaire, le fondateur décide
+  // (idée 120 des 200, 24/09).
+  async function voteRemplacement(a, raisons) {
+    const cible = departements.find((d) => sansAccent(d.nom) === sansAccent(a.departement)) || salonRapport;
+    if (!cible) return;
+    const autres = data.agents.filter((x) => !x.user_id && x.actif && x.moteur !== 'claude-code' && x.id !== a.id)
+      .sort((x, y) => Number(sansAccent(y.departement) === sansAccent(a.departement)) - Number(sansAccent(x.departement) === sansAccent(a.departement)) || Number(y.est_directeur) - Number(x.est_directeur));
+    const participants = autres.slice(0, 4).map((x) => x.id);
+    if (participants.length < 2) { toast.error(t('legion.tdb.voteTropPeu')); return; }
+    const sujet = t('legion.tdb.voteSujet', { nom: a.nom, poste: a.poste, raisons: (raisons || []).join(' ; ') });
+    const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { canal_id: cible.id, sujet, participants, format: 'vote' } });
+    if (e || r?.erreur) { toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic')); return; }
+    if (r?.message) setData((d) => (d && !d.messages.some((m) => m.id === r.message.id) ? { ...d, messages: [...d.messages, r.message] } : d));
+    setParams({ canal: cible.id });
+    setVue('chat');
+  }
+
   // Le rapport du soir tout de suite (legion-rapport, 23/09). La fonction
   // l'écrit avant de répondre; il arrive dans le salon en temps réel.
   async function faireRapport(mode) {
@@ -370,6 +388,11 @@ export default function Entreprise() {
     await majMessage(x.id, { meta: { ...(x.meta || {}), statut: 'a_faire', remarque, renvoye_le: new Date().toISOString() }, termine_le: null });
     const { data: livrable } = await supabase.from('legion_messages').select('id, texte').eq('entreprise_id', entrepriseId)
       .contains('meta', { livrable: { tache_id: x.id } }).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    // Une leçon pour LUI (sa mémoire, 0185) : il la retrouvera la prochaine
+    // fois qu'on lui demande quelque chose de proche.
+    if (a && remarque.trim().length >= 3) {
+      supabase.from('legion_souvenirs').insert({ entreprise_id: entrepriseId, agent_id: a.id, source: 'lecon', texte: `Livrable « ${x.texte} » renvoyé : ${remarque.trim()}`.slice(0, 1500), cree_par: user.id }).then(() => {}, () => {});
+    }
     if (enRegle && remarque.trim().length >= 8) {
       await supabase.from('legion_memoire').insert({ entreprise_id: entrepriseId, regle: remarque.trim(), source: 'main', agent_id: a?.id || null, cree_par: user.id });
     }
@@ -401,6 +424,15 @@ export default function Entreprise() {
       setData((d) => d && ({ ...d, agents: d.agents.map((x) => (x.user_id ? x : { ...x, actif })) }));
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
+  // Tout un département d'un coup (idée 110 des 200, 24/09).
+  async function allumerDepartement(nomDept, actif) {
+    const ids = data.agents.filter((x) => !x.user_id && x.moteur !== 'claude-code' && sansAccent(x.departement) === sansAccent(nomDept)).map((x) => x.id);
+    if (!ids.length) return;
+    const { error: err } = await supabase.from('legion_agents').update({ actif }).in('id', ids);
+    if (err) { toast.error(err.message); return; }
+    setData((d) => d && ({ ...d, agents: d.agents.map((x) => (ids.includes(x.id) ? { ...x, actif } : x)) }));
+    toast.success(t(actif ? 'legion.departementAllume' : 'legion.departementEteint', { nom: nomDept }));
+  }
   async function modifierAgent(a, champs) {
     const { error: err } = await supabase.from('legion_agents').update(champs).eq('id', a.id);
     if (err) { toast.error(err.message); return; }
@@ -419,6 +451,7 @@ export default function Entreprise() {
     if (err) { toast.error(err.message); return; }
     setData((d) => d && ({ ...d, agents: [...d.agents, cree] }));
     toast.success(t('legion.agentCree', { nom: cree.nom, defaultValue: '{{nom}} rejoint l’équipe' }));
+    return cree;
   }
   // Engager les agents proposés par « Renforcer » (legion-renfort): chacun
   // avec sa fiche de mission, ce qu'il ne fait jamais, et ses premières
@@ -660,7 +693,7 @@ export default function Entreprise() {
             messages={data.messages} taches={taches} moi={moi}
             onEntrer={entrer} onOuvrirSalon={choisirSalon} onEcrireA={ecrireA} onFiche={setFiche}
             onKanban={() => { setKanban(true); if (window.innerWidth < 1024) setVue('taches'); else setVue('chat'); }}
-            onAllumer={allumer} onAllumerTous={allumerTous} onDirective={directive}
+            onAllumer={allumer} onAllumerTous={allumerTous} onAllumerDepartement={allumerDepartement} onVoteRemplacement={voteRemplacement} onDirective={directive}
             onVraiesPhotos={vraiesPhotos} photosEnCours={photos}
             sansPhoto={sansPhoto} aChoisir={aChoisir} t={t}
           />

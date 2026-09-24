@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil, IconSearch } from '@tabler/icons-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil, IconSearch, IconDownload } from '@tabler/icons-react';
 import { Modal } from '../../../components/Modal';
 import { supabase } from '../../../lib/supabase';
 import { Visage } from './Visage';
@@ -10,6 +10,177 @@ import { CompetencesAgent } from './Competences';
 // Ce qu'un agent peut lire parmi ce que l'entreprise a branché (0177, E4).
 // Vide = tout. Les fonctions des agents s'y tiennent.
 const SOURCES = ['mesures', 'boutique', 'comptabilite', 'web', 'github', 'documents'];
+
+// SA MÉMOIRE À LUI (0185, idée 1 des 200, 24/09) : ses livrables passés,
+// les leçons reçues quand un livrable a été renvoyé, ce que le fondateur a
+// aimé. Il retrouve les plus proches avant de répondre ou de livrer. On peut
+// lui en ajouter (encourager, idée 168) et lui en faire oublier.
+const NOM_SOUVENIR = { livrable: '📦', lecon: '↩', encouragement: '👏' };
+function SaMemoire({ agent, t }) {
+  const [liste, setListe] = useState(null);
+  const [bravo, setBravo] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const charger = useCallback(async () => {
+    const { data } = await supabase.from('legion_souvenirs').select('id, source, texte, created_at').eq('agent_id', agent.id).order('created_at', { ascending: false }).limit(12);
+    setListe(data || []);
+  }, [agent.id]);
+  useEffect(() => { charger(); }, [charger]);
+  async function encourager(e) {
+    e.preventDefault();
+    const texte = bravo.trim();
+    if (texte.length < 3 || envoi) return;
+    setEnvoi(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('legion_souvenirs').insert({ entreprise_id: agent.entreprise_id, agent_id: agent.id, source: 'encouragement', texte: texte.slice(0, 1000), cree_par: user?.id });
+    setEnvoi(false);
+    if (!error) { setBravo(''); charger(); }
+  }
+  async function oublier(id) {
+    await supabase.from('legion_souvenirs').delete().eq('id', id);
+    setListe((l) => (l || []).filter((x) => x.id !== id));
+  }
+  if (!liste) return null;
+  return (
+    <div>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.memoireAgent.titre')}</p>
+      <div className="space-y-2 rounded-card border border-legion-line bg-legion-card p-3">
+        <p className="text-[12px] leading-snug text-legion-muted">{t('legion.memoireAgent.aide')}</p>
+        {liste.length === 0 ? (
+          <p className="text-caption text-legion-muted">{t('legion.memoireAgent.vide')}</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {liste.map((s) => (
+              <li key={s.id} className="flex items-start gap-2 text-caption">
+                <span className="shrink-0" title={t(`legion.memoireAgent.source.${s.source}`)}>{NOM_SOUVENIR[s.source] || '•'}</span>
+                <span className="min-w-0 flex-1 text-legion-ink"><span className="line-clamp-2">{s.texte}</span></span>
+                <button type="button" onClick={() => oublier(s.id)} className="shrink-0 text-[11px] text-legion-muted hover:text-legion-danger">{t('legion.memoireAgent.oublier')}</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form onSubmit={encourager} className="flex items-center gap-2 border-t border-legion-line pt-2">
+          <input value={bravo} onChange={(e) => setBravo(e.target.value)} maxLength={1000} placeholder={t('legion.memoireAgent.bravoPlaceholder')}
+            className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-2.5 py-1.5 text-[16px] text-legion-ink outline-none focus:border-legion-gold/60 sm:text-caption" />
+          <button type="submit" disabled={bravo.trim().length < 3 || envoi} className="shrink-0 rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-40">👏 {t('legion.memoireAgent.encourager')}</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Emprunter les compétences d'un collègue (idée 183 des 200, 24/09) : chaque
+// fiche est reposée depuis sa source par legion-competences (licence
+// vérifiée), comme le bouton « Équiper ».
+function EmprunterCompetences({ agent, t, onFait }) {
+  const [collegues, setCollegues] = useState(null);
+  const [choix, setChoix] = useState('');
+  const [occupe, setOccupe] = useState(false);
+  const [bilan, setBilan] = useState('');
+  useEffect(() => {
+    let vivant = true;
+    Promise.all([
+      supabase.from('legion_agents').select('id, nom').eq('entreprise_id', agent.entreprise_id).is('user_id', null).neq('id', agent.id),
+      supabase.from('legion_competences').select('agent_id, catalogue_cle, nom').eq('entreprise_id', agent.entreprise_id).eq('actif', true).not('catalogue_cle', 'is', null),
+    ]).then(([{ data: ag }, { data: comp }]) => {
+      if (!vivant) return;
+      const siennes = new Set((comp || []).filter((c) => c.agent_id === agent.id).map((c) => c.catalogue_cle));
+      setCollegues((ag || []).map((a) => ({ ...a, fiches: (comp || []).filter((c) => c.agent_id === a.id && !siennes.has(c.catalogue_cle)) })).filter((a) => a.fiches.length));
+    }, () => vivant && setCollegues([]));
+    return () => { vivant = false; };
+  }, [agent.id, agent.entreprise_id]);
+  if (!collegues?.length) return null;
+  const c = collegues.find((x) => x.id === choix);
+  async function emprunter() {
+    if (!c || occupe) return;
+    setOccupe(true);
+    let n = 0;
+    for (const f of c.fiches.slice(0, 4)) {
+      const { data } = await supabase.functions.invoke('legion-competences', { body: { action: 'equiper', entreprise_id: agent.entreprise_id, agent_id: agent.id, catalogue_cle: f.catalogue_cle } });
+      if (data && !data.erreur) n += 1;
+    }
+    setOccupe(false);
+    setBilan(t('legion.emprunter.fait', { count: n, nom: c.nom }));
+    onFait?.();
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-card border border-legion-line bg-legion-card p-2.5 text-caption">
+      <span className="text-legion-muted">{t('legion.emprunter.titre')}</span>
+      <select value={choix} onChange={(e) => { setChoix(e.target.value); setBilan(''); }} className="rounded-input border border-legion-line bg-legion-bg px-2 py-1 text-[16px] text-legion-ink sm:text-caption">
+        <option value="">{t('legion.emprunter.choisir')}</option>
+        {collegues.map((x) => <option key={x.id} value={x.id}>{x.nom} ({x.fiches.length})</option>)}
+      </select>
+      {c && <button type="button" onClick={emprunter} disabled={occupe} className="rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{occupe ? '…' : t('legion.emprunter.bouton', { count: Math.min(4, c.fiches.length) })}</button>}
+      {c && <span className="w-full text-[11px] text-legion-muted">{c.fiches.slice(0, 4).map((f) => f.nom).join(' · ')}</span>}
+      {bilan && <span className="w-full text-[12px] text-legion-success">{bilan}</span>}
+    </div>
+  );
+}
+
+// Exporter un agent en fichier (idée 152) : sa fiche et la liste de ses
+// compétences (leur clé et leur source, pas leur contenu : à l'import, elles
+// sont reprises à la source, licence vérifiée). Un agent n'a aucune donnée
+// personnelle : c'est une fiche de poste.
+async function exporterAgent(agent) {
+  const { data: comp } = await supabase.from('legion_competences').select('catalogue_cle, nom, source_repo, licence').eq('agent_id', agent.id).eq('actif', true);
+  const fiche = {
+    format: 'legion-agent', version: 1, exporte_le: new Date().toISOString().slice(0, 10),
+    nom: agent.nom, poste: agent.poste, departement: agent.departement || null, mandat: agent.mandat || null,
+    personnalite: agent.personnalite || null, jamais: agent.jamais || null, peut_lire: agent.peut_lire ?? null, autonomie: agent.autonomie || 'supervise',
+    competences: (comp || []).filter((c) => c.catalogue_cle),
+  };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(fiche, null, 2)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = `agent-${String(agent.nom).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// Importer un agent (idées 41 et 152) : un fichier exporté d'une autre
+// entreprise Legion, ou son lien (un dépôt GitHub, par exemple). Seuls les
+// champs d'une fiche sont repris, raccourcis ; rien d'autre n'est lu.
+function lireFicheImportee(brut) {
+  const j = typeof brut === 'string' ? JSON.parse(brut) : brut;
+  if (!j || j.format !== 'legion-agent') throw new Error('format');
+  const s = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+  return {
+    champs: { nom: s(j.nom, 40), poste: s(j.poste, 80), departement: s(j.departement, 60), mandat: s(j.mandat, 600), personnalite: s(j.personnalite, 400), jamais: s(j.jamais, 400),
+      peut_lire: Array.isArray(j.peut_lire) ? j.peut_lire.filter((x) => SOURCES.includes(x)) : null, fin_mission: '' },
+    competences: (Array.isArray(j.competences) ? j.competences : []).map((c) => s(c?.catalogue_cle, 120)).filter(Boolean).slice(0, 4),
+  };
+}
+function ImporterAgent({ t, onLu }) {
+  const [lien, setLien] = useState('');
+  const [erreur, setErreur] = useState('');
+  const fichier = useRef(null);
+  function lu(brut) {
+    try { onLu(lireFicheImportee(brut)); setErreur(''); } catch { setErreur(t('legion.importer.illisible')); }
+  }
+  async function depuisLien() {
+    let u = lien.trim();
+    if (!/^https:\/\//.test(u)) { setErreur(t('legion.importer.lienHttps')); return; }
+    // Un lien GitHub « blob » devient le fichier brut.
+    u = u.replace(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\//, 'https://raw.githubusercontent.com/$1/$2/');
+    try {
+      const r = await fetch(u);
+      if (!r.ok) throw new Error(String(r.status));
+      lu(await r.text());
+    } catch { setErreur(t('legion.importer.injoignable')); }
+  }
+  return (
+    <div className="space-y-1.5 rounded-card border border-dashed border-legion-line p-2.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.importer.titre')}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => fichier.current?.click()} className="rounded-pill border border-legion-line px-2.5 py-1 text-[12px] text-legion-ink hover:border-legion-gold">{t('legion.importer.fichier')}</button>
+        <input ref={fichier} type="file" accept="application/json,.json" className="hidden"
+          onChange={async (e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) lu(await f.text()); }} />
+        <input value={lien} onChange={(e) => setLien(e.target.value)} placeholder={t('legion.importer.lienPlaceholder')}
+          className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-2 py-1 text-[16px] text-legion-ink outline-none sm:text-caption" />
+        <button type="button" onClick={depuisLien} disabled={!lien.trim()} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-40">{t('legion.importer.lire')}</button>
+      </div>
+      {erreur && <p className="text-[12px] text-legion-danger">{erreur}</p>}
+    </div>
+  );
+}
 
 // Le journal des choix (idée 14 des 200, 24/09) : ses dernières prises de
 // parole, et pour chacune ce qui la justifie — ce qu'il a vérifié (outils
@@ -159,6 +330,8 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
   const [change, setChange] = useState(false);
   const [enGrand, setEnGrand] = useState(false);
   const [edition, setEdition] = useState(null); // null | { nom, poste, departement, mandat, personnalite }
+  const [importees, setImportees] = useState([]); // clés des compétences d'un agent importé
+  const [cleComp, setCleComp] = useState(0); // recharger ses compétences après un emprunt
   if (!agent) return null;
 
   // Beau, 23/09: « ils peuvent créer ou modifier les agents pour eux ». Un
@@ -180,13 +353,27 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
         propre.fin_mission = champs.fin_mission || null;
         // Une date de fin fait de lui un intérimaire: il s'éteint seul le lendemain.
         propre.interim = !!champs.fin_mission;
-        if (nouveau) { await onCreer(propre); setEdition(null); onFermer(); } else { await onModifier(agent, propre); setEdition(null); }
+        if (nouveau) {
+          const cree = await onCreer(propre);
+          // Les compétences d'un agent importé, reprises à leur source.
+          for (const cle of cree?.id ? importees : []) {
+            await supabase.functions.invoke('legion-competences', { body: { action: 'equiper', entreprise_id: cree.entreprise_id, agent_id: cree.id, catalogue_cle: cle } });
+          }
+          setEdition(null); onFermer();
+        } else { await onModifier(agent, propre); setEdition(null); }
       } finally { setChange(false); }
     }
     const champ = 'w-full rounded-input border border-legion-line bg-legion-card px-3 py-2 text-caption text-legion-ink outline-none focus:border-legion-gold';
     return (
       <Modal open onClose={() => (nouveau ? onFermer() : setEdition(null))} title={nouveau ? t('legion.nouvelAgent', 'Nouvel agent') : t('legion.modifierAgent', 'Modifier l’agent')} className="legion-modale">
         <form onSubmit={enregistrer} className="space-y-3 text-legion-ink">
+          {nouveau && (
+            <ImporterAgent t={t} onLu={({ champs: c, competences }) => {
+              setEdition({ ...champs, ...c, departement: departements.find((d) => d.nom.toLowerCase() === String(c.departement || '').toLowerCase())?.nom || champs.departement });
+              setImportees(competences);
+            }} />
+          )}
+          {nouveau && importees.length > 0 && <p className="text-[12px] text-legion-muted">{t('legion.importer.competences', { count: importees.length })}</p>}
           {nouveau && (
             <ChercherCatalogue t={t} onChoisir={(x) => setEdition({ ...champs, poste: x.poste, mandat: x.mandat || '',
               departement: departements.find((d) => d.nom.toLowerCase() === String(x.departement || '').toLowerCase())?.nom || champs.departement })} />
@@ -362,9 +549,13 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
           </div>
         </div>
 
+        {!agent.user_id && agent.moteur !== 'claude-code' && <SaMemoire agent={agent} t={t} />}
+
         {!agent.user_id && agent.moteur !== 'claude-code' && <JournalDesChoix agent={agent} t={t} />}
 
-        {agent.moteur !== 'claude-code' && <CompetencesAgent agent={agent} t={t} />}
+        {agent.moteur !== 'claude-code' && <CompetencesAgent key={cleComp} agent={agent} t={t} />}
+
+        {!agent.user_id && agent.moteur !== 'claude-code' && <EmprunterCompetences agent={agent} t={t} onFait={() => setCleComp((k) => k + 1)} />}
 
         {!agent.user_id && agent.moteur !== 'claude-code' && <SaConsigne agent={agent} t={t} />}
 
@@ -373,6 +564,11 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
             <button type="button" onClick={autreTete} disabled={change} className="flex items-center gap-1 text-caption text-legion-muted hover:text-legion-ink disabled:opacity-40">
               <IconRefresh size={14} /> {t('legion.autreTete', 'Une autre tête')}
             </button>
+            {!agent.user_id && agent.moteur !== 'claude-code' && (
+              <button type="button" onClick={() => exporterAgent(agent)} title={t('legion.exporterAide')} className="flex items-center gap-1 text-caption text-legion-muted hover:text-legion-ink">
+                <IconDownload size={14} /> {t('legion.exporter')}
+              </button>
+            )}
             {onVraiePhoto && (
               <button type="button" onClick={() => onVraiePhoto(agent)} disabled={photosEnCours}
                 title={t('legion.photosCoutent')}

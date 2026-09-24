@@ -25,6 +25,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { budgetAgentAtteint, compter, coutEnCours, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { blocSouvenirs, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
@@ -98,7 +99,7 @@ const SCHEMA = {
     action: {
       type: 'OBJECT',
       properties: {
-        type: { type: 'STRING', enum: ['aucune', 'allumer_agent', 'eteindre_agent', 'retenir_regle', 'equiper_competence'] },
+        type: { type: 'STRING', enum: ['aucune', 'allumer_agent', 'eteindre_agent', 'retenir_regle', 'equiper_competence', 'engager_agent'] },
         agent: { type: 'STRING' },
         valeur: { type: 'STRING' },
       },
@@ -170,7 +171,7 @@ Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
-"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la. Elle ne s'exécute QUE s'il touche le bouton « Confirmer » de la carte qui apparaîtra sous ton message: dis « je te propose… touche Confirmer ». Si ce qu'il demande est DÉJÀ le cas (un agent déjà éteint, déjà allumé), dis-le et ne propose rien. S'il écrit « je confirme » dans le chat, ce n'est PAS une confirmation: dis-lui de toucher « Confirmer » sur la carte. Tu ne dis JAMAIS qu'une action est faite: tu n'en sais rien, seul le bouton l'exécute. Quand tu proposes une action, "tache" vaut "" (pas de tâche en double). « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
+"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la. Elle ne s'exécute QUE s'il touche le bouton « Confirmer » de la carte qui apparaîtra sous ton message: dis « je te propose… touche Confirmer ». Si ce qu'il demande est DÉJÀ le cas (un agent déjà éteint, déjà allumé), dis-le et ne propose rien. S'il écrit « je confirme » dans le chat, ce n'est PAS une confirmation: dis-lui de toucher « Confirmer » sur la carte. Tu ne dis JAMAIS qu'une action est faite: tu n'en sais rien, seul le bouton l'exécute. Quand tu proposes une action, "tache" vaut "" (pas de tâche en double). « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). « engager_agent » — SEULEMENT si tu es responsable d'un service, quand le fondateur demande de recruter, ou quand une tâche demandée à ton équipe réclame un métier que personne n'a (dis-le en une phrase) : valeur = « Prénom Nom | Poste | Département | Ce qu'il fera, en une phrase » (un prénom et un nom inventés, un département qui existe). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
 "regle": seulement si le DERNIER message du fondateur fixe une façon de faire qui doit valoir TOUJOURS, pour toute l'équipe (une préférence durable, une correction de comportement, une interdiction). Écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Dans tous les autres cas, "" — et c'est le cas le plus fréquent. NE SONT PAS des règles: une question (« sur quel écran tu travailles ? »), une demande ponctuelle ou une tâche (« crée un salon », « fais-moi le rapport »), un salut, une information. Une règle déjà listée plus haut ne se répète pas.${web ? `
 ${blocWeb(web)}` : ''}`;
 }
@@ -599,6 +600,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
 
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
+  // Sa mémoire à lui (0185): le vecteur du message, calculé une fois pour tous.
+  const vecteurMessage = vecteurDe(apiKey, String(msg.texte || ''));
   let pourquoi = '';
 
   for (const cible of allumees) {
@@ -620,7 +623,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const sesVerifs = verifsPour(verifie, (source) => peut(cible, source));
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);
     const sesDocs = peut(cible, 'documents') ? passages : [];
-    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs), complexe, tableur);
+    const sesSouvenirs = String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage) : [];
+    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
@@ -653,9 +657,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const a0 = (r.obj.action || {}) as { type?: string; agent?: string; valeur?: string };
     if (!estClaude && a0.type && a0.type !== 'aucune') {
       const visee = a0.agent ? (agents as Agent[]).find((x) => !x.user_id && sansAccent(x.nom) === sansAccent(String(a0.agent))) : null;
-      const besoinAgent = a0.type !== 'retenir_regle';
+      const besoinAgent = a0.type !== 'retenir_regle' && a0.type !== 'engager_agent';
+      // Engager (idée 3 des 200): un responsable seulement, et une fiche complète.
+      const ficheOk = a0.type !== 'engager_agent' || (cible.est_directeur && String(a0.valeur || '').split('|').filter((x) => x.trim()).length >= 3);
       const dejaFait = visee && ((a0.type === 'allumer_agent' && visee.actif) || (a0.type === 'eteindre_agent' && !visee.actif));
-      if (!dejaFait && (!besoinAgent || visee) && (a0.type.startsWith('allumer') || a0.type.startsWith('eteindre') || String(a0.valeur || '').trim())) {
+      if (!dejaFait && ficheOk && (!besoinAgent || visee) && (a0.type.startsWith('allumer') || a0.type.startsWith('eteindre') || String(a0.valeur || '').trim())) {
         action = { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
       }
     }
@@ -679,7 +685,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, cout_eur: Number((coutEnCours() - avant).toFixed(6)), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

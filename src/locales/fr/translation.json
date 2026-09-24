@@ -612,7 +612,10 @@
           "nom": "Assidu",
           "regle": "A travaillé au moins cinq jours différents sur la période."
         }
-      }
+      },
+      "voteBouton": "Réunir l'équipe : faut-il le remplacer ?",
+      "voteTropPeu": "Il faut au moins deux autres agents allumés pour ce vote.",
+      "voteSujet": "Faut-il remplacer {{nom}} ({{poste}}) ? Ce qu'on constate : {{raisons}}. Votez, en disant pourquoi et ce qui changerait votre avis."
     },
     "journal": {
       "titre": "Journal des choix",
@@ -629,6 +632,49 @@
       "corrige": "Corrigé à la relecture : {{raison}}",
       "reluOk": "Relu, rien à corriger",
       "cout": "Coût : {{n}} €"
+    },
+    "interrupteurDepartement": "Allumer ou éteindre tout {{nom}}",
+    "departementAllume": "{{nom}} : tout le service est allumé",
+    "departementEteint": "{{nom}} : tout le service est éteint",
+    "galerie": "Galerie",
+    "memoireAgent": {
+      "titre": "Sa mémoire",
+      "aide": "Ce qui n'appartient qu'à lui : ses livrables, les leçons reçues quand un livrable a été renvoyé, ce que tu as aimé. Avant de répondre ou de livrer, il retrouve les plus proches de ce qu'on lui demande.",
+      "vide": "Rien encore : sa mémoire se remplit avec ses livrables, tes renvois et tes encouragements.",
+      "source": {
+        "livrable": "Son livrable",
+        "lecon": "Une leçon (livrable renvoyé)",
+        "encouragement": "Ce que tu as aimé"
+      },
+      "oublier": "Oublier",
+      "bravoPlaceholder": "Ce que tu as aimé dans son travail…",
+      "encourager": "Encourager"
+    },
+    "emprunter": {
+      "titre": "Emprunter les compétences de",
+      "choisir": "un collègue…",
+      "bouton_one": "Emprunter sa compétence",
+      "bouton_other": "Emprunter ses {{count}} compétences",
+      "fait_one": "{{count}} compétence de {{nom}} reprise à sa source.",
+      "fait_other": "{{count}} compétences de {{nom}} reprises à leur source."
+    },
+    "exporter": "Exporter",
+    "exporterAide": "Sa fiche et ses compétences dans un fichier, pour le recréer dans une autre entreprise Legion.",
+    "importer": {
+      "titre": "Importer un agent",
+      "fichier": "Un fichier…",
+      "lienPlaceholder": "ou son lien (GitHub…)",
+      "lire": "Lire",
+      "illisible": "Ce fichier n'est pas une fiche d'agent Legion.",
+      "lienHttps": "Il faut un lien qui commence par https://",
+      "injoignable": "Impossible de lire ce lien.",
+      "competences_one": "{{count}} compétence sera reprise à sa source après la création.",
+      "competences_other": "{{count}} compétences seront reprises à leur source après la création."
+    },
+    "conteste": {
+      "badge": "Conteste le livrable de {{nom}}",
+      "demander": "Faire relire par {{nom}}",
+      "consigne": "relis le livrable de {{nom}} ci-dessus avec l'œil de ton métier. S'il y a un vrai problème (chiffre sans source, conclusion non démontrée, règle enfreinte, risque oublié), dis-le précisément et ce qu'il faudrait changer ; sinon dis simplement que tu n'as rien à redire."
     }
   },
   "equipe": {

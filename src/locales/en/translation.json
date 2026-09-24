@@ -612,7 +612,10 @@
           "nom": "Steady",
           "regle": "Worked on at least five different days over the period."
         }
-      }
+      },
+      "voteBouton": "Gather the team: should they be replaced?",
+      "voteTropPeu": "This vote needs at least two other agents switched on.",
+      "voteSujet": "Should we replace {{nom}} ({{poste}})? What we see: {{raisons}}. Vote, saying why and what would change your mind."
     },
     "journal": {
       "titre": "Decision log",
@@ -629,6 +632,49 @@
       "corrige": "Corrected on reread: {{raison}}",
       "reluOk": "Reread, nothing to correct",
       "cout": "Cost: €{{n}}"
+    },
+    "interrupteurDepartement": "Switch all of {{nom}} on or off",
+    "departementAllume": "{{nom}}: the whole department is on",
+    "departementEteint": "{{nom}}: the whole department is off",
+    "galerie": "Gallery",
+    "memoireAgent": {
+      "titre": "Their memory",
+      "aide": "What belongs to them alone: their deliverables, the lessons from deliverables you sent back, what you liked. Before replying or delivering, they recall the closest to what is asked.",
+      "vide": "Nothing yet: their memory fills up with their deliverables, your send-backs and your encouragement.",
+      "source": {
+        "livrable": "Their deliverable",
+        "lecon": "A lesson (deliverable sent back)",
+        "encouragement": "What you liked"
+      },
+      "oublier": "Forget",
+      "bravoPlaceholder": "What you liked about their work…",
+      "encourager": "Encourage"
+    },
+    "emprunter": {
+      "titre": "Borrow the skills of",
+      "choisir": "a colleague…",
+      "bouton_one": "Borrow their skill",
+      "bouton_other": "Borrow their {{count}} skills",
+      "fait_one": "{{count}} skill from {{nom}} fetched from its source.",
+      "fait_other": "{{count}} skills from {{nom}} fetched from their source."
+    },
+    "exporter": "Export",
+    "exporterAide": "Their profile and skills in a file, to recreate them in another Legion company.",
+    "importer": {
+      "titre": "Import an agent",
+      "fichier": "A file…",
+      "lienPlaceholder": "or its link (GitHub…)",
+      "lire": "Read",
+      "illisible": "This file is not a Legion agent profile.",
+      "lienHttps": "The link must start with https://",
+      "injoignable": "Could not read this link.",
+      "competences_one": "{{count}} skill will be fetched from its source after creation.",
+      "competences_other": "{{count}} skills will be fetched from their source after creation."
+    },
+    "conteste": {
+      "badge": "Challenges {{nom}}'s deliverable",
+      "demander": "Have {{nom}} review it",
+      "consigne": "review {{nom}}'s deliverable above with your professional eye. If there is a real problem (unsourced figure, unproven conclusion, broken rule, missed risk), say exactly what and what should change; otherwise just say you have nothing to add."
     }
   },
   "equipe": {

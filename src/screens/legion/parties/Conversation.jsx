@@ -114,6 +114,27 @@ export function Conversation({
   const [convoquer, setConvoquer] = useState(false);
   const [rapport, setRapport] = useState(false);
 
+  // Faire relire un livrable par un collègue (idée 2 des 200) : un autre
+  // agent du service, sinon un responsable. Il répond comme d'habitude, et
+  // peut contester.
+  function relecteurDe(m) {
+    const auteur = agents.find((a) => a.id === m.auteur_id);
+    if (!auteur) return null;
+    const libres = agents.filter((a) => !a.user_id && a.actif && a.moteur !== 'claude-code' && a.id !== auteur.id);
+    return libres.find((a) => sansAccent(a.departement) === sansAccent(auteur.departement)) || libres.find((a) => a.est_directeur) || null;
+  }
+  async function faireRelire(m) {
+    const qui = relecteurDe(m);
+    const auteur = agents.find((a) => a.id === m.auteur_id);
+    if (!qui || !auteur) return;
+    colle.current = true;
+    await onEnvoyer({
+      texte: `@${qui.nom} ${t('legion.conteste.consigne', { nom: auteur.nom })}`,
+      genre: 'info',
+      meta: { reponse_a: { id: m.id, nom: auteur.nom, texte: String(m.texte).slice(0, 160) } },
+    });
+  }
+
   function copier(m) {
     navigator.clipboard?.writeText(m.texte).catch(() => {});
     setCopie(m.id); setTimeout(() => setCopie(null), 1500);
@@ -442,6 +463,9 @@ export function Conversation({
                         <Action icone={IconArrowBackUp} label={t('legion.repondre', 'Répondre')} onClick={() => repondre(m)} />
                         <Action icone={IconCopy} label={copie === m.id ? t('legion.copie', 'Copié') : t('legion.copier', 'Copier')} onClick={() => { copier(m); setOuvert(null); }} />
                         <Action icone={IconPlus} label={t('legion.enFaireUneTache', 'En faire une tâche')} onClick={() => { onTacheDepuis(m); setOuvert(null); }} />
+                        {m.meta?.livrable && !mien && relecteurDe(m) && (
+                          <Action icone={IconSwords} label={t('legion.conteste.demander', { nom: relecteurDe(m).nom })} onClick={() => { faireRelire(m); setOuvert(null); }} />
+                        )}
                       </div>
                     )}
                     <div className="absolute -top-4 z-20 hidden items-center gap-0.5 rounded-pill border border-legion-line bg-legion-card p-0.5 opacity-0 shadow-lg transition lg:group-hover:flex lg:group-hover:opacity-100" style={mien ? { left: -76 } : { right: -76 }}>
@@ -506,6 +530,11 @@ const LIBELLES_ACTION = {
   eteindre_agent: (a) => `Éteindre ${a.agent}`,
   retenir_regle: (a) => `Retenir la règle : « ${a.valeur} »`,
   equiper_competence: (a) => `Équiper ${a.agent} de « ${a.valeur} »`,
+  // « Prénom Nom | Poste | Département | Ce qu'il fera » (idée 3 des 200).
+  engager_agent: (a) => {
+    const [nom, poste, dep, mandat] = String(a.valeur || '').split('|').map((x) => x.trim());
+    return `Engager ${nom} — ${poste}${dep ? ` (${dep})` : ''}${mandat ? ` : ${mandat}` : ''}`;
+  },
 };
 function ActionProposee({ message, t }) {
   const [etat, setEtat] = useState(message.meta.action);
@@ -716,6 +745,8 @@ function EtiquetteReunion({ m, mien, agents, t, messages = [], langue = 'fr' }) 
   const r = m.meta?.reunion;
   const base = `mb-1 mr-1 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-gold/15 text-legion-gold'}`;
   if (m.meta?.dans_reunion) return <span className={base}><IconHandStop size={12} /> {t('legion.reunion.intervention')}</span>;
+  // Un collègue conteste un livrable (idée 2 des 200, 24/09).
+  if (m.meta?.conteste) return <span className="mb-1 mr-1 inline-flex items-center gap-1 rounded-pill bg-legion-danger/15 px-1.5 py-0.5 text-[11px] font-semibold text-legion-danger"><IconSwords size={12} /> {t('legion.conteste.badge', { nom: m.meta.conteste.agent })}</span>;
   const rap = m.meta?.rapport;
   if (rap) {
     return (

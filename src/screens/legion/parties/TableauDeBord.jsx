@@ -55,7 +55,7 @@ function euros(n, langue) {
   return `${v.toLocaleString(langue === 'en' ? 'en-GB' : 'fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 }
 
-export function TableauDeBord({ entreprise, agents, onFiche, t, langue = 'fr' }) {
+export function TableauDeBord({ entreprise, agents, onFiche, onVoteRemplacement, t, langue = 'fr' }) {
   const [jours, setJours] = useState(30);
   const [d, setD] = useState(null);
   const [erreur, setErreur] = useState(false);
@@ -221,6 +221,13 @@ export function TableauDeBord({ entreprise, agents, onFiche, t, langue = 'fr' })
                   <ul className="space-y-0.5 text-[11px] text-legion-muted">
                     {x.sante.raisons.map((r) => <li key={r}>– {r}</li>)}
                   </ul>
+                )}
+                {/* En difficulté : l'équipe en débat (vote), le fondateur décide (idée 120) */}
+                {x.sante.cle === 'difficulte' && x.agent && onVoteRemplacement && (
+                  <button type="button" onClick={() => onVoteRemplacement(x.agent, x.sante.raisons)}
+                    className="rounded-pill border border-legion-danger/40 px-2.5 py-1 text-[11px] font-semibold text-legion-danger hover:bg-legion-danger/10">
+                    🗳️ {t('legion.tdb.voteBouton')}
+                  </button>
                 )}
                 <div className="grid grid-cols-3 gap-1.5 text-center">
                   <Chiffre n={x.reponses + x.reunions} libelle={t('legion.tdb.prisesDeParole')} />

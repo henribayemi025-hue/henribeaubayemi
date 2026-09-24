@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { IconSearch, IconHash, IconAdjustmentsHorizontal, IconRobot, IconUsers } from '@tabler/icons-react';
+import { IconSearch, IconHash, IconAdjustmentsHorizontal, IconRobot, IconUsers, IconLayoutGrid } from '@tabler/icons-react';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { dernierMessage, quand, sansAccent, iconeDept, espacerPhrases } from './outils';
@@ -18,6 +18,10 @@ export function ColonneSalons({
   const [q, setQ] = useState('');
   const [onglet, setOnglet] = useState(ongletInitial); // 'mixte' | 'agents'
   const [actifsSeuls, setActifsSeuls] = useState(false);
+  // La galerie (idée 68 des 200, 24/09) : les portraits en grand, filtrés
+  // par département ; la recherche filtre déjà par nom, poste, département.
+  const [galerie, setGalerie] = useState(false);
+  const [filtreDept, setFiltreDept] = useState('');
 
   const machines = useMemo(() => agents.filter((a) => !a.user_id), [agents]);
   const duDept = useMemo(
@@ -28,10 +32,11 @@ export function ColonneSalons({
     const k = sansAccent(q.trim());
     return duDept.filter((a) => {
       if (actifsSeuls && !a.actif) return false;
+      if (galerie && filtreDept && a.departement !== filtreDept) return false;
       if (!k) return true;
       return sansAccent(a.nom).includes(k) || sansAccent(a.poste).includes(k) || sansAccent(a.departement).includes(k);
     });
-  }, [duDept, q, actifsSeuls]);
+  }, [duDept, q, actifsSeuls, galerie, filtreDept]);
 
   const salonsVisibles = dept ? salons.filter((s) => s.id === dept.id) : salons;
   const privesVisibles = prives.filter((p) => !q || sansAccent(p.nom).includes(sansAccent(q)));
@@ -149,8 +154,37 @@ export function ColonneSalons({
               <button type="button" onClick={onRenfort} title={t('legion.renfort.titre')}
                 className="whitespace-nowrap rounded-pill border border-legion-line px-2 py-0.5 text-[11px] font-semibold text-legion-gold hover:border-legion-gold">{t('legion.renfort.bouton')}</button>
             )}
+            <button type="button" onClick={() => setGalerie((v) => !v)} aria-pressed={galerie}
+              className={`ml-auto flex items-center gap-1 whitespace-nowrap rounded-pill border px-2 py-0.5 text-[11px] font-semibold ${galerie ? 'border-legion-gold bg-legion-gold/15 text-legion-ink' : 'border-legion-line text-legion-muted hover:text-legion-ink'}`}>
+              <IconLayoutGrid size={12} /> {t('legion.galerie', 'Galerie')}
+            </button>
           </div>
-          <ul className="mt-1 space-y-1.5">
+          {galerie && !dept && (
+            <div className="flex gap-1 overflow-x-auto px-2 pb-1">
+              {['', ...[...new Set(machines.map((a) => a.departement).filter(Boolean))]].map((dep) => (
+                <button key={dep || 'tous'} type="button" onClick={() => setFiltreDept(dep)}
+                  className={`shrink-0 rounded-pill px-2 py-0.5 text-[11px] ${filtreDept === dep ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>
+                  {dep || t('legion.tous', 'Tous')}
+                </button>
+              ))}
+            </div>
+          )}
+          {galerie && (
+            <ul className="mt-1 grid grid-cols-2 gap-2 px-1 sm:grid-cols-3 lg:grid-cols-2">
+              {filtres.length === 0 && <li className="col-span-full rounded-card bg-legion-bg p-4 text-center text-caption text-legion-muted">{t('legion.personneNeCorrespond', 'Personne ne correspond.')}</li>}
+              {filtres.slice(0, 120).map((a) => (
+                <li key={a.id}>
+                  <button type="button" onClick={() => onFiche(a)}
+                    className={`flex w-full flex-col items-center gap-1.5 rounded-card border p-2.5 text-center transition hover:border-legion-gold/50 ${a.actif ? 'border-legion-line bg-legion-card' : 'border-legion-line/60 bg-legion-card/50 opacity-70'}`}>
+                    <Visage a={a} taille={64} />
+                    <span className="w-full truncate text-caption font-semibold text-legion-ink">{a.nom}</span>
+                    <span className="line-clamp-2 w-full text-[11px] leading-tight text-legion-muted">{a.poste}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <ul className={`mt-1 space-y-1.5 ${galerie ? 'hidden' : ''}`}>
             {filtres.length === 0 && (
               <li className="rounded-card bg-legion-bg p-4 text-center text-caption text-legion-muted">{t('legion.personneNeCorrespond', 'Personne ne correspond.')}</li>
             )}

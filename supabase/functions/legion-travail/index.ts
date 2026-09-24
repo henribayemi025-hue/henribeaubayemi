@@ -35,6 +35,7 @@ import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
 import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
+import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -118,6 +119,21 @@ const SCHEMA_PLAN = {
   },
   required: ['plan_semaine', 'plan_mois', 'taches'],
 };
+// La relecture par un collègue (idée 2 des 200, 24/09) : il ne parle que
+// pour contester, avec une raison précise ; sinon il se tait (et rien ne
+// s'affiche — pas de « bravo » automatique qui noierait le salon).
+const SCHEMA_CONTESTER = { type: 'OBJECT', properties: { verdict: { type: 'STRING', enum: ['ok', 'conteste'] }, texte: { type: 'STRING' } }, required: ['verdict', 'texte'] };
+function consigneContester(collegue: Agent, auteur: Agent, tache: string, livrable: string, memoire: string[], anglais: boolean): string {
+  return `Tu es ${collegue.nom}, ${collegue.poste}${collegue.departement ? ` (${collegue.departement})` : ''}. Ton collègue ${auteur.nom} (${auteur.poste}) vient de rendre ce livrable pour la tâche « ${tache} ». Le fondateur va le valider ou le renvoyer.
+
+LE LIVRABLE :
+${livrable.slice(0, 3500)}
+${memoire.length ? `\nLES RÈGLES DE LA MAISON :\n${memoire.slice(0, 15).map((r) => `- ${r}`).join('\n')}\n` : ''}
+Relis-le avec l'œil de ton métier. "verdict" = "conteste" SEULEMENT s'il y a un vrai problème : un chiffre sans source présenté comme sûr, une conclusion que le livrable ne démontre pas, une règle de la maison enfreinte, une contradiction interne, un risque oublié qui change la décision, ou la tâche pas faite. Alors "texte" = 2 à 4 phrases adressées à ${auteur.nom} par son prénom : ce qui ne va pas, précisément, et ce qu'il faudrait changer. Pas de politesse, pas de « bon travail mais ».
+Sinon (un désaccord de goût, un détail, un doute vague) : "verdict" = "ok", "texte" = "".
+Écris en ${anglais ? 'anglais' : 'français'}.`;
+}
+
 const SCHEMA_LIVRABLE = {
   type: 'OBJECT',
   properties: {
@@ -398,7 +414,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // Une tâche qui regarde dehors (veille, événements, prospects,
       // concurrents): une recherche sur Internet, sources comprises.
       const web = !gratuite && peut(a, 'web') && aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
-      const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + enLangue;
+      // Sa mémoire à lui (0185): ce qu'il a déjà livré de proche, les leçons
+      // reçues, ce qui a plu.
+      await rattraper(service, apiKey, entrepriseId, a.id);
+      const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte));
+      const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       const livrable = aerer(String(r.obj.livrable || '').trim()).slice(0, 4000);
@@ -413,6 +433,26 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
       await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
+      if (!bloque && livrablePublie?.id) {
+        await retenir(service, apiKey, { entreprise_id: entrepriseId, agent_id: a.id, source: 'livrable', message_id: livrablePublie.id, texte: `Tâche « ${tache.texte} » — ${livrable.slice(0, 1500)}` });
+        // UN COLLÈGUE RELIT (idée 2 des 200, I6) : un autre agent du service
+        // — ou le directeur — lit le livrable et ne dit quelque chose QUE
+        // s'il le conteste, avant que le fondateur valide.
+        const collegue = machines.find((x) => x.id !== a.id && x.actif && x.moteur !== 'claude-code' && sansAccent(x.departement || '') === sansAccent(a.departement || ''))
+          || machines.find((x) => x.id !== a.id && x.actif && x.moteur !== 'claude-code' && x.est_directeur);
+        if (collegue && livrable.length >= 300 && !(await budgetAgentAtteint(collegue))) {
+          const avantRelecture = coutEnCours();
+          const avis = await generer(apiKey, consigneContester(collegue, a, tache.texte, livrable, memoire, anglais), SCHEMA_CONTESTER, { temperature: 0.3, reflexion: 1024, maxSortie: 1024, delaiMs: 40_000, modeles: moteursSimples() });
+          if (!('erreur' in avis) && avis.obj.verdict === 'conteste' && String(avis.obj.texte || '').trim().length > 20) {
+            await service.from('legion_messages').insert({
+              entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: collegue.id, user_id: null, texte: aerer(String(avis.obj.texte).trim()).slice(0, 1500), genre: 'info',
+              meta: { par_ia: true, modele: avis.modele, cout_eur: Number((coutEnCours() - avantRelecture).toFixed(6)), sans_reponse: true, conteste: { livrable_id: livrablePublie.id, agent_id: a.id, agent: a.nom, tache: tache.texte },
+                reponse_a: { id: livrablePublie.id, nom: a.nom, texte: livrable.slice(0, 160) } },
+            });
+            journal.push(`${entreprise.nom}: ${collegue.nom} conteste le livrable de ${a.nom}`);
+          }
+        }
+      }
       // LE RELAIS (plan complet, B6-5): un livrable fini passe la suite au bon
       // agent — une tâche nouvelle, dans le salon de son département, qui
       // dit d'où elle vient. Il la prendra à sa prochaine journée.
