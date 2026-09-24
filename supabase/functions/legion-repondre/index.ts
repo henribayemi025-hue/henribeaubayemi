@@ -41,6 +41,7 @@ const PROD_HOST = 'finjaro.net';
 const TIMEOUT_MS = 25_000;
 const CONTEXTE = 20;
 const MAX_REPONDANTS = 4;
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -100,7 +101,7 @@ const SCHEMA = {
     action: {
       type: 'OBJECT',
       properties: {
-        type: { type: 'STRING', enum: ['aucune', 'allumer_agent', 'eteindre_agent', 'retenir_regle', 'equiper_competence', 'engager_agent'] },
+        type: { type: 'STRING', enum: ['aucune', 'allumer_agent', 'eteindre_agent', 'retenir_regle', 'equiper_competence', 'engager_agent', 'changer_photo'] },
         agent: { type: 'STRING' },
         valeur: { type: 'STRING' },
       },
@@ -180,7 +181,7 @@ Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
-"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la. Elle ne s'exécute QUE s'il touche le bouton « Confirmer » de la carte qui apparaîtra sous ton message: dis « je te propose… touche Confirmer ». Si ce qu'il demande est DÉJÀ le cas (un agent déjà éteint, déjà allumé), dis-le et ne propose rien. S'il écrit « je confirme » dans le chat, ce n'est PAS une confirmation: dis-lui de toucher « Confirmer » sur la carte. Tu ne dis JAMAIS qu'une action est faite: tu n'en sais rien, seul le bouton l'exécute. Quand tu proposes une action, "tache" vaut "" (pas de tâche en double). « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). « engager_agent » — SEULEMENT si tu es responsable d'un service, quand le fondateur demande de recruter, ou quand une tâche demandée à ton équipe réclame un métier que personne n'a (dis-le en une phrase) : valeur = « Prénom Nom | Poste | Département | Ce qu'il fera, en une phrase » (un prénom et un nom inventés, un département qui existe). Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
+"action": si le fondateur te DEMANDE de faire une de ces choses, propose-la. Elle ne s'exécute QUE s'il touche le bouton « Confirmer » de la carte qui apparaîtra sous ton message: dis « je te propose… touche Confirmer ». Si ce qu'il demande est DÉJÀ le cas (un agent déjà éteint, déjà allumé), dis-le et ne propose rien. S'il écrit « je confirme » dans le chat, ce n'est PAS une confirmation: dis-lui de toucher « Confirmer » sur la carte. Tu ne dis JAMAIS qu'une action est faite: tu n'en sais rien, seul le bouton l'exécute. Quand tu proposes une action, "tache" vaut "" (pas de tâche en double). « allumer_agent » / « eteindre_agent » (agent = son nom exact), « retenir_regle » (valeur = la règle en une phrase), « equiper_competence » (agent = son nom exact, valeur = la clé de la compétence). « engager_agent » — SEULEMENT si tu es responsable d'un service, quand le fondateur demande de recruter, ou quand une tâche demandée à ton équipe réclame un métier que personne n'a (dis-le en une phrase) : valeur = « Prénom Nom | Poste | Département | Ce qu'il fera, en une phrase » (un prénom et un nom inventés, un département qui existe). « changer_photo » — TA photo de profil, c'est TOI qui la choisis (Beau, 24/09: « ils doivent pouvoir choisir leur photo eux-mêmes »): quand on te le demande, ou quand tu en as envie, valeur = la photo que tu veux, en une phrase en anglais (visage, âge, tenue, expression, décor, lumière, ambiance — ce qui te ressemble, selon ton caractère). Elle se fait tout de suite, sans Confirmer; une par jour au plus. Ne dis jamais que tu ne peux pas choisir ta photo. Sinon {"type": "aucune"}. Ne propose jamais une action que personne n'a demandée.
 "regle": seulement si le DERNIER message du fondateur fixe une façon de faire qui doit valoir TOUJOURS, pour toute l'équipe (une préférence durable, une correction de comportement, une interdiction). Écris-la en une phrase courte, à l'impératif, compréhensible sans le contexte. Dans tous les autres cas, "" — et c'est le cas le plus fréquent. NE SONT PAS des règles: une question (« sur quel écran tu travailles ? »), une demande ponctuelle ou une tâche (« crée un salon », « fais-moi le rapport »), un salut, une information. Une règle déjà listée plus haut ne se répète pas.${web ? `
 ${blocWeb(web)}` : ''}`;
 }
@@ -693,12 +694,15 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const a0 = (r.obj.action || {}) as { type?: string; agent?: string; valeur?: string };
     if (!estClaude && a0.type && a0.type !== 'aucune') {
       const visee = a0.agent ? (agents as Agent[]).find((x) => !x.user_id && sansAccent(x.nom) === sansAccent(String(a0.agent))) : null;
-      const besoinAgent = a0.type !== 'retenir_regle' && a0.type !== 'engager_agent';
+      const besoinAgent = a0.type !== 'retenir_regle' && a0.type !== 'engager_agent' && a0.type !== 'changer_photo';
       // Engager (idée 3 des 200): un responsable seulement, et une fiche complète.
       const ficheOk = a0.type !== 'engager_agent' || (cible.est_directeur && String(a0.valeur || '').split('|').filter((x) => x.trim()).length >= 3);
       const dejaFait = visee && ((a0.type === 'allumer_agent' && visee.actif) || (a0.type === 'eteindre_agent' && !visee.actif));
       if (!dejaFait && ficheOk && (!besoinAgent || visee) && (a0.type.startsWith('allumer') || a0.type.startsWith('eteindre') || String(a0.valeur || '').trim())) {
-        action = { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
+        // Sa photo, il la change lui-même, tout de suite: c'est son visage.
+        action = a0.type === 'changer_photo'
+          ? { type: a0.type, agent_id: cible.id, agent: cible.nom, valeur: String(a0.valeur || '').slice(0, 600), statut: 'en_cours', resultat: `${cible.nom} se fait sa nouvelle photo.` }
+          : { type: a0.type, agent_id: visee?.id ?? null, agent: visee?.nom ?? null, valeur: String(a0.valeur || '').slice(0, 400), statut: 'a_confirmer' };
       }
     }
     // Le tableau rendu par l'agent → un vrai fichier .xlsx, joint à sa réponse.
@@ -729,6 +733,25 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     await garder(service, { entreprise_id: msg.entreprise_id, message_id: ecrit.id, fonction: 'legion_repondre', modele: r.modele, consigne: laConsigne, sortie: JSON.stringify({ ...r.obj, texte }) });
     ecrits.push(ecrit);
     ont_repondu.push(cible.nom);
+    if (action?.type === 'changer_photo') {
+      // La photo se fabrique en fond (15 à 30 s); la carte se met à jour.
+      const photo = (async () => {
+        let resultat = 'La photo n’a pas pu se faire.';
+        let statut = 'echec';
+        try {
+          const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-portrait`, {
+            method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entreprise_id: msg.entreprise_id, agent_id: cible.id, envie: action.valeur }), signal: AbortSignal.timeout(120_000),
+          });
+          const b = await r.json().catch(() => ({}));
+          if (b?.faits) { statut = 'faite'; resultat = `${cible.nom} a sa nouvelle photo.`; }
+          else resultat = `Pas de nouvelle photo : ${b?.pourquoi || b?.erreur || `HTTP ${r.status}`}.`;
+        } catch (e) { resultat = `Pas de nouvelle photo : ${(e as Error).message}.`; }
+        await service.from('legion_messages').update({ meta: { ...(ecrit.meta || {}), action: { ...action, statut, resultat } } }).eq('id', ecrit.id);
+      })();
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(photo);
+      else await photo;
+    }
     lignes.push(`${cible.nom}: ${texte}`);
     if (debloque) {
       const { bloque: _b, ...reste } = (blocage!.meta || {}) as Record<string, unknown>;

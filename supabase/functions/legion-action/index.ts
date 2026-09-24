@@ -11,6 +11,8 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
@@ -111,12 +113,20 @@ Deno.serve(async (req: Request) => {
       const base = sans(nom).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
       const pris = new Set((agents || []).map((x: { cle: string }) => x.cle));
       let cle = base; for (let i = 2; pris.has(cle); i += 1) cle = `${base}-${i}`;
-      const { error } = await service.from('legion_agents').insert({
+      const { data: neuf, error } = await service.from('legion_agents').insert({
         entreprise_id: msg.entreprise_id, cle, nom: nom.slice(0, 80), poste: poste.slice(0, 120), departement,
         mandat: (mandat || poste).slice(0, 600), actif: true, ordre: 850, autonomie: 'supervise',
         mission: { type: 'engage', par: auteur?.nom || null, debut: new Date().toISOString().slice(0, 10) },
-      });
-      return error ? marquer('echec', error.message) : marquer('faite', `${nom} rejoint l'équipe${departement ? ` (${departement})` : ''}, allumé et supervisé.`);
+      }).select('id').single();
+      if (error) return marquer('echec', error.message);
+      // Sa photo, il la choisit lui-même en arrivant (Beau, 24/09: Ada était
+      // restée sans visage). En fond: le clic « Confirmer » n'attend pas.
+      const photo = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-portrait`, {
+        method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entreprise_id: msg.entreprise_id, agent_id: neuf.id }), signal: AbortSignal.timeout(120_000),
+      }).catch((e) => console.error('portrait:', (e as Error).message));
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(photo);
+      return marquer('faite', `${nom} rejoint l'équipe${departement ? ` (${departement})` : ''}, allumé et supervisé. Il choisit sa photo.`);
     }
     default:
       return marquer('echec', 'Action inconnue.');

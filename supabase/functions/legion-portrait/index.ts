@@ -76,25 +76,26 @@ function consigneDescription(a: Agent, entreprise: string): string {
   return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` (${a.departement})` : ''} chez « ${entreprise} ».
 ${a.personnalite ? `Ton caractère: ${a.personnalite}` : ''}
 
-On va faire ta photo de profil professionnelle. Décris le visage que TU veux
-avoir, en une seule phrase en anglais, pour un photographe.
+On va faire ta photo de profil. Décris la photo que TU veux, en une seule
+phrase en anglais, pour un photographe.
 
-Tu es libre: âge, genre, origine, coupe de cheveux, barbe ou non, lunettes ou
-non, tenue, expression. Choisis ce qui te ressemble, pas ce qui ferait joli,
-et pas le cliché de ton métier. Deux collègues du même service ne doivent pas
-se ressembler.
+Tu es libre, complètement (Beau, 24/09: « ne les confine pas, rends-les
+libres »): âge, genre, origine, coiffure, tenue, expression — et aussi le
+décor, la lumière, l'ambiance, le cadrage. Un bureau, une rue, un atelier,
+la plage, un fond uni: ce qui te ressemble, selon ton caractère. Pas le
+cliché de ton métier. Deux collègues ne doivent pas se ressembler.
 
 Réponds UNIQUEMENT par la phrase, sans guillemets, sans explication.
 Exemple de forme: "a 34-year-old West African woman with short natural hair,
-small gold earrings, a dark green blazer, calm confident half-smile".`;
+small gold earrings and a dark green blazer, laughing on a sunny rooftop terrace at golden hour".`;
 }
 
-// 2. La consigne du photographe. Ce qui compte ici: « personne qui n'existe
-//    pas », cadrage identique pour tous, fond neutre — pour que vingt
-//    portraits forment un trombinoscope cohérent et pas un patchwork.
+// 2. La consigne du photographe: la photo que l'agent a décrite, telle
+//    quelle. Seules limites: une personne qui n'existe pas, le visage bien
+//    visible (c'est une photo de profil), ni texte ni logo.
 function consignePhoto(description: string): string {
-  return `Professional corporate headshot photograph of a fictional person who does not exist: ${description}.
-Shot on 85mm lens, shallow depth of field, soft even studio lighting, plain neutral dark blue-grey background (#1A2337), centred, head and shoulders, looking at the camera, photorealistic, high detail, natural skin texture.
+  return `Photograph of a fictional person who does not exist: ${description}.
+Profile picture: the face is clearly visible and well lit, photorealistic, high detail, natural skin texture.
 Do not include any text, watermark, logo or border. Do not depict any real or recognisable public figure.`;
 }
 
@@ -167,15 +168,20 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
 
-  let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean; action?: string };
+  let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean; action?: string; envie?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
   if (!corps.entreprise_id) return json({ erreur: 'Entreprise manquante.' }, 400);
   const limite = Math.min(Math.max(Number(corps.limite) || 1, 1), LIMITE_MAX);
 
-  const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
+  // Le serveur lui-même (24/09): un agent qui vient d'être engagé se fait
+  // sa photo, et un agent qui en a envie en change depuis la conversation.
+  const parServeur = auth === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+  if (parServeur && !corps.agent_id) return json({ erreur: 'Agent manquant.' }, 400);
+  const personne = createClient(Deno.env.get('SUPABASE_URL')!, parServeur ? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')! : Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
   const { data: entreprise } = await personne
     .from('legion_entreprises').select('id, nom').eq('id', corps.entreprise_id).maybeSingle();
+  const envie = String(corps.envie || '').trim().slice(0, 600);
   if (!entreprise) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
 
   // Alléger les portraits déjà faits (aucun modèle appelé, rien ne se paie).
@@ -230,7 +236,11 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
 
   for (let i = 0; i < agents.length; i += EN_PARALLELE) {
     await Promise.all(agents.slice(i, i + EN_PARALLELE).map(async (a) => {
-      const description = await demanderTexte(apiKey, consigneDescription(a as Agent, entreprise.nom));
+      // Une photo par jour au plus quand l'agent en change lui-même (ce qui
+      // se paie ne se repaie pas toutes les heures).
+      const deja = (a.apparence as { change_le?: string } | null)?.change_le;
+      if (envie && deja === new Date().toISOString().slice(0, 10)) { rates.push(a.nom); pourquoi = pourquoi || 'une nouvelle photo par jour au plus'; return; }
+      const description = envie || await demanderTexte(apiKey, consigneDescription(a as Agent, entreprise.nom));
       if (!description) { rates.push(a.nom); pourquoi = pourquoi || 'le modèle n’a pas décrit le visage'; return; }
 
       const img = await fabriquerImage(apiKey, consignePhoto(description));
@@ -251,7 +261,7 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
         const { error: errMini } = await service.storage.from('legion').upload(cheminMini, petite, { contentType: 'image/jpeg', upsert: true });
         if (!errMini) mini = service.storage.from('legion').getPublicUrl(cheminMini).data.publicUrl;
       }
-      const apparence = { ...(a.apparence as Record<string, unknown> || {}), famille: 'photo', description, url, ...(mini ? { mini } : {}) };
+      const apparence = { ...(a.apparence as Record<string, unknown> || {}), famille: 'photo', description, url, ...(mini ? { mini } : {}), ...(envie ? { change_le: new Date().toISOString().slice(0, 10) } : {}) };
       const { error: errMaj } = await service.from('legion_agents')
         .update({ avatar_url: mini || url, apparence, choisi_par_lui: true }).eq('id', a.id);
       if (errMaj) { rates.push(a.nom); pourquoi = pourquoi || errMaj.message; return; }

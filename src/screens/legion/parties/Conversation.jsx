@@ -550,10 +550,15 @@ const LIBELLES_ACTION = {
     const [nom, poste, dep, mandat] = String(a.valeur || '').split('|').map((x) => x.trim());
     return `Engager ${nom} — ${poste}${dep ? ` (${dep})` : ''}${mandat ? ` : ${mandat}` : ''}`;
   },
+  // Sa photo, l'agent la choisit lui-même, tout de suite (24/09).
+  changer_photo: (a) => `${a.agent || 'L’agent'} change sa photo`,
 };
 function ActionProposee({ message, t }) {
   const [etat, setEtat] = useState(message.meta.action);
   const [occupe, setOccupe] = useState(false);
+  // Le résultat qui arrive plus tard (la photo fabriquée en fond) : suivre le message.
+  const statutServeur = message.meta.action?.statut;
+  useEffect(() => { if (statutServeur && statutServeur !== 'a_confirmer') setEtat(message.meta.action); }, [statutServeur]); // eslint-disable-line react-hooks/exhaustive-deps
   const libelle = (LIBELLES_ACTION[etat.type] || (() => etat.type))(etat);
   async function decider(decision) {
     setOccupe(true);
@@ -575,7 +580,7 @@ function ActionProposee({ message, t }) {
         </div>
       ) : (
         <p className={`mt-1 text-[12px] font-semibold ${etat.statut === 'faite' ? 'text-legion-success' : etat.statut === 'echec' ? 'text-legion-danger' : 'text-legion-muted'}`}>
-          {etat.statut === 'faite' ? '✓ ' : etat.statut === 'refusee' ? '✕ ' : ''}{etat.resultat}
+          {etat.statut === 'faite' ? '✓ ' : etat.statut === 'refusee' ? '✕ ' : etat.statut === 'en_cours' ? '⏳ ' : ''}{etat.resultat}
         </p>
       )}
       {etat.statut === 'a_confirmer' && etat.resultat && <p className="mt-1 text-[12px] text-legion-danger">{etat.resultat}</p>}
