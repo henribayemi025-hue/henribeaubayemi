@@ -180,3 +180,22 @@ qu'on attend de lui (décisions, clés, essais sur téléphone) et ce qu'on a
 promis sans l'avoir encore fait. On coche ✅ avec la date, on ne supprime
 jamais. Les ressources d'entraînement ont en plus leur fiche dans
 `docs/vestiaire/`.
+
+## 10. Toujours partager le travail avec les agents de Léo — ordre de Beau (24/09)
+
+« Dans tous nos futurs travaux, tu dois toujours diviser les tâches entre Léo
+et toi. Des fois, donne-leur les trucs durs, comme ça ils s'entraînent. Après,
+tu vérifies ; s'ils ont mal fait, tu corriges. »
+
+- Chaque chantier se découpe : une partie pour moi, une partie pour les agents
+  de l'entreprise Finjaro dans Léo (et Claudinette pour Accounting).
+- Une tâche d'agent = une ligne `legion_messages` (`genre 'tache'`,
+  `assigne_a`, `meta.statut 'a_faire'`, `meta.par_claude true`), puis
+  `legion-travail` (chaque agent prend sa tâche ouverte la plus ancienne, une
+  par jour).
+- Régulièrement une tâche **difficile** (`meta.difficile true`).
+- Je relis chaque livrable : ce qui est juste est repris, ce qui est faux est
+  corrigé et dit à l'agent (c'est comme ça qu'il apprend). Rien de ce qu'un
+  agent produit n'est annoncé à Beau sans cette relecture.
+- Ce que les agents construisent ne doit jamais être réservé à Beau : tout
+  utilisateur de Léo doit pouvoir avoir des agents aussi capables.
