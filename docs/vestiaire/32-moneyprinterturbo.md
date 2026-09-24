@@ -28,5 +28,11 @@ Pour une ambiance (ville, marché, mains qui emballent), une banque libre comme 
 - La publication automatique sur TikTok, Instagram ou YouTube reste chez nous derrière le Confirmer.
 - Le nom (« imprimante à argent ») promet un revenu : aucune promesse ne se reprend.
 
+## Complément : le guide Notion « MoneyPrinterTurbo — Guide complet » (reçu le 25/09, 1 h 16)
+- **Source** : https://dust-lyric-f80.notion.site/MoneyPrinterTurbo-Guide-Complet-3c80c5d43df680f48845c2d8370f32b6 (lu en entier par l'interface publique de Notion, 35 blocs).
+- Il redit le fonctionnement (sujet → script → images de banque → voix → sous-titres → musique), l'installation par Docker (interface sur le port 8501) et la **publication automatique** sur TikTok, Instagram et YouTube (`upload_post_auto_upload = true`). Il précise un point utile : **pas de vidéo générée par IA de zéro**, seulement des images de banque.
+- Le reste est **promotionnel** : « 100 000 étoiles » (la page GitHub en montrait environ 125 000 le 25/09), une agence qui vend ce montage « plusieurs milliers d'euros », un appel « Mentorya » avec des gains de membres non vérifiables. Rien de tout cela ne se reprend.
+- Chez nous, la publication automatique reste **désactivée** : toute publication passe par le Confirmer de la personne.
+
 ## Verdict
 **Retenu pour un essai** (Forge), à comparer avec HyperFrames. Rien installé sans l'accord de Beau.

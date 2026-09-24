@@ -12,6 +12,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 | Date | Quoi | Ce qu'il faut de Beau |
 |---|---|---|
+| 25/09 | **Idée de Beau (1 h 16, d'après la vidéo « Autopolis », une ville de 50 agents)** : « construire les gars dans un site comme ça… un peu comme les Sims ». Mon avis : oui, mais comme **l'immeuble de TON entreprise dans Léo**, branché sur l'activité RÉELLE (un étage par département, les agents à leur bureau avec leur photo, en réunion, à l'Institut = formation et compétences, la recrue qui arrive) ; jamais d'activité simulée. En 2D isométrique, léger sur téléphone, sans aucun appel d'IA en plus. Il existe déjà un « Bureau » (Vues.jsx) à faire évoluer | son « oui » pour une V0 (un étage par département + l'Institut) |
 | 25/09 | **Réunion de lancement des agents (Direction, 23 h 07)** : Ada, Rigo, Alpha, Mentor, Orchestre disent « l'atelier ne doit pas passer devant le produit ». Vérifié dans la base (7 jours, sans comptes de test ni pics de robots des 18 et 20/09) : 176 vues de fiches, 6 ajouts au panier, 1 commande réelle (22/09). **47 % des articles en ligne (223 sur 472) sont en « prix sur demande »**, dont 8 des 10 fiches les plus vues. | ✅ 25/09, Beau : « On avance à tout en même temps… il faut diviser pour que ça avance vite » et « je ne veux pas une notification en plus » → les deux chantiers en parallèle ; le prix manquant se demande DANS l'application (carte « Articles sans prix » dans l'espace vendeuse), jamais par une notification. Réparti dans Léo (Direction, 23 h 30) : Claude la carte + l'outil « voir une fiche », Plume les textes, Lien le « pourquoi un prix », Rigo la mesure avant/après, Ada la palette, Alpha le suivi. Départ : 223/472 sans prix, 23 boutiques, 12 sans aucun prix |
 | 24/09 | ✅ 24/09 soir, « oui » de Beau : **Mettre en ligne sur finjaro.net** le lot de staging (tout ce qui suit 6bacb72 : choix du modèle d'IA, alertes, relais de recherche, examen de Rigo, Déposer une ressource, modèle Studio de contenu, Retirer le fond, kit /kit, vestiaire 20–26). La mise en ligne a été **bloquée par le contrôle de sécurité** : il faut un « oui, pousse ce lot sur finjaro.net » explicite. | « oui, pousse » — ou d'abord l'essai sur son téléphone (Retirer le fond, /kit) |
 | 24/09 | ✅ 24/09 soir, « oui atelier » de Beau → V0 lancée (voir 0.3). **Atelier de code** V0 (plan `docs/plans/2026-09-24-atelier-de-code-et-jarvis.md`) : OpenHands (MIT), modes Demander / Accepter les modifications / Auto, Confirmer obligatoire | « oui atelier » |
@@ -174,7 +175,7 @@ Plume, outil payant mis de côté : pas de faux témoignages), **34 Higgsfield**
 (visages persistants des agents, payant, en réserve), **35 prompt.pdf** (« une
 question à la fois, tester avec 1 puis 10 » → compétence confiée à Mentor, et
 accueil de « Construire une application » dans l'atelier). Doublon : le guide
-Arcads, envoyé deux fois.
+Arcads, envoyé deux fois. **25/09, 1 h 16** : le guide Notion « MoneyPrinterTurbo — Guide complet » → complément de la fiche 32 (publication automatique laissée désactivée, partie promotionnelle écartée).
 
 Envoi du 24/09, 20 h 40 (5 liens) :
 - page Notion « Top 5 Sites pour Vibe Coders » : déjà traitée (= fiche 22) ✅
