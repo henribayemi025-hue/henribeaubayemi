@@ -2,7 +2,7 @@
 
 *Rédigé le 24/09/2026. Rien n'est codé. Ce document sert à décider.*
 
-Beau a demandé deux choses :
+Beau a demandé trois choses (la troisième ajoutée en cours de journée) :
 
 1. **L'atelier de code** : un endroit dans Léo où un étudiant ou un petit
    développeur arrive, trouve son environnement, ajoute ses plugins et ses
@@ -13,6 +13,9 @@ Beau a demandé deux choses :
    « accepter les modifications », « automatique ».
 2. **Jarvis dans Léo** : on appelle, Jarvis s'allume, il parle naturellement
    et il agit dans Léo.
+3. **Une application d'assistant personnel** (ajout du 24/09) : pour une
+   personne, avec agenda, rappels, e-mails, notes, courses, finances perso,
+   recherche et voix.
 
 Beau a aussi dit : « ce n'est pas une blague, fais-le sérieusement, ne te base
 pas juste sur ce que tu connais, et fais beaucoup de propositions ». Ce plan
@@ -59,6 +62,17 @@ brancher sa propre clé.
 Sur iPhone, aucune application n'a le droit d'écouter en permanence en
 arrière-plan. Le réveil passe donc par Siri (« Dis Siri, parle à Léo… »), ou
 se fait quand Léo est ouvert.
+
+**L'assistant personnel.** C'est **le même produit que Jarvis**, vu autrement.
+Jarvis est la voix. L'assistant personnel est un **espace « Moi » dans Léo**,
+avec sa petite équipe (rappels, notes, courses, agenda, argent). Les échecs
+récents (Humane, Rabbit) viennent du matériel, des promesses trop grandes et
+de la sécurité. On fait donc :
+- **pas d'appareil** : le téléphone suffit ;
+- un **départ étroit et fiable** ;
+- **l'e-mail par transfert** : lire Gmail en direct impose à l'appli une
+  évaluation de sécurité annuelle par un laboratoire agréé ;
+- **Confirmer** pour tout ce qui sort.
 
 **Les décisions** sont à la fin (section 4). **Coût de départ estimé** :
 environ **5 $ par mois de socle** (l'offre payante de Cloudflare, si elle
@@ -1200,6 +1214,34 @@ la description d'abord, le reste à la demande [A]. Export vers
 
 ---
 
+## C. L'assistant personnel
+
+- **Tables (additives)** : `moi_rappels` (id, espace_id, personne, texte,
+  echeance, fuseau, recurrence, statut, cree_par), `moi_notes`,
+  `moi_listes` + `moi_articles` (liste partagée : membres du foyer),
+  `moi_sources` (agenda iCal, adresse de transfert, connecteurs).
+- RLS : la personne, et les membres invités du foyer pour les listes
+  partagées. **Aucun agent d'une entreprise** ne lit l'espace Moi.
+- **Rappels** : le planificateur existant cherche chaque minute les rappels
+  échus et appelle `send-push`. Le fuseau est celui de la personne (réglage
+  explicite, pas une détection automatique qui se tromperait).
+- **Adresse de transfert** : une adresse par personne (jeton aléatoire) qui
+  reçoit un e-mail (service de réception entrant, à choisir), le stocke comme
+  **pièce** et le fait lire par `comprendrePieces` comme un fichier. Le
+  contenu reste une **donnée** : jamais une consigne.
+- **Agenda** : V0 = URL iCal secrète en lecture (fetch planifié). V1 = OAuth
+  Google et Microsoft, jetons au coffre (comme `legion_jeton_github`),
+  lecture seule d'abord ; l'écriture (créer un événement) est N2.
+- **Finances** : outils `ma_compta_*` existants (connecteur Finjaro
+  Accounting), si un espace personnel existe côté Accounting.
+- **Voix** : les mêmes `legion-voix` et `legion-voix-outils` que Jarvis, avec
+  les outils Moi (`creer_rappel`, `ajouter_liste`, `noter`, `mon_jour`).
+- **Mes données** : export JSON et CSV ; effacement réel (suppression des
+  lignes de l'espace Moi) sans toucher au compte `auth.users`, qui est commun
+  aux applications.
+
+---
+
 # 6. Sources (toutes lues le 24/09/2026)
 
 **Atelier : produits et prix**
@@ -1283,6 +1325,26 @@ la description d'abord, le reste à la demande [A]. Export vers
 - ElevenLabs Conversational AI 2.0 (HN) [V] : https://news.ycombinator.com/item?id=44152926
 - iOS App Shortcuts et Siri [A] : https://developer.apple.com/videos/play/wwdc2023/10102/
 - Android, service micro au premier plan [A] : https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start
+
+**Assistant personnel (partie 3)**
+- ChatGPT, tâches programmées [V] : https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt
+- ChatGPT Pulse arrêté (notes de version du 17/06/2026, rapporté) [A] : https://justinmckelvey.com/blog/chatgpt-pulse
+- Gemini remplace Google Assistant sur Android [A] : https://9to5google.com/2025/12/19/google-assistant-gemini-2026/ ; https://www.mediapost.com/publications/article/417031/google-retires-assistant-on-android-as-gemini-shif.html
+- Siri personnalisé reporté, basé sur Gemini [A] : https://www.macrumors.com/2026/04/22/google-gemini-powered-siri-2026/ ; https://valueaddvc.com/blog/apple-intelligence-2026-what-apples-ai-actually-does-and-what-it-still-cant
+- Alexa+, gratuit avec Prime, 19,99 $ sinon [V] : https://www.aboutamazon.com/news/devices/alexa-plus-available-free-prime-members-us
+- Alexa, fin du traitement local (28/03/2025) [A] : https://www.theregister.com/2025/03/17/amazon_kills_on_device_alexa/
+- Humane AI Pin [V] : https://en.wikipedia.org/wiki/Humane_Inc. ; arrêt [A] : https://www.axios.com/2025/02/18/humane-ai-pin-shut-down-hp
+- Rabbit R1 [V] : https://en.wikipedia.org/wiki/Rabbit_r1 ; test Engadget [A] : https://www.engadget.com/rabbit-r1-review-a-199-ai-toy-that-fails-at-almost-everything-161043050.html
+- Lindy, prix [V] : https://www.lindy.ai/pricing ; avis [A] : https://www.usecarly.com/blog/lindy-ai-review/
+- Martin, prix [V] : https://www.trymartin.com/pricing
+- Motion, prix [V] : https://www.usemotion.com/pricing
+- Reclaim, prix [V] : https://reclaim.ai/pricing
+- Pi (Inflection) après l'accord Microsoft [A] : https://en.wikipedia.org/wiki/Inflection_AI ; https://venturebeat.com/orchestration/inflection-ai-returns-to-consumer-market-with-pi-journeys-after-microsoft-upheaval
+- Leon (MIT) [V] : https://github.com/leon-ai/leon
+- Open Interpreter 01 (AGPL-3.0 [V]) et abandon du boîtier [A] : https://github.com/openinterpreter/01
+- OpenClaw, failles et e-mail piégé [A] : https://www.kaspersky.com/blog/openclaw-vulnerabilities-exposed/55263/ ; MIT Technology Review [A] : https://www.technologyreview.com/2026/02/11/1132768/is-a-secure-ai-assistant-possible/
+- Google, vérification des portées restreintes (évaluation annuelle) [V] : https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification
+- Coût de l'évaluation CASA [A] : https://deepstrike.io/blog/google-casa-security-assessment-2025
 
 **Accès impossibles, à signaler** : l'API de recherche de Reddit a refusé
 les requêtes de cette session (« Too Many Requests », puis 403), et le moteur
