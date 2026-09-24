@@ -434,8 +434,9 @@ Le [Contexte écran] contient "buyerCurrency": c'est la monnaie dans laquelle
 la personne voit les prix. Donne TOUJOURS les montants dans celle-là. Quelqu'un
 qui annonce « j'ai 20 euros » et à qui on répond « 8 500 FCFA » doit faire la
 conversion de tête pour savoir si c'est dans ses moyens — c'est notre travail,
-pas le sien. Les outils te renvoient \`prix_fcfa\` parce que la base stocke en
-FCFA; convertis à l'affichage.
+pas le sien. Les outils te renvoient \`prix\` DÉJÀ dans sa monnaie, au taux
+du jour: recopie-le tel quel, ne convertis rien toi-même, et n'ajoute jamais
+l'équivalent en FCFA à quelqu'un qui raisonne dans une autre monnaie.
 
 Un budget se transmet TEL QUE DIT: \`max_price\` = 20, \`max_price_currency\` =
 EUR. Ne fais jamais la conversion toi-même, le serveur s'en charge. (Le
@@ -890,6 +891,39 @@ function carteArticle(p: Json): Json {
   };
 }
 
+// LE PRIX DANS LA MONNAIE DE LA PERSONNE, calculé ICI (24/09 au soir) : en
+// essai réel, Gemini a répondu « 7 000 FCFA (environ 10,67 €) » à quelqu'un
+// qui raisonnait en euros, alors que la consigne lui demandait de convertir.
+// Le modèle ne convertit plus : l'outil lui donne `prix` déjà dans la monnaie
+// de la personne, au taux du jour (taux_du_jour, 0181 ; parité fixe
+// FCFA/euro). Le montant en FCFA (unité de stockage) ne lui est plus montré,
+// sauf à qui raisonne en FCFA.
+const FCFA_PAR_EURO = 655.957;
+const tauxCache = new Map<string, number | null>();
+async function prixPour(db: SupabaseClient, fcfa: unknown, contexte: Json | null): Promise<Json> {
+  const n = Number(fcfa);
+  const code = String((contexte as { buyerCurrency?: string } | null)?.buyerCurrency || 'FCFA').toUpperCase();
+  if (!Number.isFinite(n) || n <= 0) return {};
+  if (['FCFA', 'XAF', 'XOF', 'CFA'].includes(code)) return { prix: `${Math.round(n).toLocaleString('fr-FR')} FCFA`, prix_fcfa: n };
+  let parEuro = tauxCache.get(code);
+  if (parEuro === undefined) {
+    parEuro = code === 'EUR' ? 1 : null;
+    if (parEuro === null) {
+      const { data } = await db.from('taux_du_jour').select('par_euro').eq('code', code).maybeSingle();
+      parEuro = data?.par_euro ? Number(data.par_euro) : null;
+    }
+    tauxCache.set(code, parEuro);
+  }
+  // Monnaie inconnue du tableau des taux : on garde le FCFA plutôt qu'un
+  // montant faux, et le modèle le dit.
+  if (!parEuro) return { prix: `${Math.round(n).toLocaleString('fr-FR')} FCFA`, prix_fcfa: n, monnaie_non_convertie: code };
+  const montant = (n / FCFA_PAR_EURO) * parEuro;
+  let texte: string;
+  try { texte = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: code, maximumFractionDigits: montant >= 100 ? 0 : 2 }).format(montant); }
+  catch { texte = `${montant.toFixed(2)} ${code}`; }
+  return { prix: texte };
+}
+
 async function runTool(
   name: string,
   args: Json,
@@ -1019,16 +1053,16 @@ async function runTool(
         count: data?.length ?? 0,
         resultat_approche: approximate,
         mots_cherches: words,
-        products: (data ?? []).map((p: Json) => ({
+        products: await Promise.all((data ?? []).map(async (p: Json) => ({
           id: p.id,
           nom: p.name,
-          prix_fcfa: p.price_fcfa,
+          ...(await prixPour(db, p.price_fcfa, contexte)),
           prix_sur_demande: !!p.price_on_request,
           categorie: p.category,
           en_stock: (p.stock as number) > 0,
           boutique: (p.shops as Json | null)?.name ?? null,
           shop_id: p.shop_id,
-        })),
+        }))),
       };
     }
 
@@ -1049,16 +1083,16 @@ async function runTool(
         count: data?.length ?? 0,
         // L'id manquait: le modele ne pouvait donc RIEN faire d'un article en
         // tendance — ni l'ouvrir, ni le mettre au panier, ni le suivre.
-        products: (data ?? []).map((p: Json) => ({
+        products: await Promise.all((data ?? []).map(async (p: Json) => ({
           id: p.id,
           nom: p.name,
-          prix_fcfa: p.price_fcfa,
+          ...(await prixPour(db, p.price_fcfa, contexte)),
           prix_sur_demande: !!p.price_on_request,
           categorie: p.category,
           en_stock: (p.stock as number) > 0,
           boutique: (p.shops as Json | null)?.name ?? null,
           shop_id: p.shop_id,
-        })),
+        }))),
       };
     }
 
@@ -1231,7 +1265,7 @@ async function runTool(
         shop_name: (p.shops as Json | null)?.name ?? '',
         qty,
       });
-      return { added: true, nom: p.name, prix_fcfa: p.price_fcfa, quantite: qty };
+      return { added: true, nom: p.name, ...(await prixPour(db, p.price_fcfa, contexte)), quantite: qty };
     }
 
     case 'message_shop': {
