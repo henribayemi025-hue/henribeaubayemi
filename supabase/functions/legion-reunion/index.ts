@@ -30,7 +30,7 @@
 // jamais de chiffre inventé ni de travail prétendu.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { budgetAgentAtteint, compter, coutEnCours, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteurs, moteursSimples } from '../_shared/moteur.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { texteAvecPieces } from '../_shared/pieces.ts';
@@ -68,7 +68,7 @@ const sansAccent = (s: string) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g,
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; ordre: number; moteur: string;
-  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null };
+  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null; plafond_mois_eur?: number | null };
 // Ce qu'un agent a le droit de lire (0177): vide = tout ce qui est branché.
 const peut = (a: Agent, source: string) => !Array.isArray(a.peut_lire) || a.peut_lire.includes(source);
 // `recherche`: une recherche sur Internet est faite UNE fois, avant la
@@ -217,7 +217,7 @@ type Message = { id: string; entreprise_id: string; canal_id: string; auteur_id:
 // deno-lint-ignore no-explicit-any
 type Service = any;
 
-const COLS_AGENT = 'id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, ordre, moteur, jamais, peut_lire, mission, fin_mission';
+const COLS_AGENT = 'id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, ordre, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur';
 const COLS_MSG = 'id, entreprise_id, canal_id, auteur_id, user_id, texte, genre, created_at, meta';
 
 const reunionDe = (m: Message | null) => (m?.meta as { reunion?: Record<string, unknown> } | null)?.reunion ?? null;
@@ -372,6 +372,7 @@ const REGLES_REUNION = (langue: string, mesures: boolean) => `RÈGLES DE LA RÉU
 // ——— Une prise de parole ———
 async function prendreLaParole(service: Service, apiKey: string, o: Message, r: Reunion, a: Agent, tour: number, ordre: number,
   ctx: Awaited<ReturnType<typeof contexte>>, participants: Agent[], president: Agent) {
+  const avant = coutEnCours();
   const { data: comp } = await service.from('legion_competences').select('nom, description, contenu')
     .eq('agent_id', a.id).eq('actif', true).order('created_at').limit(3);
   const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) =>
@@ -424,7 +425,7 @@ ${REGLES_REUNION(langue, !!ctx.mesures)}`;
   const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: a.id, user_id: null,
     texte: aerer(rendu.obj.texte.trim()).slice(0, 3000), genre: 'info',
-    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, tour, ordre, ...(vise ? { conteste: vise.nom } : {}), ...(vote ? { vote } : {}), ...(role ? { role: true } : {}) } },
+    meta: { par_ia: true, modele: rendu.modele, cout_eur: Number((coutEnCours() - avant).toFixed(6)), sans_reponse: true, reunion: { id: o.id, tour, ordre, ...(vise ? { conteste: vise.nom } : {}), ...(vote ? { vote } : {}), ...(role ? { role: true } : {}) } },
   }).select('id').single();
   if (error) { console.error('réunion, écrire:', error.message); return false; }
   await garder(service, { entreprise_id: o.entreprise_id, message_id: ecrit.id, fonction: 'legion_reunion', modele: rendu.modele, consigne: texte, sortie: JSON.stringify(rendu.obj) });
@@ -434,6 +435,7 @@ ${REGLES_REUNION(langue, !!ctx.mesures)}`;
 // ——— Le compte rendu, par le président ———
 async function conclure(service: Service, apiKey: string, o: Message, r: Reunion, ctx: Awaited<ReturnType<typeof contexte>>,
   participants: Agent[], president: Agent, nbParoles: number) {
+  const avant = coutEnCours();
   const fin = async (texte: string, extra: Record<string, unknown> = {}) => {
     await service.from('legion_messages').insert({
       entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: president.id, user_id: null, texte, genre: 'info',
@@ -510,7 +512,7 @@ Un agent ne code pas, ne teste pas, n'envoie rien : une décision qui demande ce
   const { data: cr, error } = await service.from('legion_messages').insert({
     entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: president.id, user_id: null,
     texte: `${titre}\n\n${corpsCR}`.slice(0, 5000), genre: 'decision',
-    meta: { par_ia: true, modele: rendu.modele, sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id), ...(r.format ? { format: r.format } : {}), ...(decompte ? { votes: decompte } : {}) }, ...(question ? { question } : {}), ...(r.web?.sources.length ? { sources: r.web.sources } : {}) },
+    meta: { par_ia: true, modele: rendu.modele, cout_eur: Number((coutEnCours() - avant).toFixed(6)), sans_reponse: true, reunion: { id: o.id, fin: true, participants: participants.map((p) => p.id), ...(r.format ? { format: r.format } : {}), ...(decompte ? { votes: decompte } : {}) }, ...(question ? { question } : {}), ...(r.web?.sources.length ? { sources: r.web.sources } : {}) },
   }).select('id').single();
   if (error) { console.error('réunion, compte rendu:', error.message); return; }
   await garder(service, { entreprise_id: o.entreprise_id, message_id: cr.id, fonction: 'legion_reunion', modele: rendu.modele, consigne: texte, sortie: JSON.stringify(rendu.obj) });
@@ -591,12 +593,16 @@ async function avancer(service: Service, apiKey: string, reunionId: string, etap
     await conclure(service, apiKey, o, r, ctx, participants, president, paroles.filter((m) => typeof reunionDe(m)?.tour === 'number').length);
     return;
   }
-  const ok = await prendreLaParole(service, apiKey, o, r, participants[place % n], Math.floor(place / n) + 1, place, ctx, participants, president);
+  // Budget du mois atteint (0184): il ne parle pas, et on le dit.
+  const budget = await budgetAgentAtteint(participants[place % n]);
+  const ok = !budget && await prendreLaParole(service, apiKey, o, r, participants[place % n], Math.floor(place / n) + 1, place, ctx, participants, president);
   // Un raté (modèle saturé) : on ne bloque pas la réunion, le suivant parle.
   if (!ok) {
     await service.from('legion_messages').insert({
       entreprise_id: o.entreprise_id, canal_id: o.canal_id, auteur_id: participants[place % n].id, user_id: null,
-      texte: ctx.entreprise.langue === 'en' ? '(could not speak — the model did not answer)' : "(n'a pas pu prendre la parole — le modèle n'a pas répondu)", genre: 'info',
+      texte: budget
+        ? (ctx.entreprise.langue === 'en' ? '(monthly budget reached — does not speak)' : '(budget du mois atteint — ne prend pas la parole)')
+        : (ctx.entreprise.langue === 'en' ? '(could not speak — the model did not answer)' : "(n'a pas pu prendre la parole — le modèle n'a pas répondu)"), genre: 'info',
       meta: { sans_reponse: true, reunion: { id: o.id, tour: Math.floor(place / n) + 1, ordre: place, rate: true } },
     });
   }

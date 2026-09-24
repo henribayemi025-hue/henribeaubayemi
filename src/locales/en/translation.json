@@ -528,6 +528,106 @@
       "alertes_one": "{{count}} alert",
       "alertes_other": "{{count}} alerts",
       "plafond": "Monthly cap reached: no AI-written report today."
+    },
+    "tdb": {
+      "titre": "The dashboard",
+      "jours": "{{n}} days",
+      "commentCalcule": "How it is calculated",
+      "aideCompte": "Everything is counted in the database: messages, deliverables, tasks, rereads. No score is made up, and no model grades the agents.",
+      "aideDifficulte": "open work and not a word for three days, or two blocked tasks, or the monthly budget reached.",
+      "aideSurveiller": "one blocked task, a deliverable waiting for your review for more than two days, a task untouched for seven days, more send-backs than approvals, or 80% of the budget.",
+      "aideForme": "none of the above.",
+      "aideReputation": "Approved: the deliverables you approved, out of approved + sent back, over the period.",
+      "aideCout": "Cost per agent is recorded on each of its messages since 24/09: before, only the company total was known. It is an estimate based on Google's public prices.",
+      "santeEquipe": "Team health",
+      "personneAllume": "No agent switched on.",
+      "sante": {
+        "forme": "Doing well",
+        "surveiller": "Keep an eye",
+        "difficulte": "Struggling",
+        "veille": "Off"
+      },
+      "r": {
+        "silence": "Open work, and not a word for three days",
+        "bloquees": "{{n}} blocked tasks",
+        "bloquee": "One blocked task",
+        "budgetAtteint": "Monthly budget reached: no more work until next month",
+        "revueLongue": "{{n}} deliverable(s) waiting for your review for more than two days",
+        "immobiles": "{{n}} task(s) untouched for seven days",
+        "renvois": "More deliverables sent back than approved",
+        "budgetProche": "{{p}}% of the monthly budget"
+      },
+      "charge": "Workload",
+      "tachesOuvertes": "open tasks",
+      "parAgent": "{{n}} per active agent",
+      "plafondMois": "{{depense}} of {{plafond}} this month",
+      "depenseMois": "{{depense}} this month",
+      "carte": "Activity by department — last {{n}} days",
+      "messages_one": "{{count}} message",
+      "messages_other": "{{count}} messages",
+      "parAgentTitre": "Each agent — last {{n}} days",
+      "jusquAu": "until {{date}}",
+      "prisesDeParole": "messages",
+      "livrables": "deliverables",
+      "faites": "tasks done",
+      "ouvertes": "{{n}} open",
+      "dontBloquees": "{{n}} blocked",
+      "aValider": "{{n}} to review",
+      "relecture": "Reread: {{relues}} · corrected: {{corrigees}}",
+      "reputation": "Approved: {{p}}% ({{v}} approved, {{r}} sent back)",
+      "reputationVide": "Approved: nothing judged yet",
+      "cout": "Cost",
+      "ceMois": "this month",
+      "budget": "Budget",
+      "trophees": "Trophies — milestones reached",
+      "aucuneEtape": "None of the {{n}} roadmap milestones is ticked yet.",
+      "pasDeFeuille": "No roadmap yet: its ticked milestones will become trophies.",
+      "badge": {
+        "premierLivrable": {
+          "nom": "First deliverable",
+          "regle": "Delivered at least one deliverable."
+        },
+        "dixLivrables": {
+          "nom": "10 deliverables",
+          "regle": "Delivered at least ten deliverables."
+        },
+        "cinqValides": {
+          "nom": "5 approved",
+          "regle": "At least five deliverables approved by you."
+        },
+        "sansFaute": {
+          "nom": "No corrections",
+          "regle": "At least ten replies reread over the period, none corrected."
+        },
+        "debloqueur": {
+          "nom": "Unblocker",
+          "regle": "Unblocked a task by answering what was missing."
+        },
+        "relais": {
+          "nom": "Relay",
+          "regle": "Passed a task to a colleague along with its deliverable."
+        },
+        "assidu": {
+          "nom": "Steady",
+          "regle": "Worked on at least five different days over the period."
+        }
+      }
+    },
+    "journal": {
+      "titre": "Decision log",
+      "vide": "Nothing written yet.",
+      "livrable": "Deliverable",
+      "plan": "Plan",
+      "reunion": "Meeting",
+      "rapport": "Report",
+      "reponse": "Reply",
+      "verifie": "Checked: {{quoi}}",
+      "rienVerifie": "Nothing checked with a tool",
+      "sources_one": "{{count}} source",
+      "sources_other": "{{count}} sources",
+      "corrige": "Corrected on reread: {{raison}}",
+      "reluOk": "Reread, nothing to correct",
+      "cout": "Cost: €{{n}}"
     }
   },
   "equipe": {

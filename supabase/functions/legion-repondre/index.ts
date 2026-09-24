@@ -24,7 +24,7 @@
 // message n'a qu'une série de réponses; un agent ne répond jamais à un agent.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { budgetAgentAtteint, compter, coutEnCours, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
@@ -70,7 +70,7 @@ const LES_AUTRES = /\b(les autres|autres|d'autres|personne d'autre|le reste)\b/;
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; autonomie: string; ordre: number; moteur: string;
-  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null };
+  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null; plafond_mois_eur?: number | null };
 
 // Ce qu'un agent a le droit de lire (0177): vide = tout ce que l'entreprise
 // a branché.
@@ -321,7 +321,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
     service.from('legion_entreprises').select('nom, projet, formule').eq('id', msg.entreprise_id).single(),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, membres, resume').eq('id', msg.canal_id).single(),
-    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur, jamais, peut_lire, mission, fin_mission')
+    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
   ]);
   if (!entreprise || !salon || !agents) return json({ erreur: 'Entreprise introuvable.' }, 404);
@@ -602,6 +602,10 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   let pourquoi = '';
 
   for (const cible of allumees) {
+    // Les agents répondent l'un après l'autre: la différence du compteur est
+    // ce que coûte SA réponse (relecture comprise), noté sur le message.
+    const avant = coutEnCours();
+    if (await budgetAgentAtteint(cible)) { pourquoi = pourquoi || `${cible.nom} : budget du mois atteint.`; continue; }
     // Ses compétences (chantier 2): 4 fiches au plus, tronquées, pour que le
     // coût reste petit.
     const { data: comp } = await service.from('legion_competences').select('nom, description, contenu')
@@ -675,7 +679,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, cout_eur: Number((coutEnCours() - avant).toFixed(6)), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

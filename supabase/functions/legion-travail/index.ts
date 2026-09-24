@@ -29,7 +29,7 @@
 // dans sa propre session.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { aPart, budgetAgentAtteint, compter, coutEnCours, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
@@ -57,7 +57,7 @@ function cors(origin: string | null): Record<string, string> {
 
 type Agent = { id: string; cle: string; nom: string; poste: string; departement: string | null; mandat: string | null;
   personnalite: string | null; actif: boolean; est_directeur: boolean; user_id: string | null; moteur: string;
-  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null };
+  jamais?: string | null; peut_lire?: string[] | null; mission?: { objectif?: string; prend?: string[]; relais_humain?: string } | null; fin_mission?: string | null; plafond_mois_eur?: number | null };
 // Ce qu'un agent a le droit de lire (0177): vide = tout ce qui est branché.
 const peut = (a: Agent, source: string) => !Array.isArray(a.peut_lire) || a.peut_lire.includes(source);
 // Sa mission et ce qu'il ne fait jamais (0177).
@@ -218,7 +218,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet, langue, formule').eq('id', entrepriseId).single(),
-    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur, jamais, peut_lire, mission, fin_mission').eq('entreprise_id', entrepriseId).order('ordre'),
+    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur').eq('entreprise_id', entrepriseId).order('ordre'),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
     service.from('legion_connecteurs').select('id').eq('entreprise_id', entrepriseId).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
@@ -317,6 +317,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const plansDuJour: string[] = [];
   for (const d of directeurs) {
     const dept = d.departement!;
+    const avantPlan = coutEnCours();
+    if (await budgetAgentAtteint(d)) { journal.push(`${entreprise.nom}/${dept}: ${d.nom}, budget du mois atteint`); continue; }
     const jours = (x: { created_at: string }) => (Date.now() - new Date(x.created_at).getTime()) / 86_400_000;
     const dernierSemaine = plansDe(dept, 'semaine')[0];
     const dernierMois = plansDe(dept, 'mois')[0];
@@ -350,7 +352,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const texte = `## ${anglais ? 'Weekly plan' : 'Plan de la semaine'} — ${dept}\n${sansTitre(semaine)}${besoinMois && mois.length >= 100 ? `\n\n## ${anglais ? 'Monthly plan' : 'Plan du mois'} — ${dept}\n${sansTitre(mois)}` : ''}`;
     const { data: planPublie } = await service.from('legion_messages').insert({
       entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: d.id, user_id: null, texte, genre: 'info',
-      meta: { par_ia: true, modele: r.modele, plan: { horizon: besoinMois ? 'semaine+mois' : 'semaine', departement: dept }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+      meta: { par_ia: true, modele: r.modele, cout_eur: Number((coutEnCours() - avantPlan).toFixed(6)), plan: { horizon: besoinMois ? 'semaine+mois' : 'semaine', departement: dept }, sans_reponse: true, ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
     }).select('id').single();
     await garder(service, { entreprise_id: entrepriseId, message_id: planPublie?.id, fonction: 'legion_travail:plan', modele: r.modele, consigne: consignePlan, sortie: JSON.stringify(r.obj) });
     let creees = 0;
@@ -372,9 +374,12 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const restants = machines.filter((a) => !dejaLivre.has(a.id));
   for (let i = 0; i < restants.length; i += lot) {
     if (tempsEcoule()) return true;
-    await Promise.all(restants.slice(i, i + lot).map(async (a) => {
+    // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
+    // coûte SON livrable.
+    await Promise.all(restants.slice(i, i + lot).map((a) => aPart(async () => {
       const tache = ouvertes.find((t) => t.assigne_a === a.id);
       if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
+      if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); dejaLivre.add(a.id); return; }
       const canal = canalDe(a.departement);
       const { data: comp } = await service.from('legion_competences').select('nom, description, contenu').eq('agent_id', a.id).eq('actif', true).order('created_at').limit(4);
       const competences = (comp || []).map((c: { nom: string; description: string | null; contenu: string | null }) => ({ nom: c.nom, texte: String(c.contenu || c.description || '').slice(0, 2500) }));
@@ -403,7 +408,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
       const { data: livrablePublie } = await service.from('legion_messages').insert({
         entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: a.id, user_id: null, texte, genre: bloque ? 'question' : 'info',
-        meta: { par_ia: true, modele: r.modele, livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(web?.sources.length ? { sources: web.sources } : {}), ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+        meta: { par_ia: true, modele: r.modele, cout_eur: Number(coutEnCours().toFixed(6)), livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(web?.sources.length ? { sources: web.sources } : {}), ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
       }).select('id').single();
       await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
@@ -424,7 +429,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       }
       journal.push(`${entreprise.nom}: ${a.nom} a livré « ${tache.texte.slice(0, 60)} » (${bloque ? 'bloqué' : 'terminé'}, ${r.modele}${relais})`);
       dejaLivre.add(a.id);
-    }));
+    })));
   }
   return false;
 }

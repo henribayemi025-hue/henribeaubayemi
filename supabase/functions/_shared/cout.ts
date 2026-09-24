@@ -70,6 +70,39 @@ export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: b
   return { atteint: plafond != null && depense >= plafond, depense, plafond };
 }
 
+// Ce qu'a coûté jusqu'ici le travail en cours (la requête, ou la part
+// ouverte par aPart): noté sur chaque message d'agent (meta.cout_eur, 24/09),
+// pour que le tableau de bord dise ce que coûte CHAQUE agent.
+export function coutEnCours(): number {
+  return suivi.getStore()?.eur ?? 0;
+}
+
+// Un travail dont on veut le coût à lui seul, même quand plusieurs tournent
+// en même temps (legion-travail livre trois agents à la fois): un compteur à
+// part, reversé ensuite dans celui de la requête — rien n'est compté deux
+// fois, rien n'est perdu.
+export async function aPart<T>(travail: () => Promise<T>): Promise<T> {
+  const parent = suivi.getStore();
+  if (!parent) return travail();
+  const enfant: Suivi = { eur: 0, fn: parent.fn, entreprise: parent.entreprise };
+  try {
+    return await suivi.run(enfant, travail);
+  } finally {
+    parent.eur += enfant.eur;
+    if (enfant.entreprise && !parent.entreprise) parent.entreprise = enfant.entreprise;
+  }
+}
+
+// Le budget du mois d'UN agent (0184, idée 115 des 200): vide = pas de
+// budget. Atteint, l'agent ne répond plus, ne livre plus, ne prend plus la
+// parole en réunion jusqu'au mois suivant — comme le plafond de l'entreprise.
+export async function budgetAgentAtteint(agent: { id: string; plafond_mois_eur?: number | string | null }): Promise<boolean> {
+  if (agent.plafond_mois_eur == null) return false;
+  const { data, error } = await service().rpc('legion_depense_agent', { p_agent: agent.id });
+  if (error) { console.error('budget agent:', error.message); return false; }
+  return Number(data || 0) >= Number(agent.plafond_mois_eur);
+}
+
 // Enrobe le serveur d'une fonction: un compteur par requête, et à la fin
 // une ligne dans ai_usage si quelque chose a été dépensé.
 export function compter(fn: string, traiter: (req: Request) => Promise<Response>) {

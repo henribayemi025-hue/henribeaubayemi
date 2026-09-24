@@ -528,6 +528,106 @@
       "alertes_one": "{{count}} alerte",
       "alertes_other": "{{count}} alertes",
       "plafond": "Plafond du mois atteint : pas de rapport écrit par l'IA aujourd'hui."
+    },
+    "tdb": {
+      "titre": "Le tableau de bord",
+      "jours": "{{n}} jours",
+      "commentCalcule": "Comment c'est calculé",
+      "aideCompte": "Tout est compté dans la base : messages, livrables, tâches, relectures. Aucun score n'est inventé, et aucun modèle ne note les agents.",
+      "aideDifficulte": "du travail ouvert et pas un mot depuis trois jours, ou deux tâches bloquées, ou le budget du mois atteint.",
+      "aideSurveiller": "une tâche bloquée, un livrable qui attend ta validation depuis plus de deux jours, une tâche immobile depuis sept jours, plus de renvois que de validations, ou 80 % du budget.",
+      "aideForme": "rien de tout cela.",
+      "aideReputation": "Validés : les livrables que tu as validés, rapportés à ceux validés + renvoyés, sur la période.",
+      "aideCout": "Le coût par agent est noté sur chacun de ses messages depuis le 24/09 : avant, seul le total de l'entreprise était connu. C'est une estimation d'après les prix publics de Google.",
+      "santeEquipe": "Santé de l'équipe",
+      "personneAllume": "Aucun agent allumé.",
+      "sante": {
+        "forme": "En forme",
+        "surveiller": "À surveiller",
+        "difficulte": "En difficulté",
+        "veille": "En veille"
+      },
+      "r": {
+        "silence": "Du travail ouvert, et pas un mot depuis trois jours",
+        "bloquees": "{{n}} tâches bloquées",
+        "bloquee": "Une tâche bloquée",
+        "budgetAtteint": "Budget du mois atteint : il ne travaille plus jusqu'au mois prochain",
+        "revueLongue": "{{n}} livrable(s) attendent ta validation depuis plus de deux jours",
+        "immobiles": "{{n}} tâche(s) immobile(s) depuis sept jours",
+        "renvois": "Plus de livrables renvoyés que validés",
+        "budgetProche": "{{p}} % du budget du mois"
+      },
+      "charge": "Charge",
+      "tachesOuvertes": "tâches ouvertes",
+      "parAgent": "{{n}} par agent allumé",
+      "plafondMois": "{{depense}} sur {{plafond}} ce mois-ci",
+      "depenseMois": "{{depense}} ce mois-ci",
+      "carte": "Activité par département — {{n}} derniers jours",
+      "messages_one": "{{count}} message",
+      "messages_other": "{{count}} messages",
+      "parAgentTitre": "Chaque agent — {{n}} derniers jours",
+      "jusquAu": "jusqu'au {{date}}",
+      "prisesDeParole": "prises de parole",
+      "livrables": "livrables",
+      "faites": "tâches faites",
+      "ouvertes": "{{n}} ouverte(s)",
+      "dontBloquees": "{{n}} bloquée(s)",
+      "aValider": "{{n}} à valider",
+      "relecture": "Relues : {{relues}} · corrigées : {{corrigees}}",
+      "reputation": "Validés : {{p}} % ({{v}} validés, {{r}} renvoyés)",
+      "reputationVide": "Validés : rien de jugé encore",
+      "cout": "Coût",
+      "ceMois": "ce mois-ci",
+      "budget": "Budget",
+      "trophees": "Trophées — les étapes franchies",
+      "aucuneEtape": "Aucune des {{n}} étapes de la feuille de route n'est encore cochée.",
+      "pasDeFeuille": "Pas encore de feuille de route : ses étapes cochées deviendront des trophées.",
+      "badge": {
+        "premierLivrable": {
+          "nom": "Premier livrable",
+          "regle": "A rendu au moins un livrable."
+        },
+        "dixLivrables": {
+          "nom": "10 livrables",
+          "regle": "A rendu au moins dix livrables."
+        },
+        "cinqValides": {
+          "nom": "5 validés",
+          "regle": "Au moins cinq livrables validés par toi."
+        },
+        "sansFaute": {
+          "nom": "Sans correction",
+          "regle": "Au moins dix réponses relues sur la période, aucune corrigée."
+        },
+        "debloqueur": {
+          "nom": "Débloqueur",
+          "regle": "A débloqué une tâche en répondant à ce qui manquait."
+        },
+        "relais": {
+          "nom": "Relais",
+          "regle": "A passé une tâche à un collègue avec son livrable."
+        },
+        "assidu": {
+          "nom": "Assidu",
+          "regle": "A travaillé au moins cinq jours différents sur la période."
+        }
+      }
+    },
+    "journal": {
+      "titre": "Journal des choix",
+      "vide": "Il n'a encore rien écrit.",
+      "livrable": "Livrable",
+      "plan": "Plan",
+      "reunion": "Réunion",
+      "rapport": "Rapport",
+      "reponse": "Réponse",
+      "verifie": "Vérifié : {{quoi}}",
+      "rienVerifie": "Rien vérifié par un outil",
+      "sources_one": "{{count}} source",
+      "sources_other": "{{count}} sources",
+      "corrige": "Corrigé à la relecture : {{raison}}",
+      "reluOk": "Relu, rien à corriger",
+      "cout": "Coût : {{n}} €"
     }
   },
   "equipe": {

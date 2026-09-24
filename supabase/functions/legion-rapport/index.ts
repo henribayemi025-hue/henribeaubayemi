@@ -22,7 +22,7 @@
 // son entreprise).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { compter, coutEnCours, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteursSimples } from '../_shared/moteur.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -191,7 +191,7 @@ Trois champs, en phrases simples, sans titre ni puce (la mise en page est faite 
 "aujourdhui" : ce qui a vraiment été fait ${semaine ? 'cette semaine' : "aujourd'hui"}, qui l'a fait — 2 à 5 phrases. S'il ne s'est presque rien passé, dis-le en une phrase.
 "demain" : ce qui est sur la table pour la suite, d'après les tâches ouvertes — 1 à 3 phrases.
 "pour_toi" : ce qui attend une décision ou une action du fondateur (validations, blocages, questions) — 1 à 3 phrases, ou "" s'il n'y a rien.
-"a_verifier" : si DEUX faits ci-dessus se contredisent (deux livrables qui donnent des chiffres différents, une décision qu'une tâche ignore, un compte rendu qu'un livrable contredit), dis lesquels, en les citant, en 1 à 3 phrases. Tu ne juges que ce qui est écrit ci-dessus ; en cas de doute, ou s'il n'y a pas de contradiction, laisse "".
+"a_verifier" : si DEUX faits ci-dessus se contredisent (deux livrables qui donnent des chiffres différents, une décision qu'une tâche ignore, un compte rendu qu'un livrable contredit), dis lesquels, en les citant, en 1 à 3 phrases. Un fait plus récent qui en remplace un plus ancien (un blocage levé ensuite, une deuxième version d’un livrable) n’est PAS une contradiction. Tu ne juges que ce qui est écrit ci-dessus ; en cas de doute, ou s'il n'y a pas de contradiction, laisse "".
 Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'anglais' : 'français'}.`;
 
   const titre = semaine ? (anglais ? 'The week' : 'La semaine') : (anglais ? 'Tonight’s report' : 'Rapport du soir');
@@ -218,7 +218,7 @@ Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'ang
   const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: entrepriseId, canal_id: canal, auteur_id: directeur.id, user_id: null,
     texte: aerer(blocs.join('\n\n')).slice(0, 5000), genre: 'info',
-    meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, a_verifier: !!recit?.a_verifier?.trim(), chiffres: f.chiffres, demande: force } },
+    meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), cout_eur: Number(coutEnCours().toFixed(6)), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, a_verifier: !!recit?.a_verifier?.trim(), chiffres: f.chiffres, demande: force } },
   }).select('*').single();
   if (error) return `${e.nom}: ${error.message}`;
   ecrits.push(ecrit);

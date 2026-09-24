@@ -11,6 +11,55 @@ import { CompetencesAgent } from './Competences';
 // Vide = tout. Les fonctions des agents s'y tiennent.
 const SOURCES = ['mesures', 'boutique', 'comptabilite', 'web', 'github', 'documents'];
 
+// Le journal des choix (idée 14 des 200, 24/09) : ses dernières prises de
+// parole, et pour chacune ce qui la justifie — ce qu'il a vérifié (outils
+// appelés), ses sources, ce que la relecture a corrigé, ce qu'elle a coûté.
+// Tout vient de ce que les fonctions ont noté sur le message, rien n'est
+// reconstitué après coup.
+function JournalDesChoix({ agent, t }) {
+  const [lignes, setLignes] = useState(null);
+  useEffect(() => {
+    let vivant = true;
+    supabase.from('legion_messages').select('id, texte, created_at, meta, genre').eq('auteur_id', agent.id).is('user_id', null).neq('genre', 'tache')
+      .order('created_at', { ascending: false }).limit(8)
+      .then(({ data }) => { if (vivant) setLignes(data || []); }, () => { if (vivant) setLignes([]); });
+    return () => { vivant = false; };
+  }, [agent.id]);
+  if (!lignes) return null;
+  const quoi = (m) => (m.meta?.livrable ? t('legion.journal.livrable') : m.meta?.plan ? t('legion.journal.plan') : m.meta?.reunion ? t('legion.journal.reunion') : m.meta?.rapport ? t('legion.journal.rapport') : t('legion.journal.reponse'));
+  return (
+    <div>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.journal.titre')}</p>
+      {lignes.length === 0 ? (
+        <p className="rounded-card border border-legion-line bg-legion-card p-3 text-caption text-legion-muted">{t('legion.journal.vide')}</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {lignes.map((m) => {
+            const verifie = Array.isArray(m.meta?.verifie) ? m.meta.verifie : [];
+            const sources = Array.isArray(m.meta?.sources) ? m.meta.sources : [];
+            const relu = m.meta?.relu;
+            return (
+              <li key={m.id} className="rounded-card border border-legion-line bg-legion-card p-2.5">
+                <div className="flex items-center justify-between gap-2 text-[11px] text-legion-muted">
+                  <span className="font-semibold text-legion-gold">{quoi(m)}</span>
+                  <span>{new Date(m.created_at).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-caption text-legion-ink">{String(m.texte || '').replace(/[#*_]/g, '').slice(0, 220)}</p>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-legion-muted">
+                  <span>{verifie.length ? t('legion.journal.verifie', { quoi: verifie.join(', ') }) : t('legion.journal.rienVerifie')}</span>
+                  {sources.length > 0 && <span>{t('legion.journal.sources', { count: sources.length })}</span>}
+                  {relu && <span className={relu.corrige ? 'text-legion-gold' : ''}>{relu.corrige ? t('legion.journal.corrige', { raison: relu.raison || '' }) : t('legion.journal.reluOk')}</span>}
+                  {m.meta?.cout_eur != null && <span>{t('legion.journal.cout', { n: Number(m.meta.cout_eur).toLocaleString(undefined, { maximumFractionDigits: 4 }) })}</span>}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // Chercher un poste dans le catalogue (studio_modele_postes) au lieu de
 // partir d'une page blanche (D7, 23/09). Toucher un résultat remplit le
 // poste, le mandat, et le département s'il existe dans l'entreprise.
@@ -312,6 +361,8 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
             ))}
           </div>
         </div>
+
+        {!agent.user_id && agent.moteur !== 'claude-code' && <JournalDesChoix agent={agent} t={t} />}
 
         {agent.moteur !== 'claude-code' && <CompetencesAgent agent={agent} t={t} />}
 

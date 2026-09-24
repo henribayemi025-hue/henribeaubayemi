@@ -15,6 +15,7 @@ import { FeuilleDeRoute } from './FeuilleDeRoute';
 import { Connecteurs } from './Connecteurs';
 import { Documents } from './Documents';
 import { Inviter } from './Inviter';
+import { TableauDeBord } from './TableauDeBord';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -318,6 +319,9 @@ export function Accueil({
           )}
         </section>
       </div>
+
+      {/* 5 bis. Le tableau de bord : chaque agent, compté (24/09) */}
+      <TableauDeBord entreprise={entreprise} agents={agents} onFiche={onFiche} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
 
       {/* 6. Les plans par département, et « Au travail maintenant » */}
       <FeuilleDeRoute entreprise={entreprise} agents={agents} langue={typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined} t={t} />
