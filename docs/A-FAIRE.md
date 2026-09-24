@@ -39,7 +39,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | Date | Quoi | État |
 |---|---|---|
 | 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») |
-| 24/09 | Vérifier finjaro.net après la mise en ligne (bundle, /kit, Retirer le fond, Studio de contenu) | après le « oui » de Beau |
+| 24/09 | Vérifier finjaro.net après la mise en ligne (bundle, /kit, Retirer le fond, Studio de contenu) | ✅ 24/09 soir : finjaro.net sert 8d559ad — /kit, classeur, modèle et moteur de détourage, textes Léo présents |
 | 24/09 | Essayer « Déposer une ressource » avec un vrai lien, dans Léo | à faire au prochain lien de Beau |
 | 24/09 | Bouton « Retirer le fond » dans l'**import en masse** (`VendorProductsBulk.jsx`) | pas fait |
 | 24/09 | Studio de contenu : l'export puis l'import d'un agent **ne reprend pas** ses compétences du modèle | pas fait |
