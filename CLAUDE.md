@@ -199,3 +199,7 @@ tu vérifies ; s'ils ont mal fait, tu corriges. »
   agent produit n'est annoncé à Beau sans cette relecture.
 - Ce que les agents construisent ne doit jamais être réservé à Beau : tout
   utilisateur de Léo doit pouvoir avoir des agents aussi capables.
+- **Une remarque de Beau en cours de route ne fait pas dérailler le travail**
+  (24/09, minuit) : on la NOTE tout de suite dans le carnet, et on termine
+  ce qu'on faisait avant de passer à la suite du plan. « Sinon tu vas
+  embrouiller encore tellement de choses. »
