@@ -82,7 +82,8 @@ Règles qui ne changent jamais :
 - Si une action est refusée, ne la retente pas à l'identique : propose autre chose ou demande à l'humain.
 - Pour ecrire_fichier, donne toujours le contenu COMPLET du fichier et une « explication » en français simple.
 - Travaille par petites étapes vérifiables. Quand tu as fini, dis en quelques lignes ce que tu as fait, ce qui reste, et comment le vérifier. Ne prétends jamais qu'une chose marche si tu ne l'as pas vérifiée.
-- Réponds dans la langue de l'humain, simplement : il ne code pas forcément.`;
+- Réponds dans la langue de l'humain, simplement : il ne code pas forcément.
+- L'écran de l'atelier a un bouton « Aperçu » qui affiche la page web du projet (le fichier index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page, ne dis pas que c'est impossible : dis-lui de toucher « Aperçu ». Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.`;
   if (etat.mode === 'reflechir') {
     return `${base}
 

@@ -1006,9 +1006,9 @@
       "reponds": "Answer the card above first.",
       "envoyer": "Send",
       "carteTitre": "Permission request",
-      "veutLancer": "The Coder wants to run a command",
-      "veutModifier": "The Coder wants to edit a file",
-      "veutSupprimer": "The Coder wants to delete a file",
+      "veutLancer": "{{nom}} wants to run a command",
+      "veutModifier": "{{nom}} wants to edit a file",
+      "veutSupprimer": "{{nom}} wants to delete a file",
       "reseau": "Network: {{hotes}}",
       "pasDeReseau": "No network expected",
       "autoriserUneFois": "Allow once",
@@ -1027,7 +1027,14 @@
       "attendTonAccord": "waiting for your OK",
       "suivre": "Follow {{nom}}",
       "suivreAide": "The editor opens the file the agent is working on by itself, and you watch it type.",
-      "travailleNom": "{{nom}} is working…"
+      "travailleNom": "{{nom}} is working…",
+      "apercu": "Preview",
+      "code": "Code",
+      "actualiser": "Refresh",
+      "apercuVide": "No web page to show yet (it needs an index.html file). For a Python program, the agent runs it and the result shows up in the conversation.",
+      "apercuProposition": "with {{nom}}'s proposal, not accepted yet",
+      "apercuTelephone": "Phone size",
+      "apercuLarge": "Full width"
     }
   },
   "equipe": {

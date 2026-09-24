@@ -66,7 +66,7 @@ export function DiffBloc({ diff, t }) {
 
 // La carte « Autoriser une fois / Toujours / Refuser ». C'est le Worker qui
 // décide de l'afficher : l'agent ne peut rien écrire ni lancer sans elle.
-export function Carte({ demande, occupe, onDecider, t }) {
+export function Carte({ demande, occupe, onDecider, t, nom }) {
   if (!demande) return null;
   const commande = demande.outil === 'commande';
   const Icone = commande ? IconTerminal2 : demande.outil === 'supprimer_fichier' ? IconTrash : IconPencil;
@@ -74,7 +74,7 @@ export function Carte({ demande, occupe, onDecider, t }) {
     <div className="rounded-card border-2 border-legion-gold/70 bg-legion-card p-3 shadow-lg" role="alertdialog" aria-label={t('legion.atelier.carteTitre')}>
       <div className="mb-2 flex items-center gap-2 text-[14px] font-semibold text-legion-ink">
         <Icone size={18} className="text-legion-gold" />
-        {commande ? t('legion.atelier.veutLancer') : demande.outil === 'supprimer_fichier' ? t('legion.atelier.veutSupprimer') : t('legion.atelier.veutModifier')}
+        {commande ? t('legion.atelier.veutLancer', { nom }) : demande.outil === 'supprimer_fichier' ? t('legion.atelier.veutSupprimer', { nom }) : t('legion.atelier.veutModifier', { nom })}
       </div>
       {commande ? (
         <>

@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2 } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop } from '@tabler/icons-react';
 import { appel, ErreurAtelier } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
+import { pageDeDepart, dependances, assembler } from './apercu';
 
 // L'ATELIER DE CODE de Léo — V0 (Beau, 24/09 : « oui atelier »).
 //
@@ -186,6 +187,44 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposition?.id]);
   useEffect(() => { if (!travaille && statut !== 'attente') setActivite(null); }, [travaille, statut]);
+  // Le fichier s'ouvre d'abord tel qu'il est, puis l'agent y tape sa proposition.
+  const [propPrete, setPropPrete] = useState(null);
+  useEffect(() => {
+    if (!proposition || fichier?.chemin !== proposition.chemin) return undefined;
+    const m = setTimeout(() => setPropPrete(proposition.id), 450);
+    return () => clearTimeout(m);
+  }, [proposition?.id, fichier?.chemin]); // eslint-disable-line react-hooks/exhaustive-deps
+  // L'aperçu : la page web du projet, assemblée et affichée dans un cadre isolé.
+  // Si l'agent attend un accord sur un fichier, on montre la page AVEC sa
+  // proposition : on voit le résultat avant de dire oui.
+  const [docApercu, setDocApercu] = useState(null);
+  const [etroit, setEtroit] = useState(false);
+  const apercuVisible = onglet === 'apercu';
+  const signature = (vue?.fichiers || []).map((f) => `${f.chemin}:${f.taille}`).join('|');
+  const rafraichirApercu = useCallback(async () => {
+    if (!pid) return;
+    const page = pageDeDepart((vue?.fichiers || []).map((f) => f.chemin));
+    if (!page) { setDocApercu({ vide: true }); return; }
+    const prop = vue?.demande?.outil === 'ecrire_fichier' && typeof vue.demande.contenu === 'string' ? vue.demande : null;
+    const lireF = async (c) => {
+      if (prop?.chemin === c) return prop.contenu;
+      if (fichier?.chemin === c) return fichier.brouillon;
+      return (await appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(c)}`)).contenu;
+    };
+    try {
+      const html = await lireF(page);
+      const contenus = {};
+      await Promise.all(dependances(page, html).map(async (c) => { try { contenus[c] = await lireF(c); } catch { /* fichier absent */ } }));
+      setDocApercu({ page, doc: assembler(page, html, contenus), proposition: !!prop });
+    } catch (e) { setDocApercu({ page, erreur: e?.message || String(e) }); }
+  }, [pid, vue?.fichiers, vue?.demande, fichier]);
+  useEffect(() => {
+    if (!apercuVisible) return undefined;
+    const m = setTimeout(rafraichirApercu, 350);
+    return () => clearTimeout(m);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apercuVisible, signature, vue?.demande?.id, fichier?.brouillon, pid]);
+
   const basculerSuivre = () => setSuivre((x) => { ecrire('atelier:suivre', x ? '0' : '1'); return !x; });
   const enregistrer = () => fichier && agir(async () => {
     const r = await appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: fichier.chemin, contenu: fichier.brouillon } });
@@ -229,7 +268,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   const s = vue?.session;
   const part = s ? Math.min(1, s.cout / s.plafond) : 0;
   const sale = fichier && fichier.brouillon !== fichier.contenu;
-  const enProposition = !!(proposition && fichier?.chemin === proposition.chemin);
+  const enProposition = !!(proposition && fichier?.chemin === proposition.chemin && propPrete === proposition.id);
 
   const colonneArbre = (
     <div className="flex h-full min-h-0 flex-col">
@@ -282,6 +321,32 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     </div>
   );
 
+  const colonneApercu = (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center gap-2 border-b border-legion-line px-3 py-1.5 text-[12px]">
+        <IconEye size={14} className="shrink-0 text-legion-gold" />
+        <span className="min-w-0 truncate font-mono text-legion-ink">{docApercu?.page || t('legion.atelier.apercu')}</span>
+        {docApercu?.proposition && <span className="shrink-0 text-legion-gold-soft">· {t('legion.atelier.apercuProposition', { nom: nomCodeur })}</span>}
+        <button type="button" onClick={() => setEtroit((x) => !x)} title={t(etroit ? 'legion.atelier.apercuLarge' : 'legion.atelier.apercuTelephone')}
+          className="ml-auto hidden rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold lg:block">
+          {etroit ? <IconDeviceDesktop size={14} /> : <IconDeviceMobile size={14} />}
+        </button>
+        <button type="button" onClick={rafraichirApercu} title={t('legion.atelier.actualiser')}
+          className="rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold max-lg:ml-auto"><IconRefresh size={14} /></button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto bg-[#1a2030] p-2">
+        {docApercu?.doc ? (
+          <iframe title={t('legion.atelier.apercu')} sandbox="allow-scripts allow-forms allow-modals" srcDoc={docApercu.doc}
+            className="mx-auto block h-full rounded-md bg-white shadow-lg" style={{ width: etroit ? 390 : '100%', maxWidth: '100%' }} />
+        ) : (
+          <p className="p-6 text-center text-caption text-legion-muted">
+            {docApercu?.vide ? t('legion.atelier.apercuVide') : docApercu?.erreur || <IconLoader2 className="mx-auto animate-spin" />}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   const colonneConversation = (
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
@@ -308,7 +373,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
         {travaille && statut !== 'attente' && (
           <p className="flex items-center gap-2 px-1 text-[12px] text-legion-muted"><Visage codeur={codeur} taille={20} /> {activite ? t(`legion.atelier.activite_${activite.verbe}`, { nom: nomCodeur, chemin: activite.chemin }) : t('legion.atelier.travailleNom', { nom: nomCodeur })} <IconLoader2 size={14} className="animate-spin" /></p>
         )}
-        <Carte demande={vue?.demande} occupe={occupe} onDecider={decider} t={t} />
+        <Carte demande={vue?.demande} occupe={occupe} onDecider={decider} t={t} nom={nomCodeur} />
         <div ref={fin} />
       </div>
       <form onSubmit={envoyer} className="border-t border-legion-line p-2">
@@ -397,7 +462,17 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
       {/* Ordinateur : trois colonnes. Téléphone : un onglet à la fois. */}
       <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[220px_minmax(0,1fr)_400px]">
         <div className={`${onglet === 'fichiers' ? 'block' : 'hidden'} h-full min-h-0 border-legion-line bg-legion-panel lg:block lg:border-r`}>{colonneArbre}</div>
-        <div className={`${onglet === 'editeur' ? 'block' : 'hidden'} h-full min-h-0 lg:block`}>{colonneEditeur}</div>
+        <div className={`${onglet === 'editeur' || onglet === 'apercu' ? 'flex' : 'hidden'} h-full min-h-0 flex-col lg:flex`}>
+          <div className="hidden shrink-0 gap-1 border-b border-legion-line px-3 py-1 lg:flex" role="tablist">
+            {[[false, IconCode, t('legion.atelier.code')], [true, IconEye, t('legion.atelier.apercu')]].map(([v, Icone, label]) => (
+              <button key={label} type="button" role="tab" aria-selected={apercuVisible === v} onClick={() => setOnglet(v ? 'apercu' : 'editeur')}
+                className={`flex items-center gap-1 rounded-pill px-3 py-1 text-[12px] font-semibold ${apercuVisible === v ? 'bg-legion-gold text-legion-bg' : 'text-legion-muted hover:text-legion-ink'}`}>
+                <Icone size={14} /> {label}
+              </button>
+            ))}
+          </div>
+          <div className="min-h-0 flex-1">{apercuVisible ? colonneApercu : colonneEditeur}</div>
+        </div>
         <div className={`${onglet === 'conversation' ? 'block' : 'hidden'} h-full min-h-0 border-legion-line bg-legion-panel lg:block lg:border-l`}>{colonneConversation}</div>
       </div>
 
@@ -405,6 +480,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
         {[
           ['fichiers', IconFiles, t('legion.atelier.fichiers')],
           ['editeur', IconCode, t('legion.atelier.editeur')],
+          ['apercu', IconEye, t('legion.atelier.apercu')],
           ['conversation', IconMessages, t('legion.atelier.conversation')],
         ].map(([k, Icone, label]) => (
           <button key={k} type="button" onClick={() => setOnglet(k)}

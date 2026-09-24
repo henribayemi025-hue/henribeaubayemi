@@ -1006,9 +1006,9 @@
       "reponds": "Réponds d'abord à la carte ci-dessus.",
       "envoyer": "Envoyer",
       "carteTitre": "Demande d'autorisation",
-      "veutLancer": "Le Codeur veut lancer une commande",
-      "veutModifier": "Le Codeur veut modifier un fichier",
-      "veutSupprimer": "Le Codeur veut supprimer un fichier",
+      "veutLancer": "{{nom}} veut lancer une commande",
+      "veutModifier": "{{nom}} veut modifier un fichier",
+      "veutSupprimer": "{{nom}} veut supprimer un fichier",
       "reseau": "Réseau : {{hotes}}",
       "pasDeReseau": "Pas de réseau prévu",
       "autoriserUneFois": "Autoriser une fois",
@@ -1027,7 +1027,14 @@
       "attendTonAccord": "attend ton accord",
       "suivre": "Suivre {{nom}}",
       "suivreAide": "L'éditeur ouvre tout seul le fichier sur lequel l'agent travaille, et tu le vois taper.",
-      "travailleNom": "{{nom}} travaille…"
+      "travailleNom": "{{nom}} travaille…",
+      "apercu": "Aperçu",
+      "code": "Code",
+      "actualiser": "Actualiser",
+      "apercuVide": "Pas encore de page web à montrer (il faut un fichier index.html). Pour un programme Python, l'agent le lance et le résultat s'affiche dans la conversation.",
+      "apercuProposition": "avec la proposition de {{nom}}, pas encore acceptée",
+      "apercuTelephone": "Voir en taille téléphone",
+      "apercuLarge": "Voir en grand"
     }
   },
   "equipe": {
