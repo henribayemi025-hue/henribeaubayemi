@@ -16,8 +16,10 @@ import { appeler, ordre, cleDe, ErreurMoteur } from './moteur.js';
 import { coutAppel, estimationMaxAppel, arrondi } from './cout.js';
 import { diff } from './diff.js';
 
-export const MAX_PAS = 30; // appels au modèle par demande
-export const MAX_SORTIE = 8000; // jetons de sortie par appel
+// 80 appels au modèle par demande (30 jusqu'au 25/09 : Ada s'est arrêtée au milieu
+// du tableur, un vrai travail long). Le plafond de dépense reste la vraie barrière.
+export const MAX_PAS = 80;
+export const MAX_SORTIE = 16000; // jetons de sortie par appel (8000 jusqu'au 25/09 : un fichier de 26 Ko ne passait pas d'un coup)
 export const MAX_ECHECS_IDENTIQUES = 3;
 const MAX_LECTURE = 60_000;
 const MAX_SORTIE_COMMANDE = 12_000;
