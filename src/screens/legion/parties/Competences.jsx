@@ -185,14 +185,15 @@ export function CompetencesAgent({ agent, t }) {
                   <p className="text-[13px] font-semibold text-legion-ink">{c.nom}</p>
                   {c.pourquoi && <p className="text-[12px] italic text-legion-gold">{c.pourquoi}</p>}
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-legion-muted">
-                    {/* Une compétence du vestiaire (24/09) garde un lien complet
-                        (article, vidéo, fiche) : on l'ouvre tel quel, au lieu
-                        de le coller derrière github.com. */}
-                    {c.source_repo && (
-                      <a href={/^https?:\/\//.test(c.source_repo) ? c.source_repo : `https://github.com/${c.source_repo}/blob/HEAD/${c.source_chemin}`} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-0.5 hover:text-legion-ink">
+                    {/* Une fiche du catalogue (dépôt + chemin), une fiche du
+                        vestiaire (adresse complète : article, vidéo, fiche),
+                        ou une compétence écrite par Léo, livrée avec un
+                        modèle (aucune source en ligne : pas de lien cassé). */}
+                    {c.source_repo ? (
+                      <a href={/^https?:\/\//.test(c.source_repo) ? c.source_repo : `https://github.com/${c.source_repo}${c.source_chemin ? `/blob/HEAD/${c.source_chemin}` : ''}`} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-0.5 hover:text-legion-ink">
                         <span className="truncate">{/^https?:\/\//.test(c.source_repo) ? c.source_repo.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60) : c.source_repo}</span> <IconExternalLink size={11} className="shrink-0" />
                       </a>
-                    )}
+                    ) : <span>{t('legion.competenceMaison', 'Écrite par Léo')}</span>}
                     {c.licence && <span>· {c.licence}</span>}
                     {!c.contenu && <span className="text-legion-danger">· {t('legion.ficheNonLue', 'fiche pas encore lue')}</span>}
                   </p>
