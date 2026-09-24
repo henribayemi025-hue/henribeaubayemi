@@ -91,7 +91,7 @@ sous « Leo », `ANTHROPIC_API_KEY` si elle existe un jour).
 - Claude Sonnet 5 n'est proposé que par ce relais, et seulement si
   `ANTHROPIC_API_KEY` existe (la fonction traduit son format).
 - Limites : 2 Mo par requête, 120 s par appel, 16 384 jetons de sortie au
-  plus, et un **plafond de 10 $ par personne et par jour** (somme de
+  plus, et un **plafond de 1 $ par personne et par jour** (Beau, 24/09 : 10 $ était trop pour une phase d'essai) (somme de
   `atelier_couts` depuis minuit UTC), réglable par le secret Supabase
   `ATELIER_PLAFOND_JOUR_USD`. Le plafond dur de chaque session reste en place.
 - Le jeton d'une session Léo vit une heure : s'il expire pendant un long

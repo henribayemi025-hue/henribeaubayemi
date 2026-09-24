@@ -29,7 +29,7 @@
 // Le coût reste compté par l'atelier lui-même (atelier_couts, écrit par le
 // Worker). Ce relais n'écrit donc rien dans ai_usage ; il LIT atelier_couts
 // pour un plafond simple par personne et par jour (ATELIER_PLAFOND_JOUR_USD,
-// 10 $ par défaut), en plus du plafond dur de chaque session du Worker.
+// 1 $ par défaut depuis le 24/09 : « 10 $, c'est trop, on fait seulement le test » (Beau)), en plus du plafond dur de chaque session du Worker.
 //
 // ATTENTION : comme toute fonction edge, elle est COMMUNE à staging et à la
 // production (CLAUDE.md §4). Elle n'est appelée que par l'atelier.
@@ -128,7 +128,7 @@ async function verifier(auth: string): Promise<{ personne?: Personne; statut?: n
 // à compter : le plafond dur de chaque session reste la protection.
 const plafondJour = () => {
   const n = Number(Deno.env.get('ATELIER_PLAFOND_JOUR_USD'));
-  return Number.isFinite(n) && n > 0 ? n : 10;
+  return Number.isFinite(n) && n > 0 ? n : 1;
 };
 
 async function depenseDuJour(p: Personne): Promise<number | null> {
