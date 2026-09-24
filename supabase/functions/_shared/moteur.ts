@@ -72,7 +72,7 @@ export function moteursSimples(): string[] {
   return [...releve(false), ...MOTEURS_SIMPLES_PAR_DEFAUT];
 }
 
-type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[] };
+type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean };
 export type Rendu = { obj: Record<string, unknown>; modele: string } | { erreur: string };
 
 // Gemini rend parfois « \n » échappé deux fois: on rétablit les vrais
@@ -180,7 +180,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
   let derniere = 'aucun modèle joignable';
   let plafondGoogle = false;
   const liste = o.modeles ?? moteurs();
-  for (const nom of [...liste, ...secours().filter((x) => !liste.includes(x))]) {
+  for (const nom of o.sansSecours ? liste : [...liste, ...secours().filter((x) => !liste.includes(x))]) {
     // Le plafond de dépenses du projet Google vaut pour tous ses modèles
     // (vu le 24/09) : inutile de les essayer un par un, on passe au secours.
     if (plafondGoogle && /^gemini/.test(nom)) continue;
