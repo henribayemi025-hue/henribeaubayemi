@@ -28,9 +28,9 @@
 // l'écran au lieu de disparaître.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { compter, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { generer, moteursSimples } from '../_shared/moteur.ts';
 
-const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 const PROD_HOST = 'finjaro.net';
 const LIMITE_DEFAUT = 25;
 const LIMITE_MAX = 40;
@@ -124,59 +124,26 @@ un peu gênant, comme on décrirait un vrai collègue.`;
 
 type Resultat = { obj: Record<string, unknown>; modele: string } | { erreur: string };
 
-async function demander(apiKey: string, texte: string): Promise<Resultat> {
-  let derniere = 'aucun modèle joignable';
-  for (const model of MODELS) {
-    try {
-      const resp = await gemini(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: texte }] }],
-            generationConfig: {
-              // Chaud: on VEUT que deux comptables ne se ressemblent pas.
-              temperature: 1.0,
-              // Doublé, et la réflexion coupée: choisir une coiffure ne
-              // demande pas de raisonner, et sur les modèles 2.5 la
-              // réflexion se paie sur CE budget — c'est ce qui vidait la
-              // réponse.
-              maxOutputTokens: 2048,
-              thinkingConfig: { thinkingBudget: 0 },
-              responseMimeType: 'application/json',
-              responseSchema: SCHEMA,
-            },
-          }),
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        },
-      );
-      if (!resp.ok) {
-        const t = await resp.text();
-        derniere = `${model}: HTTP ${resp.status} ${t.slice(0, 160)}`;
-        console.error(derniere);
-        continue;
-      }
-      const body = await resp.json();
-      const fin = body?.candidates?.[0]?.finishReason;
-      const txt = body?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-      if (!txt) {
-        derniere = `${model}: réponse vide (finishReason=${fin})`;
-        console.error(derniere, JSON.stringify(body).slice(0, 400));
-        continue;
-      }
-      try {
-        return { obj: JSON.parse(txt), modele: model };
-      } catch {
-        derniere = `${model}: JSON illisible — ${txt.slice(0, 160)}`;
-        console.error(derniere);
-      }
-    } catch (e) {
-      derniere = `${model}: ${(e as Error).message}`;
-      console.error(derniere);
-    }
+// Par le moteur commun (24/09): avant, Gemini seul — et avec le plafond
+// Google atteint, « let them choose » ne faisait RIEN (PJ Hôtel : 100
+// agents, aucun visage). Le moteur suit maintenant le choix de l'entreprise
+// (DeepSeek d'abord en Auto). Les autres moteurs ne tiennent pas toujours les
+// listes du schéma : une valeur hors liste est ramenée à la première.
+function dansLeSchema(obj: Record<string, unknown>): Record<string, unknown> {
+  const props = (SCHEMA as { properties: Record<string, { enum?: string[] }> }).properties;
+  const propre: Record<string, unknown> = { ...obj };
+  for (const [k, def] of Object.entries(props)) {
+    if (def.enum && !def.enum.includes(String(propre[k]))) propre[k] = def.enum[0];
   }
-  return { erreur: derniere };
+  return propre;
+}
+
+async function demander(apiKey: string, texte: string): Promise<Resultat> {
+  // Chaud: on VEUT que deux comptables ne se ressemblent pas. Pas de
+  // réflexion: choisir une coiffure ne demande pas de raisonner.
+  const r = await generer(apiKey, texte, SCHEMA, { modeles: moteursSimples(), temperature: 1.0, maxSortie: 2048, reflexion: 0, delaiMs: TIMEOUT_MS });
+  if ('erreur' in r) return { erreur: r.erreur };
+  return { obj: dansLeSchema(r.obj), modele: r.modele };
 }
 
 Deno.serve(compter('legion_se_choisir', async (req: Request) => {
