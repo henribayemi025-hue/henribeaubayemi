@@ -33,7 +33,7 @@ export default function Rejoindre() {
   return (
     <div className="legion-app flex h-dvh items-center justify-center overflow-y-auto bg-legion-bg px-4 text-legion-ink">
       <div className="w-full max-w-sm space-y-4 rounded-2xl border border-legion-line bg-legion-panel p-6 text-center">
-        <img src="/logos/legion.png" alt="Legion" className="mx-auto h-12 w-12 rounded-input object-cover" />
+        <img src="/logos/leo.png" alt="Léo" className="mx-auto h-12 w-12 rounded-input object-cover" />
         {apercu === undefined ? (
           <div className="flex justify-center py-6"><Spinner /></div>
         ) : !apercu ? (
@@ -58,7 +58,7 @@ export default function Rejoindre() {
           </>
         )}
         {erreur && <p className="text-caption text-legion-danger">{erreur}</p>}
-        <Link to="/legion" className="inline-flex items-center gap-1 text-caption text-legion-muted"><IconArrowLeft size={13} /> Legion</Link>
+        <Link to="/legion" className="inline-flex items-center gap-1 text-caption text-legion-muted"><IconArrowLeft size={13} /> Léo</Link>
       </div>
     </div>
   );

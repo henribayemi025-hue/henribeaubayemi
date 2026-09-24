@@ -684,11 +684,11 @@ export default function Entreprise() {
           <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-legion-line px-2 py-1 text-caption font-semibold text-legion-muted lg:hidden" title={t('legion.retourFinjaro')}>
             <IconArrowLeft size={14} /> Finjaro
           </Link>
-          <img src="/logos/legion.png" alt="Legion" className="hidden h-8 w-8 rounded-input object-cover sm:block" />
+          <img src="/logos/leo.png" alt="Léo" className="hidden h-8 w-8 rounded-input object-cover sm:block" />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="truncate text-body font-semibold text-legion-ink">{data.entreprise.nom}</span>
-              <span className="hidden rounded border border-legion-line bg-legion-bg px-1.5 font-mono text-[10px] text-legion-muted sm:inline">LEGION</span>
+              <span className="hidden rounded border border-legion-line bg-legion-bg px-1.5 font-mono text-[10px] text-legion-muted sm:inline">LÉO</span>
             </div>
             <p className="truncate text-[11px] text-legion-muted">
               {t('legion.bilanAgents', { total: machines.length, allumes, choisis: machines.filter((a) => a.choisi_par_lui).length })}

@@ -16,8 +16,8 @@ import { Spinner } from './Spinner';
 
 const APPLIS = {
   legion: {
-    logo: '/logos/legion.png',
-    nom: 'Legion',
+    logo: '/logos/leo.png',
+    nom: 'Léo',
     fond: 'legion-app bg-legion-bg text-legion-ink',
     panneau: 'border-legion-line bg-legion-panel',
     carte: 'border-legion-line bg-legion-card',

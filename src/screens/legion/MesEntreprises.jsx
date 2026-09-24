@@ -71,8 +71,8 @@ export default function MesEntreprises() {
           <Link to="/apps" className="flex items-center gap-1 rounded-pill border border-legion-line px-2.5 py-1 text-caption font-semibold text-legion-muted transition hover:text-legion-ink">
             <IconArrowLeft size={14} /> Finjaro
           </Link>
-          <img src="/logos/legion.png" alt="Legion" className="h-8 w-8 rounded-input object-cover" />
-          <span className="text-body font-semibold">Legion</span>
+          <img src="/logos/leo.png" alt="Léo" className="h-8 w-8 rounded-input object-cover" />
+          <span className="text-body font-semibold">Léo</span>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/legion/fonder"

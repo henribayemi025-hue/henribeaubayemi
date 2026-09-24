@@ -12,7 +12,7 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
   return (
     <aside className="hidden w-[68px] shrink-0 flex-col items-center bg-legion-panel py-3 text-legion-ink lg:flex">
       <Link to="/legion" title={t('legion.mesEntreprises')} className="mb-3 block h-11 w-11 overflow-hidden rounded-2xl shadow-lg">
-        <img src="/logos/legion.png" alt="Legion" className="h-full w-full object-cover" />
+        <img src="/logos/leo.png" alt="Léo" className="h-full w-full object-cover" />
       </Link>
 
       <button
