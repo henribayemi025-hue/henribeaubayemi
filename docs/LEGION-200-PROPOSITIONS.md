@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 121 faites, 21 en partie, 5 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 127 faites, 14 en partie, 5 à faire, 18 en attente de Beau, 36 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -92,7 +92,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 45 | Dépendances obsolètes et mises à jour sûres | ⏸ | Studio de code. |
 | 46 | Environnement de test éphémère par fonctionnalité | ⏸ | Studio de code (aperçu par branche). |
 | 47 | Brancher Jira ou Linear | 🔧 | Jira et Linear branchables (0188, 24/09), en lecture seule, jeton au coffre : les agents voient les tickets ouverts. Jira essayé sur le Jira public d'Atlassian (les agents citent les vrais tickets). Linear construit mais pas essayé : il faut une vraie clé Linear. |
-| 48 | Signature des contributions des agents | 🔧 | Chaque message et livrable garde son auteur, le modèle utilisé et l'heure. Pas de signature cryptographique. |
+| 48 | Signature des contributions des agents | ✅ | Chaque décision, compte rendu, livrable et action confirmée est signé (0189, 24/09) : une signature HMAC avec une clé qui ne quitte jamais le serveur, en plus de l'auteur, du modèle et de l'heure. |
 | 49 | Taille du contexte adaptée à la tâche | ✅ | Les questions simples partent sur un modèle rapide, les questions de fond sur un modèle plus fort, avec plus de contexte. |
 | 50 | Sauvegarde sur stockage décentralisé | ✗ | La base est déjà sauvegardée par Supabase. Aucun besoin exprimé. |
 
@@ -161,26 +161,26 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
 | 101 | Garde-fous contre les dérives | ✅ | Règles de la maison, « ce qu'il ne fait jamais », relecture de chaque réponse, rien n'est envoyé sans « Confirmer ». |
-| 102 | Chiffrement des échanges internes | 🔧 | Connexions chiffrées (HTTPS) et base protégée par des règles d'accès par entreprise. Pas de chiffrement de bout en bout. |
+| 102 | Chiffrement des échanges internes | ✗ | Écarté, pour une raison de fond : des agents qui répondent doivent pouvoir lire les messages ; un chiffrement de bout en bout les rendrait aveugles. Ce qui existe : connexions chiffrées (HTTPS), règles d'accès par entreprise dans la base, jetons rangés dans le coffre chiffré (vault). |
 | 103 | Isoler les agents sensibles (finances…) | ✅ | Droits par agent (0177) : un agent sans le droit « comptabilité » ne consulte pas les comptes (vérifié le 23/09). |
-| 104 | Journal inaltérable des décisions | 🔧 | Messages et comptes rendus datés, avec leur auteur. Pas de journal inaltérable. |
+| 104 | Journal inaltérable des décisions | ✅ | Journal inaltérable des décisions (0189, 24/09) : chaque ligne porte l'empreinte du contenu et celle de la ligne précédente ; un déclencheur refuse toute modification ou suppression, même aux fonctions du serveur. « Vérifier » recalcule la chaîne et les signatures et dit si un message a été retouché après coup (essayé : une décision retouchée est signalée). |
 | 105 | Double validation humaine pour les actions critiques | ✅ | Toute action passe par « Confirmer » ; un livrable passe par « Valider ». |
-| 106 | Détection des biais dans les analyses | 🔧 | La relecture retire les chiffres et faits inventés ; pas de détection de biais statistiques. |
+| 106 | Détection des biais dans les analyses | ✅ | La relecture repère aussi les biais (24/09) : conclusion tirée de trop peu de cas, corrélation prise pour une cause, moyenne qui cache des écarts, exemples choisis — elle ajoute la réserve au lieu de laisser passer. |
 | 107 | Pas de données personnelles non autorisées | ✅ | Les agents ne voient jamais un e-mail, un téléphone ou une adresse ; prénom de la cliente au plus. |
 | 108 | Tests d'intrusion par une équipe rouge | ⏸ | Studio de code. |
-| 109 | Rôles et permissions fins pour les humains | 🔧 | Propriétaire et membres invités. Pas de rôles plus fins. |
+| 109 | Rôles et permissions fins pour les humains | ✅ | Rôles des membres (0189, 24/09) : propriétaire, membre, lecteur. Un lecteur lit tout mais n'écrit rien et ne touche pas aux agents — imposé par la base (essayé : son message est refusé). |
 | 110 | Coupure d'urgence globale ou par département | ✅ | Interrupteur par département sur l'accueil (24/09), en plus de l'interrupteur général, de celui de chaque agent et du plafond du mois. |
 | 111 | Provenance et licence du code importé | ✅ | Les compétences GitHub ne sont prises que sous licence libre vérifiée, avec leur source. |
 | 112 | Sauvegarde des choix stratégiques | ✅ | Comptes rendus de réunion, plans et feuille de route gardés. |
 | 113 | Pannes et cyberattaques simulées | ✗ | Pas maintenant. |
-| 114 | Intégrité des modèles | 🔧 | Chaque réponse garde le nom du modèle utilisé. |
+| 114 | Intégrité des modèles | 🔧 | Chaque réponse garde le nom exact du modèle, et les décisions sont signées dans le journal. L'intégrité des modèles eux-mêmes relève de Google : on ne peut pas la vérifier de notre côté. |
 | 115 | Budget de calcul par agent | ✅ | Budget du mois par agent (24/09), réglé sur le tableau de bord : atteint, l'agent ne répond plus, ne livre plus et ne parle plus en réunion jusqu'au mois suivant (essayé : « Anaïs : budget du mois atteint »). |
 | 116 | Traçabilité des sources | ✅ | Sources sous chaque message (Internet, documents). |
-| 117 | Rotation des mots de passe et jetons | 🔧 | Jetons de connexion MCP révocables ; jeton GitHub effaçable. |
+| 117 | Rotation des mots de passe et jetons | ✅ | Les jetons d'assistant (MCP) ont une durée de vie (30, 90, 365 jours ou sans fin ; 90 par défaut), et « Remplacer » en fait un neuf d'un geste (0189, 24/09). Le jeton GitHub reste effaçable. |
 | 118 | Audit externe par un humain | ✅ | On invite un membre dans l'entreprise ; il voit les salons et le tableau. |
 | 119 | Détection des boucles entre agents | ✅ | Une réunion a deux tours et 45 minutes au plus ; une réponse ne relance pas une chaîne d'agents sans fin. |
 | 120 | Vote d'urgence pour remplacer un agent défaillant | ✅ | Pour un agent « en difficulté » au tableau de bord (24/09) : « Réunir l'équipe : faut-il le remplacer ? » ouvre une réunion au format vote ; le vote éclaire, le fondateur décide. |
-| 121 | Chiffrement des mémoires au repos | 🔧 | Assuré par l'hébergeur de la base ; rien de plus. |
+| 121 | Chiffrement des mémoires au repos | ✅ | La base est chiffrée au repos par l'hébergeur (Supabase, chiffrement du disque) ; les jetons et clés sont en plus rangés dans le coffre chiffré (vault) et ne reviennent jamais à l'écran. |
 | 122 | Fuites de données dans les requêtes envoyées aux IA | ✅ | Les outils ne renvoient jamais d'e-mail, de téléphone ni d'adresse. |
 | 123 | Normes ISO 27001 | ✗ | Pas maintenant. |
 | 124 | Rapport de transparence mensuel | ✅ | Rapport de transparence (24/09), le 1er de chaque mois, sans modèle : ce que Legion a coûté par fonction, réponses relues et corrigées, actions proposées et confirmées, règles et documents ajoutés. |

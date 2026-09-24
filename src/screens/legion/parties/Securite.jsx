@@ -85,7 +85,7 @@ export function Journal({ entreprise, agents, t }) {
       <p className="text-[11px] leading-snug text-legion-muted">{t('legion.securite.journalAide')}</p>
       {verif && (
         <div className={`rounded-card border p-2.5 text-[12px] ${intact ? 'border-legion-success/40 bg-legion-success/10 text-legion-success' : 'border-legion-danger/40 bg-legion-danger/10 text-legion-danger'}`}>
-          {intact ? t('legion.securite.intact', { n: verif.entrees }) : (
+          {intact ? t('legion.securite.intact', { count: verif.entrees }) : (
             <ul className="space-y-0.5">
               {!verif.chaine_intacte && <li>{t('legion.securite.rupture')}</li>}
               {!verif.signatures_ok && <li>{t('legion.securite.signature')}</li>}

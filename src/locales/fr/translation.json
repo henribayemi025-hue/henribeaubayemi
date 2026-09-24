@@ -827,7 +827,6 @@
       "journal": "Le journal des décisions",
       "verifier": "Vérifier",
       "journalAide": "Chaque décision, compte rendu, livrable et action confirmée y laisse une empreinte signée, chaînée à la précédente. Rien ne s'y modifie ni ne s'y efface ; « Vérifier » recalcule tout et dit si un message a été retouché après coup.",
-      "intact": "✓ {{n}} entrées : la chaîne est intacte, les signatures sont bonnes, aucun message n'a été retouché.",
       "rupture": "La chaîne est rompue : une ligne ne suit plus la précédente.",
       "signature": "Une signature ne correspond pas.",
       "modifies_one": "{{count}} message a été modifié après coup.",
@@ -848,7 +847,9 @@
       "duree": "Durée du jeton",
       "jours": "{{n}} jours",
       "sansFin": "sans fin",
-      "lecteurNote": "Tu es lecteur dans cette entreprise : tu lis tout, tu n'écris pas. Le propriétaire peut changer ton rôle."
+      "lecteurNote": "Tu es lecteur dans cette entreprise : tu lis tout, tu n'écris pas. Le propriétaire peut changer ton rôle.",
+      "intact_one": "✓ {{count}} entrée : la chaîne est intacte, la signature est bonne, aucun message n'a été retouché.",
+      "intact_other": "✓ {{count}} entrées : la chaîne est intacte, les signatures sont bonnes, aucun message n'a été retouché."
     }
   },
   "equipe": {
