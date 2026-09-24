@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { IconFileText, IconTrash, IconUpload, IconCopy, IconCheck, IconInbox } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
+import { DeposerRessource } from './DeposerRessource';
 
 // LES DOCUMENTS DE L'ENTREPRISE, ET LE TRI DES DEMANDES CLIENTS (0179, 23/09).
 //
@@ -96,6 +97,17 @@ export function Documents({ entreprise, t }) {
     if (error) setErreur(error.message); else setDocs((d) => d.filter((x) => x.id !== doc.id));
   }
 
+  // La fiche d'une ressource déposée (vestiaire, 24/09) arrive « à lire » :
+  // elle apparaît tout de suite dans la liste, puis on la fait lire, comme
+  // un document déposé à la main.
+  async function ficheRangee(id) {
+    await charger();
+    if (!id || dejaLances.current.has(id)) return;
+    dejaLances.current.add(id);
+    await supabase.functions.invoke('legion-documents', { body: { action: 'lire', document_id: id } });
+    await charger();
+  }
+
   async function trier(e) {
     e.preventDefault();
     if (demande.trim().length < 3) return;
@@ -143,6 +155,9 @@ export function Documents({ entreprise, t }) {
           ))}
         </ul>
       )}
+
+      {/* Une ressource pour entraîner les agents : Mentor en fait la fiche (24/09) */}
+      <DeposerRessource entreprise={entreprise} onFiche={ficheRangee} t={t} />
 
       {/* Le tri d'une demande reçue (J2) */}
       <div className="mt-5 border-t border-legion-line pt-4">
