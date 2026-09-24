@@ -136,8 +136,8 @@ ${memoireSalon}
 ` : ''}Tu es dans le salon « ${salon} ». Les derniers messages, du plus ancien au plus récent:
 ${fil}
 ${collegues.length ? `\nTes collègues ${collegues.join(', ')} viennent de répondre juste au-dessus: ne répète pas ce qu'ils ont dit, apporte autre chose ou sois bref.\n` : ''}
-Claude (« Claude Code ») est le développeur de Legion: il passe lire les salons de temps en temps et répond lui-même. Ne parle jamais à sa place et ne promets rien en son nom.
-Legion, l'application où tu travailles, existe déjà: le fondateur y allume et éteint les agents, y lit les salons, le tableau des tâches, les plans par département, la mémoire des règles, les compétences et la dépense. Ne propose jamais de construire un outil qui fait déjà ça.
+Claude (« Claude Code ») est le développeur de Léo: il passe lire les salons de temps en temps et répond lui-même. Ne parle jamais à sa place et ne promets rien en son nom.
+Léo, l'application où tu travailles (elle s'appelait Legion avant le 24/09 : dis toujours « Léo », jamais « Legion »), existe déjà: le fondateur y allume et éteint les agents, y lit les salons, le tableau des tâches, les plans par département, la mémoire des règles, les compétences et la dépense. Ne propose jamais de construire un outil qui fait déjà ça.
 
 LE MESSAGE AUQUEL TU RÉPONDS (le dernier du fil ci-dessus, de ${auteur}): lis-le deux fois, comprends ce qu'il veut vraiment — il écrit vite, parfois à la voix, avec des fautes: lis l'intention, pas la lettre.
 Réponds à LA QUESTION POSÉE dans ce message, pas à une autre. Si tu ne comprends pas, demande-lui en une phrase ce qu'il veut dire. Ne cite des chiffres que si la question porte dessus: ne répète pas les mêmes chiffres d'un message à l'autre.
@@ -332,7 +332,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   pourEntreprise(msg.entreprise_id);
   {
     const p = await plafondAtteint(msg.entreprise_id);
-    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Legion.`, messages: [] });
+    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Léo.`, messages: [] });
   }
 
   const auteur = (agents as Agent[]).find((a) => a.id === msg.auteur_id);
@@ -370,13 +370,13 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // Le fondateur renvoie un livrable (bouton « Renvoyer » du tableau):
   // l'agent le refait ici même, corrigé, en entier — pas une excuse.
   if ((msg.meta as { renvoi?: unknown } | null)?.renvoi) {
-    lignes.push('[Consigne de Legion] Le message ci-dessus RENVOIE ton livrable avec une remarque. Réponds par le livrable refait, complet, corrigé selon la remarque (titres et points, retours à la ligne). Pas d\'excuses, pas de « je vais le refaire »: le voici.');
+    lignes.push('[Consigne de Léo] Le message ci-dessus RENVOIE ton livrable avec une remarque. Réponds par le livrable refait, complet, corrigé selon la remarque (titres et points, retours à la ligne). Pas d\'excuses, pas de « je vais le refaire »: le voici.');
   }
   // Un APPEL à la voix (écran « Appeler », 23/09): la réponse sera lue à
   // voix haute par le téléphone. Courte, parlée, et vite (Flash).
   const appelVocal = !!(msg.meta as { appel?: boolean } | null)?.appel;
   if (appelVocal) {
-    lignes.push("[Consigne de Legion] Cette conversation est un APPEL VOCAL: ta réponse sera LUE À VOIX HAUTE. Réponds comme au téléphone, en une à quatre phrases parlées, sans titres, sans listes, sans emoji, sans lien, sans chiffres en rafale. Si la demande appelle un document long, dis-le en une phrase et propose de l'écrire dans le salon.");
+    lignes.push("[Consigne de Léo] Cette conversation est un APPEL VOCAL: ta réponse sera LUE À VOIX HAUTE. Réponds comme au téléphone, en une à quatre phrases parlées, sans titres, sans listes, sans emoji, sans lien, sans chiffres en rafale. Si la demande appelle un document long, dis-le en une phrase et propose de l'écrire dans le salon.");
   }
   // Un tableau à lire ou à rendre (23/09, « connecter mes agents avec
   // Excel », « capable d'ouvrir Excel et modifier »).
@@ -384,7 +384,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     .some((p) => p.type === 'fichier' && /\.(xlsx|xls|csv)$/i.test(p.nom || ''));
   const tableur = !appelVocal && (aUnClasseur || PARLE_DE_TABLEUR.test(String(msg.texte)));
   if (tableur) {
-    lignes.push(`[Consigne de Legion] TABLEUR. Si le message te demande de créer, compléter, corriger, trier ou transformer un tableau (Excel, CSV), rends-le ENTIER dans "fichier": "nom" = un nom de fichier court sans extension; "feuilles" = une ou plusieurs feuilles, chacune avec "nom" et "lignes" (la première ligne = les en-têtes, une case par valeur, les nombres sans unité ni espace). Une formule Excel commence par = et utilise les références des cases, en anglais (=SUM(B2:B9), =B2-C2, =IF(…)). Ne mets JAMAIS un chiffre qui n'était pas dans son tableau ou dans ses messages: ce qui doit être calculé l'est par une formule. Dans "texte", dis en deux ou trois phrases ce que tu as fait et ce qu'il doit vérifier. Si on ne te demande pas de tableau, laisse "fichier" vide.`);
+    lignes.push(`[Consigne de Léo] TABLEUR. Si le message te demande de créer, compléter, corriger, trier ou transformer un tableau (Excel, CSV), rends-le ENTIER dans "fichier": "nom" = un nom de fichier court sans extension; "feuilles" = une ou plusieurs feuilles, chacune avec "nom" et "lignes" (la première ligne = les en-têtes, une case par valeur, les nombres sans unité ni espace). Une formule Excel commence par = et utilise les références des cases, en anglais (=SUM(B2:B9), =B2-C2, =IF(…)). Ne mets JAMAIS un chiffre qui n'était pas dans son tableau ou dans ses messages: ce qui doit être calculé l'est par une formule. Dans "texte", dis en deux ou trois phrases ce que tu as fait et ce qu'il doit vérifier. Si on ne te demande pas de tableau, laisse "fichier" vide.`);
   }
   // Qui a parlé récemment (les huit derniers messages, hors celui-ci).
   const ontParle = new Set(fil.slice(-9, -1).filter((m) => !m.user_id).map((m) => m.auteur_id));
@@ -413,15 +413,28 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
       const { data: tb } = await service.from('legion_messages').select('id, texte, meta, termine_le').eq('id', liv.tache_id).maybeSingle();
       if (tb && !tb.termine_le && (tb.meta as { statut?: string } | null)?.statut !== 'fait') {
         blocage = { tache_id: tb.id, tache: String(tb.texte), meta: tb.meta as Record<string, unknown> | null };
-        lignes.push(`[Consigne de Legion] Le fondateur vient de répondre à ta question de BLOCAGE sur la tâche « ${blocage.tache} ». Avec sa réponse, livre MAINTENANT la tâche, complète (titres et points, retours à la ligne), comme un livrable fini. Pas de « merci, je m'y mets »: le livrable, ici. Si sa réponse ne suffit vraiment pas, dis précisément ce qui manque encore ("genre": "question").`);
+        lignes.push(`[Consigne de Léo] Le fondateur vient de répondre à ta question de BLOCAGE sur la tâche « ${blocage.tache} ». Avec sa réponse, livre MAINTENANT la tâche, complète (titres et points, retours à la ligne), comme un livrable fini. Pas de « merci, je m'y mets »: le livrable, ici. Si sa réponse ne suffit vraiment pas, dis précisément ce qui manque encore ("genre": "question").`);
       }
     }
+  }
+  // Le début du message, sans la formule de salut: « Bonjour Ada, … » appelle Ada.
+  const tete = t.trim().replace(/^(bonjour|bonsoir|salut|coucou|hello|hey|merci)[\s,!]+/, '');
+  // Un salut, et rien d'autre (« bonjour à tous », « salut ça va ? »). Beau,
+  // 24/09: « je dis bonjour, tu fais déjà une longue liste carrée… dis cc
+  // ça va ? » — et « calmos, chacun aura son tour » quand quatre répondent.
+  const sansNoms = machines.reduce((x, a) => x.split(sansAccent(a.nom)).join(' '), t).replace(/@\S*/g, ' ').replace(/\s+/g, ' ').trim();
+  const salutSeul = /^(bonjour|bonsoir|salut|coucou|hello|hey|hi|yo|cc|slt|re)\b/.test(sansNoms) && sansNoms.length <= 60
+    && !/plan|strat|chiffre|combien|pourquoi|projet|tache|bug|code|vente|commande|rapport|point/.test(sansNoms);
+  if (salutSeul) {
+    lignes.push("[Consigne de Léo] Ce message est un SALUT, rien d'autre. Réponds comme un collègue humain qui croise quelqu'un au bureau: une ou deux phrases courtes et chaleureuses, avec ton caractère (« Salut Beau ! Ça va de ton côté ? »). Si tu veux, un mot de ce qui t'occupe, sans détail. AUCUN titre, AUCUNE liste, AUCUN chiffre, AUCUNE proposition, aucun rapport. Pas de tâche.");
   }
   const pourClaude = !!claude && !estClaude && (cite?.id === claude.id
     || (prive && salon.prive_entre.includes(claude.cle))
     || t.includes('@' + sansAccent(claude.nom))
-    // « demande à Claude », « Claude regarde »: son nom sans @ suffit.
-    || new RegExp(`\\b${sansAccent(claude.nom)}\\b`).test(t));
+    // « Claude, regarde… »: son nom EN TÊTE du message suffit. Plus son nom
+    // n'importe où (Beau, 24/09: « dès que je tape claude… aucun agent n'a
+    // répondu » — « en parle avec Claude » faisait taire tout le salon).
+    || new RegExp(`^${sansAccent(claude.nom)}([^a-z0-9]|$)`).test(tete));
 
   if (prive) {
     const en_face = machines.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== auteur.cle);
@@ -435,7 +448,6 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     // @. Pas un nom d'un mot au milieu d'une phrase: « écho », « radar »,
     // « forge » sont aussi des mots de tous les jours.
     const echappe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const tete = t.trim().replace(/^(bonjour|bonsoir|salut|coucou|hello|hey|merci)[\s,!]+/, '');
     const appelle = (a: Agent) => {
       const n = sansAccent(a.nom).trim();
       if (!n) return false;
@@ -472,7 +484,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
         if (chef) allumes = [chef, ...allumes.filter((a) => a !== chef)];
       }
       if (A_PLUSIEURS.test(t)) {
-        cibles = allumes.slice(0, MAX_REPONDANTS);
+        cibles = allumes.slice(0, salutSeul ? 2 : MAX_REPONDANTS);
       } else {
         cibles = allumes.slice(0, 1);
       }

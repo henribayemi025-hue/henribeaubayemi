@@ -41,13 +41,13 @@ const rpcErreur = (id: unknown, code: number, message: string, s = 200) => repon
 
 // ----------------------------------------------------------------- outils
 const OUTILS = [
-  { name: 'mes_entreprises', description: "Les entreprises Legion de la personne (nom, rôle, langue). À appeler d'abord: les autres outils veulent un entreprise_id.", inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
+  { name: 'mes_entreprises', description: "Les entreprises Léo de la personne (nom, rôle, langue). À appeler d'abord: les autres outils veulent un entreprise_id.", inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
   { name: 'agents', description: "L'équipe d'une entreprise: agents avec nom, poste, département, allumé ou non.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' } }, required: ['entreprise_id'] } },
   { name: 'salons', description: "Les salons (canaux) d'une entreprise que la personne voit, avec leur rôle.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' } }, required: ['entreprise_id'] } },
   { name: 'messages', description: 'Les derniers messages d’un salon (auteur, date, genre, texte), du plus récent au plus ancien.', inputSchema: { type: 'object', properties: { canal_id: { type: 'string' }, limite: { type: 'integer', minimum: 1, maximum: 100 } }, required: ['canal_id'] } },
   { name: 'taches', description: "Les tâches du tableau d'une entreprise (titre, statut, priorité, à qui, échéance).", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' }, statut: { type: 'string', enum: ['a_faire', 'en_cours', 'valide', 'renvoye', 'termine'] } }, required: ['entreprise_id'] } },
   { name: 'feuille_de_route', description: "La feuille de route de l'entreprise: trimestre, mois, semaine, jour, lignes récurrentes; ce qui est fait et commenté.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' }, horizon: { type: 'string', enum: ['trimestre', 'mois', 'semaine', 'jour', 'recurrent'] } }, required: ['entreprise_id'] } },
-  { name: 'ecrire', description: "Écrit un message dans un salon, AU NOM de la personne (comme si elle le tapait dans Legion). Les agents du salon répondent. À n'utiliser que quand elle l'a demandé.", inputSchema: { type: 'object', properties: { canal_id: { type: 'string' }, texte: { type: 'string', minLength: 1, maxLength: 4000 } }, required: ['canal_id', 'texte'] } },
+  { name: 'ecrire', description: "Écrit un message dans un salon, AU NOM de la personne (comme si elle le tapait dans Léo). Les agents du salon répondent. À n'utiliser que quand elle l'a demandé.", inputSchema: { type: 'object', properties: { canal_id: { type: 'string' }, texte: { type: 'string', minLength: 1, maxLength: 4000 } }, required: ['canal_id', 'texte'] } },
   { name: 'creer_tache', description: "Ajoute une tâche au tableau d'une entreprise, dans un salon, confiée à un agent (par son nom) ou à personne.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' }, canal_id: { type: 'string' }, titre: { type: 'string', minLength: 3, maxLength: 200 }, agent: { type: 'string', description: "Le nom de l'agent (facultatif)" }, priorite: { type: 'string', enum: ['haute', 'normale', 'basse'] } }, required: ['entreprise_id', 'canal_id', 'titre'] } },
   { name: 'cocher_feuille', description: 'Marque une ligne de la feuille de route comme faite, avec un commentaire facultatif.', inputSchema: { type: 'object', properties: { ligne_id: { type: 'string' }, commentaire: { type: 'string', maxLength: 1000 } }, required: ['ligne_id'] } },
 ];
@@ -158,7 +158,7 @@ async function executer(service: SupabaseClient, userId: string, nom: string, ar
 // ---------------------------------------------------------------- serveur
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: entetes });
-  if (req.method !== 'POST') return reponse({ erreur: 'Serveur MCP Legion: POST seulement.' }, 405);
+  if (req.method !== 'POST') return reponse({ erreur: 'Serveur MCP Léo: POST seulement.' }, 405);
 
   // Le jeton: dans l'adresse (…/legion-mcp/lg_…) ou dans l'en-tête.
   const chemin = new URL(req.url).pathname;
@@ -178,7 +178,7 @@ Deno.serve(async (req: Request) => {
 
   switch (methode) {
     case 'initialize':
-      return rpcOk(id, { protocolVersion: VERSION_PROTOCOLE, capabilities: { tools: {} }, serverInfo: { name: 'Legion (Finjaro)', version: '1.0' }, instructions: "Legion: l'entreprise de la personne, avec ses agents IA. Commence par mes_entreprises. N'écris dans un salon (ecrire) que si elle l'a demandé: les agents répondent au nom de l'entreprise." });
+      return rpcOk(id, { protocolVersion: VERSION_PROTOCOLE, capabilities: { tools: {} }, serverInfo: { name: 'Léo (Finjaro)', version: '1.0' }, instructions: "Léo: l'entreprise de la personne, avec ses agents IA. Commence par mes_entreprises. N'écris dans un salon (ecrire) que si elle l'a demandé: les agents répondent au nom de l'entreprise." });
     case 'notifications/initialized':
     case 'notifications/cancelled':
       return new Response(null, { status: 202, headers: entetes });

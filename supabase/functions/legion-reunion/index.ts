@@ -713,7 +713,7 @@ Deno.serve(compter('legion_reunion', async (req: Request) => {
 
   pourEntreprise(salon.entreprise_id);
   const p = await plafondAtteint(salon.entreprise_id);
-  if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Legion.` });
+  if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Léo.` });
 
   const participants = choisirParticipants(salon, (agents || []) as Agent[], corps.participants);
   if (participants.length < MIN_PARTICIPANTS) return json({ erreur: 'Il faut au moins deux agents allumés pour tenir une réunion.' }, 400);
