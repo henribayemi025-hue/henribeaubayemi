@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPhotoPlus, IconSparkles, IconLoader2, IconTrash } from '@tabler/icons-react';
+import { IconPhotoPlus, IconSparkles, IconLoader2, IconTrash, IconEraser } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { uid } from '../../lib/uid';
 import { compressForUploadWithThumb } from '../../lib/image';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { AppHeader } from '../../components/AppHeader';
+import { uploadImageFile } from '../../components/ImageUpload';
+import { RetirerFond } from '../../components/RetirerFond';
 import { Button } from '../../components/Button';
 import { Field, TextInput } from '../../components/Field';
 import { categoryHeadFor, defaultPublishCategory } from '../../lib/categories';
@@ -107,6 +109,10 @@ export default function VendorProductsBulk() {
   // Photos deja envoyees sur le serveur mais rattachees a aucun article.
   const [orphelines, setOrphelines] = useState([]);
   const [aiDone, setAiDone] = useState(null); // {done, total} pendant l'analyse
+  // « Retirer le fond » sur une photo du lot (Beau, 24/09 ; même outil que
+  // la fiche article, voir components/RetirerFond.jsx) : le chemin de la
+  // photo ouverte, ou null.
+  const [detourage, setDetourage] = useState(null);
   const [saving, setSaving] = useState(false);
   // VIDE au départ, et c'est le coeur du sujet.
   //
@@ -209,6 +215,27 @@ export default function VendorProductsBulk() {
     })();
     return () => { vivant = false; };
   }, [user?.id, shop?.id]);
+
+  // La photo au fond retiré REMPLACE celle de la ligne, envoyée par le même
+  // chemin qu'une photo de la fiche article (uploadImageFile : compression et
+  // vignette). L'ancienne n'appartient encore à aucun article : on la retire
+  // du dossier, sinon elle reviendrait plus tard dans « photos déjà
+  // envoyées ». Si le retrait échoue, rien de grave : on continue.
+  async function keepDetourage(blob) {
+    const ancien = detourage;
+    setUploading((n) => n + 1);
+    try {
+      const path = await uploadImageFile('products', user.id, blob);
+      setRows((rs) => rs.map((x) => (x.path === ancien ? { ...x, path } : x)));
+      setDetourage(null);
+      const pouce = ancien.replace(/\.(\w+)$/, '_thumb.$1');
+      supabase.storage.from('products').remove([ancien, pouce]).catch(() => {});
+    } catch (err) {
+      toast.error(err.message || t('errors.generic'));
+    } finally {
+      setUploading((n) => Math.max(0, n - 1));
+    }
+  }
 
   function recupererOrphelines() {
     const dejaLa = new Set(rows.map((r) => r.path));
@@ -471,7 +498,20 @@ export default function VendorProductsBulk() {
             <div className="space-y-2">
               {rows.map((r, i) => (
                 <div key={r.path} className="flex gap-3 rounded-card border border-hairline bg-white p-2">
-                  <img src={storageUrl('products', r.path)} alt="" className="h-20 w-20 shrink-0 rounded-input object-cover" />
+                  <div className="relative h-20 w-20 shrink-0">
+                    <img src={storageUrl('products', r.path)} alt="" className="h-20 w-20 rounded-input object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setDetourage(r.path)}
+                      disabled={uploading > 0}
+                      className="absolute bottom-1 left-1 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-semibold text-white"
+                      aria-label={t('vendor.removeBg')}
+                      title={t('vendor.removeBg')}
+                    >
+                      <IconEraser size={14} />
+                      {t('vendor.removeBgShort')}
+                    </button>
+                  </div>
                   <div className="min-w-0 flex-1 space-y-2">
                     <TextInput
                       value={r.name}
@@ -517,9 +557,17 @@ export default function VendorProductsBulk() {
                 </div>
               ))}
             </div>
+            <p className="text-caption text-muted">{t('vendor.removeBgHint')}</p>
           </>
         )}
       </div>
+      {detourage && (
+        <RetirerFond
+          source={storageUrl('products', detourage)}
+          onClose={() => setDetourage(null)}
+          onKeep={keepDetourage}
+        />
+      )}
 
       {/* La barre d'action doit passer AU-DESSUS de la barre d'onglets
           flottante (z-40, voir TabBar) — sinon le bouton est bien visible

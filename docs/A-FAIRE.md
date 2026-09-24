@@ -47,7 +47,8 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | **Corrigé** : l'enquête (vérifier les chiffres) appelait Google en dur → 429 → agents « bloqués ». Relais par le moteur commun | ✅ 24/09, à vérifier au prochain passage |
 | 24/09 | Rappel à Beau à 22 h (heure de son téléphone) : essai Fish Audio + bilan + points du carnet | programmé (20 h UTC) |
 | 24/09 | Essayer « Déposer une ressource » avec un vrai lien, dans Léo | à faire au prochain lien de Beau |
-| 24/09 | Bouton « Retirer le fond » dans l'**import en masse** (`VendorProductsBulk.jsx`) | pas fait |
+| 24/09 | Bouton « Retirer le fond » dans l'**import en masse** (`VendorProductsBulk.jsx`) | ✅ 24/09 soir sur staging (compile ; pas encore essayé sur téléphone). L'ancienne photo, rattachée à aucun article, est retirée du dossier |
+| 24/09 | Surveiller : l'outil `qui_a_fait` donne le **nom** d'acheteurs réels à un agent. Normal dans les entreprises de Beau ; à restreindre avant que Léo ait d'autres clients | à décider |
 | 24/09 | Studio de contenu : l'export puis l'import d'un agent **ne reprend pas** ses compétences du modèle | pas fait |
 | 24/09 | Fiche 26 : **mode silencieux** pour Vigie et les rapports (ne parler que s'il y a du nouveau) et **chaînage** collecter → trier → rédiger | pas fait |
 | 24/09 | Fiche 24 : dans le Studio de contenu, **noter les idées** avant de produire, et **tirer la leçon** du lot publié | pas fait |
