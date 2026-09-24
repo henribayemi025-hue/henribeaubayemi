@@ -31,6 +31,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Beau (22 h 15) : « j'ai déjà posé l'API OpenAI dans Supabase sous le nom Leo, ça fait mille fois que je te le dis » → le code reconnaît maintenant une clé à sa forme (« sk- » = OpenAI, « tvly- » = Tavily) sous `OPENAI_API_KEY`/`TAVILY_API_KEY` **ou** « Leo ». Pas besoin de renommer | ✅ 24/09 |
 | 24/09 | Beau (22 h 15) : « si je veux faire par exemple Finjaro Learn, je vais sur mes agents, ils me le font en 5 minutes, avec tout » → objectif de l'atelier | V1 atelier |
 | 24/09 | Beau (22 h 15) : l'apprentissage de Finia **allumé par défaut** (pas éteint) → transmis au chantier Finia commune, avec message clair et refus d'un toucher | en cours |
+| 24/09 | Clé OpenAI de Beau (« Leo ») **vérifiée** : /v1/models répond ; GPT-5.4 mini et GPT-6 Astra ont répondu au banc d'essai. OpenAI rejoint les secours du moteur et le choix du modèle dans Léo. Vocaux en relais par la transcription OpenAI : chantier en cours. À noter : `FISH_AUDIO_API_KEY` est posée mais a la forme d'une clé OpenAI (« sk- ») : à vérifier avec Beau | ✅ 24/09 22 h 40 |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 

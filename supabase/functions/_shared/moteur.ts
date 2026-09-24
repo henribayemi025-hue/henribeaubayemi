@@ -61,11 +61,12 @@ const releve = (fort: boolean) => [
 // Les modèles qu'on peut choisir un par un (0193). Le choix passe en premier;
 // derrière lui, la relève Auto — un modèle en panne ne laisse jamais
 // l'équipe muette.
-export const MODELES_CHOISIBLES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash', 'an:claude-sonnet-5'];
+export const MODELES_CHOISIBLES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'oa:gpt-6-astra', 'oa:gpt-5.4-mini', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash', 'an:claude-sonnet-5'];
 function disponible(m: string): boolean {
   if (m.startsWith('ds:')) return deepseek();
   if (m.startsWith('km:')) return kimi();
   if (m.startsWith('an:')) return !!Deno.env.get('ANTHROPIC_API_KEY');
+  if (m.startsWith('oa:')) return !!(Deno.env.get('MOTEUR_OA_URL') || cleOpenAI());
   return true;
 }
 function avecModeleChoisi(liste: string[]): string[] {

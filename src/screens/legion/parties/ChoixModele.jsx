@@ -6,6 +6,8 @@
 export const MODELES_IA = [
   ['DeepSeek', [['ds:deepseek-flash', 'DeepSeek Flash'], ['ds:deepseek-v4-pro', 'DeepSeek Pro']]],
   ['Kimi', [['km:kimi-k2.6', 'Kimi K2.6']]],
+  // OpenAI (24/09) : la clé de Beau, rangée sous le nom « Leo ».
+  ['OpenAI', [['oa:gpt-6-astra', 'GPT-6 Astra'], ['oa:gpt-5.4-mini', 'GPT-5.4 mini']]],
   ['Google Gemini', [['gemini-3.1-pro-preview', 'Gemini 3.1 Pro'], ['gemini-3.5-flash', 'Gemini 3.5 Flash'], ['gemini-2.5-flash', 'Gemini 2.5 Flash']]],
   ['Anthropic', [['an:claude-sonnet-5', 'Claude Sonnet 5']]],
 ];
