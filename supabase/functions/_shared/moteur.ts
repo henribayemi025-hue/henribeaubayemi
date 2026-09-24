@@ -44,7 +44,8 @@ const DS_FORT = () => `ds:${Deno.env.get('LEGION_MODELE_DS') || 'deepseek-v4-pro
 const DS_RAPIDE = () => `ds:${Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepseek-flash'}`;
 const kimi = () => !!Deno.env.get('KIMI_API_KEY');
 const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
-// La relève, dans l'ordre : DeepSeek fort, Kimi, DeepSeek rapide, puis Google.
+// La relève, dans l'ordre : DeepSeek fort, Kimi, DeepSeek rapide, puis Google
+// (redéployé le 24/09 : le premier déploiement avait échoué côté GitHub).
 const releve = (fort: boolean) => [
   ...(deepseek() && fort ? [DS_FORT()] : []),
   ...(kimi() && fort ? [KIMI()] : []),
