@@ -453,7 +453,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
       {enGrand && (
         <button type="button" onClick={() => setEnGrand(false)} aria-label="✕"
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6">
-          <img src={agent.avatar_url} alt={agent.nom} className="h-auto max-h-[80vh] w-[min(85vw,480px)] rounded-2xl object-contain shadow-2xl" />
+          <img src={agent.apparence?.url || agent.avatar_url} alt={agent.nom} className="h-auto max-h-[80vh] w-[min(85vw,480px)] rounded-2xl object-contain shadow-2xl" />
         </button>
       )}
       <div className="space-y-4 text-legion-ink">

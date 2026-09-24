@@ -704,6 +704,93 @@
       "activee": "On {{nom}}'s board, and it will come back on its own.",
       "toutes": "See all {{n}} missions",
       "moins": "Less"
+    },
+    "vues": {
+      "titre": {
+        "bureau": "The office",
+        "frise": "The timeline",
+        "presentation": "The presentation",
+        "idees": "The idea board"
+      },
+      "bureau": "The office",
+      "organigramme": "The org chart",
+      "legende": "Gold and moving: the agent wrote in the last ten minutes. Greyed: switched off. What moves is what they really do.",
+      "sansDepartement": "No department",
+      "auTravail": "{{n}} at work",
+      "ecrit": "writing right now",
+      "disponible": "available",
+      "aujourdhui": "today",
+      "tachesCreees": "tasks created",
+      "tachesTerminees": "tasks done",
+      "ouvertesCeSoir": "open that evening",
+      "rienCeJour": "Nothing notable that day.",
+      "groupe": {
+        "decisions": "Decisions and minutes",
+        "livrables": "Deliverables",
+        "reunions": "Meetings",
+        "rapports": "Reports",
+        "questions": "Questions to the founder"
+      },
+      "pasDeProjet": "The project is not described yet.",
+      "pasDePlan": "No plan written yet.",
+      "pasDeFeuille": "No roadmap yet.",
+      "pasDeDecision": "No decision yet.",
+      "diapo": {
+        "equipe": "The team — {{n}} agents",
+        "plan": "The plan",
+        "feuille": "The roadmap",
+        "mesure": "What is measured (30 days)",
+        "decisions": "Latest decisions",
+        "merci": "Thank you",
+        "questions": "Questions?",
+        "livrables": "{{n}} deliverables",
+        "taches": "{{n}} tasks done",
+        "reunions": "{{n}} meeting contributions",
+        "relues": "{{r}} replies reread, {{c}} corrected before sending",
+        "mesureNote": "Counted in Legion. No financial figure is written here until it is measured."
+      },
+      "pleinEcran": "Full screen",
+      "presentationNote": "Made from what is in Legion: the project, the team, the plan, the roadmap, what is measured. Arrow keys to move.",
+      "ideePlaceholder": "An idea, in one sentence…",
+      "poser": "Post",
+      "aucuneIdee": "No idea yet. Post the first one.",
+      "enTache": "as task",
+      "versTache": "Make it a task",
+      "versEquipe": "Send it to the team (Direction)",
+      "retirer": "Remove"
+    },
+    "clavier": {
+      "titre": "Keyboard shortcuts",
+      "onglets": "Home, rooms, chat, team, tasks",
+      "chercher": "Search an agent or room",
+      "ecrire": "Write a message",
+      "bureau": "The office",
+      "idees": "The idea board",
+      "aide": "This help",
+      "fermer": "Close"
+    },
+    "commandes": {
+      "titre": "Commands",
+      "reunion": {
+        "nom": "meeting",
+        "aide": "call a meeting"
+      },
+      "rapport": {
+        "nom": "report",
+        "aide": "the report, right now"
+      },
+      "tache": {
+        "nom": "task",
+        "aide": "/tache text — a task on the board"
+      },
+      "appeler": {
+        "nom": "call",
+        "aide": "/appeler Name — call an agent"
+      },
+      "regle": {
+        "nom": "rule",
+        "aide": "/regle text — a rule for the whole team"
+      }
     }
   },
   "equipe": {

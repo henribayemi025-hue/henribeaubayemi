@@ -24,6 +24,23 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { Image as Dessin } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
+
+// Les portraits sortent du modèle en PNG d'environ 1,5 Mo (mesuré le 24/09) :
+// trop lourd pour une liste d'agents sur un téléphone. On garde l'original
+// (la photo « en grand ») et on sert partout une miniature JPEG 256 × 256
+// d'une vingtaine de Ko (idée 134 des 200). La transformation d'images de
+// Supabase n'est pas active sur ce projet (403) : on la fait ici.
+async function miniature(octets: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const img = await Dessin.decode(octets);
+    img.cover(256, 256);
+    return await img.encodeJPEG(82);
+  } catch (e) {
+    console.error('miniature:', (e as Error).message);
+    return null;
+  }
+}
 
 const MODELES_IMAGE = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
 const MODELE_TEXTE = 'gemini-2.5-flash';
@@ -150,7 +167,7 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
 
-  let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean };
+  let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean; action?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
   if (!corps.entreprise_id) return json({ erreur: 'Entreprise manquante.' }, 400);
   const limite = Math.min(Math.max(Number(corps.limite) || 1, 1), LIMITE_MAX);
@@ -160,6 +177,29 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
   const { data: entreprise } = await personne
     .from('legion_entreprises').select('id, nom').eq('id', corps.entreprise_id).maybeSingle();
   if (!entreprise) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
+
+  // Alléger les portraits déjà faits (aucun modèle appelé, rien ne se paie).
+  if (corps.action === 'compresser') {
+    const service0 = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+    const { data: lourds } = await service0.from('legion_agents').select('id, avatar_url, apparence').eq('entreprise_id', entreprise.id)
+      .eq('apparence->>famille', 'photo').is('apparence->>mini', null).limit(40);
+    let faits = 0;
+    for (const a of (lourds || []).slice(0, 8) as Array<{ id: string; avatar_url: string | null; apparence: Record<string, unknown> | null }>) {
+      const source = String(a.apparence?.url || a.avatar_url || '');
+      if (!source.startsWith('http')) continue;
+      const r = await fetch(source);
+      if (!r.ok) continue;
+      const mini = await miniature(new Uint8Array(await r.arrayBuffer()));
+      if (!mini) continue;
+      const chemin = `${entreprise.id}/portraits/${a.id}-${Date.now()}-256.jpg`;
+      const { error: e1 } = await service0.storage.from('legion').upload(chemin, mini, { contentType: 'image/jpeg', upsert: true });
+      if (e1) continue;
+      const url = service0.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+      const { error: e2 } = await service0.from('legion_agents').update({ avatar_url: url, apparence: { ...(a.apparence || {}), url: source, mini: url } }).eq('id', a.id);
+      if (!e2) faits += 1;
+    }
+    return json({ faits, restants: Math.max(0, (lourds || []).length - faits) });
+  }
 
   // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
   pourEntreprise(entreprise.id);
@@ -203,9 +243,17 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
       if (errDepot) { rates.push(a.nom); pourquoi = pourquoi || errDepot.message; return; }
 
       const url = service.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
-      const apparence = { ...(a.apparence as Record<string, unknown> || {}), famille: 'photo', description, url };
+      // La miniature, servie partout ; l'original reste pour la photo en grand.
+      let mini: string | null = null;
+      const petite = await miniature(img.octets);
+      if (petite) {
+        const cheminMini = chemin.replace(/\.(png|jpg)$/, '-256.jpg');
+        const { error: errMini } = await service.storage.from('legion').upload(cheminMini, petite, { contentType: 'image/jpeg', upsert: true });
+        if (!errMini) mini = service.storage.from('legion').getPublicUrl(cheminMini).data.publicUrl;
+      }
+      const apparence = { ...(a.apparence as Record<string, unknown> || {}), famille: 'photo', description, url, ...(mini ? { mini } : {}) };
       const { error: errMaj } = await service.from('legion_agents')
-        .update({ avatar_url: url, apparence, choisi_par_lui: true }).eq('id', a.id);
+        .update({ avatar_url: mini || url, apparence, choisi_par_lui: true }).eq('id', a.id);
       if (errMaj) { rates.push(a.nom); pourquoi = pourquoi || errMaj.message; return; }
       faits += 1;
     }));

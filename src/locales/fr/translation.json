@@ -704,6 +704,93 @@
       "activee": "Au tableau de {{nom}}, et elle reviendra seule.",
       "toutes": "Voir les {{n}} missions",
       "moins": "Moins"
+    },
+    "vues": {
+      "titre": {
+        "bureau": "Le bureau",
+        "frise": "La frise",
+        "presentation": "La présentation",
+        "idees": "Le tableau d'idées"
+      },
+      "bureau": "Le bureau",
+      "organigramme": "L'organigramme",
+      "legende": "Doré et animé : l'agent a écrit dans les dix dernières minutes. Grisé : éteint. Ce qui bouge, c'est ce qu'ils font vraiment.",
+      "sansDepartement": "Sans département",
+      "auTravail": "{{n}} au travail",
+      "ecrit": "écrit en ce moment",
+      "disponible": "disponible",
+      "aujourdhui": "aujourd'hui",
+      "tachesCreees": "tâches créées",
+      "tachesTerminees": "tâches terminées",
+      "ouvertesCeSoir": "ouvertes ce soir-là",
+      "rienCeJour": "Rien de marquant ce jour-là.",
+      "groupe": {
+        "decisions": "Décisions et comptes rendus",
+        "livrables": "Livrables",
+        "reunions": "Réunions",
+        "rapports": "Rapports",
+        "questions": "Questions au fondateur"
+      },
+      "pasDeProjet": "Le projet n'est pas encore décrit.",
+      "pasDePlan": "Pas encore de plan écrit.",
+      "pasDeFeuille": "Pas encore de feuille de route.",
+      "pasDeDecision": "Pas encore de décision.",
+      "diapo": {
+        "equipe": "L'équipe — {{n}} agents",
+        "plan": "Le plan",
+        "feuille": "La feuille de route",
+        "mesure": "Ce qui est mesuré (30 jours)",
+        "decisions": "Les dernières décisions",
+        "merci": "Merci",
+        "questions": "Des questions ?",
+        "livrables": "{{n}} livrables rendus",
+        "taches": "{{n}} tâches terminées",
+        "reunions": "{{n}} prises de parole en réunion",
+        "relues": "{{r}} réponses relues, {{c}} corrigées avant de partir",
+        "mesureNote": "Comptés dans Legion. Aucun chiffre financier n'est écrit ici tant qu'il n'est pas mesuré."
+      },
+      "pleinEcran": "Plein écran",
+      "presentationNote": "Faite de ce qui est dans Legion : le projet, l'équipe, le plan, la feuille de route, ce qui est mesuré. Flèches du clavier pour avancer.",
+      "ideePlaceholder": "Une idée, en une phrase…",
+      "poser": "Poser",
+      "aucuneIdee": "Pas encore d'idée. Pose la première.",
+      "enTache": "en tâche",
+      "versTache": "En faire une tâche",
+      "versEquipe": "L'envoyer à l'équipe (Direction)",
+      "retirer": "Retirer"
+    },
+    "clavier": {
+      "titre": "Raccourcis clavier",
+      "onglets": "Accueil, salons, discussion, équipe, tâches",
+      "chercher": "Chercher un agent ou un salon",
+      "ecrire": "Écrire un message",
+      "bureau": "Le bureau",
+      "idees": "Le tableau d'idées",
+      "aide": "Cette aide",
+      "fermer": "Fermer"
+    },
+    "commandes": {
+      "titre": "Commandes",
+      "reunion": {
+        "nom": "reunion",
+        "aide": "convoquer une réunion"
+      },
+      "rapport": {
+        "nom": "rapport",
+        "aide": "le rapport, tout de suite"
+      },
+      "tache": {
+        "nom": "tache",
+        "aide": "/tache texte — une tâche au tableau"
+      },
+      "appeler": {
+        "nom": "appeler",
+        "aide": "/appeler Prénom — appeler un agent"
+      },
+      "regle": {
+        "nom": "regle",
+        "aide": "/regle texte — une règle pour toute l'équipe"
+      }
     }
   },
   "equipe": {

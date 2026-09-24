@@ -38,7 +38,7 @@ import { Missions } from './Missions';
 export function Accueil({
   entreprise, departements, agents, messages, taches, moi,
   onEntrer, onOuvrirSalon, onEcrireA, onFiche, onKanban,
-  onAllumer, onAllumerTous, onAllumerDepartement, onVoteRemplacement, onMissionLancee, onDirective, onVraiesPhotos, photosEnCours,
+  onOutil, onAllumer, onAllumerTous, onAllumerDepartement, onVoteRemplacement, onMissionLancee, onDirective, onVraiesPhotos, photosEnCours,
   sansPhoto, aChoisir, t,
 }) {
   const [directive, setDirective] = useState('');
@@ -178,6 +178,18 @@ export function Accueil({
           </div>
         </form>
       </section>
+
+      {/* Les grandes vues (24/09) */}
+      {onOutil && (
+        <section className="flex gap-2 overflow-x-auto pb-1">
+          {[['bureau', '🏢'], ['frise', '🕰️'], ['presentation', '🖥️'], ['idees', '💡']].map(([k, e]) => (
+            <button key={k} type="button" onClick={() => onOutil(k)}
+              className="flex shrink-0 items-center gap-2 rounded-card border border-legion-line bg-legion-panel px-3.5 py-2.5 text-caption font-semibold text-legion-ink transition hover:border-legion-gold/50">
+              <span className="text-[18px]">{e}</span> {t(`legion.vues.titre.${k}`)}
+            </button>
+          ))}
+        </section>
+      )}
 
       {/* 3. Les quatre compteurs — et QUE des chiffres mesurés */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

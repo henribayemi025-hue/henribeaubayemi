@@ -42,7 +42,7 @@ function couleurNom(a) {
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
   onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
-  reunion, onReunion, onConclureReunion, onAppeler, onRapport,
+  reunion, onReunion, onConclureReunion, onAppeler, onRapport, onCreerTache,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -113,6 +113,17 @@ export function Conversation({
   const [gererMembres, setGererMembres] = useState(false);
   const [convoquer, setConvoquer] = useState(false);
   const [rapport, setRapport] = useState(false);
+
+  // Les commandes « / » (idée 58 des 200, 24/09) : taper « / » dans la case
+  // propose la liste. Chacune fait ce que ferait le bouton correspondant.
+  const trouverAgent = (nom) => agents.find((a) => !a.user_id && sansAccent(a.nom).startsWith(sansAccent(String(nom || '').replace(/^@/, '').trim())) && String(nom || '').trim());
+  const commandes = [
+    !agentPrive && onReunion && !reunion && { cle: 'reunion', faire: () => { setConvoquer(true); setGererMembres(false); setRapport(false); } },
+    !agentPrive && onRapport && { cle: 'rapport', faire: () => { setRapport(true); setConvoquer(false); } },
+    onCreerTache && { cle: 'tache', arg: true, faire: (x) => (x.trim().length >= 3 ? onCreerTache({ texte: x.trim().slice(0, 200), assigne_a: null, priorite: 'moyenne' }) : null) },
+    onAppeler && { cle: 'appeler', arg: true, faire: (x) => { const a = trouverAgent(x); if (a && a.actif && a.moteur !== 'claude-code') onAppeler(a); } },
+    { cle: 'regle', arg: true, faire: async (x) => { if (x.trim().length >= 8 && moi) await supabase.from('legion_memoire').insert({ entreprise_id: entrepriseId, regle: x.trim().slice(0, 400), source: 'main', cree_par: moi.user_id }); } },
+  ].filter(Boolean);
 
   // Faire relire un livrable par un collègue (idée 2 des 200) : un autre
   // agent du service, sinon un responsable. Il répond comme d'habitude, et
@@ -508,7 +519,7 @@ export function Conversation({
       )}
 
       <Composeur
-        moi={moi} agents={agents} entrepriseId={entrepriseId} t={t}
+        moi={moi} agents={agents} entrepriseId={entrepriseId} t={t} commandes={commandes}
         reponseA={reponseA} onAnnulerReponse={() => setReponseA(null)}
         picker={picker === 'saisie'} onPicker={(v) => setPicker(v ? 'saisie' : null)}
         brouillon={brouillon} onBrouillonPris={onBrouillonPris}
@@ -915,7 +926,7 @@ function Jour({ label }) {
 // message, nommer quelqu'un), la bulle de texte avec l'emoji dedans,
 // l'appareil photo, et le micro qui devient la flèche dès qu'on écrit.
 // Tout ce qui part passe par `onEnvoyer({texte, genre, meta})`.
-function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, picker, onPicker, brouillon, onBrouillonPris, onEnvoyer }) {
+function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, picker, onPicker, brouillon, onBrouillonPris, onEnvoyer, commandes = [] }) {
   const [texte, setTexte] = useState('');
   const [genre, setGenre] = useState('info');
   const [plus, setPlus] = useState(false);
@@ -962,6 +973,14 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
     e?.preventDefault();
     const corps = texte.trim();
     if (!corps || !moi) return;
+    // « /commande argument » : exécutée ici, pas envoyée comme message.
+    const cmd = /^\/(\S+)\s*([\s\S]*)$/.exec(corps);
+    const c = cmd && commandes.find((x) => x.cle === cmd[1].toLowerCase() || t(`legion.commandes.${x.cle}.nom`) === cmd[1].toLowerCase());
+    if (c) {
+      setTexte(''); if (zone.current) zone.current.style.height = 'auto';
+      await c.faire(cmd[2] || '');
+      return;
+    }
     const genreEnvoye = genre;
     setTexte(''); setGenre('info'); setMentions(false);
     if (zone.current) zone.current.style.height = 'auto';
@@ -1109,6 +1128,18 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
         </>
       )}
 
+      {texte.startsWith('/') && !texte.includes(' ') && commandes.length > 0 && (
+        <div className="absolute bottom-full left-2 right-2 z-30 mb-2 max-w-sm overflow-hidden rounded-card border border-legion-line bg-legion-card p-1.5 shadow-2xl">
+          <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.commandes.titre')}</p>
+          {commandes.filter((c) => `/${c.cle}`.startsWith(texte.toLowerCase())).map((c) => (
+            <button key={c.cle} type="button" onClick={() => { if (c.arg) { setTexte(`/${c.cle} `); zone.current?.focus(); } else { setTexte(''); c.faire(''); } }}
+              className="flex w-full items-baseline gap-2 rounded-input px-2 py-1.5 text-left hover:bg-legion-bg">
+              <span className="font-mono text-[13px] text-legion-gold">/{c.cle}</span>
+              <span className="truncate text-[12px] text-legion-muted">{t(`legion.commandes.${c.cle}.aide`)}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {mentions && candidats.length > 0 && (
         <div className="absolute bottom-full left-2 right-2 z-30 mb-2 max-h-56 max-w-sm overflow-y-auto rounded-card border border-legion-line bg-legion-card p-1.5 shadow-2xl">
           <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.mentionner', 'Nommer quelqu’un')}</p>
@@ -1134,6 +1165,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
         </button>
         <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-legion-line bg-legion-bg pl-3.5 pr-1 transition focus-within:border-legion-gold/60">
           <textarea
+            id="legion-composer"
             ref={zone} rows={1} value={texte} onChange={changer} onKeyDown={toucheClavier}
             placeholder={enregistre ? `🔴 ${t('legion.enregistrement', 'Enregistrement')} ${secondes}s` : depot ? t('legion.envoiEnCours', 'Envoi…') : t('legion.ecrireCourt', 'Message')}
             // 16 px au moins: en dessous, Safari zoome sur la page à chaque toucher.

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { IconSearch, IconHash, IconAdjustmentsHorizontal, IconRobot, IconUsers, IconLayoutGrid } from '@tabler/icons-react';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
@@ -38,6 +38,19 @@ export function ColonneSalons({
     });
   }, [duDept, q, actifsSeuls, galerie, filtreDept]);
 
+  // Des milliers d'agents (idée 137 des 200, 24/09) : on n'en dessine que
+  // 60, puis 60 de plus quand le bas de la liste arrive à l'écran.
+  const [montres, setMontres] = useState(60);
+  const bas = useRef(null);
+  useEffect(() => { setMontres(60); }, [q, actifsSeuls, galerie, filtreDept, dept]);
+  useEffect(() => {
+    const el = bas.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
+    const o = new IntersectionObserver((e) => { if (e[0]?.isIntersecting) setMontres((m) => m + 60); }, { rootMargin: '400px' });
+    o.observe(el);
+    return () => o.disconnect();
+  }, [onglet, galerie, filtres.length, montres]);
+
   const salonsVisibles = dept ? salons.filter((s) => s.id === dept.id) : salons;
   const privesVisibles = prives.filter((p) => !q || sansAccent(p.nom).includes(sansAccent(q)));
   const allumes = machines.filter((a) => a.actif).length;
@@ -56,6 +69,7 @@ export function ColonneSalons({
         <div className="relative">
           <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-legion-muted" />
           <input
+            id="legion-recherche"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('legion.chercherQuelquun', 'Chercher un agent, un poste, un salon…')}
@@ -172,7 +186,7 @@ export function ColonneSalons({
           {galerie && (
             <ul className="mt-1 grid grid-cols-2 gap-2 px-1 sm:grid-cols-3 lg:grid-cols-2">
               {filtres.length === 0 && <li className="col-span-full rounded-card bg-legion-bg p-4 text-center text-caption text-legion-muted">{t('legion.personneNeCorrespond', 'Personne ne correspond.')}</li>}
-              {filtres.slice(0, 120).map((a) => (
+              {filtres.slice(0, montres).map((a) => (
                 <li key={a.id}>
                   <button type="button" onClick={() => onFiche(a)}
                     className={`flex w-full flex-col items-center gap-1.5 rounded-card border p-2.5 text-center transition hover:border-legion-gold/50 ${a.actif ? 'border-legion-line bg-legion-card' : 'border-legion-line/60 bg-legion-card/50 opacity-70'}`}>
@@ -182,13 +196,14 @@ export function ColonneSalons({
                   </button>
                 </li>
               ))}
+              {filtres.length > montres && <li ref={bas} className="col-span-full py-2 text-center text-[11px] text-legion-muted">{t('legion.etPlusPersonnes', { count: filtres.length - montres })}</li>}
             </ul>
           )}
           <ul className={`mt-1 space-y-1.5 ${galerie ? 'hidden' : ''}`}>
             {filtres.length === 0 && (
               <li className="rounded-card bg-legion-bg p-4 text-center text-caption text-legion-muted">{t('legion.personneNeCorrespond', 'Personne ne correspond.')}</li>
             )}
-            {filtres.slice(0, 200).map((a) => {
+            {filtres.slice(0, montres).map((a) => {
               const choisi = agentPrive === a.id;
               return (
                 <li key={a.id} className={`rounded-card border p-2.5 transition ${choisi ? 'border-legion-gold/50 bg-legion-card shadow-md' : 'border-legion-line/70 bg-legion-card/60 hover:bg-legion-card'}`}>
@@ -214,7 +229,7 @@ export function ColonneSalons({
                 </li>
               );
             })}
-            {filtres.length > 200 && <li className="px-2 text-[11px] text-legion-muted">{t('legion.etPlusPersonnes', { count: filtres.length - 200 })}</li>}
+            {filtres.length > montres && <li ref={galerie ? null : bas} className="px-2 py-2 text-center text-[11px] text-legion-muted">{t('legion.etPlusPersonnes', { count: filtres.length - montres })}</li>}
           </ul>
         </div>
       </div>

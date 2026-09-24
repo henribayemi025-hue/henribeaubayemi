@@ -18,6 +18,8 @@ import { Appel } from './parties/Appel';
 import { Renfort } from './parties/Renfort';
 import { Kanban } from './parties/Kanban';
 import { FicheAgent } from './parties/FicheAgent';
+import { PleinEcran, Bureau, Frise, Presentation, Idees } from './parties/Vues';
+import { Veilleur } from './parties/Veilleur';
 import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
 import { Visage } from './parties/Visage';
@@ -64,6 +66,8 @@ export default function Entreprise() {
   const [photos, setPhotos] = useState(false);
   const [appel, setAppel] = useState(null); // l'agent qu'on appelle (23/09)
   const [renfort, setRenfort] = useState(false); // renforcer un service / un expert (23/09)
+  const [outil, setOutil] = useState(null); // 'bureau' | 'frise' | 'presentation' | 'idees' (24/09)
+  const [aideClavier, setAideClavier] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
     if (!user?.id || !entrepriseId) return null;
@@ -586,6 +590,37 @@ export default function Entreprise() {
     } catch (e) { toast.error(e.message || t('errors.generic')); }
   }
 
+  // Les raccourcis clavier (idée 65 des 200, 24/09). Rien ne se déclenche
+  // pendant qu'on écrit, sauf Échap.
+  useEffect(() => {
+    function touche(e) {
+      const cible = e.target;
+      const ecrit = cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA' || cible.isContentEditable);
+      if (e.key === 'Escape') { setAideClavier(false); setOutil(null); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setVue((v) => (v === 'accueil' ? 'salons' : v));
+        setTimeout(() => document.getElementById('legion-recherche')?.focus(), 50); return;
+      }
+      if (ecrit || e.ctrlKey || e.metaKey) return;
+      if (e.altKey && /^[1-5]$/.test(e.key)) { e.preventDefault(); setVue(['accueil', 'salons', 'chat', 'equipe', 'taches'][Number(e.key) - 1]); return; }
+      if (e.key === '?') { setAideClavier((v) => !v); return; }
+      if (e.key === '/') { e.preventDefault(); setVue('chat'); setTimeout(() => document.getElementById('legion-composer')?.focus(), 50); return; }
+      if (e.key.toLowerCase() === 'b') setOutil('bureau');
+      if (e.key.toLowerCase() === 'i') setOutil('idees');
+    }
+    window.addEventListener('keydown', touche);
+    return () => window.removeEventListener('keydown', touche);
+  }, []);
+
+  // Des portraits de 1,5 Mo : la fonction en fait des miniatures, une fois
+  // (idée 134 des 200, 24/09). Rien n'est payé : aucun modèle n'est appelé.
+  const [allege, setAllege] = useState(false);
+  useEffect(() => {
+    if (allege || !data?.agents?.some((a) => a.apparence?.famille === 'photo' && !a.apparence?.mini)) return;
+    setAllege(true);
+    supabase.functions.invoke('legion-portrait', { body: { action: 'compresser', entreprise_id: entrepriseId } }).then(() => {}, () => {});
+  }, [data?.agents, allege, entrepriseId]);
+
   if (authLoading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
   if (!user) return <Navigate to="/auth" state={{ from: `/legion/${entrepriseId}` }} replace />;
   if (loading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
@@ -693,7 +728,7 @@ export default function Entreprise() {
             messages={data.messages} taches={taches} moi={moi}
             onEntrer={entrer} onOuvrirSalon={choisirSalon} onEcrireA={ecrireA} onFiche={setFiche}
             onKanban={() => { setKanban(true); if (window.innerWidth < 1024) setVue('taches'); else setVue('chat'); }}
-            onAllumer={allumer} onAllumerTous={allumerTous} onAllumerDepartement={allumerDepartement} onVoteRemplacement={voteRemplacement} onMissionLancee={(l) => ajouterMessages([l])} onDirective={directive}
+            onOutil={setOutil} onAllumer={allumer} onAllumerTous={allumerTous} onAllumerDepartement={allumerDepartement} onVoteRemplacement={voteRemplacement} onMissionLancee={(l) => ajouterMessages([l])} onDirective={directive}
             onVraiesPhotos={vraiesPhotos} photosEnCours={photos}
             sansPhoto={sansPhoto} aChoisir={aChoisir} t={t}
           />
@@ -709,11 +744,11 @@ export default function Entreprise() {
               onEnvoyer={envoyer} onReagir={reagir} onTacheDepuis={tacheDepuis} onFiche={setFiche} onAllumer={allumer}
               onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon} onMembres={membresSalon}
               reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion} onAppeler={appeler}
-              onRapport={salonRapport && salon.id === salonRapport.id ? faireRapport : null}
+              onRapport={salonRapport && salon.id === salonRapport.id ? faireRapport : null} onCreerTache={creerTache}
               entrepriseId={entrepriseId} t={t}
             />
           ) : (
-            <div className="flex flex-1 items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-caption text-legion-muted"><Veilleur taille={84} />{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>
           )}
         </div>
 
@@ -749,6 +784,42 @@ export default function Entreprise() {
           </button>
         ))}
       </nav>
+
+      {/* Les grandes vues (24/09) : le bureau, la frise, la présentation, les idées */}
+      {outil && (
+        <PleinEcran titre={t(`legion.vues.titre.${outil}`)} onFermer={() => setOutil(null)} t={t}>
+          {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={setFiche} t={t} />}
+          {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
+          {outil === 'presentation' && <Presentation entreprise={data.entreprise} agents={data.agents} departements={departements} langue={langue} t={t} />}
+          {outil === 'idees' && (
+            <Idees entreprise={data.entreprise} moi={moi} departements={departements} t={t}
+              onTache={async (texte) => {
+                const chef = data.agents.find((a) => !a.user_id && a.actif && a.est_directeur) || null;
+                const { data: ligne } = await supabase.from('legion_messages').insert({
+                  entreprise_id: entrepriseId, canal_id: salonRapport?.id || departements[0]?.id, auteur_id: moi.id, user_id: user.id, texte: texte.slice(0, 200), genre: 'tache', assigne_a: chef?.id || null,
+                  meta: { statut: 'a_faire', priorite: 'moyenne', idee: true },
+                }).select().single();
+                if (ligne) ajouterMessages([ligne]);
+                return ligne;
+              }}
+              onDirective={(texte) => { setOutil(null); if (salonRapport) directive(texte, salonRapport.id); }} />
+          )}
+        </PleinEcran>
+      )}
+
+      {/* L'aide des raccourcis (touche « ? ») */}
+      {aideClavier && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onClick={() => setAideClavier(false)} role="presentation">
+          <div className="w-full max-w-sm rounded-2xl border border-legion-line bg-legion-card p-5 text-legion-ink" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t('legion.clavier.titre')}>
+            <h3 className="mb-3 text-[16px] font-semibold">{t('legion.clavier.titre')}</h3>
+            <ul className="space-y-1.5 text-caption">
+              {[['Alt + 1…5', 'onglets'], ['Ctrl / ⌘ + K', 'chercher'], ['/', 'ecrire'], ['B', 'bureau'], ['I', 'idees'], ['?', 'aide'], ['Échap', 'fermer']].map(([k, cle]) => (
+                <li key={cle} className="flex items-center justify-between gap-3"><span className="text-legion-muted">{t(`legion.clavier.${cle}`)}</span><kbd className="rounded border border-legion-line bg-legion-bg px-1.5 py-0.5 font-mono text-[12px]">{k}</kbd></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Une clé par agent: la fiche repart de zéro à chaque ouverture (sinon
           un formulaire à moitié rempli passait d'un agent à l'autre). */}
