@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 93 faites, 38 en partie, 16 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 109 faites, 24 en partie, 14 à faire, 18 en attente de Beau, 35 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -82,12 +82,12 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 35 | Optimisation des requêtes SQL par un agent base de données | ⏸ | Studio de code. |
 | 36 | Une action GitHub déclenche une réunion | 📌 | Faisable dès que le dépôt est branché : un nouveau ticket ouvre une réunion. |
 | 37 | Tests unitaires écrits par un agent qualité | ⏸ | Studio de code. |
-| 38 | Audit hebdomadaire de la dette technique | 🔧 | Possible aujourd'hui en tâche récurrente sur un dépôt branché (lecture). Pas encore proposé par défaut. |
+| 38 | Audit hebdomadaire de la dette technique | ✅ | Mission « Audit de la dette technique » (24/09), chaque semaine, sur le dépôt branché : les trois dettes qui coûtent le plus et leur correction. |
 | 39 | Secrets et clés rangés à part, par entreprise | ✅ | Le jeton GitHub de chaque entreprise est au coffre (vault), jamais relu par l'application. |
 | 40 | Architecture en graphe 3D | ✗ | Pas prioritaire : joli, mais n'aide pas à décider. |
 | 41 | Importer un agent depuis GitHub | ✅ | Importer un agent (24/09) depuis un fichier ou son lien (un dépôt GitHub) : sa fiche, et ses compétences reprises à leur source, licence vérifiée. |
 | 42 | Consommation par agent et par dépôt | ✅ | Chaque message d'agent porte ce qu'il a coûté (24/09) ; le tableau de bord montre le coût du mois de chaque agent. Une entreprise n'a qu'un dépôt : son coût est celui de l'entreprise. |
-| 43 | Changelog automatique pour les utilisateurs | 📌 | Faisable à partir du dépôt branché. |
+| 43 | Changelog automatique pour les utilisateurs | ✅ | Mission « Nouveautés de la semaine pour les utilisateurs » (24/09), écrite à partir des changements du dépôt branché, rien d'inventé. |
 | 44 | Annuler d'un coup la modification d'un agent | ⏸ | Studio de code (Git le permet). |
 | 45 | Dépendances obsolètes et mises à jour sûres | ⏸ | Studio de code. |
 | 46 | Environnement de test éphémère par fonctionnalité | ⏸ | Studio de code (aperçu par branche). |
@@ -131,29 +131,29 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
 | 76 | Étude de marché et veille concurrentielle en continu | ✅ | Recherche sur Internet avec sources, pour les tâches qui regardent dehors ; experts « Étude de marché » à la mission. |
-| 77 | Campagnes publicitaires complètes (textes, visuels, ciblage) | 🔧 | Les textes et le ciblage, oui. Les visuels : non (règle : aucune photo d'article prise sur le web ; les visuels viennent des vendeuses ou de Beau). |
+| 77 | Campagnes publicitaires complètes (textes, visuels, ciblage) | ✅ | Mission « Campagne publicitaire complète » (24/09) : objectif, public, accroches, textes par réseau, budget, mesure — et pour les visuels un brief, jamais une image prise sur Internet (règle de la maison). |
 | 78 | Entretiens simulés avec des clients (personas) | ✅ | Réunion au format « clients » (24/09) : les participants jouent des clients (personas) et disent ce qui les ferait acheter ou partir. |
 | 79 | Rentabilité et modèle financier | ✅ | Excel rendu avec formules (marge, taux, totaux) ; avec Accounting branché, sur les vrais chiffres (0180). |
-| 80 | Business plan mis à jour quand une variable change | 🔧 | Le plan de la semaine et du mois est réécrit chaque semaine. Pas de business plan vivant. |
-| 81 | Charte graphique et kit marketing | 🔧 | Texte oui ; images non (même règle que 77). |
-| 82 | Retours utilisateurs → propositions produit | 🔧 | Avec la boutique branchée, les agents lisent les avis. Pas de synthèse automatique. |
+| 80 | Business plan mis à jour quand une variable change | ✅ | Mission « Business plan mis à jour », chaque mois (24/09), sur les chiffres mesurés branchés ; chaque chiffre dit d'où il vient. |
+| 81 | Charte graphique et kit marketing | ✅ | Mission « Charte graphique et kit marketing » (24/09) : ton, mots, couleurs et typographies avec leurs codes, présentation, fiche presse ; pour les images, un brief. |
+| 82 | Retours utilisateurs → propositions produit | ✅ | Mission « Retours des utilisateurs → propositions », chaque semaine (24/09) : regroupés par thème avec leur fréquence réelle, trois propositions produit. |
 | 83 | Prix testés sur des marchés simulés | ✗ | Un marché simulé donnerait des chiffres inventés. Mieux : « prix conseillé » à partir des vrais prix (déjà fait sur Finjaro, idée 59). |
-| 84 | Contrats et conditions générales par des agents juristes | 🔧 | Modèle « Cabinet d'avocats », expert « Relecture de contrats ». Toujours relu par un humain. |
-| 85 | Plan de communication de crise | 🔧 | Faisable par un agent ; pas de modèle prêt. |
+| 84 | Contrats et conditions générales par des agents juristes | ✅ | Mission « Conditions générales / contrat type » (24/09) : un PROJET en langage clair et la liste de ce qu'un avocat doit vérifier avant tout usage. |
+| 85 | Plan de communication de crise | ✅ | Mission « Plan de communication de crise » (24/09) : cinq crises probables, qui parle, premier message, canaux, qui prévenir dans l'heure. |
 | 86 | Publications réseaux sociaux programmées | 🔧 | Le calendrier des publications est préparé chaque vendredi (tâche récurrente). ⏸ Publier soi-même attend les comptes et l'accord de Beau. |
 | 87 | Analyse des tunnels de conversion | ✅ | Avec « Mesures Finjaro » (équipe Finjaro) ou la boutique branchée : vues, paniers, commandes. |
 | 88 | Séminaires de cohésion des agents | ✗ | Pas retenu. |
-| 89 | Lettre d'information hebdomadaire | 🔧 | Un agent peut la rédiger ; ⏸ l'envoyer attend la boîte mail branchée. |
+| 89 | Lettre d'information hebdomadaire | ✅ | Mission « Lettre d'information de la semaine » (24/09) : un brouillon chaque semaine. ⏸ L'envoi attend une boîte mail branchée : rien ne part sans le fondateur. |
 | 90 | Empreinte carbone des serveurs | ✗ | Pas de chiffre mesurable fiable aujourd'hui (règle : aucun chiffre inventé). |
-| 91 | Personas détaillés sur données réelles | 🔧 | Avec la boutique ou les mesures branchées. Sinon, sur les documents de l'entreprise. |
-| 92 | Audit SEO et mots-clés | 🔧 | Faisable avec la recherche web ; pas d'outil SEO branché. |
+| 91 | Personas détaillés sur données réelles | ✅ | Mission « Personas sur données réelles » (24/09) : chaque trait dit sur quoi il repose, le supposé est marqué comme tel. |
+| 92 | Audit SEO et mots-clés | ✅ | Mission « Audit SEO et mots-clés », chaque mois (24/09), avec la recherche sur Internet et ses sources ; aucun volume de recherche inventé. |
 | 93 | Négociations commerciales simulées | ✅ | Réunion au format « négociation » (24/09) : un agent joue le partenaire en face. |
 | 94 | Supports de formation pour les futurs employés | ✅ | Un agent peut les écrire à partir des documents de l'entreprise. |
 | 95 | Tendances technologiques mondiales | ✅ | Recherche web avec sources. |
-| 96 | Matrice des risques mise à jour | 📌 | Tâche récurrente à proposer dans les modèles. |
-| 97 | Parrainage et fidélisation | 🔧 | Côté Finjaro, le parrainage existe. Dans Legion, un agent peut le concevoir. |
+| 96 | Matrice des risques mise à jour | ✅ | Mission « Matrice des risques », chaque mois (24/09) : probabilité, impact, ce qui a changé, parade et responsable (essayé : la tâche revient seule, une seule fois par période). |
+| 97 | Parrainage et fidélisation | ✅ | Mission « Parrainage et fidélisation » (24/09) : mécanisme, gains, coût maximal, abus évités, mesure. Côté Finjaro, le parrainage existe déjà. |
 | 98 | Analyse des avis sur les magasins d'applications | 📌 | Demande un connecteur vers les stores. |
-| 99 | Gamification de l'application | 🔧 | Idées oui, par un agent. Rien de construit. |
+| 99 | Gamification de l'application | ✅ | Mission « Gamification du produit » (24/09) : trois mécaniques liées à ce que l'utilisateur veut faire, sans manipulation ni fausse urgence. |
 | 100 | Expansion internationale pays par pays | ✅ | Faisable par un agent, avec recherche web et sources. Finjaro est mondiale : pas de pays par défaut. |
 
 ## Sécurité, gouvernance et éthique (101 à 125)
@@ -243,7 +243,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 171 | Agendas partagés | ⏸ | Google Agenda attend le projet Google de Beau. |
 | 172 | Badges pour les utilisateurs actifs | ✗ | Pas retenu. |
 | 173 | Passerelle vers le no-code | ✗ | Pas maintenant. |
-| 174 | Livre blanc annuel | 🔧 | Un agent peut l'écrire. |
+| 174 | Livre blanc annuel | ✅ | Mission « Livre blanc annuel », chaque année (24/09), sur les chiffres mesurés de l'année avec leur source. |
 | 175 | Rétrospective de fin de sprint | ✅ | Réunion au format « rétrospective » (24/09) : relit les tâches des sept derniers jours — ce qui a marché, ce qui a coincé, ce qu'on change. |
 
 ## Le futur (176 à 200)
@@ -259,7 +259,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 182 | Journal secret du directeur général | ✗ | Pas retenu : rien de caché au fondateur. |
 | 183 | Fusion des meilleures consignes | ✅ | Emprunter les compétences d'un collègue (24/09) : ses fiches d'experts sont reprises à leur source pour un autre agent. Pas d'« évolution génétique » automatique : c'est le fondateur qui choisit. |
 | 184 | Scénarios de crise | ✅ | Réunion au format « crise » (24/09) : un scénario de crise, et qui fait quoi dans l'heure. |
-| 185 | Rédaction de brevets | 🔧 | Faisable par un agent juriste ; relu par un avocat. |
+| 185 | Rédaction de brevets | ✅ | Mission « Projet de brevet » (24/09) : problème, solution, nouveauté, revendications, art antérieur à vérifier — relu par un conseil en propriété industrielle avant tout dépôt. |
 | 186 | Impact social des décisions | ✅ | Réunion au format « impact » (24/09). |
 | 187 | Réunions à l'oral avec des voix réalistes | ✅ | « Écouter la réunion » (24/09) : chaque agent a sa voix (celles du téléphone, dans la langue de l'entreprise) ; pas de voix de synthèse payante. |
 | 188 | Musée des versions | ✗ | Pas retenu. |

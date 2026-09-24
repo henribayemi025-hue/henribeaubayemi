@@ -94,10 +94,12 @@ export function Missions({ entreprise, agents, departements, moi, onLancee, t, l
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.missions.enCours')}</p>
           {actives.filter((x) => x.actif).map((x) => (
-            <div key={x.id} className="flex items-center gap-2 rounded-card border border-legion-gold/30 bg-legion-gold/10 px-3 py-2 text-caption">
+            <div key={x.id} className="flex items-start gap-2 rounded-card border border-legion-gold/30 bg-legion-gold/10 px-3 py-2 text-caption">
               <span>{MISSIONS.find((m) => m.cle === x.cle)?.emoji || '🔁'}</span>
-              <span className="min-w-0 flex-1 truncate text-legion-ink">{x.titre}</span>
-              <span className="shrink-0 text-[11px] text-legion-muted">{t(`legion.missions.rythme.${x.recurrence}`)} · {t('legion.missions.prochaine', { date: dateCourte(x.prochaine) })}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-legion-ink">{x.titre}</span>
+                <span className="block text-[11px] text-legion-muted">{t(`legion.missions.rythme.${x.recurrence}`)} · {t('legion.missions.prochaine', { date: dateCourte(x.prochaine) })}</span>
+              </span>
               <button type="button" onClick={() => arreter(x)} className="shrink-0 text-[11px] font-semibold text-legion-danger">{t('legion.missions.arreter')}</button>
             </div>
           ))}
