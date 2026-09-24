@@ -44,6 +44,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Premier vrai essai de l'atelier (bac à sable, modèle, carte d'autorisation, export) | après les clés |
 | 24/09 | Finia : le prix donné par ses outils est déjà dans la monnaie de la personne (vu : « 7 000 FCFA (environ 10,67 €) » à quelqu'un en euros) | ✅ 24/09 ; reste : les outils vendeuse (create_product, mes articles) parlent encore en FCFA |
 | 24/09 | Beau (23 h) : « dans l'atelier, tous les modèles ; ils vont choisir. J'ai ajouté DeepSeek » → l'atelier ne voyait aucune clé (clé sans doute posée dans les variables de **construction**) ; décision : l'atelier passera par les clés déjà dans Supabase (fonction `atelier-modele`), plus rien à recopier dans Cloudflare | en cours |
+| 24/09 | **Vérifié en vrai (23 h)** : l'écoute des vocaux par OpenAI marche avec la clé « Leo » (phrase dite puis transcrite mot pour mot par gpt-4o-mini-transcribe) ; Finia donne « 10,67 € » sans FCFA à une personne en euros | ✅ |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 
