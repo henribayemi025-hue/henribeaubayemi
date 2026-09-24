@@ -327,7 +327,7 @@ function SaConsigne({ agent, t }) {
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
 // personne ».
-export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer, onAutonomie, onEcrireA, onAutreTete, onVraiePhoto, onModifier, onCreer, photosEnCours, t }) {
+export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer, onAutonomie, onDroits, onEcrireA, onAutreTete, onVraiePhoto, onModifier, onCreer, photosEnCours, t }) {
   const [change, setChange] = useState(false);
   const [enGrand, setEnGrand] = useState(false);
   const [edition, setEdition] = useState(null); // null | { nom, poste, departement, mandat, personnalite }
@@ -556,6 +556,28 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
             ))}
           </div>
         </div>
+
+        {/* Beau, 25/09 : « le user doit pouvoir donner à ses agents soit la
+            lecture seule, soit la modification ». Modifier = travailler dans
+            l'atelier de code (écrire des fichiers, lancer des commandes), sous
+            le mode choisi par l'humain ; lecture seule = lire et proposer. */}
+        {!agent.user_id && agent.moteur !== 'claude-code' && onDroits && (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.droits.titre', 'Ses droits')}</p>
+              <span className="font-mono text-[11px] text-legion-gold">{t(agent.peut_coder ? 'legion.droits.modifier' : 'legion.droits.lecture')}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[false, true].map((modif) => (
+                <button key={String(modif)} type="button" onClick={() => onDroits(agent, modif)}
+                  className={`rounded-card border p-2.5 text-left transition ${!!agent.peut_coder === modif ? 'border-legion-gold bg-legion-gold/10 text-legion-ink' : 'border-legion-line bg-legion-card text-legion-muted hover:text-legion-ink'}`}>
+                  <div className="text-caption font-semibold">{t(modif ? 'legion.droits.modifier' : 'legion.droits.lecture')}</div>
+                  <div className="mt-0.5 text-[10px] leading-snug text-legion-muted">{t(modif ? 'legion.droits.modifierAide' : 'legion.droits.lectureAide')}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {!agent.user_id && agent.moteur !== 'claude-code' && <SaMemoire agent={agent} t={t} />}
 

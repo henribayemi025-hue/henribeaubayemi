@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled } from '@tabler/icons-react';
 import { appel, ErreurAtelier } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
@@ -86,7 +86,12 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   const [acces, setAcces] = useState(null); // null | 'ok' | 'hors_ligne' | 'reserve' | 'connexion' | message
   const [projets, setProjets] = useState([]);
   const [pid, setPid] = useState(() => lire('atelier:projet'));
-  const [vue, setVue] = useState(null);
+  const [vueBrute, setVue] = useState(null);
+  // « Revoir la séance » (Beau, 25/09 : « je ne vois pas comment elle code ») :
+  // on rejoue le dernier travail pas à pas — messages, fichier qui se tape,
+  // commandes et leur sortie — même quand on arrive après la fin.
+  const [rejeu, setRejeu] = useState(null); // { liste, i, vite }
+  const vue = useMemo(() => (rejeu && vueBrute ? { ...vueBrute, affichage: rejeu.liste.slice(0, rejeu.i), demande: null } : vueBrute), [rejeu, vueBrute]);
   const [fichier, setFichier] = useState(null); // { chemin, contenu, brouillon }
   const [onglet, setOnglet] = useState('conversation');
   const [panneau, setPanneau] = useState(null);
@@ -229,7 +234,14 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     const geste = [...nouveaux].reverse().find((a) => a.qui === 'action' && ['lire_fichier', 'ecrire_fichier'].includes(a.outil) && a.ok && a.resume && a.resume !== '.');
     if (!geste) return;
     setActivite({ verbe: geste.outil === 'lire_fichier' ? 'lit' : 'ecrit', chemin: geste.resume });
-    if (suivre && fichier?.chemin !== geste.resume && (!fichier || fichier.brouillon === fichier.contenu)) {
+    if (rejeu && geste.outil === 'ecrire_fichier' && typeof geste.contenu === 'string') {
+      const c = geste.contenu;
+      setOnglet('code');
+      if (fichier?.chemin !== geste.resume) setFichier({ chemin: geste.resume, contenu: '', brouillon: '' });
+      setTimeout(() => setFichier({ chemin: geste.resume, contenu: c, brouillon: c }), 150);
+      return;
+    }
+    if ((suivre || rejeu) && fichier?.chemin !== geste.resume && (!fichier || fichier.brouillon === fichier.contenu)) {
       // Un fichier qu'elle vient d'ÉCRIRE s'ouvre vide, puis se tape sous nos
       // yeux en descendant là où elle écrit (25/09 : « la barre reste à 1 »).
       if (geste.outil === 'ecrire_fichier') { setFichier({ chemin: geste.resume, contenu: '', brouillon: '' }); setTimeout(() => ouvrir(geste.resume, false), 120); }
@@ -246,6 +258,31 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposition?.id]);
   useEffect(() => { if (!travaille && statut !== 'attente') setActivite(null); }, [travaille, statut]);
+  useEffect(() => {
+    if (!rejeu) return undefined;
+    if (rejeu.i >= rejeu.liste.length) {
+      const m = setTimeout(() => { setRejeu(null); setActivite(null); }, 2500);
+      return () => clearTimeout(m);
+    }
+    // Le temps de regarder ce qui vient d'apparaître : un fichier qui se tape
+    // (2 à 4 s), un message à lire, une sortie de terminal.
+    const courant = rejeu.liste[rejeu.i - 1];
+    const base = courant?.qui === 'action' && courant.outil === 'ecrire_fichier' && courant.contenu ? 4600
+      : courant?.qui === 'agent' || courant?.qui === 'humain' ? Math.min(4000, 1000 + String(courant.texte || '').length * 8)
+        : courant?.terminal ? 2200 : 1000;
+    const m = setTimeout(() => setRejeu((r) => (r ? { ...r, i: r.i + 1 } : r)), rejeu.vite ? Math.round(base / 3) : base);
+    return () => clearTimeout(m);
+  }, [rejeu]);
+  const revoir = () => {
+    const liste = vueBrute?.affichage || [];
+    let debut = -1;
+    for (let k = liste.length - 1; k >= 0; k -= 1) if (liste[k].qui === 'humain' && liste[k].par !== 'humain') { debut = k; break; }
+    if (debut < 0) debut = 0;
+    vuJusqua.current = debut > 0 ? liste[debut - 1].id : '';
+    setFichier(null);
+    setOnglet('code');
+    setRejeu({ liste, i: debut, vite: false });
+  };
   // Le fichier s'ouvre d'abord tel qu'il est, puis l'agent y tape sa proposition.
   const [propPrete, setPropPrete] = useState(null);
   useEffect(() => {
@@ -628,12 +665,16 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
       {vue && (
         <div className="flex gap-1.5 overflow-x-auto border-b border-legion-line px-3 py-1.5 text-[12px]" style={{ scrollbarWidth: 'none' }}>
           {[
+            rejeu
+              ? [IconPlayerStopFilled, t('legion.atelier.rejeuArreter'), () => setRejeu(null), false]
+              : [IconPlayerPlayFilled, t('legion.atelier.revoir', { nom: nomCodeur }), revoir, travaille || statut === 'attente' || !(vueBrute?.affichage || []).length],
+            rejeu ? [IconPlayerTrackNextFilled, t(rejeu.vite ? 'legion.atelier.rejeuNormal' : 'legion.atelier.rejeuVite'), () => setRejeu((r) => (r ? { ...r, vite: !r.vite } : r)), false] : null,
             [IconPresentation, t('legion.atelier.presenteMoi'), presenter, travaille || statut === 'attente'],
             [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), false],
             [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), false],
             [IconDownload, t('legion.atelier.exporter'), exporter, travaille],
             [IconPlus, t('legion.atelier.nouvelleSession'), nouvelleSession, travaille || statut === 'attente'],
-          ].map(([Icone, label, fn, off]) => (
+          ].filter(Boolean).map(([Icone, label, fn, off]) => (
             <button key={label} type="button" onClick={fn} disabled={off}
               className="flex shrink-0 items-center gap-1 rounded-pill border border-legion-line px-3 py-1 text-legion-ink hover:border-legion-gold disabled:opacity-40">
               <Icone size={14} className="text-legion-gold" /> {label}

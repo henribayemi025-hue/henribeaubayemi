@@ -554,6 +554,13 @@ export default function Entreprise() {
     const { error: err } = await supabase.from('legion_entreprises').update({ modele: v || null, moteur: 'auto' }).eq('id', entrepriseId);
     if (err) { toast.error(err.message); setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele: avant } })); }
   }
+  async function droits(a, peutModifier) {
+    const { error: err } = await supabase.from('legion_agents').update({ peut_coder: peutModifier }).eq('id', a.id);
+    if (err) { toast.error(t('errors.generic')); return; }
+    setData((d) => d && ({ ...d, agents: d.agents.map((x) => (x.id === a.id ? { ...x, peut_coder: peutModifier } : x)) }));
+    setFiche((f) => (f && f.id === a.id ? { ...f, peut_coder: peutModifier } : f));
+  }
+
   async function autonomie(a, niveau) {
     const { error: err } = await supabase.from('legion_agents').update({ autonomie: niveau }).eq('id', a.id);
     if (err) { toast.error(err.message); return; }
@@ -888,7 +895,7 @@ export default function Entreprise() {
       {/* Une clé par agent: la fiche repart de zéro à chaque ouverture (sinon
           un formulaire à moitié rempli passait d'un agent à l'autre). */}
       <FicheAgent key={fiche ? fiche.id || 'nouveau' : 'aucun'} agent={fiche} dept={departements.find((d) => d.nom === fiche?.departement)} departements={departements} onFermer={() => setFiche(null)}
-        onAllumer={allumer} onAutonomie={autonomie} onEcrireA={(a) => { ecrireA(a); }} onAutreTete={autreTete}
+        onAllumer={allumer} onAutonomie={autonomie} onDroits={droits} onEcrireA={(a) => { ecrireA(a); }} onAutreTete={autreTete}
         onModifier={modifierAgent} onCreer={creerAgent}
         onVraiePhoto={vraiesPhotos} photosEnCours={photos} t={t} />
     </div>

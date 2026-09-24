@@ -252,6 +252,7 @@ async function executer(outil, args, etat, deps) {
 }
 
 const MAX_CONTENU_CARTE = 100_000;
+const MAX_CONTENU_REJEU = 60_000;
 const MAX_TERMINAL = 4000;
 
 // La carte montrée à l'humain.
@@ -281,7 +282,10 @@ async function traiter(etat, deps, appel, outil, args, decision, ev) {
   }
   etat.conversation.push({ role: 'tool', tool_call_id: appel.id, content: resultat.texte });
   const quand = deps.maintenant().toISOString();
-  etat.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil, resume: resumeAppel(outil, args), decision, ok: resultat.ok, quand, ...(resultat.terminal ? { terminal: resultat.terminal } : {}) });
+  // Le texte écrit est gardé (60 000 caractères au plus) pour « Revoir la
+  // séance » : Beau, 25/09, arrivé après la fin, n'avait vu que le résultat.
+  const ecrit = outil === 'ecrire_fichier' && resultat.ok && typeof args?.contenu === 'string' && args.contenu.length <= MAX_CONTENU_REJEU ? { contenu: args.contenu } : {};
+  etat.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil, resume: resumeAppel(outil, args), decision, ok: resultat.ok, quand, ...(resultat.terminal ? { terminal: resultat.terminal } : {}), ...ecrit });
   await deps.journal({
     acteur: decision === 'refuse' || decision.startsWith('autorise') ? 'humain' : 'outil',
     outil, entree_resumee: resumer(resumeAppel(outil, args), 500), resultat_resume: resumer(resultat.texte.replace(DONNEES, ''), 500),

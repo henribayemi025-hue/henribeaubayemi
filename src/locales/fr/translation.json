@@ -1064,7 +1064,18 @@
       "fermerPanneau": "Fermer le panneau",
       "ouvrirPanneau": "Ouvrir le panneau (agent en direct, terminaux)",
       "terminalVide": "Tape une commande ci-dessous : elle s'exécute dans le bac à sable du projet (ex. ls, node tests.js, python3 main.py).",
-      "terminalSaisie": "Tape une commande puis Entrée…"
+      "terminalSaisie": "Tape une commande puis Entrée…",
+      "revoir": "Revoir la séance de {{nom}}",
+      "rejeuArreter": "Arrêter le rejeu",
+      "rejeuVite": "Plus vite",
+      "rejeuNormal": "Vitesse normale"
+    },
+    "droits": {
+      "titre": "Ses droits",
+      "lecture": "Lecture seule",
+      "lectureAide": "Il lit et propose. Il ne modifie rien.",
+      "modifier": "Peut modifier",
+      "modifierAide": "Il peut écrire du code et lancer des commandes dans l'atelier, selon le mode que tu choisis."
     }
   },
   "equipe": {

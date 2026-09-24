@@ -1064,7 +1064,18 @@
       "fermerPanneau": "Close the panel",
       "ouvrirPanneau": "Open the panel (live agent, terminals)",
       "terminalVide": "Type a command below: it runs in the project sandbox (e.g. ls, node tests.js, python3 main.py).",
-      "terminalSaisie": "Type a command, then Enter…"
+      "terminalSaisie": "Type a command, then Enter…",
+      "revoir": "Replay {{nom}}'s session",
+      "rejeuArreter": "Stop replay",
+      "rejeuVite": "Faster",
+      "rejeuNormal": "Normal speed"
+    },
+    "droits": {
+      "titre": "Permissions",
+      "lecture": "Read only",
+      "lectureAide": "Reads and suggests. Changes nothing.",
+      "modifier": "Can edit",
+      "modifierAide": "Can write code and run commands in the code workshop, within the mode you choose."
     }
   },
   "equipe": {
