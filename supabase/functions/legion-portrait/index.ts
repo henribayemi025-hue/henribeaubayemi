@@ -24,6 +24,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { generer, moteursSimples } from '../_shared/moteur.ts';
 import { Image as Dessin } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 
 // Les portraits sortent du modèle en PNG d'environ 1,5 Mo (mesuré le 24/09) :
@@ -43,7 +44,6 @@ async function miniature(octets: Uint8Array): Promise<Uint8Array | null> {
 }
 
 const MODELES_IMAGE = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
-const MODELE_TEXTE = 'gemini-2.5-flash';
 const PROD_HOST = 'finjaro.net';
 const LIMITE_MAX = 25;
 const EN_PARALLELE = 3;
@@ -99,22 +99,14 @@ Profile picture: the face is clearly visible and well lit, photorealistic, high 
 Do not include any text, watermark, logo or border. Do not depict any real or recognisable public figure.`;
 }
 
+// Par le moteur commun (24/09) : l'IA choisie par l'entreprise, DeepSeek
+// d'abord en Auto — avant, Gemini seul, et rien quand Google coupait.
 async function demanderTexte(apiKey: string, texte: string): Promise<string | null> {
-  try {
-    const r = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELE_TEXTE}:generateContent`, {
-      method: 'POST',
-      headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: texte }] }],
-        generationConfig: { temperature: 1.1, maxOutputTokens: 512, thinkingConfig: { thinkingBudget: 0 } },
-      }),
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!r.ok) { console.error('description:', r.status, (await r.text()).slice(0, 200)); return null; }
-    const b = await r.json();
-    const t = b?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('').trim();
-    return t ? t.replace(/^["']|["']$/g, '').slice(0, 400) : null;
-  } catch (e) { console.error('description:', (e as Error).message); return null; }
+  const r = await generer(apiKey, texte, { type: 'OBJECT', properties: { description: { type: 'STRING' } }, required: ['description'] },
+    { modeles: moteursSimples(), temperature: 1.0, maxSortie: 400, reflexion: 0, delaiMs: 30_000 });
+  if ('erreur' in r) { console.error('description:', r.erreur); return null; }
+  const d = String(r.obj.description || '').trim().replace(/^"|"$/g, '');
+  return d || null;
 }
 
 type Image = { octets: Uint8Array; type: string } | { erreur: string };
@@ -151,6 +143,30 @@ async function fabriquerImage(apiKey: string, invite: string): Promise<Image> {
       return { octets, type: (img.inlineData.mimeType as string) || 'image/png' };
     } catch (e) {
       derniere = `${modele}: ${(e as Error).message}`;
+      console.error(derniere);
+    }
+  }
+  // Le relais quand Google coupe (proposition 3 de Beau, 24/09 : « ne plus
+  // jamais dépendre de Google seul ») : OpenAI, si sa clé est posée.
+  const cleOpenAI = Deno.env.get('OPENAI_API_KEY');
+  if (cleOpenAI) {
+    try {
+      const r = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cleOpenAI}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: Deno.env.get('LEGION_MODELE_IMAGE_OA') || 'gpt-image-1', prompt: invite, size: '1024x1024', n: 1 }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status} ${(await r.text()).slice(0, 180)}`);
+      const b = await r.json();
+      const b64 = b?.data?.[0]?.b64_json;
+      if (!b64) throw new Error('pas d’image dans la réponse');
+      const brut = atob(b64);
+      const octets = new Uint8Array(brut.length);
+      for (let i = 0; i < brut.length; i += 1) octets[i] = brut.charCodeAt(i);
+      return { octets, type: 'image/png' };
+    } catch (e) {
+      derniere = `${derniere} ; openai: ${(e as Error).message}`;
       console.error(derniere);
     }
   }

@@ -64,11 +64,47 @@ export type Passage = { document_id: string; titre: string; url: string | null; 
 export async function chercherPassages(service: Service, apiKey: string, entrepriseId: string, question: string, n = 5): Promise<Passage[]> {
   const { count } = await service.from('legion_documents').select('id', { count: 'exact', head: true }).eq('entreprise_id', entrepriseId).eq('statut', 'lu');
   if (!count) return [];
-  const [v] = await vecteurs(apiKey, [question.slice(0, 4000)], 'RETRIEVAL_QUERY');
-  const { data, error } = await service.rpc('legion_chercher_morceaux', { p_entreprise: entrepriseId, p_vecteur: `[${v.join(',')}]`, p_n: n });
-  if (error) { console.error('passages:', error.message); return []; }
-  // Au-delà de cette distance, le passage ne parle pas vraiment de la question.
-  return ((data || []) as Passage[]).filter((p) => p.distance < 0.55);
+  try {
+    const [v] = await vecteurs(apiKey, [question.slice(0, 4000)], 'RETRIEVAL_QUERY');
+    const { data, error } = await service.rpc('legion_chercher_morceaux', { p_entreprise: entrepriseId, p_vecteur: `[${v.join(',')}]`, p_n: n });
+    if (error) throw new Error(error.message);
+    // Au-delà de cette distance, le passage ne parle pas vraiment de la question.
+    const proches = ((data || []) as Passage[]).filter((p) => p.distance < 0.55);
+    if (proches.length) return proches;
+  } catch (e) { console.error('passages (vecteurs):', (e as Error).message); }
+  // Sans vecteurs (plafond de Google, ou document rangé sans eux) : par les mots.
+  return await passagesParMots(service, entrepriseId, question, n);
+}
+
+// ——— La recherche par les mots (proposition 3 de Beau, 24/09 : « ne plus
+// jamais dépendre de Google seul ») ———
+// Moins fine que les vecteurs, mais elle ne dépend de personne : la mémoire
+// et les documents continuent de servir quand Google coupe.
+const VIDES = new Set(['dans', 'pour', 'avec', 'sans', 'mais', 'donc', 'alors', 'cette', 'votre', 'notre', 'leurs', 'elle', 'elles', 'nous', 'vous', 'sont', 'était', 'être', 'avoir', 'fait', 'faire', 'comme', 'quoi', 'quand', 'comment', 'pourquoi', 'tout', 'tous', 'toute', 'plus', 'moins', 'très', 'bien', 'aussi', 'encore', 'what', 'this', 'that', 'with', 'from', 'have', 'your']);
+const sans = (x: string) => (x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+export function motsCles(texte: string, max = 8): string[] {
+  const vus = new Map<string, number>();
+  for (const m of sans(texte).split(/[^a-z0-9]+/)) if (m.length > 3 && !VIDES.has(m)) vus.set(m, (vus.get(m) || 0) + 1);
+  return [...vus.entries()].sort((a, b) => b[0].length - a[0].length || b[1] - a[1]).slice(0, max).map(([m]) => m);
+}
+export function noteParMots(texte: string, mots: string[]): number {
+  const t = sans(texte);
+  return mots.reduce((n, m) => n + (t.includes(m) ? 1 : 0), 0);
+}
+
+async function passagesParMots(service: Service, entrepriseId: string, question: string, n: number): Promise<Passage[]> {
+  const mots = motsCles(question);
+  if (!mots.length) return [];
+  const { data } = await service.from('legion_morceaux').select('document_id, texte').eq('entreprise_id', entrepriseId)
+    .or(mots.map((m) => `texte.ilike.%${m}%`).join(',')).limit(80);
+  const notes = ((data || []) as Array<{ document_id: string; texte: string }>)
+    .map((m) => ({ ...m, note: noteParMots(m.texte, mots) }))
+    .filter((m) => m.note >= Math.min(2, mots.length))
+    .sort((a, b) => b.note - a.note).slice(0, n);
+  if (!notes.length) return [];
+  const { data: docs } = await service.from('legion_documents').select('id, titre, url').in('id', [...new Set(notes.map((m) => m.document_id))]);
+  const doc = new Map(((docs || []) as Array<{ id: string; titre: string; url: string | null }>).map((d) => [d.id, d]));
+  return notes.map((m) => ({ document_id: m.document_id, titre: doc.get(m.document_id)?.titre || 'Document', url: doc.get(m.document_id)?.url || null, texte: m.texte, distance: 0.5 }));
 }
 
 // Le bloc à mettre dans une consigne.

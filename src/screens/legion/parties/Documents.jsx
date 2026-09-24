@@ -42,7 +42,7 @@ export function Documents({ entreprise, t }) {
       const liste = await charger();
       // Et ceux que le plafond de Google a fait échouer : on réessaie, pour
       // qu'ils se rangent d'eux-mêmes dès que le plafond est relevé.
-      const reessayer = (d) => d.statut === 'echec' && /429|spending cap|plafond/i.test(d.erreur || '');
+      const reessayer = (d) => (d.statut === 'echec' && /429|spending cap|plafond/i.test(d.erreur || '')) || (d.statut === 'lu' && /sans vecteurs/.test(d.erreur || ''));
       const enAttente = liste.filter((d) => (d.statut === 'a_lire' || reessayer(d)) && d.url && !dejaLances.current.has(d.id));
       for (const d of enAttente) {
         if (fini) return;

@@ -86,15 +86,20 @@ Deno.serve(compter('legion_documents', async (req: Request) => {
       const texte = await texteDeFichier(apiKey, octets, doc.url, doc.mime || r.headers.get('content-type') || '', 300_000);
       if (!texte || texte.trim().length < 20) return await echec('Rien de lisible dans ce fichier.');
       const morceaux = decouper(texte);
-      const v = await vecteurs(apiKey, morceaux, 'RETRIEVAL_DOCUMENT');
+      // Sans vecteurs (plafond de Google, 24/09) : le document est rangé
+      // quand même, et trouvé par ses mots ; il sera relu à l'ouverture des
+      // Documents jusqu'à avoir ses vecteurs.
+      let v: Array<number[] | null>;
+      let sansVecteurs = '';
+      try { v = await vecteurs(apiKey, morceaux, 'RETRIEVAL_DOCUMENT'); } catch (e) { v = morceaux.map(() => null); sansVecteurs = (e as Error).message; }
       await service.from('legion_morceaux').delete().eq('document_id', doc.id);
       for (let i = 0; i < morceaux.length; i += 100) {
         const { error } = await service.from('legion_morceaux').insert(morceaux.slice(i, i + 100).map((t, j) => ({
-          document_id: doc.id, entreprise_id: doc.entreprise_id, ordre: i + j, texte: t, embedding: `[${v[i + j].join(',')}]`,
+          document_id: doc.id, entreprise_id: doc.entreprise_id, ordre: i + j, texte: t, embedding: v[i + j] ? `[${v[i + j]!.join(',')}]` : null,
         })));
         if (error) return await echec(`Enregistrement impossible : ${error.message}`);
       }
-      await service.from('legion_documents').update({ statut: 'lu', morceaux: morceaux.length, erreur: null, taille: texte.length }).eq('id', doc.id);
+      await service.from('legion_documents').update({ statut: 'lu', morceaux: morceaux.length, erreur: sansVecteurs ? `sans vecteurs (recherche par les mots) — ${sansVecteurs.slice(0, 200)}` : null, taille: texte.length }).eq('id', doc.id);
       return json({ ok: true, morceaux: morceaux.length, signes: texte.length });
     } catch (e) {
       return await echec((e as Error).message);

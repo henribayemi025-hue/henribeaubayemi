@@ -657,7 +657,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const sesVerifs = verifsPour(verifie, (source) => peut(cible, source));
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);
     const sesDocs = peut(cible, 'documents') ? passages : [];
-    const sesSouvenirs = String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage) : [];
+    const sesSouvenirs = String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage, 3, () => String(msg.texte || '')) : [];
     const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,

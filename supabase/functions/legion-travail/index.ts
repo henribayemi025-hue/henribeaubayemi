@@ -416,7 +416,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // Sa mémoire à lui (0185): ce qu'il a déjà livré de proche, les leçons
       // reçues, ce qui a plu.
       await rattraper(service, apiKey, entrepriseId, a.id);
-      const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte));
+      const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte), 3, () => String(tache.texte || ''));
       const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }

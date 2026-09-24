@@ -6,7 +6,7 @@
 // retrouve les trois souvenirs les plus proches de ce qu'on lui demande —
 // pour ne pas refaire une erreur déjà corrigée, et garder ce qui a plu.
 
-import { vecteurs } from './documents.ts';
+import { motsCles, noteParMots, vecteurs } from './documents.ts';
 
 // deno-lint-ignore no-explicit-any
 type Service = any;
@@ -40,7 +40,7 @@ export function vecteurDe(apiKey: string, texte: string): () => Promise<number[]
 
 // Les souvenirs d'un agent les plus proches d'une demande. Rien s'il n'en a
 // aucun (et alors aucun appel).
-export async function souvenirsDe(service: Service, apiKey: string, agentId: string, demande: () => Promise<number[]>, n = 3): Promise<Souvenir[]> {
+export async function souvenirsDe(service: Service, apiKey: string, agentId: string, demande: () => Promise<number[]>, n = 3, texteDemande?: () => Promise<string> | string): Promise<Souvenir[]> {
   try {
     const { count } = await service.from('legion_souvenirs').select('id', { count: 'exact', head: true }).eq('agent_id', agentId);
     if (!count) return [];
@@ -51,8 +51,19 @@ export async function souvenirsDe(service: Service, apiKey: string, agentId: str
     // Au-delà, le souvenir ne parle pas vraiment de la demande.
     return ((data || []) as Souvenir[]).filter((s) => s.distance < 0.6);
   } catch (e) {
-    console.error('souvenirs:', (e as Error).message);
-    return [];
+    console.error('souvenirs (vecteurs):', (e as Error).message);
+    // Sans vecteurs (plafond de Google) : par les mots de la demande (24/09).
+    try {
+      const texte = await texteDemande?.();
+      const mots = motsCles(texte || '');
+      if (!mots.length) return [];
+      const { data } = await service.from('legion_souvenirs').select('id, texte, source, created_at').eq('agent_id', agentId)
+        .or(mots.map((m) => `texte.ilike.%${m}%`).join(',')).order('created_at', { ascending: false }).limit(30);
+      return ((data || []) as Array<Record<string, unknown>>)
+        .map((x) => ({ ...x, note: noteParMots(String(x.texte || ''), mots) }))
+        .filter((x) => x.note >= Math.min(2, mots.length)).sort((a, b) => b.note - a.note).slice(0, n)
+        .map(({ note: _n, ...x }) => ({ ...x, distance: 0.5 })) as unknown as Souvenir[];
+    } catch { return []; }
   }
 }
 
