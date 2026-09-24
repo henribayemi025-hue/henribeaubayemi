@@ -39,6 +39,10 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Beau (22 h 45) : Fish Audio « c'est bon » | ✅ (clé posée ; à tester à l'essai des voix) |
 | 24/09 | Beau (22 h 45) : quelqu'un qui aime ChatGPT doit pouvoir choisir le type (GPT-5, Astra…) ; **Astra doit être présent quand il veut coder** → GPT-6 Astra dans le choix de Léo (fait) et dans l'atelier de code (à faire) | atelier : à faire |
 | 24/09 | Beau (22 h 45) : « guide-moi pour Cloudflare » → guide pas à pas donné | en cours avec Beau |
+| 24/09 | **Atelier en ligne** : Beau a fait le réglage Cloudflare (Worker renommé `finjaro-atelier`, dossier `atelier`, branche `staging`) ; https://finjaro-atelier.finjaro.workers.dev répond « Atelier de Léo : en service. » GPT-6 Astra, GPT-6 Sol et GPT-5.4 mini ajoutés au choix de l'atelier | ✅ 24/09 23 h |
+| 24/09 | Clés de l'atelier dans Cloudflare (finjaro-atelier → Settings → Variables and Secrets, type Secret) : `DEEPSEEK_API_KEY` (nouvelle clé, la même à remettre dans Supabase), et la clé OpenAI (nom libre, par ex. « Leo ») pour Astra | à faire par Beau |
+| 24/09 | Premier vrai essai de l'atelier (bac à sable, modèle, carte d'autorisation, export) | après les clés |
+| 24/09 | Finia : le prix donné par ses outils est déjà dans la monnaie de la personne (vu : « 7 000 FCFA (environ 10,67 €) » à quelqu'un en euros) | ✅ 24/09 ; reste : les outils vendeuse (create_product, mes articles) parlent encore en FCFA |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 
