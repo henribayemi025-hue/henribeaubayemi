@@ -512,6 +512,7 @@
     "ouvrirAccounting": "Open Finjaro Accounting",
     "connecteurComptaAide": "Agents read the TOTALS of your books: a month’s summary, sales, expenses by category, what is still to be collected and paid — never a customer’s name or a single line. If you leave this workspace, they read nothing more.",
     "depenseMoinsDunCentime": "less than €0.01",
+    "plafondIA": "This month's AI budget is used up. The agents will resume as soon as it is raised.",
     "googleSature": "Google's models are overloaded right now. Try again in a minute.",
     "reessaie": "A small connection problem with the models. Try again in a moment.",
     "rapport": {

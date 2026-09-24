@@ -113,6 +113,9 @@ export function espacerPhrases(texte) {
 // l'écran montrait l'erreur brute de Google.
 export function raisonLisible(raison, t) {
   const r = String(raison || '');
+  if (/spending cap/i.test(r)) {
+    return t('legion.plafondIA', "Le budget d'intelligence artificielle du mois est épuisé. Les agents reprendront dès qu'il sera relevé.");
+  }
   if (/\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(r)) {
     return t('legion.googleSature', 'Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.');
   }

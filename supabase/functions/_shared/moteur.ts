@@ -132,16 +132,23 @@ function secours(): string[] {
 // moteurs de secours d'autres fournisseurs (quand ils sont configurés).
 export async function generer(apiKey: string, texte: string, schema: unknown, o: Options = {}): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
+  let plafondGoogle = false;
   const liste = o.modeles ?? moteurs();
   for (const nom of [...liste, ...secours().filter((x) => !liste.includes(x))]) {
+    // Le plafond de dépenses du projet Google vaut pour tous ses modèles
+    // (vu le 24/09) : inutile de les essayer un par un, on passe au secours.
+    if (plafondGoogle && !nom.startsWith('oa:') && !nom.startsWith('an:')) continue;
     try {
       const txt = nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { return { obj: nettoyer(JSON.parse(txt)), modele: nom }; } catch { derniere = `${nom}: JSON illisible`; }
-    } catch (e) { derniere = `${nom}: ${(e as Error).message}`; console.error(derniere); }
+    } catch (e) {
+      derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
+      if (/spending cap/i.test(derniere)) plafondGoogle = true;
+    }
   }
-  return { erreur: derniere };
+  return { erreur: plafondGoogle && !derniere.includes('spending cap') ? `plafond Google (spending cap) — ${derniere}` : derniere };
 }
 
 // La trace pour nos exemples d'entraînement (0167). Ne casse jamais rien:

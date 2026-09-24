@@ -512,6 +512,7 @@
     "ouvrirAccounting": "Ouvrir Finjaro Accounting",
     "connecteurComptaAide": "Les agents lisent les TOTAUX de tes livres : le résumé d’un mois, les ventes, les dépenses par catégorie, ce qui reste à encaisser et à payer — jamais le nom d’un client ni le détail d’une ligne. Si tu quittes cet espace, ils ne lisent plus rien.",
     "depenseMoinsDunCentime": "moins de 0,01 €",
+    "plafondIA": "Le budget d'intelligence artificielle du mois est épuisé. Les agents reprendront dès qu'il sera relevé.",
     "googleSature": "Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.",
     "reessaie": "Petit souci de connexion avec les modèles. Réessaie dans un instant.",
     "rapport": {

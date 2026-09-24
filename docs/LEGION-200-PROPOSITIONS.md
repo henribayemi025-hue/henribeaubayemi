@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 127 faites, 14 en partie, 5 à faire, 18 en attente de Beau, 36 écartées.
+**Le compte :** 130 faites, 14 en partie, 0 à faire, 20 en attente de Beau, 36 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -58,7 +58,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 16 | Négociation de budget entre départements | ✅ | Réunion au format « budget » (24/09) : chaque participant défend sa part, sur la dépense réelle et le plafond. Il n'existe pas de budget stocké par département : le vote conclut, le fondateur décide. |
 | 17 | Un mentor pour les nouveaux agents | ✗ | Pas utile tel quel : un nouvel agent reçoit déjà le contexte complet (mémoire, plans, tâches). |
 | 18 | Pauses café entre agents pour des idées inattendues | ✗ | Coûte de l'argent sans demande de l'utilisateur. Les réunions couvrent le besoin quand on le veut. |
-| 19 | Agents qui simulent des utilisateurs pour tester l'application | 📌 | Utile pour le studio de code et pour Finjaro. Demande un navigateur de test côté serveur. |
+| 19 | Agents qui simulent des utilisateurs pour tester l'application | 🔧 | Fait (24/09) : des parcours d'utilisateurs rejoués par un navigateur (scripts/parcours.mjs, GitHub Actions) — accueil, recherche, fiche article, boutique, connexion, sur téléphone et grand écran ; un échec ouvre un ticket. Passage du 24/09 : 10 sur 10. Ils reviendront chaque nuit à 4 h 15 UTC une fois en production (GitHub ne lance les tâches planifiées que depuis la branche principale). Manque : ce sont des parcours écrits à l'avance, pas des agents IA qui improvisent le leur. |
 | 20 | Vote à la majorité en comité de direction | ✅ | Réunion au format « vote » (24/09) : chacun vote pour, contre ou s'abstient ; c'est Legion qui compte, pas un agent, et le compte rendu rappelle que l'humain décide. |
 | 21 | KPI par agent suivis dans un tableau RH | ✅ | Tableau de bord (24/09), par agent sur 7 ou 30 jours : prises de parole, livrables, tâches faites, ouvertes, bloquées, à valider, renvoyées, relectures et corrections — tout compté dans la base. |
 | 22 | Refuser une tâche hors de son métier | ✅ | Le mandat et « ce qu'il ne fait jamais » le permettent ; il le dit et passe la main. |
@@ -152,7 +152,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 95 | Tendances technologiques mondiales | ✅ | Recherche web avec sources. |
 | 96 | Matrice des risques mise à jour | ✅ | Mission « Matrice des risques », chaque mois (24/09) : probabilité, impact, ce qui a changé, parade et responsable (essayé : la tâche revient seule, une seule fois par période). |
 | 97 | Parrainage et fidélisation | ✅ | Mission « Parrainage et fidélisation » (24/09) : mécanisme, gains, coût maximal, abus évités, mesure. Côté Finjaro, le parrainage existe déjà. |
-| 98 | Analyse des avis sur les magasins d'applications | 📌 | Demande un connecteur vers les stores. |
+| 98 | Analyse des avis sur les magasins d'applications | 🔧 | Fait (24/09) : les avis App Store arrivent par la veille (0188) — le flux public des avis Apple se branche comme un flux RSS ; essayé : 20 avis lus. Manque : Google Play n'a pas de flux public, il faut un compte de service de la Play Console (Beau) ; et pas encore de synthèse des avis par un agent au-delà de la liste postée dans le salon. |
 | 99 | Gamification de l'application | ✅ | Mission « Gamification du produit » (24/09) : trois mécaniques liées à ce que l'utilisateur veut faire, sans manipulation ni fausse urgence. |
 | 100 | Expansion internationale pays par pays | ✅ | Faisable par un agent, avec recherche web et sources. Finjaro est mondiale : pas de pays par défaut. |
 
@@ -191,10 +191,10 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
 | 126 | Des milliers d'agents en parallèle | 🔧 | L'effectif va jusqu'à 10 000 à la fondation ; seuls ceux à qui l'on parle, ou qui ont une tâche, travaillent (et coûtent). |
-| 127 | Cache des réponses fréquentes | 📌 | Utile pour le coût. |
+| 127 | Cache des réponses fréquentes | 🔧 | Construit (0190, 24/09) : les recherches sur Internet gardées 12 h, le tri d'une même demande 7 jours, ménage chaque nuit ; la clé est une empreinte, pas le texte. Essayé : une demande déjà triée revient du cache sans appeler le modèle. Pas encore vu : le cache qui se remplit après un vrai calcul — l'IA était à l'arrêt au moment de l'essai (plafond de dépenses Google atteint). |
 | 128 | Petits modèles pour les tâches simples, grands pour le fond | ✅ | Déjà le cas. |
 | 129 | Compression des longues conversations | ✅ | Chaque salon est résumé chaque matin (mémoire du salon). |
-| 130 | Plusieurs fournisseurs d'IA | 🔧 | Moteur interchangeable ; aujourd'hui Gemini, avec plusieurs modèles de secours quand Google est saturé. Claude et ChatGPT peuvent se brancher via le connecteur MCP. |
+| 130 | Plusieurs fournisseurs d'IA | ⏸ | Moteur interchangeable. Le secours chez un autre fournisseur est construit (24/09) : quand tous les modèles Google échouent, Claude (Anthropic) prend le relais. Il attend une clé ANTHROPIC_API_KEY dans les secrets Supabase (Beau) : pas encore essayé. Le 24/09 à 1 h 18 UTC, le plafond de dépenses du mois chez Google a été atteint et les agents se sont arrêtés — c'est exactement le cas que ce secours couvre. |
 | 131 | Modèles locaux hors ligne | ✗ | Pas sur un téléphone d'entrée de gamme. |
 | 132 | Optimiser les requêtes des agents développeurs | ⏸ | Studio de code. |
 | 133 | Nettoyer les agents inactifs | ✅ | Un intérimaire s'éteint seul le lendemain de sa date de fin (0177). |
@@ -205,14 +205,14 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 138 | Organigramme en WebGL | ✗ | Pas prioritaire. |
 | 139 | Reprise après coupure réseau | ✅ | Plusieurs modèles de secours, délais bornés, message clair quand Google est saturé. |
 | 140 | Économie d'énergie des serveurs | ✗ | Hors de notre main. |
-| 141 | Tests de charge | 📌 | Avant une grosse campagne. |
+| 141 | Tests de charge | ✅ | scripts/charge.mjs (24/09), prudent et plafonné : 600 requêtes sur le site, les articles et les taux du jour — 0 erreur, 95 % des réponses sous une seconde (mesuré depuis le bac à sable). À relancer avant une grosse campagne. |
 | 142 | Synchronisation en arrière-plan | ✅ | Travail en fond (réunions, lecture des documents). |
 | 143 | Workers web pour ne pas bloquer l'écran | 🔧 | Le travail lourd est côté serveur. |
 | 144 | Compatibilité des anciennes versions d'agents | ✅ | Migrations additives : rien de ce qui existe ne casse. |
 | 145 | Profilage du code généré | ⏸ | Studio de code. |
-| 146 | Moins de données échangées | 🔧 | Au cas par cas. |
+| 146 | Moins de données échangées | ✅ | Les portraits d'agents de 1,5 Mo ramenés à une miniature de 256 px, et les anciens compressés d'eux-mêmes (24/09, essayé) ; les longues listes dessinées au fil du défilement ; les recherches et le tri gardés en cache (0190). |
 | 147 | File prioritaire pour le fondateur | 🔧 | Le fondateur est servi à la demande ; le travail de fond passe la nuit et le matin. |
-| 148 | Stockage local hors ligne | 🔧 | Finjaro a un bandeau hors ligne ; Legion demande le réseau. |
+| 148 | Stockage local hors ligne | ✅ | Hors ligne (24/09) : un message écrit sans réseau attend sur l'appareil (🕓) et part tout seul, dans l'ordre, au retour du réseau. Essayé : réseau coupé, message en attente, réseau rétabli, message parti une seule fois. Ce qui demande toujours le réseau : ouvrir Legion et recevoir les réponses. |
 | 149 | Petits modèles spécialisés affinés | ✗ | Pas avant d'avoir beaucoup d'usage réel. |
 | 150 | Micro-services | ✅ | Une fonction par métier (répondre, travailler, réunion, renfort, documents…). |
 
@@ -227,14 +227,14 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 155 | Agents dans de vraies visioconférences | ✗ | Pas maintenant ; l'appel vocal d'un agent existe. |
 | 156 | API ouverte pour piloter les agents | ✅ | Serveur MCP : Claude, ChatGPT, Claude Code… lisent et écrivent dans les salons avec les droits de la personne. |
 | 157 | Publier les réussites sur LinkedIn | ⏸ | Attend les comptes et l'accord de Beau ; rien n'est publié en son nom sans lui. |
-| 158 | Parrainage avec crédits de calcul | 📌 | À décider avec le prix des formules (Beau : plus tard). |
+| 158 | Parrainage avec crédits de calcul | ⏸ | À décider avec le prix des formules (Beau : plus tard). |
 | 159 | Forum communautaire | ✗ | Pas maintenant. |
 | 160 | Hackathons entre départements | ✗ | Pas retenu. |
 | 161 | Flux RSS et veille partagée | ✅ | Veille RSS (0188, 24/09) : chaque heure, les articles jamais vus des flux branchés (RSS ou Atom) sont déposés en une liste avec leurs liens, sans modèle (essayé avec Le Monde et The Verge). |
 | 162 | Experts invités pour une mission | ✅ | « Un expert pour une mission », avec date de fin (23/09). |
 | 163 | Vote communautaire sur les compétences | ✗ | Pas maintenant. |
-| 164 | Adaptation culturelle par marché | 🔧 | Langue de l'utilisateur ; pas de pays par défaut. |
-| 165 | Wiki interne tenu par les agents | 🔧 | Documents de l'entreprise + mémoire. Pas de wiki écrit par les agents. |
+| 164 | Adaptation culturelle par marché | 🔧 | Fait (0190, 24/09) : le marché de l'entreprise — le propriétaire choisit un pays dans la liste (vide = aucun pays supposé) ; il entre dans les consignes de chaque agent (monnaie, usages, jours fériés, cadre légal) sans l'annoncer à chaque phrase. Essayé : le choix s'enregistre et s'affiche, sur téléphone et grand écran. Pas encore vu : la réponse d'un agent avec un marché choisi — l'IA était à l'arrêt. |
+| 165 | Wiki interne tenu par les agents | 🔧 | Fait (24/09) : un wiki de trois pages — « Qui fait quoi » et « Nos façons de faire » tirées des agents et des règles, « Ce qu'on a décidé » écrite par le directeur à partir des décisions et comptes rendus ; mis à jour chaque vendredi ou à la demande, lu par les agents. Essayé : les pages se créent et s'affichent. Pas encore vu : la page écrite par le directeur — l'IA était à l'arrêt, la page a montré la liste brute des décisions à la place (prévu pour ce cas). |
 | 166 | Tableau blanc collaboratif | ✅ | Le tableau d'idées (0187, 24/09) : des notes de couleur que les membres posent et votent, en temps réel ; une idée devient une tâche ou part à l'équipe en un geste. |
 | 167 | Historique des décisions consultable | ✅ | Comptes rendus (genre « décision ») dans les salons. |
 | 168 | Encourager un agent | ✅ | « Encourager » sur la fiche de l'agent (24/09) : ce que le fondateur a aimé entre dans SA mémoire, et il le retrouve quand on lui demande quelque chose de proche. Les réactions emoji restent. |
