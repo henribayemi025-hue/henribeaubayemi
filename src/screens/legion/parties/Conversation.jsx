@@ -359,7 +359,7 @@ export function Conversation({
                           ))}
                         </div>
                       )}
-                      {!seulementPiece && (m.meta?.par_ia && estStructure(m.texte) ? (
+                      {!seulementPiece && ((m.meta?.par_ia || m.meta?.rapport) && estStructure(m.texte) ? (
                         // Un plan, un livrable, une réponse point par point
                         // (Beau, 22/09: « présentable, on n'est pas au
                         // primaire »): titres et listes rendus, pas du

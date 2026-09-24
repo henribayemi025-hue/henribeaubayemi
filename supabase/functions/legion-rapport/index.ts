@@ -139,7 +139,7 @@ async function salonDirection(service: Service, entrepriseId: string): Promise<s
 const SCHEMA_RAPPORT = { type: 'OBJECT', properties: { aujourdhui: { type: 'STRING' }, demain: { type: 'STRING' }, pour_toi: { type: 'STRING' } }, required: ['aujourdhui', 'demain', 'pour_toi'] };
 
 // ——— Le rapport du soir (ou de la semaine, le vendredi) ———
-async function rapportSoir(service: Service, apiKey: string, entrepriseId: string, semaine: boolean, force: boolean): Promise<string> {
+async function rapportSoir(service: Service, apiKey: string, entrepriseId: string, semaine: boolean, force: boolean, ecrits: unknown[] = []): Promise<string> {
   const [{ data: e }, { data: ag }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet, langue').eq('id', entrepriseId).single(),
     service.from('legion_agents').select('id, nom, poste, departement, actif, est_directeur, user_id, moteur, fin_mission, personnalite').eq('entreprise_id', entrepriseId).order('ordre'),
@@ -216,14 +216,15 @@ Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'ang
     entreprise_id: entrepriseId, canal_id: canal, auteur_id: directeur.id, user_id: null,
     texte: aerer(blocs.join('\n\n')).slice(0, 5000), genre: 'info',
     meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, chiffres: f.chiffres, demande: force } },
-  }).select('id').single();
+  }).select('*').single();
   if (error) return `${e.nom}: ${error.message}`;
+  ecrits.push(ecrit);
   if (recit && !('erreur' in r)) await garder(service, { entreprise_id: entrepriseId, message_id: ecrit.id, fonction: 'legion_rapport', modele: r.modele, consigne, sortie: JSON.stringify(r.obj) });
   return `${e.nom}: rapport ${type} écrit (${f.alertes.length} alerte(s))`;
 }
 
 // ——— Le rapport de transparence du mois : calculé, sans modèle ———
-async function rapportMois(service: Service, entrepriseId: string, force: boolean): Promise<string> {
+async function rapportMois(service: Service, entrepriseId: string, force: boolean, ecrits: unknown[] = []): Promise<string> {
   const [{ data: e }, { data: ag }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, langue').eq('id', entrepriseId).single(),
     service.from('legion_agents').select('id, nom, poste, departement, actif, est_directeur, user_id, moteur, fin_mission, personnalite').eq('entreprise_id', entrepriseId).order('ordre'),
@@ -262,11 +263,13 @@ async function rapportMois(service: Service, entrepriseId: string, force: boolea
   const texte = anglais
     ? `Transparency report — ${moisNom}\n\n## What Legion cost\n- ${eur(total)} (estimate from public prices; the real bill is Google's)${Object.keys(parFn).length ? '\n' : ''}${Object.entries(parFn).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k}: ${eur(v)}`).join('\n')}\n\n## What the agents did\n- ${reponses.length} replies, ${lignes.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable).length} deliverables, ${lignes.filter((m) => (m.meta as { reunion?: { ouverture?: boolean } } | null)?.reunion?.ouverture).length} meetings, ${lignes.filter((m) => m.genre === 'tache' && m.termine_le).length} tasks done\n\n## What was checked\n- ${relues.length} replies reread before sending, ${corrigees.length} corrected (invented figure, promise, fact)\n- ${actions.length} actions proposed, ${confirmees.length} confirmed by a human — nothing runs without "Confirm"\n- ${(regles || []).length} house rules added, ${(docs || []).length} documents added`
     : `Rapport de transparence — ${moisNom}\n\n## Ce que Legion a coûté\n- ${eur(total)} (estimation d'après les prix publics ; la vraie facture est celle de Google)${Object.keys(parFn).length ? '\n' : ''}${Object.entries(parFn).sort((a, b) => b[1] - a[1]).map(([k, v]) => `- ${k} : ${eur(v)}`).join('\n')}\n\n## Ce que les agents ont fait\n- ${reponses.length} réponses, ${lignes.filter((m) => (m.meta as { livrable?: unknown } | null)?.livrable).length} livrables, ${lignes.filter((m) => (m.meta as { reunion?: { ouverture?: boolean } } | null)?.reunion?.ouverture).length} réunions, ${lignes.filter((m) => m.genre === 'tache' && m.termine_le).length} tâches terminées\n\n## Ce qui a été vérifié\n- ${relues.length} réponses relues avant de partir, ${corrigees.length} corrigées (chiffre inventé, promesse, fait)\n- ${actions.length} actions proposées, ${confirmees.length} confirmées par un humain — rien ne s'exécute sans « Confirmer »\n- ${(regles || []).length} règles de la maison ajoutées, ${(docs || []).length} documents ajoutés`;
-  const { error } = await service.from('legion_messages').insert({
+  const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: entrepriseId, canal_id: canal, auteur_id: directeur.id, user_id: null, texte, genre: 'info',
     meta: { sans_reponse: true, rapport: { type: 'mois', demande: force, mois: debut.toISOString().slice(0, 7), total_eur: Number(total.toFixed(4)), relues: relues.length, corrigees: corrigees.length, actions: actions.length, confirmees: confirmees.length } },
-  });
-  return error ? `${e.nom}: ${error.message}` : `${e.nom}: rapport du mois écrit`;
+  }).select('*').single();
+  if (error) return `${e.nom}: ${error.message}`;
+  ecrits.push(ecrit);
+  return `${e.nom}: rapport du mois écrit`;
 }
 
 Deno.serve(compter('legion_rapport', async (req: Request) => {
@@ -304,12 +307,15 @@ Deno.serve(compter('legion_rapport', async (req: Request) => {
   // Le vendredi soir, la tâche planifiée fait le résumé de la semaine.
   const semaine = mode === 'semaine' || (mode === 'soir' && !!jeton && new Date().getUTCDay() === 5);
   const journal: string[] = [];
+  // Ce qui a été écrit: renvoyé à qui l'a demandé, pour l'afficher sans
+  // attendre le temps réel.
+  const ecrits: unknown[] = [];
   for (const id of entreprises) {
     const p = await plafondAtteint(id);
     if (p.atteint && mode !== 'mois') { journal.push(`${id}: plafond atteint`); continue; }
     await enFond('legion_rapport', id, async () => {
-      journal.push(mode === 'mois' ? await rapportMois(service, id, force) : await rapportSoir(service, apiKey, id, semaine, force));
+      journal.push(mode === 'mois' ? await rapportMois(service, id, force, ecrits) : await rapportSoir(service, apiKey, id, semaine, force, ecrits));
     });
   }
-  return json({ ok: true, journal });
+  return json({ ok: true, journal, messages: jeton ? [] : ecrits });
 }));

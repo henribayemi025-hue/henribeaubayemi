@@ -284,6 +284,7 @@ export default function Entreprise() {
     if (e || r?.erreur) { toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic')); return false; }
     const ligne = (r?.journal || [])[0] || '';
     if (/plafond/.test(ligne)) { toast.error(t('legion.rapport.plafond')); return false; }
+    if (r?.messages?.length) ajouterMessages(r.messages);
     return true;
   }
 
