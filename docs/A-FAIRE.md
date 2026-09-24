@@ -16,7 +16,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | ✅ 24/09 soir, « oui atelier » de Beau → V0 lancée (voir 0.3). **Atelier de code** V0 (plan `docs/plans/2026-09-24-atelier-de-code-et-jarvis.md`) : OpenHands (MIT), modes Demander / Accepter les modifications / Auto, Confirmer obligatoire | « oui atelier » |
 | 24/09 | **Jarvis** V0 (réveil par bouton ou geste, puis voix) ; espace « Moi » de l'assistant personnel ; proposition 10 « Hé Léo » | son accord sur le plan |
 | 24/09 | **Réceptionniste vocale** pour les clients de Léo (fiche 24) : prototype sans téléphone, puis numéro Twilio (payant) | décision + budget |
-| 24/09 | **Essai à l'aveugle Fish Audio contre ElevenLabs** pour les voix de Léo (Fish : environ 11 $/mois avec les droits commerciaux, API gratuite jusqu'au 30/11/2026 sans garantie) | « oui essai » |
+| 24/09 | ✅ « oui essai » de Beau (24/09 soir) — il faut d'abord sa clé Fish Audio (voir 0.2). **Essai à l'aveugle Fish Audio contre ElevenLabs** pour les voix de Léo (Fish : environ 11 $/mois avec les droits commerciaux, API gratuite jusqu'au 30/11/2026 sans garantie) | « oui essai » |
 | 24/09 | **Essai à l'aveugle Wan 2.6 / LTX 2 contre Kling** pour la vidéo (environ 1 $) | « oui » |
 | 24/09 | **Bouton du kit → Accounting déjà connecté** (relais SSO) : touche l'authentification commune, donc Accounting aussi | accord |
 | 24/09 | **Vidéo Accounting v2** : retours attendus (prononciation « Accounting », raccord de la voix vers 16 s, longueur de la fin). La version HQ (35 Mo) dépasse la limite d'envoi : proposer une version compressée | ses retours |
@@ -31,6 +31,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Clé **OpenAI** (facultative) dans les secrets Supabase (`OPENAI_API_KEY`) | relais pour les photos des agents tant que Google est bloqué |
 | 24/09 | Faire tourner la **clé DeepSeek** | hygiène |
 | 24/09 | **GitHub App ou jeton** pour l'atelier et les agents | atelier de code |
+| 24/09 | **Clé Fish Audio** : créer un compte gratuit sur fish.audio, puis une clé API, et la poser dans les secrets Supabase sous le nom `FISH_AUDIO_API_KEY` | pour l'essai à l'aveugle Fish Audio contre ElevenLabs |
 | 24/09 | **Cloudflare pour l'atelier** : activer l'offre payante Workers (environ 5 $ par mois) si elle ne l'est pas, et brancher le nouveau Worker `finjaro-atelier` (étapes exactes données quand le code sera prêt) | sans ça, l'atelier ne peut pas lancer de bac à sable |
 | 24/09 | Un vrai clic **Accounting → finjaro.net** avec un vrai compte | vérifier la connexion unique en conditions réelles |
 | 24/09 | Essayer sur téléphone **« Retirer le fond »** (staging, fiche article) et ouvrir le **classeur du kit** dans Excel ou Google Sheets | pas encore testé sur un vrai téléphone ni dans Excel |
