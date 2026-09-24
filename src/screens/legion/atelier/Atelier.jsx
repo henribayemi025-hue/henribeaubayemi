@@ -70,7 +70,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   const [erreur, setErreur] = useState(null);
   const [modele, setModele] = useState(() => lire('atelier:modele') || 'auto');
   const fin = useRef(null);
-  const [suivre, setSuivre] = useState(() => lire('atelier:suivre') !== '0');
+  const [suivre, setSuivre] = useState(() => lire('atelier:suivre2') !== '0');
   const [activite, setActivite] = useState(null); // { verbe: 'lit' | 'ecrit', chemin }
   const vuJusqua = useRef(null);
   const nomCodeur = codeur?.nom?.split(' ')[0] || t('legion.atelier.leCodeur');
@@ -132,7 +132,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   // Un fichier ouvert que l'agent vient de changer : on le relit (sauf si
   // Beau est en train de le modifier lui-même).
   const tailleOuverte = vue?.fichiers?.find((f) => f.chemin === fichier?.chemin)?.taille;
-  const nbActions = vue?.affichage?.length || 0;
+  const nbActions = vue?.affichage?.[vue.affichage.length - 1]?.id || '';
   useEffect(() => {
     if (!fichier || fichier.brouillon !== fichier.contenu || !pid) return;
     appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(fichier.chemin)}`)
@@ -196,8 +196,10 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     if (!geste) return;
     setActivite({ verbe: geste.outil === 'lire_fichier' ? 'lit' : 'ecrit', chemin: geste.resume });
     if (suivre && fichier?.chemin !== geste.resume && (!fichier || fichier.brouillon === fichier.contenu)) ouvrir(geste.resume, false);
+    // Le fil est tronqué à 200 lignes par le serveur : on suit le DERNIER
+    // élément, pas la longueur (25/09 : au-delà de 200, l'éditeur ne suivait plus).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vue?.affichage?.length]);
+  }, [vue?.affichage?.[vue.affichage.length - 1]?.id]);
   useEffect(() => {
     if (!proposition) return;
     setActivite({ verbe: 'ecrit', chemin: proposition.chemin });
@@ -243,7 +245,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apercuVisible, signature, vue?.demande?.id, fichier?.brouillon, pid]);
 
-  const basculerSuivre = () => setSuivre((x) => { ecrire('atelier:suivre', x ? '0' : '1'); return !x; });
+  const basculerSuivre = () => setSuivre((x) => { ecrire('atelier:suivre2', x ? '0' : '1'); return !x; });
   const enregistrer = () => fichier && agir(async () => {
     const r = await appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: fichier.chemin, contenu: fichier.brouillon } });
     setFichier((f) => ({ ...f, contenu: f.brouillon }));
@@ -321,7 +323,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
             <span className="min-w-0 truncate font-mono text-[12px] text-legion-ink">{fichier.chemin}{sale ? ' •' : ''}</span>
             <button type="button" onClick={basculerSuivre} aria-pressed={suivre} title={t('legion.atelier.suivreAide')}
               className={`ml-auto shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${suivre ? 'border-legion-gold text-legion-gold' : 'border-legion-line text-legion-muted'}`}>
-              {t('legion.atelier.suivre', { nom: nomCodeur })}
+              {suivre ? '● ' : '○ '}{t(suivre ? 'legion.atelier.suivreOui' : 'legion.atelier.suivreNon', { nom: nomCodeur })}
             </button>
             <button type="button" onClick={enregistrer} disabled={!sale || travaille || enProposition}
               className="flex shrink-0 items-center gap-1 rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-40">
@@ -339,6 +341,24 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
       ) : (
         <div className="flex h-full items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.atelier.choisisUnFichier')}</div>
       )}
+    </div>
+  );
+
+  // La console en direct, sous l'éditeur (Beau, 25/09 : « je veux voir les
+  // logs, comment ça défile ») : chaque geste de l'agent, à la seconde.
+  const lignesConsole = (vue?.affichage || []).filter((a) => a.qui === 'action' || a.qui === 'agent').slice(-40);
+  const console_ = (
+    <div className="h-[132px] shrink-0 overflow-y-auto border-t border-legion-line bg-[#070b14] px-3 py-1.5 font-mono text-[11px] leading-relaxed" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+      {!lignesConsole.length && <p className="text-legion-muted">{t('legion.atelier.consoleVide')}</p>}
+      {lignesConsole.map((a) => (
+        <p key={a.id} className="truncate">
+          <span className="text-legion-muted">{a.quand ? new Date(a.quand).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''} </span>
+          {a.qui === 'action'
+            ? <><span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>{a.outil}</span> <span className="text-legion-ink">{a.resume}</span> <span className="text-legion-muted">· {t(`legion.atelier.decision_${a.decision}`, a.decision)}</span></>
+            : <><span className="text-legion-gold">{nomCodeur}</span> <span className="text-legion-ink">{String(a.texte || '').replace(/[*#`]+/g, '').replace(/\s+/g, ' ').slice(0, 160)}</span></>}
+        </p>
+      ))}
+      {travaille && <p className="text-legion-gold">▍</p>}
     </div>
   );
 
@@ -493,6 +513,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
             ))}
           </div>
           <div className="min-h-0 flex-1">{apercuVisible ? colonneApercu : colonneEditeur}</div>
+          {console_}
         </div>
         <div className={`${onglet === 'conversation' ? 'block' : 'hidden'} h-full min-h-0 border-legion-line bg-legion-panel lg:block lg:border-l`}>{colonneConversation}</div>
       </div>

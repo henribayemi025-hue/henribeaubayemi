@@ -1036,7 +1036,10 @@
       "apercuTelephone": "Voir en taille téléphone",
       "apercuLarge": "Voir en grand",
       "rejoue": "▶ rejoué",
-      "rejoueAide": "{{nom}} a écrit toute sa proposition d'un coup ; l'éditeur la rejoue lettre par lettre pour que tu voies ce qui change. Rien n'est enregistré avant ton accord."
+      "rejoueAide": "{{nom}} a écrit toute sa proposition d'un coup ; l'éditeur la rejoue lettre par lettre pour que tu voies ce qui change. Rien n'est enregistré avant ton accord.",
+      "suivreOui": "Je suis {{nom}}",
+      "suivreNon": "Suivre {{nom}}",
+      "consoleVide": "La console : chaque geste de l'agent s'affichera ici, en direct."
     }
   },
   "equipe": {

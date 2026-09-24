@@ -1036,7 +1036,10 @@
       "apercuTelephone": "Phone size",
       "apercuLarge": "Full width",
       "rejoue": "▶ replay",
-      "rejoueAide": "{{nom}} wrote the whole proposal at once; the editor replays it letter by letter so you can see what changes. Nothing is saved until you agree."
+      "rejoueAide": "{{nom}} wrote the whole proposal at once; the editor replays it letter by letter so you can see what changes. Nothing is saved until you agree.",
+      "suivreOui": "Following {{nom}}",
+      "suivreNon": "Follow {{nom}}",
+      "consoleVide": "The console: every move the agent makes will show up here, live."
     }
   },
   "equipe": {
