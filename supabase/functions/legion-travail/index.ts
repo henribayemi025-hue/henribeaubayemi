@@ -289,6 +289,8 @@ Ton mandat: ${a.mandat || '(non précisé)'}.
 ${contrat(a)}L'entreprise: ${projet}
 Nous sommes le ${aujourdhui}. Tu prends ta tâche du jour et tu la LIVRES maintenant, par écrit. Le fondateur veut un résultat, pas « on y travaille ».
 
+TA RAISON D'ÊTRE (le fondateur, 24/09) : faire réussir cette entreprise. Tu n'attends pas qu'on te demande. Une journée ne passe pas sans que tu aies fait avancer quelque chose de concret. S'il ne s'est rien passé (aucune commande, aucune inscription, aucun client), tu cherches POURQUOI avec les chiffres réels, tu proposes des solutions et tu en appliques une qui est dans ton métier. Tu rends des choses utilisables tout de suite : une liste de personnes ou d'entreprises à contacter (trouvées sur Internet, avec la source), un texte prêt à publier, une analyse avec causes et solutions, un plan chiffré. Ce qui sort de l'entreprise (envoyer, publier, payer, mettre en ligne) se prépare et attend le Confirmer du fondateur — le reste, tu le fais.
+
 TA TÂCHE: « ${tache.texte} » (ouverte depuis le ${tache.created_at.slice(0, 10)}${tache.meta?.priorite ? `, priorité ${tache.meta.priorite}` : ''}).
 
 L'ÉQUIPE:
@@ -488,9 +490,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const plansDe = (dept: string, horizon?: string) => (plansRecents || [])
     .filter((x: { departement: string; horizon: string }) => sansAccent(x.departement) === sansAccent(dept) && (!horizon || x.horizon === horizon));
 
-  // Qui a déjà rendu son livrable aujourd'hui (une tranche précédente).
+  // Qui a déjà rendu un livrable dans les 3 dernières heures (une tranche
+  // précédente). Depuis le 25/09, l'équipe passe trois fois par jour (matin,
+  // fin de matinée, après-midi) : un livrable par passage, pas un par jour.
   const { data: livresAujourdhui } = await service.from('legion_messages').select('auteur_id')
-    .eq('entreprise_id', entrepriseId).gte('created_at', new Date().toISOString().slice(0, 10)).not('meta->livrable', 'is', null);
+    .eq('entreprise_id', entrepriseId).gte('created_at', new Date(Date.now() - 3 * 3_600_000).toISOString()).not('meta->livrable', 'is', null);
   const dejaLivre = new Set((livresAujourdhui || []).map((x: { auteur_id: string }) => x.auteur_id));
 
   // 1. LES PLANS — un par département dont le responsable est allumé; la
@@ -562,8 +566,23 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
     // coûte SON livrable.
     await Promise.all(restants.slice(i, i + lot).map((a) => aPart(async () => {
-      const tache = ouvertes.find((t) => t.assigne_a === a.id);
-      if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
+      let tache = ouvertes.find((t) => t.assigne_a === a.id);
+      // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
+      // « vous ne devez pas attendre que je vous demande quelque chose ») :
+      // il se donne l'initiative du jour, dans son métier, et la livre.
+      if (!tache) {
+        const titre = anglais
+          ? `Initiative of the day (${a.poste}): without waiting to be asked, pick the ONE most useful thing in your job to move the company forward today, do it, and say why you chose it`
+          : `Initiative du jour (${a.poste}) : sans attendre qu'on te le demande, choisis LA chose la plus utile de ton métier pour faire avancer l'entreprise aujourd'hui, fais-la, et dis pourquoi tu l'as choisie`;
+        const canalA = canalDe(a.departement);
+        const { data: nouvelle } = await service.from('legion_messages').insert({
+          entreprise_id: entrepriseId, canal_id: canalA.id, auteur_id: a.id, user_id: null, texte: titre, genre: 'tache', assigne_a: a.id,
+          meta: { par_ia: true, statut: 'a_faire', priorite: 'moyenne', initiative: true },
+        }).select('id, texte, assigne_a, canal_id, meta, created_at').single();
+        if (!nouvelle) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
+        tache = nouvelle as Tache;
+        journal.push(`${entreprise.nom}: ${a.nom} prend une initiative`);
+      }
       if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); dejaLivre.add(a.id); return; }
       const canal = canalDe(a.departement);
       pourAgent((a as { modele?: string | null }).modele);
