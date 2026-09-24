@@ -13,6 +13,7 @@
 // verify_jwt=false requis sur cette fonction.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { relaisDepuisGemini } from '../_shared/relais.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -74,6 +75,11 @@ async function isOverBudget(sb: any): Promise<boolean> {
 
 async function classify(apiKey: string, items: Array<{ id: string; texte: string }>): Promise<Json[]> {
   const payload = items.map((i) => `id=${i.id} :: ${i.texte}`).join('\n');
+  const corps = {
+    systemInstruction: { parts: [{ text: INSTRUCTION }] },
+    contents: [{ role: 'user', parts: [{ text: payload }] }],
+    generationConfig: { temperature: 0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json' },
+  };
   for (const model of MODELS) {
     try {
       const resp = await fetch(
@@ -81,11 +87,7 @@ async function classify(apiKey: string, items: Array<{ id: string; texte: string
         {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: INSTRUCTION }] },
-            contents: [{ role: 'user', parts: [{ text: payload }] }],
-            generationConfig: { temperature: 0, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json' },
-          }),
+          body: JSON.stringify(corps),
           signal: AbortSignal.timeout(45000),
         },
       );
@@ -99,6 +101,17 @@ async function classify(apiKey: string, items: Array<{ id: string; texte: string
     } catch {
       /* modèle suivant */
     }
+  }
+  // Google en échec (plafond de dépenses du 24/09…) : même consigne, mêmes
+  // messages, au relais (voir _shared/relais.ts). Un message n'est jamais
+  // que SIGNALÉ ici, jamais masqué : une erreur du relais coûte un clic.
+  const relais = await relaisDepuisGemini(corps, { fn: 'chat_moderation_sweep' });
+  const raw = String(((((relais?.candidates as Json[] | undefined)?.[0]?.content as Json | undefined)?.parts as Json[] | undefined)?.[0]?.text) ?? '');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch { /* ci-dessous */ }
   }
   throw new Error('aucun modèle disponible');
 }

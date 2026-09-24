@@ -14,6 +14,7 @@
 // sur cette fonction.
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { relaisDepuisGemini } from '../_shared/relais.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -72,6 +73,11 @@ async function isOverBudget(sb: any): Promise<boolean> {
 
 async function genererReponse(apiKey: string, catalogue: string, historique: string): Promise<string | null> {
   const contenu = `ARTICLES DE LA BOUTIQUE (les seuls dont tu peux parler):\n${catalogue}\n\nCONVERSATION (la dernière ligne est la question à laquelle répondre):\n${historique}`;
+  const corps = {
+    systemInstruction: { parts: [{ text: INSTRUCTION }] },
+    contents: [{ role: 'user', parts: [{ text: contenu }] }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 400, thinkingConfig: { thinkingBudget: 0 } },
+  };
   for (const model of MODELS) {
     try {
       const resp = await fetch(
@@ -79,11 +85,7 @@ async function genererReponse(apiKey: string, catalogue: string, historique: str
         {
           method: 'POST',
           headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: INSTRUCTION }] },
-            contents: [{ role: 'user', parts: [{ text: contenu }] }],
-            generationConfig: { temperature: 0.4, maxOutputTokens: 400, thinkingConfig: { thinkingBudget: 0 } },
-          }),
+          body: JSON.stringify(corps),
           signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
         },
       );
@@ -96,7 +98,12 @@ async function genererReponse(apiKey: string, catalogue: string, historique: str
       /* modèle suivant */
     }
   }
-  return null;
+  // Google en échec (plafond de dépenses du 24/09…) : la même consigne et la
+  // même conversation partent au relais (DeepSeek, puis Kimi — voir
+  // _shared/relais.ts). Quand Google répond, rien ne change.
+  const relais = await relaisDepuisGemini(corps, { fn: 'chat-autoreply' });
+  const txt = String(((((relais?.candidates as Json[] | undefined)?.[0]?.content as Json | undefined)?.parts as Json[] | undefined)?.[0]?.text) ?? '').trim();
+  return txt ? txt.slice(0, 600) : null;
 }
 
 // Le jeton partagé, lu avec une deuxième chance.

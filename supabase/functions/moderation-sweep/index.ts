@@ -31,6 +31,7 @@
 // la raison en clair — pour que l'erreur de la machine se répare d'un clic,
 // et que la vendeuse puisse recevoir une explication.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { relaisDepuisGemini } from '../_shared/relais.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -140,6 +141,18 @@ recu, sans texte autour et sans balises de code:
 
 async function classify(apiKey: string, items: Array<{ id: string; texte: string }>, instruction: string = INSTRUCTION) {
   const payload = items.map((i) => `id=${i.id} :: ${i.texte}`).join('\n');
+  const corps = {
+    systemInstruction: { parts: [{ text: instruction }] },
+    contents: [{ role: 'user', parts: [{ text: payload }] }],
+    generationConfig: {
+      // Une inspection doit être RÉPÉTABLE: le même article relu
+      // demain doit donner le même verdict.
+      temperature: 0,
+      maxOutputTokens: 4096,
+      thinkingConfig: { thinkingBudget: 512 },
+      responseMimeType: 'application/json',
+    },
+  };
   let lastErr = '';
   for (const model of MODELS) {
     try {
@@ -152,18 +165,7 @@ async function classify(apiKey: string, items: Array<{ id: string; texte: string
           // écrire. Mieux vaut perdre un paquet et garder les autres.
           signal: AbortSignal.timeout(45000),
           headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: instruction }] },
-            contents: [{ role: 'user', parts: [{ text: payload }] }],
-            generationConfig: {
-              // Une inspection doit être RÉPÉTABLE: le même article relu
-              // demain doit donner le même verdict.
-              temperature: 0,
-              maxOutputTokens: 4096,
-              thinkingConfig: { thinkingBudget: 512 },
-              responseMimeType: 'application/json',
-            },
-          }),
+          body: JSON.stringify(corps),
         },
       );
       if (!resp.ok) { lastErr = `${model}: ${resp.status}`; continue; }
@@ -177,6 +179,22 @@ async function classify(apiKey: string, items: Array<{ id: string; texte: string
     } catch (e) {
       lastErr = `${model}: ${e instanceof Error ? e.message : String(e)}`;
     }
+  }
+  // Google en échec (plafond de dépenses du 24/09…) : la même consigne et les
+  // mêmes contenus partent au relais (DeepSeek, puis Kimi — voir
+  // _shared/relais.ts). Coût non noté dans ai_usage : cette fonction n'y a
+  // pas de nom autorisé (elle n'y écrit rien non plus quand Google répond).
+  const relais = await relaisDepuisGemini(corps, { fn: null });
+  const raw = String(((((relais?.candidates as Json[] | undefined)?.[0]?.content as Json | undefined)?.parts as Json[] | undefined)?.[0]?.text) ?? '');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      // Un modèle de relais n'a pas fait ses preuves sur cette tâche : il ne
+      // MASQUE jamais rien lui-même. Son « block » devient « review », et un
+      // humain tranche (Beau, 24/09 au soir : proposition acceptée).
+      if (Array.isArray(parsed)) return parsed.map((x: Json) => (x && (x as { verdict?: string }).verdict === 'block') ? { ...x, verdict: 'review', raison: `${(x as { raison?: string }).raison || ''} (avis du modèle de relais, à confirmer)`.trim() } : x);
+      lastErr = 'relais: format inattendu';
+    } catch { lastErr = 'relais: JSON illisible'; }
   }
   throw new Error(lastErr || 'aucun modèle disponible');
 }
