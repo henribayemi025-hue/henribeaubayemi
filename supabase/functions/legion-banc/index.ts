@@ -8,6 +8,7 @@
 // compté comme les autres (ai_usage, fonction « legion_banc »).
 
 import { cleOpenAI, clesPresentes, compter, coutEnCours } from '../_shared/cout.ts';
+import { verifierApplication } from '../_shared/github-app.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { generer } from '../_shared/moteur.ts';
 import { transcrire } from '../_shared/relais.ts';
@@ -37,6 +38,9 @@ Deno.serve(compter('legion_banc', async (req: Request) => {
     }
     return json({ ok: true, cles: clesPresentes(), modelesOpenAI });
   }
+  // L'application GitHub de l'atelier : la clé marche-t-elle, où est-elle
+  // installée (24/09 — jamais la clé elle-même).
+  if (corps.diagnostic === 'github') return json(await verifierApplication());
   // L'écoute des vocaux par OpenAI (le relais quand Google tombe) : OpenAI
   // dit une phrase, puis la transcrit — sans aucun vrai vocal de personne.
   if (corps.diagnostic === 'voix') {
