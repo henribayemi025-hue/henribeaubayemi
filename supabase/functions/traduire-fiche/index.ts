@@ -13,9 +13,8 @@
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, gemini } from '../_shared/cout.ts';
-
-const MODELES = ['gemini-2.5-flash', 'gemini-3.5-flash'];
+import { compter } from '../_shared/cout.ts';
+import { generer, moteursSimples } from '../_shared/moteur.ts';
 const PROD_HOST = 'finjaro.net';
 function origineAutorisee(origin: string | null): boolean {
   if (!origin) return false;
@@ -62,26 +61,20 @@ Deno.serve(compter('traduire_fiche', async (req: Request) => {
 TITRE: ${String(p.name || '').slice(0, 300)}
 DESCRIPTION: ${String(p.description || '').slice(0, 3000)}`;
 
-  for (const model of MODELES) {
-    try {
-      const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST', headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 }, responseMimeType: 'application/json', responseSchema: SCHEMA } }),
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!resp.ok) { console.error(`${model}: HTTP ${resp.status}`); continue; }
-      const body = await resp.json();
-      const txt = body?.candidates?.[0]?.content?.parts?.map((x: { text?: string }) => x.text ?? '').join('') ?? '';
-      const obj = JSON.parse(txt);
-      const name = String(obj.name || '').replace(/\\n/g, '\n').trim().slice(0, 300);
-      const description = String(obj.description || '').replace(/\\n/g, '\n').trim().slice(0, 4000) || null;
-      const langueSource = ['fr', 'en'].includes(String(obj.langue_source)) ? String(obj.langue_source) : 'autre';
-      if (!name) continue;
+  // Par le moteur commun (24/09) : Google d'abord, puis le relais (DeepSeek,
+  // Kimi…) quand Google ne répond pas — son plafond de dépense a tout coupé
+  // le 24/09 à 01 h 18 UTC, et plus aucune fiche ne se traduisait.
+  const r = await generer(apiKey, texte, SCHEMA, { temperature: 0.1, maxSortie: 2048, delaiMs: 25_000, modeles: moteursSimples() });
+  if (!('erreur' in r)) {
+    const obj = r.obj;
+    const name = String(obj.name || '').replace(/\\n/g, '\n').trim().slice(0, 300);
+    const description = String(obj.description || '').replace(/\\n/g, '\n').trim().slice(0, 4000) || null;
+    const langueSource = ['fr', 'en'].includes(String(obj.langue_source)) ? String(obj.langue_source) : 'autre';
+    if (name) {
       const ligne = { product_id: productId, langue, langue_source: langueSource, name, description };
       await service.from('product_traductions').upsert(ligne);
       return json({ ...ligne, en_cache: false });
-    } catch (e) { console.error(`${model}: ${(e as Error).message}`); }
-  }
+    }
+  } else console.error(`traduction: ${r.erreur}`);
   return json({ erreur: 'Traduction impossible pour le moment.' }, 502);
 }));
