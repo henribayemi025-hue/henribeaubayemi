@@ -40,7 +40,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 | Date | Quoi | État |
 |---|---|---|
-| 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») |
+| 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») · 24/09 : code écrit sur staging (migration 0198, legion-travail, legion-examen, legion-action, fiche de l'agent, carte du salon, point de la semaine). **Pas encore en service** : 0198 à appliquer, puis les 3 fonctions à déployer ; essai réel à faire |
 | 24/09 | **Atelier de code V0** (plan §1.8) : Worker `finjaro-atelier` + bac à sable Cloudflare sans aucune clé, mode Demander seulement (+ Réfléchir d'abord), écran Atelier (arbre, éditeur, conversation, cartes d'autorisation, modifications, journal, coût, Stop), « Présente-moi comment ça marche », export .zip, **pas d'envoi GitHub** | lancé le 24/09 au soir |
 | 24/09 | Vérifier finjaro.net après la mise en ligne (bundle, /kit, Retirer le fond, Studio de contenu) | ✅ 24/09 soir : finjaro.net sert 8d559ad — /kit, classeur, modèle et moteur de détourage, textes Léo présents |
 | 24/09 | Essayer « Déposer une ressource » avec un vrai lien, dans Léo | à faire au prochain lien de Beau |

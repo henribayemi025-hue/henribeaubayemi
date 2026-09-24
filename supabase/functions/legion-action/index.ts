@@ -8,6 +8,16 @@
 //
 // Les actions de cette première version restent à l'intérieur de Legion:
 // allumer ou éteindre un agent, retenir une règle, équiper une compétence.
+//
+// « activer_competence » (0198, Beau 24/09 : « les agents doivent pouvoir
+// s'auto-entraîner ») : une compétence qu'un agent a écrite lui-même, qui a
+// réussi l'examen de Rigo (legion-examen). Mentor la présente avec deux
+// boutons. « Confirmer » l'allume ; « Écarter » (décision « refuser ») la
+// laisse éteinte, marquée « ecartee », avec la raison donnée (rien n'est
+// supprimé). C'est le SEUL chemin qui allume une compétence écrite par un
+// agent : il faut le jeton d'un humain membre de l'entreprise. La même
+// décision peut se prendre depuis la fiche de l'agent (corps
+// { competence_id, decision }) : la carte du salon suit alors aussi.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -32,6 +42,33 @@ function cors(origin: string | null): Record<string, string> {
   };
 }
 
+// deno-lint-ignore no-explicit-any
+type Service = any;
+
+// Allumer ou écarter une compétence écrite par un agent (0198). Seulement si
+// elle est de CETTE entreprise, écrite par un agent, et qu'elle attend une
+// décision ; une compétence déjà écartée ne se rallume pas par ce chemin.
+async function deciderCompetence(service: Service, entrepriseId: string, competenceId: string, decision: 'confirmer' | 'refuser', userId: string, raison?: string): Promise<{ statut: string; resultat: string }> {
+  if (!competenceId) return { statut: 'echec', resultat: 'Compétence non précisée.' };
+  const { data: c } = await service.from('legion_competences').select('id, nom, agent_id, actif, etat, ajoutee_par')
+    .eq('id', competenceId).eq('entreprise_id', entrepriseId).maybeSingle();
+  if (!c || c.ajoutee_par !== 'agent' || !c.etat) return { statut: 'echec', resultat: 'Compétence introuvable dans cette entreprise.' };
+  const { data: a } = await service.from('legion_agents').select('nom').eq('id', c.agent_id).maybeSingle();
+  const qui = a?.nom || 'L’agent';
+  const maintenant = new Date().toISOString();
+  if (decision === 'refuser') {
+    if (c.actif) return { statut: 'echec', resultat: `« ${c.nom} » est déjà active : retire-la depuis la fiche de ${qui}.` };
+    if (c.etat === 'ecartee') return { statut: 'refusee', resultat: `« ${c.nom} » était déjà écartée.` };
+    const pourquoi = String(raison || '').trim().slice(0, 400);
+    const { error } = await service.from('legion_competences').update({ etat: 'ecartee', etat_le: maintenant, decide_par: userId, etat_raison: pourquoi || 'Écartée par le fondateur.' }).eq('id', c.id);
+    return error ? { statut: 'echec', resultat: error.message } : { statut: 'refusee', resultat: `Écartée${pourquoi ? ` : ${pourquoi}` : ''}. ${qui} ne s’en servira pas.` };
+  }
+  if (c.actif) return { statut: 'faite', resultat: `« ${c.nom} » est déjà active.` };
+  if (c.etat !== 'a_valider') return { statut: 'echec', resultat: c.etat === 'ecartee' ? `« ${c.nom} » a été écartée.` : `« ${c.nom} » n’a pas (encore) réussi l’examen.` };
+  const { error } = await service.from('legion_competences').update({ actif: true, etat: 'active', etat_le: maintenant, decide_par: userId, etat_raison: null }).eq('id', c.id);
+  return error ? { statut: 'echec', resultat: error.message } : { statut: 'faite', resultat: `${qui} se sert maintenant de « ${c.nom} ».` };
+}
+
 Deno.serve(async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
@@ -40,26 +77,56 @@ Deno.serve(async (req: Request) => {
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
 
-  let corps: { message_id?: string; decision?: 'confirmer' | 'refuser' };
+  let corps: { message_id?: string; competence_id?: string; decision?: 'confirmer' | 'refuser'; raison?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
-  if (!corps.message_id || !['confirmer', 'refuser'].includes(String(corps.decision))) return json({ erreur: 'Demande incomplète.' }, 400);
+  if ((!corps.message_id && !corps.competence_id) || !['confirmer', 'refuser'].includes(String(corps.decision))) return json({ erreur: 'Demande incomplète.' }, 400);
 
   // Lu avec le jeton de la personne: si elle n'est pas membre, rien ne revient.
   const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
   const { data: { user } } = await personne.auth.getUser();
+  if (!user) return json({ erreur: 'Il faut être connecté.' }, 401);
+  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+
+  // Depuis la fiche de l'agent : la compétence, lue avec le jeton du membre.
+  if (!corps.message_id && corps.competence_id) {
+    const { data: comp } = await personne.from('legion_competences').select('id, entreprise_id').eq('id', corps.competence_id).maybeSingle();
+    if (!comp) return json({ erreur: "Compétence inconnue, ou tu n'es pas membre." }, 403);
+    const r = await deciderCompetence(service, comp.entreprise_id, comp.id, corps.decision!, user.id, corps.raison);
+    // La carte du salon qui la proposait suit la décision.
+    if (r.statut !== 'echec') {
+      const { data: cartes } = await service.from('legion_messages').select('id, meta').eq('entreprise_id', comp.entreprise_id)
+        .eq('meta->apprise->>competence_id', comp.id).limit(5);
+      for (const m of (cartes || []) as Array<{ id: string; meta: Record<string, unknown> & { action?: Record<string, unknown> } }>) {
+        if (m.meta?.action?.statut !== 'a_confirmer') continue;
+        await service.from('legion_messages').update({
+          meta: { ...m.meta, action: { ...m.meta.action, statut: r.statut, resultat: r.resultat, par: user.id, le: new Date().toISOString() } },
+          repondu_le: new Date().toISOString(),
+        }).eq('id', m.id);
+      }
+    }
+    return json(r);
+  }
+
   const { data: msg } = await personne.from('legion_messages').select('id, entreprise_id, auteur_id, meta').eq('id', corps.message_id).maybeSingle();
-  if (!msg || !user) return json({ erreur: "Message inconnu, ou tu n'es pas membre." }, 403);
+  if (!msg) return json({ erreur: "Message inconnu, ou tu n'es pas membre." }, 403);
   const action = (msg.meta as { action?: Record<string, string> } | null)?.action;
   if (!action || action.statut !== 'a_confirmer') return json({ erreur: 'Rien à confirmer ici (déjà fait ou refusé).' }, 409);
 
-  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
   const marquer = async (statut: string, resultat: string) => {
     await service.from('legion_messages').update({
       meta: { ...(msg.meta as Record<string, unknown>), action: { ...action, statut, resultat, par: user.id, le: new Date().toISOString() } },
+      // Une compétence à valider est une question posée au fondateur : une
+      // fois tranchée, elle ne compte plus parmi ce qui l'attend.
+      ...(action.type === 'activer_competence' && statut !== 'echec' ? { repondu_le: new Date().toISOString() } : {}),
     }).eq('id', msg.id);
     return json({ statut, resultat });
   };
+
+  if (action.type === 'activer_competence') {
+    const r = await deciderCompetence(service, msg.entreprise_id, String(action.competence_id || ''), corps.decision!, user.id, corps.raison);
+    return marquer(r.statut, r.resultat);
+  }
 
   if (corps.decision === 'refuser') return marquer('refusee', 'Refusé par le fondateur.');
 

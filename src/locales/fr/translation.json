@@ -711,6 +711,26 @@
         "egalite": "Égalité"
       }
     },
+    "appris": {
+      "par": "Apprise par {{nom}} le {{date}}",
+      "etat": {
+        "a_examiner": "En examen",
+        "a_valider": "À valider",
+        "a_revoir": "À revoir",
+        "active": "Active",
+        "ecartee": "Écartée"
+      },
+      "attente": "Rigo l’examinera lundi. Pour ne pas attendre : « Faire passer l’examen ».",
+      "raison": "Pourquoi : {{raison}}",
+      "lire": "Lire la fiche",
+      "fermer": "Fermer la fiche",
+      "activer": "Activer",
+      "ecarter": "Écarter",
+      "annuler": "Annuler",
+      "pourquoi": "Pourquoi ? (facultatif)",
+      "retiree": "Retirée depuis la fiche de l’agent.",
+      "libelleAction": "Activer la compétence « {{nom}} » pour {{agent}}"
+    },
     "exporter": "Exporter",
     "exporterAide": "Sa fiche et ses compétences dans un fichier, pour le recréer dans une autre entreprise Léo.",
     "importer": {

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { IconBook2, IconPlus, IconSearch, IconSparkles, IconX, IconExternalLink, IconFlask, IconCircleCheck, IconAlertTriangle } from '@tabler/icons-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { IconBook2, IconPlus, IconSearch, IconSparkles, IconX, IconExternalLink, IconFlask, IconCircleCheck, IconAlertTriangle, IconSchool } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 
 // Un examen « en cours » plus vieux que ça a été interrompu (la fonction
@@ -93,6 +93,74 @@ function ExamenCompetence({ competence, examens, agent, t, onLance }) {
 // GitHub ». Une compétence est une fiche de savoir-faire d'expert, copiée
 // d'un dépôt GitHub sous licence libre; l'agent la relit avant de répondre.
 
+// Les compétences qu'un agent a écrites lui-même (0198, Beau 24/09 : « les
+// agents doivent pouvoir s'auto-entraîner »). Elles arrivent éteintes :
+// Rigo les examine, puis un humain de l'équipe les active ou les écarte
+// (fonction legion-action, la même que le bouton du salon). Ici : d'où elle
+// vient (« Apprise par … le … »), son état, la raison d'un refus, et la
+// fiche à lire avant de décider.
+const COULEUR_ETAT = {
+  a_examiner: 'bg-legion-line/60 text-legion-muted',
+  a_valider: 'bg-legion-gold/20 text-legion-gold',
+  a_revoir: 'bg-legion-danger/10 text-legion-danger',
+  active: 'bg-legion-success/15 text-legion-success',
+  ecartee: 'bg-legion-line/60 text-legion-muted',
+};
+function Apprise({ c, agent, t, onDecide }) {
+  const [lire, setLire] = useState(false);
+  const [raison, setRaison] = useState(null); // null = champ fermé
+  const [occupe, setOccupe] = useState(false);
+  const [erreur, setErreur] = useState('');
+  const date = new Date(c.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+  const enAttente = ['a_examiner', 'a_valider', 'a_revoir'].includes(c.etat);
+  async function decider(decision) {
+    setOccupe(true); setErreur('');
+    try {
+      const { data, error } = await supabase.functions.invoke('legion-action', { body: { competence_id: c.id, decision, raison: raison || undefined } });
+      if (error) throw error;
+      if (data?.erreur) throw new Error(data.erreur);
+      if (data?.statut === 'echec') throw new Error(data.resultat);
+      setRaison(null);
+      await onDecide();
+    } catch (e) { setErreur(e.message); } finally { setOccupe(false); }
+  }
+  return (
+    <div className="mt-1">
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px]">
+        <span className="inline-flex items-center gap-1 text-legion-muted"><IconSchool size={12} /> {t('legion.appris.par', { nom: agent.nom, date })}</span>
+        <span className={`rounded-pill px-1.5 py-px font-semibold ${COULEUR_ETAT[c.etat] || COULEUR_ETAT.a_examiner}`}>{t(`legion.appris.etat.${c.etat}`)}</span>
+        <button type="button" onClick={() => setLire((x) => !x)} className="text-legion-muted underline decoration-dotted hover:text-legion-ink">
+          {lire ? t('legion.appris.fermer') : t('legion.appris.lire')}
+        </button>
+      </p>
+      {c.etat === 'a_examiner' && <p className="mt-0.5 text-[11px] text-legion-muted">{t('legion.appris.attente')}</p>}
+      {['a_revoir', 'ecartee'].includes(c.etat) && c.etat_raison && <p className="mt-0.5 text-[11px] text-legion-muted">{t('legion.appris.raison', { raison: c.etat_raison })}</p>}
+      {lire && <p className="mt-1 whitespace-pre-line rounded-lg bg-legion-bg/60 px-2.5 py-1.5 text-[11px] leading-snug text-legion-ink">{c.contenu || c.description}</p>}
+      {enAttente && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {c.etat === 'a_valider' && raison === null && (
+            <button type="button" onClick={() => decider('confirmer')} disabled={occupe}
+              className="rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{occupe ? '…' : t('legion.appris.activer')}</button>
+          )}
+          {raison === null ? (
+            <button type="button" onClick={() => setRaison('')} disabled={occupe}
+              className="rounded-pill border border-legion-line px-3 py-1 text-[12px] font-semibold text-legion-muted disabled:opacity-50">{t('legion.appris.ecarter')}</button>
+          ) : (
+            <>
+              <input value={raison} onChange={(e) => setRaison(e.target.value)} maxLength={400} placeholder={t('legion.appris.pourquoi')}
+                className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-2.5 py-1 text-[16px] text-legion-ink outline-none placeholder:text-legion-muted focus:border-legion-gold/60 sm:text-[12px]" />
+              <button type="button" onClick={() => decider('refuser')} disabled={occupe}
+                className="rounded-pill border border-legion-danger/40 px-3 py-1 text-[12px] font-semibold text-legion-danger disabled:opacity-50">{occupe ? '…' : t('legion.appris.ecarter')}</button>
+              <button type="button" onClick={() => setRaison(null)} disabled={occupe} className="text-[12px] text-legion-muted hover:text-legion-ink">{t('legion.appris.annuler')}</button>
+            </>
+          )}
+        </div>
+      )}
+      {erreur && <p className="mt-0.5 text-[11px] text-legion-danger">{erreur}</p>}
+    </div>
+  );
+}
+
 async function appeler(corps) {
   const { data, error } = await supabase.functions.invoke('legion-competences', { body: corps });
   if (error) throw error;
@@ -110,9 +178,18 @@ export function CompetencesAgent({ agent, t }) {
   const [erreur, setErreur] = useState('');
 
   const charger = useCallback(async () => {
-    const { data } = await supabase.from('legion_competences').select('id, catalogue_cle, nom, description, pourquoi, source_repo, source_chemin, licence, ajoutee_par, contenu')
-      .eq('agent_id', agent.id).eq('actif', true).order('created_at');
-    setListe(data || []);
+    const colonnes = 'id, catalogue_cle, nom, description, pourquoi, source_repo, source_chemin, licence, ajoutee_par, contenu';
+    // Les actives, et celles qu'il a écrites lui-même, quel que soit leur
+    // état (0198). Sans la migration 0198, la lecture d'avant.
+    const { data, error } = await supabase.from('legion_competences').select(`${colonnes}, actif, etat, etat_raison, created_at`)
+      .eq('agent_id', agent.id).or('actif.eq.true,etat.not.is.null').order('created_at');
+    if (!error) {
+      const rang = (c) => (c.etat === 'a_valider' ? 0 : c.actif ? 1 : c.etat === 'a_examiner' ? 2 : 3);
+      setListe((data || []).map((c, i) => ({ c, i })).sort((a, b) => rang(a.c) - rang(b.c) || a.i - b.i).map(({ c }) => c));
+      return;
+    }
+    const { data: avant } = await supabase.from('legion_competences').select(colonnes).eq('agent_id', agent.id).eq('actif', true).order('created_at');
+    setListe(avant || []);
   }, [agent.id]);
   useEffect(() => { charger(); }, [charger]);
 
@@ -130,11 +207,18 @@ export function CompetencesAgent({ agent, t }) {
   useEffect(() => { chargerExamens(); }, [chargerExamens]);
   // Tant qu'un examen tourne, on relit toutes les 8 secondes : le verdict
   // arrive en une à deux minutes.
+  // L'examen fini, l'état d'une compétence apprise change juste après (à
+  // valider, à revoir) : on relit la liste une fois, quelques secondes plus tard.
+  const tournait = useRef(false);
   useEffect(() => {
-    if (!examens.some(enCours)) return undefined;
+    const tourne = examens.some(enCours);
+    const fini = tournait.current && !tourne;
+    tournait.current = tourne;
+    if (fini) { const m = setTimeout(charger, 3000); return () => clearTimeout(m); }
+    if (!tourne) return undefined;
     const minuteur = setTimeout(chargerExamens, 8000);
     return () => clearTimeout(minuteur);
-  }, [examens, chargerExamens]);
+  }, [examens, chargerExamens, charger]);
 
   useEffect(() => {
     const q = cherche.trim();
@@ -158,10 +242,13 @@ export function CompetencesAgent({ agent, t }) {
     try { await appeler({ action: 'equiper', entreprise_id: agent.entreprise_id, agent_id: agent.id, catalogue_cle: cle }); setCherche(''); await charger(); }
     catch (e) { setErreur(e.message); } finally { setOccupe(null); }
   }
-  async function retirer(id) {
-    setListe((l) => l.filter((x) => x.id !== id));
-    await supabase.from('legion_competences').update({ actif: false }).eq('id', id);
+  async function retirer(c) {
+    setListe((l) => l.filter((x) => x.id !== c.id));
+    // Une compétence qu'il avait apprise reste dans sa fiche, marquée écartée.
+    await supabase.from('legion_competences').update(c.etat ? { actif: false, etat: 'ecartee', etat_le: new Date().toISOString(), etat_raison: t('legion.appris.retiree') } : { actif: false }).eq('id', c.id);
+    if (c.etat) await charger();
   }
+  const apprise = (c) => c.ajoutee_par === 'agent' && !!c.etat;
 
   return (
     <div>
@@ -179,7 +266,7 @@ export function CompetencesAgent({ agent, t }) {
       ) : (
         <ul className="space-y-1.5">
           {liste.map((c) => (
-            <li key={c.id} className="rounded-card border border-legion-line bg-legion-card px-3 py-2">
+            <li key={c.id} className={`rounded-card border px-3 py-2 ${c.etat === 'a_valider' ? 'border-legion-gold/50 bg-legion-gold/5' : 'border-legion-line bg-legion-card'} ${c.actif === false ? 'opacity-90' : ''}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-legion-ink">{c.nom}</p>
@@ -193,16 +280,19 @@ export function CompetencesAgent({ agent, t }) {
                       <a href={/^https?:\/\//.test(c.source_repo) ? c.source_repo : `https://github.com/${c.source_repo}${c.source_chemin ? `/blob/HEAD/${c.source_chemin}` : ''}`} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-0.5 hover:text-legion-ink">
                         <span className="truncate">{/^https?:\/\//.test(c.source_repo) ? c.source_repo.replace(/^https?:\/\/(www\.)?/, '').slice(0, 60) : c.source_repo}</span> <IconExternalLink size={11} className="shrink-0" />
                       </a>
-                    ) : <span>{t('legion.competenceMaison', 'Écrite par Léo')}</span>}
+                    ) : apprise(c) ? null : <span>{t('legion.competenceMaison', 'Écrite par Léo')}</span>}
                     {c.licence && <span>· {c.licence}</span>}
                     {!c.contenu && <span className="text-legion-danger">· {t('legion.ficheNonLue', 'fiche pas encore lue')}</span>}
                   </p>
                 </div>
-                <button type="button" onClick={() => retirer(c.id)} title={t('legion.retirer', 'Retirer')} className="shrink-0 rounded-full p-1 text-legion-muted hover:bg-legion-bg hover:text-legion-danger">
-                  <IconX size={14} />
-                </button>
+                {c.actif !== false && (
+                  <button type="button" onClick={() => retirer(c)} title={t('legion.retirer', 'Retirer')} className="shrink-0 rounded-full p-1 text-legion-muted hover:bg-legion-bg hover:text-legion-danger">
+                    <IconX size={14} />
+                  </button>
+                )}
               </div>
-              {examinable && (c.contenu || c.description) && (
+              {apprise(c) && <Apprise c={c} agent={agent} t={t} onDecide={charger} />}
+              {examinable && (c.contenu || c.description) && c.etat !== 'ecartee' && (
                 <ExamenCompetence competence={c} examens={examens.filter((x) => x.competence_id === c.id)} agent={agent} t={t} onLance={chargerExamens} />
               )}
             </li>

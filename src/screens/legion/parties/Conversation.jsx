@@ -554,16 +554,25 @@ const LIBELLES_ACTION = {
   // Sa photo, l'agent la choisit lui-même, tout de suite (24/09).
   changer_photo: (a) => `${a.agent || 'L’agent'} change sa photo`,
 };
+// Une compétence écrite par un agent et réussie à l'examen (0198) : Mentor
+// la présente ; « Confirmer » l'allume, « Écarter » la laisse éteinte, avec
+// une raison si on veut (elle nourrit le point de la semaine).
 function ActionProposee({ message, t }) {
   const [etat, setEtat] = useState(message.meta.action);
   const [occupe, setOccupe] = useState(false);
+  const [raison, setRaison] = useState(null); // null = champ fermé
+  const apprise = etat.type === 'activer_competence';
   // Le résultat qui arrive plus tard (la photo fabriquée en fond) : suivre le message.
   const statutServeur = message.meta.action?.statut;
   useEffect(() => { if (statutServeur && statutServeur !== 'a_confirmer') setEtat(message.meta.action); }, [statutServeur]); // eslint-disable-line react-hooks/exhaustive-deps
-  const libelle = (LIBELLES_ACTION[etat.type] || (() => etat.type))(etat);
+  const libelle = apprise
+    ? t('legion.appris.libelleAction', { nom: etat.valeur, agent: etat.agent })
+    : (LIBELLES_ACTION[etat.type] || (() => etat.type))(etat);
   async function decider(decision) {
+    // Écarter une compétence : d'abord le champ « pourquoi », puis l'envoi.
+    if (apprise && decision === 'refuser' && raison === null) { setRaison(''); return; }
     setOccupe(true);
-    const { data, error } = await supabase.functions.invoke('legion-action', { body: { message_id: message.id, decision } });
+    const { data, error } = await supabase.functions.invoke('legion-action', { body: { message_id: message.id, decision, ...(apprise && raison ? { raison } : {}) } });
     setOccupe(false);
     if (error || data?.erreur) { setEtat((e) => ({ ...e, resultat: data?.erreur || error.message })); return; }
     setEtat((e) => ({ ...e, statut: data.statut, resultat: data.resultat }));
@@ -573,11 +582,20 @@ function ActionProposee({ message, t }) {
       <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-gold">{t('legion.actionProposee', 'Action proposée')}</p>
       <p className="mt-0.5 text-[14px] font-semibold text-legion-ink">{libelle}</p>
       {etat.statut === 'a_confirmer' ? (
-        <div className="mt-2 flex gap-2">
-          <button type="button" onClick={() => decider('confirmer')} disabled={occupe}
-            className="rounded-pill bg-legion-gold px-3.5 py-1.5 text-[13px] font-semibold text-legion-bg disabled:opacity-50">{occupe ? '…' : t('legion.confirmer', 'Confirmer')}</button>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {raison === null && (
+            <button type="button" onClick={() => decider('confirmer')} disabled={occupe}
+              className="rounded-pill bg-legion-gold px-3.5 py-1.5 text-[13px] font-semibold text-legion-bg disabled:opacity-50">{occupe ? '…' : t('legion.confirmer', 'Confirmer')}</button>
+          )}
+          {raison !== null && (
+            <input value={raison} onChange={(e) => setRaison(e.target.value)} maxLength={400} placeholder={t('legion.appris.pourquoi')}
+              className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-2.5 py-1.5 text-[16px] text-legion-ink outline-none placeholder:text-legion-muted focus:border-legion-gold/60 sm:text-[13px]" />
+          )}
           <button type="button" onClick={() => decider('refuser')} disabled={occupe}
-            className="rounded-pill border border-legion-line px-3.5 py-1.5 text-[13px] font-semibold text-legion-muted disabled:opacity-50">{t('legion.refuser', 'Refuser')}</button>
+            className="rounded-pill border border-legion-line px-3.5 py-1.5 text-[13px] font-semibold text-legion-muted disabled:opacity-50">{apprise ? (occupe && raison !== null ? '…' : t('legion.appris.ecarter')) : t('legion.refuser', 'Refuser')}</button>
+          {raison !== null && (
+            <button type="button" onClick={() => setRaison(null)} disabled={occupe} className="text-[12px] text-legion-muted hover:text-legion-ink">{t('legion.appris.annuler')}</button>
+          )}
         </div>
       ) : (
         <p className={`mt-1 text-[12px] font-semibold ${etat.statut === 'faite' ? 'text-legion-success' : etat.statut === 'echec' ? 'text-legion-danger' : 'text-legion-muted'}`}>

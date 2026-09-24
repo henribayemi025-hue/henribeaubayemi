@@ -711,6 +711,26 @@
         "egalite": "Tie"
       }
     },
+    "appris": {
+      "par": "Learned by {{nom}} on {{date}}",
+      "etat": {
+        "a_examiner": "Being examined",
+        "a_valider": "Awaiting approval",
+        "a_revoir": "To review",
+        "active": "Active",
+        "ecartee": "Set aside"
+      },
+      "attente": "Rigo will examine it on Monday. Not to wait: « Run the exam ».",
+      "raison": "Why: {{raison}}",
+      "lire": "Read the skill",
+      "fermer": "Close the skill",
+      "activer": "Switch on",
+      "ecarter": "Set aside",
+      "annuler": "Cancel",
+      "pourquoi": "Why? (optional)",
+      "retiree": "Removed from the agent’s profile.",
+      "libelleAction": "Switch on the skill « {{nom}} » for {{agent}}"
+    },
     "exporter": "Export",
     "exporterAide": "Their profile and skills in a file, to recreate them in another Léo company.",
     "importer": {

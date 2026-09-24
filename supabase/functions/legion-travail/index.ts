@@ -69,7 +69,8 @@ function contrat(a: Agent): string {
   const m = a.mission;
   return `${m?.objectif ? `Ta mission: ${m.objectif}${m.prend?.length ? ` — tu prends: ${m.prend.join(' ; ')}` : ''}${m.relais_humain ? `. Tu passes la main à un humain quand: ${m.relais_humain}` : ''}.\n` : ''}${a.fin_mission ? `Tu es en intérim jusqu'au ${a.fin_mission}.\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat): ${a.jamais}\n` : ''}`;
 }
-type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string } } | null; created_at: string };
+type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string };
+  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string } | null; created_at: string };
 type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
 
@@ -129,6 +130,104 @@ Relis-le avec l'œil de ton métier. "verdict" = "conteste" SEULEMENT s'il y a u
 Sinon (un désaccord de goût, un détail, un doute vague) : "verdict" = "ok", "texte" = "".
 Écris en ${anglais ? 'anglais' : 'français'}.`;
 }
+
+// ——— APPRENDRE (Beau, 24/09 : « les agents doivent pouvoir s'auto-entraîner ») ———
+//
+// Le modèle : Hermes Agent (docs/vestiaire/26). Après une tâche difficile,
+// l'agent écrit sa propre compétence. Le défaut avoué d'Hermes — une fiche
+// fausse, réutilisée avec assurance — est paré ici : la proposition arrive
+// ÉTEINTE (0198, état « a_examiner »), Rigo l'examine (legion-examen, sûreté
+// comprise), et seul un humain de l'équipe l'active par « Confirmer ».
+//
+// « Difficile », avec ce que la base sait vraiment d'une tâche :
+//   - elle avait été BLOQUÉE à une journée précédente (meta.bloque), et elle
+//     est livrée cette fois ;
+//   - le fondateur l'avait RENVOYÉE (meta.renvoye_le), et elle est livrée à
+//     nouveau ;
+//   - un collègue avait CONTESTÉ un livrable précédent de cette tâche ;
+//   - elle a demandé BEAUCOUP D'OUTILS : 4 vérifications dans la base ou plus
+//     (le maximum d'une enquête), la recherche sur Internet comptant pour une.
+//     C'est l'équivalent de la règle d'Hermes (« 5 appels d'outils ou plus »).
+// La longueur du livrable n'entre pas en compte : elle est fixée par la
+// consigne (800 à 2500 signes), elle ne dit rien de la difficulté.
+//
+// Coût : UN appel de modèle, par le moteur commun (moteursSimples : l'IA
+// choisie par l'entreprise et par l'agent, jamais un modèle en dur). Au plus
+// une proposition par agent et par jour, jamais un doublon d'une compétence
+// qu'il a déjà, et rien au-delà du plafond du mois.
+const OUTILS_DIFFICILE = 4;
+
+function pourquoiDifficile(tache: Tache, outils: number, contesteAvant: boolean): string[] {
+  const m = tache.meta || {};
+  const r: string[] = [];
+  if (m.bloque) r.push(`bloquée à un premier essai (« ${String(m.bloque).slice(0, 200)} »), livrée cette fois`);
+  if (m.renvoye_le) r.push(`renvoyée par le fondateur${m.remarque ? ` (« ${String(m.remarque).slice(0, 300)} »)` : ''}, livrée à nouveau`);
+  if (contesteAvant) r.push('un livrable précédent a été contesté par un collègue, livrée à nouveau');
+  if (outils >= OUTILS_DIFFICILE) r.push(`${outils} vérifications et recherches pour la mener`);
+  return r;
+}
+
+const SCHEMA_APPRIS = {
+  type: 'OBJECT',
+  properties: {
+    a_retenir: { type: 'BOOLEAN' },
+    nom: { type: 'STRING' },
+    description: { type: 'STRING' },
+    quand: { type: 'STRING' },
+    etapes: { type: 'STRING' },
+    pieges: { type: 'STRING' },
+    verifier: { type: 'STRING' },
+    pas_encore: { type: 'STRING' },
+  },
+  required: ['a_retenir', 'nom', 'description', 'quand', 'etapes', 'pieges', 'verifier', 'pas_encore'],
+};
+
+function consigneApprendre(a: Agent, tache: Tache, livrable: string, raisons: string[], faits: string[], dejaSu: string[], anglais: boolean): string {
+  return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` (${a.departement})` : ''}. Tu viens de livrer la tâche « ${tache.texte} », et elle n'a pas été simple : ${raisons.join(' ; ')}.
+Comme un professionnel qui tient son carnet, tu écris ce que CETTE tâche t'a appris, pour mieux faire la prochaine fois. C'est une PROPOSITION : elle reste éteinte, Rigo l'examine, puis le fondateur décide.
+
+CE QUI S'EST PASSÉ (tes seules sources) :
+${faits.join('\n')}
+
+TON LIVRABLE :
+${livrable.slice(0, 3000)}
+
+LES COMPÉTENCES QUE TU AS DÉJÀ (ne les répète pas) :
+${dejaSu.length ? dejaSu.map((x) => `- ${x}`).join('\n') : '(aucune)'}
+
+RÈGLES — les mêmes que pour tout ce que tu écris :
+- N'écris QUE ce que tu as constaté dans cette tâche. Rien de supposé, rien de général « qu'on sait bien ». Une seule tâche : écris « vu une fois » là où c'est le cas.
+- Aucun chiffre qui ne figure pas ci-dessus ; un chiffre de la tâche reste un exemple, jamais une règle ni un objectif.
+- Aucune monnaie « par défaut » (ni FCFA, ni euro, ni dollar) : un montant garde la monnaie de sa source.
+- Rien qui publie, envoie, paie ou modifie quoi que ce soit sans l'accord du fondateur.
+- Aucune donnée personnelle : ni nom de client, ni téléphone, ni e-mail, ni adresse.
+- Aucune promesse de gain ou de résultat.
+- Aucune phrase qui enferme la place de marché dans un pays ; jamais « diaspora ».
+- Pas de copie du livrable : une MÉTHODE réutilisable pour une tâche du même genre.
+
+ÉCRIS :
+"a_retenir" : false s'il n'y a rien de neuf et de réutilisable (une tâche difficile par hasard, ou une compétence que tu as déjà) — alors tout le reste vaut "". Sinon true.
+"nom" : le nom de la compétence, 3 à 8 mots, un savoir-faire (« Débloquer un rapport quand un chiffre manque »), pas le titre de la tâche.
+"description" : une phrase, ce qu'elle apporte.
+"quand" : quand s'en servir — la situation, en une ou deux phrases.
+"etapes" : les étapes qui ont marché, dans l'ordre, une par ligne commençant par « - ».
+"pieges" : les pièges rencontrés et comment tu les as évités, une par ligne commençant par « - ».
+"verifier" : comment vérifier que c'est bien fait, une par ligne commençant par « - ».
+"pas_encore" : ce que tu ne sais pas encore (ce que cette seule tâche ne prouve pas), une par ligne commençant par « - ».
+Écris en ${anglais ? 'anglais' : 'français'}, simplement.`;
+}
+
+// La fiche en Markdown, toujours dans le même ordre : Rigo et le fondateur
+// la lisent de la même façon d'une proposition à l'autre.
+function ficheApprise(o: Record<string, unknown>, anglais: boolean): string {
+  const t = (k: string, n = 900) => String(o[k] || '').trim().slice(0, n);
+  const titres = anglais
+    ? ['When to use it', 'The steps that worked', 'Pitfalls met', 'How to check', 'What I do not know yet']
+    : ['Quand s\'en servir', 'Les étapes qui ont marché', 'Les pièges rencontrés', 'Comment vérifier', 'Ce que je ne sais pas encore'];
+  return ['quand', 'etapes', 'pieges', 'verifier', 'pas_encore'].map((k, i) => `## ${titres[i]}\n${t(k) || '-'}`).join('\n\n');
+}
+
+const slug = (s: string) => sansAccent(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'competence';
 
 const SCHEMA_LIVRABLE = {
   type: 'OBJECT',
@@ -221,6 +320,77 @@ ${REGLES_COMMUNES}
 // chaîne s'arrête d'elle-même.
 const BUDGET_MS = 100_000;
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
+// L'agent écrit sa compétence, si la tâche livrée était difficile (voir
+// « APPRENDRE » plus haut). Ne casse jamais rien : une proposition perdue
+// vaut mieux qu'un livrable perdu. Rend une ligne pour le journal, ou ''.
+async function apprendre(service: Service, apiKey: string, o: {
+  entrepriseId: string; a: Agent; tache: Tache; livrable: string; livrableId: string;
+  verifie: string[]; sources: string[]; anglais: boolean;
+}): Promise<string> {
+  const { entrepriseId, a, tache } = o;
+  try {
+    // Un livrable précédent de cette tâche contesté par un collègue : ne se
+    // cherche que si la tâche avait déjà été livrée une fois.
+    let contestation = '';
+    if (tache.meta?.livre_le) {
+      const { data: avant } = await service.from('legion_messages').select('id').eq('entreprise_id', entrepriseId)
+        .eq('meta->livrable->>tache_id', tache.id).neq('id', o.livrableId).limit(10);
+      const ids = (avant || []).map((x: { id: string }) => x.id);
+      if (ids.length) {
+        const { data: c } = await service.from('legion_messages').select('texte').eq('entreprise_id', entrepriseId)
+          .in('meta->conteste->>livrable_id', ids).order('created_at', { ascending: false }).limit(1);
+        if (c?.length) contestation = String(c[0].texte || '').slice(0, 800);
+      }
+    }
+    const outils = o.verifie.length + (o.sources.length ? 1 : 0);
+    const raisons = pourquoiDifficile(tache, outils, !!contestation);
+    if (!raisons.length) return '';
+
+    // Une proposition par agent et par jour ; le plafond du mois, relu (les
+    // livrables de la journée ont pu le faire passer).
+    const jour = new Date().toISOString().slice(0, 10);
+    const { data: siennes, error: errLire } = await service.from('legion_competences').select('nom, description, ajoutee_par, created_at, etat')
+      .eq('agent_id', a.id).limit(200);
+    if (errLire) return `${a.nom} : compétence non proposée (${errLire.message})`;
+    if ((siennes || []).some((c: { ajoutee_par: string; etat: string | null; created_at: string }) => c.ajoutee_par === 'agent' && c.etat && c.created_at >= jour)) return '';
+    if ((await plafondAtteint(entrepriseId)).atteint || await budgetAgentAtteint(a)) return '';
+
+    const faits = [
+      `- La tâche : « ${tache.texte} » (ouverte le ${tache.created_at.slice(0, 10)}).`,
+      ...(tache.meta?.bloque ? [`- Au premier essai, tu étais bloqué : ${String(tache.meta.bloque).slice(0, 400)}`] : []),
+      ...(tache.meta?.renvoye_le ? [`- Le fondateur a renvoyé ton livrable précédent${tache.meta.remarque ? `, avec cette remarque : « ${String(tache.meta.remarque).slice(0, 600)} »` : ' (sans remarque écrite)'}.`] : []),
+      ...(contestation ? [`- Un collègue avait contesté ton livrable précédent : « ${contestation} »`] : []),
+      ...(o.verifie.length ? [`- Tes vérifications dans la base (outil → résultat) :\n${o.verifie.map((v) => `  ${v.slice(0, 300)}`).join('\n')}`] : []),
+      ...(o.sources.length ? [`- Ta recherche sur Internet, ses sources : ${o.sources.slice(0, 5).join(' ; ')}`] : []),
+    ];
+    const dejaSu = (siennes || []).filter((c: { etat: string | null }) => c.etat !== 'ecartee').map((c: { nom: string }) => c.nom).slice(0, 60);
+    const avantCout = coutEnCours();
+    const r = await generer(apiKey, consigneApprendre(a, tache, o.livrable, raisons, faits, dejaSu, o.anglais), SCHEMA_APPRIS,
+      { temperature: 0.3, reflexion: 1024, maxSortie: 2048, delaiMs: 45_000, modeles: moteursSimples() });
+    if ('erreur' in r) return `${a.nom} : compétence non proposée (${r.erreur})`;
+    const nom = String(r.obj.nom || '').trim().replace(/^["«\s]+|["»\s]+$/g, '').slice(0, 120);
+    if (!r.obj.a_retenir || nom.length < 6 || String(r.obj.etapes || '').trim().length < 20) return `${a.nom} : rien de neuf à retenir de cette tâche`;
+    // Pas de doublon : même comparaison de mots que pour les tâches.
+    const description = String(r.obj.description || '').trim().slice(0, 400);
+    const double = (siennes || []).find((c: { nom: string; description: string | null }) => semblable(c.nom, nom) || (description && c.description && semblable(c.description, description)));
+    if (double) return `${a.nom} : proposition « ${nom} » écartée d'office, trop proche de « ${double.nom} »`;
+
+    const { error } = await service.from('legion_competences').insert({
+      entreprise_id: entrepriseId, agent_id: a.id, catalogue_cle: `appris-${jour}-${slug(nom)}`, nom,
+      description: description || null, contenu: ficheApprise(r.obj, o.anglais),
+      source_repo: null, source_chemin: null, licence: null,
+      ajoutee_par: 'agent', actif: false, etat: 'a_examiner', etat_le: new Date().toISOString(),
+      pourquoi: `${o.anglais ? 'Learned while delivering' : 'Apprise en livrant'} « ${tache.texte.slice(0, 180)} »`,
+      appris_de: { tache_id: tache.id, tache: tache.texte.slice(0, 300), livrable_id: o.livrableId, pourquoi: raisons, modele: r.modele, cout_eur: Number((coutEnCours() - avantCout).toFixed(6)) },
+    });
+    if (error) return `${a.nom} : compétence non enregistrée (${error.message})`;
+    return `${a.nom} propose une compétence : « ${nom} » (${raisons.join(' ; ')}), en attente d'examen`;
+  } catch (e) {
+    console.error('apprendre:', (e as Error).message);
+    return '';
+  }
+}
 
 // Le plan et les livrables d'UNE entreprise. Rend true s'il reste du travail.
 async function travailler(service: Service, apiKey: string, entrepriseId: string, journal: string[], debut: number): Promise<boolean> {
@@ -432,6 +602,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
       await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
+      let contesteMaintenant = false;
       if (!bloque && livrablePublie?.id) {
         await retenir(service, apiKey, { entreprise_id: entrepriseId, agent_id: a.id, source: 'livrable', message_id: livrablePublie.id, texte: `Tâche « ${tache.texte} » — ${livrable.slice(0, 1500)}` });
         // UN COLLÈGUE RELIT (idée 2 des 200, I6) : un autre agent du service
@@ -449,7 +620,15 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
                 reponse_a: { id: livrablePublie.id, nom: a.nom, texte: livrable.slice(0, 160) } },
             });
             journal.push(`${entreprise.nom}: ${collegue.nom} conteste le livrable de ${a.nom}`);
+            contesteMaintenant = true;
           }
+        }
+        // APPRENDRE : une tâche difficile, livrée et que personne ne conteste
+        // à l'instant, peut devenir une compétence proposée (éteinte). Pas
+        // si la tranche a déjà épuisé son temps : le livrable passe d'abord.
+        if (!contesteMaintenant && livrable.length >= 300 && !tempsEcoule()) {
+          const appris = await apprendre(service, apiKey, { entrepriseId, a, tache, livrable, livrableId: livrablePublie.id, verifie, sources: (web?.sources || []).map((s) => `${s.titre} (${s.url})`), anglais });
+          if (appris) journal.push(`${entreprise.nom}: ${appris}`);
         }
       }
       // LE RELAIS (plan complet, B6-5): un livrable fini passe la suite au bon
