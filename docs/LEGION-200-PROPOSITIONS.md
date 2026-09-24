@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 109 faites, 24 en partie, 14 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 119 faites, 21 en partie, 7 à faire, 18 en attente de Beau, 35 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -100,25 +100,25 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
-| 51 | Organigramme vivant animé | 🔧 | L'organigramme se construit à la fondation et les salons suivent les départements. Pas d'animation selon l'activité. |
-| 52 | Bureau virtuel isométrique avec les avatars au travail | 📌 | Beau aime le style : faisable en 2D légère sur l'accueil. |
+| 51 | Organigramme vivant animé | ✅ | L'organigramme vivant (24/09) : l'entreprise, ses départements, le responsable puis l'équipe ; l'agent qui a écrit dans les dix dernières minutes est cerclé d'or avec un point qui clignote. |
+| 52 | Bureau virtuel isométrique avec les avatars au travail | ✅ | Le bureau (24/09) : une pièce par département, chaque agent à son poste avec ce qu'il fait (sa tâche en cours, « écrit en ce moment », ou « en veille ») — tout vient de ce qu'ils font vraiment. |
 | 53 | Avatars personnalisés (IA, photo, manga, corporate) | ✅ | Chaque agent choisit son visage ou son bitmoji ; on peut aussi le changer. |
 | 54 | Salle de contrôle : vue d'ensemble ↔ un seul agent | ✅ | Accueil = vue d'ensemble (santé, charge, carte d'activité, chaque agent) ; toucher un agent ouvre sa fiche, avec son journal des choix (24/09). |
 | 55 | Notifications des agents | ✅ | Le téléphone sonne quand un agent pose une question, propose, décide, ouvre une réunion, ou donne une tâche à un humain. |
 | 56 | Tableau des coûts en temps réel | ✅ | Dépense du mois et plafond, par entreprise. |
 | 57 | Mode sombre et thèmes | ✅ | Legion a son thème bleu nuit et or. |
-| 58 | Commandes rapides (/) pour appeler un agent | 🔧 | On appelle un agent par « @Prénom ». Pas de commandes « / ». |
-| 59 | Frise pour revoir l'état à une date donnée | 📌 | Les messages, plans et tâches sont datés : une frise est faisable. |
+| 58 | Commandes rapides (/) pour appeler un agent | ✅ | Commandes « / » dans la case d'écriture (24/09) : /reunion, /rapport, /tache, /appeler, /regle — la liste s'ouvre en tapant « / ». |
+| 59 | Frise pour revoir l'état à une date donnée | ✅ | La frise (24/09) : les 30 derniers jours ; toucher un jour montre ses décisions, livrables, réunions, rapports, questions, et l'état du tableau ce soir-là (tâches créées, terminées, ouvertes). |
 | 60 | Carte de chaleur de l'activité par département | ✅ | Carte d'activité par département sur 14 jours (24/09) : une case par jour, plus foncée quand les agents ont plus parlé. |
 | 61 | Cartes de visite des agents | ✅ | La fiche de l'agent (visage, poste, mandat, personnalité, ce qu'il reçoit). |
-| 62 | Mode « présentation investisseur » | 🔧 | Un agent peut écrire le dossier dans un salon. Pas de diapositives générées. |
+| 62 | Mode « présentation investisseur » | ✅ | La présentation (24/09) : des diapositives faites de ce qui est dans Legion (projet, équipe, plan, feuille de route, ce qui est mesuré, décisions), plein écran, et PDF à imprimer. Aucun chiffre financier inventé. |
 | 63 | Dicter ses ordres à la voix | ✅ | Vocaux transcrits, et appel vocal d'un agent (23/09). |
 | 64 | Interface traduite | ✅ | Français et anglais ; d'autres langues à ajouter. |
-| 65 | Raccourcis clavier | 📌 | Petit travail. |
+| 65 | Raccourcis clavier | ✅ | Raccourcis clavier (24/09) : Alt+1…5 pour les onglets, Ctrl/⌘+K pour chercher, « / » pour écrire, B le bureau, I les idées, « ? » l'aide, Échap pour fermer. |
 | 66 | Jauge de santé du projet | ✅ | Santé de l'équipe (24/09) : chaque agent en forme, à surveiller ou en difficulté selon une règle écrite et affichée (« comment c'est calculé ») : silence avec du travail, blocages, livrables qui attendent, tâches immobiles, renvois, corrections, budget. |
 | 67 | Mode focus : cacher les agents inactifs | ✅ | Le bouton « Allumés » de la liste des agents cache ceux qui sont éteints (il existait déjà ; la ligne disait le contraire, corrigée le 24/09). |
 | 68 | Galerie des avatars filtrable par rôle | ✅ | Galerie (24/09) : les portraits en grand, filtrés par département ; la recherche filtre par nom, poste et département. |
-| 69 | Exporter l'organigramme en PDF ou image | 📌 | Petit travail. |
+| 69 | Exporter l'organigramme en PDF ou image | ✅ | L'organigramme s'exporte en PNG, en SVG et en PDF (24/09). |
 | 70 | Mini-jeu pour « motiver » les agents | ✗ | Pas retenu : ne sert pas le travail. |
 | 71 | Trophées aux grandes étapes | ✅ | Trophées (24/09) : les étapes de la feuille de route que le fondateur a cochées, avec leur date. Rien n'est décerné par un modèle. |
 | 72 | Conférence de presse simulée | ✅ | Réunion au format « conférence de presse » (24/09) : des journalistes posent les questions difficiles, l'entreprise répond. |
@@ -198,10 +198,10 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 131 | Modèles locaux hors ligne | ✗ | Pas sur un téléphone d'entrée de gamme. |
 | 132 | Optimiser les requêtes des agents développeurs | ⏸ | Studio de code. |
 | 133 | Nettoyer les agents inactifs | ✅ | Un intérimaire s'éteint seul le lendemain de sa date de fin (0177). |
-| 134 | Avatars compressés | 📌 | La place de marché sert ses photos en miniature ; les portraits des agents pas encore. |
+| 134 | Avatars compressés | ✅ | Les portraits (PNG d'environ 1,5 Mo) ont maintenant une miniature JPEG 256 px (essayé : 11 Ko), servie partout ; l'original reste pour la photo en grand. Les anciens portraits sont allégés à l'ouverture de l'entreprise, sans rien payer (24/09). |
 | 135 | Indexation instantanée des documents | ✅ | Documents découpés et indexés par le sens à l'ajout (0179). |
 | 136 | Surveillance mémoire et processeur | ✗ | Géré par l'hébergeur. |
-| 137 | Listes virtualisées pour des milliers d'agents | 📌 | À faire avant les très grands effectifs. |
+| 137 | Listes virtualisées pour des milliers d'agents | 🔧 | La liste et la galerie des agents se dessinent 60 par 60 au fil du défilement (24/09) : des milliers d'agents ne chargent plus tout d'un coup. Ce n'est pas encore une vraie liste virtualisée (les lignes déjà dessinées restent). |
 | 138 | Organigramme en WebGL | ✗ | Pas prioritaire. |
 | 139 | Reprise après coupure réseau | ✅ | Plusieurs modèles de secours, délais bornés, message clair quand Google est saturé. |
 | 140 | Économie d'énergie des serveurs | ✗ | Hors de notre main. |
@@ -235,7 +235,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 163 | Vote communautaire sur les compétences | ✗ | Pas maintenant. |
 | 164 | Adaptation culturelle par marché | 🔧 | Langue de l'utilisateur ; pas de pays par défaut. |
 | 165 | Wiki interne tenu par les agents | 🔧 | Documents de l'entreprise + mémoire. Pas de wiki écrit par les agents. |
-| 166 | Tableau blanc collaboratif | 📌 | À voir. |
+| 166 | Tableau blanc collaboratif | ✅ | Le tableau d'idées (0187, 24/09) : des notes de couleur que les membres posent et votent, en temps réel ; une idée devient une tâche ou part à l'équipe en un geste. |
 | 167 | Historique des décisions consultable | ✅ | Comptes rendus (genre « décision ») dans les salons. |
 | 168 | Encourager un agent | ✅ | « Encourager » sur la fiche de l'agent (24/09) : ce que le fondateur a aimé entre dans SA mémoire, et il le retrouve quand on lui demande quelque chose de proche. Les réactions emoji restent. |
 | 169 | Podcast de la semaine | ✅ | Le vendredi (24/09), le rapport du soir couvre la semaine ; un bouton « Écouter » le lit avec la voix du téléphone (rien ne part au serveur). |
@@ -267,7 +267,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 190 | « Et si on avait fait autrement il y a 3 mois ? » | ✅ | Réunion au format « et si » (24/09) : relit les plans et décisions passés et imagine l'autre chemin. |
 | 191 | Bourses pour former les agents juniors | ✗ | Pas retenu. |
 | 192 | Humour réglable | ✅ | Par la personnalité. |
-| 193 | Mascotte animée | 🔧 | Finou existe côté Finjaro. |
+| 193 | Mascotte animée | ✅ | Le veilleur (24/09) : une chouette en laiton et terracotta, dessinée en code (aucune image du web), qui cligne des yeux dans les écrans vides de Legion. |
 | 194 | Fusions-acquisitions simulées | ✗ | Pas retenu. |
 | 195 | Subventions et partenariats à saisir | ✅ | Recherche web avec sources, par un agent. |
 | 196 | Cerveau collectif : une seule réponse de tous | ✅ | Le compte rendu de réunion rassemble les avis en une décision. |

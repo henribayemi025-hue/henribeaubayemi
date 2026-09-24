@@ -206,15 +206,15 @@ export function Frise({ entreprise, agents, t, langue = 'fr' }) {
   const date = (j) => new Date(`${j}T12:00:00`).toLocaleDateString(langue === 'en' ? 'en-GB' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   return (
     <div className="space-y-4 p-4">
-      <div className="overflow-x-auto">
-        <div className="flex h-24 items-end gap-1" style={{ minWidth: 30 * 16 }}>
+      <div>
+        <div className="flex h-24 items-end gap-[2px] sm:gap-1">
           {jours.map((j) => (
             <button key={j} type="button" onClick={() => setJour(j)} title={`${date(j)} — ${parJour[j]}`}
               className={`flex-1 rounded-t ${j === jour ? 'bg-legion-gold' : 'bg-legion-teal/50 hover:bg-legion-teal'}`}
               style={{ height: `${Math.max(4, (parJour[j] / max) * 100)}%` }} />
           ))}
         </div>
-        <div className="mt-1 flex justify-between text-[10px] text-legion-muted" style={{ minWidth: 30 * 16 }}>
+        <div className="mt-1 flex justify-between text-[10px] text-legion-muted">
           <span>{date(jours[0])}</span><span>{t('legion.vues.aujourdhui')}</span>
         </div>
       </div>
