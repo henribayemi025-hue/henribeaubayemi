@@ -113,6 +113,11 @@ export default function Entreprise() {
         (c) => setData((d) => (d ? { ...d, reactions: d.reactions.filter((r) => !(r.message_id === c.old.message_id && r.auteur_id === c.old.auteur_id && r.emoji === c.old.emoji)) } : d)))
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'legion_agents', filter: `entreprise_id=eq.${entrepriseId}` },
         (c) => setData((d) => (d ? { ...d, agents: d.agents.map((a) => (a.id === c.new.id ? { ...a, ...c.new } : a)) } : d)))
+      // Un agent engagé (bouton « Confirmer », legion-action) arrive ici tout
+      // de suite. Avant le 24/09, Ada restait absente de la liste, de « @ » et
+      // de la recherche jusqu'au rechargement de la page.
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'legion_agents', filter: `entreprise_id=eq.${entrepriseId}` },
+        (c) => setData((d) => (d && !d.agents.some((a) => a.id === c.new.id) ? { ...d, agents: [...d.agents, c.new] } : d)))
       .subscribe();
     return () => { supabase.removeChannel(abo); };
   }, [entrepriseId, user?.id, setData]);

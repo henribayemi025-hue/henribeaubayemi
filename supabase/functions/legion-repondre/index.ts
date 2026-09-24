@@ -429,7 +429,22 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   } else if (cite && cite.moteur !== 'claude-code') {
     cibles = [cite];
   } else {
-    const nommes = machines.filter((a) => t.includes('@' + sansAccent(a.nom)));
+    // Beau, 24/09: « ada nkemba bonjour » — et ce sont d'autres qui ont
+    // répondu. Un nom complet (prénom + nom) n'importe où, ou un nom en tête
+    // du message (« Ada, … », « bonjour Vigie »), appelle cet agent comme un
+    // @. Pas un nom d'un mot au milieu d'une phrase: « écho », « radar »,
+    // « forge » sont aussi des mots de tous les jours.
+    const echappe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const tete = t.trim().replace(/^(bonjour|bonsoir|salut|coucou|hello|hey|merci)[\s,!]+/, '');
+    const appelle = (a: Agent) => {
+      const n = sansAccent(a.nom).trim();
+      if (!n) return false;
+      if (t.includes('@' + n)) return true;
+      if (n.includes(' ') && new RegExp(`(^|[^a-z0-9])${echappe(n)}([^a-z0-9]|$)`).test(t)) return true;
+      const prenom = n.split(/\s+/)[0];
+      return new RegExp(`^${echappe(prenom)}([^a-z0-9]|$)`).test(tete);
+    };
+    const nommes = machines.filter(appelle);
     if (nommes.length) {
       cibles = nommes.slice(0, MAX_REPONDANTS);
     } else if (pourClaude) {
