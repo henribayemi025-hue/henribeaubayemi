@@ -239,3 +239,32 @@ async function signalerSeuil(entrepriseId: string, depense: number, plafond: num
       { alerte: { type: 'seuil', pct } });
   } catch (e) { console.error('alerte seuil:', (e as Error).message); }
 }
+
+// Les clés que Beau pose lui-même dans les secrets de Supabase (24/09) : il
+// les nomme à sa façon (« Leo »…), et c'est au code de s'adapter, pas à lui
+// de renommer. On reconnaît une clé à sa FORME : « sk-… » = OpenAI,
+// « tvly-… » = Tavily. Le nom officiel reste lu en premier.
+const NOMS_LIBRES = ['Leo', 'LEO', 'leo', 'Léo', 'LÉO', 'léo'];
+function cleSelonForme(officiel: string, prefixe: string): string | undefined {
+  const v = Deno.env.get(officiel);
+  if (v) return v.trim();
+  for (const nom of NOMS_LIBRES) {
+    const x = (Deno.env.get(nom) || '').trim();
+    if (x.startsWith(prefixe)) return x;
+  }
+  return undefined;
+}
+export const cleOpenAI = () => cleSelonForme('OPENAI_API_KEY', 'sk-');
+export const cleTavily = () => cleSelonForme('TAVILY_API_KEY', 'tvly-');
+
+// Ce qui est posé, sans jamais rien montrer d'une clé : le nom, et la
+// famille reconnue à sa forme (pour le diagnostic du banc d'essai).
+export function clesPresentes(): Record<string, string> {
+  const r: Record<string, string> = {};
+  for (const nom of ['GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'KIMI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'TAVILY_API_KEY', 'BRAVE_API_KEY', 'FISH_AUDIO_API_KEY', 'ELEVENLABS_API_KEY', ...NOMS_LIBRES]) {
+    const v = (Deno.env.get(nom) || '').trim();
+    if (!v) continue;
+    r[nom] = v.startsWith('sk-ant-') ? 'forme Anthropic' : v.startsWith('sk-') ? 'forme OpenAI' : v.startsWith('tvly-') ? 'forme Tavily' : v.startsWith('AIza') ? 'forme Google' : 'présente';
+  }
+  return r;
+}

@@ -14,7 +14,7 @@
 // et seulement quand la question le demande (voir `aBesoinDuWeb`).
 
 import { avecCache } from './cache.ts';
-import { gemini } from './cout.ts';
+import { cleTavily, gemini } from './cout.ts';
 
 export type Trouvaille = { resume: string; sources: { titre: string; url: string }[]; via?: string };
 
@@ -77,7 +77,7 @@ Rends en français, 800 à 2000 signes, les faits trouvés (qui, quoi, quand, o�
 const courte = (q: string) => q.replace(/\s+/g, ' ').trim().slice(0, 380);
 
 async function parTavily(question: string): Promise<Trouvaille | null> {
-  const cle = Deno.env.get('TAVILY_API_KEY');
+  const cle = cleTavily();
   if (!cle) return null;
   try {
     const r = await fetch('https://api.tavily.com/search', {

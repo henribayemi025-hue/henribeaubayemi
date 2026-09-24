@@ -28,6 +28,9 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Beau (22 h) sur l'atelier : « un développeur doit se sentir super à l'aise ; ce qu'il fait en 5 jours avec VS Code et Claude, avec nous il doit le faire en une heure avec les agents. Toi seul sais ce que les devs aiment : c'est à toi de gérer. » → V1 de l'atelier pensée pour les développeurs | à faire après le premier vrai essai |
 | 24/09 | Beau (22 h) : « pourquoi tu veux que je passe Cloudflare payante ? » → expliqué (les bacs à sable n'existent que dans l'offre à 5 $/mois ; alternatives données) | sa décision |
 | 24/09 | Beau (22 h) sur Fish Audio : « tu dis que je pars où pour faire ça ? » → marche à suivre simple donnée | sa clé |
+| 24/09 | Beau (22 h 15) : « j'ai déjà posé l'API OpenAI dans Supabase sous le nom Leo, ça fait mille fois que je te le dis » → le code reconnaît maintenant une clé à sa forme (« sk- » = OpenAI, « tvly- » = Tavily) sous `OPENAI_API_KEY`/`TAVILY_API_KEY` **ou** « Leo ». Pas besoin de renommer | ✅ 24/09 |
+| 24/09 | Beau (22 h 15) : « si je veux faire par exemple Finjaro Learn, je vais sur mes agents, ils me le font en 5 minutes, avec tout » → objectif de l'atelier | V1 atelier |
+| 24/09 | Beau (22 h 15) : l'apprentissage de Finia **allumé par défaut** (pas éteint) → transmis au chantier Finia commune, avec message clair et refus d'un toucher | en cours |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 

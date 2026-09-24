@@ -31,7 +31,7 @@
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
 
-import { ajouterCout, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
+import { ajouterCout, cleOpenAI, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
@@ -140,7 +140,9 @@ export const PRIX_DS: Record<string, [number, number, number]> = {
   'kimi-k2.6': [0.1284, 0.4972, 2.97],
 };
 
-async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL'), cle = Deno.env.get('MOTEUR_OA_CLE')): Promise<string> {
+// Sans adresse réglée, « oa: » va chez OpenAI avec la clé de Beau, reconnue
+// à sa forme (24/09 : il l'a rangée sous le nom « Leo »).
+async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL') || (cleOpenAI() ? 'https://api.openai.com/v1' : undefined), cle = Deno.env.get('MOTEUR_OA_CLE') || cleOpenAI()): Promise<string> {
   if (!url) throw new Error('MOTEUR_OA_URL absent');
   const resp = await fetch(`${url.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
@@ -208,6 +210,8 @@ function secours(): string[] {
   const s: string[] = [];
   if (Deno.env.get('ANTHROPIC_API_KEY')) s.push(`an:${Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude-sonnet-5'}`);
   if (Deno.env.get('MOTEUR_OA_URL') && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
+  // OpenAI (clé de Beau), quand son modèle est réglé (LEGION_MODELE_OA).
+  else if (cleOpenAI() && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
   return s;
 }
 

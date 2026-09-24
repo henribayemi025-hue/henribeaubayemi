@@ -23,7 +23,7 @@
 //   - c'est un bouton à part, qui dit que ça coûte. Beau décide.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { cleOpenAI as lireCleOpenAI, compter, gemini, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { generer, moteursSimples } from '../_shared/moteur.ts';
 import { Image as Dessin } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 
@@ -148,7 +148,7 @@ async function fabriquerImage(apiKey: string, invite: string): Promise<Image> {
   }
   // Le relais quand Google coupe (proposition 3 de Beau, 24/09 : « ne plus
   // jamais dépendre de Google seul ») : OpenAI, si sa clé est posée.
-  const cleOpenAI = Deno.env.get('OPENAI_API_KEY');
+  const cleOpenAI = lireCleOpenAI();
   if (cleOpenAI) {
     try {
       const r = await fetch('https://api.openai.com/v1/images/generations', {

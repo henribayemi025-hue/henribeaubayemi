@@ -7,7 +7,7 @@
 // seulement). Aucune donnée d'entreprise n'est lue ni écrite ; le coût est
 // compté comme les autres (ai_usage, fonction « legion_banc »).
 
-import { compter, coutEnCours } from '../_shared/cout.ts';
+import { cleOpenAI, clesPresentes, compter, coutEnCours } from '../_shared/cout.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { generer } from '../_shared/moteur.ts';
 
@@ -21,8 +21,21 @@ Deno.serve(compter('legion_banc', async (req: Request) => {
   const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_banc').maybeSingle();
   if (!jeton || !sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
 
-  let corps: { consigne?: string; moteurs?: string[] };
+  let corps: { consigne?: string; moteurs?: string[]; diagnostic?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
+  // Quelles clés sont posées (le NOM et la famille reconnue à la forme,
+  // jamais la valeur), et quels modèles la clé OpenAI ouvre (24/09).
+  if (corps.diagnostic === 'cles') {
+    let modelesOpenAI: string[] | string = 'pas de clé OpenAI';
+    const cle = cleOpenAI();
+    if (cle) {
+      try {
+        const r = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${cle}` }, signal: AbortSignal.timeout(15_000) });
+        modelesOpenAI = r.ok ? ((await r.json()).data || []).map((m: { id: string }) => m.id).filter((x: string) => /gpt|o\d|transcribe|whisper|tts|image/.test(x)).sort() : `HTTP ${r.status}`;
+      } catch (e) { modelesOpenAI = (e as Error).message; }
+    }
+    return json({ ok: true, cles: clesPresentes(), modelesOpenAI });
+  }
   const consigne = String(corps.consigne || '').slice(0, 12_000);
   const liste = (corps.moteurs || []).filter((m) => /^(ds|km|an|oa):|^gemini/.test(m)).slice(0, 4);
   if (!consigne || !liste.length) return json({ erreur: 'consigne et moteurs requis' }, 400);
