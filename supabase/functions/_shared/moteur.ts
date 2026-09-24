@@ -31,7 +31,7 @@
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
 
-import { ajouterCout, gemini } from './cout.ts';
+import { ajouterCout, gemini, moteurChoisi } from './cout.ts';
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
@@ -55,7 +55,20 @@ const releve = (fort: boolean) => [
   ...(kimi() ? [KIMI()] : []),
 ];
 
+// Le choix de l'entreprise (0192, Beau 24/09): une IA pour toute l'équipe.
+// « auto » garde la relève ci-dessus; un moteur dont la clé manque retombe
+// sur « auto » plutôt que de laisser l'équipe muette.
+function choixEntreprise(fort: boolean): string[] | null {
+  const c = moteurChoisi();
+  if (c === 'deepseek' && deepseek()) return fort ? [DS_RAPIDE(), DS_FORT()] : [DS_RAPIDE()];
+  if (c === 'kimi' && kimi()) return [KIMI()];
+  if (c === 'gemini') return fort ? MOTEURS_PAR_DEFAUT : MOTEURS_SIMPLES_PAR_DEFAUT;
+  return null;
+}
+
 export function moteurs(): string[] {
+  const choisi = choixEntreprise(true);
+  if (choisi) return choisi;
   const reglage = (Deno.env.get('LEGION_MOTEURS') || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (reglage.length) return reglage;
   return [...releve(true), ...MOTEURS_PAR_DEFAUT];
@@ -67,6 +80,8 @@ export function moteurs(): string[] {
 // reste en dernier recours si Flash est saturé.
 export const MOTEURS_SIMPLES_PAR_DEFAUT = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-pro-preview'];
 export function moteursSimples(): string[] {
+  const choisi = choixEntreprise(false);
+  if (choisi) return choisi;
   const reglage = (Deno.env.get('LEGION_MOTEURS_SIMPLES') || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (reglage.length) return reglage;
   return [...releve(false), ...MOTEURS_SIMPLES_PAR_DEFAUT];

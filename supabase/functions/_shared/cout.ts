@@ -22,7 +22,7 @@ const PRIX: Array<[RegExp, number, number]> = [
   [/flash/, 0.30, 2.50],
 ];
 
-type Suivi = { eur: number; fn: string; entreprise: string | null };
+type Suivi = { eur: number; fn: string; entreprise: string | null; moteur?: string | null };
 const suivi = new AsyncLocalStorage<Suivi>();
 
 function estimer(url: string, corps: { usageMetadata?: Record<string, number> }): number {
@@ -62,11 +62,15 @@ export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: b
   const db = service();
   const debut = new Date(); debut.setUTCDate(1); debut.setUTCHours(0, 0, 0, 0);
   const [{ data: e }, { data: lignes }] = await Promise.all([
-    db.from('legion_entreprises').select('plafond_mois_eur').eq('id', entrepriseId).maybeSingle(),
+    db.from('legion_entreprises').select('plafond_mois_eur, moteur').eq('id', entrepriseId).maybeSingle(),
     db.from('ai_usage').select('cost_eur').eq('entreprise_id', entrepriseId).gte('created_at', debut.toISOString()),
   ]);
   const depense = (lignes || []).reduce((t: number, l: { cost_eur: number }) => t + Number(l.cost_eur), 0);
   const plafond = e?.plafond_mois_eur != null ? Number(e.plafond_mois_eur) : null;
+  // L'IA choisie par l'entreprise (0192), lue en même temps que le plafond:
+  // toutes les fonctions le lisent avant de faire parler un agent.
+  const s = suivi.getStore();
+  if (s) s.moteur = e?.moteur || 'auto';
   return { atteint: plafond != null && depense >= plafond, depense, plafond };
 }
 
@@ -84,7 +88,7 @@ export function coutEnCours(): number {
 export async function aPart<T>(travail: () => Promise<T>): Promise<T> {
   const parent = suivi.getStore();
   if (!parent) return travail();
-  const enfant: Suivi = { eur: 0, fn: parent.fn, entreprise: parent.entreprise };
+  const enfant: Suivi = { eur: 0, fn: parent.fn, entreprise: parent.entreprise, moteur: parent.moteur };
   try {
     return await suivi.run(enfant, travail);
   } finally {
@@ -139,6 +143,11 @@ export function enFond(fn: string, entreprise: string | null, travail: () => Pro
       }
     }
   });
+}
+
+// L'IA choisie par l'entreprise pour laquelle on travaille (0192).
+export function moteurChoisi(): string {
+  return suivi.getStore()?.moteur || 'auto';
 }
 
 // Un coût connu autrement que par la réponse de Gemini (les vecteurs de

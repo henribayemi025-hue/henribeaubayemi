@@ -21,6 +21,7 @@ const NOMS = {
 
 export function Depense({ entreprise, t }) {
   const [formule, setFormule] = useState(entreprise.formule || null);
+  const [moteur, setMoteur] = useState(entreprise.moteur || 'auto');
   const [d, setD] = useState(null);
   const [plafond, setPlafond] = useState('');
   const [enregistre, setEnregistre] = useState(false);
@@ -48,6 +49,14 @@ export function Depense({ entreprise, t }) {
   // Quelques millièmes d'euro ne s'affichent pas « 0,00 € » (vu au check-up
   // du 23/09 : la ligne semblait gratuite alors qu'elle avait coûté).
   const euros = (n) => (n > 0 && n < 0.005 ? t('legion.depenseMoinsDunCentime', 'moins de 0,01 €') : `${n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`);
+
+  // L'IA de toute l'équipe (0192, Beau 24/09 : un réglage par entreprise).
+  async function choisirMoteur(k) {
+    const avant = moteur;
+    setMoteur(k);
+    const { error } = await supabase.from('legion_entreprises').update({ moteur: k }).eq('id', entreprise.id);
+    if (error) setMoteur(avant);
+  }
 
   async function choisirFormule(k) {
     setFormule(k);
@@ -102,6 +111,18 @@ export function Depense({ entreprise, t }) {
           <span className="w-full text-[11px] leading-snug text-legion-muted">{(formule || 'complete') === 'gratuite'
             ? t('legion.formuleGratuiteAide', 'Gratuite : les agents répondent avec le modèle rapide (Flash), sans recherche sur Internet.')
             : t('legion.formuleCompleteAide', 'Complète : le modèle Pro pour tout ce qui est complexe, et la recherche sur Internet.')}</span>
+        </div>
+      )}
+      {proprietaire && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-legion-line pt-3">
+          <span className="text-[12px] text-legion-muted">{t('legion.moteurEquipe', 'L’IA des agents')}</span>
+          {[['auto', t('legion.moteurAuto', 'Auto')], ['deepseek', 'DeepSeek'], ['kimi', 'Kimi'], ['gemini', 'Gemini']].map(([k, l]) => (
+            <button key={k} type="button" onClick={() => choisirMoteur(k)} aria-pressed={moteur === k}
+              className={`rounded-pill px-3 py-1 text-[12px] font-semibold ${moteur === k ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted hover:text-legion-ink'}`}>{l}</button>
+          ))}
+          <span className="w-full text-[11px] leading-snug text-legion-muted">{moteur === 'auto'
+            ? t('legion.moteurAutoAide', 'Auto : DeepSeek d’abord, Kimi s’il ne répond pas, puis Gemini. Le réglage vaut pour toute l’équipe.')
+            : t('legion.moteurSeulAide', 'Toute l’équipe parle avec ce moteur seulement. Si sa clé n’est pas posée, Léo repasse en Auto plutôt que de laisser les agents muets.')}</span>
         </div>
       )}
       <p className="text-[11px] leading-snug text-legion-muted">{t('legion.depenseAide', 'Au-delà du plafond, les agents s’arrêtent jusqu’au mois suivant. La vraie facture reste celle de Google AI Studio.')}</p>

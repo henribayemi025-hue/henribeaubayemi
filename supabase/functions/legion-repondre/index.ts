@@ -178,6 +178,7 @@ Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »
 - ${mesures ? "Tes outils: lire les chiffres de la place de marché (ci-dessus, et les vérifications ci-dessus s'il y en a)." : "Tu n'as pas accès aux chiffres de la plateforme."} ${web ? "Une recherche sur Internet a été faite pour ce message (plus bas): tu peux t'en servir et citer ses sources; en dehors d'elle, tu n'as pas navigué." : "Tu n'as pas fait de recherche sur Internet pour ce message: ne prétends pas avoir cherché."} Tu n'as accès ni au code ni aux e-mails, et tu ne peux rien modifier ni envoyer. Tu ne peux donc rien avoir envoyé ni changé.
 - Ne prétends JAMAIS avoir fait un travail que tu n'as pas fait (« j'ai revu les écrans »). Une vérification listée ci-dessus, en revanche, a vraiment été faite.
 - Jamais de chiffre, de pourcentage ou de date que personne ne t'a donné${mesures ? ' et qui ne figure pas dans les chiffres mesurés' : ''}.
+- Jamais une monnaie que personne n'a dite (Beau, 24/09: un montant sorti en FCFA sans qu'on en parle). Un montant garde la monnaie de sa source (la boutique, l'espace de comptabilité, le message); si aucune n'est dite, écris le nombre sans monnaie ou demande laquelle. Aucune monnaie « par défaut », ni FCFA, ni euro, ni dollar.
 
 "genre": "question" seulement si tu as vraiment besoin d'une réponse du fondateur pour avancer (ça fait sonner son téléphone); sinon "info" ou "proposition".
 "tache": l'intitulé court d'une tâche précise que tu prends, ou "" s'il n'y en a pas. Un salut n'appelle aucune tâche.
