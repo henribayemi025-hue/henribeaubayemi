@@ -35,7 +35,7 @@ import { competencesPour } from '../_shared/competences.ts';
 import { lireTickets, PARLE_DE_TICKETS } from '../_shared/tickets.ts';
 import { blocMarche, blocWiki } from '../_shared/contexte.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
-import { classeurEnTexte, creerClasseur, MIME_XLSX, type Feuille } from '../_shared/tableur.ts';
+import { classeurAvecAdresses, classeurEnTexte, creerClasseur, MIME_XLSX, modifierClasseur, type Feuille, type Operation } from '../_shared/tableur.ts';
 import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -260,6 +260,18 @@ const SCHEMA_TABLEUR = {
         feuilles: { type: 'ARRAY', items: { type: 'OBJECT', properties: { nom: { type: 'STRING' }, lignes: { type: 'ARRAY', items: { type: 'ARRAY', items: { type: 'STRING' } } } } } },
       },
     },
+    // Modifier le classeur REÇU sans le recopier (24/09) : voir
+    // _shared/tableur.ts, modifierClasseur.
+    modifications: {
+      type: 'OBJECT',
+      properties: {
+        operations: { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+          op: { type: 'STRING', enum: ['ecrire', 'ajouter_ligne', 'ajouter_colonne', 'effacer_ligne', 'renommer_feuille', 'ajouter_feuille'] },
+          feuille: { type: 'STRING' }, cellule: { type: 'STRING' }, valeur: { type: 'STRING' }, valeurs: { type: 'STRING' },
+          numero: { type: 'STRING' }, entete: { type: 'STRING' }, nouveau_nom: { type: 'STRING' },
+        }, required: ['op'] } },
+      },
+    },
   },
 };
 const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul|spreadsheet|classeur|colonne/i;
@@ -386,7 +398,29 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const aUnClasseur = ((msg.meta as { pieces?: Array<{ type?: string; nom?: string }> } | null)?.pieces || [])
     .some((p) => p.type === 'fichier' && /\.(xlsx|xls|csv)$/i.test(p.nom || ''));
   const tableur = !appelVocal && (aUnClasseur || PARLE_DE_TABLEUR.test(String(msg.texte)));
+  // Le classeur à MODIFIER (24/09) : celui de ce message, sinon le dernier
+  // du salon (y compris celui qu'un agent vient de rendre : on peut le
+  // retravailler plusieurs fois). Lu avec les adresses des cases.
+  let classeurSource: { octets: Uint8Array; nom: string } | null = null;
   if (tableur) {
+    const estClasseur = (p: { type?: string; nom?: string; url?: string }) => p.type === 'fichier' && !!p.url && /\.(xlsx|xls|csv)$/i.test(p.nom || '');
+    const piecesDe = (m: { meta?: unknown }) => ((m.meta as { pieces?: Array<{ type?: string; nom?: string; url?: string }> } | null)?.pieces || []);
+    const source = piecesDe(msg).find(estClasseur) || [...fil].reverse().flatMap((m) => piecesDe(m as { meta?: unknown })).find(estClasseur);
+    if (source) {
+      try {
+        const rep = await fetch(source.url!, { signal: AbortSignal.timeout(20_000) });
+        if (rep.ok) {
+          const octets = new Uint8Array(await rep.arrayBuffer());
+          if (octets.length <= 15 * 1024 * 1024) {
+            classeurSource = { octets, nom: String(source.nom || 'classeur') };
+            lignes.push(`[Le classeur « ${classeurSource.nom} », avec l'adresse de chaque case (colonne en lettre, ligne en chiffre)]\n${classeurAvecAdresses(octets)}`);
+          }
+        }
+      } catch (e) { console.error('classeur source:', (e as Error).message); }
+    }
+  }
+  if (tableur) {
+    if (classeurSource) lignes.push(`[Consigne de Léo] MODIFIER LE CLASSEUR « ${classeurSource.nom} ». Si on te demande de le compléter, corriger, calculer ou enrichir, NE LE RECOPIE PAS: rends seulement tes changements dans "modifications.operations", ils seront appliqués sur le vrai fichier (toutes ses autres lignes, feuilles et formules restent intactes), et le fichier modifié sera joint à ta réponse en .xlsx. Opérations: {"op":"ecrire","feuille","cellule":"B7","valeur"} ; {"op":"ajouter_ligne","feuille","valeurs":"[\"…\",\"…\"]"} (une liste JSON, dans l'ordre des colonnes) ; {"op":"ajouter_colonne","feuille","entete":"Marge","valeur":"=C{n}-B{n}"} (remplie sur chaque ligne remplie ; {n} = le numéro de la ligne) ; {"op":"effacer_ligne","feuille","numero":"12"} ; {"op":"renommer_feuille","feuille","nouveau_nom"} ; {"op":"ajouter_feuille","feuille":"Résumé","valeurs":"[[\"Total\",\"=SUM(Stock!D2:D40)\"]]"}. Utilise les adresses EXACTES du classeur ci-dessus. Un calcul se fait par une formule Excel (en anglais: SUM, IF…), jamais par un chiffre que tu calcules toi-même. Laisse "fichier" vide dans ce cas. Si on te demande un tableau NOUVEAU, utilise "fichier" comme d'habitude.`);
     lignes.push(`[Consigne de Léo] TABLEUR. Si le message te demande de créer, compléter, corriger, trier ou transformer un tableau (Excel, CSV), rends-le ENTIER dans "fichier": "nom" = un nom de fichier court sans extension; "feuilles" = une ou plusieurs feuilles, chacune avec "nom" et "lignes" (la première ligne = les en-têtes, une case par valeur, les nombres sans unité ni espace). Une formule Excel commence par = et utilise les références des cases, en anglais (=SUM(B2:B9), =B2-C2, =IF(…)). Ne mets JAMAIS un chiffre qui n'était pas dans son tableau ou dans ses messages: ce qui doit être calculé l'est par une formule. Dans "texte", dis en deux ou trois phrases ce que tu as fait et ce qu'il doit vérifier. Si on ne te demande pas de tableau, laisse "fichier" vide.`);
   }
   // Qui a parlé récemment (les huit derniers messages, hors celui-ci).
@@ -720,6 +754,23 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
           else pieceClasseur = { type: 'fichier', url: service.storage.from('legion').getPublicUrl(chemin).data.publicUrl, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, texte: classeurEnTexte(octets) };
         }
       } catch (e) { console.error('classeur:', (e as Error).message); }
+    }
+    // Les modifications du classeur reçu, appliquées sur le vrai fichier.
+    const ops = ((r.obj.modifications as { operations?: Operation[] } | null)?.operations || []);
+    if (tableur && !pieceClasseur && classeurSource && Array.isArray(ops) && ops.length) {
+      try {
+        const m = modifierClasseur(classeurSource.octets, ops);
+        if (m.octets) {
+          const base = classeurSource.nom.replace(/\.(xlsx|xls|csv)$/i, '').replace(/ \(modifié\)$/, '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 60) || 'classeur';
+          const nomFichier = `${base} (modifié).xlsx`;
+          const chemin = `${msg.entreprise_id}/${crypto.randomUUID()}.xlsx`;
+          const { error: eUp } = await service.storage.from('legion').upload(chemin, m.octets, { contentType: MIME_XLSX, upsert: false });
+          if (eUp) console.error('classeur modifié:', eUp.message);
+          else pieceClasseur = { type: 'fichier', url: service.storage.from('legion').getPublicUrl(chemin).data.publicUrl, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, modifie_de: classeurSource.nom, modifications: m.faites.slice(0, 50), texte: classeurEnTexte(m.octets) };
+        }
+        // Ce qui n'a pas pu se faire se dit, au lieu de passer sous silence.
+        if (m.refusees.length) texte += `\n\n_${m.octets ? 'Non appliqué' : 'Aucune modification appliquée'} : ${m.refusees.slice(0, 5).join(' ; ')}._`;
+      } catch (e) { console.error('classeur modifié:', (e as Error).message); }
     }
     // Débloqué: la réponse EST le livrable de la tâche (le tableau la met
     // « à revoir », comme un livrable du matin).
