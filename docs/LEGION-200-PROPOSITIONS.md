@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 82 faites, 48 en partie, 17 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 93 faites, 38 en partie, 16 à faire, 18 en attente de Beau, 35 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -40,9 +40,9 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
-| 1 | Mémoire courte et longue, base vectorielle par agent | 🔧 | Existe : les règles de la maison (Mémoire), la mémoire de chaque salon résumée chaque matin, ce qui s'est dit dans les autres salons, et une base vectorielle pour les documents de l'entreprise (0179). Manque : une mémoire vectorielle propre à CHAQUE agent (ses livrables passés, ce qu'on lui a appris). |
-| 2 | Réputation : les agents s'évaluent après chaque livrable | 🔧 | Tableau de bord (24/09) : pour chaque agent, la part de ses livrables que TU as validés (validés / validés + renvoyés), et ce que la relecture a corrigé. Les agents ne se notent toujours pas entre eux : c'est « contester un livrable » (chantier suivant). |
-| 3 | Auto-recrutement : un manager rédige la fiche et demande un agent | 🔧 | « Renforcer » : Legion propose des agents avec leur fiche complète, le fondateur coche. Un directeur ne peut pas encore le proposer de lui-même dans un salon (il faudrait une action « engager » derrière « Confirmer »). |
+| 1 | Mémoire courte et longue, base vectorielle par agent | ✅ | Mémoire propre à chaque agent (0185, 24/09) : ses livrables, les leçons reçues quand un livrable est renvoyé, ce que le fondateur a aimé — chacun avec son vecteur. Avant de répondre ou de livrer, il retrouve les 3 plus proches (essayé : Nadia s'est servie de ses 2 livrables). Visible et effaçable sur sa fiche. |
+| 2 | Réputation : les agents s'évaluent après chaque livrable | ✅ | Un collègue relit chaque livrable (24/09) et ne parle que pour le contester, avec la raison (essayé : Kwame a contesté l'inventaire d'Elodie, incomplet). Sur un livrable, « Faire relire par… » le demande à la main. Plus, sur le tableau de bord, la part des livrables que le fondateur a validés. |
+| 3 | Auto-recrutement : un manager rédige la fiche et demande un agent | ✅ | Un responsable propose d'engager un agent (24/09) : il rédige la fiche (nom, poste, département, mission) et rien ne se fait sans « Confirmer » (essayé : Kwame a proposé une spécialiste conformité, créée après confirmation). |
 | 4 | Personnalités simulées (optimiste, prudent, perfectionniste) | ✅ | Chaque agent a une personnalité écrite, modifiable sur sa fiche, et parle avec elle. |
 | 5 | Réunions automatiques, transcription et synthèse des points d'équipe | ✅ | Réunions en direct (23/09) : deux tours, compte rendu avec décidé, écarté, désaccords, à trancher, et tâches créées. Pas encore de réunion lancée seule chaque matin. |
 | 6 | Jeu de rôle conflictuel, un avocat du diable permanent | ✅ | Réunion au format « avocat du diable » (24/09) : un participant attitré conteste chaque proposition, les autres répondent. |
@@ -85,7 +85,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 38 | Audit hebdomadaire de la dette technique | 🔧 | Possible aujourd'hui en tâche récurrente sur un dépôt branché (lecture). Pas encore proposé par défaut. |
 | 39 | Secrets et clés rangés à part, par entreprise | ✅ | Le jeton GitHub de chaque entreprise est au coffre (vault), jamais relu par l'application. |
 | 40 | Architecture en graphe 3D | ✗ | Pas prioritaire : joli, mais n'aide pas à décider. |
-| 41 | Importer un agent depuis GitHub | 🔧 | On importe des COMPÉTENCES depuis GitHub (catalogue, licence vérifiée). Pas un agent entier. |
+| 41 | Importer un agent depuis GitHub | ✅ | Importer un agent (24/09) depuis un fichier ou son lien (un dépôt GitHub) : sa fiche, et ses compétences reprises à leur source, licence vérifiée. |
 | 42 | Consommation par agent et par dépôt | ✅ | Chaque message d'agent porte ce qu'il a coûté (24/09) ; le tableau de bord montre le coût du mois de chaque agent. Une entreprise n'a qu'un dépôt : son coût est celui de l'entreprise. |
 | 43 | Changelog automatique pour les utilisateurs | 📌 | Faisable à partir du dépôt branché. |
 | 44 | Annuler d'un coup la modification d'un agent | ⏸ | Studio de code (Git le permet). |
@@ -116,8 +116,8 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 64 | Interface traduite | ✅ | Français et anglais ; d'autres langues à ajouter. |
 | 65 | Raccourcis clavier | 📌 | Petit travail. |
 | 66 | Jauge de santé du projet | ✅ | Santé de l'équipe (24/09) : chaque agent en forme, à surveiller ou en difficulté selon une règle écrite et affichée (« comment c'est calculé ») : silence avec du travail, blocages, livrables qui attendent, tâches immobiles, renvois, corrections, budget. |
-| 67 | Mode focus : cacher les agents inactifs | 🔧 | Les agents éteints sont grisés. Pas de filtre qui les cache. |
-| 68 | Galerie des avatars filtrable par rôle | 🔧 | Liste par salon et par département. |
+| 67 | Mode focus : cacher les agents inactifs | ✅ | Le bouton « Allumés » de la liste des agents cache ceux qui sont éteints (il existait déjà ; la ligne disait le contraire, corrigée le 24/09). |
+| 68 | Galerie des avatars filtrable par rôle | ✅ | Galerie (24/09) : les portraits en grand, filtrés par département ; la recherche filtre par nom, poste et département. |
 | 69 | Exporter l'organigramme en PDF ou image | 📌 | Petit travail. |
 | 70 | Mini-jeu pour « motiver » les agents | ✗ | Pas retenu : ne sert pas le travail. |
 | 71 | Trophées aux grandes étapes | ✅ | Trophées (24/09) : les étapes de la feuille de route que le fondateur a cochées, avec leur date. Rien n'est décerné par un modèle. |
@@ -169,7 +169,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 107 | Pas de données personnelles non autorisées | ✅ | Les agents ne voient jamais un e-mail, un téléphone ou une adresse ; prénom de la cliente au plus. |
 | 108 | Tests d'intrusion par une équipe rouge | ⏸ | Studio de code. |
 | 109 | Rôles et permissions fins pour les humains | 🔧 | Propriétaire et membres invités. Pas de rôles plus fins. |
-| 110 | Coupure d'urgence globale ou par département | 🔧 | L'interrupteur par agent, et le plafond du mois qui arrête tout. Pas d'interrupteur par département. |
+| 110 | Coupure d'urgence globale ou par département | ✅ | Interrupteur par département sur l'accueil (24/09), en plus de l'interrupteur général, de celui de chaque agent et du plafond du mois. |
 | 111 | Provenance et licence du code importé | ✅ | Les compétences GitHub ne sont prises que sous licence libre vérifiée, avec leur source. |
 | 112 | Sauvegarde des choix stratégiques | ✅ | Comptes rendus de réunion, plans et feuille de route gardés. |
 | 113 | Pannes et cyberattaques simulées | ✗ | Pas maintenant. |
@@ -179,7 +179,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 117 | Rotation des mots de passe et jetons | 🔧 | Jetons de connexion MCP révocables ; jeton GitHub effaçable. |
 | 118 | Audit externe par un humain | ✅ | On invite un membre dans l'entreprise ; il voit les salons et le tableau. |
 | 119 | Détection des boucles entre agents | ✅ | Une réunion a deux tours et 45 minutes au plus ; une réponse ne relance pas une chaîne d'agents sans fin. |
-| 120 | Vote d'urgence pour remplacer un agent défaillant | 🔧 | Le fondateur éteint ou remplace un agent. Pas de vote. |
+| 120 | Vote d'urgence pour remplacer un agent défaillant | ✅ | Pour un agent « en difficulté » au tableau de bord (24/09) : « Réunir l'équipe : faut-il le remplacer ? » ouvre une réunion au format vote ; le vote éclaire, le fondateur décide. |
 | 121 | Chiffrement des mémoires au repos | 🔧 | Assuré par l'hébergeur de la base ; rien de plus. |
 | 122 | Fuites de données dans les requêtes envoyées aux IA | ✅ | Les outils ne renvoient jamais d'e-mail, de téléphone ni d'adresse. |
 | 123 | Normes ISO 27001 | ✗ | Pas maintenant. |
@@ -221,7 +221,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
 | 151 | Partager un organigramme complet (modèles) | ✅ | Catalogue de modèles : 3 737 postes, dont « Construire une application de A à Z » (200 postes) et « Agence d'intérim IA » ; un modèle se génère pour n'importe quel secteur. |
-| 152 | Exporter un agent en fichier | 📌 | Petit travail (JSON de sa fiche). |
+| 152 | Exporter un agent en fichier | ✅ | Exporter un agent en fichier (24/09) : sa fiche et la liste de ses compétences (pas de donnée personnelle : c'est une fiche de poste). |
 | 153 | Plusieurs humains dirigent la même entreprise | ✅ | On invite des membres ; chacun parle aux agents. |
 | 154 | Commenter le travail des agents | ✅ | Commentaires sur une tâche du tableau. |
 | 155 | Agents dans de vraies visioconférences | ✗ | Pas maintenant ; l'appel vocal d'un agent existe. |
@@ -237,7 +237,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 165 | Wiki interne tenu par les agents | 🔧 | Documents de l'entreprise + mémoire. Pas de wiki écrit par les agents. |
 | 166 | Tableau blanc collaboratif | 📌 | À voir. |
 | 167 | Historique des décisions consultable | ✅ | Comptes rendus (genre « décision ») dans les salons. |
-| 168 | Encourager un agent | 🔧 | Réactions emoji sur les messages. |
+| 168 | Encourager un agent | ✅ | « Encourager » sur la fiche de l'agent (24/09) : ce que le fondateur a aimé entre dans SA mémoire, et il le retrouve quand on lui demande quelque chose de proche. Les réactions emoji restent. |
 | 169 | Podcast de la semaine | ✅ | Le vendredi (24/09), le rapport du soir couvre la semaine ; un bouton « Écouter » le lit avec la voix du téléphone (rien ne part au serveur). |
 | 170 | Modèles de projets (lancement, levée de fonds…) | ✅ | Modèles d'entreprise et feuille de route. |
 | 171 | Agendas partagés | ⏸ | Google Agenda attend le projet Google de Beau. |
@@ -257,7 +257,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 180 | Organigramme en réalité augmentée | ✗ | Pas retenu. |
 | 181 | Agents qui jouent des investisseurs | ✅ | Réunion au format « investisseurs » (24/09) : les participants jouent un comité d'investissement. |
 | 182 | Journal secret du directeur général | ✗ | Pas retenu : rien de caché au fondateur. |
-| 183 | Fusion des meilleures consignes | 🔧 | Compétences combinées par agent ; pas d'« évolution génétique ». |
+| 183 | Fusion des meilleures consignes | ✅ | Emprunter les compétences d'un collègue (24/09) : ses fiches d'experts sont reprises à leur source pour un autre agent. Pas d'« évolution génétique » automatique : c'est le fondateur qui choisit. |
 | 184 | Scénarios de crise | ✅ | Réunion au format « crise » (24/09) : un scénario de crise, et qui fait quoi dans l'heure. |
 | 185 | Rédaction de brevets | 🔧 | Faisable par un agent juriste ; relu par un avocat. |
 | 186 | Impact social des décisions | ✅ | Réunion au format « impact » (24/09). |
