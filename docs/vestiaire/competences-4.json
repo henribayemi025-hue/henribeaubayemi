@@ -1,0 +1,62 @@
+[
+ {
+  "cle": "vestiaire-26-ecrire-sa-competence",
+  "nom": "Écrire sa propre compétence après une tâche difficile",
+  "agents": [
+   "Mentor",
+   "Rigo",
+   "Orchestre",
+   "Vigie",
+   "Plume",
+   "Écho",
+   "Claude",
+   "Ada Nkemba"
+  ],
+  "description": "Après une tâche difficile, proposer sa propre compétence (situation, étapes, pièges, vérification, inconnues), inactive jusqu'à l'examen et l'accord du fondateur.",
+  "contenu": "Quand une tâche t'a demandé beaucoup d'étapes, ou qu'elle a échoué avant de réussir, écris une proposition de compétence en cinq parties : quand s'en servir (la situation, en une phrase) ; les étapes qui ont marché, dans l'ordre ; les pièges rencontrés et comment tu les as évités ; comment vérifier que c'est bien fait ; ce que tu ne sais pas encore. N'écris que ce que tu as vraiment constaté pendant la tâche, jamais ce que tu supposes. Ta proposition n'est pas active : elle passe l'examen de Rigo, puis l'accord du fondateur. Piège : généraliser à partir d'un seul cas. Écris « vu une fois » tant que ce n'est pas confirmé.",
+  "fiche": "26-hermes-agent-boucle-apprentissage.md",
+  "source": "https://github.com/NousResearch/hermes-agent (guide de Dany @danyltn)",
+  "licence": "MIT (Hermes Agent) ; guide sans licence — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-26-examiner-competence-agent",
+  "nom": "Examiner une compétence écrite par un agent",
+  "agents": [
+   "Rigo",
+   "Mentor"
+  ],
+  "description": "Examiner une compétence écrite par un agent : vraie, utile (avec/sans, à l'aveugle), sûre, neuve — puis activer, corriger ou écarter.",
+  "contenu": "Avant qu'une compétence écrite par un agent serve, vérifie quatre choses. Est-elle vraie ? Chaque affirmation doit être tirée de la tâche, pas inventée. Est-elle utile ? Refais un cas avec et sans elle, noté à l'aveugle. Est-elle sûre ? Elle ne doit rien contenir qui contourne une règle de Finjaro : aucun chiffre inventé, aucune monnaie par défaut, rien de publié sans accord, aucune donnée personnelle. Est-elle neuve ? Elle ne doit pas répéter une compétence existante. Si c'est un doublon, propose de fusionner. Rends un verdict : « à activer », « à corriger » (avec quoi corriger) ou « à écarter » (avec la raison). Piège : valider parce que c'est bien écrit. Une compétence fausse et bien écrite est la plus dangereuse.",
+  "fiche": "26-hermes-agent-boucle-apprentissage.md",
+  "source": "https://github.com/NousResearch/hermes-agent (guide de Dany @danyltn)",
+  "licence": "MIT (Hermes Agent) ; guide sans licence — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-26-parler-si-nouveau",
+  "nom": "Ne parler que s'il y a du nouveau",
+  "agents": [
+   "Vigie",
+   "Orchestre",
+   "Radar"
+  ],
+  "description": "Sur une tâche récurrente, ne rien écrire s'il n'y a rien de neuf, mais toujours signaler une panne.",
+  "contenu": "Pour une tâche qui revient (veille, surveillance, rapport), compare d'abord avec la fois précédente. Si rien d'important n'a changé et que rien ne va mal, n'écris rien dans le salon : note seulement « rien de neuf » dans ton journal. Si quelque chose a changé, dis-le en une ligne avec la source, puis détaille. Si quelque chose va mal, commence par ça. Piège : se taire sur une panne parce qu'on n'avait « rien de neuf ». Une erreur, un outil bloqué ou un chiffre qui s'effondre se signalent toujours.",
+  "fiche": "26-hermes-agent-boucle-apprentissage.md",
+  "source": "https://github.com/NousResearch/hermes-agent (guide de Dany @danyltn)",
+  "licence": "MIT (Hermes Agent) ; guide sans licence — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-26-chainer-trois-taches",
+  "nom": "Chaîner trois tâches : collecter, trier, rédiger",
+  "agents": [
+   "Vigie",
+   "Plume",
+   "Orchestre"
+  ],
+  "description": "Découper une veille en collecter → trier → rédiger, chaque étape lisant la précédente sans inventer.",
+  "contenu": "Pour une veille qui doit donner du contenu, découpe en trois tâches qui se passent le relais par écrit. D'abord, **collecter** : 10 sujets, chacun avec sa source et sa date. Ensuite, **trier** : noter chaque sujet (intérêt pour les vendeuses et les acheteurs de Finjaro, solidité de la source), garder les 5 meilleurs et dire pourquoi. Enfin, **rédiger** : pour chacun, une accroche et un angle, à déposer dans « À valider ». Chaque tâche lit la sortie de la précédente et ne refait pas son travail. Piège : laisser la troisième tâche inventer un fait absent de la collecte. Si ce n'est pas dans la collecte, ça n'existe pas.",
+  "fiche": "26-hermes-agent-boucle-apprentissage.md",
+  "source": "https://github.com/NousResearch/hermes-agent (guide de Dany @danyltn)",
+  "licence": "MIT (Hermes Agent) ; guide sans licence — méthode reformulée avec nos mots"
+ }
+]

@@ -27,3 +27,4 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [23 — « Les 7 repos gratuits. Et ce qu'on vend avec. » (guide PDF de bencodezero)](23-sept-depots-bencodezero.md)
 - [24 — theaiagents : « 4 agents IA qui valent la peine d'être construits »](24-theaiagents-4-agents-a-construire.md)
 - [25 — Claw Code : un « Claude Code » réécrit par d'autres](25-claw-code.md)
+- [26 — Hermes Agent : « l'agent IA qui apprend de toi » (guide de Dany, @danyltn)](26-hermes-agent-boucle-apprentissage.md)
