@@ -132,6 +132,9 @@ export function aerer(t: string): string {
     .replace(/([.:!?)»])[ \t]+- (?=\S)/g, '$1\n- ')
     .replace(/(\d)([A-ZÀ-ÖØ-Þ][a-zà-ÿ]{1,})/g, '$1\n$2')
     .replace(/([.!?:])\s*(\d{1,2})\.\s(?=[A-ZÀ-ÖØ-Þ])/g, '$1\n$2. ')
+    // Des clés de tickets collées (« In ProgressJRASERVER-78848 », vu le 24/09) :
+    // une par ligne.
+    .replace(/([a-zà-ÿ):])\s?([A-Z][A-Z0-9]{1,9}-\d+)(?= :| —| -|:)/g, '$1\n- $2')
     .replace(/^\n+/, '')
     .trim();
 }

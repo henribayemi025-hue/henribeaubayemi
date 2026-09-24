@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 119 faites, 21 en partie, 7 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 121 faites, 21 en partie, 5 à faire, 18 en attente de Beau, 35 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -80,7 +80,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 33 | Détection des conflits entre agents codeurs | ⏸ | Studio de code : une branche par agent (vidéo « Claude Squad », J1). |
 | 34 | Documentation du code tenue à jour | ⏸ | Studio de code. |
 | 35 | Optimisation des requêtes SQL par un agent base de données | ⏸ | Studio de code. |
-| 36 | Une action GitHub déclenche une réunion | 📌 | Faisable dès que le dépôt est branché : un nouveau ticket ouvre une réunion. |
+| 36 | Une action GitHub déclenche une réunion | ✅ | Option du connecteur GitHub (0188, 24/09) : chaque heure, un ticket NOUVEAU sur le dépôt ouvre une réunion (gravité, qui le prend, que répond-on), au nom du président de séance (essayé : le ticket #16 du dépôt de Finjaro a ouvert une réunion dans l'entreprise de test). |
 | 37 | Tests unitaires écrits par un agent qualité | ⏸ | Studio de code. |
 | 38 | Audit hebdomadaire de la dette technique | ✅ | Mission « Audit de la dette technique » (24/09), chaque semaine, sur le dépôt branché : les trois dettes qui coûtent le plus et leur correction. |
 | 39 | Secrets et clés rangés à part, par entreprise | ✅ | Le jeton GitHub de chaque entreprise est au coffre (vault), jamais relu par l'application. |
@@ -91,7 +91,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 44 | Annuler d'un coup la modification d'un agent | ⏸ | Studio de code (Git le permet). |
 | 45 | Dépendances obsolètes et mises à jour sûres | ⏸ | Studio de code. |
 | 46 | Environnement de test éphémère par fonctionnalité | ⏸ | Studio de code (aperçu par branche). |
-| 47 | Brancher Jira ou Linear | 📌 | Même mécanisme que GitHub : un connecteur par entreprise. |
+| 47 | Brancher Jira ou Linear | 🔧 | Jira et Linear branchables (0188, 24/09), en lecture seule, jeton au coffre : les agents voient les tickets ouverts. Jira essayé sur le Jira public d'Atlassian (les agents citent les vrais tickets). Linear construit mais pas essayé : il faut une vraie clé Linear. |
 | 48 | Signature des contributions des agents | 🔧 | Chaque message et livrable garde son auteur, le modèle utilisé et l'heure. Pas de signature cryptographique. |
 | 49 | Taille du contexte adaptée à la tâche | ✅ | Les questions simples partent sur un modèle rapide, les questions de fond sur un modèle plus fort, avec plus de contexte. |
 | 50 | Sauvegarde sur stockage décentralisé | ✗ | La base est déjà sauvegardée par Supabase. Aucun besoin exprimé. |
@@ -230,7 +230,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 158 | Parrainage avec crédits de calcul | 📌 | À décider avec le prix des formules (Beau : plus tard). |
 | 159 | Forum communautaire | ✗ | Pas maintenant. |
 | 160 | Hackathons entre départements | ✗ | Pas retenu. |
-| 161 | Flux RSS et veille partagée | 🔧 | Le veilleur prend chaque matin de nouvelles compétences sur GitHub ; recherche web pour les tâches. Pas de flux RSS. |
+| 161 | Flux RSS et veille partagée | ✅ | Veille RSS (0188, 24/09) : chaque heure, les articles jamais vus des flux branchés (RSS ou Atom) sont déposés en une liste avec leurs liens, sans modèle (essayé avec Le Monde et The Verge). |
 | 162 | Experts invités pour une mission | ✅ | « Un expert pour une mission », avec date de fin (23/09). |
 | 163 | Vote communautaire sur les compétences | ✗ | Pas maintenant. |
 | 164 | Adaptation culturelle par marché | 🔧 | Langue de l'utilisateur ; pas de pays par défaut. |
