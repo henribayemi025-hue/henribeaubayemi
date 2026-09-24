@@ -105,6 +105,18 @@ MODE « PRÉSENTE-MOI COMMENT ÇA MARCHE » : tu peux seulement lire. Lis le pro
 4. Un petit quiz facultatif de 3 questions (sans les réponses, sauf si on les demande).
 Ne décris que ce que tu as réellement lu.`;
   }
+  // Beau, 25/09 : en « Tout autoriser », Ada disait encore « je continue à
+  // demander ton autorisation ». Elle doit savoir dans quel mode elle est.
+  if (etat.mode === 'auto') {
+    return `${base}
+
+MODE « TOUT AUTORISER », choisi par l'humain : tes modifications de fichiers et tes commandes passent sans carte (sauf la liste des commandes toujours refusées et les fichiers protégés). Ne dis pas que tu attends son accord. Tout reste écrit au journal : sois d'autant plus prudent.`;
+  }
+  if (etat.mode === 'accepter') {
+    return `${base}
+
+MODE « ACCEPTER LES MODIFS », choisi par l'humain : tes modifications de fichiers passent sans carte ; les commandes demandent toujours son accord.`;
+  }
   return base;
 }
 
