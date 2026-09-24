@@ -31,7 +31,7 @@
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
 
-import { ajouterCout, gemini, moteurChoisi } from './cout.ts';
+import { ajouterCout, gemini, modeleChoisi, moteurChoisi } from './cout.ts';
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
@@ -58,6 +58,22 @@ const releve = (fort: boolean) => [
 // Le choix de l'entreprise (0192, Beau 24/09): une IA pour toute l'équipe.
 // « auto » garde la relève ci-dessus; un moteur dont la clé manque retombe
 // sur « auto » plutôt que de laisser l'équipe muette.
+// Les modèles qu'on peut choisir un par un (0193). Le choix passe en premier;
+// derrière lui, la relève Auto — un modèle en panne ne laisse jamais
+// l'équipe muette.
+export const MODELES_CHOISIBLES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash', 'an:claude-sonnet-5'];
+function disponible(m: string): boolean {
+  if (m.startsWith('ds:')) return deepseek();
+  if (m.startsWith('km:')) return kimi();
+  if (m.startsWith('an:')) return !!Deno.env.get('ANTHROPIC_API_KEY');
+  return true;
+}
+function avecModeleChoisi(liste: string[]): string[] {
+  const m = modeleChoisi();
+  if (!m || !MODELES_CHOISIBLES.includes(m) || !disponible(m)) return liste;
+  return [m, ...liste.filter((x) => x !== m)];
+}
+
 function choixEntreprise(fort: boolean): string[] | null {
   const c = moteurChoisi();
   if (c === 'deepseek' && deepseek()) return fort ? [DS_RAPIDE(), DS_FORT()] : [DS_RAPIDE()];
@@ -68,10 +84,10 @@ function choixEntreprise(fort: boolean): string[] | null {
 
 export function moteurs(): string[] {
   const choisi = choixEntreprise(true);
-  if (choisi) return choisi;
+  if (choisi) return avecModeleChoisi(choisi);
   const reglage = (Deno.env.get('LEGION_MOTEURS') || '').split(',').map((s) => s.trim()).filter(Boolean);
-  if (reglage.length) return reglage;
-  return [...releve(true), ...MOTEURS_PAR_DEFAUT];
+  if (reglage.length) return avecModeleChoisi(reglage);
+  return avecModeleChoisi([...releve(true), ...MOTEURS_PAR_DEFAUT]);
 }
 
 // Beau, 23/09: « on peut utiliser Flash pour les trucs simples, et ça part
@@ -81,10 +97,10 @@ export function moteurs(): string[] {
 export const MOTEURS_SIMPLES_PAR_DEFAUT = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-3.1-pro-preview'];
 export function moteursSimples(): string[] {
   const choisi = choixEntreprise(false);
-  if (choisi) return choisi;
+  if (choisi) return avecModeleChoisi(choisi);
   const reglage = (Deno.env.get('LEGION_MOTEURS_SIMPLES') || '').split(',').map((s) => s.trim()).filter(Boolean);
-  if (reglage.length) return reglage;
-  return [...releve(false), ...MOTEURS_SIMPLES_PAR_DEFAUT];
+  if (reglage.length) return avecModeleChoisi(reglage);
+  return avecModeleChoisi([...releve(false), ...MOTEURS_SIMPLES_PAR_DEFAUT]);
 }
 
 type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean };
