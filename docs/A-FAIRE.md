@@ -12,7 +12,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 | Date | Quoi | Ce qu'il faut de Beau |
 |---|---|---|
-| 24/09 | **Mettre en ligne sur finjaro.net** le lot de staging (tout ce qui suit 6bacb72 : choix du modèle d'IA, alertes, relais de recherche, examen de Rigo, Déposer une ressource, modèle Studio de contenu, Retirer le fond, kit /kit, vestiaire 20–26). La mise en ligne a été **bloquée par le contrôle de sécurité** : il faut un « oui, pousse ce lot sur finjaro.net » explicite. | « oui, pousse » — ou d'abord l'essai sur son téléphone (Retirer le fond, /kit) |
+| 24/09 | ✅ 24/09 soir, « oui » de Beau : **Mettre en ligne sur finjaro.net** le lot de staging (tout ce qui suit 6bacb72 : choix du modèle d'IA, alertes, relais de recherche, examen de Rigo, Déposer une ressource, modèle Studio de contenu, Retirer le fond, kit /kit, vestiaire 20–26). La mise en ligne a été **bloquée par le contrôle de sécurité** : il faut un « oui, pousse ce lot sur finjaro.net » explicite. | « oui, pousse » — ou d'abord l'essai sur son téléphone (Retirer le fond, /kit) |
 | 24/09 | **Atelier de code** V0 (plan `docs/plans/2026-09-24-atelier-de-code-et-jarvis.md`) : OpenHands (MIT), modes Demander / Accepter les modifications / Auto, Confirmer obligatoire | « oui atelier » |
 | 24/09 | **Jarvis** V0 (réveil par bouton ou geste, puis voix) ; espace « Moi » de l'assistant personnel ; proposition 10 « Hé Léo » | son accord sur le plan |
 | 24/09 | **Réceptionniste vocale** pour les clients de Léo (fiche 24) : prototype sans téléphone, puis numéro Twilio (payant) | décision + budget |
@@ -27,7 +27,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | Date | Quoi | Pourquoi |
 |---|---|---|
 | 24/09 | Relever le **plafond de dépense Google** (ai.studio/spend) | photos des agents, lecture des documents par le sens, recherche Gemini : bloquées depuis le 24/09 à 01 h 18 UTC |
-| 24/09 | **Recréer la clé Tavily** et remettre la nouvelle dans les secrets Supabase (`TAVILY_API_KEY`) | l'ancienne a été écrite en clair dans la conversation. La recherche marche (testée le 24/09 : Kwame a répondu avec des sources) |
+| 24/09 | ~~Recréer la clé Tavily~~ — ✅ 24/09 : Beau garde la clé actuelle (nommée « Leo » chez Tavily), c'est sa décision. Elle est posée dans Supabase et marche (journaux : Google refuse, Tavily répond) | — |
 | 24/09 | Clé **OpenAI** (facultative) dans les secrets Supabase (`OPENAI_API_KEY`) | relais pour les photos des agents tant que Google est bloqué |
 | 24/09 | Faire tourner la **clé DeepSeek** | hygiène |
 | 24/09 | **GitHub App ou jeton** pour l'atelier et les agents | atelier de code |
