@@ -566,7 +566,10 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
     // coûte SON livrable.
     await Promise.all(restants.slice(i, i + lot).map((a) => aPart(async () => {
-      let tache = ouvertes.find((t) => t.assigne_a === a.id);
+      // Une tâche urgente ou haute passe avant les plus anciennes (file de
+      // priorités, point 7 des « agents autonomes »).
+      const siennes = ouvertes.filter((t) => t.assigne_a === a.id);
+      let tache = siennes.find((t) => ['urgente', 'haute'].includes(t.meta?.priorite || '')) || siennes[0];
       // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
       // « vous ne devez pas attendre que je vous demande quelque chose ») :
       // il se donne l'initiative du jour, dans son métier, et la livre.
