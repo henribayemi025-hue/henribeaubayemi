@@ -22,7 +22,7 @@ const PRIX: Array<[RegExp, number, number]> = [
   [/flash/, 0.30, 2.50],
 ];
 
-type Suivi = { eur: number; fn: string; entreprise: string | null; moteur?: string | null; modele?: string | null };
+type Suivi = { eur: number; fn: string; entreprise: string | null; moteur?: string | null; modele?: string | null; modeleAgent?: string | null };
 const suivi = new AsyncLocalStorage<Suivi>();
 
 function estimer(url: string, corps: { usageMetadata?: Record<string, number> }): number {
@@ -88,7 +88,7 @@ export function coutEnCours(): number {
 export async function aPart<T>(travail: () => Promise<T>): Promise<T> {
   const parent = suivi.getStore();
   if (!parent) return travail();
-  const enfant: Suivi = { eur: 0, fn: parent.fn, entreprise: parent.entreprise, moteur: parent.moteur, modele: parent.modele };
+  const enfant: Suivi = { eur: 0, fn: parent.fn, entreprise: parent.entreprise, moteur: parent.moteur, modele: parent.modele, modeleAgent: parent.modeleAgent };
   try {
     return await suivi.run(enfant, travail);
   } finally {
@@ -149,9 +149,17 @@ export function enFond(fn: string, entreprise: string | null, travail: () => Pro
 export function moteurChoisi(): string {
   return suivi.getStore()?.moteur || 'auto';
 }
-// Le modèle précis choisi (0193), ou null pour Auto.
+// Le modèle précis choisi : celui de l'agent qui parle (0197), sinon celui
+// de l'équipe (0193), sinon null pour Auto.
 export function modeleChoisi(): string | null {
-  return suivi.getStore()?.modele || null;
+  const s = suivi.getStore();
+  return s?.modeleAgent || s?.modele || null;
+}
+// L'agent qui va parler (0197) : son modèle passe avant celui de l'équipe.
+// À appeler avant chaque génération faite pour un agent précis.
+export function pourAgent(modele: string | null | undefined) {
+  const s = suivi.getStore();
+  if (s) s.modeleAgent = modele || null;
 }
 
 // Un coût connu autrement que par la réponse de Gemini (les vecteurs de

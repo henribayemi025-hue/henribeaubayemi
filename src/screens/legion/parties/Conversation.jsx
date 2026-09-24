@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChoixModele } from './ChoixModele';
 import {
   IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
@@ -42,7 +43,7 @@ function couleurNom(a) {
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
   onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
-  reunion, onReunion, onConclureReunion, onAppeler, onRapport, onCreerTache, lecteur = false,
+  reunion, onReunion, onConclureReunion, onAppeler, onRapport, onCreerTache, lecteur = false, modele, onModele,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -522,7 +523,7 @@ export function Conversation({
         <p className="shrink-0 border-t border-legion-line bg-legion-card px-4 py-3 text-center text-caption text-legion-muted" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>{t('legion.securite.lecteurNote')}</p>
       ) : (
       <Composeur
-        moi={moi} agents={agents} entrepriseId={entrepriseId} t={t} commandes={commandes}
+        moi={moi} agents={agents} entrepriseId={entrepriseId} t={t} commandes={commandes} modele={modele} onModele={onModele}
         reponseA={reponseA} onAnnulerReponse={() => setReponseA(null)}
         picker={picker === 'saisie'} onPicker={(v) => setPicker(v ? 'saisie' : null)}
         brouillon={brouillon} onBrouillonPris={onBrouillonPris}
@@ -935,7 +936,7 @@ function Jour({ label }) {
 // message, nommer quelqu'un), la bulle de texte avec l'emoji dedans,
 // l'appareil photo, et le micro qui devient la flèche dès qu'on écrit.
 // Tout ce qui part passe par `onEnvoyer({texte, genre, meta})`.
-function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, picker, onPicker, brouillon, onBrouillonPris, onEnvoyer, commandes = [] }) {
+function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, picker, onPicker, brouillon, onBrouillonPris, onEnvoyer, commandes = [], modele, onModele }) {
   const [texte, setTexte] = useState('');
   const [genre, setGenre] = useState('info');
   const [plus, setPlus] = useState(false);
@@ -1168,6 +1169,14 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
         </div>
       )}
 
+      {/* L'IA de l'équipe, à portée de main, comme le choix du modèle chez
+          Claude (Beau, 24/09). Le même réglage que dans « Ce que Léo coûte ». */}
+      {onModele && (
+        <div className="mb-1 flex items-center justify-end gap-1.5 px-1 text-[11px] text-legion-muted">
+          <span>{t('legion.modeleIci', 'IA')}</span>
+          <ChoixModele valeur={modele} onChange={onModele} t={t} compact libelleVide={t('legion.modeleAutoCourt', 'Auto')} />
+        </div>
+      )}
       <form onSubmit={envoyer} className="flex items-end gap-1">
         <button type="button" onClick={() => setPlus((v) => !v)} aria-label="+" className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${plus ? 'rotate-45 text-legion-gold' : 'text-legion-ink'}`}>
           <IconPlus size={26} />

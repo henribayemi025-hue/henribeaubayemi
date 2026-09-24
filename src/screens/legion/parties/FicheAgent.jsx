@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChoixModele, nomDuModele } from './ChoixModele';
 import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil, IconSearch, IconDownload } from '@tabler/icons-react';
 import { Modal } from '../../../components/Modal';
 import { supabase } from '../../../lib/supabase';
@@ -338,7 +339,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
   // agent appartient à UNE entreprise: le modifier ici ne change jamais
   // l'agent d'une autre entreprise, même du même secteur.
   const nouveau = !agent.id;
-  const champs = edition || (nouveau ? { nom: '', poste: '', departement: agent.departement || departements[0]?.nom || '', mandat: '', personnalite: '', jamais: '', peut_lire: null, fin_mission: '' } : null);
+  const champs = edition || (nouveau ? { nom: '', poste: '', departement: agent.departement || departements[0]?.nom || '', mandat: '', personnalite: '', jamais: '', peut_lire: null, fin_mission: '', modele: '' } : null);
   if (champs) {
     const maj = (k, v) => setEdition({ ...champs, [k]: v });
     const valide = champs.nom.trim().length >= 2 && champs.poste.trim().length >= 2;
@@ -351,6 +352,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
         propre.jamais = propre.jamais || null;
         propre.peut_lire = Array.isArray(champs.peut_lire) ? champs.peut_lire : null;
         propre.fin_mission = champs.fin_mission || null;
+        propre.modele = champs.modele || null;
         // Une date de fin fait de lui un intérimaire: il s'éteint seul le lendemain.
         propre.interim = !!champs.fin_mission;
         if (nouveau) {
@@ -420,6 +422,11 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
               </div>
             )}
           </fieldset>
+          {/* Son IA à lui (0197, Beau 24/09 : « Ada sur DeepSeek Pro pour le
+              code, les autres sur Flash ») ; vide = celle de l'équipe. */}
+          <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.sonIA', 'Son IA')}
+            <span className="mt-1 block normal-case tracking-normal"><ChoixModele valeur={champs.modele} onChange={(v) => maj('modele', v)} t={t} libelleVide={t('legion.commeEquipe', 'Comme l’équipe')} /></span>
+          </label>
           <label className="block text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.finMission', 'Fin de mission (intérim)')}
             <input type="date" className={`${champ} mt-1`} value={champs.fin_mission || ''} onChange={(e) => maj('fin_mission', e.target.value)} />
             <span className="mt-0.5 block text-[10.5px] normal-case tracking-normal">{t('legion.finMissionAide', 'Vide : il reste. Une date : il s’éteint seul le lendemain matin, et le dit.')}</span>
@@ -473,7 +480,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
               </div>
               <p className="text-caption font-semibold text-legion-muted">{agent.poste}</p>
               {onModifier && !agent.user_id && agent.moteur !== 'claude-code' && (
-                <button type="button" onClick={() => setEdition({ nom: agent.nom || '', poste: agent.poste || '', departement: agent.departement || '', mandat: agent.mandat || '', personnalite: agent.personnalite || '', jamais: agent.jamais || '', peut_lire: Array.isArray(agent.peut_lire) ? agent.peut_lire : null, fin_mission: agent.fin_mission || '' })}
+                <button type="button" onClick={() => setEdition({ nom: agent.nom || '', poste: agent.poste || '', departement: agent.departement || '', mandat: agent.mandat || '', personnalite: agent.personnalite || '', jamais: agent.jamais || '', peut_lire: Array.isArray(agent.peut_lire) ? agent.peut_lire : null, fin_mission: agent.fin_mission || '', modele: agent.modele || '' })}
                   className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-legion-gold hover:brightness-110">
                   <IconPencil size={12} /> {t('legion.modifier', 'Modifier')}
                 </button>
@@ -529,6 +536,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
             <div className="space-y-1 rounded-card border border-legion-line bg-legion-card p-3 text-caption leading-relaxed">
               <p><b className="text-legion-danger">{t('legion.jamais', 'Ce qu’il ne fait jamais')}</b> — {agent.jamais || t('legion.jamaisDefaut', 'rien de précisé : les règles de la maison et celles de Legion s’appliquent (rien d’envoyé ni de modifié sans ton clic).')}</p>
               <p><b className="text-legion-ink">{t('legion.peutLire', 'Ce qu’il peut lire')}</b> — {Array.isArray(agent.peut_lire) ? (agent.peut_lire.length ? agent.peut_lire.map((x) => t(`legion.source.${x}`)).join(', ') : t('legion.peutLireRien', 'rien au-delà de la conversation')) : t('legion.peutLireTout', 'Tout ce que l’entreprise a branché')}</p>
+              <p><b className="text-legion-ink">{t('legion.sonIA', 'Son IA')}</b> — {nomDuModele(agent.modele) || t('legion.commeEquipe', 'Comme l’équipe')}</p>
             </div>
           </div>
         )}

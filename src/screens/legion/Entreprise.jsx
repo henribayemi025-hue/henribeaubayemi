@@ -542,6 +542,13 @@ export default function Entreprise() {
     } catch (e) { toast.error(e.message || t('errors.generic')); return false; }
   }
 
+  // L'IA de toute l'équipe (0193), choisie depuis la zone de saisie.
+  async function changerModele(v) {
+    const avant = data?.entreprise?.modele || null;
+    setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele: v || null } }));
+    const { error: err } = await supabase.from('legion_entreprises').update({ modele: v || null, moteur: 'auto' }).eq('id', entrepriseId);
+    if (err) { toast.error(err.message); setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele: avant } })); }
+  }
   async function autonomie(a, niveau) {
     const { error: err } = await supabase.from('legion_agents').update({ autonomie: niveau }).eq('id', a.id);
     if (err) { toast.error(err.message); return; }
@@ -786,6 +793,7 @@ export default function Entreprise() {
               reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion} onAppeler={appeler}
               onRapport={salonRapport && salon.id === salonRapport.id ? faireRapport : null} onCreerTache={creerTache}
               entrepriseId={entrepriseId} lecteur={data.role === 'lecteur'} t={t}
+              modele={data.entreprise.modele || ''} onModele={data.role === 'lecteur' ? null : changerModele}
             />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-caption text-legion-muted"><Veilleur taille={84} />{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>

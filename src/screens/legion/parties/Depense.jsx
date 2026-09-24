@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IconCoin } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
+import { ChoixModele } from './ChoixModele';
 
 // LEGION — ce que Legion coûte ce mois-ci, et le plafond (plan B9).
 //
@@ -117,21 +118,7 @@ export function Depense({ entreprise, t }) {
       {proprietaire && (
         <div className="space-y-1.5 border-t border-legion-line pt-3">
           <label htmlFor="modele" className="text-[12px] text-legion-muted">{t('legion.moteurEquipe', 'L’IA des agents')}</label>
-          <select id="modele" value={modele} onChange={(e) => choisirModele(e.target.value)}
-            className="w-full rounded-input border border-legion-line bg-legion-bg px-2 py-1.5 text-[16px] text-legion-ink outline-none focus:border-legion-gold/60 sm:text-[13px]">
-            <option value="">{t('legion.modeleAuto', 'Auto — DeepSeek, puis Kimi, puis Gemini (recommandé)')}</option>
-            <optgroup label="DeepSeek">
-              <option value="ds:deepseek-flash">DeepSeek Flash — {t('legion.modeleRapide', 'rapide et économique')}</option>
-              <option value="ds:deepseek-v4-pro">DeepSeek Pro — {t('legion.modeleFort', 'plus fort, plus lent')}</option>
-            </optgroup>
-            <optgroup label="Kimi"><option value="km:kimi-k2.6">Kimi K2.6</option></optgroup>
-            <optgroup label="Google Gemini">
-              <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
-              <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            </optgroup>
-            <optgroup label="Anthropic"><option value="an:claude-sonnet-5">Claude Sonnet 5</option></optgroup>
-          </select>
+          <ChoixModele id="modele" valeur={modele} onChange={choisirModele} t={t} />
           <span className="block text-[11px] leading-snug text-legion-muted">{modele
             ? t('legion.modeleChoisiAide', 'Toute l’équipe travaille avec ce modèle. S’il ne répond pas ou si sa clé n’est pas posée, Léo passe au suivant en Auto plutôt que de laisser les agents muets.')
             : t('legion.moteurAutoAide', 'Auto : DeepSeek d’abord, Kimi s’il ne répond pas, puis Gemini. Le réglage vaut pour toute l’équipe.')}</span>

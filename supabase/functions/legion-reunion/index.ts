@@ -31,7 +31,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { competencesPour } from '../_shared/competences.ts';
-import { budgetAgentAtteint, compter, coutEnCours, enFond, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { budgetAgentAtteint, compter, coutEnCours, enFond, plafondAtteint, pourAgent, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteurs, moteursSimples } from '../_shared/moteur.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { texteAvecPieces } from '../_shared/pieces.ts';
@@ -218,7 +218,7 @@ type Message = { id: string; entreprise_id: string; canal_id: string; auteur_id:
 // deno-lint-ignore no-explicit-any
 type Service = any;
 
-const COLS_AGENT = 'id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, ordre, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur';
+const COLS_AGENT = 'id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, ordre, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur, modele';
 const COLS_MSG = 'id, entreprise_id, canal_id, auteur_id, user_id, texte, genre, created_at, meta';
 
 const reunionDe = (m: Message | null) => (m?.meta as { reunion?: Record<string, unknown> } | null)?.reunion ?? null;
@@ -376,6 +376,7 @@ const REGLES_REUNION = (langue: string, mesures: boolean) => `RÈGLES DE LA RÉU
 async function prendreLaParole(service: Service, apiKey: string, o: Message, r: Reunion, a: Agent, tour: number, ordre: number,
   ctx: Awaited<ReturnType<typeof contexte>>, participants: Agent[], president: Agent) {
   const avant = coutEnCours();
+  pourAgent((a as { modele?: string | null }).modele);
   const competences = await competencesPour(service, a.id, String(r.sujet || ''), 3, 1500);
   const lignes = transcription(ctx.fil, o, ctx.agents);
   const convocant = ctx.agents.find((x) => x.id === o.auteur_id)?.nom || 'le fondateur';

@@ -30,7 +30,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { competencesPour } from '../_shared/competences.ts';
-import { aPart, budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
+import { aPart, budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourAgent, pourEntreprise } from '../_shared/cout.ts';
 import { aerer, generer, garder, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
@@ -231,7 +231,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet, langue, formule, marche').eq('id', entrepriseId).single(),
-    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur').eq('entreprise_id', entrepriseId).order('ordre'),
+    service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur, modele').eq('entreprise_id', entrepriseId).order('ordre'),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
     service.from('legion_connecteurs').select('id').eq('entreprise_id', entrepriseId).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
@@ -396,6 +396,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       if (!tache) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
       if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); dejaLivre.add(a.id); return; }
       const canal = canalDe(a.departement);
+      pourAgent((a as { modele?: string | null }).modele);
       const competences = await competencesPour(service, a.id, String(tache.texte || ''), 4, 2500);
       const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
