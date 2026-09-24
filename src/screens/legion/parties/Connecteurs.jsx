@@ -156,15 +156,17 @@ export function Connecteurs({ entreprise, t }) {
   const [jetonClair, setJetonClair] = useState('');
   const [erreurJeton, setErreurJeton] = useState('');
   const [copie, setCopie] = useState(false);
+  const [duree, setDuree] = useState(90); // jours de vie d'un jeton (0189) ; 0 = sans fin
   const chargerJetons = useCallback(async () => {
-    const { data } = await supabase.from('legion_jetons').select('id, nom, cree_le, dernier_usage_le').is('revoque_le', null).order('cree_le', { ascending: false });
+    const { data } = await supabase.from('legion_jetons').select('id, nom, cree_le, dernier_usage_le, expire_le').is('revoque_le', null).order('cree_le', { ascending: false });
     setJetons(data || []);
   }, []);
   useEffect(() => { chargerJetons(); }, [chargerJetons]);
   const adresseMcp = (clair) => `${supabase.supabaseUrl}/functions/v1/legion-mcp/${clair}`;
   async function creerJeton(e) {
     e.preventDefault(); setErreurJeton(''); setBusy(true);
-    const { data, error } = await supabase.rpc('legion_creer_jeton', { p_nom: nomJeton.trim() || null });
+    // Un jeton qui expire (0189, idée 117 des 200) : 90 jours par défaut.
+    const { data, error } = await supabase.rpc('legion_creer_jeton_expirant', { p_nom: nomJeton.trim() || null, p_jours: duree });
     setBusy(false);
     if (error) return setErreurJeton(error.message === 'trop_de_jetons' ? t('legion.tropDeJetons', 'Cinq jetons au plus : révoque-en un d’abord.') : error.message);
     setJetonClair(data); setNomJeton(''); setCopie(false); chargerJetons();
@@ -334,6 +336,8 @@ export function Connecteurs({ entreprise, t }) {
                   <li key={j.id} className="flex flex-wrap items-center gap-x-2 text-[12px] text-legion-muted">
                     <span className="font-semibold text-legion-ink">{j.nom}</span>
                     <span>{j.dernier_usage_le ? t('legion.jetonUsage', { quand: new Date(j.dernier_usage_le).toLocaleDateString(), defaultValue: 'utilisé le {{quand}}' }) : t('legion.jetonJamais', 'jamais utilisé')}</span>
+                    <span className={j.expire_le && new Date(j.expire_le) < new Date() ? 'text-legion-danger' : ''}>{j.expire_le ? (new Date(j.expire_le) < new Date() ? t('legion.securite.jetonExpire') : t('legion.securite.jetonJusquAu', { date: new Date(j.expire_le).toLocaleDateString() })) : t('legion.securite.jetonSansFin')}</span>
+                    <button type="button" disabled={busy} onClick={async () => { setBusy(true); const { data } = await supabase.rpc('legion_remplacer_jeton', { p_id: j.id }); setBusy(false); if (data) { setJetonClair(data); setCopie(false); } chargerJetons(); }} className="font-semibold text-legion-gold">{t('legion.securite.remplacer')}</button>
                     <button type="button" disabled={busy} onClick={() => revoquerJeton(j.id)} className="font-semibold text-legion-danger">{t('legion.revoquer', 'Révoquer')}</button>
                   </li>
                 ))}
@@ -341,6 +345,9 @@ export function Connecteurs({ entreprise, t }) {
             )}
             <form onSubmit={creerJeton} className="mt-2 flex flex-wrap items-center gap-2">
               <input value={nomJeton} onChange={(e) => setNomJeton(e.target.value)} maxLength={60} placeholder={t('legion.jetonNom', 'Nom (ex. Claude sur mon téléphone)')} className="input min-w-0 flex-1 text-[13px]" />
+              <select value={duree} onChange={(e) => setDuree(Number(e.target.value))} className="rounded-input border border-legion-line bg-legion-bg px-1.5 py-1 text-[16px] text-legion-ink sm:text-[12px]" aria-label={t('legion.securite.duree')}>
+                {[30, 90, 365, 0].map((d) => <option key={d} value={d}>{d ? t('legion.securite.jours', { n: d }) : t('legion.securite.sansFin')}</option>)}
+              </select>
               <button type="submit" disabled={busy} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.creerJeton', 'Créer un jeton')}</button>
             </form>
             {erreurJeton && <p className="text-[11px] text-legion-danger">{erreurJeton}</p>}

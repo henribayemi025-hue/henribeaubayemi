@@ -814,6 +814,41 @@
       "emailJira": "Your Atlassian email",
       "jetonJira": "Atlassian API token",
       "ticketsAide": "Agents read open tickets when asked about code, tickets or priorities. The token goes to the vault and is never shown again."
+    },
+    "securite": {
+      "membres": "Members ({{n}})",
+      "toi": "you",
+      "role": {
+        "proprietaire": "owner",
+        "membre": "member",
+        "lecteur": "reader"
+      },
+      "rolesAide": "A reader sees every room, task and the dashboard, but writes nothing and cannot change agents. The database enforces it, not just the screen.",
+      "journal": "The decision log",
+      "verifier": "Verify",
+      "journalAide": "Every decision, minutes, deliverable and confirmed action leaves a signed fingerprint, chained to the previous one. Nothing in it can be changed or deleted; “Verify” recomputes everything and says whether a message was edited afterwards.",
+      "intact": "✓ {{n}} entries: the chain is intact, signatures are valid, no message was edited.",
+      "rupture": "The chain is broken: an entry no longer follows the previous one.",
+      "signature": "A signature does not match.",
+      "modifies_one": "{{count}} message was edited afterwards.",
+      "modifies_other": "{{count}} messages were edited afterwards.",
+      "disparus_one": "{{count}} message has disappeared.",
+      "disparus_other": "{{count}} messages have disappeared.",
+      "vide": "Empty so far: the first decision will open it.",
+      "genre": {
+        "decision": "Decision",
+        "compte_rendu": "Minutes",
+        "livrable": "Deliverable",
+        "action": "Action"
+      },
+      "jetonJusquAu": "until {{date}}",
+      "jetonExpire": "expired",
+      "jetonSansFin": "no end date",
+      "remplacer": "Replace",
+      "duree": "Token lifetime",
+      "jours": "{{n}} days",
+      "sansFin": "no end",
+      "lecteurNote": "You are a reader in this company: you see everything, you don't write. The owner can change your role."
     }
   },
   "equipe": {

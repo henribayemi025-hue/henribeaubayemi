@@ -814,6 +814,41 @@
       "emailJira": "Ton e-mail Atlassian",
       "jetonJira": "Jeton d'API Atlassian",
       "ticketsAide": "Les agents lisent les tickets ouverts quand on leur parle de code, de tickets ou de priorités. Le jeton va au coffre et ne s'affiche plus jamais."
+    },
+    "securite": {
+      "membres": "Les membres ({{n}})",
+      "toi": "toi",
+      "role": {
+        "proprietaire": "propriétaire",
+        "membre": "membre",
+        "lecteur": "lecteur"
+      },
+      "rolesAide": "Un lecteur lit tous les salons, les tâches et le tableau de bord, mais n'écrit rien et ne touche pas aux agents. C'est la base qui l'impose, pas seulement l'écran.",
+      "journal": "Le journal des décisions",
+      "verifier": "Vérifier",
+      "journalAide": "Chaque décision, compte rendu, livrable et action confirmée y laisse une empreinte signée, chaînée à la précédente. Rien ne s'y modifie ni ne s'y efface ; « Vérifier » recalcule tout et dit si un message a été retouché après coup.",
+      "intact": "✓ {{n}} entrées : la chaîne est intacte, les signatures sont bonnes, aucun message n'a été retouché.",
+      "rupture": "La chaîne est rompue : une ligne ne suit plus la précédente.",
+      "signature": "Une signature ne correspond pas.",
+      "modifies_one": "{{count}} message a été modifié après coup.",
+      "modifies_other": "{{count}} messages ont été modifiés après coup.",
+      "disparus_one": "{{count}} message a disparu.",
+      "disparus_other": "{{count}} messages ont disparu.",
+      "vide": "Encore vide : la première décision l'ouvrira.",
+      "genre": {
+        "decision": "Décision",
+        "compte_rendu": "Compte rendu",
+        "livrable": "Livrable",
+        "action": "Action"
+      },
+      "jetonJusquAu": "jusqu'au {{date}}",
+      "jetonExpire": "expiré",
+      "jetonSansFin": "sans date de fin",
+      "remplacer": "Remplacer",
+      "duree": "Durée du jeton",
+      "jours": "{{n}} jours",
+      "sansFin": "sans fin",
+      "lecteurNote": "Tu es lecteur dans cette entreprise : tu lis tout, tu n'écris pas. Le propriétaire peut changer ton rôle."
     }
   },
   "equipe": {

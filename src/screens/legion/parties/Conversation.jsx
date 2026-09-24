@@ -42,7 +42,7 @@ function couleurNom(a) {
 export function Conversation({
   salon, dept, agentPrive, messages, agents, moi, reactions, langue, tape, brouillon, onBrouillonPris,
   onEnvoyer, onReagir, onTacheDepuis, onFiche, onAllumer, onToggleKanban, onRetour, onTaches, onPhotoSalon, onMembres, entrepriseId, t,
-  reunion, onReunion, onConclureReunion, onAppeler, onRapport, onCreerTache,
+  reunion, onReunion, onConclureReunion, onAppeler, onRapport, onCreerTache, lecteur = false,
 }) {
   const photoSalon = useRef(null);
   const fil = useRef(null);
@@ -518,6 +518,9 @@ export function Conversation({
         </button>
       )}
 
+      {lecteur ? (
+        <p className="shrink-0 border-t border-legion-line bg-legion-card px-4 py-3 text-center text-caption text-legion-muted" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>{t('legion.securite.lecteurNote')}</p>
+      ) : (
       <Composeur
         moi={moi} agents={agents} entrepriseId={entrepriseId} t={t} commandes={commandes}
         reponseA={reponseA} onAnnulerReponse={() => setReponseA(null)}
@@ -530,6 +533,7 @@ export function Conversation({
           await onEnvoyer({ ...x, meta: { ...(x.meta || {}), ...(cite ? { reponse_a: { id: cite.id, nom: agentDe(cite.auteur_id)?.nom || '?', texte: cite.texte.slice(0, 160) } } : {}) } });
         }}
       />
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { Documents } from './Documents';
 import { Inviter } from './Inviter';
 import { TableauDeBord } from './TableauDeBord';
 import { Missions } from './Missions';
+import { Membres, Journal } from './Securite';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -355,9 +356,14 @@ export function Accueil({
 
       {/* 8. La mémoire, les connecteurs, et ce que Legion coûte */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2"><Memoire entrepriseId={entreprise.id} t={t} /></div>
+        <div className="space-y-6 lg:col-span-2">
+          <Memoire entrepriseId={entreprise.id} t={t} />
+          {/* Le journal inaltérable et signé des décisions (0189) */}
+          <Journal entreprise={entreprise} agents={agents} t={t} />
+        </div>
         <div className="space-y-6">
           {entreprise.owner_id === moi?.user_id && <Inviter entreprise={entreprise} t={t} />}
+          <Membres entreprise={entreprise} moi={moi} t={t} />
           <Connecteurs entreprise={entreprise} t={t} />
           <Documents entreprise={entreprise} t={t} />
           <Depense entreprise={entreprise} t={t} />

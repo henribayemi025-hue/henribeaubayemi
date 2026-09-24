@@ -90,8 +90,10 @@ export default function Entreprise() {
     // Où chacun s'est arrêté dans chaque salon (non-lus). Sans la table —
     // ou en cas d'erreur — rien ne s'affiche, rien ne casse.
     const { data: lectures } = await supabase.from('legion_lectures').select('canal_id, lu_le').eq('entreprise_id', entrepriseId);
+    // Son rôle (0189) : un « lecteur » lit tout et n'écrit rien.
+    const { data: place } = await supabase.from('legion_membres').select('role').eq('entreprise_id', entrepriseId).eq('user_id', user.id).maybeSingle();
     const lus = Object.fromEntries((lectures || []).map((l) => [l.canal_id, l.lu_le]));
-    return { entreprise, agents: agents.data || [], salons: salons.data || [], messages: liste, reactions: reactions || [], lus };
+    return { entreprise, agents: agents.data || [], salons: salons.data || [], messages: liste, reactions: reactions || [], lus, role: place?.role || 'membre' };
   }, [user?.id, entrepriseId], { cacheKey: `legion:v2:${entrepriseId}` });
 
   // Le temps réel: les messages, les réactions, les agents (leur interrupteur
@@ -745,7 +747,7 @@ export default function Entreprise() {
               onToggleKanban={() => setKanban((k) => !k)} onRetour={() => setVue('salons')} onTaches={() => setVue('taches')} onPhotoSalon={photoSalon} onMembres={membresSalon}
               reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion} onAppeler={appeler}
               onRapport={salonRapport && salon.id === salonRapport.id ? faireRapport : null} onCreerTache={creerTache}
-              entrepriseId={entrepriseId} t={t}
+              entrepriseId={entrepriseId} lecteur={data.role === 'lecteur'} t={t}
             />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-caption text-legion-muted"><Veilleur taille={84} />{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>

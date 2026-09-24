@@ -209,8 +209,9 @@ Vérifie, dans cet ordre:
 3. Enfreint-il une règle de la maison ?
 4. Est-il creux (formules, promesses vagues sans qui/quoi/quand) ? Rends-le concret ou plus court.
 5. Le fondateur a-t-il demandé un plan, une stratégie, une analyse, un bilan — et le message se contente-t-il de PROPOSER de le faire (« je peux te préparer… », « dis-moi si tu veux ») ou de dire qu'on y travaille ? C'est la faute la plus grave (Beau, 22/09: « paresseux »). Réécris-le pour qu'il LIVRE le contenu demandé, complet, avec les chiffres des faits et des actions précises (qui, quoi, quand). Dans ce cas seulement, le texte corrigé peut être plus long que l'original.
+6. Un BIAIS dans le raisonnement (idée 106 des 200, 24/09) : une conclusion générale tirée de trop peu de cas (« les clientes préfèrent… » sur trois ventes), une corrélation présentée comme une cause, une moyenne qui cache des écarts, seulement les exemples qui vont dans le sens de la conclusion, une tendance tirée de deux points. Ne supprime pas la conclusion : ajoute la réserve en une phrase courte et précise (« sur trois ventes seulement, à confirmer »), et dans "raison" commence par « biais : ».
 
-Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original (sauf le cas 5); raison = en une courte phrase, ce que tu as corrigé.`;
+Si tout va bien: verdict "ok", texte identique, raison "". Sinon: verdict "corrige", texte = le message corrigé, dans la voix et la langue de ${a.nom}, pas plus long que l'original (sauf les cas 5 et 6); raison = en une courte phrase, ce que tu as corrigé.`;
   try {
     const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELS[0]}:generateContent`, {
       method: 'POST',
