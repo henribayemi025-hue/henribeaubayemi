@@ -64,7 +64,9 @@ Rends en français, 800 à 2000 signes, les faits trouvés (qui, quoi, quand, o�
       // Sans source, ce n'est pas une recherche: c'est le modèle qui parle de
       // mémoire (vu le 23/09: il avait résumé la demande). On ne le fait pas
       // passer pour « j'ai cherché ».
-      if (!sources.length) { console.error(`web ${model}: aucune source — ignoré`); return null; }
+      // 24/09 au soir : on passe alors au relais (Tavily, Brave) au lieu
+      // d'abandonner — les agents disaient « pas d'outil de recherche ».
+      if (!sources.length) { console.error(`web ${model}: aucune source — ignoré`); continue; }
       return { resume: resume.slice(0, 3000), sources };
     } catch (e) { console.error(`web ${model}: ${(e as Error).message}`); }
   }

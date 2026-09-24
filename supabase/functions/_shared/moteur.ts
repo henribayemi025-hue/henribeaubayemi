@@ -159,7 +159,10 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
           temperature: /^kimi/.test(model) ? 1 : (o.temperature ?? 0.6),
           // Ces modèles comptent leur réflexion dans la sortie : sans cette
           // marge, un tableau un peu long était coupé en plein JSON (banc du 24/09).
-          max_tokens: (o.maxSortie ?? 8192) + (o.reflexion ?? 4096),
+          // Doublée le 24/09 au soir : les livrables des agents (DeepSeek fort,
+          // Kimi) sortaient encore « coupés », donc vides. On ne paie que ce
+          // qui est vraiment écrit.
+          max_tokens: Math.min(32_768, 2 * ((o.maxSortie ?? 8192) + (o.reflexion ?? 4096))),
         }),
       response_format: { type: 'json_object' },
       messages: [
