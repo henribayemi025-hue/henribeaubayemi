@@ -175,7 +175,7 @@ Plume, outil payant mis de côté : pas de faux témoignages), **34 Higgsfield**
 (visages persistants des agents, payant, en réserve), **35 prompt.pdf** (« une
 question à la fois, tester avec 1 puis 10 » → compétence confiée à Mentor, et
 accueil de « Construire une application » dans l'atelier). Doublon : le guide
-Arcads, envoyé deux fois. **25/09, 1 h 16** : le guide Notion « MoneyPrinterTurbo — Guide complet » → complément de la fiche 32 (publication automatique laissée désactivée, partie promotionnelle écartée).
+Arcads, envoyé deux fois. **25/09, 1 h 16** : le guide Notion « MoneyPrinterTurbo — Guide complet » → complément de la fiche 32 (publication automatique laissée désactivée, partie promotionnelle écartée). **25/09, ~1 h 20** : « 7 GitHub Repos That Make AI Feel Very Different » (Notion) → **fiche 36** : Atlas (plusieurs agents sur un même projet, mémoire commune) retenu pour l'équipe dans l'atelier ; MiroFish (simulation, AGPL) en réserve ; RuView et ASC mis de côté.
 
 Envoi du 24/09, 20 h 40 (5 liens) :
 - page Notion « Top 5 Sites pour Vibe Coders » : déjà traitée (= fiche 22) ✅

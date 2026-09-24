@@ -37,3 +37,4 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [33 — Arcads : des pubs « UGC » avec des acteurs IA (guide de 0xLoucash)](33-arcads-pubs-ugc-acteurs-ia.md)
 - [34 — Higgsfield : un personnage qui reste le même d'un plan à l'autre (guide de 0xLoucash)](34-higgsfield-personnage-persistant.md)
 - [35 — « prompt.pdf » : transformer une idée en application qui travaille seule](35-prompt-idee-en-application.md)
+- [36 — « 7 GitHub Repos That Make AI Feel Very Different » (Atlas, MiroFish, OpenResearch…)](36-sept-depots-ia-differente.md)
