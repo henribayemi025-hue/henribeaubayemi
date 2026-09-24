@@ -67,6 +67,6 @@ describe('Auto sans Gemini', () => {
     expect(disponibles({})).toEqual([]);
   });
   it('un modèle choisi passe en premier, la relève derrière', () => {
-    expect(ordre({ DEEPSEEK_API_KEY: 'x', KIMI_API_KEY: 'k' }, 'km:kimi-k2.6')).toEqual(['km:kimi-k2.6', 'ds:deepseek-flash', 'ds:deepseek-v4-pro']);
+    expect(ordre({ DEEPSEEK_API_KEY: 'x', KIMI_API_KEY: 'k' }, 'km:kimi-k2.6')).toEqual(['km:kimi-k2.6']);
   });
 });

@@ -120,9 +120,12 @@ export async function modelesRelais(env, jeton, fetchFn = fetch) {
 export function ordre(env, choix = 'auto', etat = {}) {
   const reglage = String(env?.ATELIER_MODELES || '').split(',').map((s) => s.trim()).filter((m) => MODELES.includes(m));
   const auto = (reglage.length ? reglage : AUTO_PAR_DEFAUT);
-  const liste = choix && choix !== 'auto' && MODELES.includes(choix) ? [choix, ...auto.filter((m) => m !== choix)] : auto;
   const dispo = new Set(disponibles(env, etat));
-  return liste.filter((m) => dispo.has(m));
+  // Un modèle choisi, c'est CE modèle seulement, sans relais vers un autre
+  // (Beau, 25/09 : « on dit qu'elle travaille seulement avec DeepSeek, pour
+  // voir comment il fait »). S'il n'est pas joignable du tout, on retombe sur Auto.
+  if (choix && choix !== 'auto' && MODELES.includes(choix) && dispo.has(choix)) return [choix];
+  return auto.filter((m) => dispo.has(m));
 }
 
 export class ErreurMoteur extends Error {
