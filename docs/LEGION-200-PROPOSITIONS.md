@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 55 faites, 59 en partie, 33 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 72 faites, 52 en partie, 23 à faire, 18 en attente de Beau, 35 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -45,21 +45,21 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 3 | Auto-recrutement : un manager rédige la fiche et demande un agent | 🔧 | « Renforcer » : Legion propose des agents avec leur fiche complète, le fondateur coche. Un directeur ne peut pas encore le proposer de lui-même dans un salon (il faudrait une action « engager » derrière « Confirmer »). |
 | 4 | Personnalités simulées (optimiste, prudent, perfectionniste) | ✅ | Chaque agent a une personnalité écrite, modifiable sur sa fiche, et parle avec elle. |
 | 5 | Réunions automatiques, transcription et synthèse des points d'équipe | ✅ | Réunions en direct (23/09) : deux tours, compte rendu avec décidé, écarté, désaccords, à trancher, et tâches créées. Pas encore de réunion lancée seule chaque matin. |
-| 6 | Jeu de rôle conflictuel, un avocat du diable permanent | 🔧 | Le 2e tour d'une réunion est contradictoire : chacun doit dire ce qui ne va pas chez l'autre. Pas encore un agent « avocat du diable » attitré. |
+| 6 | Jeu de rôle conflictuel, un avocat du diable permanent | ✅ | Réunion au format « avocat du diable » (24/09) : un participant attitré conteste chaque proposition, les autres répondent. |
 | 7 | Un agent s'auto-forme en lisant la documentation du projet | ✅ | Documents de l'entreprise (0179) et compétences : l'agent qui en a le droit lit les documents et cite sa source. |
 | 8 | Badges de compétences, certifications internes | 🔧 | Les compétences d'un agent sont affichées sur sa fiche. Pas de badge ni de certification. |
 | 9 | Humeur des agents selon la charge et les retours | ✗ | Pas retenu : une « humeur » inventée ne sert pas l'utilisateur et brouille ce qui est vrai. La charge réelle (tâches ouvertes par agent) est déjà visible au tableau. |
 | 10 | Agents multilingues | ✅ | Ils répondent dans la langue du message, et en anglais toute la journée de travail si le fondateur lit l'anglais. |
-| 11 | Rapport de fin de journée par le directeur général | 🔧 | Chaque matin, plans de la semaine par département et livrables. Pas encore un rapport unique « ce qui a été fait aujourd'hui ». |
+| 11 | Rapport de fin de journée par le directeur général | ✅ | Rapport du soir (24/09) : chaque soir, le directeur écrit dans Direction ce qui a été fait, ce qui suit, ce qui attend le fondateur ; les chiffres viennent de la base, pas du modèle. Aussi à la demande (bouton dans Direction). |
 | 12 | Déléguer une tâche à un autre département | ✅ | Relais : une tâche passe d'un agent à l'autre avec le livrable du premier. |
-| 13 | Alerte proactive en cas d'incohérence | 🔧 | Un agent bloqué pose sa question au fondateur. Pas de veille qui cherche seule les incohérences. |
+| 13 | Alerte proactive en cas d'incohérence | ✅ | Chaque soir (24/09), des alertes calculées dans la base : tâche bloquée, livrable en attente depuis 2 jours, tâche immobile depuis 7 jours, plafond à 80 %, intérim qui finit, agent silencieux avec du travail ; et « à vérifier » quand deux faits du jour se contredisent. |
 | 14 | Journal des choix : pourquoi l'agent a décidé ça | 🔧 | Chaque réponse garde ce qui a été vérifié (outils appelés), ses sources et ce que la relecture a corrigé. La fiche montre ce que l'agent reçoit avant de répondre. Pas de journal par agent. |
 | 15 | Conscience éthique selon les règles de l'entreprise | ✅ | Règles de la maison relues avant chaque réponse ; « ce qu'il ne fait jamais » par agent (0177). |
-| 16 | Négociation de budget entre départements | 📌 | Faisable en réunion (sujet « budget »). Pas de budget par département aujourd'hui, seulement le plafond de l'entreprise. |
+| 16 | Négociation de budget entre départements | ✅ | Réunion au format « budget » (24/09) : chaque participant défend sa part, sur la dépense réelle et le plafond. Il n'existe pas de budget stocké par département : le vote conclut, le fondateur décide. |
 | 17 | Un mentor pour les nouveaux agents | ✗ | Pas utile tel quel : un nouvel agent reçoit déjà le contexte complet (mémoire, plans, tâches). |
 | 18 | Pauses café entre agents pour des idées inattendues | ✗ | Coûte de l'argent sans demande de l'utilisateur. Les réunions couvrent le besoin quand on le veut. |
 | 19 | Agents qui simulent des utilisateurs pour tester l'application | 📌 | Utile pour le studio de code et pour Finjaro. Demande un navigateur de test côté serveur. |
-| 20 | Vote à la majorité en comité de direction | 📌 | Simple à ajouter aux réunions (chaque agent vote, le compte rendu le dit). |
+| 20 | Vote à la majorité en comité de direction | ✅ | Réunion au format « vote » (24/09) : chacun vote pour, contre ou s'abstient ; c'est Legion qui compte, pas un agent, et le compte rendu rappelle que l'humain décide. |
 | 21 | KPI par agent suivis dans un tableau RH | 📌 | On a les tâches faites, en retard, renvoyées : un tableau par agent est faisable. |
 | 22 | Refuser une tâche hors de son métier | ✅ | Le mandat et « ce qu'il ne fait jamais » le permettent ; il le dit et passe la main. |
 | 23 | Biographie générée à la création | ✅ | Mandat et personnalité écrits à la création, portrait choisi par l'agent lui-même. |
@@ -121,7 +121,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 69 | Exporter l'organigramme en PDF ou image | 📌 | Petit travail. |
 | 70 | Mini-jeu pour « motiver » les agents | ✗ | Pas retenu : ne sert pas le travail. |
 | 71 | Trophées aux grandes étapes | 📌 | Possible avec la feuille de route (étape franchie). |
-| 72 | Conférence de presse simulée | 🔧 | Faisable en réunion avec des experts en communication. Pas de mode dédié. |
+| 72 | Conférence de presse simulée | ✅ | Réunion au format « conférence de presse » (24/09) : des journalistes posent les questions difficiles, l'entreprise répond. |
 | 73 | Charge globale de l'entreprise | 📌 | Même source que 60. |
 | 74 | Ton des agents (formel, décontracté…) | ✅ | Par la personnalité de chaque agent. |
 | 75 | Météo et ambiance sonore | ✗ | Pas retenu. |
@@ -132,7 +132,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | --- | --- | --- | --- |
 | 76 | Étude de marché et veille concurrentielle en continu | ✅ | Recherche sur Internet avec sources, pour les tâches qui regardent dehors ; experts « Étude de marché » à la mission. |
 | 77 | Campagnes publicitaires complètes (textes, visuels, ciblage) | 🔧 | Les textes et le ciblage, oui. Les visuels : non (règle : aucune photo d'article prise sur le web ; les visuels viennent des vendeuses ou de Beau). |
-| 78 | Entretiens simulés avec des clients (personas) | 📌 | Faisable en réunion avec des agents « clients ». À proposer comme modèle de réunion. |
+| 78 | Entretiens simulés avec des clients (personas) | ✅ | Réunion au format « clients » (24/09) : les participants jouent des clients (personas) et disent ce qui les ferait acheter ou partir. |
 | 79 | Rentabilité et modèle financier | ✅ | Excel rendu avec formules (marge, taux, totaux) ; avec Accounting branché, sur les vrais chiffres (0180). |
 | 80 | Business plan mis à jour quand une variable change | 🔧 | Le plan de la semaine et du mois est réécrit chaque semaine. Pas de business plan vivant. |
 | 81 | Charte graphique et kit marketing | 🔧 | Texte oui ; images non (même règle que 77). |
@@ -147,7 +147,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 90 | Empreinte carbone des serveurs | ✗ | Pas de chiffre mesurable fiable aujourd'hui (règle : aucun chiffre inventé). |
 | 91 | Personas détaillés sur données réelles | 🔧 | Avec la boutique ou les mesures branchées. Sinon, sur les documents de l'entreprise. |
 | 92 | Audit SEO et mots-clés | 🔧 | Faisable avec la recherche web ; pas d'outil SEO branché. |
-| 93 | Négociations commerciales simulées | 📌 | Réunion avec un agent qui joue le partenaire. |
+| 93 | Négociations commerciales simulées | ✅ | Réunion au format « négociation » (24/09) : un agent joue le partenaire en face. |
 | 94 | Supports de formation pour les futurs employés | ✅ | Un agent peut les écrire à partir des documents de l'entreprise. |
 | 95 | Tendances technologiques mondiales | ✅ | Recherche web avec sources. |
 | 96 | Matrice des risques mise à jour | 📌 | Tâche récurrente à proposer dans les modèles. |
@@ -183,8 +183,8 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 121 | Chiffrement des mémoires au repos | 🔧 | Assuré par l'hébergeur de la base ; rien de plus. |
 | 122 | Fuites de données dans les requêtes envoyées aux IA | ✅ | Les outils ne renvoient jamais d'e-mail, de téléphone ni d'adresse. |
 | 123 | Normes ISO 27001 | ✗ | Pas maintenant. |
-| 124 | Rapport de transparence mensuel | 📌 | Faisable : dépense, réponses corrigées par la relecture, actions confirmées. |
-| 125 | Validation éthique des grandes fonctionnalités | 🔧 | Étude de l'intérim avec la loi et ce qui a mal tourné ailleurs (LEGION-INTERIM-ETUDE.md). |
+| 124 | Rapport de transparence mensuel | ✅ | Rapport de transparence (24/09), le 1er de chaque mois, sans modèle : ce que Legion a coûté par fonction, réponses relues et corrigées, actions proposées et confirmées, règles et documents ajoutés. |
+| 125 | Validation éthique des grandes fonctionnalités | ✅ | Réunion au format « impact » (24/09) : effets sur les clients, l'équipe, la société, et ce qui pourrait mal tourner, avant une grande décision. Plus l'étude de l'intérim (LEGION-INTERIM-ETUDE.md). |
 
 ## Performance et échelle (126 à 150)
 
@@ -238,13 +238,13 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 166 | Tableau blanc collaboratif | 📌 | À voir. |
 | 167 | Historique des décisions consultable | ✅ | Comptes rendus (genre « décision ») dans les salons. |
 | 168 | Encourager un agent | 🔧 | Réactions emoji sur les messages. |
-| 169 | Podcast de la semaine | 📌 | Synthèse vocale déjà utilisée pour l'appel ; faisable. |
+| 169 | Podcast de la semaine | ✅ | Le vendredi (24/09), le rapport du soir couvre la semaine ; un bouton « Écouter » le lit avec la voix du téléphone (rien ne part au serveur). |
 | 170 | Modèles de projets (lancement, levée de fonds…) | ✅ | Modèles d'entreprise et feuille de route. |
 | 171 | Agendas partagés | ⏸ | Google Agenda attend le projet Google de Beau. |
 | 172 | Badges pour les utilisateurs actifs | ✗ | Pas retenu. |
 | 173 | Passerelle vers le no-code | ✗ | Pas maintenant. |
 | 174 | Livre blanc annuel | 🔧 | Un agent peut l'écrire. |
-| 175 | Rétrospective de fin de sprint | 📌 | Réunion récurrente à proposer. |
+| 175 | Rétrospective de fin de sprint | ✅ | Réunion au format « rétrospective » (24/09) : relit les tâches des sept derniers jours — ce qui a marché, ce qui a coincé, ce qu'on change. |
 
 ## Le futur (176 à 200)
 
@@ -255,16 +255,16 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 178 | Réflexion approfondie la nuit | ✅ | Le travail de fond tourne la nuit et le matin (plans, livrables). |
 | 179 | Musique d'ambiance générée | ✗ | Pas retenu. |
 | 180 | Organigramme en réalité augmentée | ✗ | Pas retenu. |
-| 181 | Agents qui jouent des investisseurs | 📌 | Réunion « comité d'investissement ». |
+| 181 | Agents qui jouent des investisseurs | ✅ | Réunion au format « investisseurs » (24/09) : les participants jouent un comité d'investissement. |
 | 182 | Journal secret du directeur général | ✗ | Pas retenu : rien de caché au fondateur. |
 | 183 | Fusion des meilleures consignes | 🔧 | Compétences combinées par agent ; pas d'« évolution génétique ». |
-| 184 | Scénarios de crise | 📌 | Réunion sur scénario. |
+| 184 | Scénarios de crise | ✅ | Réunion au format « crise » (24/09) : un scénario de crise, et qui fait quoi dans l'heure. |
 | 185 | Rédaction de brevets | 🔧 | Faisable par un agent juriste ; relu par un avocat. |
-| 186 | Impact social des décisions | 🔧 | En réunion, sur demande. |
-| 187 | Réunions à l'oral avec des voix réalistes | 🔧 | Appel vocal avec UN agent (voix du téléphone). Pas encore de réunion à plusieurs voix. |
+| 186 | Impact social des décisions | ✅ | Réunion au format « impact » (24/09). |
+| 187 | Réunions à l'oral avec des voix réalistes | ✅ | « Écouter la réunion » (24/09) : chaque agent a sa voix (celles du téléphone, dans la langue de l'entreprise) ; pas de voix de synthèse payante. |
 | 188 | Musée des versions | ✗ | Pas retenu. |
 | 189 | Analyse du ton de voix de l'utilisateur | ✗ | Pas retenu : intrusif. |
-| 190 | « Et si on avait fait autrement il y a 3 mois ? » | 📌 | Réunion sur les plans passés : faisable. |
+| 190 | « Et si on avait fait autrement il y a 3 mois ? » | ✅ | Réunion au format « et si » (24/09) : relit les plans et décisions passés et imagine l'autre chemin. |
 | 191 | Bourses pour former les agents juniors | ✗ | Pas retenu. |
 | 192 | Humour réglable | ✅ | Par la personnalité. |
 | 193 | Mascotte animée | 🔧 | Finou existe côté Finjaro. |
@@ -297,10 +297,10 @@ Vérifié dans le code de Finjaro le 23/09 au soir.
 | 13 | Centre d'aide (FAQ, assistant 24 h/24) | ✅ | Page d'aide avec FAQ, support dans la console, Finou (l'assistante) à toute heure. |
 | 14 | Litiges, remboursements, réclamations | 🔧 | Signaler un article, une boutique, une vidéo, un commentaire ou une personne ; annulation avec sa raison ; commandes sans réponse annulées seules après dix jours (stock rendu). Pas de circuit de litige ni de remboursement (le paiement se fait à la livraison). |
 | 15 | Notifications push | ✅ | Sur le web et dans les applications Android et iOS. |
-| 16 | Plusieurs langues et monnaies selon le lieu | 🔧 | Français et anglais ; prix dans la monnaie de chacun. À corriger : le Canada voit des dollars américains au lieu de canadiens, et les taux sont fixes dans le code (celui du dollar est décalé d'environ 5 %). Proposition faite à Beau : un taux par jour. |
+| 16 | Plusieurs langues et monnaies selon le lieu | ✅ | Français et anglais ; prix dans la monnaie de chacun (165 monnaies), au taux du jour mis à jour chaque nuit ; le Canada voit des dollars canadiens ; le prix saisi par la vendeuse est gardé dans sa monnaie (23/09, en ligne). |
 | 17 | Tableaux de bord des administrateurs | ✅ | Console Finjaro : commandes, boutiques, personnes, modération, relances, veille. |
 | 18 | Publication de contenus (blog, actualités) | 🔧 | Vidéos courtes, stories, annonces et bandeau depuis la console. Pas de blog. |
 | 19 | Partage sur les réseaux, liens d'affiliation | 🔧 | Partage d'une boutique, d'une vidéo, d'une invitation. Pas d'affiliation. |
 | 20 | Documents (factures, reçus, conditions générales) | 🔧 | Conditions générales, confidentialité, suppression de compte. Pas de facture ni de reçu automatiques sur la place de marché (Accounting tient les livres de la vendeuse). |
 
-**Le compte :** 9 faites, 11 en partie, aucune absente.
+**Le compte :** 10 faites, 10 en partie, aucune absente.

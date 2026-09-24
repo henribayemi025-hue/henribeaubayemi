@@ -136,7 +136,7 @@ async function salonDirection(service: Service, entrepriseId: string): Promise<s
   return d?.id || null;
 }
 
-const SCHEMA_RAPPORT = { type: 'OBJECT', properties: { aujourdhui: { type: 'STRING' }, demain: { type: 'STRING' }, pour_toi: { type: 'STRING' } }, required: ['aujourdhui', 'demain', 'pour_toi'] };
+const SCHEMA_RAPPORT = { type: 'OBJECT', properties: { aujourdhui: { type: 'STRING' }, demain: { type: 'STRING' }, pour_toi: { type: 'STRING' }, a_verifier: { type: 'STRING' } }, required: ['aujourdhui', 'demain', 'pour_toi', 'a_verifier'] };
 
 // ——— Le rapport du soir (ou de la semaine, le vendredi) ———
 async function rapportSoir(service: Service, apiKey: string, entrepriseId: string, semaine: boolean, force: boolean, ecrits: unknown[] = []): Promise<string> {
@@ -191,24 +191,26 @@ Trois champs, en phrases simples, sans titre ni puce (la mise en page est faite 
 "aujourdhui" : ce qui a vraiment été fait ${semaine ? 'cette semaine' : "aujourd'hui"}, qui l'a fait — 2 à 5 phrases. S'il ne s'est presque rien passé, dis-le en une phrase.
 "demain" : ce qui est sur la table pour la suite, d'après les tâches ouvertes — 1 à 3 phrases.
 "pour_toi" : ce qui attend une décision ou une action du fondateur (validations, blocages, questions) — 1 à 3 phrases, ou "" s'il n'y a rien.
+"a_verifier" : si DEUX faits ci-dessus se contredisent (deux livrables qui donnent des chiffres différents, une décision qu'une tâche ignore, un compte rendu qu'un livrable contredit), dis lesquels, en les citant, en 1 à 3 phrases. Tu ne juges que ce qui est écrit ci-dessus ; en cas de doute, ou s'il n'y a pas de contradiction, laisse "".
 Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'anglais' : 'français'}.`;
 
   const titre = semaine ? (anglais ? 'The week' : 'La semaine') : (anglais ? 'Tonight’s report' : 'Rapport du soir');
   const t = anglais
-    ? { auj: semaine ? 'This week' : 'Today', dem: 'Next', toi: 'For you', al: 'Alerts', ch: 'Figures' }
-    : { auj: semaine ? 'Cette semaine' : "Aujourd'hui", dem: 'Ensuite', toi: 'Pour toi', al: 'Alertes', ch: 'Les chiffres' };
+    ? { auj: semaine ? 'This week' : 'Today', dem: 'Next', toi: 'For you', ver: 'To check (possible contradiction)', al: 'Alerts', ch: 'Figures' }
+    : { auj: semaine ? 'Cette semaine' : "Aujourd'hui", dem: 'Ensuite', toi: 'Pour toi', ver: 'À vérifier (contradiction possible)', al: 'Alertes', ch: 'Les chiffres' };
   const eur = (n: number) => euros(n, anglais);
   const chiffres = anglais
     ? `- ${f.chiffres.reponses} agent replies, ${f.chiffres.livrables} deliverables, ${f.chiffres.reunions} meetings, ${f.chiffres.decisions} decisions\n- Tasks: ${f.chiffres.taches_faites} done, ${f.chiffres.taches_creees} created, ${f.chiffres.taches_ouvertes} open (${f.chiffres.en_revue} awaiting you)\n- Cost: ${eur(f.depensePeriode)} over the period, ${eur(f.plafond.depense)} this month${f.plafond.plafond != null ? ` of ${eur(f.plafond.plafond)}` : ''}`
     : `- ${f.chiffres.reponses} réponses d'agents, ${f.chiffres.livrables} livrables, ${f.chiffres.reunions} réunions, ${f.chiffres.decisions} décisions\n- Tâches : ${f.chiffres.taches_faites} faites, ${f.chiffres.taches_creees} créées, ${f.chiffres.taches_ouvertes} ouvertes (dont ${f.chiffres.en_revue} à valider)\n- Coût : ${eur(f.depensePeriode)} sur la période, ${eur(f.plafond.depense)} ce mois-ci${f.plafond.plafond != null ? ` sur ${eur(f.plafond.plafond)}` : ''}`;
 
   const r = await generer(apiKey, consigne, SCHEMA_RAPPORT, { temperature: 0.4, reflexion: 512, maxSortie: 2048, delaiMs: 40_000, modeles: moteursSimples() });
-  const recit = 'erreur' in r ? null : r.obj as { aujourdhui?: string; demain?: string; pour_toi?: string };
+  const recit = 'erreur' in r ? null : r.obj as { aujourdhui?: string; demain?: string; pour_toi?: string; a_verifier?: string };
   const blocs = [
     `${titre} — ${new Date().toLocaleDateString(anglais ? 'en-GB' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`,
     recit?.aujourdhui ? `## ${t.auj}\n${String(recit.aujourdhui).trim()}` : '',
     recit?.demain ? `## ${t.dem}\n${String(recit.demain).trim()}` : '',
     recit?.pour_toi ? `## ${t.toi}\n${String(recit.pour_toi).trim()}` : '',
+    recit?.a_verifier?.trim() ? `## ${t.ver}\n${String(recit.a_verifier).trim()}` : '',
     f.alertes.length ? `## ${t.al}\n${f.alertes.map((a) => `- ${a}`).join('\n')}` : '',
     `## ${t.ch}\n${chiffres}`,
     !recit ? (anglais ? '(The model did not answer: here are the facts alone.)' : "(Le modèle n'a pas répondu : voici les faits seuls.)") : '',
@@ -216,7 +218,7 @@ Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'ang
   const { data: ecrit, error } = await service.from('legion_messages').insert({
     entreprise_id: entrepriseId, canal_id: canal, auteur_id: directeur.id, user_id: null,
     texte: aerer(blocs.join('\n\n')).slice(0, 5000), genre: 'info',
-    meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, chiffres: f.chiffres, demande: force } },
+    meta: { par_ia: !!recit, ...(recit && 'modele' in r ? { modele: r.modele } : {}), sans_reponse: true, rapport: { type, depuis: depuis.toISOString(), alertes: f.alertes.length, a_verifier: !!recit?.a_verifier?.trim(), chiffres: f.chiffres, demande: force } },
   }).select('*').single();
   if (error) return `${e.nom}: ${error.message}`;
   ecrits.push(ecrit);
