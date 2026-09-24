@@ -16,7 +16,7 @@
 import { avecCache } from './cache.ts';
 import { gemini } from './cout.ts';
 
-export type Trouvaille = { resume: string; sources: { titre: string; url: string }[] };
+export type Trouvaille = { resume: string; sources: { titre: string; url: string }[]; via?: string };
 
 // Une question ou une tâche qui demande de regarder dehors.
 const BESOIN = /(internet|en ligne|sur le web|cherche|recherche|trouve|trouver|veille|concurren|lanc[ée]|nouveaut|actualit|tendance|événement|evenement|salon |concours|prix pour|appel à|appel a|incubat|accélérat|accelerat|investiss|financement|subvention|partenaire|prospect|entreprises? (à|a) |linkedin|instagram|tiktok|facebook|réseaux|reseaux|influenc|march[ée] |benchmark|compar)/i;
@@ -68,11 +68,52 @@ Rends en français, 800 à 2000 signes, les faits trouvés (qui, quoi, quand, o�
       return { resume: resume.slice(0, 3000), sources };
     } catch (e) { console.error(`web ${model}: ${(e as Error).message}`); }
   }
-  return null;
+  // Le relais quand Google ne répond pas (proposition 3 de Beau, 24/09 :
+  // « ne plus jamais dépendre de Google seul ») : Tavily, puis Brave, si
+  // leur clé est posée. Ils rendent des extraits de pages avec leurs liens.
+  return await parTavily(question) || await parBrave(question);
+}
+
+const courte = (q: string) => q.replace(/\s+/g, ' ').trim().slice(0, 380);
+
+async function parTavily(question: string): Promise<Trouvaille | null> {
+  const cle = Deno.env.get('TAVILY_API_KEY');
+  if (!cle) return null;
+  try {
+    const r = await fetch('https://api.tavily.com/search', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cle}` },
+      body: JSON.stringify({ api_key: cle, query: courte(question), search_depth: 'basic', include_answer: true, max_results: 6 }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) { console.error(`web tavily: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`); return null; }
+    const b = await r.json();
+    const res = (b?.results || []) as Array<{ title?: string; url?: string; content?: string }>;
+    const sources = res.filter((x) => x.url).slice(0, 8).map((x) => ({ titre: String(x.title || x.url), url: String(x.url) }));
+    if (!sources.length) return null;
+    const resume = [b?.answer ? String(b.answer) : '', ...res.map((x, i) => `[${i + 1}] ${String(x.content || '').slice(0, 400)}`)].filter(Boolean).join('\n').slice(0, 3000);
+    return { resume, sources, via: 'Tavily' };
+  } catch (e) { console.error(`web tavily: ${(e as Error).message}`); return null; }
+}
+
+async function parBrave(question: string): Promise<Trouvaille | null> {
+  const cle = Deno.env.get('BRAVE_API_KEY');
+  if (!cle) return null;
+  try {
+    const r = await fetch(`https://api.search.brave.com/res/v1/web/search?count=6&q=${encodeURIComponent(courte(question))}`, {
+      headers: { Accept: 'application/json', 'X-Subscription-Token': cle }, signal: AbortSignal.timeout(30_000),
+    });
+    if (!r.ok) { console.error(`web brave: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`); return null; }
+    const b = await r.json();
+    const res = (b?.web?.results || []) as Array<{ title?: string; url?: string; description?: string }>;
+    const sources = res.filter((x) => x.url).slice(0, 8).map((x) => ({ titre: String(x.title || x.url), url: String(x.url) }));
+    if (!sources.length) return null;
+    const resume = res.map((x, i) => `[${i + 1}] ${String(x.title || '')} — ${String(x.description || '').replace(/<[^>]+>/g, '')}`).join('\n').slice(0, 3000);
+    return { resume, sources, via: 'Brave' };
+  } catch (e) { console.error(`web brave: ${(e as Error).message}`); return null; }
 }
 
 // Le bloc à glisser dans la consigne d'un agent.
 export function blocWeb(t: Trouvaille): string {
   const src = t.sources.length ? `\nSOURCES (cite celles que tu utilises, par leur titre):\n${t.sources.map((s, i) => `[${i + 1}] ${s.titre}`).join('\n')}` : '';
-  return `\nRECHERCHE SUR INTERNET FAITE À L'INSTANT pour cette demande (Google, via Gemini) — tu PEUX t'en servir et dire « j'ai cherché »; ne dis pas plus que ce qu'elle contient:\n${t.resume}${src}\n`;
+  return `\nRECHERCHE SUR INTERNET FAITE À L'INSTANT pour cette demande (${t.via || 'Google, via Gemini'}) — tu PEUX t'en servir et dire « j'ai cherché »; ne dis pas plus que ce qu'elle contient:\n${t.resume}${src}\n`;
 }
