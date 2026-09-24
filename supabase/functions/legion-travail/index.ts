@@ -35,6 +35,7 @@ import { aBesoinDuWeb, blocWeb, chercherWeb } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
 import { lireTickets } from '../_shared/tickets.ts';
+import { blocMarche, blocWiki } from '../_shared/contexte.ts';
 import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 
@@ -234,7 +235,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return false; }
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
-    service.from('legion_entreprises').select('id, nom, projet, langue, formule').eq('id', entrepriseId).single(),
+    service.from('legion_entreprises').select('id, nom, projet, langue, formule, marche').eq('id', entrepriseId).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur').eq('entreprise_id', entrepriseId).order('ordre'),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, resume, resume_jusqua').eq('entreprise_id', entrepriseId),
     service.from('legion_memoire').select('regle').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at', { ascending: false }).limit(30),
@@ -245,6 +246,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   if (!machines.length) { journal.push(`${entreprise.nom}: personne d'allumé`); return false; }
   const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
   let projet = String(entreprise.projet || entreprise.nom);
+  // Le marché de l'entreprise et le wiki de l'équipe (0190).
+  projet += blocMarche(entreprise.marche) + await blocWiki(service, entrepriseId);
   // La langue de l'entreprise (0166, bouton FR / EN de Legion): les plans et
   // les livrables s'écrivent dans celle-là. Vide = français. Pas la langue du
   // profil: celui de Beau est en anglais, il lit ses agents en français.

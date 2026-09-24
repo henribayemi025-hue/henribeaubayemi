@@ -17,7 +17,7 @@ import { Documents } from './Documents';
 import { Inviter } from './Inviter';
 import { TableauDeBord } from './TableauDeBord';
 import { Missions } from './Missions';
-import { Membres, Journal } from './Securite';
+import { Membres, Journal, Marche } from './Securite';
 
 // LEGION — la page d'accueil, la tour de contrôle.
 //
@@ -183,7 +183,7 @@ export function Accueil({
       {/* Les grandes vues (24/09) */}
       {onOutil && (
         <section className="flex gap-2 overflow-x-auto pb-1">
-          {[['bureau', '🏢'], ['frise', '🕰️'], ['presentation', '🖥️'], ['idees', '💡']].map(([k, e]) => (
+          {[['bureau', '🏢'], ['frise', '🕰️'], ['presentation', '🖥️'], ['idees', '💡'], ['wiki', '📚']].map(([k, e]) => (
             <button key={k} type="button" onClick={() => onOutil(k)}
               className="flex shrink-0 items-center gap-2 rounded-card border border-legion-line bg-legion-panel px-3.5 py-2.5 text-caption font-semibold text-legion-ink transition hover:border-legion-gold/50">
               <span className="text-[18px]">{e}</span> {t(`legion.vues.titre.${k}`)}
@@ -364,6 +364,7 @@ export function Accueil({
         <div className="space-y-6">
           {entreprise.owner_id === moi?.user_id && <Inviter entreprise={entreprise} t={t} />}
           <Membres entreprise={entreprise} moi={moi} t={t} />
+          <Marche entreprise={entreprise} moi={moi} t={t} />
           <Connecteurs entreprise={entreprise} t={t} />
           <Documents entreprise={entreprise} t={t} />
           <Depense entreprise={entreprise} t={t} />

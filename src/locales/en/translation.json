@@ -710,7 +710,8 @@
         "bureau": "The office",
         "frise": "The timeline",
         "presentation": "The presentation",
-        "idees": "The idea board"
+        "idees": "The idea board",
+        "wiki": "The wiki"
       },
       "bureau": "The office",
       "organigramme": "The org chart",
@@ -757,7 +758,15 @@
       "enTache": "as task",
       "versTache": "Make it a task",
       "versEquipe": "Send it to the team (Direction)",
-      "retirer": "Remove"
+      "retirer": "Remove",
+      "wikiMaj": "Update now",
+      "wikiEnCours": "The director is writing…",
+      "wikiVide": "The wiki is not written yet: it fills up every Friday, or now with the button.",
+      "wikiMajLe": "Updated on {{date}} — {{par}}",
+      "wikiParHumain": "edited by hand",
+      "wikiParDirecteur": "by the director",
+      "wikiCorriger": "Edit this page",
+      "wikiAide": "“What we decided” is written by the director from decisions and minutes; “Who does what” and “How we work” come from the database. Agents reread “What we decided” before replying."
     },
     "clavier": {
       "titre": "Keyboard shortcuts",
@@ -799,7 +808,7 @@
       "reunionTicketAide": "Every hour, Legion checks the repository's tickets; a NEW ticket opens a meeting (what is it, how serious, who takes it, what do we answer). One per hour; older tickets open nothing.",
       "rss": "My watch (RSS feeds)",
       "rssPlaceholder": "One feed per line (https://…/feed)",
-      "rssAide": "Every hour, never-seen articles from your feeds (5 at most) are posted as a list in the room, with their links. No model is called: nothing is charged.",
+      "rssAide": "Every hour, never-seen articles from your feeds (5 at most) are posted as a list in the room, with their links. No model is called: nothing is charged. To follow your app's App Store reviews: https://itunes.apple.com/us/rss/customerreviews/id=YOUR_ID/sortBy=mostRecent/xml (Google Play has no public feed).",
       "luLe": "Read on {{quand}}",
       "pasEncoreLu": "Not read yet",
       "enErreur": "{{n}} feed(s) failing",
@@ -849,7 +858,15 @@
       "sansFin": "no end",
       "lecteurNote": "You are a reader in this company: you see everything, you don't write. The owner can change your role.",
       "intact_one": "✓ {{count}} entry: the chain is intact, the signature is valid, no message was edited.",
-      "intact_other": "✓ {{count}} entries: the chain is intact, signatures are valid, no message was edited."
+      "intact_other": "✓ {{count}} entries: the chain is intact, signatures are valid, no message was edited.",
+      "marche": "The company's market",
+      "marcheAucun": "No particular country",
+      "marcheAide": "The country where the company mainly sells: agents adapt currency, examples, holidays and legal framework. Without a choice, they assume no country."
+    },
+    "horsLigne": {
+      "enAttente": "Offline: your message is waiting on this device and will be sent as soon as the network is back.",
+      "partis_one": "Back online: {{count}} waiting message was sent.",
+      "partis_other": "Back online: {{count}} waiting messages were sent."
     }
   },
   "equipe": {

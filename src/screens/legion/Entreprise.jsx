@@ -18,7 +18,7 @@ import { Appel } from './parties/Appel';
 import { Renfort } from './parties/Renfort';
 import { Kanban } from './parties/Kanban';
 import { FicheAgent } from './parties/FicheAgent';
-import { PleinEcran, Bureau, Frise, Presentation, Idees } from './parties/Vues';
+import { PleinEcran, Bureau, Frise, Presentation, Idees, Wiki } from './parties/Vues';
 import { Veilleur } from './parties/Veilleur';
 import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
@@ -229,6 +229,20 @@ export default function Entreprise() {
   async function envoyer({ texte, genre, meta }, canalForce) {
     const canal = canalForce || salonId;
     if (!moi || !canal) return;
+    // Hors ligne (idée 148 des 200, 24/09) : le message attend dans la boîte
+    // d'envoi de l'appareil et part tout seul au retour du réseau.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      const enAttente = { id: `attente-${Date.now()}`, entreprise_id: entrepriseId, canal_id: canal, auteur_id: moi.id, user_id: user.id, texte, genre, meta: { ...(meta || {}), en_attente: true }, created_at: new Date().toISOString() };
+      try {
+        const cle = `legion_envoi_${entrepriseId}`;
+        const boite = JSON.parse(localStorage.getItem(cle) || '[]');
+        boite.push({ canal, texte, genre, meta: meta || null, id: enAttente.id });
+        localStorage.setItem(cle, JSON.stringify(boite.slice(-50)));
+      } catch { /* sans stockage, on le dit quand même */ }
+      setData((d) => (d ? { ...d, messages: [...d.messages, enAttente] } : d));
+      toast.info(t('legion.horsLigne.enAttente'));
+      return;
+    }
     // Pendant une réunion, un message du salon est une INTERVENTION: le
     // prochain qui parle y répond d'abord (legion-reunion). Personne d'autre
     // ne répond en parallèle, sinon deux conversations se croisent.
@@ -264,6 +278,25 @@ export default function Entreprise() {
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setTape(null); }
   }
+
+  // Le retour du réseau : la boîte d'envoi part, dans l'ordre.
+  useEffect(() => {
+    async function vider() {
+      const cle = `legion_envoi_${entrepriseId}`;
+      let boite = [];
+      try { boite = JSON.parse(localStorage.getItem(cle) || '[]'); } catch { boite = []; }
+      if (!boite.length || !moi) return;
+      localStorage.removeItem(cle);
+      setData((d) => (d ? { ...d, messages: d.messages.filter((m) => !String(m.id).startsWith('attente-')) } : d));
+      for (const x of boite) {
+        try { await envoyer({ texte: x.texte, genre: x.genre, meta: x.meta }, x.canal); } catch { /* l'erreur est déjà dite */ }
+      }
+      toast.success(t('legion.horsLigne.partis', { count: boite.length }));
+    }
+    window.addEventListener('online', vider);
+    if (navigator.onLine) vider();
+    return () => window.removeEventListener('online', vider);
+  }, [entrepriseId, moi?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Les réunions (legion-reunion, 23/09). La fonction répond tout de suite;
   // les prises de parole arrivent ensuite une par une, en temps réel.
@@ -792,6 +825,7 @@ export default function Entreprise() {
         <PleinEcran titre={t(`legion.vues.titre.${outil}`)} onFermer={() => setOutil(null)} t={t}>
           {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={setFiche} t={t} />}
           {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
+          {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'presentation' && <Presentation entreprise={data.entreprise} agents={data.agents} departements={departements} langue={langue} t={t} />}
           {outil === 'idees' && (
             <Idees entreprise={data.entreprise} moi={moi} departements={departements} t={t}

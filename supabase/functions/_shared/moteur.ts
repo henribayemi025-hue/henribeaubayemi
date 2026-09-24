@@ -13,11 +13,16 @@
 //   modèles ouverts, ou NOTRE serveur (vLLM, Ollama…) qui fera tourner un
 //   Gemma ou un Llama spécialisé. Adresse et clé: MOTEUR_OA_URL et
 //   MOTEUR_OA_CLE. Non branché tant que ces secrets n'existent pas.
+// - « an:<modèle> » (24/09, idée 130 des 200) : Claude, par l'API
+//   d'Anthropic (secret ANTHROPIC_API_KEY). Et le SECOURS : quand tous les
+//   modèles de Google ont échoué (saturés, « 503 »), si une clé Anthropic ou
+//   une adresse OpenAI est configurée, le moteur essaie encore celui-là au
+//   lieu de rendre une erreur. Sans ces secrets, rien ne change.
 //
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
 
-import { gemini } from './cout.ts';
+import { ajouterCout, gemini } from './cout.ts';
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
@@ -89,13 +94,50 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   return txt;
 }
 
+async function viaAnthropic(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
+  const cle = Deno.env.get('ANTHROPIC_API_KEY');
+  if (!cle) throw new Error('ANTHROPIC_API_KEY absent');
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': cle, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model,
+      max_tokens: o.maxSortie ?? 8192,
+      temperature: o.temperature ?? 0.6,
+      system: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT), sans texte autour ni balises de code:\n${JSON.stringify(schema)}`,
+      messages: [{ role: 'user', content: texte }],
+    }),
+    signal: AbortSignal.timeout(o.delaiMs ?? 90_000),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
+  const body = await resp.json();
+  // Le coût compte aussi (prix publics d'un modèle Sonnet : 3 $ / 15 $ le million de jetons).
+  ajouterCout((((body?.usage?.input_tokens ?? 0) * 3 + (body?.usage?.output_tokens ?? 0) * 15) / 1_000_000) * 0.92);
+  const txt = String((body?.content || []).filter((c: { type: string }) => c.type === 'text').map((c: { text: string }) => c.text).join('')).trim();
+  if (!txt) throw new Error('réponse vide');
+  // Au cas où le modèle entoure le JSON de ```json … ```.
+  return txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+}
+
+// Les moteurs de secours, d'autres fournisseurs, quand ils sont configurés.
+function secours(): string[] {
+  const s: string[] = [];
+  if (Deno.env.get('ANTHROPIC_API_KEY')) s.push(`an:${Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude-sonnet-5'}`);
+  if (Deno.env.get('MOTEUR_OA_URL') && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
+  return s;
+}
+
 // Fait écrire un objet JSON conforme à `schema`: essaie chaque moteur dans
-// l'ordre, rend le premier qui répond juste.
+// l'ordre, rend le premier qui répond juste — puis, si tous ont échoué, les
+// moteurs de secours d'autres fournisseurs (quand ils sont configurés).
 export async function generer(apiKey: string, texte: string, schema: unknown, o: Options = {}): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
-  for (const nom of o.modeles ?? moteurs()) {
+  const liste = o.modeles ?? moteurs();
+  for (const nom of [...liste, ...secours().filter((x) => !liste.includes(x))]) {
     try {
-      const txt = nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o) : await viaGemini(apiKey, nom, texte, schema, o);
+      const txt = nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
+        : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
+        : await viaGemini(apiKey, nom, texte, schema, o);
       try { return { obj: nettoyer(JSON.parse(txt)), modele: nom }; } catch { derniere = `${nom}: JSON illisible`; }
     } catch (e) { derniere = `${nom}: ${(e as Error).message}`; console.error(derniere); }
   }

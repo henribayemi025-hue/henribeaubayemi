@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconShieldCheck, IconUsers } from '@tabler/icons-react';
+import { IconShieldCheck, IconUsers, IconWorld } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
+import { COUNTRIES } from '../../../lib/countries';
 
 // LEGION — la sécurité à l'écran (0189, idées 48, 104 et 109 des 200, 24/09).
 
@@ -108,6 +109,35 @@ export function Journal({ entreprise, agents, t }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+// Le marché de l'entreprise (0190, idée 164) : le pays où elle vend surtout.
+// Vide = les agents ne supposent aucun pays. Le propriétaire le choisit.
+export function Marche({ entreprise, moi, t }) {
+  const [marche, setMarche] = useState(entreprise.marche || '');
+  const [ok, setOk] = useState(false);
+  const proprietaire = entreprise.owner_id === moi?.user_id;
+  async function choisir(v) {
+    setMarche(v); setOk(false);
+    const { error } = await supabase.from('legion_entreprises').update({ marche: v || null }).eq('id', entreprise.id);
+    if (!error) { setOk(true); setTimeout(() => setOk(false), 1500); }
+  }
+  const langue = typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr';
+  const pays = [...COUNTRIES].sort((a, b) => a[langue].localeCompare(b[langue], langue));
+  return (
+    <section className="space-y-2 rounded-2xl border border-legion-line bg-legion-panel p-5">
+      <h3 className="flex items-center gap-2 text-caption font-bold text-legion-ink"><IconWorld size={15} className="text-legion-gold" /> {t('legion.securite.marche')}</h3>
+      <div className="flex items-center gap-2">
+        <select value={marche} onChange={(e) => choisir(e.target.value)} disabled={!proprietaire}
+          className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-2 py-1.5 text-[16px] text-legion-ink disabled:opacity-60 sm:text-caption">
+          <option value="">{t('legion.securite.marcheAucun')}</option>
+          {pays.map((c) => <option key={c.code} value={c.code}>{c[langue]}</option>)}
+        </select>
+        {ok && <span className="text-[12px] text-legion-success">✓</span>}
+      </div>
+      <p className="text-[11px] leading-snug text-legion-muted">{t('legion.securite.marcheAide')}</p>
     </section>
   );
 }

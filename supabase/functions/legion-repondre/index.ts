@@ -32,6 +32,7 @@ import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
 import { lireTickets, PARLE_DE_TICKETS } from '../_shared/tickets.ts';
+import { blocMarche, blocWiki } from '../_shared/contexte.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 import { classeurEnTexte, creerClasseur, MIME_XLSX, type Feuille } from '../_shared/tableur.ts';
 import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
@@ -322,7 +323,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   if ((deja ?? 0) > 0) return json({ deja: true, messages: [] });
 
   const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
-    service.from('legion_entreprises').select('nom, projet, formule').eq('id', msg.entreprise_id).single(),
+    service.from('legion_entreprises').select('nom, projet, formule, marche').eq('id', msg.entreprise_id).single(),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, membres, resume').eq('id', msg.canal_id).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
@@ -589,7 +590,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // Et ses tickets Linear / Jira (0188), quand la question en parle.
   const depot = (PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '')
     + (PARLE_DE_TICKETS.test(String(msg.texte)) || PARLE_DE_CODE.test(String(msg.texte)) ? await lireTickets(service, msg.entreprise_id) : '');
-  const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${feuille}${depot}` };
+  // Le marché de l'entreprise et la page « Ce qu'on a décidé » du wiki (0190).
+  const commun = blocMarche((entreprise as { marche?: string | null }).marche) + await blocWiki(service, msg.entreprise_id);
+  const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${commun}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
   const complexe = !gratuite && !appelVocal && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
     || /plan|strat|analy|propos|rapport|bilan|pourquoi|comment faire|explique|compar|budget|prix|chiffre|combien/i.test(String(msg.texte)));
@@ -622,7 +625,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     // Ce qu'IL a le droit de lire (0177): les chiffres, la boutique,
     // Internet, le dépôt de code — chacun seulement s'il y a droit.
     const saCompta = compta && peut(cible, 'comptabilite') ? `\nL'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les totaux de ses livres sont lisibles (vérifications ci-dessous quand elles ont eu lieu); tu parles de « nos comptes ». Un montant se donne avec la devise de l'espace, jamais converti de tête.` : '';
-    const vue0 = peut(cible, 'github') ? entrepriseVue : { ...entreprise, projet: `${entreprise.projet || ''}${feuille}` };
+    const vue0 = peut(cible, 'github') ? entrepriseVue : { ...entreprise, projet: `${entreprise.projet || ''}${commun}${feuille}` };
     const vue = saCompta ? { ...vue0, projet: `${vue0.projet || ''}${saCompta}` } : vue0;
     const sesVerifs = verifsPour(verifie, (source) => peut(cible, source));
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);

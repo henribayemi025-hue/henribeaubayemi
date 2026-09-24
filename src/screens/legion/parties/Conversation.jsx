@@ -447,7 +447,7 @@ export function Conversation({
                       )}
                       <span className={`absolute bottom-1 right-2.5 flex items-center gap-0.5 text-[11px] ${mien ? 'text-white/75' : 'text-legion-muted'}`}>
                         {heure(m.created_at, langue)}
-                        {mien && <IconChecks size={15} />}
+                        {mien && (m.meta?.en_attente ? <span title={t('legion.horsLigne.enAttente')}>🕓</span> : <IconChecks size={15} />)}
                       </span>
                       {seulementPiece ? <div className="h-3" /> : null}
                     </div>

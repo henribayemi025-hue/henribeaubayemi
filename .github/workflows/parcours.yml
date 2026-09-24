@@ -1,0 +1,50 @@
+# Les parcours d'utilisateurs, chaque nuit sur la préproduction (idée 19 des
+# 200, 24/09) : voir scripts/parcours.mjs. Lecture seule — aucune donnée
+# n'est créée sur Finjaro ; un parcours cassé ouvre un ticket « parcours ».
+name: Parcours d'utilisateurs
+
+on:
+  schedule:
+    - cron: '15 4 * * *'
+  # Pour l'essayer depuis staging (le planning ne tourne que sur la branche
+  # par défaut, c'est-à-dire la production).
+  push:
+    branches: [staging]
+    paths:
+      - scripts/parcours.mjs
+      - .github/workflows/parcours.yml
+  workflow_dispatch:
+    inputs:
+      base:
+        description: 'Adresse à parcourir'
+        required: false
+        default: 'https://staging-finjaro.finjaro.workers.dev'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parcours:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - name: Parcourir
+        env:
+          BASE: ${{ github.event.inputs.base || 'https://staging-finjaro.finjaro.workers.dev' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SORTIE: parcours
+        run: node scripts/parcours.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parcours
+          path: parcours
+          retention-days: 7

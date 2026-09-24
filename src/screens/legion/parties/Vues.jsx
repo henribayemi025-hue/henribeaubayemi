@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { Visage } from './Visage';
 import { sansAccent, initiales, statutDe } from './outils';
 import { Veilleur } from './Veilleur';
+import { Texte } from './Plans';
 
 // LEGION — les grandes vues (idées 51, 52, 59, 62, 69 et 166 des 200, 24/09) :
 // le bureau et l'organigramme vivants, la frise, la présentation, le tableau
@@ -379,6 +380,66 @@ export function Idees({ entreprise, moi, departements, onTache, onDirective, t }
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// ——— Le wiki de l'équipe (165) : tenu par le directeur, corrigeable ———
+export function Wiki({ entreprise, lecteur = false, t }) {
+  const [pages, setPages] = useState(null);
+  const [choix, setChoix] = useState('decisions');
+  const [edition, setEdition] = useState(null);
+  const [occupe, setOccupe] = useState(false);
+  const charger = useCallback(async () => {
+    const { data } = await supabase.from('legion_wiki').select('id, cle, titre, contenu, maj_le, par_user').eq('entreprise_id', entreprise.id).order('cle');
+    setPages(data || []);
+  }, [entreprise.id]);
+  useEffect(() => { charger(); }, [charger]);
+  async function mettreAJour() {
+    setOccupe(true);
+    await supabase.functions.invoke('legion-rapport', { body: { entreprise_id: entreprise.id, mode: 'wiki' } });
+    setOccupe(false); charger();
+  }
+  async function enregistrer() {
+    const p = pages.find((x) => x.cle === choix);
+    if (!p) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from('legion_wiki').update({ contenu: edition.slice(0, 20000), par_user: user?.id || null, maj_le: new Date().toISOString() }).eq('id', p.id);
+    setEdition(null); charger();
+  }
+  if (!pages) return <p className="p-6 text-caption text-legion-muted">…</p>;
+  const page = pages.find((x) => x.cle === choix) || pages[0];
+  return (
+    <div className="space-y-3 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        {pages.map((p) => (
+          <button key={p.cle} type="button" onClick={() => { setChoix(p.cle); setEdition(null); }}
+            className={`rounded-pill px-3 py-1 text-[13px] font-semibold ${page?.cle === p.cle ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>{p.titre}</button>
+        ))}
+        {!lecteur && <button type="button" onClick={mettreAJour} disabled={occupe} className="ml-auto rounded-pill border border-legion-gold/50 px-3 py-1 text-[12px] font-semibold text-legion-gold disabled:opacity-50">{occupe ? t('legion.vues.wikiEnCours') : t('legion.vues.wikiMaj')}</button>}
+      </div>
+      {!page ? (
+        <div className="flex flex-col items-center gap-2 py-8 text-center text-caption text-legion-muted"><Veilleur taille={80} />{t('legion.vues.wikiVide')}</div>
+      ) : (
+        <div className="rounded-card border border-legion-line bg-legion-card p-4">
+          <p className="mb-2 text-[11px] text-legion-muted">{t('legion.vues.wikiMajLe', { date: new Date(page.maj_le).toLocaleString(), par: page.par_user ? t('legion.vues.wikiParHumain') : t('legion.vues.wikiParDirecteur') })}</p>
+          {edition != null ? (
+            <>
+              <textarea value={edition} onChange={(e) => setEdition(e.target.value)} rows={14} className="w-full rounded-input border border-legion-line bg-legion-bg p-2 font-mono text-[13px] text-legion-ink outline-none focus:border-legion-gold" />
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={enregistrer} className="rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg">{t('common.save')}</button>
+                <button type="button" onClick={() => setEdition(null)} className="rounded-pill border border-legion-line px-3 py-1 text-[12px] text-legion-muted">{t('common.cancel', 'Annuler')}</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Texte contenu={page.contenu} className="text-[14px] leading-relaxed text-legion-ink" titre="text-legion-gold" />
+              {!lecteur && <button type="button" onClick={() => setEdition(page.contenu)} className="mt-3 text-[12px] font-semibold text-legion-gold">{t('legion.vues.wikiCorriger')}</button>}
+            </>
+          )}
+        </div>
+      )}
+      <p className="text-[11px] text-legion-muted">{t('legion.vues.wikiAide')}</p>
     </div>
   );
 }

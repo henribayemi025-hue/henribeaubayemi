@@ -13,6 +13,7 @@
 //   { action: 'lire', document_id }   — découpe le document, calcule ses vecteurs
 //   { action: 'trier', entreprise_id, demande } — trie et prépare le brouillon
 
+import { avecCache } from '../_shared/cache.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { generer, moteursSimples } from '../_shared/moteur.ts';
@@ -110,6 +111,12 @@ Deno.serve(compter('legion_documents', async (req: Request) => {
     const p = await plafondAtteint(entreprise.id);
     if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € sur ${p.plafond} €.` });
 
+    // La même demande dans les 7 jours (un message transféré deux fois) : le
+    // même tri, sans repayer (0190). Un nouveau document change la clé.
+    const { count: nbDocs } = await service.from('legion_documents').select('id', { count: 'exact', head: true }).eq('entreprise_id', entreprise.id).eq('statut', 'lu');
+    const cleTri = `${entreprise.id}|${nbDocs || 0}|${demande.replace(/\s+/g, ' ').toLowerCase()}`;
+    const dejaTrie = await avecCache<Record<string, unknown>>('tri', cleTri, 7 * 86_400_000, async () => null);
+    if (dejaTrie) return json({ ...dejaTrie, depuis_cache: true });
     const passages = await chercherPassages(service, apiKey, entreprise.id, demande, 5);
     const consigne = `Tu tries le courrier de l'entreprise « ${entreprise.nom} »${entreprise.projet ? ` (${String(entreprise.projet).slice(0, 600)})` : ''}.
 
@@ -145,7 +152,9 @@ ${blocDocuments(passages) || "\n(L'entreprise n'a aucun document qui parle de ce
     const vus = new Set<string>();
     const sources = client ? passages.filter((x) => { if (vus.has(x.document_id)) return false; vus.add(x.document_id); return true; })
       .map((x) => ({ titre: x.titre, url: x.url })) : [];
-    return json({ ok: true, categorie: r.obj.categorie, sujet: r.obj.sujet, urgence: r.obj.urgence, brouillon, manque: client ? String(r.obj.manque || '') : '', sources, modele: r.modele });
+    const resultat = { ok: true, categorie: r.obj.categorie, sujet: r.obj.sujet, urgence: r.obj.urgence, brouillon, manque: client ? String(r.obj.manque || '') : '', sources, modele: r.modele };
+    await avecCache('tri', cleTri, 7 * 86_400_000, async () => resultat);
+    return json(resultat);
   }
 
   return json({ erreur: 'Action inconnue.' }, 400);

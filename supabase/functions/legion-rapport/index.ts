@@ -226,6 +226,53 @@ Pas de félicitations, pas de formule d'introduction. Écris en ${anglais ? 'ang
   return `${e.nom}: rapport ${type} écrit (${f.alertes.length} alerte(s))`;
 }
 
+// ——— Le wiki de l'équipe (0190, idée 165 des 200, 24/09) ———
+// Trois pages : « Ce qu'on a décidé » (le directeur l'écrit à partir des
+// décisions et comptes rendus des 45 derniers jours), « Qui fait quoi » et
+// « Nos façons de faire » (tirées de la base, sans modèle).
+const SCHEMA_WIKI = { type: 'OBJECT', properties: { page: { type: 'STRING' } }, required: ['page'] };
+async function tenirWiki(service: Service, apiKey: string, entrepriseId: string): Promise<string> {
+  const depuis = new Date(Date.now() - 45 * JOUR_MS).toISOString();
+  const [{ data: e }, { data: ag }, { data: dec }, { data: regles }, { data: taches }] = await Promise.all([
+    service.from('legion_entreprises').select('id, nom, langue').eq('id', entrepriseId).single(),
+    service.from('legion_agents').select('id, nom, poste, departement, mandat, actif, est_directeur, user_id, moteur').eq('entreprise_id', entrepriseId).is('user_id', null).order('ordre'),
+    service.from('legion_messages').select('texte, created_at, meta').eq('entreprise_id', entrepriseId).eq('genre', 'decision').gte('created_at', depuis).order('created_at').limit(60),
+    service.from('legion_memoire').select('regle, created_at').eq('entreprise_id', entrepriseId).eq('actif', true).order('created_at').limit(80),
+    service.from('legion_messages').select('assigne_a').eq('entreprise_id', entrepriseId).eq('genre', 'tache').is('termine_le', null).limit(1000),
+  ]);
+  if (!e) return 'wiki: entreprise introuvable';
+  const anglais = e.langue === 'en';
+  const agents = (ag || []) as Array<{ id: string; nom: string; poste: string; departement: string | null; mandat: string | null; actif: boolean; est_directeur: boolean; moteur: string }>;
+  const directeur = agents.find((a) => a.est_directeur && a.actif && a.moteur !== 'claude-code') || agents.find((a) => a.actif && a.moteur !== 'claude-code') || agents[0];
+  const ouvertes = (id: string) => (taches || []).filter((x: { assigne_a: string | null }) => x.assigne_a === id).length;
+  const depts = [...new Set(agents.map((a) => a.departement || (anglais ? 'Other' : 'Autres')))];
+  const quiFaitQuoi = depts.map((d) => `## ${d}
+${agents.filter((a) => (a.departement || (anglais ? 'Other' : 'Autres')) === d)
+    .map((a) => `- **${a.nom}** — ${a.poste}${a.est_directeur ? (anglais ? ' (lead)' : ' (responsable)') : ''}${a.actif ? '' : (anglais ? ' — off' : ' — en veille')} : ${String(a.mandat || '').replace(/\s+/g, ' ').slice(0, 180)}${ouvertes(a.id) ? ` (${ouvertes(a.id)} ${anglais ? 'open task(s)' : 'tâche(s) ouverte(s)'})` : ''}`).join('\n')}`).join('\n\n');
+  const facons = (regles || []).length
+    ? (regles as Array<{ regle: string; created_at: string }>).map((r) => `- ${r.regle} _(${String(r.created_at).slice(0, 10)})_`).join('\n')
+    : (anglais ? 'No house rule yet.' : 'Pas encore de règle de la maison.');
+  const lignes = (dec || []) as Array<{ texte: string; created_at: string }>;
+  let decisions = anglais ? 'No decision in the last 45 days.' : 'Aucune décision ces 45 derniers jours.';
+  if (lignes.length) {
+    const faits = lignes.map((d) => `(${d.created_at.slice(0, 10)}) ${String(d.texte).replace(/\s+/g, ' ').slice(0, 700)}`).join('\n');
+    const r = await generer(apiKey, `Tu es ${directeur?.nom || 'le directeur'} et tu tiens la page « Ce qu'on a décidé » du wiki de « ${e.nom} ». Voici les décisions et comptes rendus de réunion des 45 derniers jours, datés :
+${faits}
+
+"page" : la page, en Markdown : des titres « ## Thème » et, dessous, une ligne par décision « - (date) ce qui a été décidé — et par qui si c'est écrit ». Seulement ce qui a été DÉCIDÉ (pas les débats, pas les idées écartées). Une décision remplacée par une plus récente : garde la plus récente et note « remplace celle du (date) ». Rien qui n'est pas écrit ci-dessus. Écris en ${anglais ? 'anglais' : 'français'}.`,
+      SCHEMA_WIKI, { temperature: 0.2, reflexion: 1024, maxSortie: 4096, delaiMs: 40_000, modeles: moteursSimples() });
+    decisions = 'erreur' in r ? lignes.slice(-15).map((d) => `- (${d.created_at.slice(0, 10)}) ${String(d.texte).split('\n')[0].slice(0, 200)}`).join('\n') : String(r.obj.page || '').trim().slice(0, 12000);
+  }
+  const maj = new Date().toISOString();
+  const pages = [
+    { cle: 'decisions', titre: anglais ? 'What we decided' : "Ce qu'on a décidé", contenu: decisions },
+    { cle: 'qui-fait-quoi', titre: anglais ? 'Who does what' : 'Qui fait quoi', contenu: quiFaitQuoi },
+    { cle: 'facons-de-faire', titre: anglais ? 'How we work' : 'Nos façons de faire', contenu: facons },
+  ];
+  const { error } = await service.from('legion_wiki').upsert(pages.map((p) => ({ ...p, entreprise_id: entrepriseId, par_agent: directeur?.id || null, par_user: null, maj_le: maj })), { onConflict: 'entreprise_id,cle' });
+  return error ? `wiki: ${error.message}` : `${e.nom}: wiki à jour (${lignes.length} décision(s))`;
+}
+
 // ——— Le rapport de transparence du mois : calculé, sans modèle ———
 async function rapportMois(service: Service, entrepriseId: string, force: boolean, ecrits: unknown[] = []): Promise<string> {
   const [{ data: e }, { data: ag }] = await Promise.all([
@@ -285,7 +332,7 @@ Deno.serve(compter('legion_rapport', async (req: Request) => {
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
   let corps: { entreprise_id?: string; mode?: string } = {};
   try { corps = await req.json(); } catch { corps = {}; }
-  const mode = ['soir', 'semaine', 'mois'].includes(String(corps.mode)) ? String(corps.mode) : 'soir';
+  const mode = ['soir', 'semaine', 'mois', 'wiki'].includes(String(corps.mode)) ? String(corps.mode) : 'soir';
 
   let entreprises: string[] = [];
   let force = false;
@@ -317,7 +364,10 @@ Deno.serve(compter('legion_rapport', async (req: Request) => {
     const p = await plafondAtteint(id);
     if (p.atteint && mode !== 'mois') { journal.push(`${id}: plafond atteint`); continue; }
     await enFond('legion_rapport', id, async () => {
+      if (mode === 'wiki') { journal.push(await tenirWiki(service, apiKey, id)); return; }
       journal.push(mode === 'mois' ? await rapportMois(service, id, force, ecrits) : await rapportSoir(service, apiKey, id, semaine, force, ecrits));
+      // Le vendredi, avec le résumé de la semaine, le wiki est remis à jour.
+      if (semaine && mode !== 'mois') journal.push(await tenirWiki(service, apiKey, id));
     });
   }
   return json({ ok: true, journal, messages: jeton ? [] : ecrits });

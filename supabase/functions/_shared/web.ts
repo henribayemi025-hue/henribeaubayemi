@@ -13,6 +13,7 @@
 // quota gratuit quotidien; on n'en fait qu'une par réponse ou par livrable,
 // et seulement quand la question le demande (voir `aBesoinDuWeb`).
 
+import { avecCache } from './cache.ts';
 import { gemini } from './cout.ts';
 
 export type Trouvaille = { resume: string; sources: { titre: string; url: string }[] };
@@ -25,7 +26,12 @@ export function aBesoinDuWeb(...textes: (string | null | undefined)[]): boolean 
 
 const MODELES = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 
-export async function chercherWeb(apiKey: string, question: string): Promise<Trouvaille | null> {
+// La même question dans les 12 heures : la même trouvaille, sans repayer (0190).
+export function chercherWeb(apiKey: string, question: string): Promise<Trouvaille | null> {
+  return avecCache('web', question, 12 * 3_600_000, () => chercherWebSansCache(apiKey, question));
+}
+
+async function chercherWebSansCache(apiKey: string, question: string): Promise<Trouvaille | null> {
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const texte = `Nous sommes le ${aujourdhui}. Une équipe d'entreprise a besoin de FAITS EXTÉRIEURS pour cette demande:
 ${question}

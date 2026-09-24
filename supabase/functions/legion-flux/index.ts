@@ -19,7 +19,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 // deno-lint-ignore no-explicit-any
 type Service = any;
 type Connecteur = { id: string; entreprise_id: string; type: string; config: Record<string, unknown> };
-type Article = { titre: string; lien: string; date: string | null; id: string; source: string };
+type Article = { titre: string; lien: string; date: string | null; id: string; source: string; extrait: string };
 
 const PROD_HOST = 'finjaro.net';
 function cors(origin: string | null): Record<string, string> {
@@ -37,12 +37,14 @@ export function lireFlux(xml: string, source: string): Article[] {
   const nomFlux = champ(xml.split(/<item|<entry/i)[0], 'title') || source;
   const blocs = [...xml.matchAll(/<item[\s>][\s\S]*?<\/item>/gi), ...xml.matchAll(/<entry[\s>][\s\S]*?<\/entry>/gi)].map((m) => m[0]);
   return blocs.slice(0, 20).map((b) => {
-    const lienAtom = /<link[^>]*href="([^"]+)"/i.exec(b)?.[1] || '';
+    const lienAtom = decoder(/<link[^>]*href="([^"]+)"/i.exec(b)?.[1] || '');
     const lien = champ(b, 'link') || lienAtom;
     const titre = champ(b, 'title');
     const id = champ(b, 'guid') || champ(b, 'id') || lien || titre;
     const date = champ(b, 'pubDate') || champ(b, 'updated') || champ(b, 'published') || null;
-    return { titre: titre.slice(0, 200), lien: lien.slice(0, 500), date, id: id.slice(0, 300), source: nomFlux.slice(0, 80) };
+    // Un court extrait : utile pour un avis d'App Store (le titre seul ne dit rien).
+    const extrait = (champ(b, 'content') || champ(b, 'description') || champ(b, 'summary')).slice(0, 160);
+    return { titre: titre.slice(0, 200), lien: lien.slice(0, 500), date, id: id.slice(0, 300), source: nomFlux.slice(0, 80), extrait };
   }).filter((a) => a.titre && /^https?:\/\//.test(a.lien));
 }
 
@@ -82,7 +84,7 @@ async function veille(service: Service, c: Connecteur): Promise<string> {
   if (!veilleur) return 'veille: aucun agent';
   const { data: ent } = await service.from('legion_entreprises').select('langue').eq('id', c.entreprise_id).maybeSingle();
   const en = ent?.langue === 'en';
-  const texte = `📡 ${en ? `Watch — ${aDeposer.length} new article(s)` : `Veille — ${aDeposer.length} nouvel(s) article(s)`}\n${aDeposer.map((a) => `- [${a.titre}](${a.lien}) — ${a.source}${a.date ? ` (${String(new Date(a.date).toISOString()).slice(0, 10)})` : ''}`).join('\n')}`;
+  const texte = `📡 ${en ? `Watch — ${aDeposer.length} new article(s)` : `Veille — ${aDeposer.length} nouvel(s) article(s)`}\n${aDeposer.map((a) => `- [${a.titre}](${a.lien}) — ${a.source}${a.date && !Number.isNaN(Date.parse(a.date)) ? ` (${new Date(a.date).toISOString().slice(0, 10)})` : ''}${a.extrait && a.extrait !== a.titre ? `\n  « ${a.extrait}${a.extrait.length >= 160 ? '…' : ''} »` : ''}`).join('\n')}`;
   await service.from('legion_messages').insert({
     entreprise_id: c.entreprise_id, canal_id: canal, auteur_id: veilleur.id, user_id: null, texte, genre: 'info',
     meta: { sans_reponse: true, veille: { articles: aDeposer.length }, sources: aDeposer.map((a) => ({ titre: a.titre, url: a.lien })) },

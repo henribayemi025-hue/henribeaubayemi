@@ -710,7 +710,8 @@
         "bureau": "Le bureau",
         "frise": "La frise",
         "presentation": "La présentation",
-        "idees": "Le tableau d'idées"
+        "idees": "Le tableau d'idées",
+        "wiki": "Le wiki"
       },
       "bureau": "Le bureau",
       "organigramme": "L'organigramme",
@@ -757,7 +758,15 @@
       "enTache": "en tâche",
       "versTache": "En faire une tâche",
       "versEquipe": "L'envoyer à l'équipe (Direction)",
-      "retirer": "Retirer"
+      "retirer": "Retirer",
+      "wikiMaj": "Mettre à jour maintenant",
+      "wikiEnCours": "Le directeur écrit…",
+      "wikiVide": "Le wiki n'est pas encore écrit : il se remplit chaque vendredi, ou maintenant avec le bouton.",
+      "wikiMajLe": "Mis à jour le {{date}} — {{par}}",
+      "wikiParHumain": "corrigé à la main",
+      "wikiParDirecteur": "par le directeur",
+      "wikiCorriger": "Corriger cette page",
+      "wikiAide": "« Ce qu'on a décidé » est écrit par le directeur à partir des décisions et comptes rendus ; « Qui fait quoi » et « Nos façons de faire » sont tirés de la base. Les agents relisent « Ce qu'on a décidé » avant de répondre."
     },
     "clavier": {
       "titre": "Raccourcis clavier",
@@ -799,7 +808,7 @@
       "reunionTicketAide": "Chaque heure, Legion regarde les tickets du dépôt ; un ticket NOUVEAU ouvre une réunion (qu'est-ce que c'est, quelle gravité, qui le prend, que répond-on). Un seul par heure ; les anciens n'ouvrent rien.",
       "rss": "Ma veille (flux RSS)",
       "rssPlaceholder": "Un flux par ligne (https://…/feed)",
-      "rssAide": "Chaque heure, les articles jamais vus de tes flux (5 au plus) sont déposés en une liste dans le salon, avec leur lien. Aucun modèle n'est appelé : rien ne se paie.",
+      "rssAide": "Chaque heure, les articles jamais vus de tes flux (5 au plus) sont déposés en une liste dans le salon, avec leur lien. Aucun modèle n'est appelé : rien ne se paie. Pour suivre les avis de ton application sur l'App Store : https://itunes.apple.com/fr/rss/customerreviews/id=TON_ID/sortBy=mostRecent/xml (Google Play n'a pas de flux public).",
       "luLe": "Lu le {{quand}}",
       "pasEncoreLu": "Pas encore lu",
       "enErreur": "{{n}} flux en erreur",
@@ -849,7 +858,15 @@
       "sansFin": "sans fin",
       "lecteurNote": "Tu es lecteur dans cette entreprise : tu lis tout, tu n'écris pas. Le propriétaire peut changer ton rôle.",
       "intact_one": "✓ {{count}} entrée : la chaîne est intacte, la signature est bonne, aucun message n'a été retouché.",
-      "intact_other": "✓ {{count}} entrées : la chaîne est intacte, les signatures sont bonnes, aucun message n'a été retouché."
+      "intact_other": "✓ {{count}} entrées : la chaîne est intacte, les signatures sont bonnes, aucun message n'a été retouché.",
+      "marche": "Le marché de l'entreprise",
+      "marcheAucun": "Aucun pays en particulier",
+      "marcheAide": "Le pays où l'entreprise vend surtout : les agents adaptent monnaie, exemples, jours fériés et cadre légal. Sans choix, ils ne supposent aucun pays."
+    },
+    "horsLigne": {
+      "enAttente": "Hors ligne : ton message attend sur ce téléphone et partira dès le retour du réseau.",
+      "partis_one": "Réseau revenu : {{count}} message en attente est parti.",
+      "partis_other": "Réseau revenu : {{count}} messages en attente sont partis."
     }
   },
   "equipe": {
