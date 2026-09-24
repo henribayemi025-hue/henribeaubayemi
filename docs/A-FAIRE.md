@@ -13,7 +13,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | Date | Quoi | Ce qu'il faut de Beau |
 |---|---|---|
 | 24/09 | ✅ 24/09 soir, « oui » de Beau : **Mettre en ligne sur finjaro.net** le lot de staging (tout ce qui suit 6bacb72 : choix du modèle d'IA, alertes, relais de recherche, examen de Rigo, Déposer une ressource, modèle Studio de contenu, Retirer le fond, kit /kit, vestiaire 20–26). La mise en ligne a été **bloquée par le contrôle de sécurité** : il faut un « oui, pousse ce lot sur finjaro.net » explicite. | « oui, pousse » — ou d'abord l'essai sur son téléphone (Retirer le fond, /kit) |
-| 24/09 | **Atelier de code** V0 (plan `docs/plans/2026-09-24-atelier-de-code-et-jarvis.md`) : OpenHands (MIT), modes Demander / Accepter les modifications / Auto, Confirmer obligatoire | « oui atelier » |
+| 24/09 | ✅ 24/09 soir, « oui atelier » de Beau → V0 lancée (voir 0.3). **Atelier de code** V0 (plan `docs/plans/2026-09-24-atelier-de-code-et-jarvis.md`) : OpenHands (MIT), modes Demander / Accepter les modifications / Auto, Confirmer obligatoire | « oui atelier » |
 | 24/09 | **Jarvis** V0 (réveil par bouton ou geste, puis voix) ; espace « Moi » de l'assistant personnel ; proposition 10 « Hé Léo » | son accord sur le plan |
 | 24/09 | **Réceptionniste vocale** pour les clients de Léo (fiche 24) : prototype sans téléphone, puis numéro Twilio (payant) | décision + budget |
 | 24/09 | **Essai à l'aveugle Fish Audio contre ElevenLabs** pour les voix de Léo (Fish : environ 11 $/mois avec les droits commerciaux, API gratuite jusqu'au 30/11/2026 sans garantie) | « oui essai » |
@@ -31,6 +31,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Clé **OpenAI** (facultative) dans les secrets Supabase (`OPENAI_API_KEY`) | relais pour les photos des agents tant que Google est bloqué |
 | 24/09 | Faire tourner la **clé DeepSeek** | hygiène |
 | 24/09 | **GitHub App ou jeton** pour l'atelier et les agents | atelier de code |
+| 24/09 | **Cloudflare pour l'atelier** : activer l'offre payante Workers (environ 5 $ par mois) si elle ne l'est pas, et brancher le nouveau Worker `finjaro-atelier` (étapes exactes données quand le code sera prêt) | sans ça, l'atelier ne peut pas lancer de bac à sable |
 | 24/09 | Un vrai clic **Accounting → finjaro.net** avec un vrai compte | vérifier la connexion unique en conditions réelles |
 | 24/09 | Essayer sur téléphone **« Retirer le fond »** (staging, fiche article) et ouvrir le **classeur du kit** dans Excel ou Google Sheets | pas encore testé sur un vrai téléphone ni dans Excel |
 
@@ -39,6 +40,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | Date | Quoi | État |
 |---|---|---|
 | 24/09 | **Chantier « Léo apprend tout seul »** (fiche 26) : l'agent écrit sa compétence après une tâche, Rigo l'examine, Beau l'active ; point de Mentor chaque semaine | ✅ lancé le 24/09 au soir (« oui apprentissage ») |
+| 24/09 | **Atelier de code V0** (plan §1.8) : Worker `finjaro-atelier` + bac à sable Cloudflare sans aucune clé, mode Demander seulement (+ Réfléchir d'abord), écran Atelier (arbre, éditeur, conversation, cartes d'autorisation, modifications, journal, coût, Stop), « Présente-moi comment ça marche », export .zip, **pas d'envoi GitHub** | lancé le 24/09 au soir |
 | 24/09 | Vérifier finjaro.net après la mise en ligne (bundle, /kit, Retirer le fond, Studio de contenu) | ✅ 24/09 soir : finjaro.net sert 8d559ad — /kit, classeur, modèle et moteur de détourage, textes Léo présents |
 | 24/09 | Essayer « Déposer une ressource » avec un vrai lien, dans Léo | à faire au prochain lien de Beau |
 | 24/09 | Bouton « Retirer le fond » dans l'**import en masse** (`VendorProductsBulk.jsx`) | pas fait |
