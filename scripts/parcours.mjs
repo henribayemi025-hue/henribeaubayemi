@@ -31,10 +31,11 @@ const ETAPES = [
   },
   {
     nom: 'boutique', aller: async (p) => {
-      await p.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+      // La liste des boutiques, puis la première (route « /boutique/:slug »).
+      await p.goto(`${BASE}/boutiques`, { waitUntil: 'domcontentloaded' });
       await p.waitForTimeout(4000);
-      const lien = await p.locator('a[href*="/shop/"]').first().getAttribute('href').catch(() => null);
-      if (!lien) throw new Error('aucune boutique trouvée sur l’accueil');
+      const lien = await p.locator('a[href*="/boutique/"]').first().getAttribute('href').catch(() => null);
+      if (!lien) throw new Error('aucune boutique dans la liste des boutiques');
       return p.goto(new URL(lien, BASE).href, { waitUntil: 'domcontentloaded' });
     },
   },
