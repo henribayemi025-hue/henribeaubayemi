@@ -5,6 +5,7 @@
 // docs/ATELIER-V0.md. En bref : offre payante Workers, un Worker
 // « finjaro-atelier » branché sur ce dépôt avec le dossier racine
 // « atelier » et la branche « staging », puis les secrets des modèles.
+// Fait par Beau le 24/09 au soir (renommé depuis « henribeaubayemi »).
 //
 // AUCUNE clé ici. Les secrets se posent dans le tableau de bord
 // (Paramètres → Variables et secrets) :
