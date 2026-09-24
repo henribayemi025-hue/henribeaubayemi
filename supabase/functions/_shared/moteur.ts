@@ -149,11 +149,17 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
     headers: { 'Content-Type': 'application/json', ...(cle ? { Authorization: `Bearer ${cle}` } : {}) },
     body: JSON.stringify({
       model,
-      // Kimi K2.6 n'accepte que 1 (erreur 400 sinon, vu au banc du 24/09).
-      temperature: /^kimi/.test(model) ? 1 : (o.temperature ?? 0.6),
-      // Ces modèles comptent leur réflexion dans la sortie : sans cette
-      // marge, un tableau un peu long était coupé en plein JSON (banc du 24/09).
-      max_tokens: (o.maxSortie ?? 8192) + (o.reflexion ?? 4096),
+      // Les modèles récents d'OpenAI (GPT-5, GPT-6, o…) refusent une autre
+      // température que la leur et veulent max_completion_tokens (24/09).
+      ...(/^(gpt-[5-9]|o\d)/.test(model)
+        ? { max_completion_tokens: (o.maxSortie ?? 8192) + (o.reflexion ?? 4096) }
+        : {
+          // Kimi K2.6 n'accepte que 1 (erreur 400 sinon, vu au banc du 24/09).
+          temperature: /^kimi/.test(model) ? 1 : (o.temperature ?? 0.6),
+          // Ces modèles comptent leur réflexion dans la sortie : sans cette
+          // marge, un tableau un peu long était coupé en plein JSON (banc du 24/09).
+          max_tokens: (o.maxSortie ?? 8192) + (o.reflexion ?? 4096),
+        }),
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT):\n${JSON.stringify(schema)}` },
@@ -210,8 +216,8 @@ function secours(): string[] {
   const s: string[] = [];
   if (Deno.env.get('ANTHROPIC_API_KEY')) s.push(`an:${Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude-sonnet-5'}`);
   if (Deno.env.get('MOTEUR_OA_URL') && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
-  // OpenAI (clé de Beau), quand son modèle est réglé (LEGION_MODELE_OA).
-  else if (cleOpenAI() && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
+  // OpenAI (clé de Beau), GPT-5.4 mini par défaut (réglable : LEGION_MODELE_OA).
+  else if (cleOpenAI()) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA') || 'gpt-5.4-mini'}`);
   return s;
 }
 
