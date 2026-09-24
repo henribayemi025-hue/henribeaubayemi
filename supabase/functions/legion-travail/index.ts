@@ -568,8 +568,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     await Promise.all(restants.slice(i, i + lot).map((a) => aPart(async () => {
       // Une tâche urgente ou haute passe avant les plus anciennes (file de
       // priorités, point 7 des « agents autonomes »).
-      const siennes = ouvertes.filter((t) => t.assigne_a === a.id);
-      let tache = siennes.find((t) => ['urgente', 'haute'].includes(t.meta?.priorite || '')) || siennes[0];
+      const rang = (t: Tache) => ({ urgente: 0, haute: 1 } as Record<string, number>)[t.meta?.priorite || ''] ?? 2;
+      let tache = ouvertes.filter((t) => t.assigne_a === a.id).sort((x, y) => rang(x) - rang(y))[0];
       // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
       // « vous ne devez pas attendre que je vous demande quelque chose ») :
       // il se donne l'initiative du jour, dans son métier, et la livre.
