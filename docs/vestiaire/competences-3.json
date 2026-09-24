@@ -1,0 +1,84 @@
+[
+ {
+  "cle": "vestiaire-24-noter-idee",
+  "nom": "Noter une idée avant de la produire",
+  "agents": [
+   "Plume",
+   "Vigie",
+   "Écho"
+  ],
+  "description": "Noter chaque idée (intérêt, source, effort) avant de la produire, et justifier la note.",
+  "contenu": "Avant d'écrire, donne à chaque idée une note sur trois critères, de 1 à 5 : l'intérêt pour la personne visée (un vrai problème ou une vraie envie ?), la solidité de la source (on peut le prouver ?), l'effort de production. Ne garde que les idées fortes sur les deux premiers critères. Écris la note et une phrase de justification à côté de l'idée, pour que Beau voie pourquoi elle passe. Piège : noter « tendance » une idée qui ne concerne ni les vendeuses ni les acheteurs de Finjaro.",
+  "fiche": "24-theaiagents-4-agents-a-construire.md",
+  "source": "Carrousel Instagram du compte theaiagents (captures envoyées par Beau, pas d'URL)",
+  "licence": "aucune (contenu protégé) — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-24-trier-demande",
+  "nom": "Trier une demande entrante en trois",
+  "agents": [
+   "Lien",
+   "Traque"
+  ],
+  "description": "Classer une demande entrante (prix, rendez-vous, information) puis confirmer par écrit l'étape suivante.",
+  "contenu": "Quand un message ou un appel arrive, classe-le d'abord : veut un prix ou un devis, veut un rendez-vous ou une livraison, veut une information. Réponds dans la même langue que la personne. Pose une seule question à la fois, puis propose l'étape suivante précise (un créneau, un lien vers la fiche, un devis écrit). Termine toujours par une confirmation écrite de ce qui a été convenu. Piège : promettre un délai ou un prix que la vendeuse n'a pas donné. Dans ce cas, dis que tu vérifies et reviens.",
+  "fiche": "24-theaiagents-4-agents-a-construire.md",
+  "source": "Carrousel Instagram du compte theaiagents (captures envoyées par Beau, pas d'URL)",
+  "licence": "aucune (contenu protégé) — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-24-annonce-publicites",
+  "nom": "Une annonce, plusieurs publicités",
+  "agents": [
+   "Écho",
+   "Plume"
+  ],
+  "description": "Tirer quatre angles publicitaires d'une annonce finjaro.net, uniquement avec ce qu'elle contient, à valider.",
+  "contenu": "Pars d'une annonce finjaro.net : titre, prix dans la monnaie de la boutique, photos de la vendeuse. Écris quatre angles : l'usage au quotidien, la démonstration (comment ça marche), le détail qui fait la différence, et l'histoire de la vendeuse (seulement avec son accord). Pour chacun : une accroche, un script de 15 à 30 secondes et le choix de la photo. Ne sors que ce qui existe dans l'annonce, sans chiffre inventé ni avis de client imaginaire. Garde les quatre dans le salon « À valider » : rien ne part sans l'accord du fondateur.",
+  "fiche": "24-theaiagents-4-agents-a-construire.md",
+  "source": "Carrousel Instagram du compte theaiagents (captures envoyées par Beau, pas d'URL)",
+  "licence": "aucune (contenu protégé) — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-24-lecon-lot",
+  "nom": "Tirer la leçon d'un lot publié",
+  "agents": [
+   "Plume",
+   "Écho",
+   "Rigo"
+  ],
+  "description": "Relever les résultats mesurés d'un lot publié et en tirer une leçon pour le suivant, sans conclure trop tôt.",
+  "contenu": "Une semaine après une publication, relève pour chaque contenu ce qui est mesuré : vues, clics, réponses, boutiques ouvertes. Si ce n'est pas mesuré, écris « non mesuré ». Compare les angles et garde celui qui a le mieux marché pour le lot suivant. Écris une ligne de leçon dans le salon « Bilan de la semaine ». Piège : conclure sur trois vues. En dessous d'un volume suffisant, dis « trop tôt pour conclure ».",
+  "fiche": "24-theaiagents-4-agents-a-construire.md",
+  "source": "Carrousel Instagram du compte theaiagents (captures envoyées par Beau, pas d'URL)",
+  "licence": "aucune (contenu protégé) — méthode reformulée avec nos mots"
+ },
+ {
+  "cle": "vestiaire-25-diagnostic-avant-coder",
+  "nom": "Diagnostic avant de coder",
+  "agents": [
+   "Claude",
+   "Ada Nkemba",
+   "Alpha"
+  ],
+  "description": "Faire un état des lieux en cinq points (build, tests, branche, modifications, réglages) avant de coder.",
+  "contenu": "Avant de toucher au code d'un projet, fais un état des lieux en cinq points et écris-le : le projet se construit-il (commande de build) ? les tests passent-ils ? sur quelle branche es-tu ? y a-t-il des modifications non enregistrées ? les clés et réglages nécessaires sont-ils là, sans jamais les afficher ? Si un point est rouge, ne commence pas la tâche : signale-le avec la sortie exacte de la commande. Piège : corriger un problème ancien en même temps que la tâche demandée. Sépare les deux et demande.",
+  "fiche": "25-claw-code.md",
+  "source": "https://github.com/instructkr/claw-code",
+  "licence": "MIT déclarée, origine contestée — seule la méthode est reprise, avec nos mots"
+ },
+ {
+  "cle": "vestiaire-25-origine-outil",
+  "nom": "Vérifier d'où vient un outil avant de l'adopter",
+  "agents": [
+   "Alpha",
+   "Vigie",
+   "Claude"
+  ],
+  "description": "Vérifier la licence, l'origine et l'état d'un outil avant de le proposer.",
+  "contenu": "Avant de proposer un dépôt ou une bibliothèque, vérifie trois choses et écris-les : la licence (fichier LICENSE lu, pas seulement le badge) ; l'origine (qui l'a écrit, et l'a-t-il écrit lui-même ou recopié d'un produit fermé ?) ; l'état (maintenu, testé, ou vitrine abandonnée ?). Un outil né d'une fuite de code, ou dont l'auteur dit qu'il n'est pas sérieux, ne va pas dans Finjaro, même s'il est populaire. Piège : confondre « beaucoup d'étoiles sur GitHub » et « sûr à utiliser ».",
+  "fiche": "25-claw-code.md",
+  "source": "https://github.com/instructkr/claw-code",
+  "licence": "MIT déclarée, origine contestée — seule la méthode est reprise, avec nos mots"
+ }
+]

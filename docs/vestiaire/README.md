@@ -21,3 +21,5 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [17 — seb.ai : « une équipe de 6 agents Claude Code pour trouver des clients »](17-seb-ai-equipe-6-agents-contenu.md)
 - [18 — Compositor : un éditeur d'images libre, « l'alternative à Photoshop »](18-compositor-photoshop-libre.md)
 - [19 — École Cube : publicité « Formation Claude Code »](19-ecole-cube-formation-claude-code.md)
+- [24 — theaiagents : « 4 agents IA qui valent la peine d'être construits »](24-theaiagents-4-agents-a-construire.md)
+- [25 — Claw Code : un « Claude Code » réécrit par d'autres](25-claw-code.md)
