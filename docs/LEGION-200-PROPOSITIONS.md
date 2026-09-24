@@ -19,7 +19,7 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 | ⏸ | Attend Beau (un jeton, un compte, une décision) |
 | ✗ | Écarté, avec la raison |
 
-**Le compte :** 72 faites, 52 en partie, 23 à faire, 18 en attente de Beau, 35 écartées.
+**Le compte :** 82 faites, 48 en partie, 17 à faire, 18 en attente de Beau, 35 écartées.
 
 ## Les huit à faire ensuite, à mon avis
 
@@ -41,26 +41,26 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | # | L'idée | État | Dans Legion aujourd'hui |
 | --- | --- | --- | --- |
 | 1 | Mémoire courte et longue, base vectorielle par agent | 🔧 | Existe : les règles de la maison (Mémoire), la mémoire de chaque salon résumée chaque matin, ce qui s'est dit dans les autres salons, et une base vectorielle pour les documents de l'entreprise (0179). Manque : une mémoire vectorielle propre à CHAQUE agent (ses livrables passés, ce qu'on lui a appris). |
-| 2 | Réputation : les agents s'évaluent après chaque livrable | 📌 | Aujourd'hui une relecture vérifie chaque réponse (chiffres inventés, promesses), et le fondateur « Valide » ou « Renvoie ». Les agents ne se notent pas entre eux. À faire : un collègue relit le livrable d'un autre et le conteste (déjà noté en I6). |
+| 2 | Réputation : les agents s'évaluent après chaque livrable | 🔧 | Tableau de bord (24/09) : pour chaque agent, la part de ses livrables que TU as validés (validés / validés + renvoyés), et ce que la relecture a corrigé. Les agents ne se notent toujours pas entre eux : c'est « contester un livrable » (chantier suivant). |
 | 3 | Auto-recrutement : un manager rédige la fiche et demande un agent | 🔧 | « Renforcer » : Legion propose des agents avec leur fiche complète, le fondateur coche. Un directeur ne peut pas encore le proposer de lui-même dans un salon (il faudrait une action « engager » derrière « Confirmer »). |
 | 4 | Personnalités simulées (optimiste, prudent, perfectionniste) | ✅ | Chaque agent a une personnalité écrite, modifiable sur sa fiche, et parle avec elle. |
 | 5 | Réunions automatiques, transcription et synthèse des points d'équipe | ✅ | Réunions en direct (23/09) : deux tours, compte rendu avec décidé, écarté, désaccords, à trancher, et tâches créées. Pas encore de réunion lancée seule chaque matin. |
 | 6 | Jeu de rôle conflictuel, un avocat du diable permanent | ✅ | Réunion au format « avocat du diable » (24/09) : un participant attitré conteste chaque proposition, les autres répondent. |
 | 7 | Un agent s'auto-forme en lisant la documentation du projet | ✅ | Documents de l'entreprise (0179) et compétences : l'agent qui en a le droit lit les documents et cite sa source. |
-| 8 | Badges de compétences, certifications internes | 🔧 | Les compétences d'un agent sont affichées sur sa fiche. Pas de badge ni de certification. |
+| 8 | Badges de compétences, certifications internes | ✅ | Badges (24/09), chacun à un seuil mesuré écrit dans son infobulle : premier livrable, 10 livrables, 5 validés, sans correction (10 réponses relues, aucune corrigée), débloqueur, relais, assidu (5 jours de travail). |
 | 9 | Humeur des agents selon la charge et les retours | ✗ | Pas retenu : une « humeur » inventée ne sert pas l'utilisateur et brouille ce qui est vrai. La charge réelle (tâches ouvertes par agent) est déjà visible au tableau. |
 | 10 | Agents multilingues | ✅ | Ils répondent dans la langue du message, et en anglais toute la journée de travail si le fondateur lit l'anglais. |
 | 11 | Rapport de fin de journée par le directeur général | ✅ | Rapport du soir (24/09) : chaque soir, le directeur écrit dans Direction ce qui a été fait, ce qui suit, ce qui attend le fondateur ; les chiffres viennent de la base, pas du modèle. Aussi à la demande (bouton dans Direction). |
 | 12 | Déléguer une tâche à un autre département | ✅ | Relais : une tâche passe d'un agent à l'autre avec le livrable du premier. |
 | 13 | Alerte proactive en cas d'incohérence | ✅ | Chaque soir (24/09), des alertes calculées dans la base : tâche bloquée, livrable en attente depuis 2 jours, tâche immobile depuis 7 jours, plafond à 80 %, intérim qui finit, agent silencieux avec du travail ; et « à vérifier » quand deux faits du jour se contredisent. |
-| 14 | Journal des choix : pourquoi l'agent a décidé ça | 🔧 | Chaque réponse garde ce qui a été vérifié (outils appelés), ses sources et ce que la relecture a corrigé. La fiche montre ce que l'agent reçoit avant de répondre. Pas de journal par agent. |
+| 14 | Journal des choix : pourquoi l'agent a décidé ça | ✅ | Journal des choix sur la fiche de l'agent (24/09) : ses dernières prises de parole, et pour chacune ce qu'il a vérifié (outils), ses sources, ce que la relecture a corrigé et pourquoi, ce qu'elle a coûté. |
 | 15 | Conscience éthique selon les règles de l'entreprise | ✅ | Règles de la maison relues avant chaque réponse ; « ce qu'il ne fait jamais » par agent (0177). |
 | 16 | Négociation de budget entre départements | ✅ | Réunion au format « budget » (24/09) : chaque participant défend sa part, sur la dépense réelle et le plafond. Il n'existe pas de budget stocké par département : le vote conclut, le fondateur décide. |
 | 17 | Un mentor pour les nouveaux agents | ✗ | Pas utile tel quel : un nouvel agent reçoit déjà le contexte complet (mémoire, plans, tâches). |
 | 18 | Pauses café entre agents pour des idées inattendues | ✗ | Coûte de l'argent sans demande de l'utilisateur. Les réunions couvrent le besoin quand on le veut. |
 | 19 | Agents qui simulent des utilisateurs pour tester l'application | 📌 | Utile pour le studio de code et pour Finjaro. Demande un navigateur de test côté serveur. |
 | 20 | Vote à la majorité en comité de direction | ✅ | Réunion au format « vote » (24/09) : chacun vote pour, contre ou s'abstient ; c'est Legion qui compte, pas un agent, et le compte rendu rappelle que l'humain décide. |
-| 21 | KPI par agent suivis dans un tableau RH | 📌 | On a les tâches faites, en retard, renvoyées : un tableau par agent est faisable. |
+| 21 | KPI par agent suivis dans un tableau RH | ✅ | Tableau de bord (24/09), par agent sur 7 ou 30 jours : prises de parole, livrables, tâches faites, ouvertes, bloquées, à valider, renvoyées, relectures et corrections — tout compté dans la base. |
 | 22 | Refuser une tâche hors de son métier | ✅ | Le mandat et « ce qu'il ne fait jamais » le permettent ; il le dit et passe la main. |
 | 23 | Biographie générée à la création | ✅ | Mandat et personnalité écrits à la création, portrait choisi par l'agent lui-même. |
 | 24 | Parrainage senior / junior | ✗ | Même raison que 17. |
@@ -86,7 +86,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 39 | Secrets et clés rangés à part, par entreprise | ✅ | Le jeton GitHub de chaque entreprise est au coffre (vault), jamais relu par l'application. |
 | 40 | Architecture en graphe 3D | ✗ | Pas prioritaire : joli, mais n'aide pas à décider. |
 | 41 | Importer un agent depuis GitHub | 🔧 | On importe des COMPÉTENCES depuis GitHub (catalogue, licence vérifiée). Pas un agent entier. |
-| 42 | Consommation par agent et par dépôt | 🔧 | Ce que Legion coûte ce mois-ci, par entreprise, avec un plafond (Dépense). Pas encore le détail par agent. |
+| 42 | Consommation par agent et par dépôt | ✅ | Chaque message d'agent porte ce qu'il a coûté (24/09) ; le tableau de bord montre le coût du mois de chaque agent. Une entreprise n'a qu'un dépôt : son coût est celui de l'entreprise. |
 | 43 | Changelog automatique pour les utilisateurs | 📌 | Faisable à partir du dépôt branché. |
 | 44 | Annuler d'un coup la modification d'un agent | ⏸ | Studio de code (Git le permet). |
 | 45 | Dépendances obsolètes et mises à jour sûres | ⏸ | Studio de code. |
@@ -103,26 +103,26 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 51 | Organigramme vivant animé | 🔧 | L'organigramme se construit à la fondation et les salons suivent les départements. Pas d'animation selon l'activité. |
 | 52 | Bureau virtuel isométrique avec les avatars au travail | 📌 | Beau aime le style : faisable en 2D légère sur l'accueil. |
 | 53 | Avatars personnalisés (IA, photo, manga, corporate) | ✅ | Chaque agent choisit son visage ou son bitmoji ; on peut aussi le changer. |
-| 54 | Salle de contrôle : vue d'ensemble ↔ un seul agent | 🔧 | Accueil de l'entreprise ↔ fiche d'un agent. À enrichir. |
+| 54 | Salle de contrôle : vue d'ensemble ↔ un seul agent | ✅ | Accueil = vue d'ensemble (santé, charge, carte d'activité, chaque agent) ; toucher un agent ouvre sa fiche, avec son journal des choix (24/09). |
 | 55 | Notifications des agents | ✅ | Le téléphone sonne quand un agent pose une question, propose, décide, ouvre une réunion, ou donne une tâche à un humain. |
 | 56 | Tableau des coûts en temps réel | ✅ | Dépense du mois et plafond, par entreprise. |
 | 57 | Mode sombre et thèmes | ✅ | Legion a son thème bleu nuit et or. |
 | 58 | Commandes rapides (/) pour appeler un agent | 🔧 | On appelle un agent par « @Prénom ». Pas de commandes « / ». |
 | 59 | Frise pour revoir l'état à une date donnée | 📌 | Les messages, plans et tâches sont datés : une frise est faisable. |
-| 60 | Carte de chaleur de l'activité par département | 📌 | Faisable à partir des messages et des tâches. |
+| 60 | Carte de chaleur de l'activité par département | ✅ | Carte d'activité par département sur 14 jours (24/09) : une case par jour, plus foncée quand les agents ont plus parlé. |
 | 61 | Cartes de visite des agents | ✅ | La fiche de l'agent (visage, poste, mandat, personnalité, ce qu'il reçoit). |
 | 62 | Mode « présentation investisseur » | 🔧 | Un agent peut écrire le dossier dans un salon. Pas de diapositives générées. |
 | 63 | Dicter ses ordres à la voix | ✅ | Vocaux transcrits, et appel vocal d'un agent (23/09). |
 | 64 | Interface traduite | ✅ | Français et anglais ; d'autres langues à ajouter. |
 | 65 | Raccourcis clavier | 📌 | Petit travail. |
-| 66 | Jauge de santé du projet | 📌 | À construire à partir des tâches en retard, des blocages et du plafond. |
+| 66 | Jauge de santé du projet | ✅ | Santé de l'équipe (24/09) : chaque agent en forme, à surveiller ou en difficulté selon une règle écrite et affichée (« comment c'est calculé ») : silence avec du travail, blocages, livrables qui attendent, tâches immobiles, renvois, corrections, budget. |
 | 67 | Mode focus : cacher les agents inactifs | 🔧 | Les agents éteints sont grisés. Pas de filtre qui les cache. |
 | 68 | Galerie des avatars filtrable par rôle | 🔧 | Liste par salon et par département. |
 | 69 | Exporter l'organigramme en PDF ou image | 📌 | Petit travail. |
 | 70 | Mini-jeu pour « motiver » les agents | ✗ | Pas retenu : ne sert pas le travail. |
-| 71 | Trophées aux grandes étapes | 📌 | Possible avec la feuille de route (étape franchie). |
+| 71 | Trophées aux grandes étapes | ✅ | Trophées (24/09) : les étapes de la feuille de route que le fondateur a cochées, avec leur date. Rien n'est décerné par un modèle. |
 | 72 | Conférence de presse simulée | ✅ | Réunion au format « conférence de presse » (24/09) : des journalistes posent les questions difficiles, l'entreprise répond. |
-| 73 | Charge globale de l'entreprise | 📌 | Même source que 60. |
+| 73 | Charge globale de l'entreprise | ✅ | Charge (24/09) : tâches ouvertes de l'entreprise, par agent allumé, et la barre de charge de chaque agent. |
 | 74 | Ton des agents (formel, décontracté…) | ✅ | Par la personnalité de chaque agent. |
 | 75 | Météo et ambiance sonore | ✗ | Pas retenu. |
 
@@ -174,7 +174,7 @@ Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
 | 112 | Sauvegarde des choix stratégiques | ✅ | Comptes rendus de réunion, plans et feuille de route gardés. |
 | 113 | Pannes et cyberattaques simulées | ✗ | Pas maintenant. |
 | 114 | Intégrité des modèles | 🔧 | Chaque réponse garde le nom du modèle utilisé. |
-| 115 | Budget de calcul par agent | 🔧 | Plafond par entreprise (Dépense). Pas encore par agent. |
+| 115 | Budget de calcul par agent | ✅ | Budget du mois par agent (24/09), réglé sur le tableau de bord : atteint, l'agent ne répond plus, ne livre plus et ne parle plus en réunion jusqu'au mois suivant (essayé : « Anaïs : budget du mois atteint »). |
 | 116 | Traçabilité des sources | ✅ | Sources sous chaque message (Internet, documents). |
 | 117 | Rotation des mots de passe et jetons | 🔧 | Jetons de connexion MCP révocables ; jeton GitHub effaçable. |
 | 118 | Audit externe par un humain | ✅ | On invite un membre dans l'entreprise ; il voit les salons et le tableau. |

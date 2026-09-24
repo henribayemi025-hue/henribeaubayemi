@@ -535,7 +535,7 @@
       "commentCalcule": "How it is calculated",
       "aideCompte": "Everything is counted in the database: messages, deliverables, tasks, rereads. No score is made up, and no model grades the agents.",
       "aideDifficulte": "open work and not a word for three days, or two blocked tasks, or the monthly budget reached.",
-      "aideSurveiller": "one blocked task, a deliverable waiting for your review for more than two days, a task untouched for seven days, more send-backs than approvals, or 80% of the budget.",
+      "aideSurveiller": "one blocked task, a deliverable waiting for your review for more than two days, a task untouched for seven days, more send-backs than approvals, the reread correcting at least half of its replies, or 80% of the budget.",
       "aideForme": "none of the above.",
       "aideReputation": "Approved: the deliverables you approved, out of approved + sent back, over the period.",
       "aideCout": "Cost per agent is recorded on each of its messages since 24/09: before, only the company total was known. It is an estimate based on Google's public prices.",
@@ -555,7 +555,8 @@
         "revueLongue": "{{n}} deliverable(s) waiting for your review for more than two days",
         "immobiles": "{{n}} task(s) untouched for seven days",
         "renvois": "More deliverables sent back than approved",
-        "budgetProche": "{{p}}% of the monthly budget"
+        "budgetProche": "{{p}}% of the monthly budget",
+        "corrections": "The reread corrected {{c}} of its {{r}} reread replies"
       },
       "charge": "Workload",
       "tachesOuvertes": "open tasks",

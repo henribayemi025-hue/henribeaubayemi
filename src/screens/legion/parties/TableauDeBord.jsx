@@ -30,6 +30,7 @@ function santeDe(x, t) {
   if (x.revue_longue > 0) raisons.push(t('legion.tdb.r.revueLongue', { n: x.revue_longue }));
   if (x.immobiles > 0) raisons.push(t('legion.tdb.r.immobiles', { n: x.immobiles }));
   if (x.renvoyees > 0 && x.renvoyees > x.validees) raisons.push(t('legion.tdb.r.renvois'));
+  if (x.relues >= 3 && x.corrigees / x.relues >= 0.5) raisons.push(t('legion.tdb.r.corrections', { c: x.corrigees, r: x.relues }));
   if (budget >= 0.8) raisons.push(t('legion.tdb.r.budgetProche', { p: Math.round(budget * 100) }));
   return { cle: raisons.length ? 'surveiller' : 'forme', raisons };
 }
@@ -242,13 +243,13 @@ export function TableauDeBord({ entreprise, agents, onFiche, t, langue = 'fr' })
                 {/* Ce qu'il coûte, et son budget du mois (115) */}
                 <div className="flex flex-wrap items-center gap-2 border-t border-legion-line pt-2 text-[11px]">
                   <span className="text-legion-muted">{t('legion.tdb.cout')}</span>
-                  <span className="font-semibold text-legion-ink">{euros(x.cout_mois_eur, langue)}</span>
+                  <span className="font-semibold text-legion-ink" title={t('legion.tdb.aideCout')}>{Number(x.cout_mois_eur) > 0 ? euros(x.cout_mois_eur, langue) : '—'}</span>
                   <span className="text-legion-muted">{t('legion.tdb.ceMois')}</span>
                   <label className="ml-auto flex items-center gap-1 text-legion-muted">
                     {t('legion.tdb.budget')}
                     <input key={`${x.id}-${x.plafond_mois_eur ?? ''}`} inputMode="decimal" defaultValue={x.plafond_mois_eur ?? ''} placeholder={t('legion.sansPlafond', 'aucun')}
                       onBlur={(e) => fixerBudget(x, e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                      className="w-16 rounded-input border border-legion-line bg-legion-bg px-1.5 py-1 text-right text-[16px] text-legion-ink outline-none focus:border-legion-gold/60 sm:text-[12px]" />
+                      className="w-20 rounded-input border border-legion-line bg-legion-bg px-1.5 py-1 text-right text-[16px] text-legion-ink outline-none focus:border-legion-gold/60 sm:w-16 sm:text-[12px]" />
                     €
                   </label>
                 </div>
