@@ -560,7 +560,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
 
   // 2. LES LIVRABLES — chaque agent allumé prend sa tâche la plus ancienne.
   const lot = 3;
-  const restants = machines.filter((a) => !dejaLivre.has(a.id));
+  // Une tâche URGENTE pas encore livrée n'attend pas le passage suivant.
+  const urgente = (a: Agent) => ouvertes.some((t) => t.assigne_a === a.id && t.meta?.priorite === 'urgente' && !t.meta?.livre_le);
+  const restants = machines.filter((a) => !dejaLivre.has(a.id) || urgente(a));
   for (let i = 0; i < restants.length; i += lot) {
     if (tempsEcoule()) return true;
     // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
