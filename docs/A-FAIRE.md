@@ -21,6 +21,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | **Bouton du kit → Accounting déjà connecté** (relais SSO) : touche l'authentification commune, donc Accounting aussi | accord |
 | 24/09 | **Vidéo Accounting v2** : retours attendus (prononciation « Accounting », raccord de la voix vers 16 s, longueur de la fin). La version HQ (35 Mo) dépasse la limite d'envoi : proposer une version compressée | ses retours |
 | 24/09 | **Agents qui codent** : le correctif est gardé de côté (`scratchpad/leo-agents-codent-complet.patch`), repris dans le plan de l'atelier en version sûre (Confirmer). Ne pas contourner le blocage de sécurité | décision avec l'atelier |
+| 24/09 | **« Finia commune »** (Beau, soir) : une seule Finia dans toutes les apps (place de marché, Accounting, Léo, projets futurs), reliée à nos agents, qui **apprend de l'usage réel**. Proposition faite : un savoir commun, une seule personnalité, un carnet d'apprentissage anonyme validé par Beau (même boucle que « Léo apprend tout seul »), les agents qui lisent les questions fréquentes. Touche **Accounting** (sa Finia est aujourd'hui locale, sans IA) et la **vie privée** (consentement, anonymisation) | son « oui » + accord sur la vie privée ; prévenir Claudinette avant |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 
