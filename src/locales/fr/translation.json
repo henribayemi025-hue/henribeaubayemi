@@ -1020,7 +1020,14 @@
       "horsLigne": "L'atelier ne répond pas. Vérifie ta connexion, puis réessaie.",
       "pasEnLigne": "L'atelier n'est pas encore en ligne : son serveur (finjaro-atelier) doit d'abord être mis en place chez Cloudflare.",
       "reserve": "L'atelier est réservé pour l'instant.",
-      "connexion": "Connecte-toi à Léo pour ouvrir l'atelier."
+      "connexion": "Connecte-toi à Léo pour ouvrir l'atelier.",
+      "leCodeur": "Le Codeur",
+      "activite_lit": "{{nom}} lit {{chemin}}…",
+      "activite_ecrit": "{{nom}} écrit dans {{chemin}}…",
+      "attendTonAccord": "attend ton accord",
+      "suivre": "Suivre {{nom}}",
+      "suivreAide": "L'éditeur ouvre tout seul le fichier sur lequel l'agent travaille, et tu le vois taper.",
+      "travailleNom": "{{nom}} travaille…"
     }
   },
   "equipe": {

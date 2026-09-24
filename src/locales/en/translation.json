@@ -1020,7 +1020,14 @@
       "horsLigne": "The workshop is not responding. Check your connection, then try again.",
       "pasEnLigne": "The workshop is not online yet: its server (finjaro-atelier) must first be set up on Cloudflare.",
       "reserve": "The workshop is reserved for now.",
-      "connexion": "Sign in to Léo to open the workshop."
+      "connexion": "Sign in to Léo to open the workshop.",
+      "leCodeur": "The Coder",
+      "activite_lit": "{{nom}} is reading {{chemin}}…",
+      "activite_ecrit": "{{nom}} is writing in {{chemin}}…",
+      "attendTonAccord": "waiting for your OK",
+      "suivre": "Follow {{nom}}",
+      "suivreAide": "The editor opens the file the agent is working on by itself, and you watch it type.",
+      "travailleNom": "{{nom}} is working…"
     }
   },
   "equipe": {

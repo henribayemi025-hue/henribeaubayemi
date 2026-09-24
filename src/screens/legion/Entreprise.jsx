@@ -851,7 +851,7 @@ export default function Entreprise() {
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'atelier' && (
             <Suspense fallback={<div className="p-6 text-caption text-legion-muted">…</div>}>
-              <Atelier t={t} langue={langue} />
+              <Atelier t={t} langue={langue} codeur={(data.agents || []).find((a) => !a.user_id && a.peut_coder && a.avatar_url) || (data.agents || []).find((a) => !a.user_id && a.peut_coder) || null} />
             </Suspense>
           )}
           {outil === 'presentation' && <Presentation entreprise={data.entreprise} agents={data.agents} departements={departements} langue={langue} t={t} />}

@@ -34,7 +34,17 @@ const NOMS_MODELES = {
 const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch { /* navigation privée */ } };
 
-export default function Atelier({ t, langue = 'fr' }) {
+// Beau, 24/09 : « je pensais que les agents devaient écrire au milieu » et
+// « on doit voir la photo de profil des agents ». Le Codeur prend donc le
+// visage et le nom de l'agent développeur de l'entreprise (peut_coder), et
+// l'éditeur SUIT l'agent : il ouvre le fichier qu'il lit, et tape sous nos
+// yeux ce qu'il propose d'écrire, pendant que la carte attend l'accord.
+function Visage({ codeur, taille = 28 }) {
+  if (codeur?.avatar_url) return <img src={codeur.avatar_url} alt="" width={taille} height={taille} className="shrink-0 rounded-full object-cover" style={{ width: taille, height: taille }} />;
+  return <span className="flex shrink-0 items-center justify-center rounded-full bg-legion-gold/20 text-legion-gold" style={{ width: taille, height: taille }}><IconCode size={taille * 0.55} /></span>;
+}
+
+export default function Atelier({ t, langue = 'fr', codeur = null }) {
   const [moi, setMoi] = useState(null);
   const [acces, setAcces] = useState(null); // null | 'ok' | 'hors_ligne' | 'reserve' | 'connexion' | message
   const [projets, setProjets] = useState([]);
@@ -48,6 +58,10 @@ export default function Atelier({ t, langue = 'fr' }) {
   const [erreur, setErreur] = useState(null);
   const [modele, setModele] = useState(() => lire('atelier:modele') || 'auto');
   const fin = useRef(null);
+  const [suivre, setSuivre] = useState(() => lire('atelier:suivre') !== '0');
+  const [activite, setActivite] = useState(null); // { verbe: 'lit' | 'ecrit', chemin }
+  const vuJusqua = useRef(null);
+  const nomCodeur = codeur?.nom?.split(' ')[0] || t('legion.atelier.leCodeur');
 
   const statut = vue?.session?.statut;
   const travaille = occupe || statut === 'en_cours';
@@ -137,13 +151,42 @@ export default function Atelier({ t, langue = 'fr' }) {
   const nouvelleSession = () => { if (window.confirm(t('legion.atelier.nouvelleSessionConfirmer'))) agir(() => appel(`/projets/${pid}/session`, { methode: 'POST', corps: {} })); };
   const retirerRegle = (id) => agir(() => appel(`/projets/${pid}/regles/${id}`, { methode: 'DELETE' }));
 
-  async function ouvrir(chemin) {
+  async function ouvrir(chemin, basculer = true) {
     try {
       const r = await appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(chemin)}`);
       setFichier({ chemin: r.chemin, contenu: r.contenu, brouillon: r.contenu });
-      setOnglet('editeur');
-    } catch (e) { signaler(e); }
+      if (basculer) setOnglet('editeur');
+    } catch (e) {
+      // Un fichier que l'agent crée n'existe pas encore : on l'ouvre vide.
+      if (!basculer && e?.statut === 404) setFichier({ chemin, contenu: '', brouillon: '' });
+      else if (basculer) signaler(e);
+    }
   }
+
+  // L'éditeur suit l'agent. Au premier chargement, on ne rejoue pas le passé.
+  const proposition = vue?.demande?.outil === 'ecrire_fichier' && typeof vue.demande.contenu === 'string' ? vue.demande : null;
+  useEffect(() => {
+    const liste = vue?.affichage || [];
+    const dernier = liste[liste.length - 1];
+    if (vuJusqua.current === null) { vuJusqua.current = dernier?.id || ''; return; }
+    if (!dernier || dernier.id === vuJusqua.current) return;
+    const i = liste.findIndex((a) => a.id === vuJusqua.current);
+    const nouveaux = liste.slice(i + 1);
+    vuJusqua.current = dernier.id;
+    const geste = [...nouveaux].reverse().find((a) => a.qui === 'action' && ['lire_fichier', 'ecrire_fichier'].includes(a.outil) && a.ok && a.resume && a.resume !== '.');
+    if (!geste) return;
+    setActivite({ verbe: geste.outil === 'lire_fichier' ? 'lit' : 'ecrit', chemin: geste.resume });
+    if (suivre && fichier?.chemin !== geste.resume && (!fichier || fichier.brouillon === fichier.contenu)) ouvrir(geste.resume, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vue?.affichage?.length]);
+  useEffect(() => {
+    if (!proposition) return;
+    setActivite({ verbe: 'ecrit', chemin: proposition.chemin });
+    if (suivre && fichier?.chemin !== proposition.chemin && (!fichier || fichier.brouillon === fichier.contenu)) ouvrir(proposition.chemin, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposition?.id]);
+  useEffect(() => { if (!travaille && statut !== 'attente') setActivite(null); }, [travaille, statut]);
+  const basculerSuivre = () => setSuivre((x) => { ecrire('atelier:suivre', x ? '0' : '1'); return !x; });
   const enregistrer = () => fichier && agir(async () => {
     const r = await appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: fichier.chemin, contenu: fichier.brouillon } });
     setFichier((f) => ({ ...f, contenu: f.brouillon }));
@@ -186,6 +229,7 @@ export default function Atelier({ t, langue = 'fr' }) {
   const s = vue?.session;
   const part = s ? Math.min(1, s.cout / s.plafond) : 0;
   const sale = fichier && fichier.brouillon !== fichier.contenu;
+  const enProposition = !!(proposition && fichier?.chemin === proposition.chemin);
 
   const colonneArbre = (
     <div className="flex h-full min-h-0 flex-col">
@@ -199,18 +243,35 @@ export default function Atelier({ t, langue = 'fr' }) {
 
   const colonneEditeur = (
     <div className="flex h-full min-h-0 flex-col">
+      {activite && (
+        <div className="flex items-center gap-2 border-b border-legion-line bg-legion-card px-3 py-1.5 text-[12px]">
+          <Visage codeur={codeur} taille={22} />
+          <span className="min-w-0 truncate text-legion-ink">
+            {t(`legion.atelier.activite_${activite.verbe}`, { nom: nomCodeur, chemin: activite.chemin })}
+            {enProposition && <span className="text-legion-gold-soft"> · {t('legion.atelier.attendTonAccord')}</span>}
+          </span>
+          <span className="ml-auto flex shrink-0 gap-0.5" aria-hidden="true">
+            {[0, 1, 2].map((k) => <span key={k} className="h-1.5 w-1.5 animate-pulse rounded-full bg-legion-gold" style={{ animationDelay: `${k * 200}ms` }} />)}
+          </span>
+        </div>
+      )}
       {fichier ? (
         <>
           <div className="flex items-center justify-between gap-2 border-b border-legion-line px-3 py-1.5">
             <span className="min-w-0 truncate font-mono text-[12px] text-legion-ink">{fichier.chemin}{sale ? ' •' : ''}</span>
-            <button type="button" onClick={enregistrer} disabled={!sale || travaille}
+            <button type="button" onClick={basculerSuivre} aria-pressed={suivre} title={t('legion.atelier.suivreAide')}
+              className={`ml-auto shrink-0 rounded-pill border px-2.5 py-1 text-[11px] font-semibold ${suivre ? 'border-legion-gold text-legion-gold' : 'border-legion-line text-legion-muted'}`}>
+              {t('legion.atelier.suivre', { nom: nomCodeur })}
+            </button>
+            <button type="button" onClick={enregistrer} disabled={!sale || travaille || enProposition}
               className="flex shrink-0 items-center gap-1 rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-40">
               <IconDeviceFloppy size={14} /> {t('legion.atelier.enregistrer')}
             </button>
           </div>
           <div className="min-h-0 flex-1">
             <Suspense fallback={<div className="p-4 text-caption text-legion-muted">…</div>}>
-              <Editeur chemin={fichier.chemin} valeur={fichier.brouillon} lectureSeule={travaille}
+              <Editeur chemin={fichier.chemin} valeur={enProposition ? proposition.contenu : fichier.brouillon} lectureSeule={travaille || enProposition}
+                auteur={nomCodeur}
                 onChange={(v) => setFichier((f) => (f ? { ...f, brouillon: v } : f))} />
             </Suspense>
           </div>
@@ -231,13 +292,21 @@ export default function Atelier({ t, langue = 'fr' }) {
             <span className="min-w-0 truncate">{a.outil} {a.resume}</span>
             <span className="shrink-0">{t(`legion.atelier.decision_${a.decision}`, a.decision)}</span>
           </div>
+        ) : a.qui === 'agent' ? (
+          <div key={a.id} className="flex max-w-[96%] items-start gap-2">
+            <Visage codeur={codeur} />
+            <div className="min-w-0">
+              <p className="mb-0.5 text-[11px] font-semibold text-legion-gold">{codeur?.nom || nomCodeur}</p>
+              <div className="whitespace-pre-wrap rounded-card bg-legion-card px-3 py-2 text-caption text-legion-ink">{a.texte}</div>
+            </div>
+          </div>
         ) : (
-          <div key={a.id} className={`max-w-[92%] whitespace-pre-wrap rounded-card px-3 py-2 text-caption ${a.qui === 'humain' ? 'ml-auto bg-legion-accent text-white' : a.qui === 'agent' ? 'bg-legion-card text-legion-ink' : 'mx-auto border border-legion-gold/40 text-center text-legion-gold-soft'}`}>
+          <div key={a.id} className={`max-w-[92%] whitespace-pre-wrap rounded-card px-3 py-2 text-caption ${a.qui === 'humain' ? 'ml-auto bg-legion-accent text-white' : 'mx-auto border border-legion-gold/40 text-center text-legion-gold-soft'}`}>
             {a.texte}
           </div>
         )))}
         {travaille && statut !== 'attente' && (
-          <p className="flex items-center gap-2 px-1 text-[12px] text-legion-muted"><IconLoader2 size={14} className="animate-spin" /> {t('legion.atelier.travaille')}</p>
+          <p className="flex items-center gap-2 px-1 text-[12px] text-legion-muted"><Visage codeur={codeur} taille={20} /> {activite ? t(`legion.atelier.activite_${activite.verbe}`, { nom: nomCodeur, chemin: activite.chemin }) : t('legion.atelier.travailleNom', { nom: nomCodeur })} <IconLoader2 size={14} className="animate-spin" /></p>
         )}
         <Carte demande={vue?.demande} occupe={occupe} onDecider={decider} t={t} />
         <div ref={fin} />

@@ -220,12 +220,17 @@ async function executer(outil, args, etat, deps) {
   return { ok: false, texte: `Outil inconnu : ${outil}` };
 }
 
+const MAX_CONTENU_CARTE = 100_000;
+
 // La carte montrée à l'humain.
 async function carte(appel, outil, args, ev, deps) {
   const base = { id: crypto.randomUUID(), tool_call_id: appel.id, outil, raison: ev.raison, creee_le: deps.maintenant().toISOString() };
   if (outil === 'commande') return { ...base, commande: ev.commande, pourquoi: resumer(args.pourquoi, 500), reseau: ev.reseau || [] };
   const avant = await deps.fichiers.lire(ev.chemin);
-  if (outil === 'ecrire_fichier') return { ...base, chemin: ev.chemin, explication: resumer(args.explication, 500), diff: diff(avant, args.contenu) };
+  // Le texte proposé en entier (s'il reste raisonnable) : l'écran le fait
+  // « taper » dans l'éditeur pendant que la carte attend (Beau, 24/09 : « je
+  // veux voir les agents écrire au milieu »). Rien n'est écrit avant l'accord.
+  if (outil === 'ecrire_fichier') return { ...base, chemin: ev.chemin, explication: resumer(args.explication, 500), diff: diff(avant, args.contenu), contenu: typeof args.contenu === 'string' && args.contenu.length <= MAX_CONTENU_CARTE ? args.contenu : null };
   return { ...base, chemin: ev.chemin, explication: resumer(args.explication, 500), diff: diff(avant, null) };
 }
 
