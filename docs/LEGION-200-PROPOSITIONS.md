@@ -21,19 +21,22 @@ sert pas l'utilisateur, ou qu'elle retirerait l'humain des commandes.
 
 **Le compte :** 130 faites, 14 en partie, 0 à faire, 20 en attente de Beau, 36 écartées.
 
-## Les huit à faire ensuite, à mon avis
+## Les huit que je conseillais de faire d'abord — toutes faites (24/09)
 
-1. **Un collègue conteste un livrable** (2, et I6) : la relecture croisée entre agents.
-2. **Un directeur propose d'engager un agent**, derrière « Confirmer » (3).
-3. **Le rapport du soir** : ce qui a été fait aujourd'hui, en une page (11).
-4. **Le vote en réunion** (20).
-5. **Le tableau par agent** : tâches faites, en retard, renvoyées, et ce qu'il coûte (21, 42, 115).
-6. **Un nouveau ticket GitHub ouvre une réunion** (36).
-7. **La mémoire propre à chaque agent** : ses livrables et ce qu'on lui a appris (1).
-8. **Le rapport de transparence du mois** : dépense, réponses corrigées, actions confirmées (124).
+1. ✅ **Un collègue conteste un livrable** (2, et I6) : essayé, Kwame a contesté l'inventaire d'Elodie, incomplet.
+2. ✅ **Un responsable propose d'engager un agent**, derrière « Confirmer » (3).
+3. ✅ **Le rapport du soir** : ce qui a été fait, ce qui suit, ce qui t'attend (11).
+4. ✅ **Le vote en réunion** : c'est Legion qui compte les voix, l'humain décide (20).
+5. ✅ **Le tableau par agent** : tâches faites, ouvertes, renvoyées, et ce qu'il coûte, avec un budget par agent (21, 42, 115).
+6. ✅ **Un nouveau ticket GitHub ouvre une réunion** (36).
+7. ✅ **La mémoire propre à chaque agent** : ses livrables et ce qu'on lui a appris (1).
+8. ✅ **Le rapport de transparence du mois** : dépense, réponses corrigées, actions confirmées (124).
 
-Et une seule chose débloque d'un coup onze lignes ⏸ (27 à 46, 108, 132, 145,
-198) : le jeton GitHub **en écriture** pour le studio de code.
+Ce qui reste ne dépend plus que de toi. Une seule chose débloque d'un coup
+seize lignes ⏸ (27 à 29, 31 à 35, 37, 44 à 46, 108, 132, 145, 198) : le jeton
+GitHub **en écriture** pour le studio de code. Les quatre autres : une clé
+Anthropic pour le moteur de secours (130), les comptes LinkedIn (157), le prix
+des formules pour le parrainage (158), le projet Google pour les agendas (171).
 
 
 ## Intelligence artificielle et comportement des agents (1 à 25)
