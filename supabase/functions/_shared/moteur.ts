@@ -116,8 +116,11 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
     headers: { 'Content-Type': 'application/json', ...(cle ? { Authorization: `Bearer ${cle}` } : {}) },
     body: JSON.stringify({
       model,
-      temperature: o.temperature ?? 0.6,
-      max_tokens: o.maxSortie ?? 8192,
+      // Kimi K2.6 n'accepte que 1 (erreur 400 sinon, vu au banc du 24/09).
+      temperature: /^kimi/.test(model) ? 1 : (o.temperature ?? 0.6),
+      // Ces modèles comptent leur réflexion dans la sortie : sans cette
+      // marge, un tableau un peu long était coupé en plein JSON (banc du 24/09).
+      max_tokens: (o.maxSortie ?? 8192) + (o.reflexion ?? 4096),
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT):\n${JSON.stringify(schema)}` },
@@ -136,8 +139,12 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
     ajouterCout(((cache * prix[0] + entree * prix[1] + (u.completion_tokens ?? 0) * prix[2]) / 1_000_000) * 0.92);
   }
   const txt = String(body?.choices?.[0]?.message?.content ?? '').trim();
+  if (body?.choices?.[0]?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
   if (!txt) throw new Error('réponse vide');
-  return txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  const net = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  // Un mot avant ou après l'objet : on garde l'objet.
+  const a = net.indexOf('{'), b = net.lastIndexOf('}');
+  return a > 0 || (b >= 0 && b < net.length - 1) ? net.slice(a, b + 1) : net;
 }
 
 async function viaAnthropic(model: string, texte: string, schema: unknown, o: Options): Promise<string> {

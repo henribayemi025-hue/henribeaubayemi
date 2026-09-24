@@ -31,7 +31,7 @@ Deno.serve(compter('legion_banc', async (req: Request) => {
   for (const m of liste) {
     const avant = coutEnCours(); const t0 = Date.now();
     // Un seul moteur, sans relève : on veut mesurer celui-là.
-    const r = await generer(Deno.env.get('GEMINI_API_KEY') || '', consigne, SCHEMA, { temperature: 0.7, maxSortie: 4096, reflexion: 1024, delaiMs: 60_000, modeles: [m], sansSecours: true });
+    const r = await generer(Deno.env.get('GEMINI_API_KEY') || '', consigne, SCHEMA, { temperature: 0.7, maxSortie: 8192, reflexion: 2048, delaiMs: 60_000, modeles: [m], sansSecours: true });
     resultats.push({ moteur: m, ms: Date.now() - t0, cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...('erreur' in r ? { erreur: r.erreur } : { texte: r.obj.texte }) });
   }
   return json({ ok: true, resultats });
