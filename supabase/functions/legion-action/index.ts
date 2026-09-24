@@ -69,6 +69,37 @@ async function deciderCompetence(service: Service, entrepriseId: string, compete
   return error ? { statut: 'echec', resultat: error.message } : { statut: 'faite', resultat: `${qui} se sert maintenant de « ${c.nom} ».` };
 }
 
+// « activer_savoir » (0202, la Finia commune, Beau 24/09) : un savoir que la
+// boucle de la semaine (finia-apprentissage) a tiré de ce que les gens ont
+// demandé à Finia. Il sert à TOUTES les Finia (place de marché, demain
+// Accounting) : seul un membre de l'entreprise Finjaro de Léo peut le
+// confirmer, jamais celui d'une autre entreprise. « Écarter » le laisse
+// éteint, marqué « ecarte », avec la raison (rien n'est supprimé).
+const PLATEFORME = '44bb201b-6787-4de0-8f7f-f9145d5c03e7'; // l'entreprise Finjaro dans Léo
+async function deciderSavoir(service: Service, entrepriseId: string, savoirId: string, decision: 'confirmer' | 'refuser', userId: string, raison?: string): Promise<{ statut: string; resultat: string }> {
+  if (entrepriseId !== PLATEFORME) return { statut: 'echec', resultat: 'Seule l’équipe Finjaro valide le savoir de Finia.' };
+  if (!savoirId) return { statut: 'echec', resultat: 'Savoir non précisé.' };
+  const { data: s } = await service.from('ia_savoirs_communs').select('id, titre, etat, actif, remplace').eq('id', savoirId).maybeSingle();
+  if (!s) return { statut: 'echec', resultat: 'Savoir introuvable.' };
+  const maintenant = new Date().toISOString();
+  if (decision === 'refuser') {
+    if (s.actif) return { statut: 'echec', resultat: `« ${s.titre} » est déjà actif.` };
+    if (s.etat === 'ecarte') return { statut: 'refusee', resultat: `« ${s.titre} » était déjà écarté.` };
+    const pourquoi = String(raison || '').trim().slice(0, 400);
+    const { error } = await service.from('ia_savoirs_communs').update({ etat: 'ecarte', raison: pourquoi || 'Écarté par l’équipe.', valide_par: userId, valide_le: maintenant }).eq('id', s.id).eq('actif', false);
+    return error ? { statut: 'echec', resultat: error.message } : { statut: 'refusee', resultat: `Écarté${pourquoi ? ` : ${pourquoi}` : ''}. Finia ne s’en servira pas.` };
+  }
+  if (s.actif) return { statut: 'faite', resultat: `« ${s.titre} » est déjà actif.` };
+  if (s.etat !== 'propose') return { statut: 'echec', resultat: `« ${s.titre} » a été ${s.etat === 'ecarte' ? 'écarté' : 'retiré'}.` };
+  const { error } = await service.from('ia_savoirs_communs').update({ actif: true, etat: 'actif', valide_par: userId, valide_le: maintenant, raison: null }).eq('id', s.id).eq('etat', 'propose');
+  if (error) return { statut: 'echec', resultat: error.message };
+  // Une correction d'un savoir déjà actif : l'ancien est retiré (pas supprimé).
+  if (s.remplace) {
+    await service.from('ia_savoirs_communs').update({ actif: false, etat: 'retire', raison: `Remplacé par « ${s.titre} ».` }).eq('id', s.remplace).neq('id', s.id);
+  }
+  return { statut: 'faite', resultat: `Finia sait maintenant « ${s.titre} » (dans 5 minutes au plus)${s.remplace ? ', à la place de l’ancien savoir' : ''}.` };
+}
+
 Deno.serve(async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
@@ -118,13 +149,18 @@ Deno.serve(async (req: Request) => {
       meta: { ...(msg.meta as Record<string, unknown>), action: { ...action, statut, resultat, par: user.id, le: new Date().toISOString() } },
       // Une compétence à valider est une question posée au fondateur : une
       // fois tranchée, elle ne compte plus parmi ce qui l'attend.
-      ...(action.type === 'activer_competence' && statut !== 'echec' ? { repondu_le: new Date().toISOString() } : {}),
+      ...((action.type === 'activer_competence' || action.type === 'activer_savoir') && statut !== 'echec' ? { repondu_le: new Date().toISOString() } : {}),
     }).eq('id', msg.id);
     return json({ statut, resultat });
   };
 
   if (action.type === 'activer_competence') {
     const r = await deciderCompetence(service, msg.entreprise_id, String(action.competence_id || ''), corps.decision!, user.id, corps.raison);
+    return marquer(r.statut, r.resultat);
+  }
+
+  if (action.type === 'activer_savoir') {
+    const r = await deciderSavoir(service, msg.entreprise_id, String(action.savoir_id || ''), corps.decision!, user.id, corps.raison);
     return marquer(r.statut, r.resultat);
   }
 

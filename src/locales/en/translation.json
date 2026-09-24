@@ -731,6 +731,7 @@
       "retiree": "Removed from the agent’s profile.",
       "libelleAction": "Switch on the skill « {{nom}} » for {{agent}}"
     },
+    "savoirFinia": "Teach Finia: « {{titre}} »",
     "exporter": "Export",
     "exporterAide": "Their profile and skills in a file, to recreate them in another Léo company.",
     "importer": {
@@ -1635,6 +1636,22 @@
     "photoTooLarge": "This photo is too heavy. Pick another one or crop it.",
     "notPremium": "Virtual try-on is reserved for Finia Premium shops.",
     "sizeNote": "The preview shows the style on you — not how a specific size will fit. Double-check the size (M, XL…) on the product page before ordering."
+  },
+  "finiaCommune": {
+    "titre": "Finia",
+    "reglage": "Help Finia improve",
+    "aide": "When Finia can't answer, or when you correct her, the exchange can help improve her — without your name or contact details, kept 12 months at most. Untick to opt out: anything already kept from you is then deleted.",
+    "compteTest": "This account is never used to improve Finia (test or team account).",
+    "enSavoirPlus": "Learn more",
+    "efface": "Done. What had been kept from your exchanges is deleted.",
+    "phrase": "When I can't answer, or if you correct me, the exchange helps me improve — anonymised, without your name or contact details.",
+    "refuserIci": "You can opt out here.",
+    "question": "May I learn from our exchanges, anonymised (without your name or contact details)? You can change your mind in settings.",
+    "oui": "Yes",
+    "nonMerci": "No thanks",
+    "merci": "Thanks for your feedback.",
+    "utile": "Helpful answer",
+    "pasUtile": "Not helpful"
   },
   "finouWizard": {
     "title": "List an item",

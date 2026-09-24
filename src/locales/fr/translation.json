@@ -731,6 +731,7 @@
       "retiree": "Retirée depuis la fiche de l’agent.",
       "libelleAction": "Activer la compétence « {{nom}} » pour {{agent}}"
     },
+    "savoirFinia": "Apprendre à Finia : « {{titre}} »",
     "exporter": "Exporter",
     "exporterAide": "Sa fiche et ses compétences dans un fichier, pour le recréer dans une autre entreprise Léo.",
     "importer": {
@@ -1635,6 +1636,22 @@
     "photoTooLarge": "Cette photo est trop lourde. Prends-en une autre ou recadre-la.",
     "notPremium": "L'essayage virtuel est réservé aux boutiques Finia Premium.",
     "sizeNote": "L'aperçu montre le style sur toi — pas l'ajustement d'une taille précise. Vérifie bien la taille (M, XL…) sur la fiche avant de commander."
+  },
+  "finiaCommune": {
+    "titre": "Finia",
+    "reglage": "Aider Finia à s'améliorer",
+    "aide": "Quand Finia ne sait pas répondre, ou quand tu la corriges, l'échange peut servir à l'améliorer — sans ton nom ni tes coordonnées, gardé 12 mois au plus. Décoche pour refuser : ce qui a déjà été gardé de toi est alors effacé.",
+    "compteTest": "Ce compte n'est jamais utilisé pour améliorer Finia (compte de test ou de l'équipe).",
+    "enSavoirPlus": "En savoir plus",
+    "efface": "C'est noté. Ce qui avait été gardé de tes échanges est effacé.",
+    "phrase": "Quand je ne sais pas répondre, ou si tu me corriges, l'échange m'aide à m'améliorer — anonymisé, sans ton nom ni tes coordonnées.",
+    "refuserIci": "Tu peux refuser ici.",
+    "question": "M'autorises-tu à apprendre de nos échanges, anonymisés (sans ton nom ni tes coordonnées) ? Tu pourras changer d'avis dans les réglages.",
+    "oui": "Oui",
+    "nonMerci": "Non merci",
+    "merci": "Merci pour ton avis.",
+    "utile": "Réponse utile",
+    "pasUtile": "Réponse pas utile"
   },
   "finouWizard": {
     "title": "Déposer un article",

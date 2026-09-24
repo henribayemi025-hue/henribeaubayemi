@@ -25,6 +25,8 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { relaisConversation, transcrire } from '../_shared/relais.ts';
+import { blocSavoirs, savoirsPour } from '../_shared/savoirs.ts';
+import { estCorrection, estSansReponse } from '../_shared/apprentissage.ts';
 
 // 2.5-flash en tête: c'est le seul des deux à répondre de façon fiable en ce
 // moment (3.5-flash renvoie régulièrement 503 "high demand"), et il gère
@@ -329,8 +331,10 @@ Silencieux pour la personne — ne dis jamais que tu mémorises quoi que ce soit
 // « doivent être entraînés comme on avait entraîné Finia »). Gemini et le
 // relais reçoivent exactement ce texte-là — personnalité, règles, monnaie,
 // interdits, destinations, applications — jamais une copie qui dériverait.
-function consigneFinia(memoire?: string | null): string {
-  return systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() + applicationsPromptSection();
+// Et, depuis la Finia commune (0202, 24/09), les quelques savoirs validés
+// par l'équipe qui touchent la question : même bloc pour Gemini et le relais.
+function consigneFinia(memoire?: string | null, savoirs = ''): string {
+  return systemPrompt(memoire) + systemPromptTools() + destinationsPromptSection() + applicationsPromptSection() + savoirs;
 }
 
 function systemPromptTools(): string {
@@ -1762,7 +1766,18 @@ Deno.serve(async (req: Request) => {
     }
     const tourUtilisateur: Json = { role: 'user', parts: userParts };
     contents.push(tourUtilisateur);
-    const consigne = consigneFinia(memoire);
+    // Le savoir commun (0202) : les savoirs validés les plus proches de la
+    // question (et de la précédente, pour « et pour la livraison ? »).
+    // Best-effort : sans eux, Finia répond comme avant.
+    const langueAppareil0 = (req.headers.get('accept-language') || '').split(',')[0].trim();
+    const derniereQuestion = Array.isArray(history) ? [...history].reverse().find((h) => h?.role === 'user' && typeof h.text === 'string')?.text || '' : '';
+    let savoirs = '';
+    try {
+      savoirs = blocSavoirs(await savoirsPour(sb, 'marketplace', `${typeof message === 'string' ? message : ''} ${derniereQuestion}`, langueAppareil0));
+    } catch (e) {
+      console.error('finou-chat: savoirs', (e as Error).message);
+    }
+    const consigne = consigneFinia(memoire, savoirs);
 
     // `noThinking` n'est vrai qu'en REPLI: si un modèle refusait le champ
     // thinkingConfig, on rejouerait l'appel sans lui plutôt que de laisser
@@ -1831,6 +1846,12 @@ Deno.serve(async (req: Request) => {
     // Google n'a pas répondu (plafond de dépenses, 5xx, délai dépassé…) :
     // le relais prend la même conversation (voir plus bas).
     let googleEnPanne = false;
+    // Finia a transmis une question à l'équipe faute de réponse
+    // (contacter_finjaro, gravité « question ») : c'est un savoir qui manque.
+    let transmiseSansReponse = false;
+    const noterOutil = (nom: string, args: Json) => {
+      if (nom === 'contacter_finjaro' && String(args?.gravite ?? '') === 'question') transmiseSansReponse = true;
+    };
 
     outer:
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -1867,6 +1888,7 @@ Deno.serve(async (req: Request) => {
       const responseParts: Array<Json> = [];
       for (const p of fnCalls) {
         const fc = (p.functionCall ?? p.function_call) as { name: string; args?: Json };
+        noterOutil(fc.name, fc.args ?? {});
         const result = await runTool(fc.name, fc.args ?? {}, userClient, user?.id ?? null, cartActions, vitrine, metiersDisponibles, context ?? null);
         responseParts.push({ functionResponse: { name: fc.name, response: result } });
       }
@@ -1916,7 +1938,7 @@ Deno.serve(async (req: Request) => {
         systeme: consigne,
         contents: contents.map((c) => (c === tourUtilisateur ? tourRelais : c)),
         declarations: toolDeclarations() as Array<{ name: string; description?: string; parameters?: unknown }>,
-        executer: (nom, args) => runTool(nom, args, userClient, user?.id ?? null, cartActions, vitrine, metiersDisponibles, context ?? null),
+        executer: (nom, args) => (noterOutil(nom, args as Json), runTool(nom, args, userClient, user?.id ?? null, cartActions, vitrine, metiersDisponibles, context ?? null)),
         maxTours: MAX_TOOL_ROUNDS,
       });
       if ('texte' in relais) {
@@ -1927,6 +1949,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    let repliTechnique = false;
     let reply =
       ((data?.candidates as Array<Json> | undefined)?.[0]?.content?.parts as Array<Json> | undefined)
         ?.map((p) => (p.text as string) ?? '')
@@ -1949,6 +1972,7 @@ Deno.serve(async (req: Request) => {
         })
       );
       reply = "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+      repliTechnique = true;
     }
 
     let category: string | null = null;
@@ -2017,6 +2041,35 @@ Deno.serve(async (req: Request) => {
       dejaVus.add(id);
       products.push(p);
       if (products.length === 10) break;
+    }
+
+    // LA FINIA COMMUNE (0202, Beau 24/09 : « que Finia apprenne des
+    // conversations des gens », « les utilisateurs choisissent »). Deux
+    // moments seulement valent la peine d'être gardés : Finia n'a pas su
+    // répondre, ou la personne la corrige. Rien pour un invité, rien pour un
+    // vocal (on n'en a pas le texte), rien pour une panne technique. C'est
+    // la base (ia_apprendre, avec le jeton de la personne) qui décide si la
+    // personne l'a permis, qui écarte les comptes de test et qui nettoie le
+    // texte : ici on ne fait que signaler. Après la réponse, sans l'attendre.
+    if (user && typeof message === 'string' && message.trim() && !repliTechnique) {
+      const passe = Array.isArray(history) ? history.filter((h) => typeof h?.text === 'string') : [];
+      const precFinia = [...passe].reverse().find((h) => h.role === 'assistant')?.text || '';
+      const precQuestion = [...passe].reverse().find((h) => h.role === 'user')?.text || '';
+      let appris: Json | null = null;
+      if (estCorrection(message) && precFinia) {
+        appris = { p_genre: 'correction', p_question: precQuestion || null, p_reponse: precFinia, p_correction: message };
+      } else if (transmiseSansReponse || estSansReponse(reply)) {
+        appris = { p_genre: 'sans_reponse', p_question: message, p_reponse: reply, p_correction: null };
+      }
+      if (appris) {
+        const garder = userClient.rpc('ia_apprendre', {
+          p_app: 'marketplace', ...appris, p_langue: langueAppareil0 || null,
+          p_ecran: context && typeof context === 'object' ? String((context as Json).screen ?? '') : null,
+        }).then(({ error }) => { if (error) console.error('finou-chat: apprentissage', error.message); }, () => {});
+        // EdgeRuntime est déclaré par edge-runtime.d.ts (importé en tête).
+        const rt = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime;
+        if (rt?.waitUntil) rt.waitUntil(garder);
+      }
     }
 
     return json({ reply, category, action, metiers, cartActions: [...mergedCart.values()], products });

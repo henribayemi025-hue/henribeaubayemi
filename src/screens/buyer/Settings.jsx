@@ -80,6 +80,35 @@ export default function Settings() {
       });
   }, [user]);
 
+  // « Aider Finia à s'améliorer » (Finia commune, 0202). Beau, 24/09 22 h 15 :
+  // allumé par défaut, mais dit clairement et réglable d'un geste. L'état
+  // vient de la base (ia_consentement_etat) : c'est elle qui décide, pour
+  // toutes les applications Finjaro. Tant que la migration n'est pas
+  // appliquée, la fonction n'existe pas et la ligne ne s'affiche pas.
+  const [finia, setFinia] = useState(null); // { permis, accord_explicite, compte_reel } | null
+  const [finiaBusy, setFiniaBusy] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc('ia_consentement_etat').then(({ data, error }) => {
+      if (!error && data?.connecte) setFinia(data);
+    });
+  }, [user]);
+
+  async function toggleFinia(next) {
+    if (!user || !finia) return;
+    setFiniaBusy(true);
+    const previous = finia;
+    setFinia({ ...finia, permis: next });
+    const { data: efface, error } = await supabase.rpc('ia_consentement_regler', { p_oui: next, p_app: 'marketplace' });
+    setFiniaBusy(false);
+    if (error) {
+      setFinia(previous);
+      toast.error(networkMessage(error, t));
+    } else {
+      toast.success(!next && efface > 0 ? t('finiaCommune.efface') : t('common.saved'));
+    }
+  }
+
   async function toggleEmail(next) {
     if (!user) return;
     setEmailBusy(true);
@@ -157,6 +186,33 @@ export default function Settings() {
                   <IconMail size={16} /> {t('notifications.email')}
                 </span>
                 <span className="mt-0.5 block text-caption text-muted">{t('notifications.emailHelp')}</span>
+              </span>
+            </label>
+          </section>
+        )}
+
+        {/* Un seul toucher pour refuser, et le refus efface aussi ce qui avait
+            été gardé (ia_consentement_regler). Les comptes de test et de
+            l'équipe ne sont jamais utilisés : on le dit plutôt que de montrer
+            un réglage sans effet. */}
+        {user && finia && (
+          <section id="finia">
+            <h2 className="mb-2 flex items-center gap-2 text-section text-ink"><IconSparkles size={20} /> {t('finiaCommune.titre')}</h2>
+            <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
+              <input
+                type="checkbox"
+                checked={!!finia.permis}
+                disabled={finiaBusy || !finia.compte_reel}
+                onChange={(e) => toggleFinia(e.target.checked)}
+                className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+              />
+              <span className="flex-1">
+                <span className="block text-body text-ink">{t('finiaCommune.reglage')}</span>
+                <span className="mt-0.5 block text-caption text-muted">
+                  {finia.compte_reel ? t('finiaCommune.aide') : t('finiaCommune.compteTest')}
+                  {' '}
+                  <Link to="/legal/confidentialite#ia" className="underline">{t('finiaCommune.enSavoirPlus')}</Link>
+                </span>
               </span>
             </label>
           </section>

@@ -34,6 +34,15 @@ const OUTILS = [{
     { name: 'commandes', description: 'Les commandes sur une période: nombre, montant total, répartition par statut.',
       parameters: { type: 'OBJECT', properties: { jours: JOURS, statut: { type: 'STRING', description: 'Filtrer sur un statut (ex. new, delivered, cancelled).' } } } },
     { name: 'pays', description: 'Les comptes et les boutiques, pays par pays.' },
+    // La Finia commune (0202, 24/09) : ce que les gens demandent à Finia et
+    // qu'elle n'a pas su, ou sur quoi ils l'ont corrigée — anonyme (un
+    // nombre et des exemples nettoyés), de personnes qui ne l'ont pas
+    // refusé, comptes de test exclus. Pour Écho (le support), Traque, Plume
+    // (le contenu) et Lien : c'est la voix des clientes, sans leur nom.
+    // Source « mesures » : seule l'équipe Finjaro l'a, et les droits par
+    // agent (peut_lire) s'appliquent comme pour les autres chiffres.
+    { name: 'questions_finia', description: "Les questions fréquentes posées à Finia (l'assistante de la place de marché) cette semaine, anonymes : combien d'échanges gardés, combien de personnes distinctes, par type (question restée sans réponse, correction de la personne, pouce vers le bas), par langue, et des exemples déjà nettoyés (aucun nom, téléphone, e-mail ni adresse). Utile pour le support, la FAQ, le contenu et les relances.",
+      parameters: { type: 'OBJECT', properties: { jours: { type: 'INTEGER', description: 'Période en jours, de 1 à 7 (7 par défaut).' } } } },
   ],
 }];
 const MAX_APPELS = 4;
@@ -123,6 +132,8 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
       appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
     } else if (OUTILS_PERSONNES.has(nom)) {
       appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });
+    } else if (nom === 'questions_finia') {
+      appel = service.rpc('ia_questions_frequentes', { p_jours: Number(args.jours) || 7, p_app: null });
     } else {
       appel = service.rpc('legion_outil', { p_nom: nom, p_params: args });
     }

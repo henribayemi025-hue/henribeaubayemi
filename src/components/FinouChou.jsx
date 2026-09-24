@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone, IconVolume, IconVolumeOff, IconTrash } from '@tabler/icons-react';
+import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone, IconVolume, IconVolumeOff, IconTrash, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl} from '../lib/supabase';
 import { fileToDataUrl } from '../lib/image';
 import { useToast } from '../hooks/useToast';
@@ -165,6 +165,62 @@ export function FinouChou() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finouOpen]);
 
+  // LA FINIA COMMUNE (0202). Beau, 24/09 22 h 15 : « Aider Finia à
+  // s'améliorer » est allumé par défaut, à condition de le DIRE, clairement,
+  // la première fois qu'on parle à Finia, avec le chemin pour refuser. La
+  // base ne garde rien tant que cette phrase n'a pas été montrée
+  // (ia_consentement_informer). Dans un pays où l'on demande d'abord
+  // l'accord (ia_pays_accord_explicite, vide aujourd'hui), la phrase devient
+  // une question Oui / Non. Invités et comptes de test : rien à dire, rien
+  // n'est gardé.
+  const [accord, setAccord] = useState(null);
+  const informeRef = useRef(false);
+  // Un autre compte (déconnexion, reconnexion) : on relit son accord à lui.
+  useEffect(() => {
+    setAccord(null);
+    informeRef.current = false;
+  }, [user?.id]);
+  useEffect(() => {
+    if (!finouOpen || !user || accord) return;
+    supabase.rpc('ia_consentement_etat').then(({ data, error }) => {
+      if (!error && data?.connecte) setAccord(data);
+    });
+  }, [finouOpen, user, accord]);
+  // Au premier échange seulement (l'accueil, sa question, la réponse) : la
+  // phrase est dite une fois, elle ne suit pas toute la conversation.
+  const montrerPhrase = !!(accord?.compte_reel && !accord.informe && !accord.accord_explicite && messages.length <= 3);
+  const poserQuestion = !!(accord?.compte_reel && accord.accord_explicite && accord.choix == null);
+  useEffect(() => {
+    if (!montrerPhrase || informeRef.current) return;
+    informeRef.current = true;
+    supabase.rpc('ia_consentement_informer', { p_app: 'marketplace' }).then(() => {}, () => {});
+  }, [montrerPhrase]);
+  async function repondreAccord(oui) {
+    setAccord((a) => ({ ...a, choix: oui, informe: true, permis: oui }));
+    const { error: errAccord } = await supabase.rpc('ia_consentement_regler', { p_oui: oui, p_app: 'marketplace' });
+    if (errAccord) toast.error(t('finou.unavailable'));
+  }
+  function ouvrirReglage() {
+    closeFinou();
+    navigate('/profile/settings#finia');
+  }
+
+  // 👍 / 👎 sous les réponses de Finia. Le pouce vers le bas envoie la
+  // question et la réponse à la base, qui ne les garde que si la personne
+  // ne l'a pas refusé (et les nettoie). Le pouce levé ne part nulle part :
+  // il dit merci, c'est tout.
+  async function donnerAvis(index, avis) {
+    const m = messages[index];
+    if (!m || m.avis) return;
+    setMessages((all) => all.map((x, i) => (i === index ? { ...x, avis } : x)));
+    if (avis !== 'bas' || !user) return;
+    const question = [...messages.slice(0, index)].reverse().find((x) => x.role === 'user' && x.text)?.text || '';
+    await supabase.rpc('ia_apprendre', {
+      p_app: 'marketplace', p_genre: 'pouce_bas', p_question: question || null, p_reponse: m.text,
+      p_correction: null, p_langue: i18n.language || null, p_ecran: location.pathname,
+    }).then(() => {}, () => {});
+  }
+
   // Ouverture AVEC une question déjà posée (visite guidée après inscription):
   // on l'envoie une seule fois, une fois le message d'accueil en place, pour
   // que la conversation démarre toute seule.
@@ -229,7 +285,7 @@ export function FinouChou() {
       });
       if (fnErr || !data?.reply) throw fnErr || new Error('no reply');
       const mid = Date.now();
-      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action, metiers: data.metiers }]);
+      setMessages((m) => [...m, { id: mid, role: 'assistant', text: data.reply, category: data.category, action: data.action, metiers: data.metiers, finia: true }]);
       speak(data.reply);
       // Le panier vit côté client (localStorage) — Finou ne peut donc pas
       // l'écrire elle-même côté serveur. cartActions contient les lignes déjà
@@ -379,6 +435,26 @@ export function FinouChou() {
                 </div>
               </div>
 
+              {/* Discret : deux petits pouces sous les VRAIES réponses de Finia
+                  (pas l'accueil ni les messages de l'écran), pour une
+                  personne connectée. */}
+              {m.finia && user && (
+                <div className="mt-1 flex items-center gap-1 pl-1 text-muted">
+                  {m.avis ? (
+                    <span className="text-[11px]">{t('finiaCommune.merci')}</span>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => donnerAvis(i, 'haut')} aria-label={t('finiaCommune.utile')} className="rounded-full p-1 hover:text-brass">
+                        <IconThumbUp size={14} />
+                      </button>
+                      <button type="button" onClick={() => donnerAvis(i, 'bas')} aria-label={t('finiaCommune.pasUtile')} className="rounded-full p-1 hover:text-teal">
+                        <IconThumbDown size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Visual-search results: a tappable product carousel. */}
               {m.products?.length > 0 && (
                 <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
@@ -423,6 +499,21 @@ export function FinouChou() {
               )}
             </div>
           ))}
+          {montrerPhrase && (
+            <p className="rounded-card border border-brass/40 bg-[#F4EFE6] px-3 py-2 text-caption text-muted">
+              {t('finiaCommune.phrase')}{' '}
+              <button type="button" onClick={ouvrirReglage} className="font-semibold text-teal underline">{t('finiaCommune.refuserIci')}</button>
+            </p>
+          )}
+          {poserQuestion && (
+            <div className="rounded-card border border-brass/40 bg-[#F4EFE6] px-3 py-2">
+              <p className="text-caption text-muted">{t('finiaCommune.question')}</p>
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={() => repondreAccord(true)} className="chip text-ink">{t('finiaCommune.oui')}</button>
+                <button type="button" onClick={() => repondreAccord(false)} className="chip text-ink">{t('finiaCommune.nonMerci')}</button>
+              </div>
+            </div>
+          )}
           {messages.length === 1 && !sending && (
             <div className="flex flex-wrap gap-2">
               {/* EN PREMIER, pour tout le monde: la porte d'entrée de ceux qui

@@ -35,12 +35,15 @@
 // Les paragraphes commençant par "• " sont rendus comme des puces.
 
 export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
-export const PRIVACY_VERSION = '1.0';
+// 1.1 (24/09/2026) : la Finia commune (apprentissage anonyme, réglable) et
+// les modèles de relais (DeepSeek, Moonshot AI…). À RELIRE PAR BEAU avant la
+// mise en ligne.
+export const PRIVACY_VERSION = '1.1';
 
 const fr = {
   title: 'Politique de confidentialité',
   updatedLabel: 'Dernière mise à jour',
-  updatedAt: '7 août 2026',
+  updatedAt: '24 septembre 2026',
   versionLabel: 'Version',
   preamble: [
     'La présente politique explique quelles données personnelles Finjaro collecte lorsque vous utilisez la plateforme (site finjaro.net et applications mobiles), pourquoi elle les collecte, avec qui elle les partage, combien de temps elle les conserve et quels sont vos droits.',
@@ -94,10 +97,15 @@ const fr = {
       title: '4. Assistante Finia, Miroir IA et fonctions d’intelligence artificielle',
       body: [
         'Finjaro propose plusieurs fonctions d’intelligence artificielle : l’assistante de discussion Finia, le Miroir IA (essayage virtuel), l’aide à la publication pour les vendeuses, la lecture automatique d’une pièce d’identité et l’estimation d’articles.',
-        'Ces fonctions s’appuient sur le service Google Gemini. Lorsque vous les utilisez, le contenu que vous fournissez à ce moment-là — votre message, la photo que vous envoyez, ou les informations de l’article concerné — est transmis à Google pour produire la réponse.',
+        'Ces fonctions s’appuient d’abord sur le service Google Gemini. Lorsque vous les utilisez, le contenu que vous fournissez à ce moment-là — votre message, la photo que vous envoyez, ou les informations de l’article concerné — est transmis à Google pour produire la réponse.',
+        'Quand Google ne répond pas, d’autres modèles d’intelligence artificielle prennent le relais pour que Finia puisse quand même vous répondre : DeepSeek (serveurs situés en Chine), Moonshot AI (Kimi) et, selon notre configuration, Anthropic (Claude) ou OpenAI. Ils reçoivent alors le même contenu que Google aurait reçu. La lecture d’une pièce d’identité et le Miroir IA ne passent jamais par ce relais.',
         'Ces fonctions ne se déclenchent JAMAIS toutes seules : rien n’est envoyé tant que vous n’ouvrez pas l’assistante, n’envoyez pas un message ou ne lancez pas un essayage.',
         'Vos photos personnelles envoyées au Miroir IA servent uniquement à produire l’image demandée et à vous l’afficher. Elles ne sont pas publiées, ni utilisées pour identifier une personne, ni vendues.',
-        'Nous n’utilisons pas vos conversations privées ni vos photos pour entraîner nos propres modèles d’intelligence artificielle.',
+        'Nous n’utilisons pas vos conversations privées avec les boutiques ni vos photos pour entraîner des modèles d’intelligence artificielle.',
+        'Aider Finia à s’améliorer. Quand Finia ne sait pas répondre, quand vous la corrigez (« non, ce n’est pas ça ») ou quand vous touchez le pouce vers le bas sous une réponse, cet échange peut servir à améliorer Finia dans toutes les applications Finjaro. Seuls ces échanges-là sont gardés, pas le reste de vos conversations.',
+        'Ils sont gardés sous une forme anonymisée : avant d’être rangés, les adresses e-mail, numéros de téléphone, adresses, noms de personnes et numéros de commande sont remplacés par des marques comme « [téléphone] ». Ils ne sont pas rangés avec votre compte : à côté du texte nettoyé, nous gardons seulement la langue, l’écran de l’application, la date, et une empreinte codée (calculée à sens unique) qui change chaque semaine. Cette empreinte ne contient ni votre nom ni votre identifiant ; elle sert uniquement à compter le nombre de personnes distinctes, et à retrouver vos échanges pour les effacer si vous retirez votre accord. Ils sont effacés au bout de 12 mois au plus.',
+        'Qui les lit : les modèles d’intelligence artificielle qui font tourner Finia (Google Gemini, et en relais DeepSeek, Moonshot AI et, selon notre configuration, Anthropic ou OpenAI), une fois par semaine, pour proposer des améliorations ; nos agents internes (des assistants d’intelligence artificielle de l’équipe Finjaro), qui en lisent un résumé anonyme pour améliorer l’aide et les réponses aux questions fréquentes ; et l’équipe Finjaro. Aucune amélioration n’est utilisée par Finia avant d’avoir été relue et validée par une personne de l’équipe. Ces échanges ne sont ni vendus ni publiés.',
+        'Ce réglage est activé par défaut pour les comptes. Finia vous le dit la première fois que vous lui parlez, et rien n’est gardé avant. Vous pouvez le désactiver à tout moment dans « Réglages », « Aider Finia à s’améliorer » : ce qui avait déjà été gardé de vos échanges est alors effacé. Vous pouvez aussi demander l’effacement en écrivant à ' + CONTACT_EMAIL + '. Les personnes qui utilisent Finia sans compte, et les comptes de test, ne sont jamais concernés.',
       ],
     },
     {
@@ -130,6 +138,7 @@ const fr = {
         '• Supabase — hébergement de la base de données, des comptes et des fichiers. Les données sont hébergées dans l’Union européenne (région de Paris, France).',
         '• Cloudflare — diffusion du site et des applications, protection contre les attaques.',
         '• Google (Gemini) — fonctions d’intelligence artificielle décrites à l’article 4.',
+        '• DeepSeek, Moonshot AI (Kimi) et, selon notre configuration, Anthropic ou OpenAI — relais de l’assistante Finia quand Google ne répond pas, et amélioration de Finia (article 4).',
         '• Google (Sign-In) — connexion avec un compte Google, si vous choisissez cette option.',
         '• Resend — envoi des e-mails de notification.',
         'Certains de ces prestataires sont établis hors de l’Union européenne, ou peuvent traiter des données depuis un pays tiers. Ces transferts sont encadrés par les garanties prévues par la réglementation applicable, notamment les clauses contractuelles types de la Commission européenne.',
@@ -145,6 +154,7 @@ const fr = {
         '• Messages et avis : tant que votre compte existe. Les avis peuvent rester affichés de façon anonymisée après la suppression du compte, car ils informent les autres acheteuses.',
         '• Pièce d’identité : voir l’article 5.',
         '• Journaux techniques et de sécurité : au maximum douze mois.',
+        '• Échanges anonymisés gardés pour améliorer Finia : au maximum douze mois (voir l’article 4).',
         '• Identifiants de notification : jusqu’à ce que vous désactiviez les notifications ou changiez d’appareil.',
       ],
     },
@@ -214,7 +224,7 @@ const fr = {
 const en = {
   title: 'Privacy Policy',
   updatedLabel: 'Last updated',
-  updatedAt: '7 August 2026',
+  updatedAt: '24 September 2026',
   versionLabel: 'Version',
   preamble: [
     'This policy explains what personal data Finjaro collects when you use the platform (finjaro.net and its mobile apps), why we collect it, who we share it with, how long we keep it, and what your rights are.',
@@ -268,10 +278,15 @@ const en = {
       title: '4. Finia assistant, AI Mirror and artificial intelligence features',
       body: [
         'Finjaro offers several AI features: the Finia chat assistant, the AI Mirror (virtual try-on), publishing assistance for sellers, automatic reading of an identity document, and item valuation.',
-        'These features rely on the Google Gemini service. When you use them, the content you provide at that moment — your message, the photo you send, or the relevant item details — is transmitted to Google in order to produce the response.',
+        'These features rely first on the Google Gemini service. When you use them, the content you provide at that moment — your message, the photo you send, or the relevant item details — is transmitted to Google in order to produce the response.',
+        'When Google does not respond, other artificial intelligence models take over so that Finia can still answer you: DeepSeek (servers located in China), Moonshot AI (Kimi) and, depending on our configuration, Anthropic (Claude) or OpenAI. They then receive the same content Google would have received. Identity document reading and the AI Mirror never go through this relay.',
         'These features NEVER run on their own: nothing is sent unless you open the assistant, send a message, or start a try-on.',
         'Personal photos sent to the AI Mirror are used solely to produce the requested image and show it to you. They are not published, not used to identify anyone, and not sold.',
-        'We do not use your private conversations or your photos to train our own AI models.',
+        'We do not use your private conversations with shops or your photos to train artificial intelligence models.',
+        'Helping Finia improve. When Finia cannot answer, when you correct her (“no, that’s not it”) or when you tap the thumbs-down under an answer, that exchange may be used to improve Finia across all Finjaro apps. Only those exchanges are kept, not the rest of your conversations.',
+        'They are kept in anonymised form: before being stored, email addresses, phone numbers, postal addresses, people’s names and order numbers are replaced with markers such as “[phone]”. They are not stored with your account: alongside the cleaned text, we only keep the language, the app screen, the date, and a one-way coded fingerprint that changes every week. This fingerprint contains neither your name nor your identifier; it is used only to count how many different people are involved, and to find your exchanges in order to delete them if you withdraw your agreement. They are deleted after 12 months at most.',
+        'Who reads them: the artificial intelligence models that run Finia (Google Gemini, and as a relay DeepSeek, Moonshot AI and, depending on our configuration, Anthropic or OpenAI), once a week, to suggest improvements; our internal agents (artificial intelligence assistants of the Finjaro team), which read an anonymous summary to improve help and answers to frequent questions; and the Finjaro team. No improvement is used by Finia until a person on the team has reviewed and approved it. These exchanges are neither sold nor published.',
+        'This setting is on by default for accounts. Finia tells you the first time you talk to her, and nothing is kept before that. You can turn it off at any time in “Settings”, “Help Finia improve”: whatever was already kept from your exchanges is then deleted. You can also request deletion by writing to ' + CONTACT_EMAIL + '. People who use Finia without an account, and test accounts, are never included.',
       ],
     },
     {
@@ -304,6 +319,7 @@ const en = {
         '• Supabase — hosting of the database, accounts and files. Data is hosted in the European Union (Paris region, France).',
         '• Cloudflare — delivery of the site and apps, protection against attacks.',
         '• Google (Gemini) — the AI features described in section 4.',
+        '• DeepSeek, Moonshot AI (Kimi) and, depending on our configuration, Anthropic or OpenAI — relay for the Finia assistant when Google does not respond, and improving Finia (section 4).',
         '• Google (Sign-In) — signing in with a Google account, if you choose that option.',
         '• Resend — sending notification emails.',
         'Some of these providers are established outside the European Union, or may process data from a third country. Such transfers are covered by the safeguards required under applicable law, in particular the European Commission’s standard contractual clauses.',
@@ -319,6 +335,7 @@ const en = {
         '• Messages and reviews: for as long as your account exists. Reviews may remain visible in anonymised form after account deletion, as they inform other buyers.',
         '• Identity document: see section 5.',
         '• Technical and security logs: twelve months at most.',
+        '• Anonymised exchanges kept to improve Finia: twelve months at most (see section 4).',
         '• Notification identifiers: until you turn notifications off or change device.',
       ],
     },

@@ -561,11 +561,15 @@ function ActionProposee({ message, t }) {
   const [etat, setEtat] = useState(message.meta.action);
   const [occupe, setOccupe] = useState(false);
   const [raison, setRaison] = useState(null); // null = champ fermé
-  const apprise = etat.type === 'activer_competence';
+  // Un savoir pour Finia (0202, la Finia commune) se tranche comme une
+  // compétence apprise : « Confirmer », ou « Écarter » avec une raison.
+  const apprise = etat.type === 'activer_competence' || etat.type === 'activer_savoir';
   // Le résultat qui arrive plus tard (la photo fabriquée en fond) : suivre le message.
   const statutServeur = message.meta.action?.statut;
   useEffect(() => { if (statutServeur && statutServeur !== 'a_confirmer') setEtat(message.meta.action); }, [statutServeur]); // eslint-disable-line react-hooks/exhaustive-deps
-  const libelle = apprise
+  const libelle = etat.type === 'activer_savoir'
+    ? t('legion.savoirFinia', { titre: etat.valeur })
+    : apprise
     ? t('legion.appris.libelleAction', { nom: etat.valeur, agent: etat.agent })
     : (LIBELLES_ACTION[etat.type] || (() => etat.type))(etat);
   async function decider(decision) {
