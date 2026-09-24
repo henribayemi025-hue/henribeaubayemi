@@ -1,10 +1,11 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch } from '@tabler/icons-react';
 import { appel, ErreurAtelier } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
+import Palette from './Palette';
 
 // L'ATELIER DE CODE de Léo — V0 (Beau, 24/09 : « oui atelier »).
 //
@@ -92,6 +93,16 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   // commandes et leur sortie — même quand on arrive après la fin.
   const [rejeu, setRejeu] = useState(null); // { liste, i, vite }
   const vue = useMemo(() => (rejeu && vueBrute ? { ...vueBrute, affichage: rejeu.liste.slice(0, rejeu.i), demande: null } : vueBrute), [rejeu, vueBrute]);
+  // La palette Ctrl+K (d'Ada, 25/09) : fichiers et actions, au clavier.
+  const [paletteOuverte, setPaletteOuverte] = useState(false);
+  useEffect(() => {
+    const clavier = (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOuverte((x) => !x); }
+    };
+    // En capture : avant le Ctrl+K de Léo (sa recherche), qui écoute depuis plus longtemps.
+    window.addEventListener('keydown', clavier, true);
+    return () => window.removeEventListener('keydown', clavier, true);
+  }, []);
   const [fichier, setFichier] = useState(null); // { chemin, contenu, brouillon }
   const [onglet, setOnglet] = useState('conversation');
   const [panneau, setPanneau] = useState(null);
@@ -236,7 +247,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     setActivite({ verbe: geste.outil === 'lire_fichier' ? 'lit' : 'ecrit', chemin: geste.resume });
     if (rejeu && geste.outil === 'ecrire_fichier' && typeof geste.contenu === 'string') {
       const c = geste.contenu;
-      setOnglet('code');
+      setOnglet('editeur');
       if (fichier?.chemin !== geste.resume) setFichier({ chemin: geste.resume, contenu: '', brouillon: '' });
       setTimeout(() => setFichier({ chemin: geste.resume, contenu: c, brouillon: c }), 150);
       return;
@@ -280,7 +291,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     if (debut < 0) debut = 0;
     vuJusqua.current = debut > 0 ? liste[debut - 1].id : '';
     setFichier(null);
-    setOnglet('code');
+    setOnglet('editeur');
     setRejeu({ liste, i: debut, vite: false });
   };
   // Le fichier s'ouvre d'abord tel qu'il est, puis l'agent y tape sa proposition.
@@ -616,6 +627,22 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
     </div>
   );
 
+  // (La palette Ctrl+K : état et raccourci déclarés plus haut, avec les autres hooks.)
+  const occupeCarte = travaille || statut === 'attente';
+  const entreesPalette = [
+    ...(vue?.fichiers || []).map((f) => ({ type: 'fichier', label: f.chemin, faire: () => { setOnglet('editeur'); ouvrir(f.chemin, true); } })),
+    { type: 'action', label: t('legion.atelier.revoir', { nom: nomCodeur }), faire: revoir, off: occupeCarte || !(vueBrute?.affichage || []).length },
+    { type: 'action', label: t('legion.atelier.presenteMoi'), faire: presenter, off: occupeCarte },
+    { type: 'action', label: t('legion.atelier.apercu'), faire: () => setOnglet('apercu') },
+    { type: 'action', label: t('legion.atelier.nouveauTerminal'), faire: () => { const id = `t${Date.now()}`; setBasOuvert(true); setTerminaux((ts) => [...ts, { id, ids: [] }]); setPanneauBas(id); } },
+    ...['demander', 'accepter', 'auto', 'reflechir'].map((m) => ({ type: 'action', label: `${t('legion.atelier.paletteMode')} ${t(`legion.atelier.mode_${m}`)}`, faire: () => changerMode(m), off: occupeCarte })),
+    { type: 'action', label: t('legion.atelier.modifications'), faire: () => setPanneau('modifications') },
+    { type: 'action', label: t('legion.atelier.journal'), faire: () => setPanneau('journal') },
+    { type: 'action', label: t('legion.atelier.exporter'), faire: exporter, off: travaille },
+    { type: 'action', label: t('legion.atelier.nouvelleSession'), faire: nouvelleSession, off: occupeCarte },
+    { type: 'action', label: t('legion.atelier.stop'), faire: stop, off: !travaille && statut !== 'attente' },
+  ];
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-legion-bg text-legion-ink">
       {/* La barre : projet, mode, modèle, coût, Stop */}
@@ -669,6 +696,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
               ? [IconPlayerStopFilled, t('legion.atelier.rejeuArreter'), () => setRejeu(null), false]
               : [IconPlayerPlayFilled, t('legion.atelier.revoir', { nom: nomCodeur }), revoir, travaille || statut === 'attente' || !(vueBrute?.affichage || []).length],
             rejeu ? [IconPlayerTrackNextFilled, t(rejeu.vite ? 'legion.atelier.rejeuNormal' : 'legion.atelier.rejeuVite'), () => setRejeu((r) => (r ? { ...r, vite: !r.vite } : r)), false] : null,
+            [IconSearch, `${t('legion.atelier.palette')} (Ctrl+K)`, () => setPaletteOuverte(true), false],
             [IconPresentation, t('legion.atelier.presenteMoi'), presenter, travaille || statut === 'attente'],
             [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), false],
             [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), false],
@@ -722,6 +750,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
         ))}
       </nav>
 
+      {paletteOuverte && vue && <Palette entrees={entreesPalette} onChoisir={(r) => r.faire()} onFermer={() => setPaletteOuverte(false)} t={t} />}
       {panneau === 'nouveau' && <NouveauProjet onCreer={creer} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'modifications' && pid && <Modifications pid={pid} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'journal' && pid && <Journal pid={pid} regles={vue?.regles} langue={langue} onRetirer={retirerRegle} onFermer={() => setPanneau(null)} t={t} />}

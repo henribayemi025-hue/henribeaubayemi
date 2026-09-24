@@ -1068,7 +1068,13 @@
       "revoir": "Replay {{nom}}'s session",
       "rejeuArreter": "Stop replay",
       "rejeuVite": "Faster",
-      "rejeuNormal": "Normal speed"
+      "rejeuNormal": "Normal speed",
+      "palette": "Command palette",
+      "paletteAide": "Type a file or an action… (\">\" for actions only)",
+      "paletteFichier": "file",
+      "paletteAction": "action",
+      "paletteRien": "Nothing matches.",
+      "paletteMode": "Mode:"
     },
     "droits": {
       "titre": "Permissions",

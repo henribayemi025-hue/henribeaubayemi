@@ -1068,7 +1068,13 @@
       "revoir": "Revoir la séance de {{nom}}",
       "rejeuArreter": "Arrêter le rejeu",
       "rejeuVite": "Plus vite",
-      "rejeuNormal": "Vitesse normale"
+      "rejeuNormal": "Vitesse normale",
+      "palette": "Palette de commandes",
+      "paletteAide": "Tape un fichier ou une action… (« > » pour les actions seules)",
+      "paletteFichier": "fichier",
+      "paletteAction": "action",
+      "paletteRien": "Rien ne correspond.",
+      "paletteMode": "Mode :"
     },
     "droits": {
       "titre": "Ses droits",

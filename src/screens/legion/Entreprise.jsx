@@ -653,6 +653,9 @@ export default function Entreprise() {
   // pendant qu'on écrit, sauf Échap.
   useEffect(() => {
     function touche(e) {
+      // Une touche déjà prise par l'atelier (sa palette Ctrl+K, Échap dans la
+      // palette) ne déclenche pas en plus la recherche de Léo (25/09).
+      if (e.defaultPrevented) return;
       const cible = e.target;
       const ecrit = cible && (cible.tagName === 'INPUT' || cible.tagName === 'TEXTAREA' || cible.isContentEditable);
       // Échap dans l'éditeur de l'atelier ferme ses suggestions, pas l'atelier.
