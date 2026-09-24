@@ -279,14 +279,18 @@ const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul
 // Un tableau: Flash d'abord, deux moteurs au plus, et un délai qui tient
 // dans les 150 secondes d'une fonction (23/09: avec Pro d'abord et 80 s par
 // moteur, la première demande de tableau a été coupée à 150 s, sans réponse).
-async function demander(apiKey: string, texte: string, complexe = true, tableur = false): Promise<Rendu> {
+async function demander(apiKey: string, texte: string, complexe = true, tableur = false, appel = false): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
   // Tableau: les trois moteurs simples (Flash, Flash, puis Pro en dernier
   // recours: le 23/09 au soir, les deux Flash répondaient « 503, forte
   // demande »). 45 s chacun au plus: une saturation répond en une seconde.
   const liste = tableur ? moteursSimples().slice(0, 3) : complexe ? moteurs() : moteursSimples();
   for (const nom of liste) {
-    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom] });
+    // Au téléphone, on répond vite et court : peu de réflexion, 20 s au plus
+    // par moteur (Beau, 24/09 : « il a répondu après près d'une minute »).
+    const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, appel
+      ? { temperature: 0.7, reflexion: 256, delaiMs: 20_000, maxSortie: 2048, modeles: [nom] }
+      : { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom] });
     if ('erreur' in r) { derniere = r.erreur; continue; }
     if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
     derniere = `${nom}: texte vide`;
@@ -361,7 +365,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // photo décrite, un fichier lu — avant, l'agent recevait « 🎤 » et ne
   // voyait pas la photo. Rangé dans la pièce: jamais refait deux fois.
   {
-    const lu = await comprendrePieces(apiKey, msg.meta);
+    const lu = await comprendrePieces(apiKey, msg.meta, { vite: !!(msg.meta as { appel?: boolean } | null)?.appel });
     if (lu.pieces) {
       const meta = { ...(msg.meta || {}), pieces: lu.pieces };
       await service.from('legion_messages').update({ meta }).eq('id', msg.id);
@@ -618,7 +622,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // avec un agent de la Direction.
   const enDirection = nomSalon === 'direction'
     || (prive && machines.some((a) => salon.prive_entre.includes(a.cle) && (sansAccent(a.departement || '') === 'direction')));
-  const verifie = (mesures || boutique || compta) ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta) : [];
+  // Au téléphone, pas d'enquête dans la base avant de répondre (trop long).
+  const verifie = !appelVocal && (mesures || boutique || compta) ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta) : [];
   // Les chiffres mesurés partent avec la consigne quand la question le
   // demande: une vérification a eu lieu, ou c'est une question de fond
   // (plan, stratégie, bilan, priorités). Beau, 22/09: la « stratégie »
@@ -692,7 +697,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);
     const sesDocs = peut(cible, 'documents') ? passages : [];
     const sesSouvenirs = String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage, 3, () => String(msg.texte || '')) : [];
-    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur);
+    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).

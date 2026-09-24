@@ -70,7 +70,9 @@ export async function texteDeFichier(apiKey: string, octets: Uint8Array, nom: st
 
 // Rend les pièces complétées (ou null si rien n'a changé) et un texte à
 // joindre au message pour les agents.
-export async function comprendrePieces(apiKey: string, meta: Record<string, unknown> | null): Promise<{ pieces: Piece[] | null; texte: string }> {
+// vite (appel vocal, 24/09 : Beau attendait près d'une minute) : OpenAI
+// transcrit d'abord (quelques secondes), Google seulement s'il échoue.
+export async function comprendrePieces(apiKey: string, meta: Record<string, unknown> | null, opts: { vite?: boolean } = {}): Promise<{ pieces: Piece[] | null; texte: string }> {
   const pieces = Array.isArray((meta as { pieces?: unknown } | null)?.pieces) ? ((meta as { pieces: Piece[] }).pieces).map((p) => ({ ...p })) : [];
   if (!pieces.length) return { pieces: null, texte: '' };
   let change = false;
@@ -83,12 +85,17 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
           const octets = new Uint8Array(await r.arrayBuffer());
           if (octets.length <= 15 * 1024 * 1024) {
             const mime = mimeDe(p.url, r, 'audio');
-            let t = await lireAvec(apiKey, "Transcris fidèlement ce message vocal, dans la langue parlée. Rends seulement le texte dit, sans commentaire. S'il n'y a rien d'audible, rends « (inaudible) ».", mime, enBase64(octets));
+            let t: string | null = null;
+            if (opts.vite) {
+              const o = await transcrire({ mime, donnees: octets }, { fn: null });
+              if ('texte' in o) t = o.texte;
+            }
+            if (!t) t = await lireAvec(apiKey, "Transcris fidèlement ce message vocal, dans la langue parlée. Rends seulement le texte dit, sans commentaire. S'il n'y a rien d'audible, rends « (inaudible) ».", mime, enBase64(octets));
             // Google en échec (plafond de dépenses du 24/09…) : OpenAI
             // transcrit à sa place (Beau : « si Gemini ne donne pas les
             // messages vocaux, OpenAI peut »). Le coût va au compteur de la
             // requête (compter() de cout.ts), comme celui de Gemini.
-            if (!t) {
+            if (!t && !opts.vite) {
               const o = await transcrire({ mime, donnees: octets }, { fn: null });
               if ('texte' in o) t = o.texte;
               else console.error('audio (relais):', o.erreur);
