@@ -841,7 +841,8 @@
       "wikiParHumain": "edited by hand",
       "wikiParDirecteur": "by the director",
       "wikiCorriger": "Edit this page",
-      "wikiAide": "“What we decided” is written by the director from decisions and minutes; “Who does what” and “How we work” come from the database. Agents reread “What we decided” before replying."
+      "wikiAide": "“What we decided” is written by the director from decisions and minutes; “Who does what” and “How we work” come from the database. Agents reread “What we decided” before replying.",
+      "immeuble": "The building"
     },
     "clavier": {
       "titre": "Keyboard shortcuts",
@@ -1082,7 +1083,49 @@
       "lectureAide": "Reads and suggests. Changes nothing.",
       "modifier": "Can edit",
       "modifierAide": "Can write code and run commands in the code workshop, within the mode you choose."
-    }
+    },
+    "immeuble": {
+      "accueil": "Your company right now: {{n}} at work. Click someone to see them.",
+      "institut": "The Institute",
+      "institutAide": "training and skills",
+      "institutVide": "Nobody in training right now.",
+      "accueilLieu": "Reception",
+      "accueilVide": "No arrivals in the last two days.",
+      "salle": "Meeting room",
+      "salleVide": "No meeting in progress.",
+      "atelier": "Code workshop",
+      "atelierVide": "Nobody is coding right now.",
+      "nouveau": "new",
+      "direct": "Live",
+      "filVide": "Nothing yet today.",
+      "regle": "Nothing is made up: an agent moves because it is really working (message, task taken, meeting, training, workshop).",
+      "etat": {
+        "veille": "asleep",
+        "atelier": "coding in the workshop",
+        "reunion": "in a meeting",
+        "institut": "in training",
+        "ecrit": "writing",
+        "travaille": "working",
+        "dispo": "available",
+        "tache": "has a task"
+      },
+      "parti": {
+        "reunion": "in a meeting ↓",
+        "atelier": "at the workshop ↓",
+        "institut": "at the Institute ↑"
+      },
+      "fil": {
+        "prend": "takes their task",
+        "rend": "delivered",
+        "bloque": "is blocked on",
+        "confie": "gives a task to {{nom}}",
+        "reunion": "in a meeting",
+        "compte_rendu": "meeting summary",
+        "decision": "decision",
+        "dit": "says"
+      }
+    },
+    "rouvrirTaches": "Reopen the task board"
   },
   "equipe": {
     "titre": "The team",

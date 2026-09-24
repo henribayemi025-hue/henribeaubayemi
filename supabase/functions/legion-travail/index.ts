@@ -70,7 +70,7 @@ function contrat(a: Agent): string {
   return `${m?.objectif ? `Ta mission: ${m.objectif}${m.prend?.length ? ` — tu prends: ${m.prend.join(' ; ')}` : ''}${m.relais_humain ? `. Tu passes la main à un humain quand: ${m.relais_humain}` : ''}.\n` : ''}${a.fin_mission ? `Tu es en intérim jusqu'au ${a.fin_mission}.\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat): ${a.jamais}\n` : ''}`;
 }
 type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string };
-  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string } | null; created_at: string };
+  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string; travaille_depuis?: string } | null; created_at: string };
 type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
 
@@ -595,6 +595,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const fil = filDe([canal.id, ...(direction && direction.id !== canal.id ? [direction.id] : [])]);
       const plans = plansDe(a.departement || '').slice(0, 2).map((x: { horizon: string; contenu: string }) => `(${x.horizon})\n${String(x.contenu).slice(0, 1500)}`);
       const enDirection = sansAccent(a.departement || '') === 'direction';
+      // L'immeuble et le fil « En direct » (Beau, 25/09 : « je veux voir
+      // comment ils travaillent, comment ça défile ») : on note le moment où
+      // l'agent PREND sa tâche, avant de la faire.
+      tache.meta = { ...(tache.meta || {}), travaille_depuis: new Date().toISOString() };
+      await service.from('legion_messages').update({ meta: tache.meta }).eq('id', tache.id);
       const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique) || (peut(a, 'comptabilite') && !!compta);
       const verifie = peutEnqueter && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null) : [];
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.

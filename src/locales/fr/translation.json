@@ -841,7 +841,8 @@
       "wikiParHumain": "corrigé à la main",
       "wikiParDirecteur": "par le directeur",
       "wikiCorriger": "Corriger cette page",
-      "wikiAide": "« Ce qu'on a décidé » est écrit par le directeur à partir des décisions et comptes rendus ; « Qui fait quoi » et « Nos façons de faire » sont tirés de la base. Les agents relisent « Ce qu'on a décidé » avant de répondre."
+      "wikiAide": "« Ce qu'on a décidé » est écrit par le directeur à partir des décisions et comptes rendus ; « Qui fait quoi » et « Nos façons de faire » sont tirés de la base. Les agents relisent « Ce qu'on a décidé » avant de répondre.",
+      "immeuble": "L'immeuble"
     },
     "clavier": {
       "titre": "Raccourcis clavier",
@@ -1082,7 +1083,49 @@
       "lectureAide": "Il lit et propose. Il ne modifie rien.",
       "modifier": "Peut modifier",
       "modifierAide": "Il peut écrire du code et lancer des commandes dans l'atelier, selon le mode que tu choisis."
-    }
+    },
+    "immeuble": {
+      "accueil": "Votre entreprise en ce moment : {{n}} au travail. Cliquez sur quelqu'un pour le voir.",
+      "institut": "L'Institut",
+      "institutAide": "formation et compétences",
+      "institutVide": "Personne en formation en ce moment.",
+      "accueilLieu": "Accueil",
+      "accueilVide": "Aucune arrivée ces deux derniers jours.",
+      "salle": "Salle de réunion",
+      "salleVide": "Pas de réunion en cours.",
+      "atelier": "Atelier de code",
+      "atelierVide": "Personne ne code en ce moment.",
+      "nouveau": "nouveau",
+      "direct": "En direct",
+      "filVide": "Rien encore aujourd'hui.",
+      "regle": "Rien n'est inventé : un agent bouge parce qu'il travaille vraiment (message, tâche prise, réunion, formation, atelier).",
+      "etat": {
+        "veille": "en veille",
+        "atelier": "code dans l'atelier",
+        "reunion": "en réunion",
+        "institut": "en formation",
+        "ecrit": "écrit",
+        "travaille": "travaille",
+        "dispo": "disponible",
+        "tache": "a une tâche"
+      },
+      "parti": {
+        "reunion": "en réunion ↓",
+        "atelier": "à l'atelier ↓",
+        "institut": "à l'Institut ↑"
+      },
+      "fil": {
+        "prend": "prend sa tâche",
+        "rend": "a rendu",
+        "bloque": "est bloqué sur",
+        "confie": "confie une tâche à {{nom}}",
+        "reunion": "en réunion",
+        "compte_rendu": "compte rendu de réunion",
+        "decision": "décision",
+        "dit": "dit"
+      }
+    },
+    "rouvrirTaches": "Rouvrir le tableau des tâches"
   },
   "equipe": {
     "titre": "L'équipe",

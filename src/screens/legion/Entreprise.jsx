@@ -835,6 +835,17 @@ export default function Entreprise() {
           onStatut={statutTache} onCreer={creerTache} onConvoquer={convoquer} onRenvoyer={renvoyer} onFermer={() => setKanban(false)} t={t}
           className={`${vue === 'taches' ? 'flex' : 'hidden'} ${kanban && vue !== 'accueil' ? 'lg:flex' : 'lg:hidden'}`}
         />
+        {/* Tableau fermé par la croix : un onglet bien visible pour le rouvrir
+            (Beau, 25/09 : « la colonne de droite a disparu, je ne sais plus la
+            renvoyer »). */}
+        {!kanban && vue !== 'accueil' && (
+          <button type="button" onClick={() => setKanban(true)}
+            className="hidden shrink-0 flex-col items-center justify-center gap-2 border-l border-legion-line bg-legion-panel px-1.5 text-[11px] font-semibold text-legion-gold hover:bg-legion-card lg:flex"
+            title={t('legion.rouvrirTaches', 'Rouvrir le tableau des tâches')}>
+            <IconLayoutKanban size={16} />
+            <span style={{ writingMode: 'vertical-rl' }}>‹ {t('legion.tableauTaches')}</span>
+          </button>
+        )}
       </div>
 
       {/* Téléphone: les quatre onglets */}
