@@ -31,7 +31,7 @@
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
 
-import { ajouterCout, gemini, modeleChoisi, moteurChoisi } from './cout.ts';
+import { ajouterCout, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
@@ -232,6 +232,11 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
       if (/spending cap/i.test(derniere)) plafondGoogle = true;
+      // Un solde épuisé chez DeepSeek ou Kimi : Beau est prévenu (une fois par jour).
+      if (/HTTP 402|insufficient balance|exceeded your current quota/i.test(derniere)) {
+        if (nom.startsWith('ds:')) await signalerCoupure('DeepSeek', 'le solde du compte est épuisé', 'https://platform.deepseek.com/top_up');
+        else if (nom.startsWith('km:')) await signalerCoupure('Kimi', 'le solde du compte est épuisé', 'https://platform.moonshot.ai');
+      }
     }
   }
   return { erreur: plafondGoogle && !derniere.includes('spending cap') ? `plafond Google (spending cap) — ${derniere}` : derniere };

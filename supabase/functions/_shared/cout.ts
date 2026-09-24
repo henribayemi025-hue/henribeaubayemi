@@ -39,6 +39,14 @@ function estimer(url: string, corps: { usageMetadata?: Record<string, number> })
 // coût s'ajoute au compteur de la requête en cours.
 export async function gemini(url: string, init: RequestInit): Promise<Response> {
   const r = await fetch(url, init);
+  // Le plafond de dépenses de Google atteint (nuit du 24/09 : tout s'est
+  // arrêté en silence) : Beau est prévenu une fois par jour.
+  if (r.status === 429) {
+    try {
+      const t = await r.clone().text();
+      if (/spending cap/i.test(t)) await signalerCoupure('Google (Gemini)', 'le plafond de dépenses du projet est atteint', 'https://ai.studio/spend');
+    } catch { /* l'alerte ne doit jamais casser l'appel */ }
+  }
   if (r.ok) {
     try {
       const s = suivi.getStore();
@@ -71,6 +79,7 @@ export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: b
   // toutes les fonctions le lisent avant de faire parler un agent.
   const s = suivi.getStore();
   if (s) { s.moteur = e?.moteur || 'auto'; s.modele = e?.modele || null; }
+  if (plafond != null && plafond > 0 && depense >= plafond * 0.8) await signalerSeuil(entrepriseId, depense, plafond);
   return { atteint: plafond != null && depense >= plafond, depense, plafond };
 }
 
@@ -167,4 +176,66 @@ export function pourAgent(modele: string | null | undefined) {
 export function ajouterCout(eur: number) {
   const s = suivi.getStore();
   if (s && Number.isFinite(eur) && eur > 0) s.eur += eur;
+}
+
+// ——— Les alertes (proposition 4 de Beau, 24/09, reprise de Jarvis : « un
+// budget qui ne coupe jamais en silence ») ———
+//
+// 1. Un FOURNISSEUR coupe (plafond de Google, solde DeepSeek ou Kimi épuisé) :
+//    ce sont les clés de Finjaro, donc c'est Beau qu'on prévient — dans le
+//    salon Direction de l'entreprise Finjaro de Léo, une fois par jour et par
+//    fournisseur.
+// 2. Une entreprise atteint 80 % de SON plafond du mois : elle est prévenue
+//    dans son salon Direction, une fois par mois.
+// Le dédoublonnage passe par legion_cache (plusieurs instances tournent).
+const PLATEFORME = '44bb201b-6787-4de0-8f7f-f9145d5c03e7'; // l'entreprise Finjaro dans Léo
+const dejaDit = new Set<string>();
+
+async function uneFois(cle: string, jours: number): Promise<boolean> {
+  if (dejaDit.has(cle)) return false;
+  dejaDit.add(cle);
+  const db = service();
+  const { data } = await db.from('legion_cache').select('cle').eq('cle', cle).maybeSingle();
+  if (data) return false;
+  const { error } = await db.from('legion_cache').insert({ cle, fonction: 'alerte', valeur: {}, expire_le: new Date(Date.now() + jours * 86_400_000).toISOString() });
+  return !error;
+}
+
+async function direDansDirection(entrepriseId: string, texte: string, meta: Record<string, unknown>) {
+  const db = service();
+  const [{ data: salons }, { data: agents }] = await Promise.all([
+    db.from('legion_canaux').select('id, nom, prive_entre').eq('entreprise_id', entrepriseId).order('ordre'),
+    db.from('legion_agents').select('id, nom, est_directeur, actif').eq('entreprise_id', entrepriseId).is('user_id', null).neq('moteur', 'claude-code').order('ordre'),
+  ]);
+  const publics = (salons || []).filter((c: { prive_entre: string[] | null }) => !c.prive_entre?.length);
+  const salon = publics.find((c: { nom: string }) => /direction/i.test(c.nom)) || publics[0];
+  const auteur = (agents || []).find((a: { nom: string; actif: boolean }) => a.actif && /orchestre/i.test(a.nom))
+    || (agents || []).find((a: { est_directeur: boolean; actif: boolean }) => a.est_directeur && a.actif) || (agents || [])[0];
+  if (!salon || !auteur) return;
+  const { error } = await db.from('legion_messages').insert({
+    entreprise_id: entrepriseId, canal_id: salon.id, auteur_id: auteur.id, user_id: null, texte, genre: 'info',
+    meta: { par_ia: true, sans_reponse: true, ...meta },
+  });
+  if (error) console.error('alerte:', error.message);
+}
+
+export async function signalerCoupure(fournisseur: string, raison: string, lien: string) {
+  try {
+    const jour = new Date().toISOString().slice(0, 10);
+    if (!(await uneFois(`alerte:coupure:${fournisseur}:${jour}`, 2))) return;
+    await direDansDirection(PLATEFORME,
+      `⚠️ ${fournisseur} a coupé : ${raison}.\n\nLes agents continuent avec les autres moteurs quand il y en a (DeepSeek d'abord). Ce qui dépend encore de lui peut s'arrêter : chez Google, les photos des agents, la mémoire, la recherche dans les documents et sur Internet.\n\nPour relever : ${lien}`,
+      { alerte: { type: 'coupure', fournisseur } });
+  } catch (e) { console.error('alerte coupure:', (e as Error).message); }
+}
+
+async function signalerSeuil(entrepriseId: string, depense: number, plafond: number) {
+  try {
+    const mois = new Date().toISOString().slice(0, 7);
+    if (!(await uneFois(`alerte:seuil80:${entrepriseId}:${mois}`, 40))) return;
+    const pct = Math.round((depense / plafond) * 100);
+    await direDansDirection(entrepriseId,
+      `La dépense de l'équipe ce mois-ci atteint ${pct} % du plafond (${depense.toFixed(2)} € sur ${plafond} €). Au plafond, les agents s'arrêtent jusqu'au mois suivant. Tu peux le relever dans « Ce que Léo coûte », ou choisir un modèle moins cher.`,
+      { alerte: { type: 'seuil', pct } });
+  } catch (e) { console.error('alerte seuil:', (e as Error).message); }
 }
