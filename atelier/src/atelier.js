@@ -13,7 +13,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { getSandbox } from '@cloudflare/sandbox';
 import { nouvelEtat, nouvelleSession, envoyer, decider, arreter, coutSession, compacter } from './boucle.js';
 import { executant } from './bac.js';
-import { disponibles, MODELES } from './moteur.js';
+import { disponibles, modelesRelais, MODELES } from './moteur.js';
 import { prixMachineParSeconde, arrondi } from './cout.js';
 import { cheminSur, MODES } from './politique.js';
 import { diff } from './diff.js';
@@ -126,7 +126,10 @@ export class Atelier extends DurableObject {
     return { id: s.id, projet_id: pid, mode: e.mode, modele: e.modele, debut: s.debut, fin: s.fin || null, statut: s.statut, cout_modele_usd: arrondi(s.coutModele), cout_machine_usd: arrondi(s.coutMachine), plafond_usd: s.plafond, jetons_entree: s.jetons.entree, jetons_cache: s.jetons.cache, jetons_sortie: s.jetons.sortie, secondes_machine: Math.round(s.secondesMachine) };
   }
 
-  deps(pid, e, trace) {
+  // `acces` : le jeton Supabase de la requête en cours et les modèles que le
+  // relais propose (24/09). Le jeton sert au relais des modèles (moteur.js)
+  // et n'entre jamais dans le bac à sable (executant ne le reçoit pas).
+  deps(pid, e, trace, acces = {}) {
     const ctrl = new AbortController();
     this.controleurs.set(pid, ctrl);
     this.arrets.delete(pid);
@@ -135,6 +138,8 @@ export class Atelier extends DurableObject {
     let bac = null;
     return {
       env,
+      jeton: acces.jeton || null,
+      relais: acces.relais || [],
       fichiers,
       get bac() {
         bac ||= executant({ sandbox: getSandbox(env.Sandbox, `p-${pid}`, { sleepAfter: env.ATELIER_VEILLE || '10m' }), etat: e, fichiers, veilleSecondes: veilleSecondes(env) });
@@ -155,10 +160,10 @@ export class Atelier extends DurableObject {
     };
   }
 
-  async tourner(pid, e, trace, travail) {
+  async tourner(pid, e, trace, travail, acces) {
     // Une seule boucle à la fois par projet.
     if (this.controleurs.has(pid)) throw new Error('L\'agent travaille déjà : attends, ou appuie sur Stop.');
-    const deps = this.deps(pid, e, trace);
+    const deps = this.deps(pid, e, trace, acces);
     // La trace Supabase peut avoir été branchée après la création du projet
     // (migration appliquée plus tard) : on (ré)écrit le projet et la session.
     await trace.projet({ id: pid, entreprise_id: this.env.ATELIER_ENTREPRISE || null, proprietaire: e.proprietaire, nom: e.projet.nom, modele_depart: e.projet.depart, cree_le: e.projet.cree_le });
@@ -181,7 +186,7 @@ export class Atelier extends DurableObject {
       projet: e.projet,
       mode: e.mode,
       modele: e.modele,
-      modeles: disponibles(env, { geminiCoupe: e.geminiCoupeLe === new Date().toISOString().slice(0, 10) }),
+      modeles: disponibles(env, { geminiCoupe: e.geminiCoupeLe === new Date().toISOString().slice(0, 10), relais: this.relaisVus || [] }),
       session: {
         id: s.id, debut: s.debut, statut: s.statut, raison: s.raison, plafond: s.plafond,
         cout_modele: arrondi(s.coutModele), cout_machine: arrondi(s.coutMachine), cout: coutSession(s),
@@ -201,6 +206,10 @@ export class Atelier extends DurableObject {
     const jeton = request.headers.get('x-atelier-jeton');
     if (!user) return erreur('non authentifié', 401);
     const trace = enregistreur(this.env, jeton);
+    // Les modèles du relais Supabase pour ce jeton (gardés 5 min par moteur.js).
+    const relais = await modelesRelais(this.env, jeton);
+    this.relaisVus = relais;
+    const acces = { jeton, relais };
     const p = url.pathname.replace(/^\/api/, '').split('/').filter(Boolean);
     const methode = request.method;
     const corps = ['POST', 'PUT'].includes(methode) ? await request.json().catch(() => ({})) : {};
@@ -262,7 +271,7 @@ export class Atelier extends DurableObject {
 
       if (action === 'message' && methode === 'POST') {
         if (corps.modele && (corps.modele === 'auto' || MODELES.includes(corps.modele))) e.modele = corps.modele;
-        await this.tourner(pid, e, trace, (deps) => envoyer(e, deps, corps.texte));
+        await this.tourner(pid, e, trace, (deps) => envoyer(e, deps, corps.texte), acces);
         return json(this.vue(pid, e, this.env));
       }
 
@@ -271,7 +280,7 @@ export class Atelier extends DurableObject {
         const avant = e.mode;
         e.mode = 'visite';
         try {
-          await this.tourner(pid, e, trace, (deps) => envoyer(e, deps, corps.texte || 'Présente-moi comment ça marche.'));
+          await this.tourner(pid, e, trace, (deps) => envoyer(e, deps, corps.texte || 'Présente-moi comment ça marche.'), acces);
         } finally {
           e.mode = avant;
           await this.sauver(pid, e);
@@ -285,7 +294,7 @@ export class Atelier extends DurableObject {
           const d = demande;
           await decider(e, deps, corps.demande_id, corps.choix);
           if (d) await trace.demande({ id: d.id, session_id: e.session.id, projet_id: pid, outil: d.outil, details: { commande: d.commande || null, chemin: d.chemin || null }, statut: corps.choix === 'refuser' ? 'refusee' : 'autorisee', creee_le: d.creee_le, decidee_le: new Date().toISOString(), decidee_par: user });
-        });
+        }, acces);
         return json(this.vue(pid, e, this.env));
       }
 

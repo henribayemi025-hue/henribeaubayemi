@@ -31,6 +31,12 @@ export const PRIX_MODELES = {
   'oa:gpt-6-astra': [1.00, 10.00, 50.00],
   'oa:gpt-6-sol': [0.20, 2.00, 10.00],
   'oa:gpt-5.4-mini': [0.075, 0.75, 4.50],
+  // Claude Sonnet (par le relais Supabase seulement, 24/09) : les prix déjà
+  // retenus par le moteur commun de Léo (3 $ / 15 $ le million de jetons,
+  // supabase/functions/_shared/moteur.ts) ; la lecture en cache au dixième
+  // de l'entrée, règle publiée d'Anthropic. À relire sur la page des prix
+  // d'Anthropic avant de s'en servir vraiment.
+  'an:claude-sonnet-5': [0.30, 3.00, 15.00],
 };
 
 // Cloudflare Containers, offre payante Workers (dollars par seconde et par unité).

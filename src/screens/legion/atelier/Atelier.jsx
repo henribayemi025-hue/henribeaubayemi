@@ -28,6 +28,7 @@ const NOMS_MODELES = {
   'oa:gpt-6-astra': 'GPT-6 Astra',
   'oa:gpt-6-sol': 'GPT-6 Sol',
   'oa:gpt-5.4-mini': 'GPT-5.4 mini',
+  'an:claude-sonnet-5': 'Claude Sonnet 5',
 };
 
 const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };

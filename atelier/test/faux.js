@@ -51,10 +51,12 @@ export function fauxModele(scenario, { usage = { prompt_tokens: 3000, prompt_cac
   return { fetchFn, requetes };
 }
 
-export function fausseDeps({ fichiers, bac, fetchFn, env = { DEEPSEEK_API_KEY: 'faux' }, journal = [], arret = () => false }) {
+export function fausseDeps({ fichiers, bac, fetchFn, env = { DEEPSEEK_API_KEY: 'faux' }, journal = [], arret = () => false, jeton = null, relais = [] }) {
   let t = Date.parse('2026-09-24T20:00:00Z');
   return {
     env,
+    jeton,
+    relais,
     fichiers,
     bac,
     journal: async (e) => { journal.push(e); },

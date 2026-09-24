@@ -12,14 +12,18 @@
 //    @cloudflare/sandbox 0.12.10), un par projet, SANS AUCUNE CLÉ, réseau
 //    fermé sauf npm, PyPI et GitHub, en lecture seulement.
 //
-// Les clés des modèles (DEEPSEEK_API_KEY, KIMI_API_KEY, GEMINI_API_KEY) sont
-// des secrets de CE Worker : il appelle les modèles lui-même. Le bac à sable
-// ne les reçoit jamais (le SDK ne transmet au conteneur que les variables
-// qu'on lui donne explicitement — ici aucune).
+// Les clés des modèles (DEEPSEEK_API_KEY, KIMI_API_KEY, GEMINI_API_KEY) peuvent
+// être des secrets de CE Worker : il appelle alors les modèles lui-même.
+// Depuis le 24/09 au soir, il n'en a plus besoin : pour tout modèle dont la
+// clé manque ici, il passe par la fonction Supabase `atelier-modele`, qui
+// détient déjà les clés de Léo, avec le jeton Supabase de la personne
+// (moteur.js). Le bac à sable ne reçoit jamais ni clé ni jeton (le SDK ne
+// transmet au conteneur que les variables qu'on lui donne explicitement —
+// ici aucune).
 
 import { Sandbox, ContainerProxy } from '@cloudflare/sandbox';
 import { identifier } from './supabase.js';
-import { disponibles } from './moteur.js';
+import { disponibles, modelesRelais } from './moteur.js';
 import { plafondSession } from './atelier.js';
 import { HOTES_PERMIS, sortiePermise } from './politique.js';
 
@@ -88,7 +92,9 @@ export default {
     if (!qui.autorise) return avec(Response.json({ erreur: 'L\'atelier est réservé pour l\'instant.' }, { status: 403 }), entetes);
 
     if (url.pathname === '/api/moi') {
-      return avec(Response.json({ user: qui.user, modeles: disponibles(env), plafond_session_usd: plafondSession(env), taille: env.ATELIER_TAILLE || 'standard-1' }), entetes);
+      // Les modèles du Worker ET ceux du relais Supabase (clés de Léo).
+      const relais = await modelesRelais(env, jeton);
+      return avec(Response.json({ user: qui.user, modeles: disponibles(env, { relais }), plafond_session_usd: plafondSession(env), taille: env.ATELIER_TAILLE || 'standard-1' }), entetes);
     }
 
     const stub = env.ATELIER.get(env.ATELIER.idFromName(qui.user.id));

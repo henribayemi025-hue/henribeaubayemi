@@ -12,7 +12,7 @@
 // test/boucle.test.js).
 
 import { evaluer, regleDepuis, signatureEchec, cheminSur, outilsPourMode, normaliserCommande } from './politique.js';
-import { appeler, ordre, ErreurMoteur } from './moteur.js';
+import { appeler, ordre, cleDe, ErreurMoteur } from './moteur.js';
 import { coutAppel, estimationMaxAppel, arrondi } from './cout.js';
 import { diff } from './diff.js';
 
@@ -301,8 +301,9 @@ export async function continuer(etat, deps) {
 
     // 2. Le modèle.
     if (etat.pas >= MAX_PAS) { arreter(etat, deps, 'arrete', `Arrêt après ${MAX_PAS} étapes : dis-moi si je continue.`); await deps.sauver(); return etat; }
-    const candidats = ordre(env, etat.modele, { geminiCoupe: etat.geminiCoupeLe === deps.maintenant().toISOString().slice(0, 10) });
-    if (!candidats.length) { arreter(etat, deps, 'erreur', 'Aucun modèle disponible : aucune clé n\'est posée dans le Worker (DEEPSEEK_API_KEY, KIMI_API_KEY ou GEMINI_API_KEY).'); await deps.sauver(); return etat; }
+    // deps.relais : les modèles que le relais Supabase propose (moteur.js).
+    const candidats = ordre(env, etat.modele, { geminiCoupe: etat.geminiCoupeLe === deps.maintenant().toISOString().slice(0, 10), relais: deps.relais || [] });
+    if (!candidats.length) { arreter(etat, deps, 'erreur', 'Aucun modèle disponible : aucune clé dans le Worker, et le relais Supabase n\'en propose aucun. Si ta connexion à Léo a expiré, recharge la page.'); await deps.sauver(); return etat; }
     const messages = [{ role: 'system', content: consigneSysteme(etat) }, ...compacter(etat.conversation)];
     const outils = definitionsOutils(etat.mode);
     const caracteres = tailleConversation(messages) + JSON.stringify(outils).length;
@@ -310,21 +311,30 @@ export async function continuer(etat, deps) {
     let modele = null;
     const erreurs = [];
     let tropCher = false;
+    // Un refus du relais qui vaut pour TOUS ses modèles (jeton expiré, accès
+    // refusé, plafond du jour) : inutile d'essayer les suivants par lui ; ceux
+    // dont le Worker a la clé peuvent encore répondre.
+    let refusRelais = null;
     for (const m of candidats) {
+      if (refusRelais && !cleDe(env, m)) continue;
       if (coutSession(etat.session) + estimationMaxAppel(m, caracteres, MAX_SORTIE) > etat.session.plafond) { tropCher = true; continue; }
       try {
-        rendu = await appeler({ modele: m, messages, outils, env, maxSortie: MAX_SORTIE, signal: deps.signal, fetchFn: deps.fetchFn });
+        rendu = await appeler({ modele: m, messages, outils, env, maxSortie: MAX_SORTIE, signal: deps.signal, fetchFn: deps.fetchFn, jeton: deps.jeton });
         modele = m;
         break;
       } catch (e) {
         if (e instanceof ErreurMoteur && e.code === 'arret') { arreter(etat, deps, 'arrete', 'Arrêté par le bouton Stop.'); await deps.sauver(); return etat; }
         if (e.code === 'plafond_google') etat.geminiCoupeLe = deps.maintenant().toISOString().slice(0, 10);
+        if (['jeton', 'acces', 'plafond_jour'].includes(e.code)) refusRelais = e;
         erreurs.push(e.message);
         await deps.journal({ acteur: 'outil', outil: 'modele', entree_resumee: m, resultat_resume: resumer(e.message, 400), decision: 'erreur', mode: etat.mode, cout_usd: 0 });
       }
     }
     if (!rendu) {
-      if (tropCher && !erreurs.length) arreter(etat, deps, 'plafond', `Plafond de la session atteint (${etat.session.plafond} $) : l'appel suivant pourrait le dépasser. Ouvre une nouvelle session pour continuer.`);
+      // Le message clair d'abord : « reconnecte-toi » ou « plafond du jour »,
+      // pas une liste d'erreurs techniques.
+      if (refusRelais) arreter(etat, deps, refusRelais.code === 'plafond_jour' ? 'plafond' : 'erreur', refusRelais.message);
+      else if (tropCher && !erreurs.length) arreter(etat, deps, 'plafond', `Plafond de la session atteint (${etat.session.plafond} $) : l'appel suivant pourrait le dépasser. Ouvre une nouvelle session pour continuer.`);
       else arreter(etat, deps, 'erreur', `Aucun modèle n'a répondu. ${erreurs.map((x) => resumer(x, 160)).join(' | ')}`);
       await deps.sauver();
       return etat;

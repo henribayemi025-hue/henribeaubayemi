@@ -7,7 +7,10 @@
 // « atelier » et la branche « staging », puis les secrets des modèles.
 // Fait par Beau le 24/09 au soir (renommé depuis « henribeaubayemi »).
 //
-// AUCUNE clé ici. Les secrets se posent dans le tableau de bord
+// AUCUNE clé ici. Depuis le 24/09 au soir, aucune clé n'est même nécessaire :
+// les modèles sans clé dans le Worker passent par la fonction Supabase
+// atelier-modele (moteur.js). Une clé posée ici reste prioritaire (appel
+// direct). Les secrets se posent dans le tableau de bord
 // (Paramètres → Variables et secrets) :
 //   DEEPSEEK_API_KEY   (conseillé : c'est le premier modèle essayé)
 //   KIMI_API_KEY       (facultatif : la relève)

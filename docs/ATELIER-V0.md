@@ -52,7 +52,11 @@ finjaro.net.
    - **Non-production branch builds** : **désactivés** (pour un Worker avec
      conteneur, ces constructions n'envoient pas l'image : inutile et
      trompeur).
-4. **Les clés des modèles**, onglet **Settings** → **Variables and Secrets**
+4. **Les clés des modèles — FACULTATIF depuis le 24/09 au soir.** L'atelier
+   passe par la fonction Supabase `atelier-modele`, qui a déjà les clés de
+   Léo (voir « Le relais des modèles » plus bas). Une clé posée ici reste
+   prioritaire (appel direct, sans passer par Supabase). Pour en poser une
+   quand même : onglet **Settings** → **Variables and Secrets**
    → **Add** → type **Secret** (jamais « Text ») :
    - `DEEPSEEK_API_KEY` : la même clé DeepSeek que Léo (le premier modèle
      essayé ; conseillé) ;
@@ -70,6 +74,35 @@ finjaro.net.
 6. **Supabase** : rien à changer côté connexion (ni Site URL, ni Redirect
    URLs : l'atelier réutilise la session de Léo). Seule la migration
    ci-dessous est à appliquer, quand Beau le décide.
+
+## Le relais des modèles : la fonction Supabase `atelier-modele` (24/09 au soir)
+
+Beau : tous les modèles au choix dans l'atelier, sans recopier chaque clé
+dans Cloudflare. Les clés sont déjà dans les secrets des fonctions Supabase
+(`DEEPSEEK_API_KEY`, `KIMI_API_KEY`, `GEMINI_API_KEY`, la clé OpenAI rangée
+sous « Leo », `ANTHROPIC_API_KEY` si elle existe un jour).
+
+- Pour tout modèle dont la clé n'est pas dans le Worker, le Worker appelle
+  `https://bokwivwizghdlaedczbw.supabase.co/functions/v1/atelier-modele` avec
+  le jeton Supabase de la personne. La fonction vérifie la même règle que le
+  Worker (propriétaire de l'entreprise Finjaro dans Léo), transmet la requête
+  au bon fournisseur et rend sa réponse telle quelle. Aucune clé ne sort de
+  Supabase, aucune n'entre dans le bac à sable.
+- Claude Sonnet 5 n'est proposé que par ce relais, et seulement si
+  `ANTHROPIC_API_KEY` existe (la fonction traduit son format).
+- Limites : 2 Mo par requête, 120 s par appel, 16 384 jetons de sortie au
+  plus, et un **plafond de 10 $ par personne et par jour** (somme de
+  `atelier_couts` depuis minuit UTC), réglable par le secret Supabase
+  `ATELIER_PLAFOND_JOUR_USD`. Le plafond dur de chaque session reste en place.
+- Le jeton d'une session Léo vit une heure : s'il expire pendant un long
+  travail, l'agent s'arrête et dit « recharge la page (ou reconnecte-toi) » ;
+  rien n'est perdu.
+- **À déployer** (quand Beau dit oui) : comme toute fonction edge, elle est
+  **commune à staging et à la production**. Une poussée sur `staging` qui la
+  contient la déploie d'elle-même (`.github/workflows/edge-functions.yml`).
+  Elle n'est appelée que par l'atelier : Finjaro Accounting et le site n'en
+  dépendent pas. Aucune migration, rien dans `ai_usage` (le coût reste
+  compté par l'atelier dans `atelier_couts`).
 
 ## La migration à appliquer (quand Beau dit oui)
 
