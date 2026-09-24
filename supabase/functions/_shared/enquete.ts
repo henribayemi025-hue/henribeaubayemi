@@ -5,6 +5,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { gemini } from './cout.ts';
 import { generer, moteursSimples } from './moteur.ts';
+import { classerFiches, voirFiche } from './fiches.ts';
 
 const MODELE_ENQUETE = 'gemini-2.5-flash';
 const TIMEOUT_MS = 25_000;
@@ -34,6 +35,15 @@ const OUTILS = [{
     { name: 'commandes', description: 'Les commandes sur une période: nombre, montant total, répartition par statut.',
       parameters: { type: 'OBJECT', properties: { jours: JOURS, statut: { type: 'STRING', description: 'Filtrer sur un statut (ex. new, delivered, cancelled).' } } } },
     { name: 'pays', description: 'Les comptes et les boutiques, pays par pays.' },
+    // Chercher soi-même dans le catalogue (Beau, 25/09 : « il doit pouvoir
+    // chercher »). Robots et comptes de test retirés.
+    { name: 'fiches', description: "Classer les fiches articles une par une (avec leur lien finjaro.net) : les plus vues (tri 'vues'), les plus vues SANS aucun ajout au panier ('sans_ajout'), les plus vues SANS prix affiché ('sans_prix'), ou SANS description ('sans_description'). Pour chacune : boutique, prix ou « sur demande », nombre de photos, longueur de la description, stock, vues et ajouts au panier. Robots et comptes de test retirés.",
+      parameters: { type: 'OBJECT', properties: {
+        tri: { type: 'STRING', enum: ['vues', 'sans_ajout', 'sans_prix', 'sans_description'] },
+        jours: { type: 'INTEGER', description: 'Période en jours, de 1 à 30 (7 par défaut).' },
+        n: { type: 'INTEGER', description: 'Combien de fiches, de 1 à 20 (10 par défaut).' } } } },
+    { name: 'voir_fiche', description: "Voir une fiche article comme l'acheteur la voit : prix (ou « sur demande »), photos, description, tailles, couleurs, stock, boutique (lien, pays, ville, note), vues et ajouts au panier sur 30 jours. On donne son lien finjaro.net, son identifiant, ou au moins 3 lettres de son nom.",
+      parameters: { type: 'OBJECT', properties: { fiche: { type: 'STRING', description: 'Le lien, l’identifiant ou une partie du nom.' } }, required: ['fiche'] } },
     // La Finia commune (0202, 24/09) : ce que les gens demandent à Finia et
     // qu'elle n'a pas su, ou sur quoi ils l'ont corrigée — anonyme (un
     // nombre et des exemples nettoyés), de personnes qui ne l'ont pas
@@ -132,6 +142,9 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
       appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
     } else if (OUTILS_PERSONNES.has(nom)) {
       appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });
+    } else if (nom === 'fiches' || nom === 'voir_fiche') {
+      appel = (nom === 'fiches' ? classerFiches(service, args) : voirFiche(service, args))
+        .then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: { message: e.message } }));
     } else if (nom === 'questions_finia') {
       appel = service.rpc('ia_questions_frequentes', { p_jours: Number(args.jours) || 7, p_app: null });
     } else {
@@ -161,7 +174,7 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
       const nom = functionCall!.name;
       const args = functionCall!.args ?? {};
       const resultat = await executer(nom, args);
-      resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
+      resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, nom === 'fiches' || nom === 'voir_fiche' ? 7000 : 3000)}`);
       reponses.push({ functionResponse: { name: nom, response: { resultat } } });
     }
     contents.push({ role: 'user', parts: reponses });
@@ -189,7 +202,7 @@ Réponds par la liste des appels à faire (${MAX_APPELS} au plus), chacun avec l
         let args: Record<string, unknown> = {};
         try { const x = JSON.parse(String(a.parametres || '{}')); if (x && typeof x === 'object' && !Array.isArray(x)) args = x; } catch { /* paramètres illisibles : l'outil prend ses valeurs par défaut */ }
         const resultat = await executer(nom, args);
-        resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, 3000)}`);
+        resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, nom === 'fiches' || nom === 'voir_fiche' ? 7000 : 3000)}`);
       }
     } else console.error('enquête (relais):', r.erreur);
   }
