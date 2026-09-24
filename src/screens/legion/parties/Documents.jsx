@@ -30,8 +30,26 @@ export function Documents({ entreprise, t }) {
   const charger = useCallback(async () => {
     const { data } = await supabase.from('legion_documents').select('id, titre, url, statut, morceaux, erreur, created_at').eq('entreprise_id', entreprise.id).order('created_at', { ascending: false });
     setDocs(data || []);
+    return data || [];
   }, [entreprise.id]);
-  useEffect(() => { charger(); }, [charger]);
+  // Les documents déposés pour l'équipe sans passer par cet écran (le
+  // vestiaire d'entraînement de Beau, 24/09, rangé par Claude) attendent
+  // « à lire » : ils sont lus ici, une fois, avec le compte de la personne.
+  const dejaLances = useRef(new Set());
+  useEffect(() => {
+    let fini = false;
+    (async () => {
+      const liste = await charger();
+      const enAttente = liste.filter((d) => d.statut === 'a_lire' && d.url && !dejaLances.current.has(d.id));
+      for (const d of enAttente) {
+        if (fini) return;
+        dejaLances.current.add(d.id);
+        await supabase.functions.invoke('legion-documents', { body: { action: 'lire', document_id: d.id } });
+      }
+      if (enAttente.length && !fini) await charger();
+    })();
+    return () => { fini = true; };
+  }, [charger]);
 
   // Déposer, enregistrer, puis faire lire (découpe et vecteurs côté serveur).
   async function ajouter(blob, nom, ext) {
