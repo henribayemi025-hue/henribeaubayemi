@@ -46,6 +46,9 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Beau (23 h) : « dans l'atelier, tous les modèles ; ils vont choisir. J'ai ajouté DeepSeek » → l'atelier ne voyait aucune clé (clé sans doute posée dans les variables de **construction**) ; décision : l'atelier passera par les clés déjà dans Supabase (fonction `atelier-modele`), plus rien à recopier dans Cloudflare | en cours |
 | 24/09 | **Vérifié en vrai (23 h)** : l'écoute des vocaux par OpenAI marche avec la clé « Leo » (phrase dite puis transcrite mot pour mot par gpt-4o-mini-transcribe) ; Finia donne « 10,67 € » sans FCFA à une personne en euros | ✅ |
 | 24/09 | Beau (23 h 15) : « c'est ok la politique, pousse sur finjaro.net » → mis en ligne (62942b4 : Finia commune + politique 1.1, relais Kimi/DeepSeek/OpenAI, vocaux OpenAI, prix de Finia dans la monnaie de la personne, Excel modifiés par les agents, atelier (entrée visible seulement pour Beau), GPT dans Léo) ; vérifié : le site sert le nouveau code (« Aider Finia à s'améliorer ») | ✅ 24/09 23 h 20 |
+| 24/09 | **ORDRE de Beau (23 h 30)** sur l'atelier : « tu sais comment les développeurs fonctionnent, ce qu'ils veulent, comment ils travaillent avec Claude. Moi je ne connais pas. Recherche sur Internet, sur GitHub… Fais un truc que les développeurs vont vraiment aimer, où ils seront franchement à l'aise, avec des propositions, même des trucs qui n'existent pas encore ailleurs. » Y compris : **comment le connecter au bureau (desktop) du développeur** | recherche lancée le 24/09 23 h 30, puis construction |
+| 24/09 | Beau (23 h 30) : il va envoyer **un dépôt « du top » qui montre comment faire des trucs à la Salesforce** → à étudier (vestiaire), puis ajouter des choses à **Accounting** et aux **modèles d'entreprise de Léo** | attend le lien de Beau |
+| 24/09 | Beau (23 h 30) : Fish Audio **pas encore testé** (clé posée) | essai des voix à faire |
 
 ### 0.2 À faire du côté de Beau (réglages que lui seul peut faire)
 
