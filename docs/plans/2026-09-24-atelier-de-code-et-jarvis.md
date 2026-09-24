@@ -1,4 +1,4 @@
-# L'atelier de code et Jarvis dans Léo — plan documenté
+# L'atelier de code, Jarvis et l'assistant personnel dans Léo — plan documenté
 
 *Rédigé le 24/09/2026. Rien n'est codé. Ce document sert à décider.*
 
@@ -60,10 +60,10 @@ Sur iPhone, aucune application n'a le droit d'écouter en permanence en
 arrière-plan. Le réveil passe donc par Siri (« Dis Siri, parle à Léo… »), ou
 se fait quand Léo est ouvert.
 
-**Les 5 décisions** sont à la fin (section 3). **Coût de départ estimé** :
+**Les décisions** sont à la fin (section 4). **Coût de départ estimé** :
 environ **5 $ par mois de socle** (l'offre payante de Cloudflare, si elle
 n'est pas déjà prise), plus un **plafond d'essais que Beau fixe** (je propose
-30 $ pour le premier mois). Voir la section 4.
+30 $ pour le premier mois). Voir la section 5.
 
 ---
 
@@ -100,7 +100,7 @@ n'est pas déjà prise), plus un **plafond d'essais que Beau fixe** (je propose
 5. **Les plugins, les compétences et Claude**, branchés sans ouvrir de brèche.
 
 Le plan du 23/09 reste valable comme **alternative économique** (voir
-l'alternative C, section 1.7).
+l'alternative C, section 1.5).
 
 ## 1.2 Comment font les autres (tableau)
 
@@ -120,7 +120,7 @@ l'alternative C, section 1.7).
 | **Aider** (open source) | Sur la machine du développeur | **Un commit git à chaque modification**, et `/undo` pour annuler [A] | Gratuit, on paie seulement le modèle | Aimé : on ne perd jamais son travail [A] | **Chaque action de l'agent = un point de retour.** |
 | **Cline / Roo** (open source) | Dans l'éditeur du développeur | Séparation **Plan / Agir**, approbation action par action, **point de restauration après chaque action**. Conseil officiel : laisser l'auto-approbation désactivée tant qu'on n'a pas de raison [A] | Code Apache-2.0 [V] | Aimé : le contrôle fin [A] | Le mode « Plan » d'abord. Des retours en arrière à grain fin. |
 
-**Ce que disent les utilisateurs, en résumé** (sources en section 5) :
+**Ce que disent les utilisateurs, en résumé** (sources en section 6) :
 - **L'argent et les quotas passent avant la qualité du code.** Une analyse de
   427 commentaires Reddit et de 806 avis a compté 5 et 3 mentions de la
   qualité du code, contre 20 et 59 mentions du coût [A]. Les gens veulent
@@ -791,7 +791,243 @@ restent confiées aux agents par le moteur commun.
 
 ---
 
-# 3. Les 5 décisions que Beau doit prendre
+# PARTIE 3 — Une application d'assistant personnel IA
+
+*Ajout demandé par Beau le 24/09 : « je pense aussi une app AI personal
+assistant ». Il s'agit d'un assistant pour **une personne**, pas pour une
+entreprise : agenda, rappels, e-mails, notes, courses, finances perso,
+recherche, et la voix.*
+
+## 3.1 Même produit que Jarvis, ou deux ? Réponse claire
+
+**Un seul produit technique, deux portes d'entrée.**
+- **Jarvis** (partie 2), c'est **la voix** : la couche qui réveille, écoute,
+  parle et fait agir. Elle sert **partout** dans Léo : dans une entreprise,
+  dans l'atelier de code, et ici.
+- **L'assistant personnel**, c'est **un espace « Moi » dans Léo**. Léo sait
+  déjà donner une équipe d'agents « à une entreprise, une personne ou un
+  projet ». Cet espace a une petite équipe préréglée (Secrétaire, Agenda,
+  Finances, Recherche, Courses), **ses propres connecteurs** (mon agenda, mes
+  rappels, ma boîte mail) et Jarvis comme voix.
+- Au début, c'est **dans l'appli Finjaro / Léo** (V0 et V1). Une icône
+  d'appli séparée (« Léo pour moi ») ne vient qu'en V2, **si** l'usage le
+  justifie. Même compte, même moteur, mêmes garde-fous.
+
+**Pourquoi pas une appli entièrement à part tout de suite** : deux produits,
+c'est deux fois la maintenance. Et l'histoire récente montre que les
+assistants personnels échouent sur la **fiabilité**, pas sur l'interface
+(voir 3.3). Mieux vaut construire le cœur une fois.
+
+## 3.2 Ce qui existe (tableau)
+
+| Produit | Ce qu'il fait | Prix publié | Ce qu'en disent les gens | Leçon |
+|---|---|---|---|---|
+| **ChatGPT** (mémoire + tâches programmées) | Rappels et tâches ponctuelles ou récurrentes, notifications push ou e-mail. Tâches déclenchées par un e-mail Gmail, Slack ou GitHub, avec les formules Plus et au-dessus. « Les actions qui demandent une approbation peuvent mettre la tâche en pause » [V]. Le briefing du matin « Pulse » a été **arrêté** (notes de version du 17/06/2026), absorbé par les tâches [A] | Free 0 $, Go 8 $, Plus 20 $, Pro dès 100 $ [V] | « L'assistant que la plupart des gens paient déjà » [A] | Tâches + mémoire + approbation : c'est le socle attendu. Un briefing « magique » seul ne tient pas. |
+| **Gemini sur Android** | Remplace Google Assistant sur les téléphones à partir de septembre 2026. Lié à Gmail, Agenda, Maps. Un « Daily Brief » tiré de la boîte mail et de l'agenda [A] | Compris dans Android ; offres Google AI payantes à part | Presse inquiète de la publicité ciblée sur l'agenda et la boîte mail [A] | Google occupe le terrain « par défaut » sur Android. Ne pas l'affronter : **se brancher dessus** (agenda) et se distinguer par la confiance. |
+| **Siri / Apple Intelligence** | Siri « personnel » (contexte, écran) promis en juin 2024, **reporté plusieurs fois**, basé sur Gemini, annoncé pour 2026 [A] | Compris dans l'iPhone | « Marchait en démo, se trompait trop dans la vraie vie » [A] | Même Apple bute sur la **fiabilité** des actions personnelles. Commencer étroit. |
+| **Alexa+** | Assistant génératif : courses, réservations, maison. Modèles Amazon Nova et Claude [A] | **Gratuit avec Prime**, sinon **19,99 $/mois** ; aux États-Unis (Inde annoncée) [V] | Inexactitudes, bavardage, lenteurs signalés [A]. Le 28/03/2025, Amazon a **supprimé l'option « ne pas envoyer mes enregistrements »** : tout part dans le nuage [A] | La confiance se perd quand on retire un choix de confidentialité. |
+| **Rabbit R1** | Boîtier à 199 $, sorti le 09/01/2024. Promettait un « modèle d'action » [V] | 199 $ | « Barely reviewable » (MKBHD). C'était en fait une appli Android. **Clés API codées en dur** qui ont fuité (06/2024). Conversations gardées sans pouvoir les effacer (07/2024). Environ **5 000 utilisateurs actifs sur ~100 000 acheteurs** en 09/2024 [V] | Pas de matériel dédié. Pas de clé dans l'appareil. Un vrai bouton « effacer ». |
+| **Humane AI Pin** | Broche à 699 $ (puis 499 $) plus **24 $/mois** [V] | 699 $ + 24 $/mois | Surchauffe, projecteur limité à ~9 min. « Plus de retours que d'achats » entre mai et août 2024. **Arrêt le 28/02/2025** : appareils inutilisables, données effacées. Actifs vendus à HP 116 M$ [V] | Le téléphone **est** l'appareil. Une promesse trop grande tue le produit. Et l'utilisateur doit pouvoir **exporter** ses données. |
+| **Lindy** | Assistant par e-mail, agenda, réunions, téléphone, par crédits [V] | Plus 29,99 $, Pro 99,99 $, Max 199,99 $ par mois ; 3 000, 15 000, 35 000 crédits [V] | Note Trustpilot 2,4/5. « Demande l'accès à tout ». Facture imprévisible [A] | Demander **le minimum d'accès**. Un prix **prévisible**. |
+| **Martin** | Assistant « comme Jarvis » par appli, SMS, appel, e-mail, WhatsApp ; peut écrire et appeler à votre place [A] | Basic 21 $/mois (annuel) ou 35 $ ; Pro 30 $ ou 49 $ [V] | Plutôt bien noté [A] | Le multi-canal (SMS, appel, WhatsApp) plaît. Agir « à votre place » exige Confirmer. |
+| **Motion** | Agenda automatique + tâches + IA [V] | Pro AI 19 $, Business AI 29 $ par personne et par mois ; crédits IA inclus [V] | Hausses de prix critiquées [A] | Le « planning automatique » séduit, puis lasse s'il est rigide. |
+| **Reclaim** | Place les tâches et habitudes dans l'agenda [V] | Gratuit (Lite), Starter 10 $, Business 15 $, Enterprise 22 $ par personne et par mois [V] | Le gratuit est « vraiment utilisable » pour essayer [A] | Un gratuit honnête fait venir. |
+| **Pi (Inflection)** | Compagnon bienveillant, voix, mémoire, rappels [A] | Gratuit [A] | L'équipe est partie chez Microsoft en 2024 ; développement ralenti [A] | Une bonne expérience ne suffit pas sans modèle économique. |
+| **Open source : Leon** (MIT [V]) | Assistant personnel libre depuis 2017, version 2.0 en préparation [A] | Gratuit | Actif [A] | À étudier (outils, mémoire). Réutilisable en citant. |
+| **Open source : Open Interpreter 01** (AGPL-3.0 [V]) | Interface vocale ; **boîtier abandonné**, précommandes remboursées [A] | — | — | AGPL : ne pas copier son code dans Léo (licence contaminante). |
+| **Open source : OpenClaw** | Assistant personnel viral de 2026 [A] | Gratuit | Audit de janvier 2026 : **512 failles, dont 8 critiques**. Un chercheur envoie un e-mail piégé, demande à l'assistant de lire ses mails, et récupère une **clé privée en 5 minutes**. Plus de 40 000 installations exposées [A] | L'e-mail est **la** porte d'entrée des attaques. Lire, oui ; agir sur ce qu'on lit, jamais sans Confirmer. |
+| **Jarvis (sosoj92)** (MIT) | Assistant vocal personnel sur PC (voir la fiche 07 du vestiaire) | Gratuit | — | Niveaux N1/N2/N3, budget, séparation « penser / agir ». |
+
+## 3.3 Ce qui a échoué, et pourquoi (en une ligne chacun)
+
+1. **Le matériel dédié** (Humane, Rabbit, Open Interpreter 01) : les gens ont
+   déjà un téléphone. L'appareil chauffe, dure peu et fait moins bien.
+2. **La promesse plus grande que la fiabilité** (Rabbit, les reports de
+   Siri) : une action personnelle ratée (mauvais rendez-vous, mauvais
+   destinataire) coûte plus cher que dix réussies n'apportent.
+3. **La sécurité négligée** (clés de Rabbit, failles d'OpenClaw) : un
+   assistant personnel voit **tout**. C'est la cible idéale.
+4. **Le prix imprévisible** (Lindy, les crédits) : les gens veulent savoir ce
+   qu'ils paieront.
+5. **La confiance retirée** (Alexa, fin du traitement local ; Humane, données
+   effacées à l'arrêt) : un assistant personnel vit de la confiance.
+
+## 3.4 Comment ça s'appuie sur ce que Léo a déjà
+
+| Besoin | Ce que Léo a déjà | Ce qu'il faut ajouter |
+|---|---|---|
+| Une équipe d'agents | Agents, salons, mémoire propre à chaque agent, compétences | Un **modèle d'espace « Moi »** avec 4 ou 5 agents préréglés et leur ton |
+| Rappels, tâches | Tâches, Kanban, notifications push (`send-push`), « le téléphone sonne » quand un agent a une question | Des **rappels datés** (« jeudi 9 h ») avec une notification à l'heure, et la récurrence |
+| Voix | L'écran Appeler, puis Jarvis (partie 2) | « Hé Léo, rappelle-moi… » : un outil N2 |
+| Notes | Documents indexés, mémoire | Une **note rapide** (voix ou texte), retrouvée par le sens |
+| Courses | — | Une **liste partagée** (foyer), cochable, remplie à la voix |
+| Recherche | Recherche web (`_shared/web.ts`), veille RSS | Rien de neuf : exposer la recherche dans l'espace Moi |
+| Finances perso | Connecteur **Finjaro Accounting** : lecture des totaux **par les fonctions d'Accounting, avec les droits de la personne** (0180) | Un **espace personnel dans Accounting**, si Accounting le permet (à vérifier avec Beau). Sinon un suivi simple dans Léo. **On ne lit pas les tables d'Accounting directement** (règle du CLAUDE.md §8) |
+| Agenda | — | Branchement **Google Agenda / Outlook** (OAuth), ou abonnement iCal en lecture (sans OAuth) au départ |
+| E-mail | — | Voir ci-dessous : c'est le plus coûteux et le plus risqué |
+| Claude / ChatGPT | Serveur MCP `legion-mcp` | Des outils « Moi » (mes rappels, ma liste, mon agenda du jour) |
+| Garde-fous | Confirmer, N1/N2/N3 (fiche Jarvis), budget IA, filtre de confidentialité | Rien de neuf. **Appliquer strictement.** |
+
+**L'e-mail, point dur (vérifié)** : lire une boîte Gmail passe par des
+**portées « restreintes »**. Toute appli qui y accède depuis ses serveurs
+doit passer une **évaluation de sécurité par un laboratoire agréé, tous les
+12 mois** [V]. Seules exceptions : usage personnel, développement et test,
+usage interne à une organisation [V]. Le coût est annoncé entre **500 et
+4 500 $ par an selon le niveau**, parfois plus [A]. **Donc, pas de Gmail
+direct en V0 et V1.** À la place :
+- une **adresse de transfert** (`moi-xxxx@…`) : on transfère un e-mail à Léo,
+  qui le lit, le résume et en tire une tâche ;
+- l'**abonnement iCal** en lecture pour l'agenda ;
+- les **brouillons** de réponse, que l'on copie ou envoie soi-même.
+
+## 3.5 Architecture recommandée
+
+```
+ Appli Finjaro / Léo (téléphone ou web) — espace « Moi »
+   Jarvis (voix, partie 2)   écrans : Aujourd'hui · Rappels · Notes · Courses · Argent · Agenda
+   │
+   ▼
+ Supabase (existant) : tables moi_* (additives) : rappels, notes, listes, sources
+   fonctions : legion-* (agents, moteur commun), send-push (notifications)
+   planificateur (cron existant) : « c'est l'heure de ce rappel » → notification
+   │
+   ├── Agenda : iCal en lecture (V0) → OAuth Google / Microsoft (V1), clés au coffre
+   ├── E-mail : adresse de transfert (V0-V1) → Gmail direct seulement après évaluation de sécurité (V2, si Beau le décide)
+   ├── Finances : connecteur Finjaro Accounting (espace personnel), lecture par ses fonctions
+   └── Recherche : outil web existant
+ Règles : lire = N1 ; créer un rappel, une note, un article de liste = N2 ;
+ envoyer un e-mail, un message, accepter une invitation, payer = N3 (toucher Confirmer)
+ Tout contenu venu d'un e-mail, d'une page ou d'un document = DONNÉE, jamais CONSIGNE
+```
+
+**Alternatives :**
+- **B, tout confier à ChatGPT ou Claude par MCP** : l'utilisateur branche
+  Léo dans son assistant habituel (c'est déjà possible). Coût nul pour nous,
+  mais l'expérience n'est plus la nôtre. À garder comme **pont**, pas comme
+  produit.
+- **C, appli séparée d'emblée** (dépôt, marque, magasin d'applis) : un
+  lancement plus visible, mais une double maintenance et une nouvelle revue
+  Apple et Google. En V2 au plus tôt.
+
+## 3.6 Le parcours
+
+1. **« Crée mon espace Moi »** : trois questions (prénom, langue, ce qui
+   aiderait le plus : agenda, rappels, argent, courses). L'équipe apparaît.
+2. **« Aujourd'hui »** : un écran d'une page. Les rendez-vous du jour (si
+   l'agenda est branché), les rappels, la liste de courses, une phrase sur le
+   budget du mois (si Accounting est branché), et **ce qui attend ma
+   décision**.
+3. **Parler** : « Hé Léo, rappelle-moi d'appeler maman dimanche à 18 h » →
+   carte « Rappel dimanche 18:00 — Créer ? » (N2) → oui → c'est fait.
+4. **Transférer un e-mail** à son adresse Léo → résumé, action proposée
+   (« ajouter le rendez-vous du 12 à l'agenda ? »), brouillon de réponse.
+5. **Les courses** : « ajoute du lait et des œufs » ; liste partagée avec le
+   foyer ; cochée au magasin.
+6. **L'argent** : « combien j'ai dépensé ce mois-ci en transport ? », par
+   Accounting, dans **la devise de l'espace**, jamais convertie de tête.
+7. **Le point du soir** (facultatif) : 30 secondes, à la voix ou en
+   notification. Ce qui est fait, ce qui reste, demain.
+8. **Mes données** : tout voir, tout exporter, **tout effacer** (en vrai, pas
+   en masquant).
+
+## 3.7 Coûts
+
+**Pour nous, par utilisateur actif et par mois.** C'est une **hypothèse**,
+pas une mesure : 30 échanges par jour, environ 5 000 jetons lus et 500 écrits
+par échange, sur DeepSeek flash (heure pleine) [V pour le tarif].
+
+| Poste | Calcul | ≈ par mois |
+|---|---|---|
+| Modèle (texte) | 4,5 M jetons lus × 0,30 $ + 0,45 M écrits × 1,20 $ (sans cache) | **≈ 1,9 $** (moins avec le cache) |
+| Voix (5 min par jour, Gemini Live) | 150 min × ~0,023 $ [V] | **≈ 3,5 $** |
+| Notifications push | Service existant | ≈ 0 $ |
+| Évaluation de sécurité Gmail (si on y va en V2) | Par an, pour toute l'appli [A] | **500 à 4 500 $ par an et plus** |
+
+**Pour situer le prix face aux autres** (prix publics) : ChatGPT Plus 20 $,
+Alexa+ 19,99 $ hors Prime, Martin 21 à 49 $, Lindy dès 29,99 $, Motion 19 $,
+Reclaim gratuit puis 10 $, Pi gratuit. **Je ne fixe pas le prix de Léo** :
+c'est à Beau de décider. Mais le coût variable estimé (≈ 5 $ par mois pour un
+usage quotidien avec la voix) laisse de la marge sous ces prix, **à condition
+de mesurer dès la V0**.
+
+## 3.8 Les étapes
+
+**V0 — quelques jours (après la V0 de Jarvis)**
+- Le **modèle d'espace « Moi »** avec son équipe préréglée.
+- Les **rappels datés** avec notification.
+- **Notes rapides** et **liste de courses**, à la voix (N2) et au texte.
+- Écran **« Aujourd'hui »**.
+- **Mes données** : exporter et effacer.
+- Aucun branchement externe. Coût : celui du modèle, plafonné.
+
+**V1 — 3 à 5 semaines**
+- **Agenda** : iCal en lecture, puis OAuth Google et Microsoft (vérification
+  de l'appli par Google à prévoir).
+- **Adresse de transfert d'e-mails**, résumé, brouillons.
+- **Finances** par le connecteur Accounting (espace personnel, si possible).
+- **Point du soir**.
+- **Liste de courses partagée** avec le foyer.
+- **Jarvis en temps réel** (Gemini Live, partie 2).
+
+**V2 — ensuite**
+- **Gmail et Outlook en direct**, seulement si Beau accepte l'évaluation de
+  sécurité annuelle et son coût.
+- **Appeler ou écrire à votre place** (façon Martin), avec présentation
+  honnête et Confirmer à chaque fois.
+- **Icône d'appli séparée** « Léo pour moi », si l'usage le justifie.
+- **Mot de réveil « Hé Léo »**.
+
+## 3.9 Les risques
+
+| Risque | Parade |
+|---|---|
+| **Un e-mail piégé fait agir l'assistant** (cas OpenClaw) | Le contenu des e-mails est une **donnée**. Aucune action N3 sans toucher Confirmer. Pas de clés dans l'espace Moi. Filtre de confidentialité |
+| **Un mauvais rappel, un mauvais rendez-vous** (fiabilité, cf. Siri) | Carte de confirmation lisible (date, heure, fuseau de la personne), « tu voulais dire… ? », annulation facile |
+| **La vie privée** (tout voir d'une personne) | Accès minimal, un branchement à la fois. « Mes données » : exporter et effacer pour de vrai. Offre payante des fournisseurs (pas d'entraînement sur les données) [V pour Gemini]. Pas de publicité |
+| **Le coût de l'e-mail direct** | Transfert d'abord ; Gmail direct seulement sur décision |
+| **La dépendance à un modèle ou à un fournisseur** (cf. Pi, Humane) | Moteur commun interchangeable ; données chez nous, exportables |
+| **Mélanger le personnel et l'entreprise** | Espace « Moi » **séparé** des espaces d'entreprise ; aucun agent d'entreprise ne lit l'espace Moi |
+| **Mélanger les tables avec Accounting** | Lecture **par les fonctions d'Accounting** uniquement, avec les droits de la personne (règle du CLAUDE.md §8) |
+| **Aucun chiffre inventé** | L'écran ne montre que des nombres mesurés ; aucun « X personnes utilisent Léo » |
+
+## 3.10 Propositions en plus
+
+1. **« Ce qui attend ma décision »** en haut de l'écran Aujourd'hui : c'est
+   là que se trouvent les vraies économies de temps.
+2. **L'adresse de transfert** : zéro OAuth, zéro évaluation Gmail, et ça
+   marche avec **toutes** les messageries.
+3. **Les rappels liés au lieu** (« quand j'arrive au marché, ma liste »),
+   seulement si la personne l'active. Plus tard.
+4. **Le foyer** : une liste de courses et des rappels partagés avec deux ou
+   trois proches.
+5. **Le budget simple** : « il te reste X ce mois-ci », dans la devise de
+   l'espace, par Accounting.
+6. **Les documents importants** (papiers, garanties, abonnements) : rangés,
+   avec un rappel avant l'échéance (« ton abonnement se renouvelle dans 5
+   jours »).
+7. **Le « pas de phrase de remplissage »** (règle Jarvis) : réponses courtes
+   par défaut, et des détails seulement si on les demande.
+8. **Le coffre à idées** : « note cette idée » à la voix, classée et
+   retrouvée par le sens.
+9. **Brancher son ChatGPT ou son Claude** sur son espace Moi par MCP : la
+   personne garde ses outils.
+10. **Le mode « je suis occupé »** : les agents regroupent les questions
+    dans un seul point au lieu de sonner dix fois.
+11. **L'export complet** en un fichier (notes, rappels, listes) : la leçon
+    d'Humane.
+12. **Des fiches « comment je fais »** : l'assistant aide à préparer un
+    dossier, un voyage, un déménagement, avec une liste d'étapes cochables.
+13. **La passerelle vers la place de marché** (plus tard, et seulement si la
+    personne le veut) : « trouve-moi ce produit sur Finjaro », sans publicité
+    imposée.
+14. **Le résumé de la semaine**, le dimanche soir, avec ce qui est fait, ce
+    qui a glissé, et une seule suggestion.
+
+---
+
+# 4. Les décisions que Beau doit prendre
+
+## Les 5 décisions principales (atelier et Jarvis)
 
 | # | Décision | Ma recommandation |
 |---|---|---|
@@ -801,17 +1037,29 @@ restent confiées aux agents par le moteur commun.
 | 4 | **Qui paie l'IA ?** | Modèle économique par défaut, plafonds partout, **« Ma clé »** pour Claude et OpenAI (pas de connexion « compte Claude.ai », c'est interdit par Anthropic), et un petit quota Découverte plafonné. Les tarifs de Léo restent à fixer par Beau. |
 | 5 | **Quelle voix pour Jarvis, et comment on le réveille ?** | **Gemini Live, offre payante**, avec repli sur l'appel actuel. Réveil : **bouton et geste** d'abord, « mains libres » local quand Léo est ouvert, **Siri** sur iPhone. Mot de réveil « **Hé Léo** » maison en V2. **Pas** d'écoute permanente en arrière-plan. **Pas** de Porcupine payant au départ. |
 
-# 4. Le coût de départ estimé
+## Les décisions propres à l'assistant personnel (partie 3)
+
+| # | Décision | Ma recommandation |
+|---|---|---|
+| 6 | **Une appli à part, ou un espace « Moi » dans Léo ?** | **Un espace « Moi » dans Léo** en V0 et V1 (même compte, même moteur, Jarvis comme voix). Une icône séparée « Léo pour moi » seulement en V2, si l'usage le justifie. |
+| 7 | **L'e-mail : Gmail en direct, ou adresse de transfert ?** | **Adresse de transfert** d'abord (zéro OAuth, marche avec toutes les messageries). Gmail direct seulement si Beau accepte l'**évaluation de sécurité annuelle** exigée par Google (500 à 4 500 $ par an et plus, annoncé). |
+| 8 | **Les finances perso passent-elles par Finjaro Accounting ?** | **Oui, par le connecteur existant**, en lecture par les fonctions d'Accounting et avec les droits de la personne, **si** Accounting peut accueillir un espace personnel. Sinon, un suivi simple dans Léo. C'est une décision qui **concerne aussi l'application Accounting**. |
+| 9 | **Le modèle économique de l'assistant personnel** | **Gratuit limité** (rappels, notes, courses, sans voix temps réel) et **payant** pour la voix temps réel et les branchements. Prix à fixer par Beau, en sachant que le coût variable estimé est d'environ 5 $ par mois pour un usage quotidien avec la voix (hypothèse à mesurer) et que la concurrence est entre 0 et 50 $. |
+| 10 | **Ce que l'assistant ne fera jamais sans toucher Confirmer** | Envoyer un e-mail ou un message, accepter une invitation, payer, appeler quelqu'un, partager une donnée. **Et jamais de publicité** dans l'espace Moi. |
+
+# 5. Le coût de départ estimé
 
 | Poste | Montant | Statut |
 |---|---|---|
 | Offre payante Cloudflare Workers (nécessaire aux bacs à sable) | **5 $ par mois**, si elle n'est pas déjà active (à vérifier dans le tableau de bord) | [V] |
 | Bacs à sable pendant la V0 | Probablement **dans la part incluse** (≈ 6 h de standard-1 ou ≈ 25 h de basic par mois) | calcul sur [V] |
-| Modèles pour les essais de l'atelier | **Plafond fixé par Beau** : je propose **30 $** pour le premier mois (≈ 45 h avec DeepSeek flash, ≈ 20 h avec Claude Sonnet 5, d'après l'hypothèse de la section 1.7) | hypothèse |
+| Modèles pour les essais de l'atelier | **Plafond fixé par Beau** : je propose **30 $** pour le premier mois (≈ 45 h avec DeepSeek v4-pro, ≈ 20 h avec Claude Sonnet 5, bien davantage avec DeepSeek flash, d'après l'hypothèse de la section 1.7) | hypothèse |
 | Voix, V0 | **0 $ de plus** (pipeline actuel) | — |
 | Voix, V1 (essais Gemini Live) | **≈ 2 à 5 $** pour une centaine de minutes | calcul sur [V] |
 | Application GitHub | **0 $** | [A] |
 | Mot de réveil commercial (Porcupine) | **0 $** (non retenu au départ ; 6 000 $ annoncé sinon) | [A] |
+| Assistant personnel, V0 (rappels, notes, courses, écran Aujourd'hui) | **Compris dans le plafond d'essais** (modèle économique) ; notifications par le service existant | hypothèse |
+| Évaluation de sécurité Gmail | **0 $** au départ (pas de Gmail direct) ; 500 à 4 500 $ par an et plus si on y va en V2 | [A] |
 | **Total du premier mois** | **≈ 5 $ de socle + ≈ 35 $ d'essais plafonnés, soit moins de 50 $** | estimation |
 
 **Ce qu'il faut aussi de Beau** : son oui ; activer l'offre payante Workers ;
@@ -827,6 +1075,13 @@ Il ne touche **ni** au Site URL de Supabase, **ni** à `auth.users`, **ni**
 aux redirections. La connexion à GitHub passe par GitHub, pas par Supabase.
 Finjaro Accounting n'est pas concerné, sauf par le fait que les fonctions
 edge sont déployées sur le projet commun.
+
+**Pour l'assistant personnel**, en revanche, les finances perso passent
+par le connecteur **Finjaro Accounting** : c'est à dire à Beau en nommant
+l'autre application. On lit seulement **par les fonctions d'Accounting**,
+jamais ses tables directement, et un éventuel « espace personnel » dans
+Accounting est une décision qui se prend côté Accounting. Les nouvelles
+tables `moi_*` sont additives.
 
 ---
 
@@ -945,7 +1200,7 @@ la description d'abord, le reste à la demande [A]. Export vers
 
 ---
 
-# 5. Sources (toutes lues le 24/09/2026)
+# 6. Sources (toutes lues le 24/09/2026)
 
 **Atelier : produits et prix**
 - Claude Code, modes de permission [V] : https://code.claude.com/docs/en/permission-modes
