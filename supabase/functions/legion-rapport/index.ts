@@ -149,11 +149,12 @@ async function rapportSoir(service: Service, apiKey: string, entrepriseId: strin
   const canal = await salonDirection(service, entrepriseId);
   if (!canal) return `${e.nom}: pas de salon`;
   const type = semaine ? 'semaine' : 'soir';
-  // Un seul rapport par jour et par type.
+  // Un seul rapport planifié par jour et par type. Celui qu'on a demandé à
+  // la main dans la journée ne compte pas: le soir, le rapport arrive quand même.
   const debutJour = new Date(); debutJour.setUTCHours(0, 0, 0, 0);
   if (!force) {
     const { data: deja } = await service.from('legion_messages').select('id').eq('entreprise_id', entrepriseId).gte('created_at', debutJour.toISOString())
-      .contains('meta', { rapport: { type } }).limit(1);
+      .contains('meta', { rapport: { type, demande: false } }).limit(1);
     if (deja?.length) return `${e.nom}: déjà fait aujourd'hui`;
   }
   const depuis = new Date(Date.now() - (semaine ? 7 : 1) * JOUR_MS);
@@ -238,7 +239,7 @@ async function rapportMois(service: Service, entrepriseId: string, force: boolea
   const moisNom = debut.toLocaleDateString(e.langue === 'en' ? 'en-GB' : 'fr-FR', { month: 'long', year: 'numeric' });
   if (!force) {
     const { data: deja } = await service.from('legion_messages').select('id').eq('entreprise_id', entrepriseId).gte('created_at', fin.toISOString())
-      .contains('meta', { rapport: { type: 'mois' } }).limit(1);
+      .contains('meta', { rapport: { type: 'mois', demande: false } }).limit(1);
     if (deja?.length) return `${e.nom}: déjà fait ce mois-ci`;
   }
   const [{ data: couts }, { data: msgs }, { data: regles }, { data: docs }] = await Promise.all([
