@@ -842,7 +842,8 @@
       "wikiParDirecteur": "by the director",
       "wikiCorriger": "Edit this page",
       "wikiAide": "“What we decided” is written by the director from decisions and minutes; “Who does what” and “How we work” come from the database. Agents reread “What we decided” before replying.",
-      "immeuble": "The building"
+      "immeuble": "The building",
+      "ville": "The city"
     },
     "clavier": {
       "titre": "Keyboard shortcuts",
@@ -1173,7 +1174,31 @@
       },
       "derniereSeance": "Last session: {{nom}}, \"{{projet}}\", on {{quand}}."
     },
-    "rouvrirTaches": "Reopen the task board"
+    "rouvrirTaches": "Reopen the task board",
+    "ville": {
+      "titre": "The city",
+      "quotidien": "Day to day",
+      "sansProjet": "no project",
+      "enRetard": "late",
+      "joursRestants": "{{n}} days left",
+      "resumeTour": "{{rendues}} of {{total}} tasks delivered · {{actifs}} agent(s) working right now",
+      "marquerFini": "Mark done",
+      "pause": "Pause",
+      "reprendre": "Resume",
+      "ranger": "Move tasks without a project here ({{n}})",
+      "ajouterIci": "Add here",
+      "resume": "{{tours}} project(s) · {{actifs}} agent(s) working right now",
+      "nouveauProjet": "New project",
+      "nomProjet": "Project name (e.g. “October launch”)",
+      "du": "From",
+      "au": "to",
+      "butProjet": "The goal, in one or two sentences (optional)",
+      "creer": "Build the tower",
+      "nomCourt": "Give the project a name.",
+      "datesInverses": "The end must come after the start.",
+      "vide": "No project yet: create the first one and it becomes a tower.",
+      "legende": "One tower per project: it rises with delivered tasks, the scaffolding shows what is left, the crane leaves when it is done. A lit window = an agent who took a task less than 10 minutes ago. Tap a tower to go in."
+    }
   },
   "equipe": {
     "titre": "The team",

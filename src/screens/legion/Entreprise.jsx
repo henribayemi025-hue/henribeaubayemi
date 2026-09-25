@@ -868,7 +868,7 @@ export default function Entreprise() {
       {/* Les grandes vues (24/09) : le bureau, la frise, la présentation, les idées */}
       {outil && (
         <PleinEcran titre={t(`legion.vues.titre.${outil}`)} onFermer={() => setOutil(null)} t={t}>
-          {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} t={t} />}
+          {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} onMajMessage={majMessage} peutAgir={data.role !== 'lecteur'} t={t} />}
           {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'atelier' && (

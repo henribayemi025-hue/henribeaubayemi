@@ -842,7 +842,8 @@
       "wikiParDirecteur": "par le directeur",
       "wikiCorriger": "Corriger cette page",
       "wikiAide": "« Ce qu'on a décidé » est écrit par le directeur à partir des décisions et comptes rendus ; « Qui fait quoi » et « Nos façons de faire » sont tirés de la base. Les agents relisent « Ce qu'on a décidé » avant de répondre.",
-      "immeuble": "L'immeuble"
+      "immeuble": "L'immeuble",
+      "ville": "La ville"
     },
     "clavier": {
       "titre": "Raccourcis clavier",
@@ -1173,7 +1174,31 @@
       },
       "derniereSeance": "Dernière séance : {{nom}}, « {{projet}} », le {{quand}}."
     },
-    "rouvrirTaches": "Rouvrir le tableau des tâches"
+    "rouvrirTaches": "Rouvrir le tableau des tâches",
+    "ville": {
+      "titre": "La ville",
+      "quotidien": "Au quotidien",
+      "sansProjet": "sans projet",
+      "enRetard": "en retard",
+      "joursRestants": "{{n}} j restants",
+      "resumeTour": "{{rendues}} tâches rendues sur {{total}} · {{actifs}} agent(s) au travail en ce moment",
+      "marquerFini": "Marquer fini",
+      "pause": "Mettre en pause",
+      "reprendre": "Reprendre",
+      "ranger": "Ranger ici des tâches sans projet ({{n}})",
+      "ajouterIci": "Ajouter ici",
+      "resume": "{{tours}} projet(s) · {{actifs}} agent(s) au travail en ce moment",
+      "nouveauProjet": "Nouveau projet",
+      "nomProjet": "Nom du projet (ex. « Lancement d’octobre »)",
+      "du": "Du",
+      "au": "au",
+      "butProjet": "Le but, en une ou deux phrases (facultatif)",
+      "creer": "Créer la tour",
+      "nomCourt": "Donne un nom au projet.",
+      "datesInverses": "La fin doit venir après le début.",
+      "vide": "Aucun projet pour l’instant : crée le premier, il deviendra une tour.",
+      "legende": "Une tour par projet : elle monte avec les tâches rendues, l’échafaudage montre ce qui reste, la grue part quand c’est fini. Une fenêtre allumée = un agent qui a pris une tâche il y a moins de 10 minutes. Touche une tour pour entrer."
+    }
   },
   "equipe": {
     "titre": "L'équipe",
