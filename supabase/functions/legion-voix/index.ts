@@ -22,8 +22,10 @@ function cors(origin: string | null): Record<string, string> {
   };
 }
 
-// Voix par défaut, réglables sans toucher au code (secrets FISH_VOIX_FR / FISH_VOIX_EN).
-const voixDe = (langue: string) => (langue === 'en' ? Deno.env.get('FISH_VOIX_EN') : Deno.env.get('FISH_VOIX_FR')) || Deno.env.get('FISH_VOIX') || '';
+// Voix par défaut (bibliothèque publique Fish, voix génériques — jamais l'imitation
+// d'une personne réelle) ; réglables sans toucher au code : FISH_VOIX_FR / FISH_VOIX_EN.
+const VOIX = { fr: 'a288bdc744da4ad194921adad6863175' /* « Clémence », narratrice */, en: '933563129e564b19a115bedd57b7406a' /* « Sarah » */ };
+const voixDe = (langue: string) => (langue === 'en' ? Deno.env.get('FISH_VOIX_EN') || VOIX.en : Deno.env.get('FISH_VOIX_FR') || VOIX.fr);
 
 Deno.serve(async (req: Request) => {
   const h = cors(req.headers.get('Origin'));

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
 import { chargerCiel, phaseDuJour } from '../parties/ciel';
+import { supabase } from '../../../lib/supabase';
 
 // LE MONDE 3D DE LÉO (Beau, 25/09) — l'écran : le moteur three.js (chargé à
 // la demande), et par-dessus : où je suis, l'ascenseur, les caméras, la carte
@@ -119,13 +120,32 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     } else if (cible.type === 'ascenseur' || cible.type === 'escalier') setEtage(true);
     else if (cible.type === 'agent') onFiche?.(agents.find((a) => a.id === cible.id));
   }
-  function parler(texte) {
+  // La voix de la réceptionniste : Fish Audio (legion-voix) ; si Fish ne répond
+  // pas, la voix du navigateur, pour qu'elle ne reste jamais muette.
+  const son = useRef(null);
+  async function parler(texte) {
+    try { speechSynthesis.cancel(); } catch { /* rien */ }
+    son.current?.pause();
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL || 'https://bokwivwizghdlaedczbw.supabase.co'}/functions/v1/legion-voix`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${sess?.session?.access_token}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_UMnuj2_xJ7uZt76TspkBAA_EiAMg6zt', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entreprise_id: entreprise.id, texte, langue }),
+      });
+      if (!r.ok || !String(r.headers.get('content-type')).includes('audio')) throw new Error(String(r.status));
+      const url = URL.createObjectURL(await r.blob());
+      const a = new Audio(url);
+      son.current = a;
+      a.onended = () => URL.revokeObjectURL(url);
+      await a.play();
+      return;
+    } catch { /* on se rabat sur la voix du navigateur */ }
     try {
       const u = new SpeechSynthesisUtterance(texte);
       u.lang = langue === 'en' ? 'en-US' : 'fr-FR';
       const voix = speechSynthesis.getVoices().find((v) => v.lang.startsWith(u.lang.slice(0, 2)) && /female|femme|amelie|audrey|marie|samantha|google/i.test(v.name));
       if (voix) u.voice = voix;
-      speechSynthesis.cancel();
       speechSynthesis.speak(u);
     } catch { /* pas de voix sur ce navigateur */ }
   }
