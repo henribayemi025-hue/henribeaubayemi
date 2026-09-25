@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
-import { chargerCiel, phaseDuJour } from '../parties/ciel';
+import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
+import { styleVille } from './region';
 import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
 import { chargerAffiches } from './affiches';
 
@@ -92,8 +93,10 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         const delai = setTimeout(() => { if (!fini) setEtat((x) => (x === 'chargement' ? 'erreur' : x)); }, 60000);
         const { Monde } = await import('./moteur');
         if (fini) { clearTimeout(delai); return; }
+        // La ville ressemble à celle de la personne : ville choisie dans la Ville, sinon fuseau horaire.
+        const tz = villeChoisie()?.tz || (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; } })();
         const m = new Monde(boite.current, {
-          mobile, langue,
+          mobile, langue, region: styleVille(tz),
           surEvenement: (e) => {
             if (e.type === 'lieu') setLieu(e.lieu);
             if (e.type === 'progression') setProgres(e.total ? Math.round((e.faits / e.total) * 100) : null);

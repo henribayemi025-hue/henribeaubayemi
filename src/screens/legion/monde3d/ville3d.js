@@ -7,12 +7,20 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { STYLES } from './region';
 
 const ROUTES_X = [-78, -26, 26, 78];
 const ROUTES_Z = [-74, -22, 30, 82];
 const LARGEUR_ROUTE = 12;
 const TROTTOIR = 4.5;
-const ENSEIGNES = ['CAFÉ', 'RAMEN', 'SUSHI', 'BOULANGERIE', 'PHARMACIE', 'RESTAURANT', 'MARCHÉ', 'LIBRAIRIE', 'PIZZA', 'THÉ', 'GRILL', 'FLEURS', 'BANQUE', 'CINÉMA', 'KARAOKÉ', 'NOODLES'];
+// Les enseignes des boutiques, selon la région de la personne et sa langue.
+const ENSEIGNES_REGION = {
+  afrique: { fr: ['BOUTIQUE', 'PHARMACIE', 'ALIMENTATION', 'BOULANGERIE', 'COIFFURE', 'TAILLEUR', 'TÉLÉPHONES', 'RESTAURANT', 'GRILL', 'QUINCAILLERIE', 'PRESSING', 'BANQUE', 'CAFÉ', 'CINÉMA', 'MARCHÉ', 'PÂTISSERIE'], en: ['SHOP', 'PHARMACY', 'GROCERY', 'BAKERY', 'SALON', 'TAILOR', 'PHONES', 'RESTAURANT', 'GRILL', 'HARDWARE', 'LAUNDRY', 'BANK', 'CAFÉ', 'CINEMA', 'MARKET', 'SWEETS'] },
+  europe: { fr: ['CAFÉ', 'BOULANGERIE', 'PHARMACIE', 'LIBRAIRIE', 'FLEURS', 'BISTROT', 'FROMAGERIE', 'BANQUE', 'CINÉMA', 'PIZZA', 'OPTIQUE', 'PÂTISSERIE', 'BRASSERIE', 'PRIMEUR', 'GALERIE', 'THÉ'], en: ['CAFÉ', 'BAKERY', 'PHARMACY', 'BOOKS', 'FLOWERS', 'BISTRO', 'CHEESE', 'BANK', 'CINEMA', 'PIZZA', 'OPTICIAN', 'PATISSERIE', 'PUB', 'GROCER', 'GALLERY', 'TEA'] },
+  asie: { fr: ['RAMEN', 'SUSHI', 'KARAOKÉ', 'NOODLES', 'THÉ', 'CAFÉ', 'PHARMACIE', 'GRILL', 'LIBRAIRIE', 'CINÉMA', 'BANQUE', 'FLEURS', 'BOULANGERIE', 'MARCHÉ', 'RESTAURANT', 'PIZZA'], en: ['RAMEN', 'SUSHI', 'KARAOKE', 'NOODLES', 'TEA', 'CAFÉ', 'PHARMACY', 'GRILL', 'BOOKS', 'CINEMA', 'BANK', 'FLOWERS', 'BAKERY', 'MARKET', 'RESTAURANT', 'PIZZA'] },
+  amerique: { fr: ['CAFÉ', 'DINER', 'PIZZA', 'PHARMACIE', 'BANQUE', 'CINÉMA', 'FLEURS', 'LIBRAIRIE', 'GRILL', 'TACOS', 'BOULANGERIE', 'MARCHÉ', 'RESTAURANT', 'THÉ', 'SPORTS', 'DELI'], en: ['COFFEE', 'DINER', 'PIZZA', 'PHARMACY', 'BANK', 'CINEMA', 'FLOWERS', 'BOOKS', 'GRILL', 'TACOS', 'BAKERY', 'MARKET', 'RESTAURANT', 'TEA', 'SPORTS', 'DELI'] },
+  mixte: { fr: ['CAFÉ', 'RAMEN', 'SUSHI', 'BOULANGERIE', 'PHARMACIE', 'RESTAURANT', 'MARCHÉ', 'LIBRAIRIE', 'PIZZA', 'THÉ', 'GRILL', 'FLEURS', 'BANQUE', 'CINÉMA', 'KARAOKÉ', 'NOODLES'], en: ['CAFÉ', 'RAMEN', 'SUSHI', 'BAKERY', 'PHARMACY', 'RESTAURANT', 'MARKET', 'BOOKS', 'PIZZA', 'TEA', 'GRILL', 'FLOWERS', 'BANK', 'CINEMA', 'KARAOKE', 'NOODLES'] },
+};
 const PEINTURES = ['#f2f2f0', '#141518', '#9aa0a6', '#7b1e1e', '#1d3a6b', '#e8c11c', '#2f4f3a', '#c8c3b8', '#5a5f66', '#0f2a44'];
 
 function alea(graine) {
@@ -365,6 +373,9 @@ function dessinerAffiche({ img, nom }, l, h, etiquette = 'BOUTIQUE') {
 // ——— La ville ———
 export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine = 7 } = {}) {
   const r = alea(graine);
+  // L'allure de la ville suit la région de la personne (voir region.js).
+  const style = monde.region || { nom: 'mixte', ...STYLES.mixte };
+  const ENSEIGNES = (ENSEIGNES_REGION[style.nom] || ENSEIGNES_REGION.mixte)[monde.langue === 'en' ? 'en' : 'fr'];
   const racine = new THREE.Group();
   racine.position.y = sol;
   groupe.add(racine);
@@ -414,11 +425,11 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     for (let k = 0; k < Math.min(n, 4); k += 1) {
       const bx = il.x0 + TROTTOIR + (k % 2) * lx + lx / 2, bz = il.z0 + TROTTOIR + (n > 2 ? Math.floor(k / 2) : 0) * lz + lz / 2;
       const dist = Math.hypot(bx, bz);
-      const h = 18 + r() * (dist < 90 ? 70 : 130);
+      const h = 14 + r() * (dist < 90 ? 70 : 130) * style.hauteur;
       const w = lx - 2, d = lz - 2;
       // Tours hautes : plutôt du verre ; petites : pierre ou résidence.
       const verres = facades.filter((x) => x.nom === 'verre'), autres = facades.filter((x) => x.nom !== 'verre');
-      const lot = h > 60 ? (r() < 0.75 ? verres : autres) : (r() < 0.3 ? verres : autres);
+      const lot = r() < (h > 60 ? Math.min(0.95, style.verre + 0.2) : style.verre * 0.5) ? verres : autres;
       const f = lot[Math.floor(r() * lot.length)];
       const hc = h - 5;
       const tour = new THREE.Mesh(cotesFacade(w, hc, d, f.taille, r), f.mat);
@@ -451,7 +462,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
         if (!NEONS.has(couleur)) { const m = new THREE.MeshStandardMaterial({ color: couleur, emissive: couleur, emissiveIntensity: 0.35 }); NEONS.set(couleur, m); nuit.enseignes.push(m); }
         const tube = new THREE.Mesh(new THREE.BoxGeometry(face * 0.8, 0.06, 0.06), NEONS.get(couleur));
         tube.position.set(bx + nx + Math.sin(rot) * 1.38, 3.44, bz + nz + Math.cos(rot) * 1.38); tube.rotation.y = rot; racine.add(tube);
-        if (r() < (dist < 120 ? 0.6 : 0.3) && h > 30) { // enseigne verticale à la japonaise
+        if (r() < (dist < 120 ? style.neons : style.neons * 0.5) && h > 24) { // enseigne verticale à la japonaise
           const tv = enseigne(nom, couleur, true);
           const mv = new THREE.MeshStandardMaterial({ map: tv, emissive: '#ffffff', emissiveMap: tv, emissiveIntensity: 0.5 });
           const pv = new THREE.Group();
@@ -519,6 +530,42 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     }
   }
 
+  // Un marché sur le trottoir d'en face (photos de Beau : le marché, les étals, les parasols).
+  if (style.marche) {
+    const bois = new THREE.MeshStandardMaterial({ color: '#7a4f2c', roughness: 0.9 });
+    const toiles = ['#d94f30', '#2f7d5b', '#e0a526', '#2b59a8', '#b83280'].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, side: THREE.DoubleSide }));
+    const produits = ['#e5572d', '#f2c230', '#6fae3c', '#8b3a1e', '#f0e6d2', '#c2185b'].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }));
+    for (let i = 0; i < 12; i += 1) {
+      const x = -19 + i * 3.3, z = 38.2;
+      const plateau = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.07, 1.1), bois); plateau.position.set(x, 1.0, z); racine.add(plateau);
+      for (const [px, pz] of [[-1.1, -0.5], [1.1, -0.5], [-1.1, 0.5], [1.1, 0.5]]) { const pied = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.82, 0.06), bois); pied.position.set(x + px, 0.59, z + pz); racine.add(pied); }
+      // Bâche tendue sur quatre perches, comme au marché
+      const bache = new THREE.Mesh(new THREE.PlaneGeometry(3, 2), toiles[i % toiles.length]); bache.rotation.x = -Math.PI / 2 + 0.12; bache.position.set(x, 2.55, z - 0.1); racine.add(bache);
+      for (const [px, pz] of [[-1.4, -0.9], [1.4, -0.9], [-1.4, 0.9], [1.4, 0.9]]) { const perche = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.4), bois); perche.position.set(x + px, 1.38, z + pz); racine.add(perche); }
+      // La marchandise : tas de fruits, piles de tissus, paniers
+      for (let k = 0; k < 5; k += 1) {
+        const m = produits[(i + k) % produits.length];
+        const o = i % 3 === 1 ? new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08 + r() * 0.12, 0.3), m) : new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), m);
+        o.position.set(x - 0.9 + k * 0.45, 1.12, z + (r() - 0.5) * 0.4); racine.add(o);
+      }
+      const panier = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.22, 0.35, 12), bois); panier.position.set(x + 1.0, 0.36, z + 0.9); racine.add(panier);
+    }
+  }
+  // Un grand rond-point avec son monument (photo de Beau), au carrefour voisin sans circulation.
+  if (style.rondPoint) {
+    const cx = 26, cz = -22;
+    const herbe = new THREE.MeshStandardMaterial({ color: '#4f7a3a', roughness: 0.95 });
+    const bordure = new THREE.MeshStandardMaterial({ color: '#d8d2c4', roughness: 0.8 });
+    const pierre = new THREE.MeshStandardMaterial({ color: '#cfc6b4', roughness: 0.7 });
+    const bronzeM = new THREE.MeshStandardMaterial({ color: '#6b5433', metalness: 0.8, roughness: 0.35 });
+    const ile = new THREE.Mesh(new THREE.CylinderGeometry(5.6, 5.6, 0.25, 48), bordure); ile.position.set(cx, 0.1, cz); ile.receiveShadow = true; racine.add(ile);
+    const gazon = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.2, 0.28, 48), herbe); gazon.position.set(cx, 0.12, cz); racine.add(gazon);
+    for (let k = 0; k < 3; k += 1) { const marche = new THREE.Mesh(new THREE.CylinderGeometry(2.4 - k * 0.6, 2.4 - k * 0.6, 0.35, 32), pierre); marche.position.set(cx, 0.4 + k * 0.35, cz); marche.castShadow = true; racine.add(marche); }
+    const socle = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 1.1), pierre); socle.position.set(cx, 2.55, cz); socle.castShadow = true; racine.add(socle);
+    const flamme = new THREE.Mesh(new THREE.ConeGeometry(0.5, 7, 4), bronzeM); flamme.position.set(cx, 7.1, cz); flamme.rotation.y = Math.PI / 4; flamme.castShadow = true; racine.add(flamme);
+    for (let k = 0; k < 8; k += 1) { const a = (k / 8) * Math.PI * 2; const fleur = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), new THREE.MeshStandardMaterial({ color: k % 2 ? '#e0a526' : '#c8201f', roughness: 0.9 })); fleur.position.set(cx + Math.cos(a) * 4, 0.45, cz + Math.sin(a) * 4); racine.add(fleur); }
+  }
+
   // Lampadaires et mobilier le long de notre îlot
   (async () => {
     for (const x of [-19.5, 19.5]) for (let z = -14; z <= 22; z += 12) {
@@ -542,7 +589,8 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const t = r();
       const peinture = PEINTURES[Math.floor(r() * PEINTURES.length)];
       const leger = monde.mobile;
-      const o = t < 0.18 ? moto(peinture) : t < 0.26 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < 0.5 ? voiture(peinture, 'taxi', leger) : voiture(peinture, t < 0.66 ? 'suv' : 'berline', leger);
+      const s1 = style.motos, s2 = s1 + style.bus, s3 = s2 + style.taxis;
+      const o = t < s1 ? moto(peinture) : t < s2 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < s3 ? voiture(peinture, 'taxi', leger) : voiture(peinture, t < s3 + (1 - s3) * 0.35 ? 'suv' : 'berline', leger);
       const vitesse = allure;
       const pos = -120 + ((k * 240) / combien) + r() * 30 + iv * 13;
       o.userData = { ...o.userData, voie: v, vitesse, pos };
@@ -631,7 +679,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       racine.add(vendeur.objet); passants.push(vendeur);
     }
     // Une terrasse de restaurant : des clients attablés (pas au téléphone)
-    if (!monde.mobile) for (const [x, z, rot, c] of [[-33.5, 8, Math.PI / 2, 'Female_Party_02'], [-33.5, 10, Math.PI / 2, 'Male_Adult_04']]) {
+    if (!monde.mobile && style.terrasses) for (const [x, z, rot, c] of [[-33.5, 8, Math.PI / 2, 'Female_Party_02'], [-33.5, 10, Math.PI / 2, 'Male_Adult_04']]) {
       const table = await monde.objet('side_table_01', { x: x - 0.9, y: 0.18, z: z + 1 });
       racine.add(table);
       const p = await monde.personnage(c);

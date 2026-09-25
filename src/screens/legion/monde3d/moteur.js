@@ -34,8 +34,9 @@ const RAYON = 0.32;
 const genreDe = (id) => CORPS.find((c) => c.id === id)?.g || 'm';
 
 export class Monde {
-  constructor(conteneur, { mobile = false, langue = 'fr', surEvenement = () => {} } = {}) {
+  constructor(conteneur, { mobile = false, langue = 'fr', region = null, surEvenement = () => {} } = {}) {
     this.conteneur = conteneur;
+    this.region = region; // allure de la ville (region.js)
     this.mobile = mobile;
     this.langue = langue;
     this.emettre = surEvenement;
