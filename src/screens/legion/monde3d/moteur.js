@@ -19,7 +19,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
+import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
@@ -897,12 +897,37 @@ export class Monde {
   }
 
   // ——— Les vrais agents ———
-  majDonnees({ agents = [], ou, faits, departements = [] } = {}) {
-    this.donnees = { agents, ou, departements };
+  majDonnees({ agents = [], ou, faits, departements = [], heure = null, jour = null } = {}) {
+    this.donnees = { agents, ou, departements, heure, jour };
     if (faits) { this.faits = faits; this.ecranFaits?.userData.redessiner(faits); }
-    this.placerAgents();
+    return this.placerAgents(); // une promesse : la page d'essai attend que tout le monde soit placé
   }
-  async placerAgents() {
+  // Le moment de la journée : celui donné à majDonnees (page d'essai), sinon l'heure de la personne.
+  momentCourant() {
+    const d = this.donnees || {};
+    const now = new Date();
+    return momentDu(d.heure ?? now.getHours(), d.jour ?? now.getDay());
+  }
+  // Il quitte le passage piéton qu'il occupait (compteur de ville3d.js).
+  libererPassage(x) {
+    if (x.passage === undefined || x.passage === null) return;
+    const ps = this.villeVivante?.passages?.[x.passage];
+    if (ps) ps.occupe = Math.max(0, ps.occupe - 1);
+    x.passage = null;
+  }
+  // La hauteur du sol dehors : notre trottoir affleure (0), ceux d'en face sont en bordure (+18 cm), la rue à 0.
+  solDehors(x, z) {
+    if (this.lieu?.nom !== 'hall' || !this.villeVivante) return 0;
+    if (x > -20 && x < 20 && z > -16 && z < 24) return 0;
+    return this.villeVivante.blocs.some((b) => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1) ? 0.18 : 0;
+  }
+  placerAgents() {
+    this.placementDemande = (this.placementDemande || 0) + 1;
+    const n = this.placementDemande;
+    this.placement = (this.placement || Promise.resolve()).then(() => (n === this.placementDemande ? this.placerAgentsMaintenant() : null)).catch((e) => console.warn('placerAgents', e));
+    return this.placement;
+  }
+  async placerAgentsMaintenant() {
     if (!this.lieu || !this.donnees) return;
     const { agents, ou } = this.donnees;
     const parId = new Map(agents.map((a) => [a.id, a]));
@@ -938,10 +963,40 @@ export class Monde {
         { x: -2.2, z: 4.2, rot: 0.6, anim: 'repos', geste: 'casque' },
       ];
       // … et ceux qui attendent leur tâche, pendant leur pause (voir enPause dans monde.js).
-      const enHall = [
+      const enHallTous = [
         ...(ou?.disponibles || []).map((d) => ({ id: d.id, sous: dispo })),
         ...(ou?.aLeurPoste || []).filter((x) => x.pause).map((x) => ({ id: x.id, sous: `${this.langue === 'en' ? 'break · to do' : 'pause · à faire'} : ${String(x.tache || '').slice(0, 34)}` })),
       ];
+      // La journée (lot 3.2) : le matin, une partie arrive par la rue (trottoir d'en face,
+      // traversée, notre parvis, la porte) ; à midi, une partie déjeune au marché d'en face
+      // s'il y en a un, sinon sur le parvis ; le soir et la nuit, ils sont chez eux (lieu « maisons »).
+      const moment = this.momentCourant();
+      const en = this.langue === 'en';
+      // Trois chemins vrais : par le passage piéton de l'est (index 1 dans ville3d), par celui de
+      // l'ouest (index 0), ou le long de notre trottoir depuis le coin ; `traversees` dit sur quel
+      // segment l'agent est sur un passage (les voitures s'arrêtent pour lui, comme pour un passant).
+      const rue = [
+        { chemin: [[17.5, 37.5], [17.5, 23.2], [8, 15.5], [1.2, 10.5], [0.8, 7.2]], traversees: { 0: 1 } },
+        { chemin: [[-33.5, 21.5], [-19.2, 21.5], [-8, 15.5], [-1.2, 10.5], [-1.5, 6]], traversees: { 0: 0 }, decale: 0.35 },
+        { chemin: [[19, -8], [16.5, 6], [6, 13.5], [0.4, 10.2], [2, 4.6]], decale: 0.6 },
+      ];
+      const M = this.villeVivante?.marche;
+      if (this.mobile) rue.length = 2;
+      const dejeuner = M
+        ? [-12.4, -5.8, 0.8, 7.4, 14].map((x, k) => ({ x, z: M.z - 1.5, rot: 0, anim: k % 2 ? 'ecoute' : 'parle', y: 0.18 }))
+        : [{ x: 6.2, z: 13.2, rot: 0.6, anim: 'parle' }, { x: 7.4, z: 12.4, rot: -2.4, anim: 'ecoute' }, { x: -6.6, z: 13, rot: -0.5, anim: 'ecoute' }, { x: -7.6, z: 12.2, rot: 2.6, anim: 'parle' }, { x: 0, z: 15.5, rot: Math.PI, anim: 'repos' }];
+      if (this.mobile) dejeuner.length = 3;
+      const enHall = [];
+      let iRue = 0, iDej = 0, absents = 0;
+      for (const d of enHallTous) {
+        const j = journeeDe(parId.get(d.id), etatDe(parId.get(d.id), ou), moment);
+        if (j.lieu === 'chemin' && iRue < rue.length) { const pl = rue[iRue++]; voulus.set(d.id, { place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous: en ? 'arriving at work' : 'arrive au travail', chemin: pl.chemin, decale: pl.decale || 0, sansBoucle: true, traversees: pl.traversees }); continue; }
+        if (j.lieu === 'marche' && iDej < dejeuner.length) { const pl = dejeuner[iDej++]; voulus.set(d.id, { place: pl, anim: pl.anim, sous: M ? (en ? 'lunch at the market' : 'déjeune au marché') : (en ? 'lunch outside' : 'déjeune dehors') }); continue; }
+        if (j.lieu === 'maison' || j.lieu === 'plage' || j.lieu === 'terrasse') { absents += 1; continue; } // chez lui, sur la plage : pas au hall
+        enHall.push(d);
+      }
+      // L'écran le dit (sinon un hall vide le soir ressemble à une panne).
+      if (moment !== this.momentAnnonce) { this.momentAnnonce = moment; this.emettre({ type: 'journee', moment, absents }); }
       // Au téléphone, 5 places seulement : une de chaque attitude (marche, assis, téléphone, casque, discussion).
       const choix = this.mobile ? [0, 3, 10, 12, 1].map((k) => places[k]) : places;
       enHall.filter((d) => !voulus.has(d.id)).slice(0, choix.length).forEach((d, i) => {
@@ -961,10 +1016,28 @@ export class Monde {
       });
     }
     if (this.lieu.nom === 'maisons') {
-      // Chez lui : seulement l'agent en veille (éteint). Allumé, il est à l'immeuble.
+      // Chez lui, selon sa journée (lot 3.2) : la nuit il dort (dans la maison, la lampe
+      // allumée), le matin il part au travail par la promenade, le soir il court sur la
+      // plage, joue au ballon ou prend un verre sur sa terrasse ; éteint, il est chez lui
+      // en veille. Au travail ou en réunion, il n'est pas là : il est à l'immeuble.
+      const moment = this.momentCourant();
+      const en = this.langue === 'en';
+      const R = this.lieu.rivage ?? 58;
+      let iPlage = 0;
       for (const v of this.lieu.villas || []) {
         const a = parId.get(v.id);
-        if (a && a.actif === false) voulus.set(a.id, { place: v.place, anim: 'assis', sous: this.langue === 'en' ? 'at home · switched off' : 'chez lui · en veille' });
+        if (!a) continue;
+        const j = journeeDe(a, etatDe(a, ou), moment);
+        if (a.actif === false) { voulus.set(a.id, { place: v.place, anim: 'assis', sous: en ? 'at home · switched off' : 'chez lui · en veille' }); continue; }
+        if (j.lieu === 'maison') voulus.set(a.id, { place: { x: v.place.x - 3.8, z: v.place.z - 10.5, rot: 0 }, anim: 'assis', sous: en ? 'at home · asleep' : 'chez lui · dort' });
+        else if (j.lieu === 'terrasse') voulus.set(a.id, { place: v.place, anim: 'assis', sous: en ? 'on the terrace · having a drink' : 'sur sa terrasse · prend un verre' });
+        else if (j.lieu === 'chemin') voulus.set(a.id, { place: { x: v.porte.x, z: v.porte.z, rot: 0 }, anim: 'marche', sous: en ? 'leaving for work' : 'part au travail', chemin: [[v.porte.x, v.porte.z], [v.porte.x, v.porte.z + 2.5], [v.porte.x + 42, v.porte.z + 2.5]], decale: 0.2, sansBoucle: true });
+        else if (j.lieu === 'plage') {
+          const k = iPlage++;
+          const x0 = -46 + (k % 6) * 15;
+          if (j.fait === 'court') voulus.set(a.id, { place: { x: x0, z: R - 4, rot: Math.PI / 2 }, anim: 'course', sous: en ? 'jogging on the beach' : 'fait sa course au bord de la mer', chemin: [[x0, R - 4], [x0 + 40, R - 4.5], [x0 + 40, R - 7], [x0, R - 6.5]], decale: k * 0.17, course: true });
+          else voulus.set(a.id, { place: { x: x0 + 6, z: R - 10, rot: 0.4 + k }, anim: 'parle', sous: en ? 'ball game on the beach' : 'joue au ballon sur la plage' });
+        }
       }
     }
     if (String(this.lieu.nom).startsWith('etage:')) {
@@ -995,7 +1068,7 @@ export class Monde {
       });
     }
     for (const [id, x] of this.agents) {
-      if (!voulus.has(id)) { x.perso.objet.parent?.remove(x.perso.objet); this.agents.delete(id); }
+      if (!voulus.has(id)) { this.libererPassage(x); x.perso.objet.parent?.remove(x.perso.objet); x.etiquette.element.remove(); this.agents.delete(id); }
     }
     for (const [id, v] of voulus) {
       const a = parId.get(id);
@@ -1012,15 +1085,18 @@ export class Monde {
       if (v.chemin) {
         // Garde sa position s'il marchait déjà sur ce chemin (pas de saut à chaque mise à jour).
         if (!x.chemin || x.chemin.cle !== String(v.chemin)) {
-          x.chemin = { pts: v.chemin, cle: String(v.chemin), i: 0, t: v.decale || 0 };
-          x.perso.objet.position.set(v.place.x, 0, v.place.z);
+          this.libererPassage(x);
+          x.chemin = { pts: v.chemin, cle: String(v.chemin), i: 0, t: v.decale || 0, sansBoucle: !!v.sansBoucle, course: !!v.course, traversees: v.traversees || null };
+          x.perso.objet.position.set(v.place.x, this.solDehors(v.place.x, v.place.z), v.place.z);
         }
       } else {
+        this.libererPassage(x);
         x.chemin = null;
-        x.perso.objet.position.set(v.place.x, 0, v.place.z);
+        x.perso.objet.position.set(v.place.x, v.place.y ?? this.solDehors(v.place.x, v.place.z), v.place.z);
         x.perso.objet.rotation.y = v.place.rot;
       }
-      x.perso.jouer(v.anim);
+      // Au bout de son chemin (arrivé au travail), il reste debout : pas de marche sur place.
+      x.perso.jouer(x.chemin?.fini ? 'repos' : v.anim);
       // Le casque audio, posé sur la tête (arceau + deux écouteurs).
       if (v.casque && !x.casque) {
         const c = new THREE.Group(), noir = new THREE.MeshStandardMaterial({ color: '#1b1d22', metalness: 0.4, roughness: 0.45 });
@@ -1488,11 +1564,19 @@ export class Monde {
       // Marche le long de son chemin, en boucle, à allure de promenade.
       const a = c.pts[c.i], b = c.pts[(c.i + 1) % c.pts.length];
       const long = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-      c.t += (1.25 * dt) / long;
-      if (c.t >= 1) { c.t -= 1; c.i = (c.i + 1) % c.pts.length; continue; }
+      c.t += ((c.course ? 3.2 : 1.25) * dt) / long;
+      if (c.t >= 1) {
+        // Arrivé au bout d'un chemin sans boucle (il arrive au travail) : il reste là, debout.
+        if (c.sansBoucle && c.i + 2 >= c.pts.length) { c.t = 1; if (!c.fini) { c.fini = true; x.perso.jouer('repos', { fondu: 0.3 }); } continue; }
+        c.t -= 1; c.i = (c.i + 1) % c.pts.length; continue;
+      }
       const o = x.perso.objet;
-      o.position.set(a[0] + (b[0] - a[0]) * c.t, 0, a[1] + (b[1] - a[1]) * c.t);
+      const px = a[0] + (b[0] - a[0]) * c.t, pz = a[1] + (b[1] - a[1]) * c.t;
+      o.position.set(px, this.solDehors(px, pz), pz);
       o.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
+      // Sur un passage piéton, il compte comme un passant : les voitures s'arrêtent (ville3d.js).
+      const ps = c.traversees ? c.traversees[c.i] : undefined;
+      if ((ps ?? null) !== (x.passage ?? null)) { this.libererPassage(x); if (ps !== undefined && this.villeVivante?.passages?.[ps]) { this.villeVivante.passages[ps].occupe += 1; x.passage = ps; } }
     }
 
     // La réceptionniste se tourne vers le visiteur et le salue une fois.

@@ -1464,6 +1464,14 @@
       "passager": {
         "descend": "{{nom}} descend. « Merci ! »",
         "descendFache": "{{nom}} descend, fâchée."
+      },
+      "journee": {
+        "nuit_one": "Il est tard : {{count}} agent libre dort chez lui. L'immeuble tourne avec ceux qui travaillent.",
+        "nuit_other": "Il est tard : {{count}} agents libres dorment chez eux. L'immeuble tourne avec ceux qui travaillent.",
+        "soir_one": "C'est le soir : {{count}} agent libre est sorti (plage, terrasse). Retrouve-le dans « Chez les agents ».",
+        "soir_other": "C'est le soir : {{count}} agents libres sont sortis (plage, terrasse). Retrouve-les dans « Chez les agents ».",
+        "weekend_one": "C'est le week-end : {{count}} agent libre est dehors. Retrouve-le dans « Chez les agents ».",
+        "weekend_other": "C'est le week-end : {{count}} agents libres sont dehors. Retrouve-les dans « Chez les agents »."
       }
     },
     "agentModifie": "Enregistré",

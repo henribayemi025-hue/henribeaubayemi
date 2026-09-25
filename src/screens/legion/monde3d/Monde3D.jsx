@@ -235,6 +235,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               setBulle({ nom: e.nom, texte, fache: e.type === 'pieton' || !!e.fache, quand });
               setTimeout(() => setBulle((b) => (b && b.quand === quand ? null : b)), 4500);
             }
+            // La journée des agents (lot 3.2) : le soir, la nuit, le week-end, les agents libres ne
+            // sont pas au hall. On le dit une fois par moment, sinon un hall vide ressemble à une panne.
+            if (e.type === 'journee' && e.absents > 0 && ['soir', 'nuit', 'weekend'].includes(e.moment)) {
+              const quand = Date.now();
+              setBulle({ nom: null, texte: t(`legion.monde.journee.${e.moment}`, { count: e.absents }), fache: false, quand });
+              setTimeout(() => setBulle((b) => (b && b.quand === quand ? null : b)), 7000);
+            }
           },
         });
         monde.current = m;

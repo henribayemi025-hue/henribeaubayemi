@@ -989,6 +989,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     // Pour conduire (conduite.js) : les voitures libres, les trottoirs, la circulation.
     voituresLibres: libres,
     passants,
+    passages,
+    // Le marché d'en face, s'il y en a un (région) : les agents y déjeunent (lot 3.2).
+    marche: style.marche ? { z: 38.2, x0: -19, x1: 17.3 } : null,
     blocs: ilots.map(({ x0, x1, z0, z1 }) => ({ x0, x1, z0, z1 })),
     // Ce qu'une voiture ne traverse pas : les immeubles (pas les trottoirs — on peut y monter, 25/09).
     solides: [...tours.map(({ bx, bz, w, d }) => ({ x0: bx - w / 2 - 0.4, x1: bx + w / 2 + 0.4, z0: bz - d / 2 - 0.4, z1: bz + d / 2 + 0.4 })), { x0: -12.8, x1: 12.8, z0: -9.8, z1: 9.8 }],

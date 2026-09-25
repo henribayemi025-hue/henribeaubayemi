@@ -211,3 +211,47 @@ export function etatDe(agent, ou, taches = []) {
   const n = (taches || []).filter((x) => x.assigne_a === id && !x.termine_le && !['fait', 'revue'].includes(x.meta?.statut)).length;
   return { etat: 'dispo', n };
 }
+
+// ——— La journée d'un agent (lot 3.2, 25/09) ———
+//
+// Beau : « un agent se lève, il part au marché, au travail, il rentre, il dort,
+// il part boire, il fait la course ». Le moment du jour est celui de la
+// personne qui regarde (son heure) : ses agents vivent avec elle. Le travail
+// réel (auBureau, réunion) passe toujours avant : un agent qui travaille tard
+// est à son poste, même à minuit — « ton entreprise tourne pendant que tu dors ».
+export function momentDu(heure, jour = 1) {
+  const h = ((Number(heure) || 0) % 24 + 24) % 24;
+  if (h >= 23 || h < 6) return 'nuit';
+  if (jour === 0 || jour === 6) return h < 10 ? 'matin' : h < 18 ? 'weekend' : 'soir';
+  if (h < 9) return 'matin';
+  if (h >= 12 && h < 14) return 'midi';
+  if (h >= 18) return 'soir';
+  return 'travail';
+}
+
+// Un tirage stable par agent (0–1), pour varier ce que chacun fait.
+export function tirageDe(id) {
+  let h = 0x9e3779b9;
+  for (const c of String(id || '')) { h = Math.imul(h ^ c.charCodeAt(0), 0x85ebca6b); h ^= h >>> 13; }
+  h = Math.imul(h ^ (h >>> 16), 0xc2b2ae35); h ^= h >>> 15; // brassage final : « a » et « b » ne se ressemblent plus
+  return ((h >>> 0) % 1000) / 1000;
+}
+
+// Où il est et ce qu'il fait, d'après son état réel et le moment :
+//   lieu : 'bureau' | 'reunion' | 'hall' | 'chemin' | 'marche' | 'maison' | 'plage' | 'terrasse'
+//   fait : 'travaille' | 'reunion' | 'pause' | 'attend' | 'arrive' | 'dejeune' | 'dort' | 'court' | 'boit' | 'joue'
+export function journeeDe(agent, etat, moment) {
+  const e = etat?.etat || 'dispo';
+  if (e === 'veille') return { lieu: 'maison', fait: 'dort' };
+  if (e === 'travaille') return { lieu: 'bureau', fait: 'travaille' };
+  if (e === 'reunion') return { lieu: 'reunion', fait: 'reunion' };
+  const t = tirageDe(agent?.id);
+  if (moment === 'nuit') return { lieu: 'maison', fait: 'dort' };
+  if (moment === 'matin') return t < 0.5 ? { lieu: 'chemin', fait: 'arrive' } : { lieu: 'hall', fait: e === 'pause' ? 'pause' : 'attend' };
+  if (moment === 'midi') return t < 0.6 ? { lieu: 'marche', fait: 'dejeune' } : { lieu: 'hall', fait: 'pause' };
+  if (moment === 'soir' || moment === 'weekend') {
+    if (e === 'aFaire' && moment === 'soir' && t > 0.7) return { lieu: 'hall', fait: 'attend' }; // il reste un peu
+    return t < 0.4 ? { lieu: 'plage', fait: 'court' } : t < 0.7 ? { lieu: 'terrasse', fait: 'boit' } : { lieu: 'plage', fait: 'joue' };
+  }
+  return { lieu: 'hall', fait: e === 'pause' ? 'pause' : 'attend' };
+}

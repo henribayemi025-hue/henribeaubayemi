@@ -300,6 +300,7 @@ Principe : une chose à la fois, jouée et vérifiée, pas dix choses en surface
   - la nuit : il dort chez lui.
 - **Règle de vérité** : ce qui est un vrai travail vient des données, jamais inventé. Le reste de la journée est une vie décorative, clairement du décor.
 - On peut suivre un agent toute sa journée.
+- **État au 25/09 (staging)** : fait — la journée suit l'heure de la personne (`momentDu`, `journeeDe` dans `monde.js`, testés) ; matin : une partie des agents libres arrive à pied par les passages piétons (les voitures s'arrêtent pour eux) et entre dans le hall ; midi : marché d'en face (régions avec marché) ou parvis ; soir et week-end : course au bord de la mer, ballon sur la plage, un verre sur la terrasse (lieu « Chez les agents ») ; nuit : il dort chez lui ; le travail réel passe toujours avant ; l'écran prévient quand le hall est vide pour cette raison. Vérifié par `journee-3d.mjs` (hall et maisons à 7 h, 12 h, 15 h, 20 h, 2 h, samedi, deux régions), 0 erreur. **Pas fait** : le taxi du matin, le basket et le foot sur de vrais terrains (attendent le stade du lot 3.5), suivre un agent d'un lieu à l'autre.
 
 **3.3 La grande carte (E10).**
 - La ville s'étend en quartiers chargés seulement quand on s'en approche :

@@ -1464,6 +1464,14 @@
       "passager": {
         "descend": "{{nom}} gets out. “Thanks!”",
         "descendFache": "{{nom}} gets out, angry."
+      },
+      "journee": {
+        "nuit_one": "It's late: {{count}} free agent is asleep at home. The building runs with those who are working.",
+        "nuit_other": "It's late: {{count}} free agents are asleep at home. The building runs with those who are working.",
+        "soir_one": "It's the evening: {{count}} free agent is out (beach, terrace). Find them in “Where agents live”.",
+        "soir_other": "It's the evening: {{count}} free agents are out (beach, terrace). Find them in “Where agents live”.",
+        "weekend_one": "It's the weekend: {{count}} free agent is out. Find them in “Where agents live”.",
+        "weekend_other": "It's the weekend: {{count}} free agents are out. Find them in “Where agents live”."
       }
     },
     "agentModifie": "Saved",

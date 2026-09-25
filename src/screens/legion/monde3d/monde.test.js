@@ -1,6 +1,6 @@
 // Le monde 3D : qui est où, sur les vraies données uniquement.
 import { describe, it, expect } from 'vitest';
-import { traitsDe, corpsDe, quiOuEst, repondre, enPause, RECEPTIONNISTE } from './monde';
+import { traitsDe, corpsDe, quiOuEst, repondre, enPause, RECEPTIONNISTE, momentDu, journeeDe, tirageDe } from './monde';
 
 const MAINTENANT = Date.parse('2026-09-25T10:00:00Z');
 const il = (min) => new Date(MAINTENANT - min * 60000).toISOString();
@@ -84,5 +84,34 @@ describe('monde 3D', () => {
     expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro' }).texte).toMatch(/Finjaro/);
     expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro', maintenant: new Date(2026, 8, 25, 8).getTime() }).texte).toMatch(/^Bonjour, bienvenue chez Finjaro\. La journée commence/);
     expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro', maintenant: new Date(2026, 8, 25, 23).getTime() }).texte).toMatch(/^Il est tard/);
+  });
+});
+
+describe('la journée d’un agent (lot 3.2)', () => {
+  it('découpe la journée, et le week-end', () => {
+    expect(momentDu(2, 3)).toBe('nuit'); expect(momentDu(23, 3)).toBe('nuit'); expect(momentDu(5, 3)).toBe('nuit');
+    expect(momentDu(7, 3)).toBe('matin'); expect(momentDu(10, 3)).toBe('travail'); expect(momentDu(12, 3)).toBe('midi'); expect(momentDu(15, 3)).toBe('travail'); expect(momentDu(19, 3)).toBe('soir');
+    expect(momentDu(11, 0)).toBe('weekend'); expect(momentDu(8, 6)).toBe('matin'); expect(momentDu(20, 6)).toBe('soir');
+    expect(momentDu('abc', 3)).toBe('nuit'); // une heure absurde ne casse rien
+  });
+  it('le travail réel passe avant le moment ; la nuit on dort ; le soir sport ou terrasse', () => {
+    expect(journeeDe({ id: 'a' }, { etat: 'travaille' }, 'nuit')).toEqual({ lieu: 'bureau', fait: 'travaille' });
+    expect(journeeDe({ id: 'a' }, { etat: 'reunion' }, 'soir')).toEqual({ lieu: 'reunion', fait: 'reunion' });
+    expect(journeeDe({ id: 'a' }, { etat: 'veille' }, 'travail')).toEqual({ lieu: 'maison', fait: 'dort' });
+    expect(journeeDe({ id: 'a' }, { etat: 'dispo' }, 'nuit')).toEqual({ lieu: 'maison', fait: 'dort' });
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+    const soirs = ids.map((id) => journeeDe({ id }, { etat: 'dispo' }, 'soir').fait);
+    expect(new Set(soirs).size).toBeGreaterThan(1);
+    expect(soirs.every((f) => ['court', 'boit', 'joue'].includes(f))).toBe(true);
+    const matins = ids.map((id) => journeeDe({ id }, { etat: 'dispo' }, 'matin').lieu);
+    expect(matins).toContain('chemin'); expect(matins).toContain('hall');
+    expect(journeeDe({ id: 'a' }, { etat: 'dispo' }, 'travail')).toEqual({ lieu: 'hall', fait: 'attend' });
+    expect(journeeDe({ id: 'a' }, { etat: 'pause' }, 'travail')).toEqual({ lieu: 'hall', fait: 'pause' });
+    expect(['marche', 'hall']).toContain(journeeDe({ id: 'a' }, { etat: 'dispo' }, 'midi').lieu);
+    expect(journeeDe(null, null, 'travail')).toEqual({ lieu: 'hall', fait: 'attend' });
+  });
+  it('tirage : stable, différent selon l’agent, entre 0 et 1', () => {
+    expect(tirageDe('x')).toBe(tirageDe('x')); expect(tirageDe('x')).not.toBe(tirageDe('y'));
+    expect(tirageDe('zzz')).toBeLessThan(1); expect(tirageDe('zzz')).toBeGreaterThanOrEqual(0); expect(tirageDe(undefined)).toBeLessThan(1);
   });
 });
