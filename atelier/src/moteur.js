@@ -45,7 +45,10 @@ export const FOURNISSEURS = {
 };
 
 export const MODELES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gm:gemini-3.5-flash', 'gm:gemini-2.5-flash', 'gm:gemini-3.1-pro-preview', 'oa:gpt-6-astra', 'oa:gpt-6-sol', 'oa:gpt-5.4-mini', 'an:claude-sonnet-5'];
-const AUTO_PAR_DEFAUT = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gm:gemini-3.5-flash'];
+// 25/09 : Beau a trouvé « pitoyable » la marketplace qu'Awa a faite avec
+// DeepSeek Flash. Auto commence donc par le plus fort qu'on ait ; si l'appel
+// risque de dépasser le plafond de la séance, la boucle passe au suivant.
+const AUTO_PAR_DEFAUT = ['oa:gpt-6-sol', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'gm:gemini-3.5-flash', 'ds:deepseek-flash'];
 
 const fournisseur = (m) => FOURNISSEURS[String(m).split(':')[0]];
 export const cleDe = (env, m) => {

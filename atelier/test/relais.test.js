@@ -110,7 +110,8 @@ describe('la liste des modèles', () => {
     expect(disponibles(SUPA)).toEqual([]);
     expect(disponibles(SUPA, { relais: liste })).toEqual(['ds:deepseek-flash', 'km:kimi-k2.6', 'an:claude-sonnet-5']);
     expect(disponibles({ ...SUPA, GEMINI_API_KEY: 'g' }, { relais: liste, geminiCoupe: true })).toEqual(['ds:deepseek-flash', 'km:kimi-k2.6', 'an:claude-sonnet-5']);
-    expect(ordre(SUPA, 'auto', { relais: liste })).toEqual(['ds:deepseek-flash', 'km:kimi-k2.6']);
+    // Auto commence par le plus fort (25/09) ; ici le relais n'a que Kimi et DeepSeek Flash.
+    expect(ordre(SUPA, 'auto', { relais: liste })).toEqual(['km:kimi-k2.6', 'ds:deepseek-flash']);
   });
 
   it('relais en panne ou jeton expiré → liste vide, sans planter', async () => {
@@ -167,9 +168,11 @@ describe('la boucle avec le relais', () => {
   });
 
   it('jeton refusé mais une clé du Worker existe → le modèle direct prend la relève', async () => {
+    // Le relais propose un modèle plus fort que Kimi (essayé d'abord), puis Kimi, dont le Worker a la clé.
     const m = monter((url) => (url === RELAIS ? new Response('{}', { status: 401 }) : Response.json(reponseModele('direct'))), {
       jeton: valide(),
       env: { ...SUPA, KIMI_API_KEY: 'k' },
+      relais: ['ds:deepseek-v4-pro', 'km:kimi-k2.6'],
     });
     await envoyer(m.etat, m.deps, 'bonjour');
     expect(m.etat.session.statut).toBe('pret');

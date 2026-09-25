@@ -61,8 +61,8 @@ describe('coût mesuré', () => {
 describe('Auto sans Gemini', () => {
   it('saute les modèles sans clé, et Gemini quand son plafond est atteint', () => {
     const env = { DEEPSEEK_API_KEY: 'x', GEMINI_API_KEY: 'y' };
-    expect(ordre(env, 'auto')).toEqual(['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'gm:gemini-3.5-flash']);
-    expect(ordre(env, 'auto', { geminiCoupe: true })).toEqual(['ds:deepseek-flash', 'ds:deepseek-v4-pro']);
+    expect(ordre(env, 'auto')).toEqual(['ds:deepseek-v4-pro', 'gm:gemini-3.5-flash', 'ds:deepseek-flash']);
+    expect(ordre(env, 'auto', { geminiCoupe: true })).toEqual(['ds:deepseek-v4-pro', 'ds:deepseek-flash']);
     expect(ordre({ KIMI_API_KEY: 'k' }, 'ds:deepseek-flash')).toEqual(['km:kimi-k2.6']);
     expect(disponibles({})).toEqual([]);
   });
