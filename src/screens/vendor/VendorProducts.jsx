@@ -13,6 +13,7 @@ import { isPriceOnRequest } from '../../lib/categories';
 import { Button } from '../../components/Button';
 import { RenameWithFinia } from '../../components/RenameWithFinia';
 import { articlesSansVraiNom } from '../../lib/nameQuality';
+import { ArticlesSansPrix } from '../../components/ArticlesSansPrix';
 
 // Trois piles bien distinctes. Avant, tout arrivait dans une seule grille:
 // impossible de voir ce qui était en ligne, et les arrivages passés se
@@ -130,6 +131,10 @@ export default function VendorProducts() {
             </button>
           ))}
         </div>
+      )}
+      {/* Les articles sans prix (25/09) : dans l'espace, jamais en notification. */}
+      {!loading && !error && rows.length > 0 && (
+        <ArticlesSansPrix shop={shop} rows={rows} onChange={(id, patch) => setData((all) => all.map((r) => (r.id === id ? { ...r, ...patch } : r)))} />
       )}
       {/* Avant la grille, parce qu'une vendeuse qui fait defiler 63 « Baby »
           ne remonte pas chercher un bouton. */}

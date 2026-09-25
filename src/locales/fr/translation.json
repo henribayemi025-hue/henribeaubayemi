@@ -1111,7 +1111,7 @@
     },
     "immeuble": {
       "accueil": "Votre entreprise en ce moment : {{n}} au travail. Cliquez sur quelqu'un pour le voir.",
-      "institut": "L'Institut",
+      "institut": "L'Académie",
       "institutAide": "formation et compétences",
       "institutVide": "Personne en formation en ce moment.",
       "accueilLieu": "Accueil",
@@ -1137,7 +1137,7 @@
       "parti": {
         "reunion": "en réunion ↓",
         "atelier": "à l'atelier ↓",
-        "institut": "à l'Institut ↑"
+        "institut": "à l'Académie ↑"
       },
       "fil": {
         "prend": "prend sa tâche",
@@ -2541,7 +2541,28 @@
     "creditBook": "Carnet de crédit",
     "creditBookHint": "Qui me doit combien — dans Finjaro Accounting",
     "appointments": "Rendez-vous",
-    "appointmentsHint": "Ton agenda de prestations — dans Finjaro Accounting"
+    "appointmentsHint": "Ton agenda de prestations — dans Finjaro Accounting",
+    "sansPrix": {
+      "titre_one": "Ton article sans prix",
+      "titre_other": "Tes {{count}} articles sans prix",
+      "phrase": "Quand un prix s’affiche, l’acheteuse sait tout de suite si c’est pour elle — et tu n’as plus à répondre à la même question.",
+      "champ": "Ton prix, dans la devise de ta boutique",
+      "enregistrer": "Enregistrer ce prix",
+      "garder": "Garder sur demande",
+      "erreur": "Ce prix n’a pas pu être enregistré. Vérifie les chiffres et réessaie.",
+      "fini": "C’est fait : tous tes articles ont un prix.",
+      "finiSuite": "Tu peux en ajouter d’autres quand tu veux.",
+      "sansPays": "Pour écrire tes prix dans la bonne devise, choisis d’abord le pays de ta boutique.",
+      "choisirPays": "Choisir le pays",
+      "tous": "Voir les {{count}}",
+      "moins": "Voir moins",
+      "pourquoi": "Pourquoi mettre un prix ?",
+      "raison1": "L’acheteuse compare : sans prix, elle passe à l’article suivant.",
+      "raison2": "Le soir, seule, elle décide sans écrire ni attendre une réponse.",
+      "raison3": "Un prix affiché lui évite la gêne de demander : elle avance, en confiance.",
+      "legitime": "« Sur demande » reste juste pour le sur-mesure, ou un prix qui change souvent.",
+      "champCourt": "Ton prix"
+    }
   },
   "orderStatus": {
     "new": "En attente de validation",
