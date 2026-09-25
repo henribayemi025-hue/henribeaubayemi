@@ -57,7 +57,7 @@ export function equipe({ env, jeton, user, entrepriseId, pid, fetchFn = fetch, a
     });
     if (!r.ok) return { ok: false, texte: `La tâche n'a pas pu être créée (${r.status}).` };
     // L'équipe se met au travail tout de suite (une tâche urgente n'attend pas).
-    const go = fetchFn(`${env.SUPABASE_URL}/functions/v1/legion-travail`, { method: 'POST', headers: h, body: JSON.stringify({ entreprise_id: entrepriseId }) }).catch(() => {});
+    const go = fetchFn(`${env.SUPABASE_URL}/functions/v1/legion-travail`, { method: 'POST', headers: h, body: JSON.stringify({ entreprise_id: entrepriseId, urgences: true }) }).catch(() => {});
     if (attendre) attendre(go);
     return { ok: true, texte: `Tâche confiée à ${qui.nom} (${qui.poste}), au tableau de Léo, en urgent. Son travail arrivera dans quelques minutes : lis-le avec « travail_collegues ». En attendant, continue ce qui ne dépend pas de lui.` };
   }
