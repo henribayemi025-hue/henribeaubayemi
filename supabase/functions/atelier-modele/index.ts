@@ -17,9 +17,10 @@
 //   Claude seul est traduit (anthropic.ts) : il ne parle pas ce format.
 //
 // La porte : le jeton Supabase de la personne, et la MÊME règle que le
-// Worker (atelier/src/supabase.js) — propriétaire de l'entreprise Finjaro
-// dans Léo (legion_membres, rôle « proprietaire »), lu avec SON jeton sous
-// les règles d'accès, ou identifiant listé dans ATELIER_UTILISATEURS.
+// Worker (atelier/src/supabase.js) — propriétaire de n'importe quelle
+// entreprise de Léo (legion_membres, rôle « proprietaire », depuis le 25/09),
+// lu avec SON jeton sous les règles d'accès, ou identifiant listé dans
+// ATELIER_UTILISATEURS.
 // Aucune clé de service ici : ce relais ne voit que ce que la personne voit.
 //
 // Pas de CORS : seul le serveur du Worker appelle ce relais, jamais une
@@ -41,7 +42,6 @@ import { depuisAnthropic, versAnthropic } from './anthropic.ts';
 const TAILLE_MAX = 2_000_000; // octets : le Worker envoie au plus ~240 000 caractères de conversation, que JSON et UTF-8 peuvent doubler
 const DELAI_MS = 120_000;
 const SORTIE_MAX = 16_384; // jetons de sortie par appel, au plus (le Worker en demande 8 000)
-const ENTREPRISE = Deno.env.get('ATELIER_ENTREPRISE') || '44bb201b-6787-4de0-8f7f-f9145d5c03e7';
 
 const env = (nom: string) => (Deno.env.get(nom) || '').trim() || undefined;
 
@@ -112,9 +112,13 @@ async function verifier(auth: string): Promise<{ personne?: Personne; statut?: n
   if (!user) return { statut: 401, erreur: 'Ta connexion à Léo a expiré : reconnecte-toi.' };
   const liste = String(Deno.env.get('ATELIER_UTILISATEURS') || '').split(',').map((s) => s.trim()).filter(Boolean);
   let autorise = liste.includes(user.id);
+  // 25/09 (Beau : « oui, ouvre le relais ») : même porte que le Worker de l'atelier
+  // (atelier/src/supabase.js) — le PROPRIÉTAIRE de n'importe quelle entreprise de Léo. Avant, un
+  // nouveau compte entrait dans l'atelier mais ce relais lui refusait tout modèle. Le plafond
+  // par personne et par jour, plus bas, reste la protection.
   if (!autorise) {
-    const { data } = await client.from('legion_membres').select('role').eq('entreprise_id', ENTREPRISE).eq('user_id', user.id);
-    autorise = Array.isArray(data) && data.some((l: { role: string }) => l.role === 'proprietaire');
+    const { data } = await client.from('legion_membres').select('role').eq('user_id', user.id).eq('role', 'proprietaire').limit(1);
+    autorise = Array.isArray(data) && data.length > 0;
   }
   cacheAcces.set(jeton, { id: user.id, autorise, expire: Math.min(Date.now() + 5 * 60_000, fin ?? Infinity) });
   if (cacheAcces.size > 200) cacheAcces.delete(cacheAcces.keys().next().value!);
