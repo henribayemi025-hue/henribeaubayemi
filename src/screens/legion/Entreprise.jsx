@@ -23,6 +23,7 @@ import { Veilleur } from './parties/Veilleur';
 import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
 import { Visage } from './parties/Visage';
+import { Jarvis } from './parties/Jarvis';
 import { couleurDept, clePrivee, sansAccent, raisonLisible } from './parties/outils';
 
 // L'Atelier de code (V0, 24/09) : chargé seulement quand on l'ouvre (l'éditeur
@@ -70,7 +71,9 @@ export default function Entreprise() {
   const [photos, setPhotos] = useState(false);
   const [appel, setAppel] = useState(null); // l'agent qu'on appelle (23/09)
   const [renfort, setRenfort] = useState(false); // renforcer un service / un expert (23/09)
-  const [outil, setOutil] = useState(null); // 'bureau' | 'frise' | 'presentation' | 'idees' | 'atelier' (24/09)
+  const [outil, setOutil] = useState(null);
+  // Jarvis V0 (25/09) : la pièce du Bureau qu'il ouvre (« ouvre la ville »).
+  const [bureauMode, setBureauMode] = useState('ville'); // 'bureau' | 'frise' | 'presentation' | 'idees' | 'atelier' (24/09)
   // « Voir comment il travaille » : ouvert depuis la fiche d'un agent de l'immeuble (25/09).
   const [voirTravail, setVoirTravail] = useState(null);
   const [aideClavier, setAideClavier] = useState(false);
@@ -226,6 +229,7 @@ export default function Entreprise() {
       setData((d) => (d ? { ...d, salons: [...d.salons, cree] } : d));
     }
     choisirSalon(s.id);
+    return s;
   }, [moi, data, entrepriseId, toast, setData, choisirSalon]);
 
   // Qui va répondre — la même règle que le serveur, pour afficher « écrit… »
@@ -294,6 +298,8 @@ export default function Entreprise() {
       // apporte aussi, on dédoublonne par identifiant.
       const arrives = (r?.messages || []).filter(Boolean);
       if (arrives.length) setData((d) => (d ? { ...d, messages: [...d.messages, ...arrives.filter((x) => !d.messages.some((m) => m.id === x.id))] } : d));
+      // Les réponses, pour qui en a besoin (Jarvis les lit à voix haute).
+      return arrives;
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setTape(null); }
   }
@@ -426,6 +432,48 @@ export default function Entreprise() {
     }).select().single();
     if (err) { toast.error(err.message); return; }
     setData((d) => (d && !d.messages.some((x) => x.id === ligne.id) ? { ...d, messages: [...d.messages, ligne] } : d));
+  }
+
+  // JARVIS V0 (25/09) : ce que la télécommande vocale a compris devient un
+  // geste de l'écran. Rend une phrase à dire quand il y a une suite (la
+  // réponse d'un agent), sinon rien.
+  async function jarvisAction(r) {
+    const agent = r.agent ? machines.find((a) => a.nom === r.agent) : null;
+    if (r.intention === 'ouvrir_vue') {
+      const salon = r.salon ? departements.find((d) => d.nom === r.salon) : null;
+      if (salon && !r.vue) { setOutil(null); choisirSalon(salon.id); return null; }
+      const v = r.vue;
+      if (['ville', 'immeuble', 'reunions', 'academie', 'organigramme'].includes(v)) { setBureauMode(v); setOutil('bureau'); return null; }
+      if (v === 'frise' || v === 'idees') { setOutil(v); return null; }
+      if (v === 'atelier') { if (data.role === 'proprietaire') setOutil('atelier'); else return t('legion.jarvis.atelierFerme'); return null; }
+      if (v === 'taches') { setOutil(null); if (window.innerWidth >= 1024) setKanban(true); else setVue('taches'); return null; }
+      setOutil(null); setDeptId(null); setVue('accueil');
+      return null;
+    }
+    if (!agent && ['parler_a', 'demander_rapport'].includes(r.intention)) return t('legion.jarvis.agentInconnu');
+    if (r.intention === 'parler_a') { setOutil(null); await ecrireA(agent); return null; }
+    if (r.intention === 'demander_rapport') {
+      setOutil(null);
+      const s = await ecrireA(agent);
+      if (!s) return null;
+      const arrives = await envoyer({ texte: t('legion.jarvis.demandeRapport', { nom: agent.nom }), genre: 'info' }, s.id);
+      const rep = (arrives || []).find((m) => m.auteur_id === agent.id && m.genre !== 'tache');
+      return rep ? String(rep.texte).slice(0, 600) : null;
+    }
+    if (!r.confirme) return null;
+    if (data.role === 'lecteur') return t('legion.jarvis.lecteur');
+    if (r.intention === 'creer_tache') {
+      await creerTache({ texte: String(r.texte).slice(0, 200), assigne_a: agent?.id || null, priorite: 'haute' });
+      return t('legion.jarvis.tacheCreee', { nom: agent?.nom || t('legion.personneEncore', 'Personne encore (libre)') });
+    }
+    if (r.intention === 'question' && salonRapport) {
+      setOutil(null);
+      choisirSalon(salonRapport.id);
+      const arrives = await envoyer({ texte: String(r.texte), genre: 'info' }, salonRapport.id);
+      const rep = (arrives || []).find((m) => m.genre !== 'tache' && machines.some((a) => a.id === m.auteur_id));
+      return rep ? String(rep.texte).slice(0, 600) : t('legion.jarvis.questionPosee');
+    }
+    return null;
   }
 
   function statutTache(x, statut) {
@@ -876,7 +924,7 @@ export default function Entreprise() {
       {/* Les grandes vues (24/09) : le bureau, la frise, la présentation, les idées */}
       {outil && (
         <PleinEcran titre={t(`legion.vues.titre.${outil}`)} onFermer={() => setOutil(null)} t={t}>
-          {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} onMajMessage={majMessage} onCreerTache={creerTache} peutAgir={data.role !== 'lecteur'} t={t} />}
+          {outil === 'bureau' && <Bureau key={bureauMode} modeDepart={bureauMode} entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} onMajMessage={majMessage} onCreerTache={creerTache} peutAgir={data.role !== 'lecteur'} t={t} />}
           {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'atelier' && (
@@ -914,6 +962,9 @@ export default function Entreprise() {
           </div>
         </div>
       )}
+
+      {/* Jarvis V0 : la télécommande vocale (bouton ou barre d'espace tenue). */}
+      {outil !== 'atelier' && <Jarvis entrepriseId={entrepriseId} langue={langue} t={t} onAction={jarvisAction} />}
 
       {/* Une clé par agent: la fiche repart de zéro à chaque ouverture (sinon
           un formulaire à moitié rempli passait d'un agent à l'autre). */}

@@ -45,9 +45,10 @@ function actifsRecents(messages) {
 }
 
 // ——— Le bureau (52) et l'organigramme (51), vivants ———
-export function Bureau({ entreprise, agents, departements, messages, taches, onFiche, onMajMessage, onCreerTache, peutAgir, t }) {
+export function Bureau({ entreprise, agents, departements, messages, taches, onFiche, onMajMessage, onCreerTache, peutAgir, modeDepart, t }) {
   // La ville d'abord (25/09) : les projets en tours ; puis l'immeuble.
-  const [mode, setMode] = useState('ville');
+  // `modeDepart` : Jarvis ouvre directement une pièce (« ouvre l'Académie »).
+  const [mode, setMode] = useState(modeDepart || 'ville');
   const [maintenant, setMaintenant] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
   const auTravail = useMemo(() => actifsRecents(messages), [messages, maintenant]); // eslint-disable-line react-hooks/exhaustive-deps

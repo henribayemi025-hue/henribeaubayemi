@@ -53,6 +53,16 @@ async function lireAvec(apiKey: string, consigne: string, mime: string, donnees:
   return null;
 }
 
+// Transcrire une phrase dite à Léo (Jarvis V0, legion-jarvis) : vite
+// d'abord (OpenAI), Gemini en relais. L'audio arrive en base64 et n'est
+// gardé nulle part.
+export async function transcrireVocal(apiKey: string, base64: string, mime: string): Promise<string | null> {
+  const o = await transcrire({ mime, donnees: base64 }, { fn: null, delaiMs: 20_000 });
+  if ('texte' in o && o.texte.trim()) return o.texte.trim().slice(0, 600);
+  const t = apiKey ? await lireAvec(apiKey, "Transcris fidèlement cette phrase dite à voix haute, dans la langue parlée. Rends seulement le texte dit, sans commentaire. S'il n'y a rien d'audible, rends « (inaudible) ».", mime, base64, 400) : null;
+  return t ? t.trim().slice(0, 600) : null;
+}
+
 // Le texte d'un fichier de travail (Excel, CSV, texte, PDF). `max` signes au
 // plus: 14 000 pour une pièce jointe, bien plus pour un document de
 // l'entreprise (0179).

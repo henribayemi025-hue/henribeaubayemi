@@ -1258,6 +1258,26 @@
         "champ": "Team ID",
         "jeton": "Access token"
       }
+    },
+    "jarvis": {
+      "bouton": "Talk to Léo (or hold Space)",
+      "ecoute": "Listening…",
+      "comprend": "Understanding…",
+      "accord": "Léo listens only when you press this button (or hold Space). Your sentence is transcribed to understand the order, then the audio is kept nowhere. Sending outside Léo, paying or deleting is never done by voice.",
+      "accepter": "OK, listen",
+      "pasDeMicro": "This browser gives no access to the microphone.",
+      "erreur": "I couldn’t understand. Try again.",
+      "oui": "Yes, go",
+      "non": "No",
+      "fait": "Done.",
+      "tachePour": "Task for {{nom}}:",
+      "questionEquipe": "Question for the team (Management):",
+      "tacheCreee": "Task created for {{nom}}.",
+      "questionPosee": "Question asked in Management.",
+      "demandeRapport": "@{{nom}} your report: where are you, what’s done, what’s blocking you?",
+      "agentInconnu": "I can’t find that agent.",
+      "atelierFerme": "The workshop is for the company owner only.",
+      "lecteur": "You’re a reader in this company: I can’t do that."
     }
   },
   "equipe": {

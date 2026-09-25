@@ -1258,6 +1258,26 @@
         "champ": "Identifiant d’équipe",
         "jeton": "Jeton d’accès"
       }
+    },
+    "jarvis": {
+      "bouton": "Parler à Léo (ou maintenir Espace)",
+      "ecoute": "Je t’écoute…",
+      "comprend": "Je comprends…",
+      "accord": "Léo t’écoute seulement quand tu appuies sur ce bouton (ou maintiens Espace). Ta phrase est transcrite pour comprendre l’ordre, puis l’audio n’est gardé nulle part. Envoyer hors de Léo, payer ou supprimer ne se fait jamais à la voix.",
+      "accepter": "D’accord, j’écoute",
+      "pasDeMicro": "Ce navigateur ne donne pas accès au micro.",
+      "erreur": "Je n’ai pas pu comprendre. Réessaie.",
+      "oui": "Oui, vas-y",
+      "non": "Non",
+      "fait": "C’est fait.",
+      "tachePour": "Tâche pour {{nom}} :",
+      "questionEquipe": "Question à poser à l’équipe (Direction) :",
+      "tacheCreee": "Tâche créée pour {{nom}}.",
+      "questionPosee": "Question posée en Direction.",
+      "demandeRapport": "@{{nom}} ton rapport : où en es-tu, qu’as-tu fini, qu’est-ce qui te bloque ?",
+      "agentInconnu": "Je ne trouve pas cet agent.",
+      "atelierFerme": "L’atelier est réservé au propriétaire de l’entreprise.",
+      "lecteur": "Tu es lecteur dans cette entreprise : je ne peux pas le faire."
     }
   },
   "equipe": {
