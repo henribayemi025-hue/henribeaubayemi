@@ -21,6 +21,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
+import { piloter, heurterBlocs, heurterVehicules, portiere, kmh } from './conduite';
 import { construireMaisons } from './maisons3d';
 import { construireSalleMarche } from './salle-marche3d';
 import { construirePlanete } from './planete3d';
@@ -488,7 +489,7 @@ export class Monde {
       { type: 'escalier', x: -8.6, z: -3.2, rayon: 1.6 },
     ];
     await Promise.all(ajouts);
-    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -36, x1: 36, z0: -27, z1: 72 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
+    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -196, x1: 196, z0: -196, z1: 196 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
   }
   async construireReunion() {
     const g = new THREE.Group();
@@ -983,7 +984,8 @@ export class Monde {
       const code = e.code;
       if (e.type === 'keydown') {
         this.touches.add(code);
-        if (code === 'KeyE') this.interagir();
+        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); }
+        else if (code === 'KeyE') this.interagir();
         if (code === 'KeyV') this.cycleCamera();
       } else this.touches.delete(code);
     };
@@ -1008,8 +1010,65 @@ export class Monde {
   // Frise du temps (onglet « La ville ») : vue d'ensemble des chantiers, ou retour au joueur.
   vueChantiers(oui) { if (oui && this.vueChantiersT == null) this.vueChantiersT = 0; if (!oui) this.vueChantiersT = null; }
   reglerCamera(mode) { this.cam.mode = mode; this.emettre({ type: 'camera', mode }); }
+  // ——— Conduire (conduite.js) ———
+  monterVoiture(id) {
+    const lb = this.villeVivante?.voituresLibres.find((x) => x.id === id);
+    if (!lb || this.conduite || this.lieu?.nom !== 'hall') return;
+    this.conduite = { lb, kmh: -1, t: 0, secousse: 0 };
+    this.joueur.objet.visible = false;
+    this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
+    this.emettre({ type: 'conduite', active: true, kmh: 0 });
+  }
+  descendreVoiture() {
+    const c = this.conduite;
+    if (!c) return;
+    const e = c.lb.etat;
+    e.vitesse = 0;
+    const pied = portiere(e);
+    const p = this.joueur.objet.position;
+    p.set(pied.x, 0, pied.z);
+    this.collisions(p);
+    this.joueur.objet.rotation.y = e.cap + Math.PI;
+    this.cam.yaw = e.cap + Math.PI; this.camSnap = true;
+    this.conduite = null;
+    this.emettre({ type: 'conduite', active: false });
+  }
+  // Pédales et volant du téléphone (boutons de l'écran), en plus du clavier et du joystick.
+  pedales(p) { this.pedale = { ...(this.pedale || {}), ...p }; }
+  avancerVoiture(dt) {
+    const c = this.conduite, t = this.touches, V = this.villeVivante, pd = this.pedale || {};
+    const gaz = Math.max(-1, Math.min(1, (t.has('KeyW') || t.has('ArrowUp') || pd.gaz ? 1 : 0) - (t.has('KeyS') || t.has('ArrowDown') || pd.frein ? 1 : 0) - this.joy.y));
+    const volant = Math.max(-1, Math.min(1, (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x));
+    // Petits pas de calcul : la voiture va à la bonne vitesse même sur un appareil lent.
+    // Obstacles : la circulation et les autres voitures libres (garées ou laissées là).
+    const autres = [...V.circulation(), ...V.voituresLibres.filter((x) => x !== c.lb).flatMap((x) => [-1.3, 1.3].map((k) => ({ x: x.etat.x + Math.sin(x.etat.cap) * k, z: x.etat.z + Math.cos(x.etat.cap) * k, rayon: 0.95 })))];
+    let e = c.lb.etat, choc = 0, reste = Math.min(dt, 0.25);
+    while (reste > 1e-4) {
+      const h = Math.min(reste, 1 / 60); reste -= h;
+      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space') }, h), V.blocs);
+      choc = Math.max(choc, e.choc);
+      e = heurterVehicules(e, autres);
+      choc = Math.max(choc, e.choc);
+    }
+    e.x = Math.max(-194, Math.min(194, e.x)); e.z = Math.max(-194, Math.min(194, e.z));
+    if (choc > 4) { c.secousse = Math.min(0.6, choc / 30); this.emettre({ type: 'choc', force: choc }); }
+    c.lb.etat = { x: e.x, z: e.z, cap: e.cap, vitesse: e.vitesse };
+    const o = c.lb.objet;
+    o.position.set(e.x, 0, e.z);
+    o.rotation.y = e.cap - Math.PI / 2;
+    o.rotation.z = Math.max(-0.03, Math.min(0.03, -gaz * 0.02 * Math.sign(e.vitesse || 1))); // la caisse plonge au freinage
+    for (const r of o.userData.roues || []) {
+      r.axe.rotation.z -= (e.vitesse * dt) / 0.35;
+      if (r.avant) r.pivot.rotation.y = -(e.angle || 0);
+    }
+    this.joueur.objet.position.set(e.x, 0, e.z); // le joueur est dans la voiture (caméra, soleil, proximité)
+    c.t += dt;
+    const k = kmh(e.vitesse);
+    if (c.t > 0.15 && k !== c.kmh) { c.t = 0; c.kmh = k; this.emettre({ type: 'conduite', active: true, kmh: k }); }
+  }
   interagir() {
     if (!this.proche) return;
+    if (this.proche.type === 'voiture') { this.monterVoiture(this.proche.id); return; }
     if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
     this.emettre({ type: 'interagir', cible: this.proche });
   }
@@ -1061,7 +1120,9 @@ export class Monde {
     let az = (t.has('KeyS') || t.has('ArrowDown') ? 1 : 0) - (t.has('KeyW') || t.has('ArrowUp') ? 1 : 0) + this.joy.y;
     const n = Math.hypot(ax, az);
     const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 1.4;
-    if (n > 0.08) {
+    if (this.conduite && this.lieu.nom !== 'hall') this.descendreVoiture();
+    if (this.conduite) this.avancerVoiture(dt);
+    else if (n > 0.08) {
       ax /= Math.max(n, 1); az /= Math.max(n, 1);
       const yaw = this.cam.mode === 'plan' ? Math.PI : this.cam.yaw;
       const dx = ax * Math.cos(yaw) + az * Math.sin(yaw);
@@ -1115,6 +1176,8 @@ export class Monde {
     const p = j.objet.position;
     let proche = null;
     for (const x of this.lieu.poi) if (Math.hypot(p.x - x.x, p.z - x.z) < x.rayon) proche = x;
+    if (this.lieu.nom === 'hall' && this.villeVivante) for (const v of this.villeVivante.voituresLibres) if (Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
+    if (this.conduite) proche = null;
     for (const [id, x] of this.agents) {
       const q = x.perso.objet.position;
       if (Math.hypot(p.x - q.x, p.z - q.z) < 1.6) proche = { type: 'agent', id, nom: x.agent.nom };
@@ -1125,7 +1188,16 @@ export class Monde {
     // Caméra
     const tete = new THREE.Vector3(p.x, 1.55, p.z);
     j.objet.visible = this.cam.mode !== 'fps';
-    if (this.vueChantiersT != null && this.lieu.nom === 'hall') {
+    if (this.conduite) {
+      // Derrière la voiture, un peu plus loin quand elle va vite ; petite secousse aux chocs.
+      const e = this.conduite.lb.etat, c = this.conduite;
+      j.objet.visible = false;
+      const recul = 6.5 + Math.abs(e.vitesse) * 0.12, dir = e.vitesse < -0.5 ? -1 : 1;
+      const voulu = new THREE.Vector3(e.x - Math.sin(e.cap) * recul * dir, 2.6 + Math.abs(e.vitesse) * 0.03, e.z - Math.cos(e.cap) * recul * dir);
+      if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 4));
+      if (c.secousse > 0) { this.camera.position.x += (Math.random() - 0.5) * c.secousse; this.camera.position.y += (Math.random() - 0.5) * c.secousse; c.secousse = Math.max(0, c.secousse - dt * 1.5); }
+      this.camera.lookAt(e.x + Math.sin(e.cap) * 5 * dir, 1.1, e.z + Math.cos(e.cap) * 5 * dir);
+    } else if (this.vueChantiersT != null && this.lieu.nom === 'hall') {
       // La frise du temps : on prend de la hauteur au-dessus du quartier des
       // projets, en se balançant doucement, pour voir les chantiers grandir.
       this.vueChantiersT += dt;
@@ -1162,7 +1234,8 @@ export class Monde {
     const L = this.lieu.limites;
     p.x = THREE.MathUtils.clamp(p.x, L.x0 + RAYON, L.x1 - RAYON);
     p.z = THREE.MathUtils.clamp(p.z, L.z0 + RAYON, L.z1 - RAYON);
-    for (const b of this.lieu.murs) {
+    const murs = this.lieu.nom === 'hall' && this.villeVivante ? [...this.lieu.murs, ...this.villeVivante.tours] : this.lieu.murs;
+    for (const b of murs) {
       if (p.x > b.x0 - RAYON && p.x < b.x1 + RAYON && p.z > b.z0 - RAYON && p.z < b.z1 + RAYON) {
         const g = p.x - (b.x0 - RAYON), d = (b.x1 + RAYON) - p.x, h = p.z - (b.z0 - RAYON), bas = (b.z1 + RAYON) - p.z;
         const m = Math.min(g, d, h, bas);

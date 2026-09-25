@@ -103,6 +103,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       rendues: x.rendues, total: x.total, avancement: x.avancement, termine: x.termine, enRetard: x.enRetard, agentsAuTravail: x.agentsAuTravail,
     }));
   }, [projets, toutes, agents, maintenant, quand, t]);
+  const [volant, setVolant] = useState(null); // { kmh } pendant qu'on conduit
+  const [choc, setChoc] = useState(0);
   const [menu, setMenu] = useState(false);
   const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
@@ -157,6 +159,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'proximite') setProche(e.cible);
             if (e.type === 'ciel') setCiel3d(e.actif);
             if (e.type === 'interagir') interagirRef.current?.(e.cible);
+            if (e.type === 'conduite') setVolant(e.active ? { kmh: e.kmh || 0 } : null);
+            if (e.type === 'choc') { setChoc(Date.now()); try { navigator.vibrate?.(Math.min(120, e.force * 4)); } catch { /* pas de vibreur */ } }
           },
         });
         monde.current = m;
@@ -199,6 +203,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   interagirRef.current = (c) => interagir(c);
   function interagir(cible) {
     if (!cible) return;
+    if (cible.type === 'voiture') { monde.current?.monterVoiture(cible.id); return; }
     if (cible.type === 'receptionniste') {
       const r = repondre('', { agents, ou, nomEntreprise: entreprise.nom }, langue);
       setDialogue({ lignes: [{ qui: 'elle', texte: r.texte }] });
@@ -355,7 +360,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </div>
       )}
 
-      {vueVille && etat === 'pret' && !ciel3d && frise.jours > 0 && (
+      {vueVille && etat === 'pret' && !ciel3d && !volant && frise.jours > 0 && (
         <div className="absolute left-3 right-3 top-14 z-[4] mx-auto max-w-xl rounded-2xl border border-legion-line bg-[#0b1120]/85 px-3 py-2 backdrop-blur">
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => { if (lecture) setLecture(false); else { if (jour == null) setJour(0); setLecture(true); } }}
@@ -399,7 +404,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             </div>
           ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
-            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">E</kbd>}
+            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{proche.type === 'voiture' ? 'F' : 'E'}</kbd>}
             {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
           </button>
           )}
@@ -431,8 +436,32 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </div>
       )}
 
+      {/* Au volant : compteur, descendre, pédales au téléphone */}
+      {volant && (
+        <>
+          <div className={`pointer-events-none absolute z-[5] flex items-baseline gap-1 rounded-2xl border border-legion-gold/40 bg-[#0b1120]/85 px-3 py-1.5 backdrop-blur ${mobile ? 'left-3 top-14' : 'bottom-4 right-4'} ${Date.now() - choc < 400 ? 'ring-2 ring-red-500' : ''}`}>
+            <span className="font-mono text-[28px] font-bold leading-none text-legion-ink">{volant.kmh}</span>
+            <span className="text-[11px] font-semibold text-legion-muted">km/h</span>
+          </div>
+          <button type="button" onClick={() => monde.current?.descendreVoiture()} className={`absolute z-[6] rounded-pill bg-legion-gold px-4 py-2 text-[13px] font-semibold text-legion-bg shadow ${mobile ? 'right-3 top-14' : 'bottom-4 left-1/2 -translate-x-1/2'}`}>
+            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">F</kbd>}{t('legion.monde.conduite.descendre')}
+          </button>
+          {!mobile && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t('legion.monde.conduite.aide')}</p>}
+          {mobile && (
+            <div className="absolute bottom-20 right-4 z-[6] flex flex-col gap-3">
+              {[['gaz', '▲'], ['frein', '▼']].map(([k, s]) => (
+                <button key={k} type="button" aria-label={t(`legion.monde.conduite.${k}`)}
+                  onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ [k]: true }); }}
+                  onPointerUp={() => monde.current?.pedales({ [k]: false })} onPointerCancel={() => monde.current?.pedales({ [k]: false })}
+                  className={`grid h-16 w-16 touch-none select-none place-items-center rounded-full border text-[22px] font-bold backdrop-blur ${k === 'gaz' ? 'border-legion-gold bg-legion-gold/30 text-legion-gold' : 'border-white/30 bg-white/10 text-white'}`}>{s}</button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* L'ascenseur (et les raccourcis) */}
-      {!dialogue && (
+      {!dialogue && !volant && (
         <div className="absolute bottom-3 left-1/2 z-[5] flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-pill bg-[#0b1120]/85 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {LIEUX.map((l) => (
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{libelle(l)}</button>
@@ -456,7 +485,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       )}
 
       {/* Commandes */}
-      {!mobile && !dialogue && (
+      {!mobile && !dialogue && !volant && (
         <p className="pointer-events-none absolute bottom-16 left-3 z-[5] hidden rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted lg:block">{t('legion.monde.aide')}</p>
       )}
       {mobile && !dialogue && (

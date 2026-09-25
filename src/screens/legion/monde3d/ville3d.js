@@ -183,7 +183,7 @@ function eclairage(g, M, long, larg, avant, leger) {
   const c = poser(g, new THREE.PlaneGeometry(9, 4), M.cone, avant + 4.5, 0.03, 0); c.rotation.x = -Math.PI / 2; c.userData.garder = true;
 }
 // Berline, SUV ou taxi : caisse extrudée (profil latéral), vitres, pare-chocs, calandre, feux.
-function voiture(peinture, genre = 'berline', leger = false) {
+function voiture(peinture, genre = 'berline', leger = false, jouable = false) {
   const M = matVehicules();
   const g = new THREE.Group();
   const carrosserie = new THREE.MeshStandardMaterial({ color: genre === 'taxi' ? '#f2b705' : peinture, metalness: 0.55, roughness: 0.22, envMapIntensity: 1.2 });
@@ -221,7 +221,15 @@ function voiture(peinture, genre = 'berline', leger = false) {
   // Roues : pneu, jante, enjoliveur
   const pneu = new THREE.CylinderGeometry(0.35, 0.35, 0.26, 22);
   const jante = new THREE.CylinderGeometry(0.22, 0.22, 0.27, 14);
+  const roues = [];
   for (const [x, z] of [[-1.45, 0.84], [-1.45, -0.84], [1.45, 0.84], [1.45, -0.84]]) {
+    if (jouable) { // la voiture qu'on conduit : des roues qui tournent, celles de devant braquent
+      const pivot = new THREE.Group(); pivot.position.set(x, 0.35, z); g.add(pivot);
+      const axe = new THREE.Group(); pivot.add(axe);
+      for (const [geo, mat] of [[pneu, M.noir], [jante, M.chrome]]) { const m = poser(axe, geo, mat, 0, 0, 0); m.rotation.x = Math.PI / 2; m.userData.garder = true; }
+      roues.push({ pivot, axe, avant: x > 0 });
+      continue;
+    }
     poser(g, pneu, M.noir, x, 0.35, z).rotation.x = Math.PI / 2;
     poser(g, jante, M.chrome, x, 0.35, z).rotation.x = Math.PI / 2;
   }
@@ -236,7 +244,7 @@ function voiture(peinture, genre = 'berline', leger = false) {
   eclairage(g, M, 4.7, 1.9, 2.4, leger);
   g.userData.lumieres = lumieres;
   g.userData.demi = 2.5;
-  g.userData.roues = [];
+  g.userData.roues = roues;
   g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
   return g;
 }
@@ -304,7 +312,7 @@ function fusionner(racine) {
   const parMat = new Map();
   const aRetirer = [];
   const tous = [];
-  racine.traverse((o) => { if (o !== racine && o.isMesh && !o.isSkinnedMesh && !o.userData.garder && !o.parent?.userData?.marche && o.parent?.userData?.voie === undefined) tous.push(o); });
+  racine.traverse((o) => { if (o !== racine && o.isMesh && !o.isSkinnedMesh && !o.userData.garder && !o.parent?.userData?.marche && o.parent?.userData?.voie === undefined && !o.parent?.userData?.libre) tous.push(o); });
   for (const o of tous) {
     if (o.parent !== racine && o.parent?.parent !== racine) continue;
     if (!o.isMesh || o.isInstancedMesh || Array.isArray(o.material) || o.userData.garder) continue;
@@ -603,6 +611,21 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       nuit.lumieres.push(...o.userData.lumieres);
     }
   });
+  // Des voitures garées le long de notre trottoir : on peut monter dedans et conduire
+  // (Beau, 25/09 : « comme GTA San Andreas »). Elles restent là où on les laisse.
+  const libres = [
+    // Garées dans le sens de la circulation de leur côté (on roule à droite).
+    { id: 'v1', peinture: '#b3121b', genre: 'berline', x: 2.5, z: 25.2, cap: -Math.PI / 2 }, // juste devant l'arrivée de l'onglet « La ville »
+    { id: 'v2', peinture: '#1c2b44', genre: 'suv', x: -6, z: 34.8, cap: Math.PI / 2 }, // en face, le long du quartier des projets
+    { id: 'v3', peinture: '#f2b705', genre: 'taxi', x: -21.0, z: 8, cap: Math.PI },
+  ].map((d) => {
+    const o = voiture(d.peinture, d.genre, monde.mobile, true);
+    o.userData.libre = true;
+    o.position.set(d.x, 0, d.z); o.rotation.y = d.cap - Math.PI / 2;
+    racine.add(o);
+    nuit.lumieres.push(...o.userData.lumieres);
+    return { id: d.id, objet: o, etat: { x: d.x, z: d.z, cap: d.cap, vitesse: 0 } };
+  });
   // Passages piétons surveillés : une voiture s'arrête si quelqu'un traverse devant elle,
   // et ne rentre pas dans celle de devant.
   const passages = [
@@ -621,6 +644,13 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
         if (!ps.occupe || ps.axe !== u.voie.axe || !ps.voies.includes(u.voie.fixe)) continue;
         const d = ecart(u.pos, ps.p0) * sens - demi;
         if (d > 0.5 && d < 12) arret = true;
+      }
+      if (!arret) for (const lb of libres) { // voitures du joueur (conduite ou garée) sur la voie, devant
+        const q = lb.etat;
+        const surVoie = u.voie.axe === 'z' ? Math.abs(q.x - u.voie.fixe) < 1.6 : Math.abs(q.z - u.voie.fixe) < 1.6;
+        if (!surVoie) continue;
+        const d = ecart(u.pos, u.voie.axe === 'z' ? q.z : q.x) * sens - demi - 2.4;
+        if (d > -1.5 && d < 3) { arret = true; break; }
       }
       if (!arret) for (const b of vehicules) {
         if (b === o || b.userData.voie !== u.voie) continue;
@@ -778,6 +808,17 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     racine,
     majEnv: (env) => racine.traverse((o) => { if (o.material?.envMap !== undefined && o.material.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } }),
     avancer: (dt) => { bouger.forEach((f) => f(dt)); for (const f of bougerChantiers) f(dt); },
+    // Pour conduire (conduite.js) : les voitures libres, les trottoirs, la circulation.
+    voituresLibres: libres,
+    blocs: ilots.map(({ x0, x1, z0, z1 }) => ({ x0, x1, z0, z1 })),
+    tours: tours.map(({ bx, bz, w, d }) => ({ x0: bx - w / 2 - 1.5, x1: bx + w / 2 + 1.5, z0: bz - d / 2 - 1.5, z1: bz + d / 2 + 1.5 })),
+    // Chaque véhicule de la circulation, en cercles le long de son axe (un bus en fait quatre).
+    circulation: () => vehicules.flatMap((o) => {
+      const demi = o.userData.demi || 1.2, axeZ = o.userData.voie.axe === 'z';
+      const pas = demi > 3 ? [-4.2, -1.5, 1.5, 4.2] : demi > 1.5 ? [-1.3, 1.3] : [0];
+      const rayon = demi > 3 ? 1.3 : demi > 1.5 ? 0.9 : 0.55;
+      return pas.map((k) => ({ x: o.position.x + (axeZ ? 0 : k), z: o.position.z + (axeZ ? k : 0), rayon }));
+    }),
     // Les projets de l'entreprise, en chantiers (vraies données : ville.js → tours()).
     chantiers: (liste = []) => {
       if (!groupeChantiers) { groupeChantiers = new THREE.Group(); racine.add(groupeChantiers); }
