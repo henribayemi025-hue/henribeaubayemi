@@ -1278,6 +1278,13 @@
       "agentInconnu": "I can’t find that agent.",
       "atelierFerme": "The workshop is for the company owner only.",
       "lecteur": "You’re a reader in this company: I can’t do that."
+    },
+    "grade": {
+      "manager": "Manager",
+      "confirme": "Senior",
+      "junior": "Junior",
+      "alternant": "Apprentice",
+      "stagiaire": "Intern"
     }
   },
   "equipe": {

@@ -8,6 +8,7 @@ import { Texte } from './Plans';
 import { Immeuble } from './Immeuble';
 import { Ville } from './Ville';
 import { SalleReunion, Academie } from './Pieces';
+import { rangerEquipe, photosEnLigne, GRADES } from './organigramme';
 
 // LEGION — les grandes vues (idées 51, 52, 59, 62, 69 et 166 des 200, 24/09) :
 // le bureau et l'organigramme vivants, la frise, la présentation, le tableau
@@ -62,10 +63,12 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
   const tacheDe = (id) => taches.find((x) => x.assigne_a === id && statutDe(x) !== 'fait');
   const svg = useRef(null);
 
-  function telecharger(type) {
+  async function telecharger(type) {
     const el = svg.current;
     if (!el) return;
-    const texte = new XMLSerializer().serializeToString(el);
+    // Les photos voyagent avec le fichier (sinon le PNG sortait sans visages).
+    const copie = await photosEnLigne(el.cloneNode(true));
+    const texte = new XMLSerializer().serializeToString(copie);
     const nom = `organigramme-${sansAccent(entreprise.nom).replace(/[^a-z0-9]+/g, '-')}`;
     const lien = (url, ext) => { const a = document.createElement('a'); a.href = url; a.download = `${nom}.${ext}`; document.body.appendChild(a); a.click(); a.remove(); };
     const blob = new Blob([texte], { type: 'image/svg+xml' });
@@ -90,10 +93,16 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
   }
 
   // L'organigramme en SVG : dessiné ici, donc exportable tel quel.
-  const COL = 210, GAP = 24, H = 58, PAD = 24;
+  const COL = 236, GAP = 22, H = 78, PAD = 24, RETRAIT = 16;
   const n = Math.max(1, parDept.length);
   const largeur = PAD * 2 + n * COL + (n - 1) * GAP;
   const hauteur = 150 + Math.max(1, ...parDept.map((d) => d.agents.length)) * (H + 12) + PAD;
+  const etatDe = (a) => {
+    if (!a.actif) return { texte: t('legion.enVeille', 'En veille'), couleur: '#6B7890' };
+    if (auTravail.has(a.id)) return { texte: t('legion.vues.ecrit'), couleur: '#E3A857' };
+    const tache = tacheDe(a.id);
+    return tache ? { texte: `▸ ${tache.texte}`, couleur: '#AEB9CC' } : { texte: t('legion.vues.disponible'), couleur: '#5FC8C0' };
+  };
   const court = (s, k) => (String(s || '').length > k ? `${String(s).slice(0, k - 1)}…` : String(s || ''));
 
   return (
@@ -162,18 +171,41 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
                   <path d={`M ${largeur / 2} ${PAD + 46} V ${PAD + 62} H ${cx} V ${PAD + 78}`} fill="none" stroke="#2A3550" strokeWidth={2} />
                   <rect x={x} y={PAD + 78} width={COL} height={32} rx={8} fill={d.couleur || '#C25E38'} />
                   <text x={cx} y={PAD + 99} textAnchor="middle" fill="#fff" fontSize={13} fontWeight={700}>{court(d.nom, 24)}</text>
-                  {d.agents.map((a, j) => {
-                    const y = PAD + 124 + j * (H + 12);
-                    const bosse = auTravail.has(a.id);
+                  {d.agents.length > 0 && <text x={cx} y={PAD + 122} textAnchor="middle" fill="#93A1B8" fontSize={10}>{t('legion.vues.auTravail', { n: d.agents.filter((a) => a.actif && auTravail.has(a.id)).length })}</text>}
+                  {rangerEquipe(d.agents).map(({ a, niveau }, j) => {
+                    const y = PAD + 132 + j * (H + 12);
+                    const bosse = a.actif && auTravail.has(a.id);
+                    const gx = x + niveau * RETRAIT;
+                    const w = COL - niveau * RETRAIT;
+                    const r = 24;
+                    const px = gx + 12 + r;
+                    const py = y + H / 2;
+                    const clip = `org-${a.id}`;
+                    const etat = etatDe(a);
+                    const grade = GRADES.includes(a.grade) && a.grade !== 'direction' ? t(`legion.grade.${a.grade}`) : '';
                     return (
-                      <g key={a.id} opacity={a.actif ? 1 : 0.5}>
-                        <line x1={cx} y1={y - 12} x2={cx} y2={y} stroke="#2A3550" strokeWidth={2} />
-                        <rect x={x} y={y} width={COL} height={H} rx={10} fill="#1A2337" stroke={bosse ? '#E3A857' : a.est_directeur ? '#5FC8C0' : '#2A3550'} strokeWidth={bosse || a.est_directeur ? 2 : 1} />
-                        <circle cx={x + 26} cy={y + H / 2} r={17} fill={`${a.couleur || '#C25E38'}33`} stroke={a.couleur || '#C25E38'} strokeWidth={2} />
-                        <text x={x + 26} y={y + H / 2 + 4} textAnchor="middle" fill="#EDF1F8" fontSize={11} fontWeight={700}>{initiales(a.nom)}</text>
-                        <text x={x + 52} y={y + 24} fill="#EDF1F8" fontSize={12} fontWeight={600}>{court(a.nom, 20)}{a.est_directeur ? ' ★' : ''}</text>
-                        <text x={x + 52} y={y + 41} fill="#93A1B8" fontSize={10}>{court(a.poste, 26)}</text>
-                        {bosse && <circle cx={x + COL - 12} cy={y + 12} r={4} fill="#E3A857"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite" /></circle>}
+                      <g key={a.id} opacity={a.actif ? 1 : 0.55} style={{ cursor: onFiche ? 'pointer' : 'default' }} onClick={() => onFiche?.(a)}>
+                        <line x1={niveau ? gx - RETRAIT / 2 : cx} y1={y - 12} x2={niveau ? gx - RETRAIT / 2 : cx} y2={niveau ? py : y} stroke="#2A3550" strokeWidth={2} />
+                        {niveau > 0 && <line x1={gx - RETRAIT / 2} y1={py} x2={gx} y2={py} stroke="#2A3550" strokeWidth={2} />}
+                        <rect x={gx} y={y} width={w} height={H} rx={12} fill="#1A2337" stroke={bosse ? '#E3A857' : a.est_directeur ? '#5FC8C0' : '#2A3550'} strokeWidth={bosse || a.est_directeur ? 2 : 1} />
+                        <clipPath id={clip}><circle cx={px} cy={py} r={r} /></clipPath>
+                        <circle cx={px} cy={py} r={r} fill={`${a.couleur || '#C25E38'}33`} />
+                        <text x={px} y={py + 4} textAnchor="middle" fill="#EDF1F8" fontSize={12} fontWeight={700}>{initiales(a.nom)}</text>
+                        {a.avatar_url && <image href={a.avatar_url} x={px - r} y={py - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${clip})`} style={a.actif ? undefined : { filter: 'grayscale(1)' }} />}
+                        <circle cx={px} cy={py} r={r} fill="none" stroke={bosse ? '#E3A857' : a.couleur || '#C25E38'} strokeWidth={2.5}>
+                          {bosse && <animate attributeName="stroke-opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite" />}
+                        </circle>
+                        <circle cx={px + r * 0.72} cy={py + r * 0.72} r={5} fill={a.actif ? '#2A9D8F' : '#6B7890'} stroke="#1A2337" strokeWidth={2} />
+                        <text x={px + r + 12} y={y + 24} fill="#EDF1F8" fontSize={13} fontWeight={700}>{court(a.nom, 17 - niveau)}{a.est_directeur ? ' ★' : ''}</text>
+                        <text x={px + r + 12} y={y + 41} fill="#93A1B8" fontSize={10.5}>{court(a.poste, 25 - niveau * 2)}</text>
+                        <text x={px + r + 12} y={y + 59} fill={etat.couleur} fontSize={10.5} fontWeight={bosse ? 700 : 400}>{court(etat.texte, 26 - niveau * 2)}</text>
+                        {grade && (
+                          <g>
+                            <rect x={gx + w - 8 - grade.length * 6 - 10} y={y + 8} width={grade.length * 6 + 10} height={16} rx={8} fill="#2A3550" />
+                            <text x={gx + w - 8 - (grade.length * 6 + 10) / 2} y={y + 19.5} textAnchor="middle" fill="#EDF1F8" fontSize={9.5}>{grade}</text>
+                          </g>
+                        )}
+                        <title>{[a.nom, a.poste, etat.texte].filter(Boolean).join(' — ')}</title>
                       </g>
                     );
                   })}

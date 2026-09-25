@@ -1278,6 +1278,13 @@
       "agentInconnu": "Je ne trouve pas cet agent.",
       "atelierFerme": "L’atelier est réservé au propriétaire de l’entreprise.",
       "lecteur": "Tu es lecteur dans cette entreprise : je ne peux pas le faire."
+    },
+    "grade": {
+      "manager": "Manager",
+      "confirme": "Confirmé",
+      "junior": "Junior",
+      "alternant": "Alternant",
+      "stagiaire": "Stagiaire"
     }
   },
   "equipe": {
