@@ -1302,14 +1302,16 @@
         "hall": "Reception",
         "reunion": "Meeting room",
         "atelier": "Workshop",
-        "maisons": "Where agents live"
+        "maisons": "Where agents live",
+        "salleMarche": "Trading floor"
       },
       "phrase": {
         "hall": "the building lobby, the receptionist welcomes you",
         "reunion": "agents sit here when a meeting is on",
         "atelier": "agents work here when they have a task in progress",
         "etage": "each agent in the department has a desk; they sit there when they're working",
-        "maisons": "their villas by the sea; an agent switched off is at home"
+        "maisons": "their villas by the sea; an agent switched off is at home",
+        "salleMarche": "today's rates, the company's activity, the time on major markets; agents work here when they have a task"
       },
       "camera": {
         "tps": "3rd person",

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
 import { styleVille } from './region';
+import { estSalleDeMarche, pairesDuJour, activite14j } from './salle-marche3d';
 import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
 import { chargerAffiches } from './affiches';
 
@@ -53,6 +54,9 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     // Sans geste récent, le navigateur refuse le son : on relance sans le son.
     v.play().catch(() => { v.muted = true; v.play().catch(finirIntro); });
   }, [intro]); // eslint-disable-line react-hooks/exhaustive-deps
+  const salleMarche = useMemo(() => estSalleDeMarche(entreprise), [entreprise]);
+  const libelle = (l) => t(`legion.monde.lieu.${l === 'atelier' && salleMarche ? 'salleMarche' : l}`);
+  useEffect(() => { if (salleMarche) monde.current?.majMarche({ jours: activite14j(taches), maintenant }); }, [salleMarche, taches, maintenant]);
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
   const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
   useEffect(() => { const f = () => { setPortrait(window.innerHeight > window.innerWidth); setTimeout(() => monde.current?.redimensionner(), 120); }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
@@ -96,7 +100,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         // La ville ressemble à celle de la personne : ville choisie dans la Ville, sinon fuseau horaire.
         const tz = villeChoisie()?.tz || (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ''; } })();
         const m = new Monde(boite.current, {
-          mobile, langue, region: styleVille(tz),
+          mobile, langue, region: styleVille(tz), salleMarche,
           surEvenement: (e) => {
             if (e.type === 'lieu') setLieu(e.lieu);
             if (e.type === 'progression') setProgres(e.total ? Math.round((e.faits / e.total) * 100) : null);
@@ -111,6 +115,14 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         // La météo arrive quand elle arrive : on n'attend pas le réseau pour ouvrir le monde.
         chargerCiel({ langue }).then((c) => { if (c && !fini) m.reglerCiel({ phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' }); }).catch(() => {});
         m.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) });
+        // Salle des marchés : les taux du jour (même table que les prix de Finjaro).
+        if (salleMarche) {
+          supabase.from('taux_du_jour').select('code, par_euro').then(({ data }) => {
+            if (fini || !data?.length) return;
+            m.majMarche({ paires: pairesDuJour(Object.fromEntries(data.map((x) => [x.code, Number(x.par_euro)]))) });
+          });
+          m.majMarche({ jours: activite14j(taches), maintenant: Date.now() });
+        }
         // Les affiches des vraies boutiques Finjaro, sans retarder l'ouverture.
         chargerAffiches(supabase, (seau, chemin, vignette) => (vignette ? storageThumbUrl : storageUrl)(seau, chemin)).then((l) => { if (!fini && l.length) m.afficherBoutiques(l); }).catch(() => {});
         await m.allerA('hall', { nomEntreprise: entreprise.nom, avatar });
@@ -208,7 +220,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const depts = nomsDepts(departements, agents);
   const estEtage = String(lieu).startsWith('etage:');
   const estSalle = String(lieu).startsWith('reunion:');
-  const nomLieu = estSalle ? t('legion.monde.salleN', { n: lieu.split(':')[1] }) : estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : t(`legion.monde.lieu.${lieu}`);
+  const nomLieu = estSalle ? t('legion.monde.salleN', { n: lieu.split(':')[1] }) : estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : libelle(lieu);
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
 
   return (
@@ -248,7 +260,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {/* Où je suis */}
       <div className="pointer-events-none absolute left-3 top-3 z-[5] rounded-card bg-[#0b1120]/80 px-3 py-2 text-[12.5px] text-legion-ink backdrop-blur">
-        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu}`)}</span>
+        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu === 'atelier' && salleMarche ? 'salleMarche' : lieu}`)}</span>
       </div>
 
       {/* Caméras + avatar */}
@@ -300,7 +312,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               <p key={i} className={`rounded-card px-2.5 py-1.5 text-[13px] ${l.qui === 'moi' ? 'self-end bg-legion-gold/15 text-legion-ink' : 'bg-legion-card text-legion-ink'}`}>{l.texte}</p>
             ))}
           </div>
-          {dialogue.aller && <button type="button" onClick={() => aller(dialogue.aller)} className="mt-2 w-full rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg">{t('legion.monde.emmene', { lieu: t(`legion.monde.lieu.${dialogue.aller}`) })}</button>}
+          {dialogue.aller && <button type="button" onClick={() => aller(dialogue.aller)} className="mt-2 w-full rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg">{t('legion.monde.emmene', { lieu: libelle(dialogue.aller) })}</button>}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {['reunion', 'travail', 'ouAlpha'].map((k) => (
               <button key={k} type="button" onClick={() => demander(t(`legion.monde.q.${k}`, { nom: agents.find((a) => !a.user_id)?.nom || '' }))} className="rounded-pill border border-legion-line px-2.5 py-1 text-[12px] text-legion-muted hover:border-legion-gold">{t(`legion.monde.q.${k}`, { nom: agents.find((a) => !a.user_id)?.nom || '' })}</button>
@@ -317,7 +329,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       {!dialogue && (
         <div className="absolute bottom-3 left-1/2 z-[5] flex -translate-x-1/2 gap-1 rounded-pill bg-[#0b1120]/85 p-1 backdrop-blur">
           {LIEUX.map((l) => (
-            <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.lieu.${l}`)}</button>
+            <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{libelle(l)}</button>
           ))}
           <button type="button" onClick={() => aller('maisons')} title={t('legion.monde.lieu.maisons')} aria-label={t('legion.monde.lieu.maisons')} className={`rounded-pill px-2.5 py-1.5 text-[12px] font-semibold ${lieu === 'maisons' ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>🏡</button>
           {depts.length > 0 && <button type="button" onClick={() => setEtage(true)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${estEtage ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t('legion.monde.etages', { n: depts.length })}</button>}
@@ -328,7 +340,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <div className="w-[min(90%,300px)] rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}>
             <p className="mb-3 text-center text-[13px] font-semibold text-legion-gold">{t('legion.monde.ascenseur')}</p>
             <div className="max-h-[60vh] overflow-y-auto">
-              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: t('legion.monde.lieu.atelier') }, ...Array.from({ length: Math.max(1, ou.reunions?.length || 0) }, (_, i) => ({ id: i ? `reunion:${i + 1}` : 'reunion', nom: i ? t('legion.monde.salleN', { n: i + 1 }) : t('legion.monde.lieu.reunion') })).reverse(), { id: 'hall', nom: t('legion.monde.lieu.hall') }, { id: 'maisons', nom: `🏡 ${t('legion.monde.lieu.maisons')}` }].map((l) => (
+              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: libelle('atelier') }, ...Array.from({ length: Math.max(1, ou.reunions?.length || 0) }, (_, i) => ({ id: i ? `reunion:${i + 1}` : 'reunion', nom: i ? t('legion.monde.salleN', { n: i + 1 }) : t('legion.monde.lieu.reunion') })).reverse(), { id: 'hall', nom: t('legion.monde.lieu.hall') }, { id: 'maisons', nom: `🏡 ${t('legion.monde.lieu.maisons')}` }].map((l) => (
                 <button key={l.id} type="button" onClick={() => aller(l.id)} className={`mb-1.5 w-full rounded-card border px-3 py-2 text-left text-[14px] text-legion-ink hover:border-legion-gold ${lieu === l.id ? 'border-legion-gold' : 'border-legion-line'}`}>{l.nom}</button>
               ))}
             </div>

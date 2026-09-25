@@ -1302,14 +1302,16 @@
         "hall": "Réception",
         "reunion": "Salle de réunion",
         "atelier": "Atelier",
-        "maisons": "Chez les agents"
+        "maisons": "Chez les agents",
+        "salleMarche": "Salle des marchés"
       },
       "phrase": {
         "hall": "le hall de l'immeuble, la réceptionniste vous accueille",
         "reunion": "les agents s'y assoient quand une réunion a lieu",
         "atelier": "les agents y travaillent quand ils ont une tâche en cours",
         "etage": "chaque agent du département a son bureau ; il y est assis quand il travaille",
-        "maisons": "leurs villas au bord de la mer ; un agent en veille est chez lui"
+        "maisons": "leurs villas au bord de la mer ; un agent en veille est chez lui",
+        "salleMarche": "les taux du jour, l'activité de l'entreprise, l'heure des grandes places ; les agents y travaillent quand ils ont une tâche"
       },
       "camera": {
         "tps": "3e personne",

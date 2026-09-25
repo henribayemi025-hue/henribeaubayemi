@@ -22,6 +22,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
 import { construireMaisons } from './maisons3d';
+import { construireSalleMarche } from './salle-marche3d';
 
 const BASE = '/monde3d/';
 const ANIMS = {
@@ -35,8 +36,9 @@ const RAYON = 0.32;
 const genreDe = (id) => CORPS.find((c) => c.id === id)?.g || 'm';
 
 export class Monde {
-  constructor(conteneur, { mobile = false, langue = 'fr', region = null, surEvenement = () => {} } = {}) {
+  constructor(conteneur, { mobile = false, langue = 'fr', region = null, salleMarche = false, surEvenement = () => {} } = {}) {
     this.conteneur = conteneur;
+    this.salleMarche = salleMarche; // l'atelier devient une salle des marchés (salle-marche3d.js)
     this.region = region; // allure de la ville (region.js)
     this.mobile = mobile;
     this.langue = langue;
@@ -753,9 +755,11 @@ export class Monde {
       // Les étiquettes (noms au-dessus des têtes) ne suivent pas d'un étage à l'autre.
       this.lieu.groupe.traverse((o) => { if (o.isCSS2DObject && o.element.parentNode) o.element.parentNode.removeChild(o.element); });
     }
-    const l = this.lieux[lieu] || (lieu === 'maisons' ? construireMaisons(this, this.donnees?.agents || []) : etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise));
+    const l = this.lieux[lieu] || (lieu === 'maisons' ? construireMaisons(this, this.donnees?.agents || []) : etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? (this.salleMarche ? await construireSalleMarche(this) : await this.construireAtelier()) : await this.construireHall(nomEntreprise));
     this.lieux[lieu] = l;
     if (lieu === 'maisons') l.lampes.emissiveIntensity = (this.niveauNuit || 0) * 1.4;
+    if (l.tableau) this.tableauAtelier = l.tableau;
+    if (l.majMarche && this.donneesMarche) l.majMarche(this.donneesMarche);
     l.nom = lieu;
     this.lieu = l;
     this.scene.add(l.groupe);
@@ -772,6 +776,12 @@ export class Monde {
     }
     this.placerAgents();
     this.emettre({ type: 'lieu', lieu });
+  }
+
+  // Salle des marchés : taux du jour, activité, heure (vraies données).
+  majMarche(d) {
+    this.donneesMarche = { ...this.donneesMarche, ...d };
+    this.lieux?.atelier?.majMarche?.(this.donneesMarche);
   }
 
   // Les affiches des vraies boutiques Finjaro dans la ville (voir affiches.js).
@@ -987,6 +997,7 @@ export class Monde {
     } else j.jouer('repos', { fondu: 0.25 });
     j.mixer.update(dt);
     this.villeVivante?.avancer(dt);
+    this.lieu?.avancer?.(dt);
     this.receptionniste?.mixer.update(dt);
     if (this.feuMat) this.feuMat.visible = performance.now() % 1600 < 700; // feu d'obstacle du mât
     for (const x of this.agents.values()) {
