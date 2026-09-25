@@ -843,7 +843,9 @@
       "wikiCorriger": "Edit this page",
       "wikiAide": "“What we decided” is written by the director from decisions and minutes; “Who does what” and “How we work” come from the database. Agents reread “What we decided” before replying.",
       "immeuble": "The building",
-      "ville": "The city"
+      "ville": "The city",
+      "reunions": "Meeting room",
+      "academie": "Academy"
     },
     "clavier": {
       "titre": "Keyboard shortcuts",
@@ -1199,7 +1201,31 @@
       "vide": "No project yet: create the first one and it becomes a tower.",
       "legende": "One tower per project: it rises with delivered tasks, the scaffolding shows what is left, the crane leaves when it is done. A lit window = an agent who took a task less than 10 minutes ago. Tap a tower to go in."
     },
-    "bientot": "Coming soon:"
+    "bientot": "Coming soon:",
+    "salle": {
+      "vide": "No meeting yet. To call one, open a room and tap “Meeting”.",
+      "enDirect": "Live session",
+      "terminee": "Ended · {{quand}}",
+      "compteRendu": "Minutes and decisions",
+      "pasEncore": "The session is not over: the minutes come at the end.",
+      "actions": "Actions ({{n}})",
+      "aucuneAction": "No action came out of this meeting.",
+      "convoquer": "To call a meeting: open a room and tap “Meeting”. Each seat is a real participant; the golden ring follows whoever is speaking."
+    },
+    "academie": {
+      "apprenant": "Learner",
+      "equipees": "skills equipped",
+      "aLExamen": "under review",
+      "examens": "exams passed",
+      "contestes": "deliverables challenged (30 d)",
+      "verite": "No invented XP or levels: only what Léo actually measures.",
+      "modules": "Their skills",
+      "aucune": "No skill yet. Add some from their profile.",
+      "equipee": "Equipped",
+      "enExamen": "Under review",
+      "envoyer": "Send to training",
+      "envoye": "Sent to training"
+    }
   },
   "equipe": {
     "titre": "The team",

@@ -7,6 +7,7 @@ import { Veilleur } from './Veilleur';
 import { Texte } from './Plans';
 import { Immeuble } from './Immeuble';
 import { Ville } from './Ville';
+import { SalleReunion, Academie } from './Pieces';
 
 // LEGION — les grandes vues (idées 51, 52, 59, 62, 69 et 166 des 200, 24/09) :
 // le bureau et l'organigramme vivants, la frise, la présentation, le tableau
@@ -44,7 +45,7 @@ function actifsRecents(messages) {
 }
 
 // ——— Le bureau (52) et l'organigramme (51), vivants ———
-export function Bureau({ entreprise, agents, departements, messages, taches, onFiche, onMajMessage, peutAgir, t }) {
+export function Bureau({ entreprise, agents, departements, messages, taches, onFiche, onMajMessage, onCreerTache, peutAgir, t }) {
   // La ville d'abord (25/09) : les projets en tours ; puis l'immeuble.
   const [mode, setMode] = useState('ville');
   const [maintenant, setMaintenant] = useState(Date.now());
@@ -97,7 +98,7 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
   return (
     <div className="p-4">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {['ville', 'immeuble', 'bureau', 'organigramme'].map((k) => (
+        {['ville', 'immeuble', 'reunions', 'academie', 'bureau', 'organigramme'].map((k) => (
           <button key={k} type="button" onClick={() => setMode(k)}
             className={`rounded-pill px-3 py-1 text-[13px] font-semibold ${mode === k ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>{t(`legion.vues.${k}`)}</button>
         ))}
@@ -111,10 +112,14 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
           </span>
         )}
       </div>
-      {!['immeuble', 'ville'].includes(mode) && <p className="mb-3 text-[12px] text-legion-muted">{t('legion.vues.legende')}</p>}
+      {!['immeuble', 'ville', 'reunions', 'academie'].includes(mode) && <p className="mb-3 text-[12px] text-legion-muted">{t('legion.vues.legende')}</p>}
 
       {mode === 'ville' ? (
         <div className="-mx-4 -mb-4"><Ville entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onMajMessage={onMajMessage} peutAgir={peutAgir} t={t} /></div>
+      ) : mode === 'reunions' ? (
+        <div className="-mx-4 -mb-4"><SalleReunion agents={agents} messages={messages} taches={taches} t={t} /></div>
+      ) : mode === 'academie' ? (
+        <div className="-mx-4 -mb-4"><Academie agents={agents} onCreerTache={onCreerTache} peutAgir={peutAgir} t={t} /></div>
       ) : mode === 'immeuble' ? (
         <div className="-mx-4 -mb-4"><Immeuble agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} t={t} /></div>
       ) : mode === 'bureau' ? (

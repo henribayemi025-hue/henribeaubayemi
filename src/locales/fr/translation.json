@@ -843,7 +843,9 @@
       "wikiCorriger": "Corriger cette page",
       "wikiAide": "« Ce qu'on a décidé » est écrit par le directeur à partir des décisions et comptes rendus ; « Qui fait quoi » et « Nos façons de faire » sont tirés de la base. Les agents relisent « Ce qu'on a décidé » avant de répondre.",
       "immeuble": "L'immeuble",
-      "ville": "La ville"
+      "ville": "La ville",
+      "reunions": "Salle de réunion",
+      "academie": "Académie"
     },
     "clavier": {
       "titre": "Raccourcis clavier",
@@ -1199,7 +1201,31 @@
       "vide": "Aucun projet pour l’instant : crée le premier, il deviendra une tour.",
       "legende": "Une tour par projet : elle monte avec les tâches rendues, l’échafaudage montre ce qui reste, la grue part quand c’est fini. Une fenêtre allumée = un agent qui a pris une tâche il y a moins de 10 minutes. Touche une tour pour entrer."
     },
-    "bientot": "Bientôt :"
+    "bientot": "Bientôt :",
+    "salle": {
+      "vide": "Aucune réunion pour l’instant. Pour en convoquer une, ouvre un salon et touche « Réunion ».",
+      "enDirect": "Séance en direct",
+      "terminee": "Terminée · {{quand}}",
+      "compteRendu": "Compte rendu et décisions",
+      "pasEncore": "La séance n’est pas finie : le compte rendu arrive à la fin.",
+      "actions": "Actions ({{n}})",
+      "aucuneAction": "Aucune action sortie de cette réunion.",
+      "convoquer": "Pour convoquer une réunion : ouvre un salon et touche « Réunion ». Chaque siège est un vrai participant ; l’anneau doré suit celui qui parle."
+    },
+    "academie": {
+      "apprenant": "Apprenant",
+      "equipees": "compétences équipées",
+      "aLExamen": "à l’examen",
+      "examens": "examens réussis",
+      "contestes": "livrables contestés (30 j)",
+      "verite": "Pas d’XP ni de niveau inventés : ce que Léo mesure vraiment.",
+      "modules": "Ses compétences",
+      "aucune": "Aucune compétence encore. Ajoute-en depuis sa fiche.",
+      "equipee": "Équipée",
+      "enExamen": "À l’examen",
+      "envoyer": "Envoyer en formation",
+      "envoye": "Envoyé en formation"
+    }
   },
   "equipe": {
     "titre": "L'équipe",
