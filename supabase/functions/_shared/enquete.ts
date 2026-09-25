@@ -9,6 +9,7 @@ import { classerFiches, voirFiche } from './fiches.ts';
 import { depotDe, codeFichiers, codeLire, codeChercher, paiements } from './code.ts';
 import { lirePage, voirEcran } from './pageweb.ts';
 import { chercherWeb } from './web.ts';
+import { servicesDe, OUTILS_SERVICES, NOMS_OUTILS_SERVICES, lireService, type Services } from './services.ts';
 
 const MODELE_ENQUETE = 'gemini-2.5-flash';
 const TIMEOUT_MS = 25_000;
@@ -84,7 +85,7 @@ const OUTILS_WEB = [
   { name: 'voir_ecran', description: "Ouvrir une page PUBLIQUE dans un vrai navigateur, comme une personne (le JavaScript tourne) : le texte affiché et une description de la capture. Pour VÉRIFIER un écran d'une application ou d'un site (finjaro.net, sa préproduction staging-finjaro.finjaro.workers.dev, le site d'un concurrent) — ce que lire_page ne voit pas. Pages publiques seulement : aucun compte, aucun clic.",
     parameters: { type: 'OBJECT', properties: { url: { type: 'STRING' }, largeur: { type: 'STRING', enum: ['telephone', 'ordinateur'] } }, required: ['url'] } },
 ];
-const LONGUEUR = (nom: string) => (nom === 'code_lire' ? 20_500 : nom === 'lire_page' || nom === 'voir_ecran' ? 11_000 : nom === 'chercher_web' ? 4000 : nom === 'fiches' || nom === 'voir_fiche' || nom === 'paiements' ? 7000 : 3000);
+const LONGUEUR = (nom: string) => (nom === 'code_lire' ? 20_500 : nom === 'lire_page' || nom === 'voir_ecran' ? 11_000 : nom === 'chercher_web' || nom === 'supabase_projet' || nom === 'cloudflare_services' || nom === 'vercel_deploiements' ? 6000 : nom === 'fiches' || nom === 'voir_fiche' || nom === 'paiements' ? 7000 : 3000);
 
 // Réservés à la Direction (Beau, 22/09: « qui sont ces personnes ? »): qui a
 // fait une action, et la fiche d'une personne — noms et activité, jamais
@@ -142,13 +143,17 @@ export function verifsPour(verifs: string[], peut: (source: string) => boolean):
 // Une enquête par message, faite une fois pour toute l'équipe: le modèle
 // choisit les outils, la base répond, et les résultats entrent dans la
 // consigne de chaque agent qui répond. Rien à vérifier → liste vide.
-export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true, compta: Compta | null = null, codeDe: string | null = null): Promise<string[]> {
+export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true, compta: Compta | null = null, codeDe: string | null = null, servicesPour: string | null = null): Promise<string[]> {
   // `codeDe` : l'entreprise dont on lit le dépôt de code, si elle en a branché un.
   const depot = codeDe ? await depotDe(service, codeDe).catch(() => null) : null;
+  // `servicesPour` : l'entreprise dont on lit les services branchés (0208).
+  const services: Services = servicesPour ? await servicesDe(service, servicesPour).catch(() => ({})) : {};
+  const outilsServices = (Object.keys(services) as (keyof Services)[]).map((k) => OUTILS_SERVICES[k]);
   const maxAppels = depot ? 8 : 6;
   const declarations = [
     ...OUTILS_WEB,
     ...(depot ? OUTILS_CODE : []),
+    ...outilsServices,
     ...(mesures ? OUTILS[0].functionDeclarations : []),
     ...(direction ? OUTILS_DIRECTION : []),
     ...(boutique ? OUTILS_BOUTIQUE : []),
@@ -159,7 +164,7 @@ export async function enqueter(apiKey: string, service: ReturnType<typeof create
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const contents: unknown[] = [{ role: 'user', parts: [{ text:
 `Tu prépares la réponse d'une équipe à son fondateur${mesures ? ', sur la place de marché Finjaro' : ''}. Nous sommes le ${aujourdhui}.
-${depot ? `L'entreprise a branché SON dépôt de code (${depot.depot}) : code_chercher retrouve un fichier par son nom, code_fichiers liste un dossier, code_lire lit un fichier. Pour une question sur un écran, une fonction ou l'avancement d'un développement, LIS le code au lieu de dire que tu ne l'as pas.\n` : ''}${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}${compta ? `L'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les outils ma_compta_* lisent les totaux de ses livres (mois, ventes, dépenses, impayés).\n` : ''}La conversation récente:
+${depot ? `L'entreprise a branché SON dépôt de code (${depot.depot}) : code_chercher retrouve un fichier par son nom, code_fichiers liste un dossier, code_lire lit un fichier. Pour une question sur un écran, une fonction ou l'avancement d'un développement, LIS le code au lieu de dire que tu ne l'as pas.\n` : ''}${outilsServices.length ? `L'entreprise a branché SES services (${Object.keys(services).join(', ')}) : ${outilsServices.map((o) => o.name).join(', ')} en lisent l'état (projets, fonctions, déploiements). Pour une question sur une mise en ligne ou une panne, LIS-les.\n` : ''}${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}${compta ? `L'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les outils ma_compta_* lisent les totaux de ses livres (mois, ventes, dépenses, impayés).\n` : ''}La conversation récente:
 ${fil}
 
 Le dernier message, auquel il faut répondre: « ${question} »
@@ -174,7 +179,9 @@ S'il n'y a vraiment rien à vérifier, n'appelle rien et réponds seulement « r
   // les personnes pour la Direction) : toujours une requête fixe côté base.
   const executer = async (nom: string, args: Record<string, unknown>): Promise<unknown> => {
     let appel: Promise<{ data: unknown; error: { message: string } | null }>;
-    if (nom === 'chercher_web') {
+    if (NOMS_OUTILS_SERVICES.has(nom)) {
+      appel = lireService(services, nom, args).then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: { message: e.message } }));
+    } else if (nom === 'chercher_web') {
       const q = String(args.requete || '').trim().slice(0, 300);
       appel = (q.length < 3 ? Promise.reject(new Error('donne une requête')) : chercherWeb(apiKey, `Recherche précise : ${q}\nRends surtout les pages publiques trouvées (nom, adresse), sans rien inventer.`))
         .then((t) => ({ data: t ? { resume: t.resume.slice(0, 2500), pages: t.sources } : { erreur: 'rien trouvé' }, error: null }), (e: Error) => ({ data: null, error: { message: e.message } }));

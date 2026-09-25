@@ -638,7 +638,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // la recherche a trouvées lui sont données à OUVRIR (Traque, 25/09 : « une
       // seule recherche, aucun lien ouvert » — lire_page n'avait aucune adresse).
       const aOuvrir = web?.sources.length ? `\nPages trouvées par la recherche web (ouvre avec lire_page celles qui servent la tâche, pour vérifier le lien, la date, le montant) :\n${web.sources.map((x) => `- ${x.titre} : ${x.url}`).join('\n')}` : '';
-      const verifie = await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres, quel code ou quelle page web vérifier ?${aOuvrir}`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null);
+      const verifie = await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres, quel code ou quelle page web vérifier ?${aOuvrir}`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null, entrepriseId);
       // Une tâche qui cherche dehors et une enquête qui n'a rien ouvert : la
       // recherche guidée (trois requêtes ciblées, puis les vraies pages).
       if (web && !verifie.some((v) => /^(chercher_web|lire_page)\(/.test(v))) verifie.push(...await rechercheGuidee(apiKey, String(tache.texte || ''), a.poste || '').catch(() => []));

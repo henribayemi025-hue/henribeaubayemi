@@ -12,6 +12,81 @@ import { supabase } from '../../../lib/supabase';
 // connecteur « Mesures Finjaro » (les chiffres de toute la plateforme)
 // reste réservé à l'équipe Finjaro.
 
+// Supabase, Cloudflare, Vercel PAR ENTREPRISE (0208, Beau, 25/09 : « connecter
+// son truc avec Cloudflare, Vercel, Supabase… pour tout le monde »). Le jeton
+// part au coffre du serveur et ne revient jamais à l'écran ; les agents ne
+// font que LIRE (projets, fonctions, Workers, déploiements).
+const SERVICES = [
+  { type: 'supabase', champ: 'projet', lien: 'https://supabase.com/dashboard/account/tokens' },
+  { type: 'cloudflare', champ: 'compte', lien: 'https://dash.cloudflare.com/profile/api-tokens' },
+  { type: 'vercel', champ: 'equipe', lien: 'https://vercel.com/account/tokens', facultatif: true },
+];
+
+function ConnecteurService({ entreprise, s, c, busy, setBusy, onChange, t }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [id, setId] = useState('');
+  const [jeton, setJeton] = useState('');
+  const [erreur, setErreur] = useState('');
+  const branche = c?.actif;
+  async function brancher(actif) {
+    setBusy(true); setErreur('');
+    const { error } = await supabase.rpc('legion_brancher_service', { p_entreprise: entreprise.id, p_type: s.type, p_config: { [s.champ]: actif ? id : (c?.config?.[s.champ] || '') }, p_jeton: actif ? jeton : null, p_actif: actif });
+    setBusy(false);
+    if (error) { setErreur(error.message); return; }
+    setJeton(''); setOuvert(false); onChange();
+  }
+  async function oublier() {
+    setBusy(true); setErreur('');
+    const { error } = await supabase.rpc('legion_oublier_jeton_service', { p_entreprise: entreprise.id, p_type: s.type });
+    setBusy(false);
+    if (error) setErreur(error.message); else onChange();
+  }
+  return (
+    <li className="flex items-start gap-2">
+      <LogoMarque marque={s.type} taille={26} />
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-legion-ink">{MARQUES[s.type].titre}</p>
+        <p className="text-legion-muted">
+          {branche
+            ? t(`legion.services.${s.type}.branche`, { id: s.type === 'vercel' ? (c.config?.equipe ? ` (${c.config.equipe})` : '') : (c.config?.[s.champ] || '—') })
+            : t(`legion.services.${s.type}.aide`)}
+          {' '}{t('legion.services.lectureSeule')}
+        </p>
+        {branche && !ouvert && (
+          <p className="mt-1 flex flex-wrap gap-3">
+            <button type="button" disabled={busy} onClick={() => { setId(c.config?.[s.champ] || ''); setOuvert(true); }} className="font-semibold text-legion-gold">{t('legion.services.changer')}</button>
+            <button type="button" disabled={busy} onClick={() => brancher(false)} className="font-semibold text-legion-muted">{t('legion.services.debrancher')}</button>
+            <button type="button" disabled={busy} onClick={oublier} className="font-semibold text-legion-danger">{t('legion.oublierJeton', 'Effacer le jeton')}</button>
+          </p>
+        )}
+        {!branche && !ouvert && (
+          <button type="button" onClick={() => { setId(c?.config?.[s.champ] || ''); setOuvert(true); }} className="mt-1 rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg">{t('legion.services.brancher')}</button>
+        )}
+        {ouvert && (
+          <form onSubmit={(e) => { e.preventDefault(); brancher(true); }} className="mt-2 space-y-2">
+            <label className="block">
+              <span className="text-[11px] text-legion-muted">{t(`legion.services.${s.type}.champ`)}{s.facultatif ? ` (${t('legion.services.facultatif')})` : ''}</span>
+              <input value={id} onChange={(e) => setId(e.target.value)} autoComplete="off" spellCheck={false} className="input w-full font-mono text-[16px] sm:text-[13px]" />
+            </label>
+            <label className="block">
+              <span className="text-[11px] text-legion-muted">{t(`legion.services.${s.type}.jeton`)}{c?.config?.avec_jeton ? ` (${t('legion.services.gardeAuCoffre')})` : ''}</span>
+              <input type="password" value={jeton} onChange={(e) => setJeton(e.target.value)} autoComplete="off" spellCheck={false} className="input w-full font-mono text-[16px] sm:text-[13px]" />
+            </label>
+            <p className="text-[11px] text-legion-muted">
+              {t('legion.services.ouCreer')} <a href={s.lien} target="_blank" rel="noreferrer" className="font-semibold text-legion-gold underline">{new URL(s.lien).hostname}</a>
+            </p>
+            <div className="flex gap-2">
+              <button type="submit" disabled={busy} className="rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.services.brancher')}</button>
+              <button type="button" onClick={() => { setOuvert(false); setErreur(''); }} className="rounded-pill px-3 py-1 text-[12px] text-legion-muted">{t('common.cancel', 'Annuler')}</button>
+            </div>
+          </form>
+        )}
+        {erreur && <p className="text-[11px] text-legion-danger">{erreur}</p>}
+      </div>
+    </li>
+  );
+}
+
 // La veille RSS, Linear, Jira, et la réunion sur ticket GitHub (0188, 24/09).
 function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onChange, t }) {
   const [salons, setSalons] = useState([]);
@@ -242,7 +317,7 @@ export function Connecteurs({ entreprise, t }) {
           chaque nouvel utilisateur »). Pas encore branchable : dit comme tel. */}
       <div className="flex flex-wrap items-center gap-2 rounded-card border border-dashed border-legion-line px-3 py-2">
         <span className="text-[11.5px] font-semibold text-legion-muted">{t('legion.bientot')}</span>
-        {['supabase', 'cloudflare', 'vercel', 'notion', 'googledrive', 'gmail', 'googlecalendar', 'slack', 'figma'].map((m) => (
+        {['notion', 'googledrive', 'gmail', 'googlecalendar', 'slack', 'figma'].map((m) => (
           <span key={m} className="inline-flex items-center gap-1.5 text-[11.5px] text-legion-muted"><LogoMarque marque={m} taille={20} />{MARQUES[m].titre}</span>
         ))}
       </div>
@@ -327,6 +402,9 @@ export function Connecteurs({ entreprise, t }) {
           </div>
         </li>
         <ConnecteursFlux entreprise={entreprise} connecteurs={connecteurs} github={github} busy={busy} setBusy={setBusy} onChange={charger} t={t} />
+        {SERVICES.map((sv) => (
+          <ConnecteurService key={sv.type} entreprise={entreprise} s={sv} c={connecteurs.find((c) => c.type === sv.type)} busy={busy} setBusy={setBusy} onChange={charger} t={t} />
+        ))}
         <li className="flex items-start gap-2">
           <IconRobot size={16} className="mt-0.5 shrink-0 text-legion-gold" />
           <div className="min-w-0 flex-1">

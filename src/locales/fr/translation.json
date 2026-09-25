@@ -1231,6 +1231,33 @@
       "pris": "Pris par mon ordinateur",
       "attend": "Attend mon ordinateur",
       "aide": "Mon ordinateur : branche cette adresse dans l’assistant de ton ordinateur (Claude dans Chrome, Claude pour ordinateur). Au tableau, choisis « Mon ordinateur » : il prend la tâche, la fait sous tes yeux, et te demande avant tout envoi, paiement ou suppression. Tu l’arrêtes quand tu veux."
+    },
+    "services": {
+      "lectureSeule": "Les agents ne font que lire ; le jeton reste au coffre du serveur.",
+      "changer": "Changer",
+      "debrancher": "Débrancher",
+      "brancher": "Brancher",
+      "facultatif": "facultatif",
+      "gardeAuCoffre": "déjà gardé : vide = on le garde",
+      "ouCreer": "Créer un jeton :",
+      "supabase": {
+        "aide": "Tes agents lisent l’état de ton projet : santé, fonctions edge, région.",
+        "branche": "Projet « {{id}} » branché : santé et fonctions edge.",
+        "champ": "Identifiant du projet (20 caractères, ou son adresse …supabase.co)",
+        "jeton": "Jeton d’accès personnel"
+      },
+      "cloudflare": {
+        "aide": "Tes agents lisent tes Workers et tes projets Pages (derniers déploiements).",
+        "branche": "Compte « {{id}} » branché : Workers et Pages.",
+        "champ": "Identifiant de compte (32 caractères)",
+        "jeton": "Jeton d’API (droits de lecture seulement)"
+      },
+      "vercel": {
+        "aide": "Tes agents lisent tes projets et tes derniers déploiements.",
+        "branche": "Compte branché{{id}} : projets et déploiements.",
+        "champ": "Identifiant d’équipe",
+        "jeton": "Jeton d’accès"
+      }
     }
   },
   "equipe": {

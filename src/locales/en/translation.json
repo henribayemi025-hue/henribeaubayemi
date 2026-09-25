@@ -1231,6 +1231,33 @@
       "pris": "Taken by my computer",
       "attend": "Waiting for my computer",
       "aide": "My computer: add this address to the assistant on your computer (Claude in Chrome, Claude desktop). On the board, choose “My computer”: it takes the task, does it in front of you, and asks before sending, paying or deleting anything. Stop it any time."
+    },
+    "services": {
+      "lectureSeule": "Agents only read; the token stays in the server vault.",
+      "changer": "Change",
+      "debrancher": "Disconnect",
+      "brancher": "Connect",
+      "facultatif": "optional",
+      "gardeAuCoffre": "already stored: leave empty to keep it",
+      "ouCreer": "Create a token:",
+      "supabase": {
+        "aide": "Your agents read your project’s status: health, edge functions, region.",
+        "branche": "Project “{{id}}” connected: health and edge functions.",
+        "champ": "Project ID (20 characters, or its …supabase.co address)",
+        "jeton": "Personal access token"
+      },
+      "cloudflare": {
+        "aide": "Your agents read your Workers and Pages projects (latest deployments).",
+        "branche": "Account “{{id}}” connected: Workers and Pages.",
+        "champ": "Account ID (32 characters)",
+        "jeton": "API token (read permissions only)"
+      },
+      "vercel": {
+        "aide": "Your agents read your projects and latest deployments.",
+        "branche": "Account connected{{id}}: projects and deployments.",
+        "champ": "Team ID",
+        "jeton": "Access token"
+      }
     }
   },
   "equipe": {
