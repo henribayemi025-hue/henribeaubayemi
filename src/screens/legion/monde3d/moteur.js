@@ -367,6 +367,35 @@ export class Monde {
     const tour = new THREE.Mesh(cotesFacade(24.4, 70, 18.4, verreTour.taille, () => 0), verreTour.mat); tour.position.set(0, 5.6 + 35, 0); g.add(tour);
     const toitTour = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.8, 18.8), new THREE.MeshStandardMaterial({ color: '#3a3d42', roughness: 0.6, metalness: 0.4 })); toitTour.position.y = 5.6 + 70.4; g.add(toitTour);
     const corniche = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.5, 18.8), new THREE.MeshStandardMaterial({ color: '#23262b', metalness: 0.7, roughness: 0.4 })); corniche.position.y = 5.85; g.add(corniche);
+    // Un vrai immeuble vu de dehors (Beau : « pas comme un vrai bâtiment »).
+    // Socle en pierre sur les côtés sans vitrine, ailettes de bronze, poteaux d'angle.
+    const metalSombre = new THREE.MeshStandardMaterial({ color: '#23262b', metalness: 0.7, roughness: 0.4 });
+    const bronze = new THREE.MeshStandardMaterial({ color: '#6e5638', metalness: 0.8, roughness: 0.35 });
+    const pierreExt = this.matiere('marble_tiles', 3, { m: { color: '#efe6d6' } });
+    const dos = new THREE.Mesh(new THREE.BoxGeometry(24.4, 5.6, 0.22), pierreExt); dos.position.set(0, 2.8, -9.28); dos.receiveShadow = true; g.add(dos);
+    const flanc = new THREE.Mesh(new THREE.BoxGeometry(0.22, 5.6, 18.4), pierreExt); flanc.position.set(12.28, 2.8, 0); flanc.receiveShadow = true; g.add(flanc);
+    for (let x = -10; x <= 10; x += 2.5) { const a = new THREE.Mesh(new THREE.BoxGeometry(0.14, 5.2, 0.4), bronze); a.position.set(x, 2.8, -9.55); g.add(a); }
+    for (let z = -7.5; z <= 7.5; z += 2.5) { const a = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5.2, 0.14), bronze); a.position.set(12.55, 2.8, z); g.add(a); }
+    const porteService = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3, 0.1), metalSombre); porteService.position.set(-6.25, 1.5, -9.42); g.add(porteService);
+    for (const [x, z] of [[-12.25, -9.25], [12.25, -9.25], [-12.25, 9.25], [12.25, 9.25]]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.55, 5.9, 0.55), metalSombre); c.position.set(x, 2.95, z); c.castShadow = true; g.add(c); }
+    // Le nom de l'entreprise sur la façade, au-dessus de l'entrée, et en couronne tout en haut.
+    const lettres = (l, h, taille) => this.ecran(l, h, (x2, w, hh) => { x2.clearRect(0, 0, w, hh); x2.fillStyle = '#f3dfb3'; x2.shadowColor = '#e3a857'; x2.shadowBlur = hh * 0.12; x2.font = `600 ${hh * taille}px Georgia, serif`; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.fillText(nom || 'Léo', w / 2, hh / 2); });
+    const nomFacade = lettres(12, 1.6, 0.7); nomFacade.material.transparent = true; nomFacade.position.set(0, 7.3, 9.36); g.add(nomFacade);
+    const nomFlanc = lettres(10, 1.4, 0.7); nomFlanc.material.transparent = true; nomFlanc.position.set(12.36, 7.3, 0); nomFlanc.rotation.y = Math.PI / 2; g.add(nomFlanc);
+    const haut = 5.6 + 70;
+    for (const [l, rot, x, z] of [[20, 0, 0, 9.36], [15, Math.PI / 2, 12.36, 0], [15, -Math.PI / 2, -12.36, 0], [20, Math.PI, 0, -9.36]]) {
+      const n = lettres(l, 3, 0.62); n.material.transparent = true; n.position.set(x, haut - 3.4, z); n.rotation.y = rot; g.add(n);
+    }
+    // Le toit : acrotère, locaux techniques, mât avec son feu rouge, lisere lumineux.
+    const acro = [[24.8, 0.2, 0, 9.3], [24.8, 0.2, 0, -9.3], [0.2, 18.8, 12.3, 0], [0.2, 18.8, -12.3, 0]];
+    for (const [lx, lz, x, z] of acro) { const a = new THREE.Mesh(new THREE.BoxGeometry(lx, 1.3, lz), metalSombre); a.position.set(x, haut + 1.45, z); g.add(a); }
+    const lisere = new THREE.MeshBasicMaterial({ color: '#ffe7b8' });
+    for (const [lx, lz, x, z] of acro) { const a = new THREE.Mesh(new THREE.BoxGeometry(lx + 0.02, 0.12, lz + 0.02), lisere); a.position.set(x, haut + 2.1, z); g.add(a); }
+    const technique = new THREE.Mesh(new THREE.BoxGeometry(9, 4, 6.5), new THREE.MeshStandardMaterial({ color: '#5c6066', roughness: 0.7, metalness: 0.3 })); technique.position.set(-3, haut + 2.8, -2); technique.castShadow = true; g.add(technique);
+    for (let i = 0; i < 6; i += 1) { const v = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.08, 0.1), metalSombre); v.position.set(-3, haut + 1.4 + i * 0.5, 1.28); g.add(v); }
+    const mat = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.25, 14, 8), metalSombre); mat.position.set(5, haut + 7.8, 2); g.add(mat);
+    const feu = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8), new THREE.MeshBasicMaterial({ color: '#ff2a2a' })); feu.position.set(5, haut + 15, 2); g.add(feu);
+    this.feuMat = feu;
     // Le comptoir d'accueil
     const bois = this.matiere('herringbone_parquet', 1.5);
     const pierre = this.matiere('terrazzo_tiles', 1, { m: { color: '#f7f5f2' } });
@@ -707,6 +736,7 @@ export class Monde {
     if (!this.villeVivante) {
       this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
+      if (this.affichesBoutiques) this.villeVivante.afficher(this.affichesBoutiques);
     }
     const etage = String(lieu).startsWith('etage:') ? String(lieu).slice(6) : null;
     const depts = this.donnees?.departements || [];
@@ -739,6 +769,12 @@ export class Monde {
     this.emettre({ type: 'lieu', lieu });
   }
 
+  // Les affiches des vraies boutiques Finjaro dans la ville (voir affiches.js).
+  afficherBoutiques(liste) {
+    this.affichesBoutiques = liste;
+    this.villeVivante?.afficher(liste);
+  }
+
   // ——— Les vrais agents ———
   majDonnees({ agents = [], ou, faits, departements = [] } = {}) {
     this.donnees = { agents, ou, departements };
@@ -761,6 +797,27 @@ export class Monde {
     if (this.lieu.nom === 'hall') {
       // Au bar : ceux qui viennent de rendre un travail (dernière demi-heure).
       (ou?.aupause || []).slice(0, this.lieu.bar?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.bar[i], anim: i % 2 ? 'ecoute' : 'parle', sous: `${this.langue === 'en' ? 'break · delivered' : 'pause · a rendu'} : ${String(b.tache || '').slice(0, 36)}` }));
+      // Les disponibles (allumés, libres) : au salon, en discussion, ou qui marchent dans le hall.
+      const dispo = this.langue === 'en' ? 'available · talk to me' : 'disponible · parle-moi';
+      // Dans l'ordre : d'abord ce qu'on voit en entrant (quelqu'un qui marche, un groupe qui discute).
+      const places = [
+        { chemin: [[0, -2.6], [9.2, -1], [6, 7.6], [-3, 6.8], [-4, 0.5]] },
+        { x: 8.4, z: -6.0, rot: -Math.PI / 2, anim: 'parle' }, { x: 7.2, z: -6.0, rot: Math.PI / 2, anim: 'ecoute' },
+        { x: -8.0, z: 0.9, rot: Math.PI / 2, anim: 'assis' }, { x: -8.0, z: 2.1, rot: Math.PI / 2, anim: 'assis' },
+        { chemin: [[9.2, -1], [0, -2.6], [-4, 0.5], [-3, 6.8], [6, 7.6]], decale: 0.5 },
+        { x: -5.72, z: -0.62, rot: -Math.PI / 2 - 0.3, anim: 'assis' }, { x: -5.72, z: 3.42, rot: -Math.PI / 2 + 0.3, anim: 'assis' },
+        { x: -10.2, z: 6.2, rot: Math.PI * 0.75, anim: 'parle' }, { x: -9.1, z: 5.1, rot: -Math.PI * 0.25, anim: 'ecoute' },
+      ];
+      // … et ceux qui attendent leur tâche, pendant leur pause (voir enPause dans monde.js).
+      const enHall = [
+        ...(ou?.disponibles || []).map((d) => ({ id: d.id, sous: dispo })),
+        ...(ou?.aLeurPoste || []).filter((x) => x.pause).map((x) => ({ id: x.id, sous: `${this.langue === 'en' ? 'break · to do' : 'pause · à faire'} : ${String(x.tache || '').slice(0, 34)}` })),
+      ];
+      enHall.filter((d) => !voulus.has(d.id)).slice(0, this.mobile ? 5 : places.length).forEach((d, i) => {
+        const pl = places[i];
+        if (pl.chemin) voulus.set(d.id, { place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous: d.sous, chemin: pl.chemin, decale: pl.decale || 0 });
+        else voulus.set(d.id, { place: pl, anim: pl.anim, sous: d.sous });
+      });
     }
     if (this.lieu.nom === 'atelier') {
       (ou?.auBureau || []).slice(0, this.lieu.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
@@ -792,7 +849,8 @@ export class Monde {
           // Il a une tâche ouverte : à son poste, sans taper.
           const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#10151d'; x.fillRect(0, 0, w, h); x.fillStyle = '#93a1b8'; x.font = `bold ${h * 0.1}px system-ui`; x.fillText(this.langue === 'en' ? 'To do' : 'À faire', w * 0.05, h * 0.18); x.fillStyle = '#edf1f8'; x.font = `${h * 0.085}px system-ui`; const t = String(attente.tache || ''); for (let l = 0; l < 4; l += 1) x.fillText(t.slice(l * 30, l * 30 + 30), w * 0.05, h * (0.38 + l * 0.14)); });
           e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
-          voulus.set(a.id, { place: p, anim: 'assis', sous: `${this.langue === 'en' ? 'to do' : 'à faire'} : ${String(attente.tache || '').slice(0, 40)}` });
+          // En pause au hall : l'écran reste allumé sur sa tâche, la chaise est vide.
+          if (!attente.pause) voulus.set(a.id, { place: p, anim: 'assis', sous: `${this.langue === 'en' ? 'to do' : 'à faire'} : ${String(attente.tache || '').slice(0, 40)}` });
         }
       });
     }
@@ -811,8 +869,17 @@ export class Monde {
         this.agents.set(id, x);
       }
       x.etiquette.element.querySelector('i').textContent = v.sous || '';
-      x.perso.objet.position.set(v.place.x, 0, v.place.z);
-      x.perso.objet.rotation.y = v.place.rot;
+      if (v.chemin) {
+        // Garde sa position s'il marchait déjà sur ce chemin (pas de saut à chaque mise à jour).
+        if (!x.chemin || x.chemin.cle !== String(v.chemin)) {
+          x.chemin = { pts: v.chemin, cle: String(v.chemin), i: 0, t: v.decale || 0 };
+          x.perso.objet.position.set(v.place.x, 0, v.place.z);
+        }
+      } else {
+        x.chemin = null;
+        x.perso.objet.position.set(v.place.x, 0, v.place.z);
+        x.perso.objet.rotation.y = v.place.rot;
+      }
       x.perso.jouer(v.anim);
       if (x.perso.objet.parent !== this.lieu.groupe) this.lieu.groupe.add(x.perso.objet);
     }
@@ -909,7 +976,20 @@ export class Monde {
     j.mixer.update(dt);
     this.villeVivante?.avancer(dt);
     this.receptionniste?.mixer.update(dt);
-    for (const x of this.agents.values()) x.perso.mixer.update(dt);
+    if (this.feuMat) this.feuMat.visible = performance.now() % 1600 < 700; // feu d'obstacle du mât
+    for (const x of this.agents.values()) {
+      x.perso.mixer.update(dt);
+      const c = x.chemin;
+      if (!c) continue;
+      // Marche le long de son chemin, en boucle, à allure de promenade.
+      const a = c.pts[c.i], b = c.pts[(c.i + 1) % c.pts.length];
+      const long = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      c.t += (1.25 * dt) / long;
+      if (c.t >= 1) { c.t -= 1; c.i = (c.i + 1) % c.pts.length; continue; }
+      const o = x.perso.objet;
+      o.position.set(a[0] + (b[0] - a[0]) * c.t, 0, a[1] + (b[1] - a[1]) * c.t);
+      o.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
+    }
 
     // La réceptionniste se tourne vers le visiteur et le salue une fois.
     if (this.lieu.nom === 'hall' && this.receptionniste) {

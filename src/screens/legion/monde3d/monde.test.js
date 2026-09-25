@@ -1,6 +1,6 @@
 // Le monde 3D : qui est où, sur les vraies données uniquement.
 import { describe, it, expect } from 'vitest';
-import { traitsDe, corpsDe, quiOuEst, repondre, RECEPTIONNISTE } from './monde';
+import { traitsDe, corpsDe, quiOuEst, repondre, enPause, RECEPTIONNISTE } from './monde';
 
 const MAINTENANT = Date.parse('2026-09-25T10:00:00Z');
 const il = (min) => new Date(MAINTENANT - min * 60000).toISOString();
@@ -61,7 +61,17 @@ describe('monde 3D', () => {
     const messages = [{ auteur_id: 'a', created_at: il(200), texte: 'Compte rendu — Budget du mois\nsuite', meta: { reunion: { id: 'r9', fin: true } } }];
     const ou = quiOuEst({ agents, messages, taches, maintenant: MAINTENANT });
     expect(ou.aLeurPoste.map((x) => x.id)).toEqual(['c']);
+    // Allumés et libres : au hall ; l'agent en veille n'y est pas, l'humain non plus.
+    expect(ou.disponibles.map((x) => x.id)).toEqual(['a', 'b']);
     expect(ou.derniereReunion.sujet).toBe('Budget du mois');
+  });
+
+  it('les pauses tournent : stables sur un créneau, environ trois sur cinq', () => {
+    expect(enPause('x', MAINTENANT)).toBe(enPause('x', MAINTENANT + 1000));
+    let n = 0;
+    for (let k = 0; k < 500; k += 1) if (enPause(`agent-${k}`, MAINTENANT)) n += 1;
+    expect(n).toBeGreaterThan(250);
+    expect(n).toBeLessThan(350);
   });
 
   it('la réceptionniste répond avec les vraies données', () => {
@@ -70,6 +80,7 @@ describe('monde 3D', () => {
     expect(repondre('où est Ada ?', { agents, ou }).texte).toMatch(/Ada Nkemba travaille/);
     expect(repondre('et Foulée ?', { agents, ou }).texte).toMatch(/en veille/);
     expect(repondre('Rigo ?', { agents, ou }).texte).toMatch(/rien fait/);
+    expect(repondre('Rigo ?', { agents, ou: { ...ou, disponibles: [{ id: 'c' }] } }).texte).toMatch(/dans le hall, disponible/);
     expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro' }).texte).toMatch(/Finjaro/);
   });
 });

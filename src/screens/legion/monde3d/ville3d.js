@@ -239,6 +239,50 @@ function fusionner(racine) {
   }
 }
 
+
+// ——— Affiches ———
+function chargerImage(url) {
+  return new Promise((ok) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => ok(img);
+    img.onerror = () => ok(null);
+    img.src = url;
+    setTimeout(() => ok(null), 15000);
+  });
+}
+function dessinerAffiche({ img, nom }, l, h, etiquette = 'BOUTIQUE') {
+  const c = document.createElement('canvas'); c.width = l; c.height = h;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f4ede3'; x.fillRect(0, 0, l, h);
+  const large = l > h;
+  // Photo de la boutique : à gauche (grand écran) ou en haut (panneau), recadrée sans déformer.
+  const zl = large ? l * 0.58 : l, zh = large ? h : h * 0.72;
+  const k = Math.max(zl / img.width, zh / img.height);
+  const iw = img.width * k, ih = img.height * k;
+  x.save(); x.beginPath(); x.rect(0, 0, zl, zh); x.clip();
+  x.drawImage(img, (zl - iw) / 2, (zh - ih) / 2, iw, ih);
+  x.restore();
+  try { x.getImageData(0, 0, 1, 1); } catch { return null; } // image refusée par son serveur
+  const tx = large ? zl + l * 0.04 : l * 0.07, largeurTexte = large ? l - zl - l * 0.08 : l * 0.86;
+  let y = large ? h * 0.3 : zh + h * 0.08;
+  x.fillStyle = '#b5532d'; x.font = `600 ${Math.round(h * (large ? 0.05 : 0.032))}px system-ui`;
+  x.fillText(etiquette, tx, y);
+  x.fillStyle = '#1c1a17';
+  const propre = String(nom).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').trim() || nom;
+  let taille = Math.round(h * (large ? 0.11 : 0.06));
+  x.font = `700 ${taille}px Georgia, serif`;
+  while (x.measureText(propre).width > largeurTexte * 2 && taille > 14) { taille -= 2; x.font = `700 ${taille}px Georgia, serif`; }
+  // Deux lignes au plus
+  const mots = propre.split(/\s+/); const lignes = [''];
+  for (const m of mots) { const essai = `${lignes[lignes.length - 1]} ${m}`.trim(); if (x.measureText(essai).width > largeurTexte && lignes[lignes.length - 1]) lignes.push(m); else lignes[lignes.length - 1] = essai; }
+  lignes.slice(0, 2).forEach((li) => { y += taille * 1.15; x.fillText(li, tx, y); });
+  x.fillStyle = '#9a7b3f'; x.font = `600 ${Math.round(h * (large ? 0.055 : 0.034))}px system-ui`;
+  x.fillText('finjaro.net', tx, large ? h * 0.86 : h * 0.95);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+
 // ——— La ville ———
 export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine = 7 } = {}) {
   const r = alea(graine);
@@ -272,6 +316,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2 });
   }
+  const tours = [];
   const facades = matieresFacades(monde, envCiel);
   for (const f of facades) nuit.fenetres.push(f.mat);
   const toit = new THREE.MeshStandardMaterial({ color: '#5b5e62', roughness: 0.9 });
@@ -299,6 +344,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const tour = new THREE.Mesh(cotesFacade(w, hc, d, f.taille, r), f.mat);
       tour.position.set(bx, 5 + hc / 2, bz); tour.castShadow = dist < 120; tour.receiveShadow = true;
       racine.add(tour);
+      tours.push({ bx, bz, w, d, h });
       const dessus = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.6, d + 0.4), toit); dessus.position.set(bx, h + 0.3, bz); racine.add(dessus);
       if (r() < 0.45) { // retrait au sommet
         const t2 = new THREE.Mesh(cotesFacade(w * 0.6, h * 0.18, d * 0.6, f.taille, r), f.mat); t2.position.set(bx, h + h * 0.09, bz); racine.add(t2);
@@ -429,11 +475,74 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     }
   });
 
+  // Affiches des vraies boutiques Finjaro (Beau, 25/09) : grands écrans sur
+  // les tours voisines, panneaux lumineux sur nos trottoirs. Elles défilent.
+  const panneaux = [];
+  const cadreMat = new THREE.MeshStandardMaterial({ color: '#1b1d21', metalness: 0.6, roughness: 0.4 });
+  const ecranVide = () => { const m = new THREE.MeshBasicMaterial({ color: '#0d0f12' }); return m; };
+  const voisines = tours.map((t) => ({ ...t, dist: Math.hypot(t.bx, t.bz) })).sort((a, b) => a.dist - b.dist).slice(0, monde.mobile ? 3 : 6);
+  for (const t of voisines) {
+    // La face tournée vers notre immeuble
+    const faces = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+    const [nx, nz] = faces.reduce((m, f) => (-(f[0] * t.bx + f[1] * t.bz) > -(m[0] * t.bx + m[1] * t.bz) ? f : m));
+    const face = nx ? t.d : t.w;
+    const L = Math.min(face * 0.5, 12), H = L * 9 / 16;
+    if (t.h < 5 + H + 3) continue;
+    const y = 5.8 + 1.4 + H / 2;
+    const px = t.bx + nx * (t.w / 2 + 0.35), pz = t.bz + nz * (t.d / 2 + 0.35);
+    const rot = Math.atan2(nx, nz);
+    const cadre = new THREE.Mesh(new THREE.BoxGeometry(L + 0.5, H + 0.5, 0.4), cadreMat);
+    cadre.position.set(px - nx * 0.15, y, pz - nz * 0.15); cadre.rotation.y = rot; cadre.userData.garder = true; cadre.visible = false; racine.add(cadre);
+    const ecran = new THREE.Mesh(new THREE.PlaneGeometry(L, H), ecranVide());
+    ecran.position.set(px + nx * 0.07, y, pz + nz * 0.07); ecran.rotation.y = rot; ecran.userData.garder = true; ecran.visible = false; racine.add(ecran);
+    panneaux.push({ ecran, format: 'large', objets: [cadre, ecran] });
+  }
+  // Panneaux sur pied (double face) le long de notre îlot
+  for (const [x, z, rot] of [[-18.9, 14, 0], [18.9, 15, 0], [-15, 22.7, Math.PI / 2], [15, 22.7, Math.PI / 2]]) {
+    const pied = new THREE.Group();
+    const corps = new THREE.Mesh(new THREE.BoxGeometry(1.36, 2.1, 0.26), cadreMat); corps.position.y = 1.35; pied.add(corps);
+    const socle = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.3), cadreMat); socle.position.y = 0.15; pied.add(socle);
+    const mat = ecranVide();
+    for (const cote of [1, -1]) {
+      const e = new THREE.Mesh(new THREE.PlaneGeometry(1.16, 1.86), mat);
+      e.position.set(0, 1.37, cote * 0.135); e.rotation.y = cote > 0 ? 0 : Math.PI; e.userData.garder = true; pied.add(e);
+    }
+    corps.userData.garder = true; socle.userData.garder = true;
+    pied.position.set(x, 0, z); pied.rotation.y = rot; pied.userData.garder = true; pied.visible = false; racine.add(pied);
+    panneaux.push({ ecran: { material: mat }, format: 'haut', objets: [pied] });
+  }
+  let affiches = [], rang = 0, attente = 0;
+  const tex = { large: [], haut: [] };
+  const montrer = () => {
+    panneaux.forEach((p, i) => {
+      const t = tex[p.format][(i + rang) % (tex[p.format].length || 1)];
+      if (!t) return;
+      if (!(p.ecran.material.map)) { p.ecran.material.color.set('#ffffff'); p.objets.forEach((o) => { o.visible = true; }); }
+      p.ecran.material.map = t; p.ecran.material.needsUpdate = true;
+    });
+  };
+  bouger.push((dt) => {
+    if (!affiches.length) return;
+    attente += dt;
+    if (attente > 8) { attente = 0; rang += 1; montrer(); }
+  });
+
   fusionner(racine);
   return {
     racine,
     majEnv: (env) => racine.traverse((o) => { if (o.material?.envMap !== undefined && o.material.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } }),
     avancer: (dt) => bouger.forEach((f) => f(dt)),
+    // liste : [{ nom, image }] — de vraies boutiques (voir affiches.js).
+    afficher: async (liste = []) => {
+      // Mémoire graphique : 8 boutiques à l'ordinateur, 4 au téléphone, en plus petit.
+      const k = monde.mobile ? 0.5 : 1;
+      const images = await Promise.all(liste.slice(0, monde.mobile ? 4 : 8).map(async (a) => { const img = (await chargerImage(a.image)) || (a.secours && a.secours !== a.image ? await chargerImage(a.secours) : null); return img ? { ...a, img } : null; }));
+      affiches = images.filter(Boolean);
+      tex.large = affiches.map((a) => dessinerAffiche(a, 1024 * k, 576 * k, monde.langue === 'en' ? 'SHOP' : 'BOUTIQUE')).filter(Boolean);
+      tex.haut = affiches.map((a) => dessinerAffiche(a, 400 * k, 640 * k, monde.langue === 'en' ? 'SHOP' : 'BOUTIQUE')).filter(Boolean);
+      if (!tex.large.length) affiches = [];
+      montrer();
+    },
     reglerNuit: (niveau) => { // 0 = plein jour, 1 = nuit
       for (const m of nuit.fenetres) m.emissiveIntensity = niveau * 1.1;
       for (const m of nuit.enseignes) m.emissiveIntensity = 0.35 + niveau * 1.4;

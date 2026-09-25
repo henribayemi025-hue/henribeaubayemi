@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
 import { chargerCiel, phaseDuJour } from '../parties/ciel';
-import { supabase } from '../../../lib/supabase';
+import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
+import { chargerAffiches } from './affiches';
 
 // LE MONDE 3D DE LÉO (Beau, 25/09) — l'écran : le moteur three.js (chargé à
 // la demande), et par-dessus : où je suis, l'ascenseur, les caméras, la carte
@@ -107,6 +108,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         // La météo arrive quand elle arrive : on n'attend pas le réseau pour ouvrir le monde.
         chargerCiel({ langue }).then((c) => { if (c && !fini) m.reglerCiel({ phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' }); }).catch(() => {});
         m.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) });
+        // Les affiches des vraies boutiques Finjaro, sans retarder l'ouverture.
+        chargerAffiches(supabase, (seau, chemin, vignette) => (vignette ? storageThumbUrl : storageUrl)(seau, chemin)).then((l) => { if (!fini && l.length) m.afficherBoutiques(l); }).catch(() => {});
         await m.allerA('hall', { nomEntreprise: entreprise.nom, avatar });
         if (fini) { m.detruire(); return; }
         m.demarrer();

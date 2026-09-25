@@ -4,6 +4,14 @@
 // s'il a vraiment écrit ou pris une tâche il y a moins de dix minutes.
 
 const DIX_MIN = 10 * 60 * 1000;
+const CRENEAU = 4 * 60 * 1000;
+
+// Un agent qui attend sa tâche (il ne tape pas) fait des pauses dans le hall,
+// à tour de rôle : trois créneaux de 4 minutes sur cinq environ. Le même calcul
+// sert partout, donc on ne le voit jamais à deux endroits à la fois.
+export function enPause(id, maintenant = Date.now()) {
+  return graine(`${id}:${Math.floor(maintenant / CRENEAU)}`) % 5 < 3;
+}
 
 // Les corps (Microsoft Rocketbox, MIT) : genre et teint, pour choisir celui
 // qui ressemble le plus au portrait de l'agent.
@@ -117,7 +125,7 @@ export function quiOuEst({ agents = [], messages = [], taches = [], maintenant =
     const st = x.meta?.statut;
     if (!x.assigne_a || !ids.has(x.assigne_a) || occupes.has(x.assigne_a) || x.termine_le || ['fait', 'revue', 'bloque'].includes(st)) continue;
     occupes.add(x.assigne_a);
-    aLeurPoste.push({ id: x.assigne_a, tache: x.texte });
+    aLeurPoste.push({ id: x.assigne_a, tache: x.texte, pause: enPause(x.assigne_a, maintenant) });
   }
   // La dernière réunion terminée, pour l'écran de la salle quand elle est vide.
   let derniere = null;
@@ -130,7 +138,13 @@ export function quiOuEst({ agents = [], messages = [], taches = [], maintenant =
     occupes.add(x.assigne_a);
     aupause.push({ id: x.assigne_a, tache: x.texte, depuis: rendue });
   }
+  // Disponibles : allumés, sans réunion, sans tâche en cours ni travail tout
+  // juste rendu. Ils attendent dans le hall qu'on leur parle — c'est vrai :
+  // un agent allumé répond quand on lui écrit (Beau : « je suis encore seul »).
+  for (const id of enReunion) occupes.add(id);
+  const disponibles = machines.filter((a) => !occupes.has(a.id)).map((a) => ({ id: a.id }));
   return {
+    disponibles,
     reunions: reunions.map((x) => ({ ...x, participants: x.participants.filter((id) => ids.has(id)) })),
     aupause,
     aLeurPoste,
@@ -162,7 +176,9 @@ export function repondre(question, { agents = [], ou, nomEntreprise = '' }, lang
     const b = (ou?.auBureau || []).find((x) => x.id === cible.id);
     if (b) return { texte: fr ? `${cible.nom} travaille à son bureau${b.tache ? ` : ${String(b.tache).slice(0, 80)}` : ''}.` : `${cible.nom} is at their desk.`, aller: 'atelier' };
     const at = (ou?.aLeurPoste || []).find((x) => x.id === cible.id);
+    if (at?.pause) return { texte: fr ? `${cible.nom} fait une pause ici, dans le hall. Tâche qui l'attend : ${String(at.tache).slice(0, 80)}.` : `${cible.nom} is on a break here in the lobby, with a task waiting.` };
     if (at) return { texte: fr ? `${cible.nom} est à son poste, avec une tâche à faire : ${String(at.tache).slice(0, 80)}.` : `${cible.nom} is at their desk with a task to do.` };
+    if ((ou?.disponibles || []).some((x) => x.id === cible.id)) return { texte: fr ? `${cible.nom} est ici, dans le hall, disponible : allez lui parler.` : `${cible.nom} is here in the lobby, available: go and talk to them.` };
     return { texte: fr ? `${cible.nom} n'a rien fait ces dix dernières minutes : pas à son bureau pour l'instant.` : `${cible.nom} hasn't been active in the last ten minutes.` };
   }
   return { texte: fr ? `Bienvenue chez ${nomEntreprise}. Demandez-moi qui est en réunion, qui travaille, ou où est un agent.` : `Welcome to ${nomEntreprise}. Ask me who's in a meeting, who's working, or where someone is.` };
