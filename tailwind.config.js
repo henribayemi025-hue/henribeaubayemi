@@ -39,20 +39,25 @@ export default {
         // Legion est une application à part et ne se mélange pas avec le
         // crème et la terracotta de la place de marché. Le laiton
         // (#E3A857) est le seul pont entre les deux, volontairement.
+        // Depuis le 25/09 (Beau : « deux palettes, la sombre et le blanc de Finjaro, il doit
+        // pouvoir choisir »), ces couleurs sont des variables posées dans global.css sur
+        // `.legion-app` : la palette sombre (ci-dessous, en commentaire) ou la palette claire
+        // (crème, terracotta, laiton) quand <html data-leo="clair">. Le format rgb(… / alpha)
+        // garde les opacités (bg-legion-gold/20).
         legion: {
-          bg: '#0B1120', // le fond, bleu nuit
-          panel: '#121A2B', // le rail et les colonnes
-          card: '#1A2337', // une carte posée dessus
-          'card-haut': '#222D45', // au survol
-          line: '#2A3550', // les traits
-          ink: '#EDF1F8', // texte principal
-          muted: '#93A1B8', // texte secondaire
-          gold: '#E3A857', // le laiton du logo
-          'gold-soft': '#F2C98A',
-          teal: '#5FC8C0', // le turquoise du logo
-          accent: '#C25E38', // la terracotta, pour MES bulles
-          success: '#34D399',
-          danger: '#FB7185',
+          bg: 'rgb(var(--leo-bg) / <alpha-value>)', // #0B1120, le fond bleu nuit
+          panel: 'rgb(var(--leo-panel) / <alpha-value>)', // #121A2B, le rail et les colonnes
+          card: 'rgb(var(--leo-card) / <alpha-value>)', // #1A2337, une carte posée dessus
+          'card-haut': 'rgb(var(--leo-card-haut) / <alpha-value>)', // #222D45, au survol
+          line: 'rgb(var(--leo-line) / <alpha-value>)', // #2A3550, les traits
+          ink: 'rgb(var(--leo-ink) / <alpha-value>)', // #EDF1F8, texte principal
+          muted: 'rgb(var(--leo-muted) / <alpha-value>)', // #93A1B8, texte secondaire
+          gold: 'rgb(var(--leo-gold) / <alpha-value>)', // #E3A857, le laiton du logo
+          'gold-soft': 'rgb(var(--leo-gold-soft) / <alpha-value>)', // #F2C98A
+          teal: 'rgb(var(--leo-teal) / <alpha-value>)', // #5FC8C0, le turquoise du logo
+          accent: 'rgb(var(--leo-accent) / <alpha-value>)', // #C25E38, la terracotta, pour MES bulles
+          success: 'rgb(var(--leo-success) / <alpha-value>)', // #34D399
+          danger: 'rgb(var(--leo-danger) / <alpha-value>)', // #FB7185
         },
         money: {
           bg: '#0B0B0F', // fond de page, presque noir

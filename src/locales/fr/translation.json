@@ -1506,7 +1506,16 @@
     "agentAToi": "Cet agent n’existe que dans ton entreprise : le modifier ne change rien ailleurs.",
     "creerAgent": "Créer l’agent",
     "modifier": "Modifier",
-    "membresCourt": "Membres"
+    "membresCourt": "Membres",
+    "palette": {
+      "sombre": "Palette sombre",
+      "claire": "Palette claire (Finjaro)"
+    },
+    "bande": {
+      "personne": "Aucun agent encore.",
+      "titre": "Ce que fait l’équipe en ce moment"
+    },
+    "agentsMot": "agents"
   },
   "equipe": {
     "titre": "L'équipe",

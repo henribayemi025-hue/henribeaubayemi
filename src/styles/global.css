@@ -199,7 +199,47 @@
 .money-app .text-teal { color: #7C5CFC; }
 .money-app .border-hairline { border-color: #26262E; }
 
-/* LEGION — les morceaux partagés, repeints en sombre.
+/* LEGION — ses couleurs, en deux palettes (Beau, 25/09 : « deux palettes, la sombre et le
+   blanc de Finjaro, il doit pouvoir choisir »). Les classes Tailwind `legion-*` lisent ces
+   variables (tailwind.config.js) ; la fenêtre modale, rendue sur <body>, les reçoit aussi.
+   Sombre : le logo de Léo (bleu nuit, laiton). Clair : la place de marché (crème, terracotta,
+   laiton) — le style que les gens ont aimé, on ne le rabote pas. */
+.legion-app,
+.legion-modale {
+  --leo-bg: 11 17 32;          /* #0B1120 */
+  --leo-panel: 18 26 43;       /* #121A2B */
+  --leo-card: 26 35 55;        /* #1A2337 */
+  --leo-card-haut: 34 45 69;   /* #222D45 */
+  --leo-line: 42 53 80;        /* #2A3550 */
+  --leo-ink: 237 241 248;      /* #EDF1F8 */
+  --leo-muted: 147 161 184;    /* #93A1B8 */
+  --leo-gold: 227 168 87;      /* #E3A857 */
+  --leo-gold-soft: 242 201 138;/* #F2C98A */
+  --leo-teal: 95 200 192;      /* #5FC8C0 */
+  --leo-accent: 194 94 56;     /* #C25E38 */
+  --leo-success: 52 211 153;   /* #34D399 */
+  --leo-danger: 251 113 133;   /* #FB7185 */
+  color-scheme: dark;
+}
+:root[data-leo="clair"] .legion-app,
+:root[data-leo="clair"] .legion-modale {
+  --leo-bg: 250 246 240;       /* #FAF6F0, la crème de Finjaro */
+  --leo-panel: 255 255 255;    /* blanc */
+  --leo-card: 244 239 230;     /* #F4EFE6 */
+  --leo-card-haut: 236 228 214;/* #ECE4D6 */
+  --leo-line: 232 223 209;     /* #E8DFD1 */
+  --leo-ink: 23 27 38;         /* #171B26 */
+  --leo-muted: 107 107 107;    /* #6B6B6B */
+  --leo-gold: 194 94 56;       /* #C25E38, la terracotta : l'accent de Finjaro */
+  --leo-gold-soft: 217 93 57;  /* #D95D39 */
+  --leo-teal: 42 157 143;      /* #2A9D8F */
+  --leo-accent: 163 74 43;     /* #A34A2B, terracotta foncée : mes bulles, le bout des dégradés */
+  --leo-success: 42 157 143;   /* #2A9D8F */
+  --leo-danger: 209 67 67;     /* #D14343 */
+  color-scheme: light;
+}
+
+/* LEGION — les morceaux partagés, repeints dans la palette.
    Beau: « mets les couleurs comme le truc de Gemini que je t'ai envoyé ».
    Legion est une application à part, comme « Mon argent »: elle a sa peau.
    Ce qui suit ne touche QUE ce qui est à l'intérieur de `.legion-app`, plus
@@ -207,29 +247,41 @@
    séparé posé par la fiche d'agent. */
 .legion-app .input,
 .legion-modale .input {
-  background-color: #1A2337;
-  border-color: #2A3550;
-  color: #EDF1F8;
+  background-color: rgb(var(--leo-card));
+  border-color: rgb(var(--leo-line));
+  color: rgb(var(--leo-ink));
 }
 .legion-app .input::placeholder,
-.legion-modale .input::placeholder { color: #93A1B8; }
+.legion-modale .input::placeholder { color: rgb(var(--leo-muted)); }
 .legion-app .input:focus,
-.legion-modale .input:focus { border-color: #E3A857; }
-.legion-app .skeleton { background-color: #1A2337; }
-.legion-modale { background-color: #121A2B !important; color: #EDF1F8; }
-.legion-modale h2 { color: #EDF1F8; }
-.legion-modale option { background-color: #1A2337; color: #EDF1F8; }
-.legion-app .label { color: #EDF1F8; }
-.legion-app .btn-primary { background: #E3A857; color: #0B1120; }
-.legion-app .btn-primary:hover { background: #F2C98A; }
-.legion-app .btn-primary:disabled { background: #2A3550; color: #93A1B8; }
-.legion-app textarea.input { background-color: #1A2337; }
+.legion-modale .input:focus { border-color: rgb(var(--leo-gold)); }
+.legion-app .skeleton { background-color: rgb(var(--leo-card)); }
+.legion-modale { background-color: rgb(var(--leo-panel)) !important; color: rgb(var(--leo-ink)); }
+.legion-modale h2 { color: rgb(var(--leo-ink)); }
+.legion-modale option { background-color: rgb(var(--leo-card)); color: rgb(var(--leo-ink)); }
+.legion-app .label { color: rgb(var(--leo-ink)); }
+.legion-app .btn-primary { background: rgb(var(--leo-gold)); color: rgb(var(--leo-bg)); }
+.legion-app .btn-primary:hover { background: rgb(var(--leo-gold-soft)); }
+.legion-app .btn-primary:disabled { background: rgb(var(--leo-line)); color: rgb(var(--leo-muted)); }
+.legion-app textarea.input { background-color: rgb(var(--leo-card)); }
+
+/* LEGION — la bande d'agents qui défile (Mes entreprises, tour de contrôle) : les visages
+   passent lentement, la souris les arrête, et rien ne bouge si la personne a demandé moins
+   d'animations. La piste contient deux fois la liste : à -50 %, la boucle est invisible. */
+.leo-defile { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.leo-defile-piste { display: flex; width: max-content; gap: 10px; animation: leo-defile var(--leo-defile-duree, 40s) linear infinite; }
+.leo-defile:hover .leo-defile-piste { animation-play-state: paused; }
+@keyframes leo-defile { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .leo-defile { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  .leo-defile-piste { animation: none; }
+}
 
 /* LEGION — le fond du fil, comme le papier peint de WhatsApp: de petits
    dessins à peine visibles (couronne, bulle, étincelle, étoile) sur le bleu
    nuit. Beau, 22/09, capture de WhatsApp à l'appui. */
 .legion-fond-chat {
-  background-color: #0B1120;
+  background-color: rgb(var(--leo-bg));
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%2393A1B8' stroke-opacity='.075' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 40l6-14 8 9 8-9 6 14z'/%3E%3Cpath d='M112 22h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6h-18l-8 7v-7h-2a6 6 0 0 1-6-6V28a6 6 0 0 1 6-6z'/%3E%3Cpath d='M60 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/%3E%3Cpath d='M150 110l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z'/%3E%3Ccircle cx='30' cy='150' r='9'/%3E%3Cpath d='M26 150h8M30 146v8'/%3E%3Cpath d='M100 150c0-8 12-8 12 0 0-8 12-8 12 0 0 8-12 14-12 14s-12-6-12-14z'/%3E%3Cpath d='M80 40h14M87 33v14'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 180px 180px;
 }

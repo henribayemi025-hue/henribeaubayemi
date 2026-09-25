@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera, IconHome } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
+import { BoutonPalette } from './parties/Palette';
 import { useEcranVisible } from './parties/useEcranVisible';
 import { useAuth } from '../../hooks/useAuth';
 import { useSettings } from '../../hooks/useSettings';
@@ -811,6 +812,7 @@ export default function Entreprise() {
             className="flex h-8 min-w-8 items-center justify-center rounded-full border border-legion-line px-1.5 text-[10px] font-bold text-legion-muted sm:hidden">
             {language === 'en' ? 'FR' : 'EN'}
           </button>
+          <BoutonPalette t={t} />
           <div className="hidden items-center rounded-full border border-legion-line p-0.5 sm:flex" role="group" aria-label="Langue / Language">
             {[['fr', 'FR', 'Français'], ['en', 'EN', 'English']].map(([code, court, nom]) => (
               <button key={code} type="button" lang={code} title={nom} aria-pressed={language === code} onClick={() => changerLangue(code)}

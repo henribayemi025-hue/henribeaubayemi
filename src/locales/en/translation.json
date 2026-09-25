@@ -1506,7 +1506,16 @@
     "agentAToi": "This agent exists only in your company: editing it changes nothing elsewhere.",
     "creerAgent": "Create agent",
     "modifier": "Edit",
-    "membresCourt": "Members"
+    "membresCourt": "Members",
+    "palette": {
+      "sombre": "Dark palette",
+      "claire": "Light palette (Finjaro)"
+    },
+    "bande": {
+      "personne": "No agent yet.",
+      "titre": "What the team is doing right now"
+    },
+    "agentsMot": "agents"
   },
   "equipe": {
     "titre": "The team",

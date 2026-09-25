@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
+import { quiOuEst, repondre, CORPS, RECEPTIONNISTE, etatDe } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
 import { styleVille } from './region';
 import { chrono } from './conduite';
@@ -363,17 +363,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
   // Ce que fait l'agent dont on s'approche (Beau, 25/09 : « je dois voir sa fiche mais aussi ce qu'il est
   // en train de faire, sur quoi il travaille ») — seulement ce que les données disent.
-  const activiteProche = useMemo(() => {
-    if (!agentProche) return null;
-    const id = agentProche.id;
-    if (agentProche.actif === false) return { etat: 'veille' };
-    const b = ou?.auBureau?.find((x) => x.id === id); if (b) return { etat: 'travaille', texte: b.tache || b.texte };
-    if (ou?.reunions?.some((r) => r.participants.includes(id))) return { etat: 'reunion' };
-    const p = ou?.aLeurPoste?.find((x) => x.id === id); if (p) return { etat: p.pause ? 'pause' : 'aFaire', texte: p.tache };
-    const r = ou?.aupause?.find((x) => x.id === id); if (r) return { etat: 'rendu', texte: r.tache };
-    const ouvertes = (taches || []).filter((x) => x.assigne_a === id && !x.termine_le && !['fait', 'revue'].includes(x.meta?.statut)).length;
-    return { etat: 'dispo', n: ouvertes };
-  }, [agentProche, ou, taches]);
+  const activiteProche = useMemo(() => etatDe(agentProche, ou, taches), [agentProche, ou, taches]);
 
   return (
     <div className={`relative ${vueVille ? 'h-[calc(100dvh-12.25rem)] sm:h-[calc(100dvh-10.5rem)]' : 'h-[calc(100dvh-8rem)] sm:h-[calc(100dvh-9.5rem)]'} min-h-[420px] overflow-hidden bg-black ${mobile ? 'monde-leger' : ''}`}>{/* l'onglet « La ville » a deux lignes de plus au-dessus : tout doit tenir dans l'écran */}

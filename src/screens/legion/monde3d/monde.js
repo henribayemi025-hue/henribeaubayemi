@@ -193,3 +193,21 @@ export function repondre(question, { agents = [], ou, nomEntreprise = '', mainte
   }[moment];
   return { texte: `${accueil} ${aide}` };
 }
+
+// Ce que fait UN agent, maintenant, d'après `quiOuEst` — la même réponse partout
+// (monde 3D quand on s'approche de lui, bande des agents de « Mes entreprises », tour de
+// contrôle). Seulement ce que les données disent ; « dispo » compte ses tâches ouvertes.
+export function etatDe(agent, ou, taches = []) {
+  if (!agent) return null;
+  const id = agent.id;
+  if (agent.actif === false) return { etat: 'veille' };
+  const b = ou?.auBureau?.find((x) => x.id === id);
+  if (b) return { etat: 'travaille', texte: b.tache || b.texte };
+  if (ou?.reunions?.some((r) => r.participants.includes(id))) return { etat: 'reunion' };
+  const p = ou?.aLeurPoste?.find((x) => x.id === id);
+  if (p) return { etat: p.pause ? 'pause' : 'aFaire', texte: p.tache };
+  const r = ou?.aupause?.find((x) => x.id === id);
+  if (r) return { etat: 'rendu', texte: r.tache };
+  const n = (taches || []).filter((x) => x.assigne_a === id && !x.termine_le && !['fait', 'revue'].includes(x.meta?.statut)).length;
+  return { etat: 'dispo', n };
+}

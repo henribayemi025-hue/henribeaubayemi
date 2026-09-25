@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PhotoSalon } from './PhotoSalon';
+import { BandeAgents } from './BandeAgents';
 import {
   IconSparkles, IconSend, IconArrowRight, IconRobot, IconPower, IconLayoutKanban,
   IconBuildingSkyscraper, IconChevronRight, IconMessageCircle, IconCamera, IconAlertCircle,
@@ -98,6 +99,9 @@ export function Accueil({
             <p className="text-body leading-relaxed text-legion-muted">
               {t('legion.heroTexte', { departements: departements.length, agents: machines.length, allumes })}
             </p>
+            {/* Beau, 25/09 : « la tour de contrôle, ça doit défiler » — l'équipe passe, avec ce que
+                chacun fait maintenant. */}
+            <BandeAgents agents={agents} messages={messages} taches={taches} t={t} taille={34} className="-mx-1 pt-1" />
 
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
               <button type="button" onClick={() => onEntrer()}
@@ -193,9 +197,10 @@ export function Accueil({
           vois comment ils travaillent ») */}
       {onOutil && (
         <button type="button" onClick={() => onOutil('bureau')}
-          className="flex w-full items-center gap-4 rounded-2xl border-2 border-legion-gold/60 px-4 py-4 text-left shadow-lg transition hover:border-legion-gold"
-          style={{ background: 'linear-gradient(120deg,#0d1630,#1b2b4a 60%,#2a2233)' }}>
-          <span className="text-[40px] leading-none">🏢</span>
+          className="flex w-full items-center gap-4 rounded-2xl border-2 border-legion-gold/60 bg-gradient-to-r from-legion-card via-legion-panel to-legion-card px-4 py-4 text-left shadow-lg transition hover:border-legion-gold">
+          {/* Beau, 25/09 : « l'icône du building ne me plaît pas, je veux un truc réel » — l'immeuble,
+              tel qu'il est filmé dans notre monde. */}
+          <img src="/monde3d/porte.jpg" alt="" className="h-14 w-14 shrink-0 rounded-card object-cover ring-1 ring-legion-gold/40" />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2 text-body font-bold text-legion-ink">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#E0664F]" /> {t('legion.immeuble.banniere')}
