@@ -134,48 +134,125 @@ function dessinerVitrine(r, k) {
 }
 
 // ——— Véhicules ———
-function voiture(peinture) {
+// Matières partagées par tous les véhicules (moins de mémoire, moins d'appels de dessin).
+let MV = null;
+function matVehicules() {
+  if (MV) return MV;
+  const ombre = document.createElement('canvas'); ombre.width = ombre.height = 64;
+  const xo = ombre.getContext('2d'); const go = xo.createRadialGradient(32, 32, 4, 32, 32, 32);
+  go.addColorStop(0, 'rgba(0,0,0,0.75)'); go.addColorStop(1, 'rgba(0,0,0,0)'); xo.fillStyle = go; xo.fillRect(0, 0, 64, 64);
+  const halo = document.createElement('canvas'); halo.width = halo.height = 64;
+  const xh = halo.getContext('2d'); const gh = xh.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gh.addColorStop(0, 'rgba(255,244,214,1)'); gh.addColorStop(0.35, 'rgba(255,236,190,0.35)'); gh.addColorStop(1, 'rgba(255,230,180,0)'); xh.fillStyle = gh; xh.fillRect(0, 0, 64, 64);
+  // La flaque de lumière des phares sur la chaussée
+  const cone = document.createElement('canvas'); cone.width = 128; cone.height = 64;
+  const xc = cone.getContext('2d'); const gc = xc.createRadialGradient(10, 32, 2, 10, 32, 118);
+  gc.addColorStop(0, 'rgba(255,240,205,0.9)'); gc.addColorStop(1, 'rgba(255,240,205,0)'); xc.fillStyle = gc; xc.fillRect(0, 0, 128, 64);
+  const tex = (c) => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const additif = (c) => new THREE.MeshBasicMaterial({ map: tex(c), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+  MV = {
+    vitre: new THREE.MeshPhongMaterial({ color: '#020304', specular: '#6f7c8a', shininess: 90, side: THREE.DoubleSide }), // géométrie retournée (miroir) : double face
+    noir: new THREE.MeshStandardMaterial({ color: '#141518', roughness: 0.75 }),
+    plastique: new THREE.MeshStandardMaterial({ color: '#23252a', roughness: 0.55, metalness: 0.2 }),
+    chrome: new THREE.MeshStandardMaterial({ color: '#d4d7dc', metalness: 1, roughness: 0.18 }),
+    plaque: new THREE.MeshStandardMaterial({ color: '#f1f0ea', roughness: 0.5 }),
+    phare: new THREE.MeshStandardMaterial({ color: '#f4f6f8', metalness: 0.5, roughness: 0.1, emissive: '#fff4d6', emissiveIntensity: 0 }),
+    feu: new THREE.MeshStandardMaterial({ color: '#7a0b0b', roughness: 0.2, emissive: '#ff2020', emissiveIntensity: 0 }),
+    ombre: new THREE.MeshBasicMaterial({ map: tex(ombre), transparent: true, depthWrite: false, toneMapped: false }),
+    halo: additif(halo),
+    cone: additif(cone),
+  };
+  return MV;
+}
+const BOITE = (l, h, p) => new THREE.BoxGeometry(l, h, p);
+function poser(g, geo, mat, x, y, z) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; }
+// Ombre douce sous le véhicule, halos des phares et flaque de lumière devant (visibles la nuit).
+function eclairage(g, M, long, larg, avant, leger) {
+  const o = poser(g, new THREE.PlaneGeometry(long + 0.6, larg + 0.6), M.ombre, 0, 0.02, 0); o.rotation.x = -Math.PI / 2; o.userData.garder = true;
+  if (leger) return; // au téléphone : l'ombre seulement, pas de halos (moins d'appels de dessin)
+  for (const z of [-larg * 0.33, larg * 0.33]) { const h = poser(g, new THREE.PlaneGeometry(0.9, 0.9), M.halo, avant + 0.05, 0.72, z); h.rotation.y = Math.PI / 2; h.userData.garder = true; }
+  const c = poser(g, new THREE.PlaneGeometry(9, 4), M.cone, avant + 4.5, 0.03, 0); c.rotation.x = -Math.PI / 2; c.userData.garder = true;
+}
+// Berline, SUV ou taxi : caisse extrudée (profil latéral), vitres, pare-chocs, calandre, feux.
+function voiture(peinture, genre = 'berline', leger = false) {
+  const M = matVehicules();
   const g = new THREE.Group();
-  const carrosserie = new THREE.MeshStandardMaterial({ color: peinture, metalness: 0.6, roughness: 0.28 });
-  const vitre = new THREE.MeshStandardMaterial({ color: '#0d1116', metalness: 0.3, roughness: 0.06 });
-  const noir = new THREE.MeshStandardMaterial({ color: '#111214', roughness: 0.85 });
-  const chrome = new THREE.MeshStandardMaterial({ color: '#c9ccd1', metalness: 1, roughness: 0.25 });
-  // Profil latéral : capot, pare-brise, toit, lunette, coffre.
+  const carrosserie = new THREE.MeshStandardMaterial({ color: genre === 'taxi' ? '#f2b705' : peinture, metalness: 0.55, roughness: 0.22, envMapIntensity: 1.2 });
+  const suv = genre === 'suv', k = suv ? 1.12 : 1;
   const s = new THREE.Shape();
-  s.moveTo(-2.25, 0.32); s.lineTo(-2.3, 0.72); s.quadraticCurveTo(-2.2, 0.86, -1.7, 0.9);
-  s.lineTo(-0.9, 0.95); s.quadraticCurveTo(-0.45, 1.38, 0.15, 1.42); s.lineTo(0.9, 1.4);
-  s.quadraticCurveTo(1.45, 1.32, 1.85, 0.98); s.lineTo(2.25, 0.9); s.quadraticCurveTo(2.35, 0.7, 2.3, 0.32); s.closePath();
-  const corps = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 1.7, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 3, curveSegments: 10 }), carrosserie);
-  corps.geometry.scale(-1, 1, 1); corps.geometry.computeVertexNormals(); corps.material.side = THREE.DoubleSide;
-  corps.position.z = -0.85;
-  g.add(corps);
+  s.moveTo(-2.25, 0.34); s.lineTo(-2.32, 0.74 * k); s.quadraticCurveTo(-2.24, 0.9 * k, -1.75, 0.94 * k);
+  s.lineTo(-1.0, 0.98 * k); s.quadraticCurveTo(-0.55, 1.4 * k, 0.05, 1.45 * k); s.lineTo(suv ? 1.55 : 0.95, 1.43 * k);
+  s.quadraticCurveTo(suv ? 1.95 : 1.5, 1.34 * k, suv ? 2.1 : 1.9, 1.0 * k); s.lineTo(2.26, 0.92 * k); s.quadraticCurveTo(2.36, 0.72, 2.3, 0.34); s.closePath();
+  const corps = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 1.7, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.08, bevelSegments: 4, curveSegments: 14 }), carrosserie);
+  corps.geometry.scale(-1, 1, 1); corps.geometry.computeVertexNormals(); carrosserie.side = THREE.DoubleSide;
+  corps.position.z = -0.85; g.add(corps);
   const v = new THREE.Shape();
-  v.moveTo(-0.78, 1.0); v.quadraticCurveTo(-0.4, 1.33, 0.15, 1.36); v.lineTo(0.88, 1.34); v.quadraticCurveTo(1.35, 1.27, 1.7, 1.0); v.closePath();
-  const vitres = new THREE.Mesh(new THREE.ExtrudeGeometry(v, { depth: 1.74, bevelEnabled: false }), vitre);
-  vitres.geometry.scale(-1, 1, 1); vitres.geometry.computeVertexNormals(); vitres.material.side = THREE.DoubleSide;
-  vitres.position.z = -0.87;
-  g.add(vitres);
-  const roue = new THREE.CylinderGeometry(0.34, 0.34, 0.24, 20);
-  const jante = new THREE.CylinderGeometry(0.2, 0.2, 0.25, 12);
-  g.userData.roues = [];
-  for (const [x, z] of [[-1.45, 0.83], [-1.45, -0.83], [1.42, 0.83], [1.42, -0.83]]) {
-    const r = new THREE.Group();
-    const p = new THREE.Mesh(roue, noir); p.rotation.x = Math.PI / 2; r.add(p);
-    const j = new THREE.Mesh(jante, chrome); j.rotation.x = Math.PI / 2; r.add(j);
-    r.position.set(x, 0.34, z);
-    g.add(r);
-    g.userData.roues.push(r);
+  // L'habitacle vitré suit la ligne de toit, un peu en dehors de la caisse pour être visible.
+  // (la caisse a un biseau de 8 cm : l'habitacle doit dépasser d'autant)
+  v.moveTo(-1.1, 0.99 * k); v.quadraticCurveTo(-0.62, 1.53 * k, 0.05, 1.58 * k); v.lineTo(suv ? 1.55 : 0.95, 1.56 * k); v.quadraticCurveTo(suv ? 2.05 : 1.6, 1.45 * k, suv ? 2.2 : 2.02, 1.0 * k); v.closePath();
+  const vitres = new THREE.Mesh(new THREE.ExtrudeGeometry(v, { depth: 1.96, bevelEnabled: false, curveSegments: 12 }), M.vitre);
+  vitres.geometry.scale(-1, 1, 1); vitres.position.z = -0.98; g.add(vitres);
+  poser(g, BOITE(suv ? 1.75 : 1.2, 0.05, 1.9), carrosserie, suv ? -0.75 : -0.45, 1.59 * k, 0); // pavillon
+  // Montants entre les vitres, de la couleur de la caisse
+  for (const z of [-0.99, 0.99]) poser(g, BOITE(0.1, 0.5 * k, 0.03), carrosserie, 0.15, 1.27 * k, z);
+  // Pare-chocs, calandre, bas de caisse
+  poser(g, BOITE(0.22, 0.28, 1.86), M.plastique, 2.3, 0.42, 0);
+  poser(g, BOITE(0.22, 0.28, 1.86), M.plastique, -2.33, 0.42, 0);
+  poser(g, BOITE(0.05, 0.16, 0.9), M.noir, 2.41, 0.62, 0);
+  for (const z of [-0.93, 0.93]) poser(g, BOITE(3.0, 0.14, 0.04), M.plastique, 0, 0.36, z);
+  // Phares et feux (bandeaux), plaques
+  for (const z of [-0.62, 0.62]) {
+    poser(g, BOITE(0.08, 0.13, 0.42), M.phare, 2.37, 0.76 * k, z);
+    poser(g, BOITE(0.08, 0.1, 0.5), M.feu, -2.38, 0.8 * k, z);
   }
-  const phare = new THREE.MeshStandardMaterial({ color: '#fff', emissive: '#fff4d6', emissiveIntensity: 0 });
-  const feu = new THREE.MeshStandardMaterial({ color: '#6a0000', emissive: '#ff2a2a', emissiveIntensity: 0 });
-  for (const z of [-0.6, 0.6]) {
-    const a = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.34), phare); a.position.set(2.33, 0.72, z); g.add(a);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.36), feu); b.position.set(-2.33, 0.76, z); g.add(b);
+  poser(g, BOITE(0.03, 0.12, 0.5), M.plaque, 2.43, 0.44, 0);
+  poser(g, BOITE(0.03, 0.12, 0.5), M.plaque, -2.46, 0.5, 0);
+  // Rétroviseurs
+  for (const z of [-0.98, 0.98]) poser(g, BOITE(0.14, 0.1, 0.18), carrosserie, 0.95, 1.02 * k, z);
+  // Roues : pneu, jante, enjoliveur
+  const pneu = new THREE.CylinderGeometry(0.35, 0.35, 0.26, 22);
+  const jante = new THREE.CylinderGeometry(0.22, 0.22, 0.27, 14);
+  for (const [x, z] of [[-1.45, 0.84], [-1.45, -0.84], [1.45, 0.84], [1.45, -0.84]]) {
+    poser(g, pneu, M.noir, x, 0.35, z).rotation.x = Math.PI / 2;
+    poser(g, jante, M.chrome, x, 0.35, z).rotation.x = Math.PI / 2;
   }
-  g.userData.lumieres = [phare, feu];
-  g.userData.roues = [];
+  const lumieres = [M.phare, M.feu];
+  if (genre === 'taxi') { // lanterne TAXI sur le toit, allumée la nuit
+    const lanterne = new THREE.MeshStandardMaterial({ color: '#fff7d0', emissive: '#ffd24a', emissiveIntensity: 0 });
+    poser(g, BOITE(0.28, 0.18, 0.6), lanterne, 0.4, 1.55 * k, 0);
+    lumieres.push(lanterne);
+    for (const z of [-0.87, 0.87]) poser(g, BOITE(2.6, 0.08, 0.02), M.noir, 0, 0.72, z); // bande à damier, vue de loin
+  }
   fusionner(g);
-  g.traverse((m) => { if (m.isMesh) { m.castShadow = true; } });
+  eclairage(g, M, 4.7, 1.9, 2.4, leger);
+  g.userData.lumieres = lumieres;
+  g.userData.roues = [];
+  g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
+  return g;
+}
+
+// Bus de ville : long, vitré sur les côtés, girouette lumineuse.
+function bus(peinture, leger = false) {
+  const M = matVehicules();
+  const g = new THREE.Group();
+  const caisse = new THREE.MeshStandardMaterial({ color: peinture, metalness: 0.3, roughness: 0.35 });
+  poser(g, BOITE(11, 2.5, 2.5), caisse, 0, 1.75, 0);
+  poser(g, BOITE(10.2, 1.0, 2.54), M.vitre, -0.2, 2.25, 0);
+  for (let x = -4.6; x <= 4.4; x += 1.5) poser(g, BOITE(0.12, 1.0, 2.58), caisse, x, 2.25, 0); // montants
+  poser(g, BOITE(10.8, 0.25, 2.4), new THREE.MeshStandardMaterial({ color: '#eceae4', roughness: 0.5 }), 0, 3.1, 0); // toit clair
+  poser(g, BOITE(0.06, 1.3, 2.3), M.vitre, 5.51, 2.0, 0);
+  poser(g, BOITE(11.05, 0.12, 2.56), M.plastique, 0, 0.55, 0);
+  poser(g, BOITE(10.6, 0.1, 2.3), M.plastique, 0, 3.05, 0);
+  const girouette = new THREE.MeshStandardMaterial({ color: '#221a05', emissive: '#ffb020', emissiveIntensity: 0 });
+  poser(g, BOITE(0.05, 0.3, 1.6), girouette, 5.53, 2.8, 0);
+  for (const z of [-0.85, 0.85]) { poser(g, BOITE(0.08, 0.16, 0.4), M.phare, 5.52, 0.9, z); poser(g, BOITE(0.08, 0.3, 0.2), M.feu, -5.52, 1.0, z); }
+  const pneu = new THREE.CylinderGeometry(0.5, 0.5, 0.32, 22);
+  for (const [x, z] of [[-3.6, 1.1], [-3.6, -1.1], [3.5, 1.1], [3.5, -1.1]]) poser(g, pneu, M.noir, x, 0.5, z).rotation.x = Math.PI / 2;
+  fusionner(g);
+  eclairage(g, M, 11, 2.5, 5.5, leger);
+  g.userData.lumieres = [M.phare, M.feu, girouette];
+  g.userData.roues = [];
+  g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
   return g;
 }
 
@@ -380,6 +457,40 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     }
   }
 
+  // Arbres d'alignement le long de notre îlot (photos de boulevards de Beau) :
+  // tronc, feuillage en plans croisés dessinés ici (aucune image du web), fusionnés.
+  {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const x = c.getContext('2d');
+    for (let i = 0; i < 900; i += 1) {
+      const a = r() * Math.PI * 2, d = Math.sqrt(r()) * 118;
+      const px = 128 + Math.cos(a) * d, py = 128 + Math.sin(a) * d * 0.9;
+      const v = 60 + Math.floor(r() * 70);
+      x.fillStyle = `rgb(${Math.floor(v * 0.45)},${v + 25},${Math.floor(v * 0.35)})`;
+      x.beginPath(); x.ellipse(px, py, 5 + r() * 6, 3 + r() * 4, r() * Math.PI, 0, Math.PI * 2); x.fill();
+    }
+    const feuilles = new THREE.CanvasTexture(c); feuilles.colorSpace = THREE.SRGBColorSpace;
+    const feuillage = new THREE.MeshStandardMaterial({ map: feuilles, alphaTest: 0.5, // le fond du canvas reste transparent
+      side: THREE.DoubleSide, roughness: 0.9 });
+    const ecorce = new THREE.MeshStandardMaterial({ color: '#4a3a2c', roughness: 0.95 });
+    const grille = new THREE.MeshStandardMaterial({ color: '#2a2c2f', metalness: 0.6, roughness: 0.5 });
+    const places = [];
+    for (const xs of [-19.4, 19.4]) for (const z of [-8, 4, 16]) places.push([xs, z]);
+    for (const xs of [-16, -3, 3, 16]) places.push([xs, 23.2]);
+    for (const [ax, az] of places) {
+      const h = 5.5 + r() * 1.5;
+      const tronc = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, h * 0.55, 8), ecorce); tronc.position.set(ax, h * 0.275, az); tronc.castShadow = true; racine.add(tronc);
+      const g2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.04, 1.2), grille); g2.position.set(ax, 0.02, az); racine.add(g2);
+      for (let k = 0; k < 7; k += 1) {
+        const t = 2.4 + r() * 1.2;
+        const f = new THREE.Mesh(new THREE.PlaneGeometry(t, t * 0.85), feuillage);
+        f.position.set(ax + (r() - 0.5) * 1.2, h * 0.6 + r() * h * 0.35, az + (r() - 0.5) * 1.2);
+        f.rotation.set((r() - 0.5) * 0.6, r() * Math.PI, (r() - 0.5) * 0.4);
+        f.castShadow = true; racine.add(f);
+      }
+    }
+  }
+
   // Lampadaires et mobilier le long de notre îlot
   (async () => {
     for (const x of [-19.5, 19.5]) for (let z = -14; z <= 22; z += 12) {
@@ -397,10 +508,14 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   const vehicules = [];
   voies.forEach((v, iv) => {
     const combien = monde.mobile ? 2 : 3;
+    // Une allure par voie : les véhicules d'une même voie ne se traversent plus.
+    const allure = (8 + r() * 3) * v.sens;
     for (let k = 0; k < combien; k += 1) {
-      const estMoto = r() < 0.22;
-      const o = estMoto ? moto(PEINTURES[Math.floor(r() * PEINTURES.length)]) : voiture(PEINTURES[Math.floor(r() * PEINTURES.length)]);
-      const vitesse = (estMoto ? 11 : 7 + r() * 5) * v.sens;
+      const t = r();
+      const peinture = PEINTURES[Math.floor(r() * PEINTURES.length)];
+      const leger = monde.mobile;
+      const o = t < 0.18 ? moto(peinture) : t < 0.26 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < 0.5 ? voiture(peinture, 'taxi', leger) : voiture(peinture, t < 0.66 ? 'suv' : 'berline', leger);
+      const vitesse = allure;
       const pos = -120 + ((k * 240) / combien) + r() * 30 + iv * 13;
       o.userData = { ...o.userData, voie: v, vitesse, pos };
       if (v.axe === 'z') o.rotation.y = v.sens > 0 ? -Math.PI / 2 : Math.PI / 2;
@@ -547,6 +662,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       for (const m of nuit.fenetres) m.emissiveIntensity = niveau * 1.1;
       for (const m of nuit.enseignes) m.emissiveIntensity = 0.35 + niveau * 1.4;
       for (const m of nuit.lumieres) m.emissiveIntensity = niveau * 2.5;
+      if (MV) { MV.halo.opacity = niveau * 0.9; MV.cone.opacity = niveau * 0.45; }
     },
   };
 }
