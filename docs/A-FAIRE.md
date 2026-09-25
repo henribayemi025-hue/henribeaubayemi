@@ -126,6 +126,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 | 24/09 | Essayer sur téléphone **« Retirer le fond »** (staging, fiche article) et ouvrir le **classeur du kit** dans Excel ou Google Sheets | pas encore testé sur un vrai téléphone ni dans Excel |
 | 25/09 | **Décider : un compte de test « Qualité »** (profil `is_test`) pour que Rigo et voir_ecran puissent voir les écrans CONNECTÉS (espace vendeuse, Léo). Touche `auth.users`, commun avec Accounting → ta décision | à décider |
 | 25/09 | **Cloudflare, Worker finjaro-atelier** : ne reconstruire que si le dossier `atelier/` change (« Build watch paths » : `atelier/*`). Aujourd'hui chaque poussée sur staging remet l'atelier à zéro et coupe les séances en cours | à régler (2 min) |
+| 25/09 | **Vérifier la clé Fish Audio** : celle rangée sous `FISH_AUDIO_API_KEY` a la forme d'une clé OpenAI (`sk-…`), relevé par le diagnostic des clés (noms seulement). OpenAI (sous « Leo ») et Tavily sont bien posées | à vérifier |
 
 ### 0.3 À faire de mon côté (pas encore fait)
 
