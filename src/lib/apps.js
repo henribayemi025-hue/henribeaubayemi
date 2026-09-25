@@ -78,12 +78,26 @@ export async function fetchApps() {
 // Le premier est en base (migration 0123): l'API ne renvoie même plus les
 // applications d'équipe à un visiteur ordinaire. Ce filtre reste pour le
 // cache local et pour un compte admin qui consulte la liste complète.
-export function visibleApps(apps, { isAdmin = false, isVendor = false } = {}) {
+export function visibleApps(apps, { isAdmin = false, isVendor = false, origine = typeof window !== 'undefined' ? window.location.origin : '' } = {}) {
   return (apps || []).filter((a) => {
     if (a.audience === 'admin') return isAdmin;
     if (a.audience === 'vendeuse') return isVendor || isAdmin;
     return true;
-  });
+  }).map((a) => ({ ...a, url: adresseIci(a.url, origine), relais: a.relais ? adresseIci(a.relais, origine) : a.relais }));
+}
+
+// En préproduction (Beau, 25/09 : « je clique Legion, ça me renvoie sur
+// finjaro.net ») : une application servie par finjaro.net l'est aussi par la
+// préproduction ; on y reste. Les autres domaines (Accounting…) ne bougent pas.
+export function adresseIci(url, origine) {
+  try {
+    const u = new URL(url);
+    const ici = new URL(origine);
+    if (u.hostname !== 'finjaro.net' || ici.hostname === 'finjaro.net' || !/(\.workers\.dev|\.pages\.dev|localhost|127\.0\.0\.1)$/.test(ici.hostname)) return url;
+    return `${ici.origin}${u.pathname}${u.search}${u.hash}`;
+  } catch {
+    return url;
+  }
 }
 
 // Tailwind ne peut pas fabriquer une classe à partir d'une valeur lue en
