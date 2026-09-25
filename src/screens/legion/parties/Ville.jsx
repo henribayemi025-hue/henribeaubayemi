@@ -80,7 +80,8 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
     return () => { vivant = false; supabase.removeChannel(canal); };
   }, [entreprise.id]);
 
-  const liste = useMemo(() => calculerTours(projets, taches, maintenant), [projets, taches, maintenant]);
+  const eteints = useMemo(() => new Set((agents || []).filter((a) => !a.actif).map((a) => a.id)), [agents]);
+  const liste = useMemo(() => calculerTours(projets, taches, maintenant, eteints), [projets, taches, maintenant, eteints]);
   const tour = liste.find((x) => x.id === choix) || null;
   const auTravail = liste.reduce((s, x) => s + x.agentsAuTravail, 0);
 

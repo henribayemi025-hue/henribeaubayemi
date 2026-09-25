@@ -195,7 +195,15 @@ export default function Entreprise() {
   const estProprietaire = data?.entreprise?.owner_id === user?.id;
   const changerLangue = useCallback(async (code) => {
     setLanguage(code);
-    if (!estProprietaire || data?.entreprise?.langue === code) return;
+    if (!estProprietaire || (data?.entreprise?.langue || 'fr') === code) return;
+    // 25/09 : un appui sur le petit « EN » du téléphone avait fait écrire
+    // toute l'équipe Finjaro en anglais pendant la nuit, sans que personne
+    // l'ait voulu. L'écran change tout de suite ; les agents, seulement si
+    // on le confirme.
+    const question = code === 'en'
+      ? 'Your agents will also write their plans and deliverables in English. Continue?'
+      : 'Vos agents écriront aussi leurs plans et livrables en français. Continuer ?';
+    if (typeof window !== 'undefined' && !window.confirm(question)) return;
     const { error: err } = await supabase.from('legion_entreprises').update({ langue: code }).eq('id', entrepriseId);
     if (!err) setData((d) => (d ? { ...d, entreprise: { ...d.entreprise, langue: code } } : d));
   }, [setLanguage, estProprietaire, data?.entreprise?.langue, entrepriseId, setData]);

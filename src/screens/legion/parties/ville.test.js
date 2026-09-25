@@ -26,6 +26,12 @@ describe('la Ville de Léo', () => {
     expect(hauteurTour({ fin: '2026-10-01' }, t, M).agentsAuTravail).toBe(2);
   });
 
+  it('un agent éteint n’allume jamais de fenêtre, même avec une prise récente', () => {
+    const t = [{ assigne_a: 'a', meta: { travaille_depuis: il(1) } }, { assigne_a: 'b', meta: { travaille_depuis: il(2) } }];
+    expect(hauteurTour({ fin: '2026-10-01' }, t, M, new Set(['a'])).agents).toEqual(['b']);
+    expect(tours([], t, M, new Set(['a', 'b']))[0].agentsAuTravail).toBe(0);
+  });
+
   it('fini quand toutes les tâches sont rendues ou le projet marqué fini ; en retard si la fin est passée', () => {
     expect(hauteurTour({ fin: '2026-10-01' }, [{ meta: { statut: 'fait' } }], M).termine).toBe(true);
     expect(hauteurTour({ fin: '2026-10-01', statut: 'fini' }, [{ meta: {} }], M).termine).toBe(true);

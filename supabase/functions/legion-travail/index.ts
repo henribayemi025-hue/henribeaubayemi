@@ -628,9 +628,15 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // côté une tâche qui a échoué trois fois (pas de dépense en boucle).
       tache.meta = { ...(tache.meta || {}), travaille_depuis: new Date().toISOString(), essais: (tache.meta?.essais || 0) + 1 };
       await service.from('legion_messages').update({ meta: tache.meta }).eq('id', tache.id);
+      // Une tâche qui regarde dehors (veille, événements, prospects,
+      // concurrents): une recherche sur Internet, sources comprises.
+      const web = !gratuite && peut(a, 'web') && aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
       // Toujours : lire une page web publique est permis à tout agent (25/09) ;
-      // les chiffres et le code, seulement s'il en a le droit.
-      const verifie = await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres ou quel code vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null);
+      // les chiffres et le code, seulement s'il en a le droit. Les pages que
+      // la recherche a trouvées lui sont données à OUVRIR (Traque, 25/09 : « une
+      // seule recherche, aucun lien ouvert » — lire_page n'avait aucune adresse).
+      const aOuvrir = web?.sources.length ? `\nPages trouvées par la recherche web (ouvre avec lire_page celles qui servent la tâche, pour vérifier le lien, la date, le montant) :\n${web.sources.map((x) => `- ${x.titre} : ${x.url}`).join('\n')}` : '';
+      const verifie = await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres, quel code ou quelle page web vérifier ?${aOuvrir}`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null);
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
       let recu = '';
       if (tache.meta?.suite_de?.tache_id) {
@@ -638,9 +644,6 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
           .eq('meta->livrable->>tache_id', tache.meta.suite_de.tache_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (avant?.texte) recu = `\n\nCETTE TÂCHE T'EST PASSÉE EN RELAIS par ${tache.meta.suite_de.par}, qui vient de livrer « ${tache.meta.suite_de.tache} ». SON LIVRABLE (pars de là, ne le refais pas):\n${String(avant.texte).slice(0, 3000)}`;
       }
-      // Une tâche qui regarde dehors (veille, événements, prospects,
-      // concurrents): une recherche sur Internet, sources comprises.
-      const web = !gratuite && peut(a, 'web') && aBesoinDuWeb(tache.texte, a.poste, a.mandat) ? await chercherWeb(apiKey, `Tâche de ${a.nom} (${a.poste}) pour l'entreprise « ${entreprise.nom} » — ${String(entreprise.projet || '').slice(0, 300)}:\n${tache.texte}`) : null;
       // Sa mémoire à lui (0185): ce qu'il a déjà livré de proche, les leçons
       // reçues, ce qui a plu.
       await rattraper(service, apiKey, entrepriseId, a.id);

@@ -31,11 +31,13 @@ export function projetDe(t, idsProjets) {
 }
 
 // L'état d'une tour : rendues, restantes, agents au travail (distincts),
-// avancement, fini, en retard.
-export function hauteurTour(projet, taches, maintenant = Date.now()) {
+// avancement, fini, en retard. `eteints` : les agents dont l'interrupteur
+// est coupé — ils n'allument jamais de fenêtre, même avec une prise récente
+// (Orchestre, 25/09 : « l'interrupteur l'emporte sur toutes les horloges »).
+export function hauteurTour(projet, taches, maintenant = Date.now(), eteints = new Set()) {
   const rendues = taches.filter(estRendue).length;
   const restantes = taches.length - rendues;
-  const agents = new Set(taches.filter((t) => t.assigne_a && auTravail(t, maintenant)).map((t) => t.assigne_a));
+  const agents = new Set(taches.filter((t) => t.assigne_a && !eteints.has(t.assigne_a) && auTravail(t, maintenant)).map((t) => t.assigne_a));
   const fin = projet ? date(projet.fin) : null;
   const finPassee = fin != null && maintenant > fin + JOUR; // la fin est un jour entier
   const termine = !!projet && (projet.statut === 'fini' || (taches.length > 0 && restantes === 0));
@@ -49,14 +51,14 @@ export function hauteurTour(projet, taches, maintenant = Date.now()) {
 }
 
 // Toutes les tours de l'entreprise, la plus avancée dans le temps d'abord.
-export function tours(projets, taches, maintenant = Date.now()) {
+export function tours(projets, taches, maintenant = Date.now(), eteints = new Set()) {
   const ids = new Set(projets.map((p) => p.id));
   const parProjet = new Map([[QUOTIDIEN, []], ...projets.map((p) => [p.id, []])]);
   for (const t of taches) parProjet.get(projetDe(t, ids)).push(t);
-  const liste = projets.map((p) => ({ projet: p, id: p.id, taches: parProjet.get(p.id), ...hauteurTour(p, parProjet.get(p.id), maintenant) }));
+  const liste = projets.map((p) => ({ projet: p, id: p.id, taches: parProjet.get(p.id), ...hauteurTour(p, parProjet.get(p.id), maintenant, eteints) }));
   liste.sort((a, b) => String(a.projet.debut).localeCompare(String(b.projet.debut)));
   const quotidien = parProjet.get(QUOTIDIEN);
-  if (quotidien.length) liste.push({ projet: null, id: QUOTIDIEN, taches: quotidien, ...hauteurTour(null, quotidien, maintenant) });
+  if (quotidien.length) liste.push({ projet: null, id: QUOTIDIEN, taches: quotidien, ...hauteurTour(null, quotidien, maintenant, eteints) });
   return liste;
 }
 
