@@ -1241,19 +1241,19 @@
       "gardeAuCoffre": "already stored: leave empty to keep it",
       "ouCreer": "Create a token:",
       "supabase": {
-        "aide": "Your agents read your project’s status: health, edge functions, region.",
+        "aide": "Your agents read your project’s status: health, edge functions, region. Create an access token (Account → Access Tokens) with the shortest expiry: it can do more than read; Léo only uses it to read. The project ID is in Project Settings → General.",
         "branche": "Project “{{id}}” connected: health and edge functions.",
         "champ": "Project ID (20 characters, or its …supabase.co address)",
         "jeton": "Personal access token"
       },
       "cloudflare": {
-        "aide": "Your agents read your Workers and Pages projects (latest deployments).",
+        "aide": "Your agents read your Workers and Pages projects. Create a custom token with ONLY these rights: Workers Scripts Read, Pages Read, Account Analytics Read, on your account. The account ID is on the account home page, right-hand column.",
         "branche": "Account “{{id}}” connected: Workers and Pages.",
         "champ": "Account ID (32 characters)",
         "jeton": "API token (read permissions only)"
       },
       "vercel": {
-        "aide": "Your agents read your projects and latest deployments.",
+        "aide": "Your agents read your projects and latest deployments. Vercel has no read-only token: a token carries your rights. Scope it to one team with the shortest expiry; Léo only uses it to read. The team ID is in Team Settings → General.",
         "branche": "Account connected{{id}}: projects and deployments.",
         "champ": "Team ID",
         "jeton": "Access token"

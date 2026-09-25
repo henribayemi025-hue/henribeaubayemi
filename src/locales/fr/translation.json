@@ -1241,19 +1241,19 @@
       "gardeAuCoffre": "déjà gardé : vide = on le garde",
       "ouCreer": "Créer un jeton :",
       "supabase": {
-        "aide": "Tes agents lisent l’état de ton projet : santé, fonctions edge, région.",
+        "aide": "Tes agents lisent l’état de ton projet : santé, fonctions edge, région. Crée un jeton d’accès (Account → Access Tokens) avec l’expiration la plus courte : il peut plus que lire, Léo ne s’en sert que pour lire. L’identifiant du projet est dans Project Settings → General.",
         "branche": "Projet « {{id}} » branché : santé et fonctions edge.",
         "champ": "Identifiant du projet (20 caractères, ou son adresse …supabase.co)",
         "jeton": "Jeton d’accès personnel"
       },
       "cloudflare": {
-        "aide": "Tes agents lisent tes Workers et tes projets Pages (derniers déploiements).",
+        "aide": "Tes agents lisent tes Workers et tes projets Pages. Crée un jeton personnalisé avec SEULEMENT ces droits : Workers Scripts Read, Pages Read, Account Analytics Read, sur ton compte. L’identifiant de compte est sur la page d’accueil du compte, colonne de droite.",
         "branche": "Compte « {{id}} » branché : Workers et Pages.",
         "champ": "Identifiant de compte (32 caractères)",
         "jeton": "Jeton d’API (droits de lecture seulement)"
       },
       "vercel": {
-        "aide": "Tes agents lisent tes projets et tes derniers déploiements.",
+        "aide": "Tes agents lisent tes projets et tes derniers déploiements. Vercel n’a pas de jeton en lecture seule : un jeton porte tes droits. Donne-lui la portée d’une seule équipe et l’expiration la plus courte ; Léo ne s’en sert que pour lire. L’identifiant d’équipe est dans Team Settings → General.",
         "branche": "Compte branché{{id}} : projets et déploiements.",
         "champ": "Identifiant d’équipe",
         "jeton": "Jeton d’accès"

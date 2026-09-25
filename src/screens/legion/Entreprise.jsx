@@ -964,7 +964,7 @@ export default function Entreprise() {
       )}
 
       {/* Jarvis V0 : la télécommande vocale (bouton ou barre d'espace tenue). */}
-      {outil !== 'atelier' && <Jarvis entrepriseId={entrepriseId} langue={langue} t={t} onAction={jarvisAction} />}
+      {outil !== 'atelier' && <Jarvis entrepriseId={entrepriseId} langue={langue} t={t} onAction={jarvisAction} enConversation={vue === 'chat'} />}
 
       {/* Une clé par agent: la fiche repart de zéro à chaque ouverture (sinon
           un formulaire à moitié rempli passait d'un agent à l'autre). */}

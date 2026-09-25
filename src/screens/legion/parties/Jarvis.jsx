@@ -37,7 +37,7 @@ export function parlerHaut(texte, langue) {
   try { synth.cancel(); synth.speak(u); } catch { /* sans voix, le texte reste affiché */ }
 }
 
-export function Jarvis({ entrepriseId, langue, t, onAction }) {
+export function Jarvis({ entrepriseId, langue, t, onAction, enConversation = false }) {
   const [etat, setEtat] = useState('repos'); // repos | accord | ecoute | comprend | confirme | reponse | erreur
   const [bulle, setBulle] = useState(null); // { dit, reponse }
   const [attente, setAttente] = useState(null); // intention à confirmer
@@ -167,7 +167,7 @@ export function Jarvis({ entrepriseId, langue, t, onAction }) {
   return (
     <>
       {visible && (
-        <div role="status" aria-live="polite" className="fixed bottom-24 right-4 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-legion-line bg-legion-card p-3 text-[13px] shadow-xl">
+        <div role="status" aria-live="polite" className={`fixed right-4 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-legion-line bg-legion-card p-3 text-[13px] shadow-xl ${enConversation ? 'bottom-[calc(env(safe-area-inset-bottom)+10.5rem)]' : 'bottom-[calc(env(safe-area-inset-bottom)+9.25rem)] lg:bottom-24'}`}>
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 font-semibold text-legion-gold">Léo</p>
             <button type="button" onClick={() => { couper(); setEtat('repos'); setBulle(null); setAttente(null); try { window.speechSynthesis?.cancel(); } catch { /* rien */ } }} aria-label={t('common.close', 'Fermer')} className="text-legion-muted hover:text-legion-ink"><IconX size={15} /></button>
@@ -204,7 +204,7 @@ export function Jarvis({ entrepriseId, langue, t, onAction }) {
         </div>
       )}
       <button type="button" onClick={reveiller} title={t('legion.jarvis.bouton')} aria-label={t('legion.jarvis.bouton')} aria-pressed={etat === 'ecoute'}
-        className={`fixed bottom-6 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition ${etat === 'ecoute' ? 'bg-legion-danger text-white ring-4 ring-legion-danger/30' : 'bg-legion-gold text-legion-bg hover:brightness-110'}`}>
+        className={`fixed right-4 z-40 flex h-14 w-14 ${enConversation ? 'bottom-[calc(env(safe-area-inset-bottom)+6rem)]' : 'bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:bottom-6'} items-center justify-center rounded-full shadow-xl transition ${etat === 'ecoute' ? 'bg-legion-danger text-white ring-4 ring-legion-danger/30' : 'bg-legion-gold text-legion-bg hover:brightness-110'}`}>
         {etat === 'ecoute' ? <IconPlayerStopFilled size={22} /> : <IconMicrophone size={24} />}
       </button>
     </>
