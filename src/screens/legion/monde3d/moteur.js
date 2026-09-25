@@ -20,7 +20,7 @@ import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
-import { construireVille } from './ville3d';
+import { construireVille, matieresFacades, cotesFacade } from './ville3d';
 
 const BASE = '/monde3d/';
 const ANIMS = {
@@ -362,9 +362,11 @@ export class Monde {
     const auvent = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 3), new THREE.MeshStandardMaterial({ color: '#23262b', metalness: 0.7, roughness: 0.4 }));
     auvent.position.set(0, 4.2, 10.4); auvent.castShadow = true; g.add(auvent);
     // L'immeuble vu de dehors : sa tour de verre au-dessus du hall.
-    const verreTour = new THREE.MeshStandardMaterial({ color: '#6f8aa3', metalness: 0.85, roughness: 0.12, envMapIntensity: 1.3 });
-    const tour = new THREE.Mesh(new THREE.BoxGeometry(24.4, 70, 18.4), verreTour); tour.position.set(0, 5.6 + 35, 0); g.add(tour);
-    for (let k = 1; k < 18; k += 1) { const bande = new THREE.Mesh(new THREE.BoxGeometry(24.6, 0.25, 18.6), new THREE.MeshStandardMaterial({ color: '#2b2f36', metalness: 0.6, roughness: 0.4 })); bande.position.y = 5.6 + k * 3.9; g.add(bande); }
+    // Même façade de verre photo-réaliste que les tours de la ville (fenêtres allumées la nuit).
+    const verreTour = matieresFacades(this, this.envCiel).find((f) => f.nom === 'verre');
+    const tour = new THREE.Mesh(cotesFacade(24.4, 70, 18.4, verreTour.taille, () => 0), verreTour.mat); tour.position.set(0, 5.6 + 35, 0); g.add(tour);
+    const toitTour = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.8, 18.8), new THREE.MeshStandardMaterial({ color: '#3a3d42', roughness: 0.6, metalness: 0.4 })); toitTour.position.y = 5.6 + 70.4; g.add(toitTour);
+    const corniche = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.5, 18.8), new THREE.MeshStandardMaterial({ color: '#23262b', metalness: 0.7, roughness: 0.4 })); corniche.position.y = 5.85; g.add(corniche);
     // Le comptoir d'accueil
     const bois = this.matiere('herringbone_parquet', 1.5);
     const pierre = this.matiere('terrazzo_tiles', 1, { m: { color: '#f7f5f2' } });
@@ -436,8 +438,8 @@ export class Monde {
     const led = new THREE.MeshBasicMaterial({ color: '#fffaf0' });
     for (const x of [-4, 0, 4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 14), led); b.position.set(x, 5.58, 0); g.add(b); }
     // Des cadres aux murs.
-    A(this.objet('hanging_picture_frame_01', { x: -11.6, y: 2.2, z: 5.5, rot: Math.PI / 2, echelle: 1.6, ombre: false }));
-    A(this.objet('hanging_picture_frame_01', { x: 11.8, y: 2.2, z: 5.5, rot: -Math.PI / 2, echelle: 1.6, ombre: false }));
+    { const t = this.peinture(1.4, 1.0, 1); t.position.set(-11.6, 2.5, 5.5); t.rotation.y = Math.PI / 2; g.add(t); }
+    { const t = this.peinture(1.4, 1.0, 2); t.position.set(11.8, 2.5, 5.5); t.rotation.y = -Math.PI / 2; g.add(t); }
     // Ascenseurs à droite
     this.ascenseur(g, murs, 11.84, -3, -Math.PI / 2);
     this.ascenseur(g, murs, 11.84, 1.2, -Math.PI / 2);
@@ -509,25 +511,32 @@ export class Monde {
     return { groupe: g, murs, places: this.places, ecran: this.ecranReunion, depart: { x: -3.5, z: 3.2, yaw: 0 }, poi: [{ type: 'ascenseur', x: -3.5, z: 4.4, rayon: 1.6 }, { type: 'table', x: 0, z: 0, rayon: 3.6 }], limites: { x0: -6.7, x1: 6.7, z0: -5.2, z1: 5.2 }, sortieAscenseur: { x: -3.5, z: 3.0, yaw: 0 } };
   }
   async construireAtelier() {
+    // L'atelier (Beau, 25/09 : « plus réaliste, avec des tableaux, des
+    // fleurs, des détails ; c'est trop vide ») : postes en bois clair à
+    // doubles écrans, fauteuils, caissons, plantes, tableaux, tableau blanc,
+    // étagères, coin café.
     const g = new THREE.Group();
     const ajouts = [];
     const A = (p) => ajouts.push(p.then((o) => g.add(o)));
     const murs = [];
-    const sol = this.matiere('terrazzo_tiles', 6);
-    const platre = new THREE.MeshStandardMaterial({ color: '#e8e4dd', roughness: 0.88 });
+    const sol = this.matiere('herringbone_parquet', 6, { m: { color: '#e2cfb3' } });
+    const platre = new THREE.MeshStandardMaterial({ color: '#efebe4', roughness: 0.88 });
     this.sol(g, 22, 14, sol);
-    this.plafond(g, 22, 14, 3.6, '#e6e3de');
+    this.plafond(g, 22, 14, 3.6, '#f1efeb');
     this.mur(g, murs, 0, 7, 22, 0.3, 3.6, platre);
     this.mur(g, murs, 11, 0, 0.3, 14, 3.6, platre);
     this.vitre(g, 0, -7, 22, 3.6); murs.push({ x0: -11, x1: 11, z0: -7.2, z1: -6.9 });
     this.vitre(g, -11, 0, 14, 3.6, Math.PI / 2); murs.push({ x0: -11.2, x1: -10.9, z0: -7, z1: 7 });
-    this.postes = [];
+    const bois = this.matiere('herringbone_parquet', 0.6, { m: { color: '#d6bb95' } });
+    const caisson = new THREE.MeshStandardMaterial({ color: '#f3f1ec', roughness: 0.55 });
     const noir = new THREE.MeshStandardMaterial({ color: '#15171b', metalness: 0.4, roughness: 0.35 });
+    const postes = [];
     for (let rang = 0; rang < 2; rang += 1) for (let i = 0; i < 4; i += 1) {
-      const x = -6 + i * 4, z = -2.6 + rang * 4.4;
-      A(this.objet('metal_office_desk', { x, z, rot: Math.PI }));
-      const moniteur = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.38, 0.04), noir); moniteur.position.set(x, 1.12, z - 0.18); g.add(moniteur);
-      const pied = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), noir); pied.position.set(x, 0.9, z - 0.2); g.add(pied);
+      const x = -6.5 + i * 4, z = -2.8 + rang * 4.6;
+      const plateau = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.04, 0.85), bois); plateau.position.set(x, 0.74, z); plateau.castShadow = plateau.receiveShadow = true; g.add(plateau);
+      for (const sx of [-0.85, 0.85]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.72, 0.75), caisson); p.position.set(x + sx, 0.36, z); g.add(p); }
+      const c = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.58, 0.55), caisson); c.position.set(x + 0.55, 0.29, z); g.add(c);
+      // deux écrans : le gauche montre le vrai travail, le droit un terminal
       const ecran = this.ecran(0.58, 0.34, (x2, w, h, d) => {
         x2.fillStyle = d.actif ? '#0d1117' : '#07090c'; x2.fillRect(0, 0, w, h);
         if (!d.actif) return;
@@ -537,18 +546,45 @@ export class Monde {
         const txt = String(d.texte || '').replace(/\s+/g, ' ');
         for (let l = 0; l < 8; l += 1) { x2.fillStyle = couleurs[l % 4]; x2.fillText(txt.slice(l * 34, l * 34 + 34), w * 0.05, h * (0.28 + l * 0.09)); }
       });
-      ecran.position.set(x, 1.12, z - 0.155); g.add(ecran);
-      A(this.objet('dining_chair_02', { x, z: z + 0.62, rot: Math.PI }));
-      murs.push({ x0: x - 0.3, x1: x + 0.3, z0: z + 0.35, z1: z + 0.9 });
-      this.postes.push({ x, z: z + 0.7, rot: Math.PI, ecran });
-      murs.push({ x0: x - 0.8, x1: x + 0.8, z0: z - 0.45, z1: z + 0.35 });
+      for (const [dx, rot] of [[-0.33, 0.12], [0.33, -0.12]]) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.38, 0.03), noir); m.position.set(x + dx, 1.08, z - 0.25); m.rotation.y = rot; g.add(m);
+        const pied = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.04), noir); pied.position.set(x + dx, 0.88, z - 0.27); g.add(pied);
+      }
+      ecran.position.set(x - 0.33, 1.08, z - 0.232); ecran.rotation.y = 0.12; g.add(ecran);
+      const term = this.ecran(0.58, 0.34, (x2, w, h) => { x2.fillStyle = '#0b0f14'; x2.fillRect(0, 0, w, h); x2.fillStyle = '#5fc8c0'; x2.font = `${h * 0.075}px ui-monospace, monospace`; ['$ npm test', '✓ tests', '$ git status', 'on branch leo/'].forEach((l, k) => x2.fillText(l, w * 0.05, h * (0.18 + k * 0.12))); });
+      term.position.set(x + 0.33, 1.08, z - 0.232); term.rotation.y = -0.12; g.add(term);
+      const clavier = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.14), noir); clavier.position.set(x, 0.77, z + 0.08); g.add(clavier);
+      const f = this.fauteuil(); f.position.set(x, 0, z + 0.75); f.rotation.y = 0; g.add(f);
+      if ((i + rang) % 2 === 0) A(this.objet('potted_plant_02', { x: x - 0.75, y: 0.76, z: z - 0.2, echelle: 0.5, ombre: false }));
+      postes.push({ x, z: z + 0.7, rot: Math.PI, ecran });
+      murs.push({ x0: x - 0.95, x1: x + 0.95, z0: z - 0.45, z1: z + 0.45 }, { x0: x - 0.28, x1: x + 0.28, z0: z + 0.5, z1: z + 1.0 });
     }
-    for (const [x, z] of [[-10.2, 6.2], [10.2, 6.2], [10.2, -6.2]]) A(this.objet('potted_plant_04', { x, z, echelle: 1.5 }));
-    this.lampes(g, [[-6, -1, 3.58], [0, -1, 3.58], [6, -1, 3.58], [-3, 3, 3.58], [3, 3, 3.58]]);
+    this.postes = postes;
+    // Le tableau blanc : les tâches de code en cours (données réelles, redessinées)
+    const tableau = this.ecran(4, 1.6, (x2, w, h, d) => {
+      x2.fillStyle = '#fbfbf8'; x2.fillRect(0, 0, w, h);
+      x2.fillStyle = '#1f2a44'; x2.font = `bold ${h * 0.1}px system-ui`; x2.fillText(this.langue === 'en' ? 'In progress' : 'En cours', w * 0.04, h * 0.15);
+      (d.lignes || []).slice(0, 5).forEach((l, k) => { x2.fillStyle = ['#c25e38', '#2a9d8f', '#e09f3e', '#264653', '#7b2d26'][k]; x2.fillRect(w * 0.04, h * (0.26 + k * 0.14), w * 0.012, h * 0.09); x2.fillStyle = '#222'; x2.font = `${h * 0.075}px system-ui`; x2.fillText(String(l).slice(0, 60), w * 0.07, h * (0.33 + k * 0.14)); });
+    });
+    tableau.position.set(-3, 1.9, 6.83); tableau.rotation.y = Math.PI; g.add(tableau);
+    this.tableauAtelier = tableau;
+    // Tableaux et étagères aux murs, plantes, coin café
+    { const t = this.peinture(1.4, 1.0, 3); t.position.set(3, 2.3, 6.78); t.rotation.y = Math.PI; g.add(t); }
+    { const t = this.peinture(1.4, 1.0, 4); t.position.set(10.8, 2.3, -3); t.rotation.y = -Math.PI / 2; g.add(t); }
+    { const t = this.peinture(1.4, 1.0, 5); t.position.set(10.8, 2.3, 1.5); t.rotation.y = -Math.PI / 2; g.add(t); }
+    const etagere = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.04, 0.3), bois);
+    for (let k = 0; k < 3; k += 1) { const e = etagere.clone(); e.position.set(6.5, 1.1 + k * 0.5, 6.7); g.add(e); }
+    for (let k = 0; k < 14; k += 1) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.3, 0.22), new THREE.MeshStandardMaterial({ color: ['#7b2d26', '#1f3b57', '#c9a35a', '#2f4f3a', '#e8e1d5'][k % 5], roughness: 0.8 })); l.position.set(5.5 + (k % 7) * 0.3, 1.27 + Math.floor(k / 7) * 0.5, 6.68); g.add(l); }
+    for (const [x, z, e] of [[-10.2, 6.2, 1.6], [10.2, -6.2, 1.6], [-10.2, -6.2, 1.4], [0, 6.3, 1.3]]) A(this.objet('potted_plant_04', { x, z, echelle: e }));
+    for (let i = 0; i < 5; i += 1) A(this.objet('planter_box_01', { x: -9 + i * 4.5, z: -6.4, echelle: 1.1 }));
+    A(this.objet('modern_coffee_table_01', { x: -8.8, z: 4.8 }));
+    A(this.objet('modern_arm_chair_01', { x: -9.8, z: 3.6, rot: 0.6 }));
+    A(this.objet('modern_arm_chair_01', { x: -7.6, z: 3.6, rot: -0.6 }));
+    murs.push({ x0: -10.5, x1: -7, z0: 3.1, z1: 5.4 });
+    this.lampes(g, [[-6.5, -2.8, 3.58], [-2.5, -2.8, 3.58], [1.5, -2.8, 3.58], [5.5, -2.8, 3.58], [-4.5, 1.8, 3.58], [3.5, 1.8, 3.58]]);
     this.ascenseur(g, murs, 8, 6.83, Math.PI);
-
     await Promise.all(ajouts);
-    return { groupe: g, murs, depart: { x: 6.5, z: 4.6, yaw: 0.5 }, poi: [{ type: 'ascenseur', x: 8, z: 5.9, rayon: 1.6 }], limites: { x0: -10.7, x1: 10.7, z0: -6.7, z1: 6.7 }, sortieAscenseur: { x: 6.5, z: 4.4, yaw: 0.5 } };
+    return { groupe: g, murs, postes, depart: { x: 6.5, z: 4.6, yaw: 0.5 }, poi: [{ type: 'ascenseur', x: 8, z: 5.9, rayon: 1.6 }], limites: { x0: -10.7, x1: 10.7, z0: -6.7, z1: 6.7 }, sortieAscenseur: { x: 6.5, z: 4.4, yaw: 0.5 } };
   }
 
   // ——— Un étage par département (Beau, 25/09 : « il n'y a pas plusieurs
@@ -567,6 +603,28 @@ export class Monde {
     for (let i = 0; i < 5; i += 1) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.32), noir); b.position.y = 0.06; b.rotation.y = (i / 5) * Math.PI * 2; b.translateZ(0.16); g.add(b); }
     for (const x of [-0.25, 0.25]) { const a = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.03, 0.26, 2, 0.012), noir); a.position.set(x, 0.66, 0.02); g.add(a); const s2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.17), noir); s2.position.set(x, 0.57, 0.1); g.add(s2); }
     g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
+    return g;
+  }
+  // Une toile abstraite encadrée, peinte ici (aucune œuvre d'autrui copiée).
+  peinture(l, h, graine = 1) {
+    let n = graine * 9301 + 49297; const r = () => { n = (n * 9301 + 49297) % 233280; return n / 233280; };
+    const g = new THREE.Group();
+    const toile = this.ecran(l, h, (x, w, hh) => {
+      const pal = [['#f3ead9', '#c25e38', '#e09f3e', '#264653', '#2a9d8f'], ['#efe7dc', '#7b2d26', '#c9a35a', '#1f3b57', '#d98e73'], ['#f5f1ea', '#2f4f3a', '#e3a857', '#b5612f', '#1d2a57']][graine % 3];
+      x.fillStyle = pal[0]; x.fillRect(0, 0, w, hh);
+      for (let k = 0; k < 7; k += 1) {
+        x.fillStyle = pal[1 + (k % 4)]; x.globalAlpha = 0.75 + r() * 0.25;
+        if (r() < 0.5) { x.beginPath(); x.arc(r() * w, r() * hh, (0.08 + r() * 0.22) * w, 0, Math.PI * 2); x.fill(); }
+        else x.fillRect(r() * w * 0.8, r() * hh * 0.8, (0.1 + r() * 0.35) * w, (0.1 + r() * 0.4) * hh);
+      }
+      x.globalAlpha = 1;
+    });
+    toile.material.toneMapped = true;
+    g.add(toile);
+    const cadre = new THREE.MeshStandardMaterial({ color: '#1a1b1e', roughness: 0.5, metalness: 0.3 });
+    for (const [px, py, pw, ph] of [[0, h / 2 + 0.025, l + 0.1, 0.05], [0, -h / 2 - 0.025, l + 0.1, 0.05], [l / 2 + 0.025, 0, 0.05, h], [-l / 2 - 0.025, 0, 0.05, h]]) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, 0.04), cadre); b.position.set(px, py, -0.01); g.add(b);
+    }
     return g;
   }
   plaque(nom, actif) {
@@ -705,8 +763,9 @@ export class Monde {
       (ou?.aupause || []).slice(0, this.lieu.bar?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.bar[i], anim: i % 2 ? 'ecoute' : 'parle', sous: `${this.langue === 'en' ? 'break · delivered' : 'pause · a rendu'} : ${String(b.tache || '').slice(0, 36)}` }));
     }
     if (this.lieu.nom === 'atelier') {
-      (ou?.auBureau || []).slice(0, this.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
-      (this.postes || []).forEach((p, i) => {
+      (ou?.auBureau || []).slice(0, this.lieu.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
+      this.tableauAtelier?.userData.redessiner({ lignes: [...(ou?.auBureau || []), ...(ou?.aLeurPoste || [])].map((b) => `${parId.get(b.id)?.nom || ''} — ${b.tache || b.texte || ''}`) });
+      (this.lieu.postes || []).forEach((p, i) => {
         const b = ou?.auBureau?.[i];
         p.ecran.userData.redessiner(b ? { actif: true, nom: parId.get(b.id)?.nom, texte: b.tache || b.texte } : { actif: false });
       });

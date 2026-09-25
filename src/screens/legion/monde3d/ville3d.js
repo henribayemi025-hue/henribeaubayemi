@@ -32,38 +32,57 @@ function canvasTex(l, h, dessiner, { repeat = [1, 1], srgb = true } = {}) {
   return t;
 }
 
-// Mur-rideau : panneaux de verre, montants, un peu de variation d'un vitrage à l'autre.
-function texturesFacade(r, teinte, petit = false) {
-  const cols = 8, rangs = 16;
-  const L = petit ? 256 : 512, H = petit ? 512 : 1024;
-  const couleur = canvasTex(L, H, (x, w, h) => {
-    const pw = w / cols, ph = h / rangs;
-    for (let i = 0; i < cols; i += 1) for (let j = 0; j < rangs; j += 1) {
-      const v = 0.85 + r() * 0.3;
-      const c = new THREE.Color(teinte).multiplyScalar(v);
-      x.fillStyle = `#${c.getHexString()}`;
-      x.fillRect(i * pw, j * ph, pw, ph);
-      if (r() < 0.25) { x.fillStyle = 'rgba(255,255,255,0.06)'; x.fillRect(i * pw, j * ph, pw, ph * 0.5); }
+// Façades photo-réalistes (images générées pour Léo, découpées pour se répéter
+// sans couture) : verre, pierre, résidence à balcons. Une texture « nuit »
+// allume certaines fenêtres quand le soleil se couche.
+// Taille réelle d'une tuile, en mètres (largeur, hauteur).
+const FACADES = { verre: [29.6, 14.4], beton: [19, 10.5], residence: [11.9, 6.4] };
+export function matieresFacades(monde, envCiel = null) {
+  if (monde.facades) { for (const f of monde.facades) if (envCiel) f.mat.envMap = envCiel; return monde.facades; }
+  const dossier = '/monde3d/facades/';
+  const suf = monde.mobile ? '-m' : '';
+  const tex = (f, srgb = true) => {
+    const t = monde.textures.load(`${dossier}${f}${suf}.webp`);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  const reglages = {
+    verre: { roughness: 0.28, metalness: 0.35, envMapIntensity: 0.9 },
+    beton: { roughness: 0.85, metalness: 0, envMapIntensity: 0.5 },
+    residence: { roughness: 0.8, metalness: 0, envMapIntensity: 0.5 },
+  };
+  const teintes = monde.mobile ? ['#ffffff'] : ['#ffffff', '#f1e6d8'];
+  const liste = [];
+  for (const nom of Object.keys(FACADES)) {
+    const map = tex(nom), nuit = tex(`${nom}-nuit`);
+    nuit.repeat.set(0.25, 0.25); // la carte de nuit couvre 4 × 4 tuiles : les fenêtres allumées ne se répètent pas
+    for (const color of teintes) {
+      liste.push({ nom, taille: FACADES[nom], mat: new THREE.MeshStandardMaterial({ map, color, envMap: envCiel, emissive: '#ffffff', emissiveMap: nuit, emissiveIntensity: 0, ...reglages[nom] }) });
     }
-    x.fillStyle = '#2b2f35';
-    for (let i = 0; i <= cols; i += 1) x.fillRect(i * pw - 3, 0, 6, h);
-    for (let j = 0; j <= rangs; j += 1) x.fillRect(0, j * ph - 5, w, 10);
-  });
-  const rugosite = petit ? null : canvasTex(L, H, (x, w, h) => {
-    x.fillStyle = '#1a1a1a'; x.fillRect(0, 0, w, h);
-    const pw = w / cols, ph = h / rangs;
-    x.fillStyle = '#b0b0b0';
-    for (let i = 0; i <= cols; i += 1) x.fillRect(i * pw - 3, 0, 6, h);
-    for (let j = 0; j <= rangs; j += 1) x.fillRect(0, j * ph - 5, w, 10);
-  }, { srgb: false });
-  const fenetres = canvasTex(L, H, (x, w, h) => {
-    x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
-    const pw = w / cols, ph = h / rangs;
-    for (let i = 0; i < cols; i += 1) for (let j = 0; j < rangs; j += 1) {
-      if (r() < 0.42) { x.fillStyle = r() < 0.7 ? '#ffe0a8' : '#dff0ff'; x.fillRect(i * pw + 6, j * ph + 8, pw - 12, ph - 16); }
+  }
+  monde.facades = liste;
+  return liste;
+}
+// Les quatre côtés d'un bloc, UV en mètres (la façade garde sa vraie échelle),
+// décalés au hasard pour que deux tours voisines ne soient pas identiques.
+export function cotesFacade(w, h, d, [tw, th], r) {
+  const b = new THREE.BoxGeometry(w, h, d).toNonIndexed();
+  const pos = b.attributes.position, uv = b.attributes.uv;
+  const du = Math.floor(r() * 8) / 8;
+  const garder = [];
+  for (let f = 0; f < 6; f += 1) {
+    if (f === 2 || f === 3) continue; // dessus et dessous : le toit à part
+    const larg = f < 2 ? d : w;
+    for (let i = f * 6; i < f * 6 + 6; i += 1) {
+      garder.push([pos.getX(i), pos.getY(i), pos.getZ(i), b.attributes.normal.getX(i), b.attributes.normal.getY(i), b.attributes.normal.getZ(i), uv.getX(i) * larg / tw + du, uv.getY(i) * h / th]);
     }
-  });
-  return { couleur, rugosite, fenetres };
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(garder.flatMap((v) => v.slice(0, 3)), 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(garder.flatMap((v) => v.slice(3, 6)), 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(garder.flatMap((v) => v.slice(6)), 2));
+  return g;
 }
 
 const CACHE_ENSEIGNES = new Map();
@@ -253,7 +272,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2 });
   }
-  const facades = (monde.mobile ? ['#7f93a6', '#9fb0bd', '#a39787'] : ['#7f93a6', '#8d9aa3', '#5f7386', '#9fb0bd', '#6b7d74', '#a39787', '#4f5d6e']).map((c) => texturesFacade(r, c, monde.mobile));
+  const facades = matieresFacades(monde, envCiel);
+  for (const f of facades) nuit.fenetres.push(f.mat);
+  const toit = new THREE.MeshStandardMaterial({ color: '#5b5e62', roughness: 0.9 });
   const beton = monde.matiere('concrete_tile_facade', 3);
   for (const il of ilots) {
     const l = il.x1 - il.x0, p = il.z1 - il.z0;
@@ -270,16 +291,18 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const dist = Math.hypot(bx, bz);
       const h = 18 + r() * (dist < 90 ? 70 : 130);
       const w = lx - 2, d = lz - 2;
-      const f = facades[Math.floor(r() * facades.length)];
-      const mat = new THREE.MeshStandardMaterial({ map: f.couleur, roughnessMap: f.rugosite, roughness: f.rugosite ? 1 : 0.3, metalness: 0.75, envMap: envCiel, envMapIntensity: 1.2, emissive: '#ffffff', emissiveMap: f.fenetres, emissiveIntensity: 0 });
-      mat.map.repeat.set(Math.max(1, w / 12), Math.max(1, h / 24));
-      if (mat.roughnessMap) mat.roughnessMap.repeat.copy(mat.map.repeat); mat.emissiveMap.repeat.copy(mat.map.repeat);
-      const tour = new THREE.Mesh(new THREE.BoxGeometry(w, h - 5, d), mat);
-      tour.position.set(bx, 5 + (h - 5) / 2, bz); tour.castShadow = dist < 120; tour.receiveShadow = true;
+      // Tours hautes : plutôt du verre ; petites : pierre ou résidence.
+      const verres = facades.filter((x) => x.nom === 'verre'), autres = facades.filter((x) => x.nom !== 'verre');
+      const lot = h > 60 ? (r() < 0.75 ? verres : autres) : (r() < 0.3 ? verres : autres);
+      const f = lot[Math.floor(r() * lot.length)];
+      const hc = h - 5;
+      const tour = new THREE.Mesh(cotesFacade(w, hc, d, f.taille, r), f.mat);
+      tour.position.set(bx, 5 + hc / 2, bz); tour.castShadow = dist < 120; tour.receiveShadow = true;
       racine.add(tour);
-      nuit.fenetres.push(mat);
+      const dessus = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.6, d + 0.4), toit); dessus.position.set(bx, h + 0.3, bz); racine.add(dessus);
       if (r() < 0.45) { // retrait au sommet
-        const t2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6, h * 0.18, d * 0.6), mat); t2.position.set(bx, h + h * 0.09, bz); racine.add(t2);
+        const t2 = new THREE.Mesh(cotesFacade(w * 0.6, h * 0.18, d * 0.6, f.taille, r), f.mat); t2.position.set(bx, h + h * 0.09, bz); racine.add(t2);
+        const d2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6 + 0.3, 0.5, d * 0.6 + 0.3), toit); d2.position.set(bx, h + h * 0.18 + 0.25, bz); racine.add(d2);
       }
       // Rez-de-chaussée : vitrines, auvent, enseigne
       const socle = new THREE.Mesh(new THREE.BoxGeometry(w, 5, d), beton); socle.position.set(bx, 2.5, bz); socle.receiveShadow = true; racine.add(socle);

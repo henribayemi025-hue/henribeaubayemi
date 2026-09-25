@@ -38,6 +38,19 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [convoc, setConvoc] = useState(null); // { sujet, ids }
   const [avatar, setAvatar] = useState(() => lire('leo:avatar', 'Male_Adult_07'));
   const [maintenant, setMaintenant] = useState(Date.now());
+  // La cinématique d'arrivée (vidéo tournée pour Léo) : une fois, puis « Revoir l'intro ».
+  const [intro, setIntro] = useState(() => !lire('leo:intro-vue', ''));
+  const [introFin, setIntroFin] = useState(false);
+  const video = useRef(null);
+  function finirIntro() { ecrire('leo:intro-vue', '1'); setIntro(false); setIntroFin(false); }
+  useEffect(() => {
+    const v = video.current;
+    if (!intro || !v) return;
+    v.currentTime = 0;
+    v.muted = false;
+    // Sans geste récent, le navigateur refuse le son : on relance sans le son.
+    v.play().catch(() => { v.muted = true; v.play().catch(finirIntro); });
+  }, [intro]); // eslint-disable-line react-hooks/exhaustive-deps
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
   const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
   useEffect(() => { const f = () => { setPortrait(window.innerHeight > window.innerWidth); setTimeout(() => monde.current?.redimensionner(), 120); }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
@@ -196,6 +209,21 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     <div className="relative h-[calc(100dvh-13rem)] min-h-[420px] sm:h-[calc(100dvh-9.5rem)] overflow-hidden bg-black">
       <div ref={boite} className="absolute inset-0" />
 
+      {intro && (
+        <div className="absolute inset-0 z-20 bg-black">
+          <video ref={video} poster="/monde3d/intro.jpg" playsInline preload="auto" className="h-full w-full object-cover"
+            onTimeUpdate={(e) => { if (e.currentTarget.currentTime > 5.6) setIntroFin(true); }} onEnded={finirIntro}>
+            <source src="/monde3d/intro.mp4" type="video/mp4" />
+            {/* Le dernier format : s'il ne passe pas non plus, on entre directement. */}
+            <source src="/monde3d/intro.webm" type="video/webm" onError={finirIntro} />
+          </video>
+          <p className={`pointer-events-none absolute inset-x-0 bottom-[18%] text-center font-serif text-[26px] tracking-wide text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)] transition-opacity duration-1000 sm:text-[40px] ${introFin ? 'opacity-100' : 'opacity-0'}`}>
+            {t('legion.monde.bienvenue', { nom: entreprise.nom })}
+          </p>
+          <button type="button" onClick={finirIntro} className="absolute bottom-4 right-4 rounded-pill bg-black/55 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur hover:bg-black/75">{t('legion.monde.passer')} ›</button>
+        </div>
+      )}
+
       {etat !== 'pret' && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#0b1120]/90 text-center">
           {etat === 'erreur' ? (
@@ -226,6 +254,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         {mobile && <button type="button" onClick={() => modeJeu(!jeu)} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{jeu ? t('legion.monde.quitterJeu') : t('legion.monde.modeJeu')}</button>}
         {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => setConvoc({ sujet: '', ids: [] })} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{t('legion.monde.convoquer')}</button>}
         {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => setRenfort(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-gold backdrop-blur">{t('legion.monde.fairevenir')}</button>}
+        <button type="button" onClick={() => setIntro(true)} title={t('legion.monde.revoirIntro')} aria-label={t('legion.monde.revoirIntro')} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-ink backdrop-blur">🎬</button>
         <button type="button" onClick={() => setChoixAvatar(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-ink backdrop-blur">{t('legion.monde.monAvatar')}</button>
       </div>
 
