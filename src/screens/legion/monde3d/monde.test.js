@@ -52,6 +52,18 @@ describe('monde 3D', () => {
     expect(quiOuEst({ agents, messages: closes, maintenant: MAINTENANT }).reunion).toBeNull();
   });
 
+  it('à leur poste : tâche ouverte, pas rendue, agent allumé ; dernière réunion', () => {
+    const taches = [
+      { assigne_a: 'c', texte: 'Relire la fiche', meta: { statut: 'a_faire' } },
+      { assigne_a: 'b', texte: 'Déjà rendue', meta: { statut: 'revue' } },
+      { assigne_a: 'd', texte: 'Veille', meta: { statut: 'a_faire' } },
+    ];
+    const messages = [{ auteur_id: 'a', created_at: il(200), texte: 'Compte rendu — Budget du mois\nsuite', meta: { reunion: { id: 'r9', fin: true } } }];
+    const ou = quiOuEst({ agents, messages, taches, maintenant: MAINTENANT });
+    expect(ou.aLeurPoste.map((x) => x.id)).toEqual(['c']);
+    expect(ou.derniereReunion.sujet).toBe('Budget du mois');
+  });
+
   it('la réceptionniste répond avec les vraies données', () => {
     const ou = { reunion: { participants: ['a'], sujet: 'Budget' }, auBureau: [{ id: 'b', tache: 'Palette Ctrl+K' }] };
     expect(repondre('Qui est en réunion ?', { agents, ou }).aller).toBe('reunion');

@@ -127,11 +127,13 @@ function voiture(peinture) {
   s.lineTo(-0.9, 0.95); s.quadraticCurveTo(-0.45, 1.38, 0.15, 1.42); s.lineTo(0.9, 1.4);
   s.quadraticCurveTo(1.45, 1.32, 1.85, 0.98); s.lineTo(2.25, 0.9); s.quadraticCurveTo(2.35, 0.7, 2.3, 0.32); s.closePath();
   const corps = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 1.7, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 3, curveSegments: 10 }), carrosserie);
+  corps.geometry.scale(-1, 1, 1); corps.geometry.computeVertexNormals(); corps.material.side = THREE.DoubleSide;
   corps.position.z = -0.85;
   g.add(corps);
   const v = new THREE.Shape();
   v.moveTo(-0.78, 1.0); v.quadraticCurveTo(-0.4, 1.33, 0.15, 1.36); v.lineTo(0.88, 1.34); v.quadraticCurveTo(1.35, 1.27, 1.7, 1.0); v.closePath();
   const vitres = new THREE.Mesh(new THREE.ExtrudeGeometry(v, { depth: 1.74, bevelEnabled: false }), vitre);
+  vitres.geometry.scale(-1, 1, 1); vitres.geometry.computeVertexNormals(); vitres.material.side = THREE.DoubleSide;
   vitres.position.z = -0.87;
   g.add(vitres);
   const roue = new THREE.CylinderGeometry(0.34, 0.34, 0.24, 20);
@@ -350,20 +352,37 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   });
 
   // Passants sur les trottoirs (Rocketbox), qui marchent en boucle
-  const trottoirs = [{ axe: 'z', fixe: -30.5 }, { axe: 'z', fixe: -21.5 }, { axe: 'x', fixe: 34.5 }, { axe: 'x', fixe: 25.5 }, { axe: 'z', fixe: 30.5 }];
+  const trottoirs = [{ axe: 'z', fixe: -18.3 }, { axe: 'z', fixe: 18.3 }, { axe: 'x', fixe: 23 }, { axe: 'x', fixe: 22 }, { axe: 'z', fixe: -33.8 }, { axe: 'x', fixe: 37.8 }, { axe: 'z', fixe: 33.8 }];
   const passants = [];
   (async () => {
     const corps = ['Female_Adult_09', 'Male_Adult_04', 'Female_Party_02'];
-    const combien = monde.mobile ? 0 : 6;
+    const combien = monde.mobile ? 3 : 10;
     for (let k = 0; k < combien; k += 1) {
       const t = trottoirs[k % trottoirs.length];
       const p = await monde.personnage(corps[k % corps.length]);
       const sens = k % 2 ? 1 : -1;
-      p.objet.userData.marche = { t, sens, pos: -60 + r() * 120, vitesse: 1.2 + r() * 0.4 };
+      p.objet.userData.marche = { t, sens, pos: -50 + r() * 100, vitesse: 1.1 + r() * 0.5 };
       p.jouer('marche', { fondu: 0 });
       p.objet.rotation.y = t.axe === 'z' ? (sens > 0 ? 0 : Math.PI) : (sens > 0 ? Math.PI / 2 : -Math.PI / 2);
       racine.add(p.objet);
       passants.push(p);
+    }
+    // Des vendeurs ambulants sur la place : étal, parasol, caisses, et le vendeur.
+    const toile = ['#d94f30', '#2f7d5b', '#e0a526'];
+    for (const [k, x, z, c] of [[0, -12, 19, 'Male_Adult_12'], [1, 12, 20, 'Female_Party_02']]) {
+      const etal = new THREE.Group();
+      const bois = new THREE.MeshStandardMaterial({ color: '#8a5a33', roughness: 0.85 });
+      const plateau = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.9), bois); plateau.position.y = 0.85; etal.add(plateau);
+      for (const [px, pz] of [[-0.8, -0.38], [0.8, -0.38], [-0.8, 0.38], [0.8, 0.38]]) { const pied = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.85, 0.06), bois); pied.position.set(px, 0.42, pz); etal.add(pied); }
+      const mat = new THREE.MeshStandardMaterial({ color: toile[k], roughness: 0.9, side: THREE.DoubleSide });
+      const parasol = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.6, 8, 1, true), mat); parasol.position.y = 2.5; etal.add(parasol);
+      const mat2 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.3), bois); mat2.position.y = 1.3; etal.add(mat2);
+      for (let i = 0; i < 6; i += 1) { const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshStandardMaterial({ color: ['#e5572d', '#f2c230', '#6fae3c'][i % 3], roughness: 0.6 })); fruit.position.set(-0.6 + i * 0.24, 0.95, 0.1 - (i % 2) * 0.2); etal.add(fruit); }
+      const caisse = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.4), bois); caisse.position.set(1.2, 0.17, 0.2); etal.add(caisse);
+      etal.position.set(x, 0, z); etal.userData.garder = true; racine.add(etal);
+      const vendeur = await monde.personnage(c);
+      vendeur.objet.position.set(x, 0, z - 0.9); vendeur.jouer(k ? 'parle' : 'repos', { fondu: 0 });
+      racine.add(vendeur.objet); passants.push(vendeur);
     }
     // Une terrasse de restaurant : des clients attablés (pas au téléphone)
     if (!monde.mobile) for (const [x, z, rot, c] of [[-33.5, 8, Math.PI / 2, 'Female_Party_02'], [-33.5, 10, Math.PI / 2, 'Male_Adult_04']]) {
@@ -381,7 +400,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const m = p.objet.userData.marche;
       if (!m) continue;
       m.pos += m.sens * m.vitesse * dt;
-      if (m.pos > 110) m.pos = -110; if (m.pos < -110) m.pos = 110;
+      if (m.pos > 60) m.pos = -60; if (m.pos < -60) m.pos = 60;
       const x = m.t.axe === 'z' ? m.t.fixe : m.pos, z = m.t.axe === 'z' ? m.pos : m.t.fixe;
       p.objet.position.set(x, x > -20 && x < 20 && z > -16 && z < 24 ? 0 : 0.18, z);
     }

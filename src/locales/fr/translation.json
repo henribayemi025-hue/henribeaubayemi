@@ -1320,7 +1320,8 @@
         "agent": "Voir sa fiche",
         "ecran": "Voir l'écran",
         "table": "La table de réunion",
-        "defaut": "Interagir"
+        "defaut": "Interagir",
+        "escalier": "Monter par l'escalier"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1344,7 +1345,10 @@
       "faitsPersonne": "Personne au travail à l'instant",
       "etage": "Étage {{n}} · {{nom}}",
       "etages": "Étages ({{n}})",
-      "reessayer": "Réessayer"
+      "reessayer": "Réessayer",
+      "modeJeu": "🎮 Plein écran",
+      "quitterJeu": "Quitter",
+      "tourne": "Tourne ton téléphone à l’horizontale"
     }
   },
   "equipe": {

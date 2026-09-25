@@ -106,7 +106,22 @@ export function quiOuEst({ agents = [], messages = [], taches = [], maintenant =
   }
   const ids = new Set(machines.map((a) => a.id));
   const auBureau = [...actifs.entries()].filter(([id]) => ids.has(id) && !enReunion.has(id)).map(([id, v]) => ({ id, ...v }));
+  // À leur poste sans taper : les agents allumés qui ont une tâche ouverte
+  // (confiée, pas encore rendue). C'est vrai : ils ont du travail en cours.
+  const occupes = new Set([...auBureau.map((b) => b.id), ...enReunion]);
+  const aLeurPoste = [];
+  for (const x of taches) {
+    const st = x.meta?.statut;
+    if (!x.assigne_a || !ids.has(x.assigne_a) || occupes.has(x.assigne_a) || x.termine_le || ['fait', 'revue', 'bloque'].includes(st)) continue;
+    occupes.add(x.assigne_a);
+    aLeurPoste.push({ id: x.assigne_a, tache: x.texte });
+  }
+  // La dernière réunion terminée, pour l'écran de la salle quand elle est vide.
+  let derniere = null;
+  for (const m of messages) if (m.meta?.reunion?.fin && (!derniere || m.created_at > derniere.created_at)) derniere = m;
   return {
+    aLeurPoste,
+    derniereReunion: derniere ? { quand: derniere.created_at, sujet: String(derniere.texte || '').split('\n')[0].replace(/^Compte rendu\s*[—-]\s*/i, '').replace(/[#*]/g, '').slice(0, 90) } : null,
     reunion: reunion ? { ...reunion, participants: reunion.participants.filter((id) => ids.has(id)) } : null,
     auBureau,
   };
@@ -133,6 +148,8 @@ export function repondre(question, { agents = [], ou, nomEntreprise = '' }, lang
     if (ou?.reunion?.participants.includes(cible.id)) return { texte: fr ? `${cible.nom} est en réunion.` : `${cible.nom} is in a meeting.`, aller: 'reunion' };
     const b = (ou?.auBureau || []).find((x) => x.id === cible.id);
     if (b) return { texte: fr ? `${cible.nom} travaille à son bureau${b.tache ? ` : ${String(b.tache).slice(0, 80)}` : ''}.` : `${cible.nom} is at their desk.`, aller: 'atelier' };
+    const at = (ou?.aLeurPoste || []).find((x) => x.id === cible.id);
+    if (at) return { texte: fr ? `${cible.nom} est à son poste, avec une tâche à faire : ${String(at.tache).slice(0, 80)}.` : `${cible.nom} is at their desk with a task to do.` };
     return { texte: fr ? `${cible.nom} n'a rien fait ces dix dernières minutes : pas à son bureau pour l'instant.` : `${cible.nom} hasn't been active in the last ten minutes.` };
   }
   return { texte: fr ? `Bienvenue chez ${nomEntreprise}. Demandez-moi qui est en réunion, qui travaille, ou où est un agent.` : `Welcome to ${nomEntreprise}. Ask me who's in a meeting, who's working, or where someone is.` };

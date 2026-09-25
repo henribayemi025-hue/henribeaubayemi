@@ -35,6 +35,17 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [choixAvatar, setChoixAvatar] = useState(false);
   const [avatar, setAvatar] = useState(() => lire('leo:avatar', 'Male_Adult_07'));
   const [maintenant, setMaintenant] = useState(Date.now());
+  const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
+  const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
+  useEffect(() => { const f = () => { setPortrait(window.innerHeight > window.innerWidth); setTimeout(() => monde.current?.redimensionner(), 120); }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
+  async function modeJeu(oui) {
+    setJeu(oui);
+    try {
+      if (oui) { await document.documentElement.requestFullscreen?.(); await screen.orientation?.lock?.('landscape'); }
+      else { screen.orientation?.unlock?.(); if (document.fullscreenElement) await document.exitFullscreen(); }
+    } catch { /* iPhone : pas de verrouillage, on demande de tourner le téléphone */ }
+    setTimeout(() => monde.current?.redimensionner(), 200);
+  }
   const langue = t('legion.ciel.langue', 'fr');
   const mobile = typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || window.innerWidth < 700);
 
@@ -103,7 +114,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       const r = repondre('', { agents, ou, nomEntreprise: entreprise.nom }, langue);
       setDialogue({ lignes: [{ qui: 'elle', texte: r.texte }] });
       parler(r.texte);
-    } else if (cible.type === 'ascenseur') setEtage(true);
+    } else if (cible.type === 'ascenseur' || cible.type === 'escalier') setEtage(true);
     else if (cible.type === 'agent') onFiche?.(agents.find((a) => a.id === cible.id));
   }
   function parler(texte) {
@@ -189,12 +200,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <button key={k} type="button" onClick={() => monde.current?.reglerCamera(k)}
             className={`rounded-pill px-2.5 py-1 text-[12px] font-semibold backdrop-blur ${camera === k ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
         ))}
+        {mobile && <button type="button" onClick={() => modeJeu(!jeu)} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{jeu ? t('legion.monde.quitterJeu') : t('legion.monde.modeJeu')}</button>}
         <button type="button" onClick={() => setChoixAvatar(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-ink backdrop-blur">{t('legion.monde.monAvatar')}</button>
       </div>
 
       {/* Ce qui est à portée */}
       {proche && !dialogue && !etage && (
-        <div className="absolute bottom-24 left-1/2 z-[5] w-[min(92%,360px)] -translate-x-1/2 rounded-2xl border border-legion-gold/40 bg-[#0b1120]/90 p-3 text-center backdrop-blur">
+        <div className={`absolute z-[5] rounded-2xl border border-legion-gold/40 bg-[#0b1120]/90 p-2.5 text-center backdrop-blur ${mobile ? 'bottom-[5.5rem] right-3 w-[52%]' : 'bottom-24 left-1/2 w-[min(92%,360px)] -translate-x-1/2 p-3'}`}>
           {agentProche && (
             <div className="mb-2 flex items-center justify-center gap-2">
               {(agentProche.apparence?.mini || agentProche.avatar_url) && <img src={agentProche.apparence?.mini || agentProche.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />}
@@ -265,10 +277,12 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); joyBouge(e); }} onPointerMove={(e) => bouton && joyBouge(e)} onPointerUp={joyFin} onPointerCancel={joyFin}>
             <span className="absolute left-1/2 top-1/2 h-12 w-12 rounded-full bg-white/40" style={{ transform: `translate(calc(-50% + ${bouton?.x || 0}px), calc(-50% + ${bouton?.y || 0}px))` }} />
           </div>
-          {proche && <button type="button" onClick={() => interagir(proche)} className="absolute bottom-20 right-5 z-[5] h-14 w-14 rounded-full bg-legion-gold text-[16px] font-bold text-legion-bg">E</button>}
         </>
       )}
 
+      {jeu && portrait && (
+        <div className="pointer-events-none absolute inset-x-0 top-1/3 z-[9] mx-auto w-fit rounded-card bg-black/75 px-4 py-3 text-center text-[14px] text-white">↻ {t('legion.monde.tourne')}</div>
+      )}
       {choixAvatar && (
         <div className="absolute inset-0 z-[8] flex items-center justify-center bg-black/60" onClick={() => setChoixAvatar(false)}>
           <div className="w-[min(94%,560px)] rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}>

@@ -1320,7 +1320,8 @@
         "agent": "See their profile",
         "ecran": "See the screen",
         "table": "The meeting table",
-        "defaut": "Interact"
+        "defaut": "Interact",
+        "escalier": "Take the stairs"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1344,7 +1345,10 @@
       "faitsPersonne": "Nobody working right now",
       "etage": "Floor {{n}} · {{nom}}",
       "etages": "Floors ({{n}})",
-      "reessayer": "Try again"
+      "reessayer": "Try again",
+      "modeJeu": "🎮 Full screen",
+      "quitterJeu": "Exit",
+      "tourne": "Turn your phone sideways"
     }
   },
   "equipe": {

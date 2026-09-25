@@ -53,7 +53,7 @@ export class Monde {
     this.ciel = { phase: 'jour', genre: 'clair' };
 
     const r = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: 'high-performance' });
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.5));
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 2));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.0;
@@ -153,7 +153,14 @@ export class Monde {
     const fichier = nom === 'telephone' && genre === 'f' ? 'f_cell_phone_talk_01' : `${genre}_${ANIMS[nom]}`;
     const g = await this.charger(`anims/${fichier}.glb`);
     const c = g.animations[0].clone();
-    c.tracks = c.tracks.filter((t) => !t.name.startsWith('MotionExtractionHelper'));
+    c.tracks = c.tracks.filter((t) => !t.name.startsWith('MotionExtractionHelper') && !/Footsteps/.test(t.name));
+    // Le mouvement vers l'avant est donné par le jeu, pas par l'animation :
+    // on garde la hauteur du bassin, on annule sa dérive horizontale.
+    for (const t of c.tracks) {
+      if (!/^Bip01\.position$/.test(t.name)) continue;
+      const v = t.values; const x0 = v[0], z0 = v[2];
+      for (let i = 0; i < v.length; i += 3) { v[i] = x0; v[i + 2] = z0; }
+    }
     return c;
   }
 
@@ -349,8 +356,15 @@ export class Monde {
     this.mur(g, murs, 12, 0, 0.3, 18, 5.6, platre);            // droite (ascenseurs)
     this.vitre(g, -12, 0, 18, 5.6, Math.PI / 2);                 // gauche : baie sur la ville
     murs.push({ x0: -12.2, x1: -11.9, z0: -9, z1: 9 });
-    this.vitre(g, 0, 9, 24, 5.6);                                // entrée vitrée
-    murs.push({ x0: -12, x1: 12, z0: 9, z1: 9.2 });
+    this.vitre(g, -7, 9, 10, 5.6);                               // entrée vitrée…
+    this.vitre(g, 7, 9, 10, 5.6);
+    murs.push({ x0: -12.2, x1: -2, z0: 8.9, z1: 9.2 }, { x0: 2, x1: 12.2, z0: 8.9, z1: 9.2 });  // …avec une porte au milieu
+    const auvent = new THREE.Mesh(new THREE.BoxGeometry(6, 0.2, 3), new THREE.MeshStandardMaterial({ color: '#23262b', metalness: 0.7, roughness: 0.4 }));
+    auvent.position.set(0, 4.2, 10.4); auvent.castShadow = true; g.add(auvent);
+    // L'immeuble vu de dehors : sa tour de verre au-dessus du hall.
+    const verreTour = new THREE.MeshStandardMaterial({ color: '#6f8aa3', metalness: 0.85, roughness: 0.12, envMapIntensity: 1.3 });
+    const tour = new THREE.Mesh(new THREE.BoxGeometry(24.4, 70, 18.4), verreTour); tour.position.set(0, 5.6 + 35, 0); g.add(tour);
+    for (let k = 1; k < 18; k += 1) { const bande = new THREE.Mesh(new THREE.BoxGeometry(24.6, 0.25, 18.6), new THREE.MeshStandardMaterial({ color: '#2b2f36', metalness: 0.6, roughness: 0.4 })); bande.position.y = 5.6 + k * 3.9; g.add(bande); }
     // Le comptoir d'accueil
     const bois = this.matiere('herringbone_parquet', 1.5);
     const pierre = this.matiere('terrazzo_tiles', 1, { m: { color: '#f7f5f2' } });
@@ -431,9 +445,10 @@ export class Monde {
       { type: 'ascenseur', x: 11, z: -3, rayon: 1.8 },
       { type: 'ascenseur', x: 11, z: 1.2, rayon: 1.8 },
       { type: 'ecran', x: 7.2, z: -8, rayon: 2.2 },
+      { type: 'escalier', x: -8.6, z: -3.2, rayon: 1.6 },
     ];
     await Promise.all(ajouts);
-    return { groupe: g, murs, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -11.6, x1: 11.6, z0: -8.6, z1: 8.7 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
+    return { groupe: g, murs, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -36, x1: 36, z0: -27, z1: 38 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
   }
   async construireReunion() {
     const g = new THREE.Group();
@@ -678,10 +693,10 @@ export class Monde {
     const r = ou?.reunion;
     if (this.lieu.nom === 'reunion') {
       (r?.participants || []).slice(0, this.places?.length || 0).forEach((id, i) => voulus.set(id, { place: this.places[i], anim: 'assis', sous: id === r.parle ? (this.langue === 'en' ? 'speaking' : 'parle') : (this.langue === 'en' ? 'in the meeting' : 'en réunion') }));
-      this.ecranReunion?.userData.redessiner(r ? { etat: this.langue === 'en' ? '● Meeting in progress' : '● Réunion en cours', sujet: r.sujet } : { etat: this.langue === 'en' ? 'Room free' : 'Salle libre', sujet: this.langue === 'en' ? 'No meeting right now.' : 'Aucune réunion en ce moment.' });
+      this.ecranReunion?.userData.redessiner(r ? { etat: this.langue === 'en' ? '● Meeting in progress' : '● Réunion en cours', sujet: r.sujet } : { etat: this.langue === 'en' ? 'Room free' : 'Salle libre', sujet: ou?.derniereReunion ? `${this.langue === 'en' ? 'Last meeting' : 'Dernière réunion'} (${new Date(ou.derniereReunion.quand).toLocaleString(this.langue === 'en' ? 'en' : 'fr', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}) : ${ou.derniereReunion.sujet}` : (this.langue === 'en' ? 'No meeting right now.' : 'Aucune réunion en ce moment.') });
     }
     if (this.lieu.nom === 'atelier') {
-      (ou?.auBureau || []).slice(0, this.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.postes[i], anim: 'assis', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
+      (ou?.auBureau || []).slice(0, this.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
       (this.postes || []).forEach((p, i) => {
         const b = ou?.auBureau?.[i];
         p.ecran.userData.redessiner(b ? { actif: true, nom: parId.get(b.id)?.nom, texte: b.tache || b.texte } : { actif: false });
@@ -699,11 +714,17 @@ export class Monde {
         if (p.plaqueObj) { this.lieu.groupe.remove(p.plaqueObj); p.plaqueObj = null; }
         if (!a) return;
         const b = actifs.get(a.id);
+        const attente = !b ? (ou?.aLeurPoste || []).find((x) => x.id === a.id) : null;
         const pl = this.plaque(a.nom, !!b); pl.position.set(p.x, 0.99, p.z - p.cote * 0.64); pl.rotation.y = p.ecranRot; pl.rotation.x = p.cote > 0 ? -0.3 : 0.3; this.lieu.groupe.add(pl); p.plaqueObj = pl;
         if (b) {
           const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#0d1117'; x.fillRect(0, 0, w, h); x.fillStyle = '#e3a857'; x.font = `bold ${h * 0.11}px ui-monospace, monospace`; x.fillText(a.nom, w * 0.05, h * 0.16); x.font = `${h * 0.08}px ui-monospace, monospace`; const t = String(b.tache || b.texte || '').replace(/\s+/g, ' '); ['#7ee787', '#79c0ff', '#d2a8ff', '#edf1f8'].forEach((c, l) => { x.fillStyle = c; x.fillText(t.slice(l * 32, l * 32 + 32), w * 0.05, h * (0.34 + l * 0.14)); }); });
           e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
-          voulus.set(a.id, { place: p, anim: 'assis', sous: String(b.tache || b.texte || '').slice(0, 48) });
+          voulus.set(a.id, { place: p, anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48) });
+        } else if (attente) {
+          // Il a une tâche ouverte : à son poste, sans taper.
+          const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#10151d'; x.fillRect(0, 0, w, h); x.fillStyle = '#93a1b8'; x.font = `bold ${h * 0.1}px system-ui`; x.fillText(this.langue === 'en' ? 'To do' : 'À faire', w * 0.05, h * 0.18); x.fillStyle = '#edf1f8'; x.font = `${h * 0.085}px system-ui`; const t = String(attente.tache || ''); for (let l = 0; l < 4; l += 1) x.fillText(t.slice(l * 30, l * 30 + 30), w * 0.05, h * (0.38 + l * 0.14)); });
+          e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
+          voulus.set(a.id, { place: p, anim: 'assis', sous: `${this.langue === 'en' ? 'to do' : 'à faire'} : ${String(attente.tache || '').slice(0, 40)}` });
         }
       });
     }
@@ -787,9 +808,10 @@ export class Monde {
     if (this.mesure.t < 2) return;
     const ips = this.mesure.n / this.mesure.t;
     const pr = this.rendu.getPixelRatio();
-    if (ips < 40 && pr > 0.6) this.rendu.setPixelRatio(Math.max(0.6, pr - 0.2));
+    const plancher = this.mobile ? 0.75 : 1; // Beau : « trop réduit le nombre de pixels »
+    if (ips < 35 && pr > plancher) this.rendu.setPixelRatio(Math.max(plancher, pr - 0.15));
     else if (ips > 58 && pr < this.mesure.max) this.rendu.setPixelRatio(Math.min(this.mesure.max, pr + 0.1));
-    if (ips < 30 && this.rendu.shadowMap.enabled && pr <= 0.8) { this.rendu.shadowMap.enabled = false; this.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
+    if (ips < 28 && this.rendu.shadowMap.enabled && pr <= plancher) { this.rendu.shadowMap.enabled = false; this.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
     if (this.rendu.getPixelRatio() !== pr) { const w = this.conteneur.clientWidth, h = this.conteneur.clientHeight; this.rendu.setSize(w, h); }
     this.mesure.t = 0; this.mesure.n = 0;
   }
@@ -860,12 +882,14 @@ export class Monde {
     } else {
       const d = this.cam.dist;
       const voulu = new THREE.Vector3(p.x + Math.sin(this.cam.yaw) * d * Math.cos(this.cam.pitch), 1.4 + Math.sin(this.cam.pitch) * d + 0.3, p.z + Math.cos(this.cam.yaw) * d * Math.cos(this.cam.pitch));
-      const L = this.lieu.limites;
+      const I = this.lieu.interieur;
+      const dedans = I && p.x > I.x0 && p.x < I.x1 && p.z > I.z0 && p.z < I.z1;
+      const L = dedans ? { x0: I.x0 + 0.3, x1: I.x1 - 0.3, z0: I.z0 + 0.3, z1: I.z1 - 0.3 } : this.lieu.limites;
       voulu.x = THREE.MathUtils.clamp(voulu.x, L.x0 + 0.25, L.x1 - 0.25);
       voulu.z = THREE.MathUtils.clamp(voulu.z, L.z0 + 0.25, L.z1 - 0.25);
       const reel = Math.hypot(voulu.x - p.x, voulu.z - p.z), ideal = Math.max(0.01, d * Math.cos(this.cam.pitch));
       voulu.y = 1.55 + (voulu.y - 1.55) * Math.min(1, reel / ideal);
-      voulu.y = Math.min(voulu.y, this.lieu.nom === 'hall' ? 5.2 : 3.2);
+      voulu.y = Math.min(voulu.y, this.lieu.nom === 'hall' ? (dedans ? 5.2 : 12) : 3.2);
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 8));
       this.camera.lookAt(tete);
     }
