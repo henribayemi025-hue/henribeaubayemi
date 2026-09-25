@@ -21,13 +21,20 @@ async function jeton() {
   return data?.session?.access_token || null;
 }
 
+// L'entreprise d'où l'atelier est ouvert : chaque appel la précise, et le
+// Worker ne montre ni n'ouvre les projets d'une autre entreprise (25/09).
+let entrepriseCourante = null;
+export function definirEntreprise(id) { entrepriseCourante = id || null; }
+
 // Un appel au Worker, avec le jeton de la session Supabase.
 export async function appel(chemin, { methode = 'GET', corps, brut = false, signal } = {}) {
   const j = await jeton();
   if (!j) throw new ErreurAtelier('Connecte-toi à Léo.', 401);
+  const adresse = entrepriseCourante && chemin.startsWith('/projets')
+    ? `${chemin}${chemin.includes('?') ? '&' : '?'}entreprise=${encodeURIComponent(entrepriseCourante)}` : chemin;
   let r;
   try {
-    r = await fetch(`${ATELIER_URL}/api${chemin}`, {
+    r = await fetch(`${ATELIER_URL}/api${adresse}`, {
       method: methode,
       headers: { Authorization: `Bearer ${j}`, ...(corps !== undefined ? { 'Content-Type': 'application/json' } : {}) },
       body: corps !== undefined ? JSON.stringify(corps) : undefined,

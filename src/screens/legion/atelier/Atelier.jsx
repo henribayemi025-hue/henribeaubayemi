@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch } from '@tabler/icons-react';
-import { appel, ErreurAtelier } from './api';
+import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
@@ -88,7 +88,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const [moi, setMoi] = useState(null);
   const [acces, setAcces] = useState(null); // null | 'ok' | 'hors_ligne' | 'reserve' | 'connexion' | message
   const [projets, setProjets] = useState([]);
-  const [pid, setPid] = useState(() => lire('atelier:projet'));
+  definirEntreprise(entrepriseId);
+  const cleProjet = `atelier:projet:${entrepriseId || 'aucune'}`;
+  const [pid, setPid] = useState(() => lire(cleProjet));
   const [vueBrute, setVue] = useState(null);
   // « Revoir la séance » (Beau, 25/09 : « je ne vois pas comment elle code ») :
   // on rejoue le dernier travail pas à pas — messages, fichier qui se tape,
@@ -153,7 +155,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
         setMoi(m);
         setProjets(p.projets || []);
         setAcces('ok');
-        if (!pid && p.projets?.length) setPid(p.projets[0].id);
+        // Le dernier projet ouvert, seulement s'il est bien de CETTE entreprise.
+        if (p.projets?.length && !p.projets.some((x) => x.id === pid)) setPid(p.projets[0].id);
+        if (!p.projets?.length) setPid(null);
         if (!p.projets?.length) setPanneau('nouveau');
       } catch (e) {
         if (!vivant) return;
@@ -173,7 +177,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
 
   useEffect(() => {
     if (acces !== 'ok' || !pid) return;
-    ecrire('atelier:projet', pid);
+    ecrire(cleProjet, pid);
     setFichier(null);
     setOnglets([]);
     charger(pid);

@@ -747,6 +747,21 @@ Deno.serve(compter('legion_travail', async (req: Request) => {
     entreprises = [e.id];
   }
 
+  // Le quart d'heure, lancé par le cron sans entreprise : UNE invocation par
+  // entreprise, chacune avec ses ressources (toutes à la suite dans la même
+  // dépassaient la mémoire du serveur, 25/09 : WORKER_RESOURCE_LIMIT).
+  if (jeton && corps.urgences && !corps.entreprise_id) {
+    for (const id of entreprises) {
+      const go = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-travail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: req.headers.get('Authorization') || '', 'x-finjaro-token': jeton },
+        body: JSON.stringify({ entreprise_id: id, urgences: true }),
+      }).catch((e) => console.error('urgences:', (e as Error).message));
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(go);
+    }
+    return json({ ok: true, journal: [`urgences : ${entreprises.length} entreprise(s) lancée(s)`] });
+  }
+
   const journal: string[] = [];
   const debut = Date.now();
   const aSuivre: string[] = [];

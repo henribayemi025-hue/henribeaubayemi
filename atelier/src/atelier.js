@@ -222,6 +222,15 @@ export class Atelier extends DurableObject {
     };
   }
 
+  // Membre de l'entreprise ? Lu dans la base avec le jeton de la personne.
+  async estMembre(jeton, user, entrepriseId) {
+    if (!jeton || !this.env.SUPABASE_URL) return false;
+    try {
+      const r = await fetch(`${this.env.SUPABASE_URL}/rest/v1/legion_membres?entreprise_id=eq.${entrepriseId}&user_id=eq.${user}&select=role&limit=1`, { headers: { apikey: this.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${jeton}` } });
+      return r.ok && (await r.json()).length > 0;
+    } catch { return false; }
+  }
+
   // ——— Les routes (appelées par index.js, après la vérification d'accès) ———
   async fetch(request) {
     const url = new URL(request.url);
@@ -240,7 +249,15 @@ export class Atelier extends DurableObject {
     try {
       if (p[0] !== 'projets') return erreur('route inconnue', 404);
 
-      if (p.length === 1 && methode === 'GET') return json({ projets: await this.projets() });
+      // Chaque entreprise ne voit QUE ses projets (Beau, 25/09 : le projet de
+      // Finjaro apparaissait dans sa société « test », avec son code et son
+      // aperçu — « des choses que tu ne dois même pas laisser arriver »).
+      const ENT = /^[0-9a-f-]{36}$/i;
+      const entrepriseVue = ENT.test(url.searchParams.get('entreprise') || '') ? url.searchParams.get('entreprise') : null;
+      if (p.length === 1 && methode === 'GET') {
+        const liste = await this.projets();
+        return json({ projets: entrepriseVue ? liste.filter((x) => x.entreprise_id === entrepriseVue) : liste });
+      }
 
       if (p.length === 1 && methode === 'POST') {
         const nom = String(corps.nom || '').trim().slice(0, 80);
@@ -250,7 +267,8 @@ export class Atelier extends DurableObject {
         if (liste.length >= 30) return erreur('30 projets au plus en V0.');
         // L'entreprise de Léo d'où l'on crée le projet (vérifiée par les règles
         // d'accès de la base : il faut en être membre, sinon rien n'est rattaché).
-        const entreprise = /^[0-9a-f-]{36}$/i.test(String(corps.entreprise_id || '')) ? corps.entreprise_id : null;
+        const entreprise = ENT.test(String(corps.entreprise_id || '')) ? corps.entreprise_id : null;
+        if (entreprise && !(await this.estMembre(jeton, user, entreprise))) return erreur('Tu n\'es pas membre de cette entreprise.', 403);
         const projet = { id: crypto.randomUUID(), nom, depart, cree_le: new Date().toISOString(), entreprise_id: entreprise };
         const e = nouvelEtat(projet, new Date(), plafondSession(this.env));
         e.proprietaire = user;
@@ -272,14 +290,21 @@ export class Atelier extends DurableObject {
       const e = await this.etat(pid);
       if (!e) return erreur('projet introuvable', 404);
       const action = p[2] || '';
-      // Les projets créés avant le 25/09 n'étaient rattachés à aucune
-      // entreprise : l'écran envoie celle d'où on l'ouvre (vérifiée par la base
-      // à chaque lecture, avec le jeton de la personne).
-      if (!e.projet.entreprise_id && /^[0-9a-f-]{36}$/i.test(String(corps.entreprise_id || '')) && e.proprietaire === user) {
-        e.projet.entreprise_id = corps.entreprise_id;
+      // Un projet d'une autre entreprise ne s'ouvre pas d'ici.
+      if (entrepriseVue && e.projet.entreprise_id !== entrepriseVue) return erreur('Ce projet appartient à une autre entreprise.', 404);
+      // Ranger un ancien projet (créé avant le 25/09, sans entreprise) :
+      // seulement le propriétaire, seulement vers une entreprise dont il est membre.
+      if (action === 'entreprise' && methode === 'PUT') {
+        const cible = ENT.test(String(corps.entreprise_id || '')) ? corps.entreprise_id : null;
+        if (!cible || e.proprietaire !== user) return erreur('Non permis.', 403);
+        if (e.projet.entreprise_id) return erreur('Ce projet est déjà rangé dans une entreprise.', 409);
+        if (!(await this.estMembre(jeton, user, cible))) return erreur('Tu n\'es pas membre de cette entreprise.', 403);
+        e.projet.entreprise_id = cible;
         const liste = await this.projets();
-        await this.ctx.storage.put('projets', liste.map((x) => (x.id === pid ? { ...x, entreprise_id: corps.entreprise_id } : x)));
+        await this.ctx.storage.put('projets', liste.map((x) => (x.id === pid ? { ...x, entreprise_id: cible } : x)));
         await this.sauver(pid, e);
+        this.equipes.delete(pid);
+        return json(this.vue(pid, e, this.env));
       }
 
       if (!action && methode === 'GET') return json(this.vue(pid, e, this.env));
