@@ -6,6 +6,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { gemini } from './cout.ts';
 import { generer, moteursSimples } from './moteur.ts';
 import { classerFiches, voirFiche } from './fiches.ts';
+import { depotDe, codeFichiers, codeLire, codeChercher, paiements } from './code.ts';
 
 const MODELE_ENQUETE = 'gemini-2.5-flash';
 const TIMEOUT_MS = 25_000;
@@ -51,11 +52,28 @@ const OUTILS = [{
     // (le contenu) et Lien : c'est la voix des clientes, sans leur nom.
     // Source « mesures » : seule l'équipe Finjaro l'a, et les droits par
     // agent (peut_lire) s'appliquent comme pour les autres chiffres.
+    // Les paiements un par un (Claudinette, 25/09 : « que Caisse me passe les
+    // débuts de paiement ligne par ligne ») : aucune donnée personnelle.
+    { name: 'paiements', description: "Les débuts de paiement et les commandes de la période, UNE PAR UNE : numéro de commande, boutique et son pays, montant, statut, statut du paiement, moyen de paiement, livraison, horodatage de chaque étape (passée, payée, confirmée, expédiée, livrée, annulée) et motif d'annulation. Aucun nom, téléphone ni adresse ; comptes de test exclus.",
+      parameters: { type: 'OBJECT', properties: { jours: { type: 'INTEGER', description: 'Période en jours, de 1 à 90 (30 par défaut).' } } } },
     { name: 'questions_finia', description: "Les questions fréquentes posées à Finia (l'assistante de la place de marché) cette semaine, anonymes : combien d'échanges gardés, combien de personnes distinctes, par type (question restée sans réponse, correction de la personne, pouce vers le bas), par langue, et des exemples déjà nettoyés (aucun nom, téléphone, e-mail ni adresse). Utile pour le support, la FAQ, le contenu et les relances.",
       parameters: { type: 'OBJECT', properties: { jours: { type: 'INTEGER', description: 'Période en jours, de 1 à 7 (7 par défaut).' } } } },
   ],
 }];
 const MAX_APPELS = 4;
+
+// LE CODE de l'entreprise (son dépôt GitHub branché) : Alpha disait « je n'ai
+// pas le code », Claudinette « ni le code ni la base » (25/09).
+const OUTILS_CODE = [
+  { name: 'code_fichiers', description: "Lister les fichiers d'un dossier du dépôt de code de l'entreprise (vide = la racine).",
+    parameters: { type: 'OBJECT', properties: { dossier: { type: 'STRING', description: 'Par exemple « src/screens/vendor ».' } } } },
+  { name: 'code_lire', description: 'Lire un fichier du dépôt de code (12 000 caractères à la fois ; « a_partir_de » pour la suite).',
+    parameters: { type: 'OBJECT', properties: { chemin: { type: 'STRING' }, a_partir_de: { type: 'INTEGER' } }, required: ['chemin'] } },
+  { name: 'code_chercher', description: "Retrouver des fichiers du dépôt par un mot de leur NOM ou de leur chemin (par exemple « vendor », « checkout », « prix »).",
+    parameters: { type: 'OBJECT', properties: { mot: { type: 'STRING' } }, required: ['mot'] } },
+];
+const OUTILS_CODE_NOMS = new Set(OUTILS_CODE.map((o) => o.name));
+const LONGUEUR = (nom: string) => (nom === 'code_lire' ? 12_500 : nom === 'fiches' || nom === 'voir_fiche' || nom === 'paiements' ? 7000 : 3000);
 
 // Réservés à la Direction (Beau, 22/09: « qui sont ces personnes ? »): qui a
 // fait une action, et la fiche d'une personne — noms et activité, jamais
@@ -113,8 +131,12 @@ export function verifsPour(verifs: string[], peut: (source: string) => boolean):
 // Une enquête par message, faite une fois pour toute l'équipe: le modèle
 // choisit les outils, la base répond, et les résultats entrent dans la
 // consigne de chaque agent qui répond. Rien à vérifier → liste vide.
-export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true, compta: Compta | null = null): Promise<string[]> {
+export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true, compta: Compta | null = null, codeDe: string | null = null): Promise<string[]> {
+  // `codeDe` : l'entreprise dont on lit le dépôt de code, si elle en a branché un.
+  const depot = codeDe ? await depotDe(service, codeDe).catch(() => null) : null;
+  const maxAppels = depot ? 7 : MAX_APPELS;
   const declarations = [
+    ...(depot ? OUTILS_CODE : []),
     ...(mesures ? OUTILS[0].functionDeclarations : []),
     ...(direction ? OUTILS_DIRECTION : []),
     ...(boutique ? OUTILS_BOUTIQUE : []),
@@ -125,18 +147,23 @@ export async function enqueter(apiKey: string, service: ReturnType<typeof create
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const contents: unknown[] = [{ role: 'user', parts: [{ text:
 `Tu prépares la réponse d'une équipe à son fondateur${mesures ? ', sur la place de marché Finjaro' : ''}. Nous sommes le ${aujourdhui}.
-${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}${compta ? `L'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les outils ma_compta_* lisent les totaux de ses livres (mois, ventes, dépenses, impayés).\n` : ''}La conversation récente:
+${depot ? `L'entreprise a branché SON dépôt de code (${depot.depot}) : code_chercher retrouve un fichier par son nom, code_fichiers liste un dossier, code_lire lit un fichier. Pour une question sur un écran, une fonction ou l'avancement d'un développement, LIS le code au lieu de dire que tu ne l'as pas.\n` : ''}${boutique ? `L'entreprise a branché SA boutique Finjaro « ${boutique.nom} »: les outils ma_boutique_* lisent ses ventes, son stock, ses avis, ses messages.\n` : ''}${compta ? `L'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les outils ma_compta_* lisent les totaux de ses livres (mois, ventes, dépenses, impayés).\n` : ''}La conversation récente:
 ${fil}
 
 Le dernier message, auquel il faut répondre: « ${question} »
 
-Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' ou dans la comptabilité' : ''}, appelle les outils nécessaires (${MAX_APPELS} appels au plus). Sinon n'appelle rien et réponds seulement « rien ».` }] }];
+Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' ou dans la comptabilité' : ''}${depot ? ' ou dans le code' : ''}, appelle les outils nécessaires (${maxAppels} appels au plus). Sinon n'appelle rien et réponds seulement « rien ».` }] }];
   const resultats: string[] = [];
   // Un outil, sa source (la place de marché, SA boutique, SA comptabilité,
   // les personnes pour la Direction) : toujours une requête fixe côté base.
   const executer = async (nom: string, args: Record<string, unknown>): Promise<unknown> => {
     let appel: Promise<{ data: unknown; error: { message: string } | null }>;
-    if (OUTILS_MA_COMPTA.has(nom)) {
+    if (OUTILS_CODE_NOMS.has(nom) || nom === 'paiements') {
+      const f = nom === 'paiements' ? () => paiements(service, args)
+        : () => (nom === 'code_fichiers' ? codeFichiers(depot!, args) : nom === 'code_lire' ? codeLire(depot!, args) : codeChercher(depot!, args));
+      appel = (depot || nom === 'paiements' ? f() : Promise.reject(new Error('aucun dépôt de code branché')))
+        .then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: { message: e.message } }));
+    } else if (OUTILS_MA_COMPTA.has(nom)) {
       appel = compta ? service.rpc('legion_outil_comptabilite', { p_nom: nom.replace('ma_compta_', ''), p_params: args, p_entreprise: compta.entreprise_id }) : Promise.resolve({ data: null, error: { message: 'aucune comptabilité branchée' } });
     } else if (OUTILS_MA_BOUTIQUE.has(nom)) {
       appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
@@ -154,7 +181,7 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
     return error ? { erreur: error.message } : data;
   };
   let googleMuet = false;
-  for (let tour = 0; tour < 3 && resultats.length < MAX_APPELS; tour += 1) {
+  for (let tour = 0; tour < (depot ? 5 : 3) && resultats.length < maxAppels; tour += 1) {
     let parts: Array<{ functionCall?: { name: string; args?: Record<string, unknown> } }> = [];
     try {
       const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${MODELE_ENQUETE}:generateContent`, {
@@ -166,7 +193,7 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
       if (!resp.ok) { console.error('enquête:', resp.status, (await resp.text()).slice(0, 200)); googleMuet = tour === 0; break; }
       parts = (await resp.json())?.candidates?.[0]?.content?.parts ?? [];
     } catch (e) { console.error('enquête:', (e as Error).message); googleMuet = tour === 0; break; }
-    const appels = parts.filter((x) => x.functionCall).slice(0, MAX_APPELS - resultats.length);
+    const appels = parts.filter((x) => x.functionCall).slice(0, maxAppels - resultats.length);
     if (!appels.length) break;
     contents.push({ role: 'model', parts });
     const reponses = [];
@@ -174,7 +201,7 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
       const nom = functionCall!.name;
       const args = functionCall!.args ?? {};
       const resultat = await executer(nom, args);
-      resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, nom === 'fiches' || nom === 'voir_fiche' ? 7000 : 3000)}`);
+      resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, LONGUEUR(nom))}`);
       reponses.push({ functionResponse: { name: nom, response: { resultat } } });
     }
     contents.push({ role: 'user', parts: reponses });
@@ -192,17 +219,17 @@ Si y répondre demande un chiffre ou une vérification dans la base${compta ? ' 
 Les outils disponibles (et SEULEMENT ceux-là) :
 ${liste}
 
-Réponds par la liste des appels à faire (${MAX_APPELS} au plus), chacun avec le nom exact de l'outil et ses paramètres en JSON (par exemple {"date":"${aujourdhui}"}). S'il n'y a rien à vérifier, une liste vide.`,
+Réponds par la liste des appels à faire (${maxAppels} au plus), chacun avec le nom exact de l'outil et ses paramètres en JSON (par exemple {"date":"${aujourdhui}"}). S'il n'y a rien à vérifier, une liste vide.`,
       { type: 'OBJECT', properties: { appels: { type: 'ARRAY', items: { type: 'OBJECT', properties: { nom: { type: 'STRING' }, parametres: { type: 'STRING' } }, required: ['nom', 'parametres'] } } }, required: ['appels'] },
       { temperature: 0.1, maxSortie: 800, modeles: moteursSimples() });
     if (!('erreur' in r)) {
-      for (const a of (Array.isArray(r.obj.appels) ? r.obj.appels : []).slice(0, MAX_APPELS) as { nom: string; parametres: string }[]) {
+      for (const a of (Array.isArray(r.obj.appels) ? r.obj.appels : []).slice(0, maxAppels) as { nom: string; parametres: string }[]) {
         const nom = String(a.nom || '').trim();
         if (!permis.has(nom)) continue;
         let args: Record<string, unknown> = {};
         try { const x = JSON.parse(String(a.parametres || '{}')); if (x && typeof x === 'object' && !Array.isArray(x)) args = x; } catch { /* paramètres illisibles : l'outil prend ses valeurs par défaut */ }
         const resultat = await executer(nom, args);
-        resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, nom === 'fiches' || nom === 'voir_fiche' ? 7000 : 3000)}`);
+        resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, LONGUEUR(nom))}`);
       }
     } else console.error('enquête (relais):', r.erreur);
   }

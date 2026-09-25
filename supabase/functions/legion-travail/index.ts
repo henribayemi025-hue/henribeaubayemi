@@ -444,6 +444,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const texteCompta = compta ? `\nL'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les totaux de ses livres (mois, ventes, dépenses, impayés) sont lisibles par les outils ma_compta_* (vérifications ci-dessous); on dit « nos comptes ». Un montant se donne avec la devise de l'espace, jamais converti de tête.` : '';
   projet += texteCompta;
   const peutEnqueter = !!(mesures || boutique || compta);
+  // Son dépôt de code branché (connecteur GitHub) : les agents le lisent.
+  const { count: nbDepots } = await service.from('legion_connecteurs').select('id', { count: 'exact', head: true }).eq('entreprise_id', entrepriseId).eq('type', 'github').eq('actif', true);
+  const aUnDepot = (nbDepots ?? 0) > 0;
   // La feuille de route du fondateur (0168): chacun travaille pour elle.
   const feuille = await lireFeuille(service, entrepriseId, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
   projet += feuille;
@@ -613,8 +616,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // côté une tâche qui a échoué trois fois (pas de dépense en boucle).
       tache.meta = { ...(tache.meta || {}), travaille_depuis: new Date().toISOString(), essais: (tache.meta?.essais || 0) + 1 };
       await service.from('legion_messages').update({ meta: tache.meta }).eq('id', tache.id);
-      const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique) || (peut(a, 'comptabilite') && !!compta);
-      const verifie = peutEnqueter && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null) : [];
+      const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique) || (peut(a, 'comptabilite') && !!compta) || (peut(a, 'github') && aUnDepot);
+      const verifie = (peutEnqueter || aUnDepot) && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres ou quel code vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null) : [];
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
       let recu = '';
       if (tache.meta?.suite_de?.tache_id) {
