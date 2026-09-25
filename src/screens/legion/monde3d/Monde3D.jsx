@@ -24,6 +24,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const boite = useRef(null);
   const monde = useRef(null);
   const [etat, setEtat] = useState('chargement'); // chargement | pret | erreur
+  const [progres, setProgres] = useState(null);
+  const [essai, setEssai] = useState(0);
   const [lieu, setLieu] = useState('hall');
   const [camera, setCamera] = useState('tps');
   const [proche, setProche] = useState(null);
@@ -58,12 +60,16 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     if (!document.getElementById('monde-style')) { const s = document.createElement('style'); s.id = 'monde-style'; s.textContent = STYLE; document.head.appendChild(s); }
     (async () => {
       try {
+        // Au-delà de 60 s, on n'attend plus en silence.
+        const delai = setTimeout(() => { if (!fini) setEtat((x) => (x === 'chargement' ? 'erreur' : x)); }, 60000);
         const { Monde } = await import('./moteur');
-        if (fini) return;
+        if (fini) { clearTimeout(delai); return; }
         const m = new Monde(boite.current, {
           mobile, langue,
           surEvenement: (e) => {
             if (e.type === 'lieu') setLieu(e.lieu);
+            if (e.type === 'progression') setProgres(e.total ? Math.round((e.faits / e.total) * 100) : null);
+            if (e.type === 'perdu') setEtat('erreur');
             if (e.type === 'camera') setCamera(e.mode);
             if (e.type === 'proximite') setProche(e.cible);
             if (e.type === 'interagir') interagirRef.current?.(e.cible);
@@ -77,6 +83,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         await m.allerA('hall', { nomEntreprise: entreprise.nom, avatar });
         if (fini) { m.detruire(); return; }
         m.demarrer();
+        clearTimeout(delai);
         setEtat('pret');
       } catch (err) {
         console.error(err);
@@ -84,7 +91,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       }
     })();
     return () => { fini = true; monde.current?.detruire(); monde.current = null; };
-  }, [entreprise.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [entreprise.id, essai]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { monde.current?.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) }); }, [agents, ou, faits, departements]);
 
@@ -157,10 +164,15 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {etat !== 'pret' && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#0b1120]/90 text-center">
-          {etat === 'erreur' ? <p className="max-w-sm px-6 text-[14px] text-legion-ink">{t('legion.monde.erreur')}</p> : (
+          {etat === 'erreur' ? (
+            <>
+              <p className="max-w-sm px-6 text-[14px] text-legion-ink">{t('legion.monde.erreur')}</p>
+              <button type="button" onClick={() => { setEtat('chargement'); setProgres(null); setEssai((n) => n + 1); }} className="rounded-pill bg-legion-gold px-4 py-2 text-[13px] font-semibold text-legion-bg">{t('legion.monde.reessayer')}</button>
+            </>
+          ) : (
             <>
               <span className="h-9 w-9 animate-spin rounded-full border-2 border-legion-gold border-t-transparent" />
-              <p className="text-[13.5px] text-legion-muted">{t('legion.monde.chargement')}</p>
+              <p className="text-[13.5px] text-legion-muted">{t('legion.monde.chargement')}{progres != null ? ` ${progres} %` : ''}</p>
             </>
           )}
         </div>

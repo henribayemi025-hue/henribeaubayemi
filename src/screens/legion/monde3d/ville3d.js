@@ -33,9 +33,10 @@ function canvasTex(l, h, dessiner, { repeat = [1, 1], srgb = true } = {}) {
 }
 
 // Mur-rideau : panneaux de verre, montants, un peu de variation d'un vitrage à l'autre.
-function texturesFacade(r, teinte) {
+function texturesFacade(r, teinte, petit = false) {
   const cols = 8, rangs = 16;
-  const couleur = canvasTex(512, 1024, (x, w, h) => {
+  const L = petit ? 256 : 512, H = petit ? 512 : 1024;
+  const couleur = canvasTex(L, H, (x, w, h) => {
     const pw = w / cols, ph = h / rangs;
     for (let i = 0; i < cols; i += 1) for (let j = 0; j < rangs; j += 1) {
       const v = 0.85 + r() * 0.3;
@@ -48,14 +49,14 @@ function texturesFacade(r, teinte) {
     for (let i = 0; i <= cols; i += 1) x.fillRect(i * pw - 3, 0, 6, h);
     for (let j = 0; j <= rangs; j += 1) x.fillRect(0, j * ph - 5, w, 10);
   });
-  const rugosite = canvasTex(512, 1024, (x, w, h) => {
+  const rugosite = petit ? null : canvasTex(L, H, (x, w, h) => {
     x.fillStyle = '#1a1a1a'; x.fillRect(0, 0, w, h);
     const pw = w / cols, ph = h / rangs;
     x.fillStyle = '#b0b0b0';
     for (let i = 0; i <= cols; i += 1) x.fillRect(i * pw - 3, 0, 6, h);
     for (let j = 0; j <= rangs; j += 1) x.fillRect(0, j * ph - 5, w, 10);
   }, { srgb: false });
-  const fenetres = canvasTex(512, 1024, (x, w, h) => {
+  const fenetres = canvasTex(L, H, (x, w, h) => {
     x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
     const pw = w / cols, ph = h / rangs;
     for (let i = 0; i < cols; i += 1) for (let j = 0; j < rangs; j += 1) {
@@ -250,7 +251,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2 });
   }
-  const facades = ['#7f93a6', '#8d9aa3', '#5f7386', '#9fb0bd', '#6b7d74', '#a39787', '#4f5d6e'].map((c) => texturesFacade(r, c));
+  const facades = (monde.mobile ? ['#7f93a6', '#9fb0bd', '#a39787'] : ['#7f93a6', '#8d9aa3', '#5f7386', '#9fb0bd', '#6b7d74', '#a39787', '#4f5d6e']).map((c) => texturesFacade(r, c, monde.mobile));
   const beton = monde.matiere('concrete_tile_facade', 3);
   for (const il of ilots) {
     const l = il.x1 - il.x0, p = il.z1 - il.z0;
@@ -268,9 +269,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const h = 18 + r() * (dist < 90 ? 70 : 130);
       const w = lx - 2, d = lz - 2;
       const f = facades[Math.floor(r() * facades.length)];
-      const mat = new THREE.MeshStandardMaterial({ map: f.couleur, roughnessMap: f.rugosite, roughness: 1, metalness: 0.75, envMap: envCiel, envMapIntensity: 1.2, emissive: '#ffffff', emissiveMap: f.fenetres, emissiveIntensity: 0 });
+      const mat = new THREE.MeshStandardMaterial({ map: f.couleur, roughnessMap: f.rugosite, roughness: f.rugosite ? 1 : 0.3, metalness: 0.75, envMap: envCiel, envMapIntensity: 1.2, emissive: '#ffffff', emissiveMap: f.fenetres, emissiveIntensity: 0 });
       mat.map.repeat.set(Math.max(1, w / 12), Math.max(1, h / 24));
-      mat.roughnessMap.repeat.copy(mat.map.repeat); mat.emissiveMap.repeat.copy(mat.map.repeat);
+      if (mat.roughnessMap) mat.roughnessMap.repeat.copy(mat.map.repeat); mat.emissiveMap.repeat.copy(mat.map.repeat);
       const tour = new THREE.Mesh(new THREE.BoxGeometry(w, h - 5, d), mat);
       tour.position.set(bx, 5 + (h - 5) / 2, bz); tour.castShadow = dist < 120; tour.receiveShadow = true;
       racine.add(tour);
@@ -353,7 +354,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   const passants = [];
   (async () => {
     const corps = ['Female_Adult_09', 'Male_Adult_04', 'Female_Party_02'];
-    const combien = monde.mobile ? 2 : 6;
+    const combien = monde.mobile ? 0 : 6;
     for (let k = 0; k < combien; k += 1) {
       const t = trottoirs[k % trottoirs.length];
       const p = await monde.personnage(corps[k % corps.length]);
@@ -364,8 +365,8 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       racine.add(p.objet);
       passants.push(p);
     }
-    // Une terrasse de restaurant : des clients attablés
-    for (const [x, z, rot, c] of [[-33.5, 8, Math.PI / 2, 'Female_Party_02'], [-33.5, 10, Math.PI / 2, 'Male_Adult_04']]) {
+    // Une terrasse de restaurant : des clients attablés (pas au téléphone)
+    if (!monde.mobile) for (const [x, z, rot, c] of [[-33.5, 8, Math.PI / 2, 'Female_Party_02'], [-33.5, 10, Math.PI / 2, 'Male_Adult_04']]) {
       const table = await monde.objet('side_table_01', { x: x - 0.9, y: 0.18, z: z + 1 });
       racine.add(table);
       const p = await monde.personnage(c);

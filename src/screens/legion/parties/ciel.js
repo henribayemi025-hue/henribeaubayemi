@@ -8,7 +8,7 @@
 // Météo : Open-Meteo (sans clé ; données CC BY 4.0). Gardée 30 min dans le
 // navigateur : une personne = au plus deux appels par heure.
 
-const CLE = 'leo:ciel';
+const CLE = 'leo:ciel-2'; // -2 : l'ancienne réserve pouvait garder des °F hors des États-Unis
 const CLE_VILLE = 'leo:ciel-ville';
 const TRENTE_MIN = 30 * 60 * 1000;
 
@@ -57,7 +57,9 @@ export function genreMeteo(code) {
 // Fahrenheit seulement là où on compte en Fahrenheit.
 export function uniteTemperature(tz, langue) {
   const us = /^(America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Indiana|Kentucky|Boise|Juneau|Adak|Nome|Sitka|Yakutat|Menominee|Metlakatla|North_Dakota)|Pacific\/Honolulu|US\/)/;
-  return us.test(String(tz || '')) || /-US$/i.test(String(langue || '')) ? 'fahrenheit' : 'celsius';
+  // Le lieu décide, pas la langue : un téléphone réglé en anglais américain à Paris affiche des °C.
+  void langue;
+  return us.test(String(tz || '')) ? 'fahrenheit' : 'celsius';
 }
 
 export const ilFaitChaud = (temperature, unite) => temperature != null && (unite === 'fahrenheit' ? temperature >= 86 : temperature >= 30);

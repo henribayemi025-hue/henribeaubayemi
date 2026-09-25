@@ -40,7 +40,7 @@ export class Monde {
     this.langue = langue;
     this.emettre = surEvenement;
     this.cache = new Map();
-    this.chargeur = new GLTFLoader();
+    this.chargeur = new GLTFLoader(THREE.DefaultLoadingManager);
     this.textures = new THREE.TextureLoader();
     this.horloge = new THREE.Clock();
     this.touches = new Set();
@@ -61,6 +61,9 @@ export class Monde {
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     conteneur.appendChild(r.domElement);
     r.domElement.style.touchAction = 'none';
+    // Si le téléphone reprend la mémoire graphique, on le dit au lieu de rester figé.
+    r.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.emettre({ type: 'perdu' }); });
+    THREE.DefaultLoadingManager.onProgress = (_u, faits, total) => this.emettre({ type: 'progression', faits, total });
     this.rendu = r;
 
     this.etiquettes = new CSS2DRenderer();
@@ -119,6 +122,13 @@ export class Monde {
       if (srgb) x.colorSpace = THREE.SRGBColorSpace;
       return x;
     };
+    // Au téléphone : la couleur seule, en 512 (la mémoire graphique d'un
+    // navigateur de téléphone — surtout celui de WhatsApp — est très petite).
+    if (this.mobile) {
+      const x = this.textures.load(`${BASE}matieres-m/${nom}/diffuse.webp`);
+      x.wrapS = x.wrapT = THREE.RepeatWrapping; x.repeat.set(repetition, repetition * (reglages.ratio || 1)); x.colorSpace = THREE.SRGBColorSpace;
+      return new THREE.MeshStandardMaterial({ map: x, roughness: 0.8, ...reglages.m });
+    }
     const arm = t('arm', false);
     return new THREE.MeshStandardMaterial({ map: t('diffuse', true), normalMap: t('nor_gl', false), aoMap: arm, roughnessMap: arm, metalnessMap: arm, ...reglages.m });
   }
@@ -128,7 +138,15 @@ export class Monde {
     o.position.set(x, y, z);
     o.rotation.y = rot;
     o.scale.setScalar(echelle);
-    o.traverse((m) => { if (m.isMesh) { m.castShadow = ombre; m.receiveShadow = true; } });
+    o.traverse((m) => {
+      if (!m.isMesh) return;
+      m.castShadow = ombre; m.receiveShadow = true;
+      if (this.mobile && m.material && !m.material.userData.allege) {
+        // Les cartes de relief et de rugosité ne sont jamais envoyées au téléphone.
+        Object.assign(m.material, { normalMap: null, roughnessMap: null, metalnessMap: null, aoMap: null });
+        m.material.userData.allege = true; m.material.needsUpdate = true;
+      }
+    });
     return o;
   }
   async clip(genre, nom) {
@@ -141,7 +159,7 @@ export class Monde {
 
   // ——— Personnages ———
   async personnage(corps) {
-    const g = await this.charger(`gens/${corps}.glb`);
+    const g = await this.charger(`${this.mobile ? 'gens-m' : 'gens'}/${corps}.glb`);
     const objet = clonerSquelette(g.scene);
     objet.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; } });
     const genre = genreDe(corps);

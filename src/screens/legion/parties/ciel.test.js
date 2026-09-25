@@ -24,6 +24,7 @@ describe('ciel de la Ville', () => {
     expect(uniteTemperature('America/Chicago', 'en-US')).toBe('fahrenheit');
     expect(uniteTemperature('America/Toronto', 'en-CA')).toBe('celsius');
     expect(uniteTemperature('Europe/London', 'en-GB')).toBe('celsius');
+    expect(uniteTemperature('Europe/Paris', 'en-US')).toBe('celsius');
     expect(ilFaitChaud(31, 'celsius')).toBe(true);
     expect(ilFaitChaud(27, 'celsius')).toBe(false);
     expect(ilFaitChaud(88, 'fahrenheit')).toBe(true);

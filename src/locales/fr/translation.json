@@ -1334,7 +1334,7 @@
         "ouAlpha": "Où est {{nom}} ?"
       },
       "chargement": "Chargement du monde 3D…",
-      "erreur": "Le monde 3D n'a pas pu s'ouvrir sur cet appareil (WebGL indisponible).",
+      "erreur": "Le monde 3D n'a pas pu s'ouvrir ou s'est interrompu sur cet appareil (mémoire ou connexion). Réessaie ; s'il reste bloqué dans WhatsApp, ouvre le lien dans Safari ou Chrome.",
       "aide": "Z Q S D ou flèches : marcher · Maj : courir · E : interagir · V : caméra · glisser : regarder",
       "faitsTitre": "Aujourd'hui chez {{nom}}",
       "faitsRendues": "{{n}} tâche(s) rendue(s) aujourd’hui",
@@ -1343,7 +1343,8 @@
       "faitsTravail": "Au travail : {{noms}}",
       "faitsPersonne": "Personne au travail à l'instant",
       "etage": "Étage {{n}} · {{nom}}",
-      "etages": "Étages ({{n}})"
+      "etages": "Étages ({{n}})",
+      "reessayer": "Réessayer"
     }
   },
   "equipe": {
