@@ -781,7 +781,7 @@
     },
     "vues": {
       "titre": {
-        "bureau": "The office",
+        "bureau": "The building",
         "frise": "The timeline",
         "presentation": "The presentation",
         "idees": "The idea board",
@@ -1123,7 +1123,12 @@
         "compte_rendu": "meeting summary",
         "decision": "decision",
         "dit": "says"
-      }
+      },
+      "entree": "The live building: watch your agents work",
+      "entreeCourte": "The building",
+      "banniere": "The live building",
+      "banniereAide": "Watch your agents work together, right now: {{n}} at work.",
+      "voir": "Enter"
     },
     "rouvrirTaches": "Reopen the task board"
   },

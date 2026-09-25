@@ -42,6 +42,36 @@ const tailleDe = (n) => (n <= 5 ? 'cocon' : n <= 40 ? 'startup' : n <= 300 ? 'sc
 // Les outils les plus courants; « D'autres ? » laisse écrire le reste.
 const OUTILS = ['Excel', 'Google Sheets', 'Word', 'Google Docs', 'PowerPoint', 'WhatsApp', 'Gmail', 'Outlook', 'Notion', 'Trello', 'Slack', 'Microsoft Teams', 'Power BI', 'Tableau', 'Canva', 'Finjaro Accounting'];
 
+// Un projet de site, d'application, de logiciel ou de place de marché arrive
+// avec son équipe de DÉVELOPPEMENT, qui a le droit de coder dans l'atelier
+// (Beau, 25/09 : « je crée une marketplace de voitures… il n'y a même pas
+// d'agents spécialisés dans le développement web »). La création prend les
+// postes du modèle dans l'ordre, jusqu'à l'effectif : une petite équipe
+// n'arrivait jamais jusqu'aux développeurs. Vaut pour TOUTES les entreprises.
+const PROJET_CODE = /\b(site|web|app|appli|application|logiciel|saas|market ?place|plateforme|e-?commerce|boutique en ligne|code|coder|d[ée]velopp|mobile|api)\w*/i;
+const POSTE_CODE = /(d[ée]veloppeu|developer|int[ée]grateur|ing[ée]nieur (logiciel|web|mobile|d'int[ée]gration|de croissance|full)|technique|full.?stack|front.?end|back.?end|devops|tests automatis|programm)/i;
+async function equiperDeveloppeurs(entrepriseId, texte) {
+  if (!PROJET_CODE.test(texte)) return;
+  try {
+    const { data: agents } = await supabase.from('legion_agents').select('id, poste, cle').eq('entreprise_id', entrepriseId).is('user_id', null);
+    const devs = (agents || []).filter((a) => POSTE_CODE.test(a.poste || ''));
+    if (devs.length) {
+      await supabase.from('legion_agents').update({ peut_coder: true }).in('id', devs.map((a) => a.id));
+      return;
+    }
+    const graine = (c) => `https://api.dicebear.com/9.x/notionists/svg?seed=${entrepriseId}-${c}`;
+    await supabase.from('legion_agents').insert([
+      { entreprise_id: entrepriseId, cle: 'developpeuse-web', nom: 'Awa Mensah', poste: 'Développeuse web full-stack', departement: 'Développement',
+        mandat: "Construit le site et l'application dans l'atelier de code : pages, base de données, paiement, tests. Rien ne part en ligne sans le Confirmer du fondateur.",
+        avatar_url: graine('developpeuse-web'), couleur: '#2A9D8F', est_directeur: true, actif: true, ordre: 40, autonomie: 'supervise', peut_coder: true },
+      { entreprise_id: entrepriseId, cle: 'testeur-qualite', nom: 'Idris Kamga', poste: 'Testeur qualité', departement: 'Développement',
+        mandat: "Relit et teste chaque modification avant qu'elle soit acceptée : ce qui marche, ce qui casse, sur téléphone et sur ordinateur.",
+        avatar_url: graine('testeur-qualite'), couleur: '#6366F1', est_directeur: false, actif: true, ordre: 41, autonomie: 'supervise', peut_coder: false },
+    ]);
+    await supabase.from('legion_canaux').insert({ entreprise_id: entrepriseId, cle: 'developpement', nom: 'Développement', a_quoi_ca_sert: 'Le code du projet : le site, l’application, les tests.', emoji: '💻', ordre: 30 });
+  } catch { /* l'entreprise existe déjà ; l'équipe de code s'ajoute aussi depuis le catalogue */ }
+}
+
 export default function Fonder() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -139,6 +169,7 @@ export default function Fonder() {
         p_effectif: Math.max(1, Math.min(10000, Number(effectif) || 1)),
       });
       if (err) throw err;
+      await equiperDeveloppeurs(id, `${nom} ${projet} ${objectif} ${modele.cle} ${modele.nom || ''}`);
       // Les agents choisissent leurs compétences dès l'arrivée (Beau: « chaque
       // type d'entreprise arrive avec ses agents et leurs compétences »).
       navigate(`/legion/${id}?equiper=1`);

@@ -24,7 +24,6 @@ import { Accueil } from './parties/Accueil';
 import { Interrupteur } from './parties/Interrupteur';
 import { Visage } from './parties/Visage';
 import { couleurDept, clePrivee, sansAccent, raisonLisible } from './parties/outils';
-import { ATELIER_ENTREPRISE } from './atelier/api';
 
 // L'Atelier de code (V0, 24/09) : chargé seulement quand on l'ouvre (l'éditeur
 // CodeMirror ne pèse rien sur le reste de Léo).
@@ -693,9 +692,9 @@ export default function Entreprise() {
   if (data.refuse) return <Navigate to="/legion" replace />;
 
   const langue = i18n.language;
-  // V0 : l'atelier n'apparaît que dans l'entreprise Finjaro, pour son
-  // propriétaire. Le Worker de l'atelier refait la vérification de son côté.
-  const atelierOuvert = data.entreprise.id === ATELIER_ENTREPRISE && data.role === 'proprietaire';
+  // L'atelier pour le propriétaire de TOUTE entreprise de Léo (25/09, Beau :
+  // « tout le monde doit avoir accès »). Le Worker refait la vérification.
+  const atelierOuvert = data.role === 'proprietaire';
   const propsColonne = {
     dept, departements, salons: departements, prives, courant: salonId, onChoisirSalon: choisirSalon,
     agents: data.agents, moi, messages: data.messages, langue, onAllumer: allumer, onFiche: setFiche, onEcrireA: ecrireA,
@@ -784,10 +783,10 @@ export default function Entreprise() {
         </div>
       )}
 
-      {vue !== 'chat' && <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} onAtelier={atelierOuvert ? () => setOutil('atelier') : null} t={t} />}
+      {vue !== 'chat' && <RailPastilles departements={departements} courant={deptId} onChoisir={choisirDept} onTous={() => choisirDept(null)} agents={data.agents} onAtelier={atelierOuvert ? () => setOutil('atelier') : null} onImmeuble={() => setOutil('bureau')} t={t} />}
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <Rail entreprise={data.entreprise} departements={departements} courant={vue === 'accueil' ? null : deptId} onChoisir={choisirDept} onTous={() => { setDeptId(null); setVue('accueil'); }} agents={data.agents} onAtelier={atelierOuvert ? () => setOutil('atelier') : null} t={t} />
+        <Rail entreprise={data.entreprise} departements={departements} courant={vue === 'accueil' ? null : deptId} onChoisir={choisirDept} onTous={() => { setDeptId(null); setVue('accueil'); }} agents={data.agents} onAtelier={atelierOuvert ? () => setOutil('atelier') : null} onImmeuble={() => setOutil('bureau')} t={t} />
 
         {vue === 'accueil' && (
           <Accueil
@@ -872,7 +871,7 @@ export default function Entreprise() {
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'atelier' && (
             <Suspense fallback={<div className="p-6 text-caption text-legion-muted">…</div>}>
-              <Atelier t={t} langue={langue} codeur={(data.agents || []).find((a) => !a.user_id && a.peut_coder && a.avatar_url) || (data.agents || []).find((a) => !a.user_id && a.peut_coder) || null} />
+              <Atelier t={t} langue={langue} entrepriseId={data.entreprise.id} codeur={(data.agents || []).find((a) => !a.user_id && a.peut_coder && a.avatar_url) || (data.agents || []).find((a) => !a.user_id && a.peut_coder) || null} />
             </Suspense>
           )}
           {outil === 'presentation' && <Presentation entreprise={data.entreprise} agents={data.agents} departements={departements} langue={langue} t={t} />}

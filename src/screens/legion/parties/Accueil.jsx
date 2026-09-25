@@ -48,6 +48,14 @@ export function Accueil({
 
   const machines = agents.filter((a) => !a.user_id);
   const allumes = machines.filter((a) => a.actif).length;
+  // Qui a travaillé dans les 10 dernières minutes (un message) ou a pris une tâche il y a moins de 15 min.
+  const enDirect = (() => {
+    const qui = new Set();
+    const m10 = Date.now() - 10 * 60_000, m15 = Date.now() - 15 * 60_000;
+    for (const m of messages || []) if (!m.user_id && Date.parse(m.created_at) >= m10) qui.add(m.auteur_id);
+    for (const x of taches || []) if (x.assigne_a && Date.parse(x.meta?.travaille_depuis || 0) >= m15) qui.add(x.assigne_a);
+    return machines.filter((a) => qui.has(a.id)).length;
+  })();
   const tousAllumes = allumes === machines.length && machines.length > 0;
   const ontChoisi = machines.filter((a) => a.choisi_par_lui).length;
   const enAttente = messages.filter((m) => ['question', 'decision'].includes(m.genre) && !m.repondu_le).length;
@@ -179,6 +187,23 @@ export function Accueil({
           </div>
         </form>
       </section>
+
+      {/* L'immeuble en direct, en grand (25/09, Beau : « je ne vois pas où je
+          vois comment ils travaillent ») */}
+      {onOutil && (
+        <button type="button" onClick={() => onOutil('bureau')}
+          className="flex w-full items-center gap-4 rounded-2xl border-2 border-legion-gold/60 px-4 py-4 text-left shadow-lg transition hover:border-legion-gold"
+          style={{ background: 'linear-gradient(120deg,#0d1630,#1b2b4a 60%,#2a2233)' }}>
+          <span className="text-[40px] leading-none">🏢</span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 text-body font-bold text-legion-ink">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[#E0664F]" /> {t('legion.immeuble.banniere')}
+            </span>
+            <span className="block text-caption text-legion-muted">{t('legion.immeuble.banniereAide', { n: enDirect })}</span>
+          </span>
+          <span className="shrink-0 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-bold text-legion-bg">{t('legion.immeuble.voir')}</span>
+        </button>
+      )}
 
       {/* Les grandes vues (24/09) */}
       {onOutil && (

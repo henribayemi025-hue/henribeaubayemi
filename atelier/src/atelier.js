@@ -166,7 +166,7 @@ export class Atelier extends DurableObject {
     const deps = this.deps(pid, e, trace, acces);
     // La trace Supabase peut avoir été branchée après la création du projet
     // (migration appliquée plus tard) : on (ré)écrit le projet et la session.
-    await trace.projet({ id: pid, entreprise_id: this.env.ATELIER_ENTREPRISE || null, proprietaire: e.proprietaire, nom: e.projet.nom, modele_depart: e.projet.depart, cree_le: e.projet.cree_le });
+    await trace.projet({ id: pid, entreprise_id: e.projet.entreprise_id || null, proprietaire: e.proprietaire, nom: e.projet.nom, modele_depart: e.projet.depart, cree_le: e.projet.cree_le });
     await trace.session(this.sessionPourSupabase(pid, e));
     try {
       await travail(deps);
@@ -225,7 +225,10 @@ export class Atelier extends DurableObject {
         const depart = DEPARTS[corps.depart] ? corps.depart : 'vide';
         const liste = await this.projets();
         if (liste.length >= 30) return erreur('30 projets au plus en V0.');
-        const projet = { id: crypto.randomUUID(), nom, depart, cree_le: new Date().toISOString() };
+        // L'entreprise de Léo d'où l'on crée le projet (vérifiée par les règles
+        // d'accès de la base : il faut en être membre, sinon rien n'est rattaché).
+        const entreprise = /^[0-9a-f-]{36}$/i.test(String(corps.entreprise_id || '')) ? corps.entreprise_id : null;
+        const projet = { id: crypto.randomUUID(), nom, depart, cree_le: new Date().toISOString(), entreprise_id: entreprise };
         const e = nouvelEtat(projet, new Date(), plafondSession(this.env));
         e.proprietaire = user;
         e.sales = {};
@@ -236,7 +239,7 @@ export class Atelier extends DurableObject {
         this.etats.set(projet.id, e);
         await this.sauver(projet.id, e);
         await this.ctx.storage.put('projets', [projet, ...liste]);
-        await trace.projet({ id: projet.id, entreprise_id: this.env.ATELIER_ENTREPRISE || null, proprietaire: user, nom, modele_depart: depart, cree_le: projet.cree_le });
+        await trace.projet({ id: projet.id, entreprise_id: projet.entreprise_id, proprietaire: user, nom, modele_depart: depart, cree_le: projet.cree_le });
         await trace.session(this.sessionPourSupabase(projet.id, e));
         await this.journaliser(projet.id, e, { acteur: 'humain', outil: 'projet', entree_resumee: `nouveau projet « ${nom} » (${depart})`, resultat_resume: null, decision: null, mode: e.mode, cout_usd: 0 }, trace);
         return json(this.vue(projet.id, e, this.env), 201);

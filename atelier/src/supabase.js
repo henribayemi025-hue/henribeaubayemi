@@ -2,11 +2,9 @@
 //
 // - Le Worker vérifie la session Supabase de l'utilisateur (son jeton
 //   d'accès) auprès de Supabase lui-même.
-// - V0 : réservé à Beau. Passe si l'identifiant est dans ATELIER_UTILISATEURS,
-//   ou si la personne est PROPRIÉTAIRE de l'entreprise Finjaro dans Léo
-//   (ATELIER_ENTREPRISE) — lu dans legion_membres avec SON jeton, sous les
-//   règles d'accès déjà en place (un membre voit les membres de son
-//   entreprise).
+// - Qui entre : le PROPRIÉTAIRE de n'importe quelle entreprise de Léo (depuis
+//   le 25/09), ou un identifiant listé dans ATELIER_UTILISATEURS — lu dans
+//   legion_membres avec SON jeton, sous les règles d'accès déjà en place.
 // - Aucune clé de service : le Worker n'a que la clé publique (celle qui est
 //   déjà dans chaque navigateur) et le jeton de la personne. Il écrit donc
 //   dans les tables atelier_* sous les règles d'accès (RLS), comme elle.
@@ -30,8 +28,12 @@ export async function identifier(env, jeton, fetchFn = fetch) {
   if (!user?.id) return null;
   const liste = String(env.ATELIER_UTILISATEURS || '').split(',').map((s) => s.trim()).filter(Boolean);
   let autorise = liste.includes(user.id);
-  if (!autorise && env.ATELIER_ENTREPRISE) {
-    const q = await fetchFn(`${env.SUPABASE_URL}/rest/v1/legion_membres?select=role&entreprise_id=eq.${encodeURIComponent(env.ATELIER_ENTREPRISE)}&user_id=eq.${encodeURIComponent(user.id)}`, { headers: entetes(env, jeton) });
+  // 25/09 (Beau : « tout ce qu'on construit, tout le monde doit y avoir
+  // accès ») : l'atelier est ouvert au PROPRIÉTAIRE de n'importe quelle
+  // entreprise de Léo, plus l'ancienne porte (entreprise Finjaro) si elle est
+  // réglée. Le plafond par séance et par jour et par personne reste la règle.
+  if (!autorise) {
+    const q = await fetchFn(`${env.SUPABASE_URL}/rest/v1/legion_membres?select=role,entreprise_id&user_id=eq.${encodeURIComponent(user.id)}&role=eq.proprietaire&limit=1`, { headers: entetes(env, jeton) });
     if (q.ok) {
       const lignes = await q.json();
       autorise = Array.isArray(lignes) && lignes.some((l) => l.role === 'proprietaire');

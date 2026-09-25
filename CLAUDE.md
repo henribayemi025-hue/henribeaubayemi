@@ -199,6 +199,14 @@ tu vérifies ; s'ils ont mal fait, tu corriges. »
   agent produit n'est annoncé à Beau sans cette relecture.
 - Ce que les agents construisent ne doit jamais être réservé à Beau : tout
   utilisateur de Léo doit pouvoir avoir des agents aussi capables.
+- **Tout ce qu'on développe dans Léo est pour TOUTES les entreprises**
+  (Beau, 25/09 : « tout ce qu'on développe, c'est pour tout le monde, c'est
+  pour des entreprises » ; « on ne peut pas améliorer seulement une petite
+  partie »). Rien de ce qui est fait pour Finjaro (atelier, immeuble, outils,
+  compétences, droits) ne reste réservé à l'entreprise Finjaro, sauf ce qui
+  lit SES données (sa boutique, ses chiffres). Avant de finir un chantier :
+  vérifier qu'il marche aussi dans une entreprise neuve d'un autre
+  utilisateur.
 - **Une remarque de Beau en cours de route ne fait pas dérailler le travail**
   (24/09, minuit) : on la NOTE tout de suite dans le carnet, et on termine
   ce qu'on faisait avant de passer à la suite du plan. « Sinon tu vas

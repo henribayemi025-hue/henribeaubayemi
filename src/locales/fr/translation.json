@@ -781,7 +781,7 @@
     },
     "vues": {
       "titre": {
-        "bureau": "Le bureau",
+        "bureau": "L'immeuble",
         "frise": "La frise",
         "presentation": "La présentation",
         "idees": "Le tableau d'idées",
@@ -1123,7 +1123,12 @@
         "compte_rendu": "compte rendu de réunion",
         "decision": "décision",
         "dit": "dit"
-      }
+      },
+      "entree": "L'immeuble en direct : voir vos agents travailler",
+      "entreeCourte": "L'immeuble",
+      "banniere": "L'immeuble en direct",
+      "banniereAide": "Voir vos agents travailler ensemble, en ce moment : {{n}} au travail.",
+      "voir": "Entrer"
     },
     "rouvrirTaches": "Rouvrir le tableau des tâches"
   },

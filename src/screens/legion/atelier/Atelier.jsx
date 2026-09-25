@@ -82,7 +82,7 @@ function Visage({ codeur, taille = 28 }) {
   return <span className="flex shrink-0 items-center justify-center rounded-full bg-legion-gold/20 text-legion-gold" style={{ width: taille, height: taille }}><IconCode size={taille * 0.55} /></span>;
 }
 
-export default function Atelier({ t, langue = 'fr', codeur = null }) {
+export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId = null }) {
   const [moi, setMoi] = useState(null);
   const [acces, setAcces] = useState(null); // null | 'ok' | 'hors_ligne' | 'reserve' | 'connexion' | message
   const [projets, setProjets] = useState([]);
@@ -394,7 +394,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null }) {
   }
 
   async function creer(nom, depart) {
-    const r = await agir(() => appel('/projets', { methode: 'POST', corps: { nom, depart } }));
+    const r = await agir(() => appel('/projets', { methode: 'POST', corps: { nom, depart, entreprise_id: entrepriseId } }));
     if (r?.projet) {
       setProjets((p) => [r.projet, ...p]);
       setPid(r.projet.id);
