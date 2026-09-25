@@ -26,7 +26,7 @@ export function VisagesModele({ modele, postes, n = 5, taille = 30 }) {
   const tetes = useMemo(() => [...postes].sort((a, b) => Number(!!b.est_directeur) - Number(!!a.est_directeur)).slice(0, n), [postes, n]);
   return (
     <span className="flex shrink-0 items-center">
-      {tetes.map((p, i) => <Visage key={p.poste} modele={modele} poste={p.poste} taille={taille} className={i > 0 ? '-ml-2.5' : ''} />)}
+      {tetes.map((p, i) => <Visage key={p.poste} modele={modele} poste={p.poste_fr || p.poste} taille={taille} className={i > 0 ? '-ml-2.5' : ''} />)}
       {postes.length > n && <span className="-ml-1.5 flex h-[30px] min-w-[30px] items-center justify-center rounded-full border-2 border-legion-card bg-legion-card-haut px-1 text-[10px] font-bold text-legion-ink">+{postes.length - n}</span>}
     </span>
   );
@@ -46,7 +46,7 @@ export function BandePostes({ modele, equipe, repartis, onOuvrir, t }) {
           <button key={`${p.poste}-${i}`} type="button" onClick={() => onOuvrir(p)} aria-hidden={i >= tetes.length}
             className="flex w-[92px] shrink-0 flex-col items-center gap-1 rounded-card px-1 py-2 text-center transition hover:bg-legion-card">
             <span className="relative">
-              <Visage modele={modele} poste={p.poste} taille={48} />
+              <Visage modele={modele} poste={p.poste_fr || p.poste} taille={48} />
               {p.est_directeur && <IconStar size={12} className="absolute -right-0.5 -top-0.5 rounded-full bg-legion-gold p-0.5 text-legion-bg" />}
               {(repartis?.[clePoste(p.poste)] || 1) > 1 && <span className="absolute -bottom-1 -right-1 rounded-full bg-legion-teal px-1 text-[9px] font-bold text-white">×{repartis[clePoste(p.poste)]}</span>}
             </span>
@@ -144,7 +144,7 @@ export function FichePoste({ poste, modele, dansEquipe, n, onFermer, onRetirer, 
     <Modal open onClose={onFermer} title={t('legion.fonderEquipe.fiche')} className="legion-modale">
       <div className="space-y-4 text-legion-ink">
         <div className="flex items-start gap-3 rounded-card border border-legion-line bg-legion-bg p-3">
-          <Visage modele={modele} poste={poste.poste} taille={64} />
+          <Visage modele={modele} poste={poste.poste_fr || poste.poste} taille={64} />
           <div className="min-w-0 flex-1">
             <h3 className="text-section font-bold leading-tight text-legion-ink">{poste.poste}</h3>
             <p className="text-caption text-legion-muted">{poste.departement}</p>
@@ -231,8 +231,9 @@ export function AjouterPoste({ catalogue, modeles, departements, existants, onAj
   async function prendre(p) {
     setAttente(p.poste);
     try {
-      const { data } = await supabase.from('studio_modele_postes').select('mandat, poids, agent_cle, est_directeur').eq('modele', p.modele).eq('poste', p.poste).limit(1).maybeSingle();
-      onAjouter({ departement: p.departement, poste: p.poste, mandat: data?.mandat || '', poids: data?.poids || 1, agent_cle: data?.agent_cle || null, est_directeur: false, origine: 'catalogue' });
+      // Le catalogue peut être affiché traduit : la base se lit avec le poste d'origine.
+      const { data } = await supabase.from('studio_modele_postes').select('mandat, poids, agent_cle, est_directeur').eq('modele', p.modele).eq('poste', p.poste_fr || p.poste).limit(1).maybeSingle();
+      onAjouter({ departement: p.departement, poste: p.poste, poste_fr: p.poste_fr, mandat: p.mandat || data?.mandat || '', poids: data?.poids || 1, agent_cle: data?.agent_cle || null, est_directeur: false, origine: 'catalogue' });
     } finally { setAttente(''); }
   }
   function ecrire(e) {

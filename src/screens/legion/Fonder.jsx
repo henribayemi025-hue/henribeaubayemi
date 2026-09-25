@@ -13,6 +13,7 @@ import { Field, TextInput, TextArea } from '../../components/Field';
 import { Skeleton, ErrorState } from '../../components/states';
 import { tailleDe, composer, horsEquipe, repartition, pourLaBase, estModifiee, choixVide, clePoste } from './parties/fonder/equipe';
 import { VisagesModele, BandePostes, Organigramme, FichePoste, AjouterPoste, AideLeo, BoutonFonder } from './parties/fonder/Equipe';
+import { chargerPostesEn, enAnglais, traduirePostes } from './parties/fonder/postesEn';
 
 // LEGION — fonder une entreprise d'agents.
 //
@@ -123,6 +124,16 @@ export default function Fonder() {
   const [complets, setComplets] = useState({});
   const [fiche, setFiche] = useState(null);
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
+  // Les postes en anglais (lot 1.7) : la table se charge une fois, seulement
+  // quand l'écran est en anglais ; sans elle, le français reste.
+  const anglais = enAnglais(i18n.language);
+  const [tableEn, setTableEn] = useState(null);
+  useEffect(() => {
+    if (!anglais) return undefined;
+    let vivant = true;
+    chargerPostesEn().then((tb) => { if (vivant) setTableEn(tb); });
+    return () => { vivant = false; };
+  }, [anglais]);
 
   // Un nouveau modèle, écrit pour le secteur décrit; puis la liste se
   // recharge et le modèle est sélectionné.
@@ -172,7 +183,7 @@ export default function Fonder() {
   useEffect(() => {
     if (!cleModele || complets[cleModele]) return undefined;
     let vivant = true;
-    supabase.from('studio_modele_postes').select('departement, poste, mandat, des_la_taille, a_ecrire, est_directeur, poids, agent_cle, ordre')
+    supabase.from('studio_modele_postes').select('modele, departement, poste, mandat, des_la_taille, a_ecrire, est_directeur, poids, agent_cle, ordre')
       .eq('modele', cleModele).order('ordre').range(0, 999)
       .then(({ data: rows }) => { if (vivant && rows) setComplets((c) => ({ ...c, [cleModele]: rows })); });
     return () => { vivant = false; };
@@ -182,11 +193,13 @@ export default function Fonder() {
   // faisait planter la page (« Cannot access before initialization »):
   // la page « Fonder » restait blanche. Vu par Beau le 23/09.
   const plat = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  // Le catalogue, traduit quand l'écran est en anglais et que la table est là.
+  const catalogue = useMemo(() => (anglais && tableEn ? traduirePostes(data?.postes || [], tableEn) : (data?.postes || [])), [data, anglais, tableEn]);
   const postesParModele = useMemo(() => {
     const m = {};
-    for (const p of data?.postes || []) (m[p.modele] ||= []).push(p);
+    for (const p of catalogue) (m[p.modele] ||= []).push(p);
     return m;
-  }, [data]);
+  }, [catalogue]);
   const modelesFiltres = (data?.modeles || []).map((m) => modeleTraduit(m, i18n.language)).filter((m) => {
     if (modele?.cle === m.cle) return true;
     const q = plat(filtre.trim());
@@ -196,7 +209,10 @@ export default function Fonder() {
 
   // L'équipe qu'on obtient vraiment, et combien de personnes par poste —
   // la même règle que la base (equipe.js).
-  const postesModele = (modele && (complets[modele.cle] || postesParModele[modele.cle])) || [];
+  const postesModele = useMemo(() => {
+    const brut = (modele && (complets[modele.cle] || postesParModele[modele.cle])) || [];
+    return anglais && tableEn ? traduirePostes(brut, tableEn) : brut;
+  }, [modele, complets, postesParModele, anglais, tableEn]);
   const equipe = useMemo(() => (modele ? composer(postesModele, effectif, choix) : []), [modele, postesModele, effectif, choix]);
   const dehors = useMemo(() => (modele ? horsEquipe(postesModele, effectif, choix) : []), [modele, postesModele, effectif, choix]);
   const personnes = Math.max(Number(effectif) || 1, equipe.length);
@@ -263,7 +279,9 @@ export default function Fonder() {
       };
       // L'équipe composée ne part que si elle diffère du modèle : sinon la
       // base fait exactement ce qu'elle a toujours fait.
-      if (estModifiee(choix)) args.p_postes = pourLaBase(equipe);
+      // Et en anglais, l'équipe part traduite : les agents naissent dans la
+      // langue du compte (lot 1.7), pas dans celle du catalogue.
+      if (estModifiee(choix) || (anglais && tableEn && equipe.some((p) => p.poste_fr))) args.p_postes = pourLaBase(equipe);
       const { data: id, error: err } = await supabase.rpc('legion_creer_entreprise', args);
       if (err) throw err;
       // La langue de l'équipe = celle de l'écran au moment de fonder (Beau, 25/09 : compte en anglais,
@@ -456,7 +474,7 @@ export default function Fonder() {
           onFermer={() => setFiche(null)} onRetirer={retirer} onRemettre={ajouter} onMandat={changerMandat} demanderLeo={demanderLeo} t={t} />
       )}
       {ajoutOuvert && modele && (
-        <AjouterPoste catalogue={data.postes} modeles={data.modeles} departements={departements} existants={equipe}
+        <AjouterPoste catalogue={catalogue} modeles={data.modeles} departements={departements} existants={equipe}
           onAjouter={(p) => { ajouter(p); setAjoutOuvert(false); }} onFermer={() => setAjoutOuvert(false)} t={t} />
       )}
     </div>
