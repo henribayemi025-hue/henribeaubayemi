@@ -1075,7 +1075,21 @@
       "paletteFichier": "fichier",
       "paletteAction": "action",
       "paletteRien": "Rien ne correspond.",
-      "paletteMode": "Mode :"
+      "paletteMode": "Mode :",
+      "ecritIci": "L'agent écrit dans ce fichier",
+      "fermerOnglet": "Fermer l'onglet",
+      "fermerSansEnregistrer": "« {{chemin}} » a des modifications non enregistrées. Fermer quand même ?",
+      "texteBrut": "Texte",
+      "modeleAuto": "Modèle : auto",
+      "etat_position": "Ligne {{ligne}}, col. {{colonne}}",
+      "etat_ligne_colonne": "Ligne et colonne du curseur",
+      "etat_langage": "Langage du fichier",
+      "etat_modele": "Modèle d'IA choisi",
+      "etat_erreurs": "Erreurs (cliquez pour voir)",
+      "etat_en_attente": "Une modification attend ton accord",
+      "etat_en_attente_court": "{{n}} en attente",
+      "etat_mode": "Mode (cliquez pour changer)",
+      "etat_cout": "Coût de la séance / plafond"
     },
     "droits": {
       "titre": "Ses droits",

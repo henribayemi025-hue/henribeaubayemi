@@ -1075,7 +1075,21 @@
       "paletteFichier": "file",
       "paletteAction": "action",
       "paletteRien": "Nothing matches.",
-      "paletteMode": "Mode:"
+      "paletteMode": "Mode:",
+      "ecritIci": "The agent is writing in this file",
+      "fermerOnglet": "Close tab",
+      "fermerSansEnregistrer": "\"{{chemin}}\" has unsaved changes. Close anyway?",
+      "texteBrut": "Plain text",
+      "modeleAuto": "Model: auto",
+      "etat_position": "Ln {{ligne}}, Col {{colonne}}",
+      "etat_ligne_colonne": "Cursor line and column",
+      "etat_langage": "File language",
+      "etat_modele": "Chosen AI model",
+      "etat_erreurs": "Errors (click to view)",
+      "etat_en_attente": "A change is waiting for your approval",
+      "etat_en_attente_court": "{{n}} pending",
+      "etat_mode": "Mode (click to change)",
+      "etat_cout": "Session cost / limit"
     },
     "droits": {
       "titre": "Permissions",

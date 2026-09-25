@@ -6,6 +6,8 @@ import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
 import Palette from './Palette';
+import Onglets, { extension } from './Onglets';
+import BarreEtat from './BarreEtat';
 
 // L'ATELIER DE CODE de Léo — V0 (Beau, 24/09 : « oui atelier »).
 //
@@ -104,6 +106,21 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     return () => window.removeEventListener('keydown', clavier, true);
   }, []);
   const [fichier, setFichier] = useState(null); // { chemin, contenu, brouillon }
+  // Les onglets ouverts (25/09) : chacun garde son texte et son brouillon.
+  const [onglets, setOnglets] = useState([]);
+  const [curseur, setCurseur] = useState({ l: 1, c: 1 });
+  useEffect(() => {
+    if (!fichier) return;
+    setOnglets((prev) => {
+      const i = prev.findIndex((o) => o.chemin === fichier.chemin);
+      const o = { chemin: fichier.chemin, contenu: fichier.contenu, brouillon: fichier.brouillon };
+      if (i >= 0) { const n = [...prev]; n[i] = o; return n; }
+      // Au plus 12 onglets : on ferme le plus ancien qui n'a rien de modifié.
+      const liste = [...prev, o];
+      if (liste.length > 12) { const k = liste.findIndex((x) => x.brouillon === x.contenu && x.chemin !== o.chemin); if (k >= 0) liste.splice(k, 1); }
+      return liste;
+    });
+  }, [fichier]);
   const [onglet, setOnglet] = useState('conversation');
   const [panneau, setPanneau] = useState(null);
   const [texte, setTexte] = useState('');
@@ -158,6 +175,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     if (acces !== 'ok' || !pid) return;
     ecrire('atelier:projet', pid);
     setFichier(null);
+    setOnglets([]);
     charger(pid);
   }, [acces, pid, charger]);
 
@@ -430,6 +448,22 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     </div>
   );
 
+  const choisirOnglet = (chemin) => {
+    const o = onglets.find((x) => x.chemin === chemin);
+    if (o && o.brouillon !== o.contenu) { setFichier(o); setOnglet('editeur'); } else ouvrir(chemin, true);
+  };
+  const fermerOnglet = (chemin) => {
+    const o = onglets.find((x) => x.chemin === chemin);
+    if (o && o.brouillon !== o.contenu && !window.confirm(t('legion.atelier.fermerSansEnregistrer', { chemin }))) return;
+    const i = onglets.findIndex((x) => x.chemin === chemin);
+    const reste = onglets.filter((x) => x.chemin !== chemin);
+    setOnglets(reste);
+    if (fichier?.chemin === chemin) {
+      const voisin = reste[Math.min(i, reste.length - 1)];
+      if (voisin) choisirOnglet(voisin.chemin); else setFichier(null);
+    }
+  };
+  const LANGUES = { js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', ts: 'TypeScript', tsx: 'TypeScript', html: 'HTML', css: 'CSS', json: 'JSON', py: 'Python', md: 'Markdown', sql: 'SQL', sh: 'Shell', txt: t('legion.atelier.texteBrut') };
   const colonneEditeur = (
     <div className="flex h-full min-h-0 flex-col">
       {activite && (
@@ -447,6 +481,8 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           </span>
         </div>
       )}
+      <Onglets onglets={onglets} actif={fichier?.chemin} onChoisir={choisirOnglet} onFermer={fermerOnglet}
+        ecritIci={(travaille || statut === 'attente') ? activite?.chemin : null} visage={<Visage codeur={codeur} taille={16} />} t={t} />
       {fichier ? (
         <>
           <div className="flex items-center justify-between gap-2 border-b border-legion-line px-3 py-1.5">
@@ -466,9 +502,14 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             <Suspense fallback={<div className="p-4 text-caption text-legion-muted">…</div>}>
               <Editeur chemin={fichier.chemin} valeur={enProposition ? proposition.contenu : fichier.brouillon} lectureSeule={travaille || enProposition}
                 auteur={nomCodeur}
-                onChange={(v) => setFichier((f) => (f ? { ...f, brouillon: v } : f))} />
+                onChange={(v) => setFichier((f) => (f ? { ...f, brouillon: v } : f))}
+                onCurseur={(l, c) => setCurseur({ l, c })} />
             </Suspense>
           </div>
+          <BarreEtat ligne={curseur.l} colonne={curseur.c} langage={LANGUES[extension(fichier.chemin)] || extension(fichier.chemin).toUpperCase()}
+            mode={vue?.mode || 'demander'} modele={NOMS_MODELES[modele] || (modele === 'auto' ? t('legion.atelier.modeleAuto') : modele)}
+            cout={dollars(s?.cout, langue)} plafond={dollars(s?.plafond, langue)} enAttente={statut === 'attente' ? 1 : 0}
+            onClicMode={() => setPaletteOuverte(true)} t={t} />
         </>
       ) : (
         <div className="flex h-full items-center justify-center p-6 text-center text-caption text-legion-muted">{t('legion.atelier.choisisUnFichier')}</div>

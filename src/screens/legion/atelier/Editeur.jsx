@@ -87,13 +87,15 @@ const themeAgent = EditorView.theme({
   '@keyframes cm-clignote': { '50%': { opacity: 0.55 } },
 });
 
-export default function Editeur({ chemin, valeur, lectureSeule, onChange, auteur = null }) {
+export default function Editeur({ chemin, valeur, lectureSeule, onChange, onCurseur, auteur = null }) {
   const hote = useRef(null);
   const vue = useRef(null);
   const langage = useRef(new Compartment());
   const lecture = useRef(new Compartment());
   const rappel = useRef(onChange);
   rappel.current = onChange;
+  const rappelCurseur = useRef(onCurseur);
+  rappelCurseur.current = onCurseur;
 
   useEffect(() => {
     const v = new EditorView({
@@ -111,6 +113,13 @@ export default function Editeur({ chemin, valeur, lectureSeule, onChange, auteur
           themeAgent,
           // Ce que l'agent tape n'est pas un brouillon de Beau : on ne le remonte pas.
           EditorView.updateListener.of((u) => { if (u.docChanged && !u.transactions.some((tr) => tr.annotation(parAgent))) rappel.current?.(u.state.doc.toString()); }),
+          // La position du curseur, pour la barre d'état (ligne:colonne).
+          EditorView.updateListener.of((u) => {
+            if (!u.selectionSet && !u.docChanged) return;
+            const tete = u.state.selection.main.head;
+            const l = u.state.doc.lineAt(tete);
+            rappelCurseur.current?.(l.number, tete - l.from + 1);
+          }),
         ],
       }),
     });
