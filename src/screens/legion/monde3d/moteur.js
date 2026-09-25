@@ -21,7 +21,8 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
-import { piloter, heurterBlocs, heurterVehicules, portiere, kmh } from './conduite';
+import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours } from './conduite';
+import { nouvelleCourse, avancerCourse, construirePortes } from './course';
 import { construireMaisons } from './maisons3d';
 import { construireSalleMarche } from './salle-marche3d';
 import { construirePlanete } from './planete3d';
@@ -743,6 +744,8 @@ export class Monde {
     }
     if (!this.villeVivante) {
       this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
+      this.portes = construirePortes();
+      this.villeVivante.racine.add(this.portes.groupe);
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
       if (this.affichesBoutiques) this.villeVivante.afficher(this.affichesBoutiques);
       if (this.listeChantiers) this.poiChantiers = this.villeVivante.chantiers(this.listeChantiers);
@@ -984,7 +987,7 @@ export class Monde {
       const code = e.code;
       if (e.type === 'keydown') {
         this.touches.add(code);
-        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); }
+        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); else if (this.proche?.type === 'helico') this.monterHelico(); }
         else if (code === 'KeyE') this.interagir();
         if (code === 'KeyV') this.cycleCamera();
       } else this.touches.delete(code);
@@ -1020,11 +1023,32 @@ export class Monde {
     this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
     this.emettre({ type: 'conduite', active: true, kmh: 0 });
   }
+  monterHelico() {
+    const h = this.villeVivante?.helico;
+    if (!h || this.conduite || this.lieu?.nom !== 'hall') return;
+    this.conduite = { lb: h, genre: 'helico', kmh: -1, alt: -1, t: 0, secousse: 0, regime: 0.1 };
+    this.joueur.objet.visible = false;
+    this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
+    this.emettre({ type: 'conduite', active: true, genre: 'helico', kmh: 0, alt: 0 });
+  }
   descendreVoiture() {
     const c = this.conduite;
     if (!c) return;
+    if (c.genre === 'helico') { // on ne saute pas d'un hélicoptère en vol : il faut se poser
+      if (c.lb.etat.y > 0.3) { this.emettre({ type: 'conduite', active: true, genre: 'helico', kmh: c.kmh, alt: Math.round(c.lb.etat.y), sePoser: true }); return; }
+      const e = c.lb.etat;
+      const p = this.joueur.objet.position;
+      p.set(e.x + Math.cos(e.cap) * 2.6, 0, e.z - Math.sin(e.cap) * 2.6);
+      this.collisions(p);
+      this.joueur.objet.rotation.y = e.cap + Math.PI;
+      this.cam.yaw = e.cap + Math.PI; this.camSnap = true;
+      this.conduite = null;
+      this.emettre({ type: 'conduite', active: false });
+      return;
+    }
     const e = c.lb.etat;
     e.vitesse = 0;
+    this.arreterCourse();
     const pied = portiere(e);
     const p = this.joueur.objet.position;
     p.set(pied.x, 0, pied.z);
@@ -1034,6 +1058,20 @@ export class Monde {
     this.conduite = null;
     this.emettre({ type: 'conduite', active: false });
   }
+  // Une course autour du pâté de maisons (course.js), seulement au volant d'une voiture.
+  lancerCourse() {
+    if (!this.conduite || this.conduite.genre === 'helico') return;
+    this.course = nouvelleCourse();
+    this.portes?.montrer(this.course.prochaine, true);
+    this.emettre({ type: 'course', ...this.resumeCourse(), nouvelle: true });
+  }
+  arreterCourse() {
+    if (!this.course) return;
+    this.course = null;
+    this.portes?.montrer(0, false);
+    this.emettre({ type: 'course', active: false });
+  }
+  resumeCourse() { const c = this.course; return { active: true, prochaine: Math.min(c.prochaine, c.circuit.length), total: c.circuit.length, temps: c.temps, finie: c.finie }; }
   // Pédales et volant du téléphone (boutons de l'écran), en plus du clavier et du joystick.
   pedales(p) { this.pedale = { ...(this.pedale || {}), ...p }; }
   avancerVoiture(dt) {
@@ -1066,10 +1104,44 @@ export class Monde {
     c.t += dt;
     const k = kmh(e.vitesse);
     if (c.t > 0.15 && k !== c.kmh) { c.t = 0; c.kmh = k; this.emettre({ type: 'conduite', active: true, kmh: k }); }
+    if (this.course && !this.course.finie) {
+      const avant = this.course.prochaine;
+      this.course = avancerCourse(this.course, e.x, e.z, dt);
+      this.course.t = (this.course.t || 0) + dt;
+      if (this.course.prochaine !== avant || this.course.finie) this.portes?.montrer(this.course.prochaine, !this.course.finie);
+      if (this.course.t > 0.1 || this.course.prochaine !== avant || this.course.finie) { this.course.t = 0; this.emettre({ type: 'course', ...this.resumeCourse() }); }
+    }
+  }
+  avancerHelico(dt) {
+    const c = this.conduite, t = this.touches, V = this.villeVivante, pd = this.pedale || {}, h = c.lb;
+    const avance = Math.max(-1, Math.min(1, (t.has('KeyW') || t.has('ArrowUp') ? 1 : 0) - (t.has('KeyS') || t.has('ArrowDown') ? 1 : 0) - this.joy.y));
+    const lacet = Math.max(-1, Math.min(1, (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x));
+    const monte = (t.has('Space') || pd.gaz ? 1 : 0) - (t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyC') || pd.frein ? 1 : 0);
+    // Les immeubles de la ville, et le nôtre (24,8 × 18,8 m, toit à 76 m).
+    if (!this.toursHelico) this.toursHelico = [...V.tours, { x0: -12.4, x1: 12.4, z0: -9.4, z1: 9.4, h: 82 }];
+    let e = h.etat, choc = 0, reste = Math.min(dt, 0.25);
+    while (reste > 1e-4) {
+      const pas = Math.min(reste, 1 / 60); reste -= pas;
+      e = heurterTours(voler(e, { avance, lacet, monte }, pas), this.toursHelico);
+      choc = Math.max(choc, e.choc);
+    }
+    e.x = Math.max(-194, Math.min(194, e.x)); e.z = Math.max(-194, Math.min(194, e.z));
+    if (choc > 5) { c.secousse = Math.min(0.8, choc / 25); this.emettre({ type: 'choc', force: choc }); }
+    h.etat = { x: e.x, y: e.y, z: e.z, cap: e.cap, vx: e.vx, vy: e.vy, vz: e.vz };
+    const o = h.objet;
+    o.position.set(e.x, h.sol + e.y, e.z);
+    o.rotation.set(e.tangage || 0, e.cap, -(e.roulis || 0), 'YXZ');
+    c.regime += ((e.y > 0.05 || monte > 0 ? 1 : 0.25) - c.regime) * Math.min(1, dt * 1.2);
+    h.animer(dt, c.regime);
+    this.joueur.objet.position.set(e.x, 0, e.z);
+    c.t += dt;
+    const k = kmh(Math.hypot(e.vx, e.vz)), alt = Math.round(e.y);
+    if (c.t > 0.15 && (k !== c.kmh || alt !== c.alt)) { c.t = 0; c.kmh = k; c.alt = alt; this.emettre({ type: 'conduite', active: true, genre: 'helico', kmh: k, alt }); }
   }
   interagir() {
     if (!this.proche) return;
     if (this.proche.type === 'voiture') { this.monterVoiture(this.proche.id); return; }
+    if (this.proche.type === 'helico') { this.monterHelico(); return; }
     if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
     this.emettre({ type: 'interagir', cible: this.proche });
   }
@@ -1122,7 +1194,8 @@ export class Monde {
     const n = Math.hypot(ax, az);
     const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 1.4;
     if (this.conduite && this.lieu.nom !== 'hall') this.descendreVoiture();
-    if (this.conduite) this.avancerVoiture(dt);
+    if (this.conduite?.genre === 'helico') this.avancerHelico(dt);
+    else if (this.conduite) this.avancerVoiture(dt);
     else if (n > 0.08) {
       ax /= Math.max(n, 1); az /= Math.max(n, 1);
       const yaw = this.cam.mode === 'plan' ? Math.PI : this.cam.yaw;
@@ -1177,7 +1250,12 @@ export class Monde {
     const p = j.objet.position;
     let proche = null;
     for (const x of this.lieu.poi) if (Math.hypot(p.x - x.x, p.z - x.z) < x.rayon) proche = x;
-    if (this.lieu.nom === 'hall' && this.villeVivante) for (const v of this.villeVivante.voituresLibres) if (Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
+    if (this.lieu.nom === 'hall' && this.villeVivante) {
+      for (const v of this.villeVivante.voituresLibres) if (Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
+      const hh = this.villeVivante.helico;
+      if (hh && hh.etat.y < 0.1 && Math.hypot(p.x - hh.etat.x, p.z - hh.etat.z) < 6) proche = { type: 'helico', id: 'helico' };
+      if (hh && !this.conduite) hh.animer(dt, 0); // rotor à l'arrêt, feux éteints
+    }
     if (this.conduite) proche = null;
     for (const [id, x] of this.agents) {
       const q = x.perso.objet.position;
@@ -1189,7 +1267,16 @@ export class Monde {
     // Caméra
     const tete = new THREE.Vector3(p.x, 1.55, p.z);
     j.objet.visible = this.cam.mode !== 'fps';
-    if (this.conduite) {
+    if (this.conduite?.genre === 'helico') {
+      const e = this.conduite.lb.etat, c = this.conduite, h = this.conduite.lb;
+      j.objet.visible = false;
+      const recul = 15 + Math.hypot(e.vx, e.vz) * 0.12;
+      const voulu = new THREE.Vector3(e.x - Math.sin(e.cap) * recul, h.sol + e.y + 5.5, e.z - Math.cos(e.cap) * recul);
+      if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 3));
+      if (this.camera.position.y < 1.2) this.camera.position.y = 1.2;
+      if (c.secousse > 0) { this.camera.position.x += (Math.random() - 0.5) * c.secousse; this.camera.position.y += (Math.random() - 0.5) * c.secousse; c.secousse = Math.max(0, c.secousse - dt * 1.5); }
+      this.camera.lookAt(e.x + Math.sin(e.cap) * 6, h.sol + e.y + 1.5, e.z + Math.cos(e.cap) * 6);
+    } else if (this.conduite) {
       // Derrière la voiture, un peu plus loin quand elle va vite ; petite secousse aux chocs.
       const e = this.conduite.lb.etat, c = this.conduite;
       j.objet.visible = false;

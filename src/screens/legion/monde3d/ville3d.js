@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { STYLES } from './region';
 import { construireChantier, jeterChantier, lumieresChantiers } from './chantiers3d';
+import { construireHelico, construireHeliport } from './helico3d';
 
 const ROUTES_X = [-78, -26, 26, 78];
 const ROUTES_Z = [-74, -22, 30, 82];
@@ -479,7 +480,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   for (let i = 0; i < xs.length - 1; i += 1) for (let j = 0; j < zs.length - 1; j += 1) {
     const x0 = xs[i] + (i === 0 ? 0 : LARGEUR_ROUTE / 2), x1 = xs[i + 1] - (i + 1 === xs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
-    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3 }); // en face : le quartier des projets (chantiers3d.js)
+    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3, heliport: i === 3 && j === 2 }); // en face : le quartier des projets (chantiers3d.js) ; à droite : l'héliport
   }
   const tours = [];
   const NEONS = new Map();
@@ -493,7 +494,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     // Notre îlot : son trottoir affleure le sol du hall (0), les autres sont en bordure (+18 cm).
     dalle.position.set((il.x0 + il.x1) / 2, il.centre ? -0.11 : 0.09, (il.z0 + il.z1) / 2); dalle.receiveShadow = true;
     racine.add(dalle);
-    if (il.centre || il.projets) continue; // notre immeuble ; les chantiers des projets
+    if (il.centre || il.projets || il.heliport) continue; // notre immeuble ; les chantiers des projets ; l'héliport
     if (monde.mobile && Math.hypot((il.x0 + il.x1) / 2, (il.z0 + il.z1) / 2) > 110) continue; // téléphone : seulement les îlots proches
     // 1 à 4 tours par îlot, rez-de-chaussée en boutiques
     const n = l > 60 || p > 60 ? 2 : 1 + Math.floor(r() * 3);
@@ -652,6 +653,15 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     for (const [x, z] of [[-10, 21.5], [10, 21.5], [-18.8, -8], [18.8, -2]]) racine.add(await monde.objet('planter_box_01', { x, y: 0, z, echelle: 1.3 }));
   })();
 
+  // L'héliport et son hélicoptère, sur l'îlot à droite de notre immeuble.
+  const ilHeli = ilots.find((il) => il.heliport);
+  const hx = (ilHeli.x0 + ilHeli.x1) / 2, hz = (ilHeli.z0 + ilHeli.z1) / 2;
+  const heliport = construireHeliport({ mobile: monde.mobile });
+  heliport.groupe.position.set(hx, 0.18, hz); racine.add(heliport.groupe);
+  const H = construireHelico({ mobile: monde.mobile });
+  H.groupe.position.set(hx, 0.53, hz); H.groupe.rotation.y = -Math.PI / 2; H.groupe.userData.libre = true;
+  racine.add(H.groupe);
+  const helico = { id: 'helico', objet: H.groupe, animer: H.animer, sol: 0.53, etat: { x: hx, y: 0, z: hz, cap: -Math.PI / 2, vx: 0, vy: 0, vz: 0 } };
   // Les vraies voitures arrivent après coup : leurs phares s'allument avec la nuit.
   monde.surModele = (g) => { for (const m of g.userData.lumieres) if (!nuit.lumieres.includes(m)) nuit.lumieres.push(m); };
   // Circulation : voitures et motos sur les deux sens des rues proches
@@ -879,7 +889,8 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     // Pour conduire (conduite.js) : les voitures libres, les trottoirs, la circulation.
     voituresLibres: libres,
     blocs: ilots.map(({ x0, x1, z0, z1 }) => ({ x0, x1, z0, z1 })),
-    tours: tours.map(({ bx, bz, w, d }) => ({ x0: bx - w / 2 - 1.5, x1: bx + w / 2 + 1.5, z0: bz - d / 2 - 1.5, z1: bz + d / 2 + 1.5 })),
+    tours: tours.map(({ bx, bz, w, d, h }) => ({ x0: bx - w / 2 - 1.5, x1: bx + w / 2 + 1.5, z0: bz - d / 2 - 1.5, z1: bz + d / 2 + 1.5, h: h * 1.18 + 1 })),
+    helico,
     // Chaque véhicule de la circulation, en cercles le long de son axe (un bus en fait quatre).
     circulation: () => vehicules.flatMap((o) => {
       const demi = o.userData.demi || 1.2, axeZ = o.userData.voie.axe === 'z';

@@ -1331,7 +1331,8 @@
         "defaut": "Interact",
         "escalier": "Take the stairs",
         "chantier": "See the project",
-        "voiture": "Get in the car"
+        "voiture": "Get in the car",
+        "helico": "Take the helicopter"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1362,7 +1363,8 @@
       "planete": "Planet view",
       "vousEtesIci": "You are here",
       "planeteAide": "Earth right now: the lit side is where it's daytime. Drag to turn it.",
-      "conduite": {"descendre": "Get out", "aide": "W accelerate · S brake, reverse · A D steer · Space handbrake · F get out", "gaz": "Accelerate", "frein": "Brake / reverse"},
+      "course": {"lancer": "Race", "porte": "Gate {{n}} / {{total}}", "versArrivee": "To the finish!", "arrivee": "Finish", "nouveauRecord": "New record!", "record": "Your record: {{temps}}", "rejouer": "Race again", "abandonner": "Quit the race"},
+      "conduite": {"descendre": "Get out", "aide": "W accelerate · S brake, reverse · A D steer · Space handbrake · F get out", "aideHelico": "W forward · S back · A D turn · Space up · Shift down · F get out (once landed)", "monter": "Climb", "descendreAlt": "Descend", "sePoser": "Land first to get out of the helicopter", "gaz": "Accelerate", "frein": "Brake / reverse"},
       "frise": {"titre": "Timeline", "revoir": "Replay the sites growing", "pause": "Pause", "aujourdhui": "Today", "retour": "Today", "locale": "en-GB", "rendues": "{{n}}/{{total}} tasks delivered"},
       "redescendre": "Back down to the city",
       "passer": "Skip",

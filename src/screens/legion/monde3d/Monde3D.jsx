@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
 import { styleVille } from './region';
+import { chrono } from './conduite';
 import { estSalleDeMarche, pairesDuJour, activite14j } from './salle-marche3d';
 import { tours as calculerTours, aLaDate, bornesFrise } from '../parties/ville';
 import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
@@ -105,6 +106,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   }, [projets, toutes, agents, maintenant, quand, t]);
   const [volant, setVolant] = useState(null); // { kmh } pendant qu'on conduit
   const [choc, setChoc] = useState(0);
+  const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
   const [menu, setMenu] = useState(false);
   const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
@@ -159,7 +161,19 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'proximite') setProche(e.cible);
             if (e.type === 'ciel') setCiel3d(e.actif);
             if (e.type === 'interagir') interagirRef.current?.(e.cible);
-            if (e.type === 'conduite') setVolant(e.active ? { kmh: e.kmh || 0 } : null);
+            if (e.type === 'conduite' && !e.active) setCourse(null);
+            if (e.type === 'conduite') setVolant(e.active ? { kmh: e.kmh || 0, genre: e.genre || 'voiture', alt: e.alt || 0, sePoser: e.sePoser ? Date.now() : 0 } : null);
+            if (e.type === 'course') setCourse((avant) => {
+              if (!e.active) return null;
+              if (e.nouvelle) return { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
+              if (e.finie && !avant?.finie) { // le record reste dans ce navigateur
+                const ancien = Number(lire('leo:course-record', '0')) || 0;
+                const nouveau = !ancien || e.temps < ancien;
+                if (nouveau) ecrire('leo:course-record', String(e.temps));
+                return { ...e, record: nouveau ? e.temps : ancien, nouveau };
+              }
+              return avant?.finie ? avant : { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
+            });
             if (e.type === 'choc') { setChoc(Date.now()); try { navigator.vibrate?.(Math.min(120, e.force * 4)); } catch { /* pas de vibreur */ } }
           },
         });
@@ -204,6 +218,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   function interagir(cible) {
     if (!cible) return;
     if (cible.type === 'voiture') { monde.current?.monterVoiture(cible.id); return; }
+    if (cible.type === 'helico') { monde.current?.monterHelico(); return; }
     if (cible.type === 'receptionniste') {
       const r = repondre('', { agents, ou, nomEntreprise: entreprise.nom }, langue);
       setDialogue({ lignes: [{ qui: 'elle', texte: r.texte }] });
@@ -404,7 +419,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             </div>
           ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
-            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{proche.type === 'voiture' ? 'F' : 'E'}</kbd>}
+            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{['voiture', 'helico'].includes(proche.type) ? 'F' : 'E'}</kbd>}
             {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
           </button>
           )}
@@ -442,15 +457,43 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <div className={`pointer-events-none absolute z-[5] flex items-baseline gap-1 rounded-2xl border border-legion-gold/40 bg-[#0b1120]/85 px-3 py-1.5 backdrop-blur ${mobile ? 'left-3 top-14' : 'bottom-4 right-4'} ${Date.now() - choc < 400 ? 'ring-2 ring-red-500' : ''}`}>
             <span className="font-mono text-[28px] font-bold leading-none text-legion-ink">{volant.kmh}</span>
             <span className="text-[11px] font-semibold text-legion-muted">km/h</span>
+            {volant.genre === 'helico' && <><span className="ml-2 font-mono text-[22px] font-bold leading-none text-legion-gold">{volant.alt}</span><span className="text-[11px] font-semibold text-legion-muted">m</span></>}
           </div>
+          {volant.genre !== 'helico' && !course && (
+            <button type="button" onClick={() => monde.current?.lancerCourse()} className={`absolute z-[6] rounded-pill border border-legion-gold bg-[#0b1120]/85 px-3 py-1.5 text-[12.5px] font-semibold text-legion-gold backdrop-blur ${mobile ? 'right-3 top-[6.5rem]' : 'bottom-4 left-[calc(50%+5.5rem)]'}`}>🏁 {t('legion.monde.course.lancer')}</button>
+          )}
+          {course && (
+            <div className={`absolute left-1/2 z-[6] -translate-x-1/2 rounded-2xl border border-legion-gold/50 bg-[#0b1120]/90 px-4 py-2 text-center backdrop-blur ${mobile ? 'top-[6.5rem]' : 'top-16'}`}>
+              {course.finie ? (
+                <>
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-legion-gold">{course.nouveau ? t('legion.monde.course.nouveauRecord') : t('legion.monde.course.arrivee')}</p>
+                  <p className="font-mono text-[26px] font-bold leading-tight text-legion-ink">{chrono(course.temps)}</p>
+                  {!course.nouveau && course.record > 0 && <p className="text-[11.5px] text-legion-muted">{t('legion.monde.course.record', { temps: chrono(course.record) })}</p>}
+                  <div className="mt-1.5 flex justify-center gap-2">
+                    <button type="button" onClick={() => monde.current?.lancerCourse()} className="rounded-pill bg-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-bg">{t('legion.monde.course.rejouer')}</button>
+                    <button type="button" onClick={() => monde.current?.arreterCourse()} className="rounded-pill border border-legion-line px-3 py-1 text-[12px] text-legion-ink">{t('common.close', 'Fermer')}</button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] font-semibold text-legion-gold">{course.prochaine === course.total ? t('legion.monde.course.versArrivee') : t('legion.monde.course.porte', { n: course.prochaine, total: course.total - 1 })}</span>
+                  <span className="font-mono text-[20px] font-bold text-legion-ink">{chrono(course.temps)}</span>
+                  <button type="button" onClick={() => monde.current?.arreterCourse()} aria-label={t('legion.monde.course.abandonner')} className="text-[14px] text-legion-muted">✕</button>
+                </div>
+              )}
+            </div>
+          )}
+          {volant.genre === 'helico' && Date.now() - volant.sePoser < 3000 && (
+            <p className="pointer-events-none absolute left-1/2 top-24 z-[6] -translate-x-1/2 rounded-pill bg-black/70 px-3 py-1.5 text-[12.5px] text-white">{t('legion.monde.conduite.sePoser')}</p>
+          )}
           <button type="button" onClick={() => monde.current?.descendreVoiture()} className={`absolute z-[6] rounded-pill bg-legion-gold px-4 py-2 text-[13px] font-semibold text-legion-bg shadow ${mobile ? 'right-3 top-14' : 'bottom-4 left-1/2 -translate-x-1/2'}`}>
             {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">F</kbd>}{t('legion.monde.conduite.descendre')}
           </button>
-          {!mobile && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t('legion.monde.conduite.aide')}</p>}
+          {!mobile && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t(volant.genre === 'helico' ? 'legion.monde.conduite.aideHelico' : 'legion.monde.conduite.aide')}</p>}
           {mobile && (
             <div className="absolute bottom-20 right-4 z-[6] flex flex-col gap-3">
               {[['gaz', '▲'], ['frein', '▼']].map(([k, s]) => (
-                <button key={k} type="button" aria-label={t(`legion.monde.conduite.${k}`)}
+                <button key={k} type="button" aria-label={t(`legion.monde.conduite.${volant.genre === 'helico' ? (k === 'gaz' ? 'monter' : 'descendreAlt') : k}`)}
                   onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ [k]: true }); }}
                   onPointerUp={() => monde.current?.pedales({ [k]: false })} onPointerCancel={() => monde.current?.pedales({ [k]: false })}
                   className={`grid h-16 w-16 touch-none select-none place-items-center rounded-full border text-[22px] font-bold backdrop-blur ${k === 'gaz' ? 'border-legion-gold bg-legion-gold/30 text-legion-gold' : 'border-white/30 bg-white/10 text-white'}`}>{s}</button>

@@ -83,3 +83,51 @@ export function portiere(e) {
 }
 
 export const kmh = (v) => Math.round(Math.abs(v) * 3.6);
+
+// Chrono d'une course : minutes, secondes, dixièmes.
+export function chrono(s) {
+  const m = Math.floor(s / 60), r = s - m * 60;
+  return `${m}:${r < 10 ? '0' : ''}${r.toFixed(1)}`;
+}
+
+// ——— L'hélicoptère (Beau, 25/09 : « prendre un hélicoptère, comme GTA ») ———
+// Pilotage simple, façon jeu : avance (-1 recule … 1 avance), lacet (-1 gauche … 1 droite),
+// monte (-1 descend … 1 monte). Au sol, il ne glisse pas : il faut d'abord décoller.
+export const HELICO = { vitesse: 32, recul: 10, montee: 9, lacet: 1.1, reponse: 1.6, plafond: 160, rayon: 5.2 };
+
+export function voler(e, { avance = 0, lacet = 0, monte = 0 } = {}, dt, H = HELICO) {
+  const auSol = e.y <= 0.01;
+  const cap = auSol && monte <= 0 ? e.cap : e.cap - borne(lacet, -1, 1) * H.lacet * dt;
+  const vise = auSol && monte <= 0 ? 0 : borne(avance, -1, 1) * (avance >= 0 ? H.vitesse : H.recul);
+  const k = Math.min(1, H.reponse * dt);
+  const vx = e.vx + (Math.sin(cap) * vise - e.vx) * k;
+  const vz = e.vz + (Math.cos(cap) * vise - e.vz) * k;
+  const vy = e.vy + (borne(monte, -1, 1) * H.montee - e.vy) * Math.min(1, 2.5 * dt);
+  let y = e.y + vy * dt;
+  y = borne(y, 0, H.plafond);
+  const pose = y <= 0.01;
+  return {
+    ...e, cap, y,
+    vx: pose && monte <= 0 ? 0 : vx, vz: pose && monte <= 0 ? 0 : vz, vy: pose ? Math.max(0, vy) : vy,
+    x: e.x + (pose && monte <= 0 ? 0 : vx) * dt, z: e.z + (pose && monte <= 0 ? 0 : vz) * dt,
+    // Pour le dessin : il pique du nez en avançant et penche dans les virages.
+    tangage: borne(avance, -1, 1) * 0.22 * (pose ? 0 : 1), roulis: borne(lacet, -1, 1) * 0.18 * (pose ? 0 : 1),
+  };
+}
+
+// Les immeubles arrêtent l'hélicoptère tant qu'il vole plus bas que leur toit.
+export function heurterTours(e, tours, H = HELICO) {
+  let { x, z, vx, vz } = e;
+  let choc = 0;
+  for (const b of tours) {
+    if (e.y > (b.h ?? 0) + 1) continue;
+    const px = borne(x, b.x0, b.x1), pz = borne(z, b.z0, b.z1);
+    const dx = x - px, dz = z - pz, d = Math.hypot(dx, dz);
+    if (d >= H.rayon) continue;
+    if (d < 1e-6) continue; // (au-dessus du toit, posé dessus)
+    x += (dx / d) * (H.rayon - d); z += (dz / d) * (H.rayon - d);
+    choc = Math.max(choc, Math.hypot(vx, vz));
+    vx *= -0.2; vz *= -0.2;
+  }
+  return { ...e, x, z, vx, vz, choc };
+}

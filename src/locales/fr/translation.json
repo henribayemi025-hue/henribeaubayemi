@@ -1331,7 +1331,8 @@
         "defaut": "Interagir",
         "escalier": "Monter par l'escalier",
         "chantier": "Voir le projet",
-        "voiture": "Monter dans la voiture"
+        "voiture": "Monter dans la voiture",
+        "helico": "Prendre l'hélicoptère"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1362,7 +1363,8 @@
       "planete": "Vue de la planète",
       "vousEtesIci": "Vous êtes ici",
       "planeteAide": "La Terre en ce moment : le côté éclairé est celui où il fait jour. Glissez pour la faire tourner.",
-      "conduite": {"descendre": "Descendre", "aide": "Z accélérer · S freiner, reculer · Q D tourner · Espace frein à main · F descendre", "gaz": "Accélérer", "frein": "Freiner / reculer"},
+      "course": {"lancer": "Course", "porte": "Porte {{n}} / {{total}}", "versArrivee": "Vers l'arrivée !", "arrivee": "Arrivée", "nouveauRecord": "Nouveau record !", "record": "Votre record : {{temps}}", "rejouer": "Rejouer", "abandonner": "Abandonner la course"},
+      "conduite": {"descendre": "Descendre", "aide": "Z accélérer · S freiner, reculer · Q D tourner · Espace frein à main · F descendre", "aideHelico": "Z avancer · S reculer · Q D tourner · Espace monter · Maj descendre · F descendre (une fois posé)", "monter": "Monter", "descendreAlt": "Descendre", "sePoser": "Posez-vous d'abord pour descendre de l'hélicoptère", "gaz": "Accélérer", "frein": "Freiner / reculer"},
       "frise": {"titre": "Frise du temps", "revoir": "Revoir les chantiers grandir", "pause": "Pause", "aujourdhui": "Aujourd'hui", "retour": "Aujourd'hui", "locale": "fr-FR", "rendues": "{{n}}/{{total}} tâches rendues"},
       "redescendre": "Redescendre en ville",
       "passer": "Passer",
