@@ -49,6 +49,9 @@ const OUTILS = [
   { name: 'feuille_de_route', description: "La feuille de route de l'entreprise: trimestre, mois, semaine, jour, lignes récurrentes; ce qui est fait et commenté.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' }, horizon: { type: 'string', enum: ['trimestre', 'mois', 'semaine', 'jour', 'recurrent'] } }, required: ['entreprise_id'] } },
   { name: 'ecrire', description: "Écrit un message dans un salon, AU NOM de la personne (comme si elle le tapait dans Léo). Les agents du salon répondent. À n'utiliser que quand elle l'a demandé.", inputSchema: { type: 'object', properties: { canal_id: { type: 'string' }, texte: { type: 'string', minLength: 1, maxLength: 4000 } }, required: ['canal_id', 'texte'] } },
   { name: 'creer_tache', description: "Ajoute une tâche au tableau d'une entreprise, dans un salon, confiée à un agent (par son nom) ou à personne.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' }, canal_id: { type: 'string' }, titre: { type: 'string', minLength: 3, maxLength: 200 }, agent: { type: 'string', description: "Le nom de l'agent (facultatif)" }, priorite: { type: 'string', enum: ['haute', 'normale', 'basse'] } }, required: ['entreprise_id', 'canal_id', 'titre'] } },
+  { name: 'taches_ordinateur', description: "Les tâches que l'entreprise a confiées à « mon ordinateur » : ce que l'assistant branché sur l'ordinateur de la personne (Claude dans Chrome, Claude pour ordinateur) doit faire à l'écran, sous ses yeux. Les plus urgentes d'abord.", inputSchema: { type: 'object', properties: { entreprise_id: { type: 'string' } }, required: ['entreprise_id'] } },
+  { name: 'prendre_tache_ordinateur', description: "Annonce qu'on commence une tâche « mon ordinateur » (elle passe « en cours » dans Léo, et l'immeuble montre l'ordinateur au travail). À appeler juste avant de la faire.", inputSchema: { type: 'object', properties: { tache_id: { type: 'string' } }, required: ['tache_id'] } },
+  { name: 'rendre_tache_ordinateur', description: "Rend une tâche « mon ordinateur » : le compte rendu (ce qui a été fait à l'écran, ce qui a été vu, ce qui reste), écrit dans le salon de la tâche, qui passe « à revoir ». « bloque » si elle n'a pas pu être faite, avec la raison.", inputSchema: { type: 'object', properties: { tache_id: { type: 'string' }, compte_rendu: { type: 'string', minLength: 3, maxLength: 8000 }, bloque: { type: 'boolean' } }, required: ['tache_id', 'compte_rendu'] } },
   { name: 'cocher_feuille', description: 'Marque une ligne de la feuille de route comme faite, avec un commentaire facultatif.', inputSchema: { type: 'object', properties: { ligne_id: { type: 'string' }, commentaire: { type: 'string', maxLength: 1000 } }, required: ['ligne_id'] } },
 ];
 
@@ -142,6 +145,44 @@ async function executer(service: SupabaseClient, userId: string, nom: string, ar
       if (error || !ligne) return refus('Tâche non créée: ' + (error?.message ?? 'inconnu'));
       return texte({ creee: true, tache_id: ligne.id });
     }
+    // « MON ORDINATEUR » (Beau, 25/09 : « les agents prennent possession de ton
+    // ordinateur »). Jamais en cachette : c'est l'assistant que la personne a
+    // elle-même branché sur SON ordinateur qui prend la tâche, écran visible,
+    // et qui peut s'arrêter à tout moment. Les agents de Léo ne prennent
+    // jamais ces tâches (legion-travail).
+    case 'taches_ordinateur': {
+      if (!(await membre(service, userId, s('entreprise_id')))) return refus("Pas membre de cette entreprise.");
+      const { data } = await service.from('legion_messages').select('id, texte, created_at, meta, canal_id').eq('entreprise_id', s('entreprise_id')).eq('genre', 'tache').contains('meta', { ordinateur: true }).is('termine_le', null).order('created_at').limit(50);
+      const rang = (m: Json) => ({ urgente: 0, haute: 1 } as Record<string, number>)[String((m.meta as Json | null)?.priorite || '')] ?? 2;
+      const ouvertes = (data ?? []).filter((m: Json) => ['a_faire', 'en_cours', 'renvoye', undefined].includes((m.meta as Json | null)?.statut as string | undefined)).sort((a: Json, b: Json) => rang(a) - rang(b));
+      return texte({
+        regles: "Fais seulement ce que la tâche décrit, à l'écran de la personne. Avant tout envoi à quelqu'un, paiement, achat, suppression, publication ou changement de mot de passe : demande-lui d'abord. Rends toujours un compte rendu (rendre_tache_ordinateur), même si tu es bloqué.",
+        taches: ouvertes.map((m: Json) => ({ id: m.id, titre: m.texte, priorite: (m.meta as Json | null)?.priorite ?? 'normale', statut: (m.meta as Json | null)?.statut ?? 'a_faire', remarque: (m.meta as Json | null)?.remarque, depuis: m.created_at })),
+      });
+    }
+    case 'prendre_tache_ordinateur':
+    case 'rendre_tache_ordinateur': {
+      if (!/^[0-9a-f-]{36}$/.test(s('tache_id'))) return refus('Tâche introuvable.');
+      const { data: t } = await service.from('legion_messages').select('id, entreprise_id, canal_id, texte, meta, genre').eq('id', s('tache_id')).maybeSingle();
+      if (!t || t.genre !== 'tache' || !(t.meta as Json | null)?.ordinateur) return refus("Ce n'est pas une tâche « mon ordinateur ».");
+      const a = await acces(service, userId, t.canal_id);
+      if (!a || !a.moi) return refus('Tâche pas accessible.');
+      const maintenant = new Date().toISOString();
+      if (nom === 'prendre_tache_ordinateur') {
+        await service.from('legion_messages').update({ meta: { ...(t.meta as Json), statut: 'en_cours', travaille_depuis: maintenant, pris_par_ordinateur: maintenant } }).eq('id', t.id);
+        return texte({ pris: true, titre: t.texte });
+      }
+      const bloque = args.bloque === true;
+      const cr = s('compte_rendu').trim().slice(0, 8000);
+      const { data: ligne, error } = await service.from('legion_messages').insert({
+        entreprise_id: t.entreprise_id, canal_id: t.canal_id, auteur_id: a.moi.id, user_id: userId, genre: 'info',
+        texte: `🖥 **Mon ordinateur — ${String(t.texte).slice(0, 150)}**\n\n${cr}`,
+        meta: { par: 'ordinateur', livrable: { tache_id: t.id, tache: t.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true },
+      }).select('id').single();
+      if (error || !ligne) return refus('Compte rendu non écrit : ' + (error?.message ?? 'inconnu'));
+      await service.from('legion_messages').update({ meta: { ...(t.meta as Json), statut: bloque ? 'a_faire' : 'revue', livre_le: maintenant, ...(bloque ? { bloque: cr.slice(0, 300) } : {}) } }).eq('id', t.id);
+      return texte({ rendu: true, statut: bloque ? 'bloqué (reste à faire)' : 'à revoir par la personne', message_id: ligne.id });
+    }
     case 'cocher_feuille': {
       if (!/^[0-9a-f-]{36}$/.test(s('ligne_id'))) return refus('Ligne introuvable.');
       const { data: l } = await service.from('legion_feuille').select('id, entreprise_id, titre').eq('id', s('ligne_id')).maybeSingle();
@@ -178,7 +219,7 @@ Deno.serve(async (req: Request) => {
 
   switch (methode) {
     case 'initialize':
-      return rpcOk(id, { protocolVersion: VERSION_PROTOCOLE, capabilities: { tools: {} }, serverInfo: { name: 'Léo (Finjaro)', version: '1.0' }, instructions: "Léo: l'entreprise de la personne, avec ses agents IA. Commence par mes_entreprises. N'écris dans un salon (ecrire) que si elle l'a demandé: les agents répondent au nom de l'entreprise." });
+      return rpcOk(id, { protocolVersion: VERSION_PROTOCOLE, capabilities: { tools: {} }, serverInfo: { name: 'Léo (Finjaro)', version: '1.0' }, instructions: "Léo: l'entreprise de la personne, avec ses agents IA. Commence par mes_entreprises. N'écris dans un salon (ecrire) que si elle l'a demandé: les agents répondent au nom de l'entreprise. Si tu tournes sur l'ordinateur de la personne (navigateur, bureau), taches_ordinateur donne ce que l'entreprise te confie : prends-en une (prendre_tache_ordinateur), fais-la sous ses yeux, rends-la (rendre_tache_ordinateur). Demande-lui avant tout envoi, paiement, suppression ou publication." });
     case 'notifications/initialized':
     case 'notifications/cancelled':
       return new Response(null, { status: 202, headers: entetes });

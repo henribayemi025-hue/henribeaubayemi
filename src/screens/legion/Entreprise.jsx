@@ -417,12 +417,12 @@ export default function Entreprise() {
     if (window.innerWidth >= 1024) setKanban(true); else setVue('taches');
   }
 
-  async function creerTache({ texte, assigne_a, priorite }) {
+  async function creerTache({ texte, assigne_a, priorite, ordinateur = false }) {
     if (!moi) return;
     const canal = salonId || departements[0]?.id;
     const { data: ligne, error: err } = await supabase.from('legion_messages').insert({
       entreprise_id: entrepriseId, canal_id: canal, auteur_id: moi.id, user_id: user.id, texte, genre: 'tache', assigne_a,
-      meta: { statut: 'a_faire', priorite },
+      meta: { statut: 'a_faire', priorite, ...(ordinateur ? { ordinateur: true } : {}) },
     }).select().single();
     if (err) { toast.error(err.message); return; }
     setData((d) => (d && !d.messages.some((x) => x.id === ligne.id) ? { ...d, messages: [...d.messages, ligne] } : d));

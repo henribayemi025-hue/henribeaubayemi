@@ -1225,6 +1225,12 @@
       "enExamen": "Under review",
       "envoyer": "Send to training",
       "envoye": "Sent to training"
+    },
+    "ordinateur": {
+      "option": "My computer (my assistant)",
+      "pris": "Taken by my computer",
+      "attend": "Waiting for my computer",
+      "aide": "My computer: add this address to the assistant on your computer (Claude in Chrome, Claude desktop). On the board, choose “My computer”: it takes the task, does it in front of you, and asks before sending, paying or deleting anything. Stop it any time."
     }
   },
   "equipe": {

@@ -8,6 +8,8 @@ import { STATUTS, statutDe, PRIORITES, COULEUR_PRIORITE } from './outils';
 // qu'on transforme), elle avance de colonne en colonne, elle est tenue par
 // un agent. Convoquer l'agent ouvre son salon privé avec la question
 // déjà écrite.
+const ORDINATEUR = '__ordinateur';
+
 export function Kanban({ taches, agents, departements, onStatut, onCreer, onConvoquer, onRenvoyer, onFermer, t, className = '' }) {
   const [filtre, setFiltre] = useState('tous');
   // La revue d'un livrable: quelle tâche est en train d'être renvoyée.
@@ -33,7 +35,10 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
   function creer(e) {
     e.preventDefault();
     if (!titre.trim()) return;
-    onCreer({ texte: titre.trim(), assigne_a: agentId || null, priorite });
+    // « Mon ordinateur » (25/09) : pour l'assistant branché sur l'ordinateur
+    // de la personne (Claude dans Chrome, par le serveur MCP de Léo).
+    const ordinateur = agentId === ORDINATEUR;
+    onCreer({ texte: titre.trim(), assigne_a: ordinateur ? null : (agentId || null), priorite, ordinateur });
     setTitre(''); setAjout(false);
   }
 
@@ -76,6 +81,7 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
             <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="input w-full">
               <option value="">{t('legion.personneEncore', 'Personne encore (libre)')}</option>
               {machines.map((a) => <option key={a.id} value={a.id}>{a.nom} — {a.poste}</option>)}
+              <option value={ORDINATEUR}>🖥 {t('legion.ordinateur.option', 'Mon ordinateur (mon assistant)')}</option>
             </select>
             <select value={priorite} onChange={(e) => setPriorite(e.target.value)} className="input w-full">
               {PRIORITES.map((p) => <option key={p} value={p}>{t(`legion.priorite.${p}`)}</option>)}
@@ -112,6 +118,9 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
                       <span className="rounded border px-1.5 py-0.5 font-mono font-semibold uppercase" style={{ color: COULEUR_PRIORITE[prio], borderColor: COULEUR_PRIORITE[prio] + '55', backgroundColor: COULEUR_PRIORITE[prio] + '14' }}>{t(`legion.priorite.${prio}`)}</span>
                     </div>
                     <p className="text-caption font-semibold leading-snug text-legion-ink group-hover:text-legion-gold">{x.texte}</p>
+                    {x.meta?.ordinateur && (
+                      <p className="text-[10px] font-semibold text-legion-gold">🖥 {x.meta?.pris_par_ordinateur ? t('legion.ordinateur.pris', 'Pris par mon ordinateur') : t('legion.ordinateur.attend', 'Attend mon ordinateur')}</p>
+                    )}
                     {/* Le relais (B6-5): cette tâche vient du livrable d'un autre agent. */}
                     {x.meta?.suite_de?.par && (
                       <p className="truncate text-[10px] text-legion-muted" title={x.meta.suite_de.tache}>

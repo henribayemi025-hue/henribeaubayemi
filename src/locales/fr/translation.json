@@ -1225,6 +1225,12 @@
       "enExamen": "À l’examen",
       "envoyer": "Envoyer en formation",
       "envoye": "Envoyé en formation"
+    },
+    "ordinateur": {
+      "option": "Mon ordinateur (mon assistant)",
+      "pris": "Pris par mon ordinateur",
+      "attend": "Attend mon ordinateur",
+      "aide": "Mon ordinateur : branche cette adresse dans l’assistant de ton ordinateur (Claude dans Chrome, Claude pour ordinateur). Au tableau, choisis « Mon ordinateur » : il prend la tâche, la fait sous tes yeux, et te demande avant tout envoi, paiement ou suppression. Tu l’arrêtes quand tu veux."
     }
   },
   "equipe": {

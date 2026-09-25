@@ -332,6 +332,10 @@ export function Connecteurs({ entreprise, t }) {
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-legion-ink">{t('legion.connecteurAssistant', 'Mon assistant (Claude, ChatGPT, Claude Code…)')}</p>
             <p className="text-legion-muted">{t('legion.connecteurAssistantAide', 'Ton assistant lit tes salons, tes tâches et ta feuille de route, et peut écrire dans un salon à ton nom — avec tes droits, rien de plus. Crée un jeton, colle l’adresse dans ton assistant (connecteur « sans authentification »).')}</p>
+            {/* « Mon ordinateur » (Beau, 25/09) : l'assistant qui tourne sur SON
+                ordinateur (Claude dans Chrome, Claude pour ordinateur) prend
+                les tâches marquées « Mon ordinateur » au tableau. */}
+            <p className="mt-1 text-legion-muted">🖥 {t('legion.ordinateur.aide')}</p>
             {jetonClair && (
               <div className="mt-2 rounded-xl border border-legion-gold/40 bg-legion-bg p-2">
                 <p className="text-[11px] font-semibold text-legion-gold">{t('legion.jetonUneFois', 'Copie cette adresse maintenant : elle ne s’affichera plus.')}</p>

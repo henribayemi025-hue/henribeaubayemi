@@ -70,7 +70,7 @@ function contrat(a: Agent): string {
   return `${m?.objectif ? `Ta mission: ${m.objectif}${m.prend?.length ? ` — tu prends: ${m.prend.join(' ; ')}` : ''}${m.relais_humain ? `. Tu passes la main à un humain quand: ${m.relais_humain}` : ''}.\n` : ''}${a.fin_mission ? `Tu es en intérim jusqu'au ${a.fin_mission}.\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat): ${a.jamais}\n` : ''}`;
 }
 type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string };
-  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string; travaille_depuis?: string; essais?: number } | null; created_at: string };
+  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string; travaille_depuis?: string; essais?: number; ordinateur?: boolean } | null; created_at: string };
 type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
 
@@ -594,7 +594,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // n'est pas encore pris »). La prise est atomique : un seul agent gagne.
       if (!tache && !urgences) {
         const monSalon = canalDe(a.departement)?.id;
-        const libre = ouvertes.find((t) => !t.assigne_a && t.canal_id === monSalon && !priseRecemment(t));
+        // Une tâche « pour mon ordinateur » (25/09) attend l'assistant branché
+        // sur l'ordinateur de la personne : aucun agent de Léo ne la prend.
+        const libre = ouvertes.find((t) => !t.assigne_a && !t.meta?.ordinateur && t.canal_id === monSalon && !priseRecemment(t));
         if (libre) {
           const { data: prise } = await service.from('legion_messages').update({ assigne_a: a.id, meta: { ...(libre.meta || {}), pris_au_tableau: true } })
             .eq('id', libre.id).is('assigne_a', null).select('id, texte, assigne_a, canal_id, meta, created_at').maybeSingle();
