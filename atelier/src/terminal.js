@@ -11,7 +11,10 @@ const guillemets = (s) => `'${String(s).replace(/'/g, "'\\''")}'`;
 // La commande, lancée depuis le dossier courant, qui rend à la fin le dossier atteint.
 export function enveloppe(commande, dossier = '') {
   const depart = dossier ? `${RACINE}/${dossier}` : RACINE;
-  return `cd ${guillemets(depart)} 2>/dev/null || cd ${guillemets(RACINE)}\n{ ${commande}\n}\n__code=$?\nprintf '\\n${MARQUE}%s\\n' "$PWD"\nexit $__code`;
+  // Dans un sous-shell : le bac à sable garde UNE session shell ouverte ; un
+  // « exit » au niveau de la session la tuerait (vu le 25/09 : la commande ne
+  // rendait jamais la main).
+  return `(\ncd ${guillemets(depart)} 2>/dev/null || cd ${guillemets(RACINE)}\n{ ${commande}\n}\n__code=$?\nprintf '\\n${MARQUE}%s\\n' "$PWD"\nexit $__code\n)`;
 }
 
 // La sortie sans la marque, et le nouveau dossier (relatif au projet ; '' = la racine).
