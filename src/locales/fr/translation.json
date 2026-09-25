@@ -845,7 +845,8 @@
       "immeuble": "L'immeuble",
       "ville": "La ville",
       "reunions": "Salle de réunion",
-      "academie": "Académie"
+      "academie": "Académie",
+      "monde3d": "Le monde 3D"
     },
     "clavier": {
       "titre": "Raccourcis clavier",
@@ -1295,6 +1296,51 @@
       "changer": "Changer de ville",
       "taVille": "Ta ville",
       "chaud": "Il fait {{t}} à {{ville}} : pense à boire de l'eau."
+    },
+    "monde": {
+      "lieu": {
+        "hall": "Réception",
+        "reunion": "Salle de réunion",
+        "atelier": "Atelier"
+      },
+      "phrase": {
+        "hall": "le hall de l'immeuble, la réceptionniste vous accueille",
+        "reunion": "les agents s'y assoient quand une réunion a lieu",
+        "atelier": "les agents y travaillent quand ils ont une tâche en cours"
+      },
+      "camera": {
+        "tps": "3e personne",
+        "fps": "1re personne",
+        "plan": "Plan"
+      },
+      "action": {
+        "receptionniste": "Parler à la réceptionniste",
+        "ascenseur": "Prendre l'ascenseur",
+        "agent": "Voir sa fiche",
+        "ecran": "Voir l'écran",
+        "table": "La table de réunion",
+        "defaut": "Interagir"
+      },
+      "monAvatar": "Mon avatar",
+      "choisirAvatar": "Choisis ton avatar",
+      "receptionniste": "Réceptionniste",
+      "ascenseur": "Ascenseur — quel étage ?",
+      "emmene": "M'emmener : {{lieu}}",
+      "demander": "Demander à la réceptionniste…",
+      "q": {
+        "reunion": "Qui est en réunion ?",
+        "travail": "Qui travaille en ce moment ?",
+        "ouAlpha": "Où est {{nom}} ?"
+      },
+      "chargement": "Chargement du monde 3D…",
+      "erreur": "Le monde 3D n'a pas pu s'ouvrir sur cet appareil (WebGL indisponible).",
+      "aide": "Z Q S D ou flèches : marcher · Maj : courir · E : interagir · V : caméra · glisser : regarder",
+      "faitsTitre": "Aujourd'hui chez {{nom}}",
+      "faitsRendues": "{{n}} tâche(s) rendue(s) aujourd’hui",
+      "faitsReunion": "Réunion en cours : {{sujet}}",
+      "faitsSansReunion": "Pas de réunion en ce moment",
+      "faitsTravail": "Au travail : {{noms}}",
+      "faitsPersonne": "Personne au travail à l'instant"
     }
   },
   "equipe": {

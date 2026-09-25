@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconX, IconDownload, IconPrinter, IconChevronLeft, IconChevronRight, IconMaximize, IconThumbUp, IconTrash, IconSend, IconChecklist } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { Visage } from './Visage';
@@ -9,6 +9,9 @@ import { Immeuble } from './Immeuble';
 import { Ville } from './Ville';
 import { SalleReunion, Academie } from './Pieces';
 import { rangerEquipe, photosEnLigne, GRADES } from './organigramme';
+
+// Le monde 3D (25/09) : three.js et ses fichiers ne se chargent qu'à l'ouverture.
+const Monde3D = lazy(() => import('../monde3d/Monde3D'));
 
 // LEGION — les grandes vues (idées 51, 52, 59, 62, 69 et 166 des 200, 24/09) :
 // le bureau et l'organigramme vivants, la frise, la présentation, le tableau
@@ -108,7 +111,7 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
   return (
     <div className="p-4">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {['ville', 'immeuble', 'reunions', 'academie', 'bureau', 'organigramme'].map((k) => (
+        {['monde3d', 'ville', 'immeuble', 'reunions', 'academie', 'bureau', 'organigramme'].map((k) => (
           <button key={k} type="button" onClick={() => setMode(k)}
             className={`rounded-pill px-3 py-1 text-[13px] font-semibold ${mode === k ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>{t(`legion.vues.${k}`)}</button>
         ))}
@@ -122,9 +125,11 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
           </span>
         )}
       </div>
-      {!['immeuble', 'ville', 'reunions', 'academie'].includes(mode) && <p className="mb-3 text-[12px] text-legion-muted">{t('legion.vues.legende')}</p>}
+      {!['immeuble', 'ville', 'reunions', 'academie', 'monde3d'].includes(mode) && <p className="mb-3 text-[12px] text-legion-muted">{t('legion.vues.legende')}</p>}
 
-      {mode === 'ville' ? (
+      {mode === 'monde3d' ? (
+        <div className="-mx-4 -mb-4"><Suspense fallback={<p className="p-6 text-center text-[13px] text-legion-muted">…</p>}><Monde3D entreprise={entreprise} agents={agents} messages={messages} taches={taches} onFiche={onFiche} t={t} /></Suspense></div>
+      ) : mode === 'ville' ? (
         <div className="-mx-4 -mb-4"><Ville entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onMajMessage={onMajMessage} peutAgir={peutAgir} t={t} /></div>
       ) : mode === 'reunions' ? (
         <div className="-mx-4 -mb-4"><SalleReunion agents={agents} messages={messages} taches={taches} t={t} /></div>

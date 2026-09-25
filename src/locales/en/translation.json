@@ -845,7 +845,8 @@
       "immeuble": "The building",
       "ville": "The city",
       "reunions": "Meeting room",
-      "academie": "Academy"
+      "academie": "Academy",
+      "monde3d": "3D world"
     },
     "clavier": {
       "titre": "Keyboard shortcuts",
@@ -1295,6 +1296,51 @@
       "changer": "Change city",
       "taVille": "Your city",
       "chaud": "It's {{t}} in {{ville}}: remember to drink some water."
+    },
+    "monde": {
+      "lieu": {
+        "hall": "Reception",
+        "reunion": "Meeting room",
+        "atelier": "Workshop"
+      },
+      "phrase": {
+        "hall": "the building lobby, the receptionist welcomes you",
+        "reunion": "agents sit here when a meeting is on",
+        "atelier": "agents work here when they have a task in progress"
+      },
+      "camera": {
+        "tps": "3rd person",
+        "fps": "1st person",
+        "plan": "Map"
+      },
+      "action": {
+        "receptionniste": "Talk to the receptionist",
+        "ascenseur": "Take the lift",
+        "agent": "See their profile",
+        "ecran": "See the screen",
+        "table": "The meeting table",
+        "defaut": "Interact"
+      },
+      "monAvatar": "My avatar",
+      "choisirAvatar": "Choose your avatar",
+      "receptionniste": "Receptionist",
+      "ascenseur": "Lift — which floor?",
+      "emmene": "Take me: {{lieu}}",
+      "demander": "Ask the receptionist…",
+      "q": {
+        "reunion": "Who's in a meeting?",
+        "travail": "Who's working right now?",
+        "ouAlpha": "Where is {{nom}}?"
+      },
+      "chargement": "Loading the 3D world…",
+      "erreur": "The 3D world couldn't open on this device (WebGL unavailable).",
+      "aide": "W A S D or arrows: walk · Shift: run · E: interact · V: camera · drag: look",
+      "faitsTitre": "Today at {{nom}}",
+      "faitsRendues": "{{n}} task(s) delivered today",
+      "faitsReunion": "Meeting on: {{sujet}}",
+      "faitsSansReunion": "No meeting right now",
+      "faitsTravail": "Working: {{noms}}",
+      "faitsPersonne": "Nobody working right now"
     }
   },
   "equipe": {
