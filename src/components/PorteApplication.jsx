@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconBrandGoogleFilled, IconMail, IconUserPlus, IconArrowLeft } from '@tabler/icons-react';
+import { IconBrandGoogleFilled, IconUserPlus, IconArrowLeft } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from './Spinner';
 
@@ -18,6 +19,12 @@ const APPLIS = {
   legion: {
     logo: '/logos/leo.png',
     nom: 'Léo',
+    // Beau, 25/09 (audit) : « une photo, ou une vidéo, de la cité avec les agents qui marchent
+    // et qui travaillent ». La vidéo est celle tournée pour Léo (la tour, les taxis, les gens
+    // devant l'entrée, puis le hall) ; à l'ordinateur seulement, et jamais en économie de
+    // données — au téléphone, l'image de la même scène.
+    fondVideo: '/monde3d/porte.mp4',
+    fondImage: '/monde3d/porte.jpg',
     fond: 'legion-app bg-legion-bg text-legion-ink',
     panneau: 'border-legion-line bg-legion-panel',
     carte: 'border-legion-line bg-legion-card',
@@ -51,20 +58,51 @@ const APPLIS = {
   },
 };
 
+// La vidéo de fond seulement là où elle ne coûte rien à personne : grand écran,
+// pas d'économie de données, pas de réduction des animations demandée.
+function veutLaVideo() {
+  if (typeof window === 'undefined' || !window.matchMedia) return false;
+  if (navigator.connection?.saveData) return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  return window.matchMedia('(min-width: 1024px)').matches;
+}
+
 export function PorteApplication({ app, from }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { signInWithGoogle } = useAuth();
   const a = APPLIS[app];
+  const [video, setVideo] = useState(false);
+  useEffect(() => { if (a.fondVideo) setVideo(veutLaVideo()); }, [a.fondVideo]);
+  const surFond = !!a.fondImage;
 
   async function google() {
     const { error } = await signInWithGoogle(from);
     if (error) navigate('/auth', { state: { from } });
   }
 
+  // Sur la vidéo, les cartes et le panneau deviennent des vitres sombres, pour que le texte
+  // reste lisible quelle que soit l'image derrière.
+  const carte = surFond ? 'border-legion-line/60 bg-legion-panel/75 backdrop-blur-md' : a.carte;
+  const panneau = surFond ? 'border-legion-line/60 bg-legion-panel/85 backdrop-blur-md shadow-2xl' : a.panneau;
+
   return (
-    <div className={`h-dvh overflow-y-auto ${a.fond}`}>
-      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 py-6 lg:justify-center lg:px-8">
+    <div className={`relative h-dvh overflow-y-auto ${a.fond}`}>
+      {surFond && (
+        <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+          {video ? (
+            <video autoPlay muted loop playsInline poster={a.fondImage} className="h-full w-full object-cover" onError={() => setVideo(false)}>
+              <source src={a.fondVideo.replace(/\.mp4$/, '.webm')} type="video/webm" />
+              <source src={a.fondVideo} type="video/mp4" />
+            </video>
+          ) : (
+            <img src={a.fondImage} alt="" className="h-full w-full object-cover" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-legion-bg/95 via-legion-bg/75 to-legion-bg/45" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-legion-bg to-transparent" />
+        </div>
+      )}
+      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 py-6 lg:justify-center lg:px-8">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={a.logo} alt="" className="h-10 w-10 rounded-input object-cover" />
@@ -78,7 +116,7 @@ export function PorteApplication({ app, from }) {
             <h1 className="text-title font-semibold leading-tight">{t(a.accroche[0], a.accroche[1])}</h1>
             <ul className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {a.cartes.map(([kt, dt, kd, dd]) => (
-                <li key={kt} className={`rounded-card border p-4 ${a.carte}`}>
+                <li key={kt} className={`rounded-card border p-4 ${carte}`}>
                   <p className="text-body font-semibold">{t(kt, dt)}</p>
                   <p className={`mt-1 text-caption leading-snug ${a.sourd}`}>{t(kd, dd)}</p>
                 </li>
@@ -86,24 +124,27 @@ export function PorteApplication({ app, from }) {
             </ul>
           </section>
 
-          <section className={`h-fit rounded-2xl border p-5 ${a.panneau}`}>
+          <section className={`h-fit rounded-2xl border p-5 ${panneau}`}>
             <p className="text-body font-semibold">{t('porte.entrer', 'Entrer')}</p>
             <p className={`mt-0.5 text-caption ${a.sourd}`}>{t('porte.memeCompte', 'Le même compte que sur Finjaro.')}</p>
             <div className="mt-4 space-y-2.5">
-              <button type="button" onClick={google} className={`flex w-full items-center justify-center gap-2 rounded-input px-4 py-3 text-body font-semibold ${a.accent}`}>
+              {/* Beau, 25/09 : « il doit aussi y avoir Continuer avec Finjaro, comme il y a Continuer
+                  avec Google ». C'est le compte Finjaro (e-mail ou téléphone), le même partout. */}
+              <button type="button" onClick={() => navigate('/auth', { state: { from, mode: 'login' } })}
+                className={`flex w-full items-center justify-center gap-2.5 rounded-input px-4 py-3 text-body font-semibold ${a.accent}`}>
+                <img src="/icon-192.png" alt="" className="h-5 w-5 rounded-[5px]" /> {t('porte.finjaro', 'Continuer avec Finjaro')}
+              </button>
+              <button type="button" onClick={google} className={`flex w-full items-center justify-center gap-2 rounded-input border px-4 py-3 text-body font-semibold ${a.ligne}`}>
                 <IconBrandGoogleFilled size={18} /> {t('porte.google', 'Continuer avec Google')}
               </button>
               <div className={`flex items-center gap-3 text-[11px] uppercase tracking-wider ${a.sourd}`}>
                 <span className={`h-px flex-1 border-t ${a.ligne}`} /> {t('porte.ou', 'ou')} <span className={`h-px flex-1 border-t ${a.ligne}`} />
               </div>
-              <button type="button" onClick={() => navigate('/auth', { state: { from, mode: 'login' } })}
-                className={`flex w-full items-center justify-center gap-2 rounded-input border px-4 py-3 text-body font-semibold ${a.ligne}`}>
-                <IconMail size={18} /> {t('porte.email', 'E-mail ou téléphone')}
-              </button>
               <button type="button" onClick={() => navigate('/auth', { state: { from, mode: 'signup' } })}
-                className={`flex w-full items-center justify-center gap-2 rounded-input px-4 py-3 text-body font-semibold ${a.sourd}`}>
+                className={`flex w-full items-center justify-center gap-2 rounded-input border px-4 py-3 text-body font-semibold ${a.ligne}`}>
                 <IconUserPlus size={18} /> {t('porte.creer', 'Créer un compte')}
               </button>
+              <p className={`pt-1 text-center text-[12px] ${a.sourd}`}>{t('porte.finjaroAide', 'Avec l’e-mail ou le téléphone de ton compte Finjaro.')}</p>
             </div>
           </section>
         </div>

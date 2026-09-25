@@ -1938,7 +1938,9 @@
       "c3": "Goals with a date, and the path to get there.",
       "c4t": "The njangi",
       "c4": "The savings circle between friends, kept properly."
-    }
+    },
+    "finjaro": "Continue with Finjaro",
+    "finjaroAide": "With the e-mail or phone of your Finjaro account."
   },
   "apps": {
     "title": "Finjaro apps",

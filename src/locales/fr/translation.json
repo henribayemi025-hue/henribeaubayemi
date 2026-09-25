@@ -1938,7 +1938,9 @@
       "c3": "Des objectifs avec une date, et le chemin pour y arriver.",
       "c4t": "Le njangi",
       "c4": "La tontine entre amis, tenue proprement."
-    }
+    },
+    "finjaro": "Continuer avec Finjaro",
+    "finjaroAide": "Avec l’e-mail ou le téléphone de ton compte Finjaro."
   },
   "apps": {
     "title": "Applications Finjaro",
