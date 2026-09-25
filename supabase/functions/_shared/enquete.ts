@@ -270,3 +270,38 @@ export function borneVerifs(verifie: string[], max = 30_000): string[] {
   const part = Math.floor(max / verifie.length);
   return verifie.map((v) => (v.length > part ? `${v.slice(0, part)}… (coupé)` : v));
 }
+
+// LA RECHERCHE GUIDÉE (25/09, Traque : trois passages de suite sans une seule
+// page de boutique ouverte — l'enquête décidait « rien à vérifier » pour une
+// tâche de prospection, et la recherche unique partait du texte brut de la
+// tâche). Pour une tâche qui cherche DEHORS, on ne laisse plus ce choix au
+// modèle : trois requêtes courtes écrites pour la tâche, lancées chacune, puis
+// les pages les plus prometteuses ouvertes. Les annuaires et fiches de
+// sociétés passent après les vraies pages (site, Instagram, Facebook,
+// organisateur).
+const ANNUAIRES = /(cbinsights|crunchbase|zoominfo|pitchbook|dnb\.com|societe\.com|pappers|linkedin\.com\/company|wikipedia|glassdoor|indeed|tracxn|owler|rocketreach|craft\.co)/i;
+
+export async function rechercheGuidee(apiKey: string, tache: string, poste: string): Promise<string[]> {
+  const q = await generer(apiKey, `Un agent (${poste}) doit faire cette tâche en cherchant sur Internet :
+« ${tache.slice(0, 800)} »
+Écris 3 requêtes de recherche Google COURTES (3 à 7 mots) et DIFFÉRENTES, qui ramènent de VRAIES pages utiles à la tâche (pour des boutiques : métier + ville ou pays + canal comme Instagram ou « boutique en ligne » ; pour des concours ou financements : nom du type d'appel + année + pays). Varie les pays quand la tâche en demande plusieurs. Pas de guillemets.`,
+    { type: 'OBJECT', properties: { requetes: { type: 'ARRAY', items: { type: 'STRING' } } }, required: ['requetes'] },
+    { temperature: 0.4, maxSortie: 300, modeles: moteursSimples() });
+  if ('erreur' in q) return [];
+  const requetes = (Array.isArray(q.obj.requetes) ? q.obj.requetes : []).map((x: unknown) => String(x).trim()).filter((x: string) => x.length > 2).slice(0, 3);
+  const resultats: string[] = [];
+  const pages: { titre: string; url: string }[] = [];
+  const vus = new Set<string>();
+  for (const r of requetes) {
+    const t = await chercherWeb(apiKey, `Recherche précise : ${r}\nRends surtout les pages publiques trouvées (nom, adresse), sans rien inventer.`).catch(() => null);
+    resultats.push(`chercher_web(${JSON.stringify({ requete: r })}) → ${JSON.stringify(t ? { resume: t.resume.slice(0, 1500), pages: t.sources } : { erreur: 'rien trouvé' }).slice(0, 2500)}`);
+    for (const s of t?.sources || []) if (!vus.has(s.url)) { vus.add(s.url); pages.push(s); }
+  }
+  // Les vraies pages d'abord, les annuaires ensuite ; trois pages ouvertes au plus.
+  pages.sort((a, b) => Number(ANNUAIRES.test(`${a.titre} ${a.url}`)) - Number(ANNUAIRES.test(`${b.titre} ${b.url}`)));
+  for (const p of pages.slice(0, 3)) {
+    const lu = await lirePage({ url: p.url }).catch((e: Error) => ({ erreur: e.message }));
+    resultats.push(`lire_page(${JSON.stringify({ url: p.url, titre: p.titre })}) → ${JSON.stringify(lu).slice(0, 5000)}`);
+  }
+  return resultats;
+}

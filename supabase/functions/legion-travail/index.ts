@@ -37,7 +37,7 @@ import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
 import { lireTickets } from '../_shared/tickets.ts';
 import { blocMarche, blocWiki } from '../_shared/contexte.ts';
-import { enqueter, verifsPour, borneVerifs, type Boutique, type Compta } from '../_shared/enquete.ts';
+import { enqueter, verifsPour, borneVerifs, rechercheGuidee, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -637,6 +637,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // seule recherche, aucun lien ouvert » — lire_page n'avait aucune adresse).
       const aOuvrir = web?.sources.length ? `\nPages trouvées par la recherche web (ouvre avec lire_page celles qui servent la tâche, pour vérifier le lien, la date, le montant) :\n${web.sources.map((x) => `- ${x.titre} : ${x.url}`).join('\n')}` : '';
       const verifie = await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres, quel code ou quelle page web vérifier ?${aOuvrir}`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null);
+      // Une tâche qui cherche dehors et une enquête qui n'a rien ouvert : la
+      // recherche guidée (trois requêtes ciblées, puis les vraies pages).
+      if (web && !verifie.some((v) => /^(chercher_web|lire_page)\(/.test(v))) verifie.push(...await rechercheGuidee(apiKey, String(tache.texte || ''), a.poste || '').catch(() => []));
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
       let recu = '';
       if (tache.meta?.suite_de?.tache_id) {
