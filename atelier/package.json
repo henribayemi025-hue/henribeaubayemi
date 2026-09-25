@@ -10,6 +10,7 @@
     "demo": "node scripts/demo-locale.mjs"
   },
   "dependencies": {
+    "@cloudflare/puppeteer": "1.4.0",
     "@cloudflare/sandbox": "0.12.10"
   },
   "devDependencies": {

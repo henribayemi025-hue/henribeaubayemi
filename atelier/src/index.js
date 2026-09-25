@@ -26,6 +26,7 @@ import { identifier } from './supabase.js';
 import { disponibles, modelesRelais } from './moteur.js';
 import { plafondSession } from './atelier.js';
 import { HOTES_PERMIS, sortiePermise } from './politique.js';
+import { voirEcran } from './ecran.js';
 
 export { Atelier } from './atelier.js';
 // Nécessaire pour que le filtrage du réseau sortant fonctionne (doc
@@ -45,6 +46,15 @@ AtelierSandbox.outbound = async (request) => {
   }
   return fetch(request);
 };
+
+async function jetonTravailValide(env, cle) {
+  if (!/^[0-9a-f]{32,128}$/i.test(cle)) return false;
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/legion_jeton_travail_valide`, {
+    method: 'POST', headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_jeton: cle }),
+  }).catch(() => null);
+  return !!r?.ok && (await r.json().catch(() => false)) === true;
+}
 
 function origines(env) {
   return String(env.ATELIER_ORIGINES || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -85,6 +95,16 @@ export default {
     // Une page d'un autre site ne peut pas piloter l'atelier.
     const origine = request.headers.get('Origin');
     if (origine && !entetes['Access-Control-Allow-Origin']) return avec(Response.json({ erreur: 'origine non permise' }, { status: 403 }), {});
+
+    // « voir_ecran » des agents de Léo (ecran.js) : appelé par les fonctions
+    // Supabase avec le jeton du travail des agents, vérifié par la base.
+    if (url.pathname === '/api/ecran' && request.method === 'POST') {
+      const cle = request.headers.get('x-finjaro-token') || '';
+      if (!(await jetonTravailValide(env, cle))) return avec(Response.json({ erreur: 'non autorisé' }, { status: 401 }), entetes);
+      const corps = await request.json().catch(() => ({}));
+      const r = await voirEcran(env, corps.url, corps.largeur).catch((e) => ({ erreur: `navigateur : ${e.message}` }));
+      return avec(Response.json(r, { status: r.erreur ? 422 : 200 }), entetes);
+    }
 
     const jeton = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     const qui = await identifier(env, jeton).catch(() => null);

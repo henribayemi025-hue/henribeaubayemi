@@ -45,6 +45,10 @@
     "ATELIER_VEILLE": "10m"
   },
 
+  // Un vrai navigateur (Cloudflare Browser Rendering, compris dans l'offre
+  // payante Workers) pour « voir_ecran » des agents : ecran.js (25/09).
+  "browser": { "binding": "BROWSER" },
+
   // Le bac à sable : un conteneur par projet actif, jetable.
   "containers": [
     {
