@@ -333,6 +333,8 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const [panneauBas, setPanneauBas] = useState('agent');
   const [terminaux, setTerminaux] = useState([]);
   const [saisieTerminal, setSaisieTerminal] = useState('');
+  // Flèches haut / bas : les dernières commandes tapées (gardées par l'atelier).
+  const [posHisto, setPosHisto] = useState(-1);
   const fichierJoint = useRef(null);
   const [etroit, setEtroit] = useState(false);
   const apercuVisible = onglet === 'apercu';
@@ -530,7 +532,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const heure = (q) => (q ? new Date(q).toLocaleTimeString(langue, { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
   const blocCommande = (a) => (
     <div key={a.id} className="py-0.5">
-      <p className="truncate"><span className="text-legion-muted">{heure(a.quand)} </span><span className={a.par === 'humain' ? 'text-legion-success' : 'text-legion-gold'}>{a.par === 'humain' ? '›' : '$'}</span> <span className="text-legion-ink">{a.resume}</span></p>
+      <p className="truncate"><span className="text-legion-muted">{heure(a.quand)} </span>{a.terminal?.dossier ? <span className="text-legion-muted">~/{a.terminal.dossier} </span> : null}<span className={a.par === 'humain' ? 'text-legion-success' : 'text-legion-gold'}>{a.par === 'humain' ? '›' : '$'}</span> <span className="text-legion-ink">{a.resume}</span></p>
       {a.terminal?.sortie && <pre className={`whitespace-pre-wrap break-all pl-4 ${a.terminal.code === 0 ? 'text-[#b9c6d8]' : 'text-legion-danger'}`}>{a.terminal.sortie}</pre>}
       {a.terminal && <p className={`pl-4 ${a.terminal.code === 0 ? 'text-legion-success' : 'text-legion-danger'}`}>{t('legion.atelier.codeSortie', { code: a.terminal.code })}</p>}
     </div>
@@ -541,6 +543,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     const c = saisieTerminal.trim();
     if (!c || !ongletActif || !pid) return;
     setSaisieTerminal('');
+    setPosHisto(-1);
     const r = await agir(() => appel(`/projets/${pid}/commande`, { methode: 'POST', corps: { commande: c } }));
     const derniere = [...(r?.affichage || [])].reverse().find((a) => a.par === 'humain');
     if (derniere) setTerminaux((ts) => ts.map((x) => (x.id === ongletActif.id ? { ...x, ids: [...x.ids, derniere.id] } : x)));
@@ -583,8 +586,17 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       </div>
       {ongletActif && (
         <form onSubmit={lancerCommande} className="flex items-center gap-2 border-t border-legion-line px-3 py-1 font-mono text-[12px]">
+          {vue?.terminal?.dossier && <span className="max-w-[40%] truncate text-legion-muted" title={vue.terminal.dossier}>~/{vue.terminal.dossier}</span>}
           <span className="text-legion-success">›</span>
-          <input value={saisieTerminal} onChange={(e) => setSaisieTerminal(e.target.value)} disabled={travaille || statut === 'attente'} placeholder={t('legion.atelier.terminalSaisie')} spellCheck={false}
+          <input value={saisieTerminal} onChange={(e) => { setSaisieTerminal(e.target.value); setPosHisto(-1); }} disabled={travaille || statut === 'attente'} placeholder={t('legion.atelier.terminalSaisie')} spellCheck={false}
+            onKeyDown={(e) => {
+              const h = vue?.terminal?.historique || [];
+              if (!h.length || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+              e.preventDefault();
+              const p = e.key === 'ArrowUp' ? (posHisto < 0 ? h.length - 1 : Math.max(0, posHisto - 1)) : (posHisto < 0 ? -1 : posHisto + 1);
+              if (p < 0 || p >= h.length) { setPosHisto(-1); setSaisieTerminal(''); return; }
+              setPosHisto(p); setSaisieTerminal(h[p]);
+            }}
             className="min-w-0 flex-1 bg-transparent text-legion-ink outline-none placeholder:text-legion-muted disabled:opacity-50" />
         </form>
       )}

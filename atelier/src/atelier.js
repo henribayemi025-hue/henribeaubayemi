@@ -16,6 +16,7 @@ import { executant } from './bac.js';
 import { disponibles, modelesRelais, MODELES } from './moteur.js';
 import { prixMachineParSeconde, arrondi } from './cout.js';
 import { cheminSur, MODES, normaliserCommande, commandeInterdite } from './politique.js';
+import { enveloppe, lireDossier, retenir } from './terminal.js';
 import { diff } from './diff.js';
 import { fabriquerZip } from './zip.js';
 import { DEPARTS } from './departs.js';
@@ -216,6 +217,7 @@ export class Atelier extends DurableObject {
         jetons: s.jetons, appels: s.appels, secondes_machine: Math.round(s.secondesMachine),
       },
       affichage: e.affichage.slice(-200),
+      terminal: { dossier: e.terminal?.dossier || '', historique: e.terminal?.historique || [] },
       demande: e.demande,
       regles: e.regles.filter((r) => !r.revoquee_le),
       fichiers: Object.entries(e.index).sort(([a], [b]) => a.localeCompare(b)).map(([chemin, taille]) => ({ chemin, taille })),
@@ -340,12 +342,18 @@ export class Atelier extends DurableObject {
         if (interdite) return erreur(`Toujours refusé : ${interdite}`, 403);
         if (coutSession(e.session) >= e.session.plafond) return erreur(`Plafond de la session atteint (${e.session.plafond} $).`, 402);
         const d = this.deps(pid, e, trace, {});
-        const r = await d.bac.executer(commande, {});
+        // Un « cd » tient d'une commande à l'autre ; les 50 dernières restent (terminal.js).
+        e.terminal ||= { dossier: '', historique: [] };
+        const depuis = e.terminal.dossier || '';
+        const r = await d.bac.executer(enveloppe(commande, depuis), {});
+        const lu = lireDossier(r.stdout, depuis);
+        e.terminal.dossier = lu.dossier;
+        e.terminal.historique = retenir(e.terminal.historique, commande);
         const secondes = Number(r.secondes || 0);
         e.session.secondesMachine += secondes;
         e.session.coutMachine += secondes * d.prixMachineSeconde;
-        const sortie = `${r.stdout || ''}${r.stderr ? `\n${r.stderr}` : ''}`.trim();
-        e.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil: 'commande', resume: commande, decision: 'humain', ok: r.code === 0, quand: new Date().toISOString(), par: 'humain', terminal: { code: r.code, sortie: sortie.length > 4000 ? `…\n${sortie.slice(-4000)}` : sortie } });
+        const sortie = `${lu.sortie || ''}${r.stderr ? `\n${r.stderr}` : ''}`.trim();
+        e.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil: 'commande', resume: commande, decision: 'humain', ok: r.code === 0, quand: new Date().toISOString(), par: 'humain', terminal: { code: r.code, dossier: depuis, sortie: sortie.length > 4000 ? `…\n${sortie.slice(-4000)}` : sortie } });
         await this.journaliser(pid, e, { acteur: 'humain', outil: 'commande', entree_resumee: commande.slice(0, 500), resultat_resume: `code ${r.code}`, decision: 'humain', mode: e.mode, cout_usd: secondes * d.prixMachineSeconde }, trace);
         await this.sauver(pid, e);
         return json(this.vue(pid, e, this.env));
