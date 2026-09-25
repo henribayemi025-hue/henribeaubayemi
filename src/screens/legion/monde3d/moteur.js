@@ -18,7 +18,9 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
+import { construireVille } from './ville3d';
 
 const BASE = '/monde3d/';
 const ANIMS = {
@@ -51,11 +53,11 @@ export class Monde {
     this.ciel = { phase: 'jour', genre: 'clair' };
 
     const r = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: 'high-performance' });
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.5));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.0;
-    r.shadowMap.enabled = true;
+    r.shadowMap.enabled = !mobile;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     conteneur.appendChild(r.domElement);
     r.domElement.style.touchAction = 'none';
@@ -69,14 +71,14 @@ export class Monde {
     this.camera = new THREE.PerspectiveCamera(55, 1, 0.05, 900);
     const pm = new THREE.PMREMGenerator(r);
     this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.035).texture;
-    this.scene.environmentIntensity = 0.55;
+    this.scene.environmentIntensity = 0.9;
 
     // Lumière : le soleil (ombres) + le ciel ; réglés par le vrai ciel.
     this.hemi = new THREE.HemisphereLight('#dfe8f5', '#4b4038', 0.55);
     this.scene.add(this.hemi);
     this.soleil = new THREE.DirectionalLight('#fff1dc', 2.4);
     this.soleil.castShadow = true;
-    this.soleil.shadow.mapSize.set(mobile ? 1024 : 2048, mobile ? 1024 : 2048);
+    this.soleil.shadow.mapSize.set(1024, 1024);
     Object.assign(this.soleil.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 80 });
     this.soleil.shadow.bias = -0.0004;
     this.soleil.shadow.normalBias = 0.03;
@@ -85,7 +87,9 @@ export class Monde {
     this.sky.scale.setScalar(800);
     this.scene.add(this.sky);
 
-    if (!mobile) {
+    // L'occlusion (GTAO) coûtait trop cher, même sur ordinateur : on ne l'active
+    // que si on le demande explicitement.
+    if (!mobile && window.location.search.includes('qualite=haute')) {
       this.composer = new EffectComposer(r);
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       const ao = new GTAOPass(this.scene, this.camera, 1, 1);
@@ -190,7 +194,17 @@ export class Monde {
     this.hemi.intensity = nuit ? 0.25 : gris ? 0.7 : 0.55;
     this.rendu.toneMappingExposure = nuit ? 0.85 : 1.0;
     this.scene.fog = gris ? new THREE.Fog(nuit ? '#1a2030' : '#aeb6c0', 30, genre === 'brouillard' ? 60 : 180) : null;
-    for (const f of this.fenetresVille || []) f.material.emissiveIntensity = nuit ? 1.2 : phase === 'jour' ? 0 : 0.6;
+    // Les reflets du vrai ciel dans les vitres de la ville.
+    if (!this.pm) this.pm = new THREE.PMREMGenerator(this.rendu);
+    const sc = new THREE.Scene();
+    const s2 = new Sky(); s2.scale.setScalar(1000);
+    for (const k of Object.keys(u)) s2.material.uniforms[k].value = u[k].value?.clone ? u[k].value.clone() : u[k].value;
+    sc.add(s2);
+    this.envCiel?.dispose();
+    this.envCiel = this.pm.fromScene(sc, 0, 0.1, 2000).texture;
+    this.niveauNuit = nuit ? 1 : phase === 'jour' ? 0 : 0.55;
+    this.villeVivante?.reglerNuit(this.niveauNuit);
+    this.villeVivante?.majEnv(this.envCiel);
   }
 
   // ——— La ville vue par les baies ———
@@ -266,11 +280,14 @@ export class Monde {
       groupe.add(mt);
     }
   }
+  // Les plafonniers : des disques lumineux, sans lumière ponctuelle (chacune
+  // alourdissait le calcul de chaque pixel de la scène).
   lampes(groupe, points) {
-    for (const [x, z, y = 4.6] of points) {
-      const l = new THREE.PointLight('#ffe2b8', this.mobile ? 6 : 9, 12, 2);
-      l.position.set(x, y, z);
-      groupe.add(l);
+    const m = new THREE.MeshBasicMaterial({ color: '#fff3dc' });
+    for (const [x, z, y = 5.55] of points) {
+      const d = new THREE.Mesh(new THREE.CircleGeometry(0.35, 20), m);
+      d.rotation.x = Math.PI / 2; d.position.set(x, y, z);
+      groupe.add(d);
     }
   }
   plafond(groupe, l, p, h, couleur = '#f2efe9') {
@@ -296,10 +313,15 @@ export class Monde {
     g.position.set(x, 0, z);
     g.rotation.y = rot;
     groupe.add(g);
+    // On ne traverse pas l'ascenseur.
+    if (Math.abs(Math.sin(rot)) > 0.5) murs.push({ x0: x - 0.45, x1: x + 0.3, z0: z - 1.1, z1: z + 1.1 });
+    else murs.push({ x0: x - 1.1, x1: x + 1.1, z0: z - 0.45, z1: z + 0.3 });
     return g;
   }
   async construireHall(nom) {
     const g = new THREE.Group();
+    const ajouts = [];
+    const A = (p) => ajouts.push(p.then((o) => g.add(o)));
     const murs = [];
     const marbre = this.matiere('terrazzo_tiles', 4);
     const platre = new THREE.MeshStandardMaterial({ color: '#ece7df', roughness: 0.88 });
@@ -336,38 +358,84 @@ export class Monde {
     this.ecranFaits = faits;
     if (this.faits) faits.userData.redessiner(this.faits);
     // Salon d'attente
-    g.add(await this.objet('sofa_03', { x: -8.4, z: 1.5, rot: Math.PI / 2 }));
-    g.add(await this.objet('modern_arm_chair_01', { x: -5.6, z: -0.6, rot: -Math.PI / 2 - 0.3 }));
-    g.add(await this.objet('modern_arm_chair_01', { x: -5.6, z: 3.4, rot: -Math.PI / 2 + 0.3 }));
-    g.add(await this.objet('modern_coffee_table_01', { x: -7.1, z: 1.5 }));
+    A(this.objet('sofa_03', { x: -8.4, z: 1.5, rot: Math.PI / 2 }));
+    A(this.objet('modern_arm_chair_01', { x: -5.6, z: -0.6, rot: -Math.PI / 2 - 0.3 }));
+    A(this.objet('modern_arm_chair_01', { x: -5.6, z: 3.4, rot: -Math.PI / 2 + 0.3 }));
+    A(this.objet('modern_coffee_table_01', { x: -7.1, z: 1.5 }));
     murs.push({ x0: -9.4, x1: -5, z0: -1.4, z1: 4.3 });
     for (const [x, z] of [[-10.8, -7.8], [10.8, -7.8], [-10.8, 7.8], [4.2, -7.6], [-4.2, -7.6]]) {
-      g.add(await this.objet('potted_plant_04', { x, z, echelle: 3.2 }));
+      A(this.objet('potted_plant_04', { x, z, echelle: 3.2 }));
       murs.push({ x0: x - 0.4, x1: x + 0.4, z0: z - 0.4, z1: z + 0.4 });
     }
-    for (const [x, z] of [[-6, -3], [6, -3], [-6, 4], [6, 4], [0, 0]]) g.add(await this.objet('modern_ceiling_lamp_01', { x, y: 5.6 - 0.9, z, ombre: false }));
+    for (const [x, z] of [[-6, -3], [6, -3], [-6, 4], [6, 4], [0, 0]]) A(this.objet('modern_ceiling_lamp_01', { x, y: 5.6 - 0.9, z, ombre: false }));
     this.lampes(g, [[-6, -3], [6, -3], [-6, 4], [6, 4], [0, -1]]);
+    // Un escalier hélicoïdal rouge (photo de Beau), près de la baie.
+    const rouge = new THREE.MeshStandardMaterial({ color: '#c8201f', roughness: 0.35, metalness: 0.1 });
+    const blancMarche = new THREE.MeshStandardMaterial({ color: '#f2f0ec', roughness: 0.5 });
+    const helice = new THREE.Group();
+    for (let i = 0; i < 26; i += 1) {
+      const a = (i / 26) * Math.PI * 2.2, y = 0.2 + i * 0.205;
+      const marche = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.06, 0.45), blancMarche); marche.position.set(Math.cos(a) * 1.05, y, Math.sin(a) * 1.05); marche.rotation.y = -a; helice.add(marche);
+      const lim = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.5), rouge); lim.position.set(Math.cos(a) * 1.85, y + 0.25, Math.sin(a) * 1.85); lim.rotation.y = -a; helice.add(lim);
+    }
+    const fut = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 5.6, 20), rouge); fut.position.y = 2.8; helice.add(fut);
+    helice.position.set(-8.6, 0, -5.6);
+    helice.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    g.add(helice);
+    murs.push({ x0: -10.6, x1: -6.6, z0: -7.6, z1: -3.6 });
+    // Un comptoir-bar arrondi avec tabourets (photo de Beau), côté entrée.
+    const boisClair = this.matiere('herringbone_parquet', 1, { m: { color: '#d9b98f' } });
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 1.05, 40, 1, true, Math.PI * 0.15, Math.PI * 1.1), boisClair);
+    bar.material.side = THREE.DoubleSide; bar.position.set(7.2, 0.52, 4.6); bar.castShadow = true; g.add(bar);
+    const plan = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.35, 40, 1, Math.PI * 0.15, Math.PI * 1.1), new THREE.MeshStandardMaterial({ color: '#f5f3ef', roughness: 0.3, side: THREE.DoubleSide }));
+    plan.rotation.x = -Math.PI / 2; plan.position.set(7.2, 1.06, 4.6); g.add(plan);
+    murs.push({ x0: 5, x1: 9.4, z0: 2.4, z1: 6.8 });
+    const noirTab = new THREE.MeshStandardMaterial({ color: '#15171a', roughness: 0.5, metalness: 0.3 });
+    const cuir = new THREE.MeshStandardMaterial({ color: '#b5612f', roughness: 0.6 });
+    for (let i = 0; i < 6; i += 1) {
+      const a = Math.PI * 0.15 + (i + 0.5) * (Math.PI * 1.1) / 6;
+      const x = 7.2 + Math.cos(a) * 2.75, z = 4.6 - Math.sin(a) * 2.75;
+      const pied = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.72), noirTab); pied.position.set(x, 0.36, z); g.add(pied);
+      const siege = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.07, 18), cuir); siege.position.set(x, 0.75, z); siege.castShadow = true; g.add(siege);
+    }
+    // Des bandeaux lumineux au plafond (photo du couloir).
+    const led = new THREE.MeshBasicMaterial({ color: '#fffaf0' });
+    for (const x of [-4, 0, 4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 14), led); b.position.set(x, 5.58, 0); g.add(b); }
+    // Des cadres aux murs.
+    A(this.objet('hanging_picture_frame_01', { x: -11.6, y: 2.2, z: 5.5, rot: Math.PI / 2, echelle: 1.6, ombre: false }));
+    A(this.objet('hanging_picture_frame_01', { x: 11.8, y: 2.2, z: 5.5, rot: -Math.PI / 2, echelle: 1.6, ombre: false }));
     // Ascenseurs à droite
     this.ascenseur(g, murs, 11.84, -3, -Math.PI / 2);
     this.ascenseur(g, murs, 11.84, 1.2, -Math.PI / 2);
-    this.ville(g, { cote: 'x-', loin: 120 });
-    // Dehors, devant l'entrée
-    const parvis = new THREE.Mesh(new THREE.PlaneGeometry(40, 20), this.matiere('concrete_pavers', 10));
-    parvis.rotation.x = -Math.PI / 2; parvis.position.set(0, 0.001, 19); parvis.receiveShadow = true; g.add(parvis);
+
     const poi = [
       { type: 'receptionniste', x: 0, z: -4.2, rayon: 2.4 },
       { type: 'ascenseur', x: 11, z: -3, rayon: 1.8 },
       { type: 'ascenseur', x: 11, z: 1.2, rayon: 1.8 },
       { type: 'ecran', x: 7.2, z: -8, rayon: 2.2 },
     ];
+    await Promise.all(ajouts);
     return { groupe: g, murs, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -11.6, x1: 11.6, z0: -8.6, z1: 8.7 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
   }
   async construireReunion() {
     const g = new THREE.Group();
+    const ajouts = [];
+    const A = (p) => ajouts.push(p.then((o) => g.add(o)));
     const murs = [];
-    const parquet = this.matiere('herringbone_parquet', 5);
+    const moquette = new THREE.MeshStandardMaterial({ color: '#8e8a84', roughness: 0.98 });
     const platre = new THREE.MeshStandardMaterial({ color: '#ebe6de', roughness: 0.88 });
-    this.sol(g, 14, 11, parquet);
+    this.sol(g, 14, 11, moquette);
+    // Mur boisé à étagères (photo de Beau)
+    const noyer = this.matiere('herringbone_parquet', 1.2, { m: { color: '#9a6b43' } });
+    const panneau = new THREE.Mesh(new THREE.BoxGeometry(14, 3.4, 0.1), noyer); panneau.position.set(0, 1.7, 5.3); g.add(panneau);
+    for (let i = 0; i < 4; i += 1) { const et = new THREE.Mesh(new THREE.BoxGeometry(5, 0.04, 0.32), noyer); et.position.set(3.6, 0.8 + i * 0.6, 5.1); g.add(et); }
+    for (let i = 0; i < 18; i += 1) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06 + (i % 3) * 0.02, 0.28 + (i % 4) * 0.04, 0.22), new THREE.MeshStandardMaterial({ color: ['#7b2d26', '#1f3b57', '#c9a35a', '#2f4f3a', '#e8e1d5'][i % 5], roughness: 0.8 })); l.position.set(1.4 + (i % 9) * 0.5, 1.0 + Math.floor(i / 9) * 1.2, 5.1); g.add(l); }
+    // Suspensions au-dessus de la table
+    const laiton = new THREE.MeshStandardMaterial({ color: '#c9a35a', metalness: 1, roughness: 0.3, emissive: '#ffd9a0', emissiveIntensity: 0.4 });
+    for (const x of [-2, 0, 2]) {
+      const abat = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.2, 24, 1, true), laiton); abat.position.set(x, 2.4, 0); g.add(abat);
+      const fil = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1.0), laiton); fil.position.set(x, 2.95, 0); g.add(fil);
+    }
     this.plafond(g, 14, 11, 3.4);
     this.mur(g, murs, 0, 5.5, 14, 0.3, 3.4, platre);
     this.mur(g, murs, 7, 0, 0.3, 11, 3.4, platre);
@@ -383,7 +451,8 @@ export class Monde {
     const chaise = [];
     for (let i = 0; i < 4; i += 1) for (const cote of [-1, 1]) chaise.push([-2.25 + i * 1.5, cote * 1.25, cote > 0 ? Math.PI : 0]);
     for (const [x, z, rot] of chaise) {
-      g.add(await this.objet('dining_chair_02', { x, z, rot }));
+      const f = this.fauteuil(true); f.position.set(x, 0, z); f.rotation.y = rot; g.add(f);
+      murs.push({ x0: x - 0.3, x1: x + 0.3, z0: z - 0.3, z1: z + 0.3 });
       this.places.push({ x, z: z + (z > 0 ? 0.08 : -0.08), rot: z > 0 ? Math.PI : 0 });
     }
     const ecran = this.ecran(3.4, 1.9, (x2, w, h, d) => {
@@ -396,15 +465,18 @@ export class Monde {
     });
     ecran.position.set(6.83, 1.8, 0); ecran.rotation.y = -Math.PI / 2; g.add(ecran);
     this.ecranReunion = ecran;
-    g.add(await this.objet('wall_clock', { x: 0, y: 2.6, z: 5.33, rot: Math.PI, ombre: false }));
-    g.add(await this.objet('potted_plant_04', { x: 6.2, z: 4.7, echelle: 1.4 }));
-    this.lampes(g, [[-2.5, 0, 3.1], [2.5, 0, 3.1]]);
+    A(this.objet('wall_clock', { x: 0, y: 2.6, z: 5.33, rot: Math.PI, ombre: false }));
+    A(this.objet('potted_plant_04', { x: 6.2, z: 4.7, echelle: 1.4 }));
+    this.lampes(g, [[-2.5, 0, 3.38], [2.5, 0, 3.38], [0, 0, 3.38]]);
     this.ascenseur(g, murs, -3.5, 5.33, Math.PI);
-    this.ville(g, { cote: 'z-', loin: 120 });
-    return { groupe: g, murs, depart: { x: -3.5, z: 3.2, yaw: 0 }, poi: [{ type: 'ascenseur', x: -3.5, z: 4.4, rayon: 1.6 }, { type: 'table', x: 0, z: 0, rayon: 3.6 }], limites: { x0: -6.7, x1: 6.7, z0: -5.2, z1: 5.2 }, sortieAscenseur: { x: -3.5, z: 4.2, yaw: 0 } };
+
+    await Promise.all(ajouts);
+    return { groupe: g, murs, depart: { x: -3.5, z: 3.2, yaw: 0 }, poi: [{ type: 'ascenseur', x: -3.5, z: 4.4, rayon: 1.6 }, { type: 'table', x: 0, z: 0, rayon: 3.6 }], limites: { x0: -6.7, x1: 6.7, z0: -5.2, z1: 5.2 }, sortieAscenseur: { x: -3.5, z: 3.0, yaw: 0 } };
   }
   async construireAtelier() {
     const g = new THREE.Group();
+    const ajouts = [];
+    const A = (p) => ajouts.push(p.then((o) => g.add(o)));
     const murs = [];
     const sol = this.matiere('terrazzo_tiles', 6);
     const platre = new THREE.MeshStandardMaterial({ color: '#e8e4dd', roughness: 0.88 });
@@ -418,7 +490,7 @@ export class Monde {
     const noir = new THREE.MeshStandardMaterial({ color: '#15171b', metalness: 0.4, roughness: 0.35 });
     for (let rang = 0; rang < 2; rang += 1) for (let i = 0; i < 4; i += 1) {
       const x = -6 + i * 4, z = -2.6 + rang * 4.4;
-      g.add(await this.objet('metal_office_desk', { x, z, rot: Math.PI }));
+      A(this.objet('metal_office_desk', { x, z, rot: Math.PI }));
       const moniteur = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.38, 0.04), noir); moniteur.position.set(x, 1.12, z - 0.18); g.add(moniteur);
       const pied = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), noir); pied.position.set(x, 0.9, z - 0.2); g.add(pied);
       const ecran = this.ecran(0.58, 0.34, (x2, w, h, d) => {
@@ -431,30 +503,131 @@ export class Monde {
         for (let l = 0; l < 8; l += 1) { x2.fillStyle = couleurs[l % 4]; x2.fillText(txt.slice(l * 34, l * 34 + 34), w * 0.05, h * (0.28 + l * 0.09)); }
       });
       ecran.position.set(x, 1.12, z - 0.155); g.add(ecran);
-      g.add(await this.objet('dining_chair_02', { x, z: z + 0.62, rot: Math.PI }));
+      A(this.objet('dining_chair_02', { x, z: z + 0.62, rot: Math.PI }));
+      murs.push({ x0: x - 0.3, x1: x + 0.3, z0: z + 0.35, z1: z + 0.9 });
       this.postes.push({ x, z: z + 0.7, rot: Math.PI, ecran });
       murs.push({ x0: x - 0.8, x1: x + 0.8, z0: z - 0.45, z1: z + 0.35 });
     }
-    for (const [x, z] of [[-10.2, 6.2], [10.2, 6.2], [10.2, -6.2]]) g.add(await this.objet('potted_plant_04', { x, z, echelle: 1.5 }));
-    this.lampes(g, [[-6, -1, 3.3], [0, -1, 3.3], [6, -1, 3.3], [-3, 3, 3.3], [3, 3, 3.3]]);
+    for (const [x, z] of [[-10.2, 6.2], [10.2, 6.2], [10.2, -6.2]]) A(this.objet('potted_plant_04', { x, z, echelle: 1.5 }));
+    this.lampes(g, [[-6, -1, 3.58], [0, -1, 3.58], [6, -1, 3.58], [-3, 3, 3.58], [3, 3, 3.58]]);
     this.ascenseur(g, murs, 8, 6.83, Math.PI);
-    this.ville(g, { cote: 'z-', loin: 120 });
-    return { groupe: g, murs, depart: { x: 6.5, z: 4.6, yaw: 0.5 }, poi: [{ type: 'ascenseur', x: 8, z: 5.9, rayon: 1.6 }], limites: { x0: -10.7, x1: 10.7, z0: -6.7, z1: 6.7 }, sortieAscenseur: { x: 8, z: 5.6, yaw: 0 } };
+
+    await Promise.all(ajouts);
+    return { groupe: g, murs, depart: { x: 6.5, z: 4.6, yaw: 0.5 }, poi: [{ type: 'ascenseur', x: 8, z: 5.9, rayon: 1.6 }], limites: { x0: -10.7, x1: 10.7, z0: -6.7, z1: 6.7 }, sortieAscenseur: { x: 6.5, z: 4.4, yaw: 0.5 } };
+  }
+
+  // ——— Un étage par département (Beau, 25/09 : « il n'y a pas plusieurs
+  // étages » ; photos : postes en bois clair, caissons blancs, fauteuils
+  // noirs en maille, plantes, salle vitrée à montants noirs, grandes baies).
+  // Chaque agent du département a SON bureau, avec son nom ; il n'y est assis
+  // que s'il travaille vraiment en ce moment.
+  fauteuil(orange = false) {
+    const g = new THREE.Group();
+    const noir = new THREE.MeshStandardMaterial({ color: '#16181b', roughness: 0.6, metalness: 0.2 });
+    const maille = new THREE.MeshStandardMaterial({ color: orange ? '#c8692f' : '#1d2024', roughness: 0.95 });
+    const assise = new THREE.Mesh(new RoundedBoxGeometry(0.48, 0.07, 0.46, 3, 0.03), maille); assise.position.y = 0.47; g.add(assise);
+    const dos = new THREE.Mesh(new RoundedBoxGeometry(0.44, 0.52, 0.04, 3, 0.018), maille); dos.position.set(0, 0.8, 0.23); dos.rotation.x = -0.12; g.add(dos);
+    const tete = new THREE.Mesh(new RoundedBoxGeometry(0.26, 0.1, 0.04, 3, 0.018), maille); tete.position.set(0, 1.13, 0.28); g.add(tete);
+    const pied = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.4), noir); pied.position.y = 0.26; g.add(pied);
+    for (let i = 0; i < 5; i += 1) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.32), noir); b.position.y = 0.06; b.rotation.y = (i / 5) * Math.PI * 2; b.translateZ(0.16); g.add(b); }
+    for (const x of [-0.25, 0.25]) { const a = new THREE.Mesh(new RoundedBoxGeometry(0.03, 0.03, 0.26, 2, 0.012), noir); a.position.set(x, 0.66, 0.02); g.add(a); const s2 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.17), noir); s2.position.set(x, 0.57, 0.1); g.add(s2); }
+    g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
+    return g;
+  }
+  plaque(nom, actif) {
+    return this.ecran(0.36, 0.09, (x, w, h) => { x.fillStyle = actif ? '#1a2337' : '#e9e4da'; x.fillRect(0, 0, w, h); x.fillStyle = actif ? '#e3a857' : '#6b6b6b'; x.font = `600 ${h * 0.55}px system-ui`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(nom).slice(0, 18), w / 2, h / 2); });
+  }
+  async construireEtage(dept, numero) {
+    const g = new THREE.Group();
+    const murs = [];
+    const ajouts = [];
+    const A = (p) => ajouts.push(p.then((o) => g.add(o)));
+    const parquet = this.matiere('herringbone_parquet', 6, { m: { color: '#e8d6bd' } });
+    const blanc = new THREE.MeshStandardMaterial({ color: '#f1efea', roughness: 0.85 });
+    this.sol(g, 26, 16, parquet);
+    this.plafond(g, 26, 16, 3.6, '#f4f3f0');
+    this.mur(g, murs, 0, 8, 26, 0.3, 3.6, blanc);
+    this.mur(g, murs, 13, 0, 0.3, 16, 3.6, blanc);
+    this.vitre(g, 0, -8, 26, 3.6); murs.push({ x0: -13, x1: 13, z0: -8.2, z1: -7.9 });
+    this.vitre(g, -13, 0, 16, 3.6, Math.PI / 2); murs.push({ x0: -13.2, x1: -12.9, z0: -8, z1: 8 });
+    // Le nom du département, grand, sur le mur du fond
+    const titre = this.ecran(8, 0.9, (x, w, h) => { x.clearRect(0, 0, w, h); x.fillStyle = '#2b2f36'; x.font = `600 ${h * 0.55}px Georgia, serif`; x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillText(`${numero}. ${dept}`, 10, h / 2); });
+    titre.material.transparent = true; titre.position.set(-4.5, 2.6, 7.83); titre.rotation.y = Math.PI; g.add(titre);
+    // Les postes : îlots de bureaux face à face
+    const bois = this.matiere('herringbone_parquet', 0.6, { m: { color: '#d8bf9c' } });
+    const caisson = new THREE.MeshStandardMaterial({ color: '#f3f1ec', roughness: 0.55 });
+    const noir = new THREE.MeshStandardMaterial({ color: '#111316', metalness: 0.4, roughness: 0.35 });
+    const tissu = new THREE.MeshStandardMaterial({ color: '#b9a88e', roughness: 0.95 });
+    this.postesEtage = [];
+    const places = [];
+    for (let ilot = 0; ilot < 3; ilot += 1) for (const rang of [0, 1]) {
+      const cx = -8 + ilot * 7, cz = -2.4 + rang * 5.2;
+      const plateau = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.04, 1.7), bois); plateau.position.set(cx, 0.74, cz); plateau.castShadow = plateau.receiveShadow = true; g.add(plateau);
+      for (const sx of [-2.3, 2.3]) { const pied = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.72, 1.5), caisson); pied.position.set(cx + sx, 0.36, cz); g.add(pied); }
+      const cloison = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.42, 0.04), tissu); cloison.position.set(cx, 0.97, cz); g.add(cloison);
+      murs.push({ x0: cx - 2.45, x1: cx + 2.45, z0: cz - 0.9, z1: cz + 0.9 });
+      for (const cote of [-1, 1]) for (let k = 0; k < 2; k += 1) {
+        const x = cx - 1.2 + k * 2.4, z = cz + cote * 0.42;
+        const ecran = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.36, 0.03), noir); ecran.position.set(x, 1.0, z - cote * 0.12); g.add(ecran);
+        const c = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.58, 0.55), caisson); c.position.set(x + 0.75, 0.29, z + cote * 0.1); g.add(c);
+        const f = this.fauteuil(); f.position.set(x, 0, cz + cote * 1.25); f.rotation.y = cote > 0 ? 0 : Math.PI; g.add(f);
+        places.push({ x, z: cz + cote * 1.18, rot: cote > 0 ? Math.PI : 0, ecranPos: [x, 1.0, z - cote * 0.12 + cote * 0.017], ecranRot: cote > 0 ? 0 : Math.PI, cote });
+      }
+      A(this.objet('potted_plant_04', { x: cx - 2.1, y: 0.76, z: cz, echelle: 0.9 }));
+      A(this.objet('potted_plant_04', { x: cx + 2.1, y: 0.76, z: cz, echelle: 0.9 }));
+    }
+    this.placesEtage = places;
+    // La salle de réunion vitrée à montants noirs, dans le coin
+    const salle = new THREE.Group();
+    const verre = new THREE.MeshStandardMaterial({ color: '#dcecf5', roughness: 0.05, transparent: true, opacity: 0.14, depthWrite: false, side: THREE.DoubleSide });
+    for (const [x, z, l, r] of [[9.5, 2.6, 6, 0], [6.5, 5.3, 5.4, Math.PI / 2]]) {
+      const v = new THREE.Mesh(new THREE.PlaneGeometry(l, 3.6), verre); v.position.set(x, 1.8, z); v.rotation.y = r; salle.add(v);
+      const n = Math.round(l / 1.2);
+      for (let i = 0; i <= n; i += 1) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 3.6, 0.05), noir); const d = -l / 2 + (i * l) / n; m.position.set(x + (r ? 0 : d), 1.8, z + (r ? d : 0)); salle.add(m); }
+    }
+    g.add(salle);
+    murs.push({ x0: 6.4, x1: 13, z0: 2.5, z1: 2.7 }, { x0: 6.4, x1: 6.6, z0: 2.6, z1: 6.6 });
+    const table = new THREE.Mesh(new THREE.BoxGeometry(3, 0.05, 1.3), bois); table.position.set(9.8, 0.75, 5.2); g.add(table);
+    for (let i = 0; i < 3; i += 1) for (const c of [-1, 1]) { const f = this.fauteuil(); f.position.set(8.8 + i, 0, 5.2 + c * 0.95); f.rotation.y = c > 0 ? 0 : Math.PI; g.add(f); }
+    // Plantes le long des baies et suspendues
+    for (let i = 0; i < 6; i += 1) A(this.objet('planter_box_01', { x: -11 + i * 4.3, z: -7.3, echelle: 1.2 }));
+    for (const [x, z] of [[-6, 0], [0, 0], [6, 0], [-3, 5], [3, 5]]) {
+      A(this.objet('potted_plant_04', { x, y: 2.9, z, echelle: 1.1, ombre: false }));
+      const fil = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.7), noir); fil.position.set(x, 3.25, z); g.add(fil);
+    }
+    this.lampes(g, [[-8, -2.4, 3.58], [-1, -2.4, 3.58], [6, -2.4, 3.58], [-8, 2.8, 3.58], [-1, 2.8, 3.58]]);
+    this.ascenseur(g, murs, 11.2, 7.83, Math.PI);
+    await Promise.all(ajouts);
+    return { groupe: g, murs, depart: { x: 11.2, z: 6.6, yaw: 0.3 }, poi: [{ type: 'ascenseur', x: 11.2, z: 6.9, rayon: 1.6 }], limites: { x0: -12.7, x1: 12.7, z0: -7.7, z1: 7.7 }, sortieAscenseur: { x: 10.4, z: 5.9, yaw: 0.6 }, places };
   }
 
   // ——— Aller quelque part ———
   async allerA(lieu, { nomEntreprise, avatar } = {}) {
     this.emettre({ type: 'chargement', lieu });
-    if (!this.joueur) {
-      this.joueur = await this.personnage(avatar || 'Male_Adult_07');
-      this.scene.add(this.joueur.objet);
+    if (!this.joueur || !this.receptionniste) {
+      const [j, r] = await Promise.all([this.joueur || this.personnage(avatar || 'Male_Adult_07'), this.receptionniste || this.personnage(RECEPTIONNISTE)]);
+      if (!this.joueur) { this.joueur = j; this.scene.add(j.objet); }
+      if (!this.receptionniste) { this.receptionniste = r; r.objet.add(this.etiquette(this.langue === 'en' ? 'Receptionist' : 'Réceptionniste', nomEntreprise || '')); }
+      // Les animations de marche : chargées d'avance pour ne pas figer au premier pas.
+      ['marche', 'course', 'salut', 'parle'].forEach((a) => this.clip(j.genre, a).catch(() => {}));
     }
-    if (!this.receptionniste) {
-      this.receptionniste = await this.personnage(RECEPTIONNISTE);
-      this.receptionniste.objet.add(this.etiquette(this.langue === 'en' ? 'Receptionist' : 'Réceptionniste', nomEntreprise || ''));
+    if (!this.villeVivante) {
+      this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
+      this.villeVivante.reglerNuit(this.niveauNuit || 0);
     }
-    if (this.lieu) this.scene.remove(this.lieu.groupe);
-    const l = lieu === 'reunion' ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise);
+    const etage = String(lieu).startsWith('etage:') ? String(lieu).slice(6) : null;
+    const depts = this.donnees?.departements || [];
+    const numero = etage ? depts.indexOf(etage) + 1 : 0;
+    this.villeVivante.racine.position.y = etage ? -(12 + numero * 4) : ({ hall: 0, reunion: -34, atelier: -22 }[lieu] ?? 0);
+    // Chaque lieu n'est construit qu'une fois ; ensuite on y retourne sans rien recharger.
+    this.lieux = this.lieux || {};
+    if (this.lieu) {
+      this.scene.remove(this.lieu.groupe);
+      // Les étiquettes (noms au-dessus des têtes) ne suivent pas d'un étage à l'autre.
+      this.lieu.groupe.traverse((o) => { if (o.isCSS2DObject && o.element.parentNode) o.element.parentNode.removeChild(o.element); });
+    }
+    const l = this.lieux[lieu] || (etage ? await this.construireEtage(etage, numero) : lieu === 'reunion' ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise));
+    this.lieux[lieu] = l;
     l.nom = lieu;
     this.lieu = l;
     this.scene.add(l.groupe);
@@ -474,8 +647,8 @@ export class Monde {
   }
 
   // ——— Les vrais agents ———
-  majDonnees({ agents = [], ou, faits } = {}) {
-    this.donnees = { agents, ou };
+  majDonnees({ agents = [], ou, faits, departements = [] } = {}) {
+    this.donnees = { agents, ou, departements };
     if (faits) { this.faits = faits; this.ecranFaits?.userData.redessiner(faits); }
     this.placerAgents();
   }
@@ -494,6 +667,26 @@ export class Monde {
       (this.postes || []).forEach((p, i) => {
         const b = ou?.auBureau?.[i];
         p.ecran.userData.redessiner(b ? { actif: true, nom: parId.get(b.id)?.nom, texte: b.tache || b.texte } : { actif: false });
+      });
+    }
+    if (String(this.lieu.nom).startsWith('etage:')) {
+      const dept = this.lieu.nom.slice(6);
+      const plat = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const siens = agents.filter((a) => !a.user_id && plat(a.departement) === plat(dept));
+      const actifs = new Map((ou?.auBureau || []).map((b) => [b.id, b]));
+      this.lieu.places.forEach((p, i) => {
+        const a = siens[i];
+        if (!p.plaqueMesh) { p.plaqueMesh = null; }
+        if (p.ecranMesh) { this.lieu.groupe.remove(p.ecranMesh); p.ecranMesh = null; }
+        if (p.plaqueObj) { this.lieu.groupe.remove(p.plaqueObj); p.plaqueObj = null; }
+        if (!a) return;
+        const b = actifs.get(a.id);
+        const pl = this.plaque(a.nom, !!b); pl.position.set(p.x, 0.99, p.z - p.cote * 0.64); pl.rotation.y = p.ecranRot; pl.rotation.x = p.cote > 0 ? -0.3 : 0.3; this.lieu.groupe.add(pl); p.plaqueObj = pl;
+        if (b) {
+          const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#0d1117'; x.fillRect(0, 0, w, h); x.fillStyle = '#e3a857'; x.font = `bold ${h * 0.11}px ui-monospace, monospace`; x.fillText(a.nom, w * 0.05, h * 0.16); x.font = `${h * 0.08}px ui-monospace, monospace`; const t = String(b.tache || b.texte || '').replace(/\s+/g, ' '); ['#7ee787', '#79c0ff', '#d2a8ff', '#edf1f8'].forEach((c, l) => { x.fillStyle = c; x.fillText(t.slice(l * 32, l * 32 + 32), w * 0.05, h * (0.34 + l * 0.14)); }); });
+          e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
+          voulus.set(a.id, { place: p, anim: 'assis', sous: String(b.tache || b.texte || '').slice(0, 48) });
+        }
       });
     }
     for (const [id, x] of this.agents) {
@@ -559,12 +752,28 @@ export class Monde {
     const pas = () => {
       if (!this.vivant) return;
       this.raf = requestAnimationFrame(pas);
-      const dt = Math.min(this.horloge.getDelta(), 0.05);
+      const brut = this.horloge.getDelta();
+      const dt = Math.min(brut, 0.05);
+      this.adapter(brut);
       this.avancer(dt);
       if (this.composer) this.composer.render(); else this.rendu.render(this.scene, this.camera);
       this.etiquettes.render(this.scene, this.camera);
     };
     pas();
+  }
+  // La résolution s'adapte à la machine : sous 40 images/s on baisse, au-dessus
+  // de 58 on remonte (sans dépasser la limite de départ).
+  adapter(brut) {
+    this.mesure = this.mesure || { t: 0, n: 0, max: this.rendu.getPixelRatio() };
+    this.mesure.t += brut; this.mesure.n += 1;
+    if (this.mesure.t < 2) return;
+    const ips = this.mesure.n / this.mesure.t;
+    const pr = this.rendu.getPixelRatio();
+    if (ips < 40 && pr > 0.6) this.rendu.setPixelRatio(Math.max(0.6, pr - 0.2));
+    else if (ips > 58 && pr < this.mesure.max) this.rendu.setPixelRatio(Math.min(this.mesure.max, pr + 0.1));
+    if (ips < 30 && this.rendu.shadowMap.enabled && pr <= 0.8) { this.rendu.shadowMap.enabled = false; this.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
+    if (this.rendu.getPixelRatio() !== pr) { const w = this.conteneur.clientWidth, h = this.conteneur.clientHeight; this.rendu.setSize(w, h); }
+    this.mesure.t = 0; this.mesure.n = 0;
   }
   avancer(dt) {
     const j = this.joueur;
@@ -590,6 +799,7 @@ export class Monde {
       j.jouer(court ? 'course' : 'marche', { fondu: 0.2 });
     } else j.jouer('repos', { fondu: 0.25 });
     j.mixer.update(dt);
+    this.villeVivante?.avancer(dt);
     this.receptionniste?.mixer.update(dt);
     for (const x of this.agents.values()) x.perso.mixer.update(dt);
 
@@ -635,6 +845,8 @@ export class Monde {
       const L = this.lieu.limites;
       voulu.x = THREE.MathUtils.clamp(voulu.x, L.x0 + 0.25, L.x1 - 0.25);
       voulu.z = THREE.MathUtils.clamp(voulu.z, L.z0 + 0.25, L.z1 - 0.25);
+      const reel = Math.hypot(voulu.x - p.x, voulu.z - p.z), ideal = Math.max(0.01, d * Math.cos(this.cam.pitch));
+      voulu.y = 1.55 + (voulu.y - 1.55) * Math.min(1, reel / ideal);
       voulu.y = Math.min(voulu.y, this.lieu.nom === 'hall' ? 5.2 : 3.2);
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 8));
       this.camera.lookAt(tete);

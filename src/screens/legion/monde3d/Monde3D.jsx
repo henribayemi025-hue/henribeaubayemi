@@ -10,12 +10,17 @@ import { chargerCiel, phaseDuJour } from '../parties/ciel';
 const STYLE = `.monde-etiquette{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;background:rgba(11,17,32,.8);color:#edf1f8;font:12px system-ui;white-space:nowrap;transform:translateY(-6px)}
 .monde-etiquette img{width:24px;height:24px;border-radius:50%;object-fit:cover}.monde-etiquette b{display:block;font-weight:700;line-height:1.1}.monde-etiquette i{display:block;font-style:normal;color:#e3a857;font-size:10.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis}`;
 const LIEUX = ['hall', 'reunion', 'atelier'];
+const nomsDepts = (departements, agents) => {
+  const n = (departements || []).map((d) => d.nom).filter(Boolean);
+  if (n.length) return n;
+  return [...new Set((agents || []).filter((a) => !a.user_id && a.departement).map((a) => a.departement))];
+};
 const JOUR = 86_400_000;
 
 function lire(cle, defaut) { try { return localStorage.getItem(cle) || defaut; } catch { return defaut; } }
 function ecrire(cle, v) { try { localStorage.setItem(cle, v); } catch { /* navigation privée */ } }
 
-export default function Monde3D({ entreprise, agents, messages, taches, onFiche, t }) {
+export default function Monde3D({ entreprise, agents, departements = [], messages, taches, onFiche, t }) {
   const boite = useRef(null);
   const monde = useRef(null);
   const [etat, setEtat] = useState('chargement'); // chargement | pret | erreur
@@ -65,9 +70,10 @@ export default function Monde3D({ entreprise, agents, messages, taches, onFiche,
           },
         });
         monde.current = m;
-        const c = await chargerCiel({ langue }).catch(() => null);
-        m.reglerCiel({ phase: phaseDuJour(Date.now(), c?.lever, c?.coucher), genre: c?.genre || 'clair' });
-        m.majDonnees({ agents, ou, faits });
+        m.reglerCiel({ phase: phaseDuJour(Date.now()), genre: 'clair' });
+        // La météo arrive quand elle arrive : on n'attend pas le réseau pour ouvrir le monde.
+        chargerCiel({ langue }).then((c) => { if (c && !fini) m.reglerCiel({ phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' }); }).catch(() => {});
+        m.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) });
         await m.allerA('hall', { nomEntreprise: entreprise.nom, avatar });
         if (fini) { m.detruire(); return; }
         m.demarrer();
@@ -80,7 +86,7 @@ export default function Monde3D({ entreprise, agents, messages, taches, onFiche,
     return () => { fini = true; monde.current?.detruire(); monde.current = null; };
   }, [entreprise.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { monde.current?.majDonnees({ agents, ou, faits }); }, [agents, ou, faits]);
+  useEffect(() => { monde.current?.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) }); }, [agents, ou, faits, departements]);
 
   const interagirRef = useRef(null);
   interagirRef.current = (c) => interagir(c);
@@ -140,7 +146,9 @@ export default function Monde3D({ entreprise, agents, messages, taches, onFiche,
   }
   function joyFin() { setBouton(null); if (monde.current) monde.current.joy = { x: 0, y: 0 }; }
 
-  const nomLieu = t(`legion.monde.lieu.${lieu}`);
+  const depts = nomsDepts(departements, agents);
+  const estEtage = String(lieu).startsWith('etage:');
+  const nomLieu = estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : t(`legion.monde.lieu.${lieu}`);
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
 
   return (
@@ -160,7 +168,7 @@ export default function Monde3D({ entreprise, agents, messages, taches, onFiche,
 
       {/* Où je suis */}
       <div className="pointer-events-none absolute left-3 top-3 z-[5] rounded-card bg-[#0b1120]/80 px-3 py-2 text-[12.5px] text-legion-ink backdrop-blur">
-        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${lieu}`)}</span>
+        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : lieu}`)}</span>
       </div>
 
       {/* Caméras + avatar */}
@@ -219,13 +227,18 @@ export default function Monde3D({ entreprise, agents, messages, taches, onFiche,
           {LIEUX.map((l) => (
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.lieu.${l}`)}</button>
           ))}
+          {depts.length > 0 && <button type="button" onClick={() => setEtage(true)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${estEtage ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t('legion.monde.etages', { n: depts.length })}</button>}
         </div>
       )}
       {etage && (
         <div className="absolute inset-0 z-[7] flex items-center justify-center bg-black/50" onClick={() => setEtage(false)}>
           <div className="w-[min(90%,300px)] rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}>
             <p className="mb-3 text-center text-[13px] font-semibold text-legion-gold">{t('legion.monde.ascenseur')}</p>
-            {LIEUX.map((l) => <button key={l} type="button" onClick={() => aller(l)} className="mb-1.5 w-full rounded-card border border-legion-line px-3 py-2 text-left text-[14px] text-legion-ink hover:border-legion-gold">{t(`legion.monde.lieu.${l}`)}</button>)}
+            <div className="max-h-[60vh] overflow-y-auto">
+              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: t('legion.monde.lieu.atelier') }, { id: 'reunion', nom: t('legion.monde.lieu.reunion') }, { id: 'hall', nom: t('legion.monde.lieu.hall') }].map((l) => (
+                <button key={l.id} type="button" onClick={() => aller(l.id)} className={`mb-1.5 w-full rounded-card border px-3 py-2 text-left text-[14px] text-legion-ink hover:border-legion-gold ${lieu === l.id ? 'border-legion-gold' : 'border-legion-line'}`}>{l.nom}</button>
+              ))}
+            </div>
           </div>
         </div>
       )}

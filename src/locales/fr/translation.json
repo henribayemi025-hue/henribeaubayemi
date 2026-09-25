@@ -1306,7 +1306,8 @@
       "phrase": {
         "hall": "le hall de l'immeuble, la réceptionniste vous accueille",
         "reunion": "les agents s'y assoient quand une réunion a lieu",
-        "atelier": "les agents y travaillent quand ils ont une tâche en cours"
+        "atelier": "les agents y travaillent quand ils ont une tâche en cours",
+        "etage": "chaque agent du département a son bureau ; il y est assis quand il travaille"
       },
       "camera": {
         "tps": "3e personne",
@@ -1340,7 +1341,9 @@
       "faitsReunion": "Réunion en cours : {{sujet}}",
       "faitsSansReunion": "Pas de réunion en ce moment",
       "faitsTravail": "Au travail : {{noms}}",
-      "faitsPersonne": "Personne au travail à l'instant"
+      "faitsPersonne": "Personne au travail à l'instant",
+      "etage": "Étage {{n}} · {{nom}}",
+      "etages": "Étages ({{n}})"
     }
   },
   "equipe": {

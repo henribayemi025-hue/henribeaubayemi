@@ -128,7 +128,7 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
       {!['immeuble', 'ville', 'reunions', 'academie', 'monde3d'].includes(mode) && <p className="mb-3 text-[12px] text-legion-muted">{t('legion.vues.legende')}</p>}
 
       {mode === 'monde3d' ? (
-        <div className="-mx-4 -mb-4"><Suspense fallback={<p className="p-6 text-center text-[13px] text-legion-muted">…</p>}><Monde3D entreprise={entreprise} agents={agents} messages={messages} taches={taches} onFiche={onFiche} t={t} /></Suspense></div>
+        <div className="-mx-4 -mb-4"><Suspense fallback={<p className="p-6 text-center text-[13px] text-legion-muted">…</p>}><Monde3D entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} t={t} /></Suspense></div>
       ) : mode === 'ville' ? (
         <div className="-mx-4 -mb-4"><Ville entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onMajMessage={onMajMessage} peutAgir={peutAgir} t={t} /></div>
       ) : mode === 'reunions' ? (

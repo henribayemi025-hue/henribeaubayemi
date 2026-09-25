@@ -1306,7 +1306,8 @@
       "phrase": {
         "hall": "the building lobby, the receptionist welcomes you",
         "reunion": "agents sit here when a meeting is on",
-        "atelier": "agents work here when they have a task in progress"
+        "atelier": "agents work here when they have a task in progress",
+        "etage": "each agent in the department has a desk; they sit there when they're working"
       },
       "camera": {
         "tps": "3rd person",
@@ -1340,7 +1341,9 @@
       "faitsReunion": "Meeting on: {{sujet}}",
       "faitsSansReunion": "No meeting right now",
       "faitsTravail": "Working: {{noms}}",
-      "faitsPersonne": "Nobody working right now"
+      "faitsPersonne": "Nobody working right now",
+      "etage": "Floor {{n}} · {{nom}}",
+      "etages": "Floors ({{n}})"
     }
   },
   "equipe": {
