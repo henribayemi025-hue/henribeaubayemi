@@ -1017,7 +1017,7 @@ export class Monde {
   monterVoiture(id) {
     const lb = this.villeVivante?.voituresLibres.find((x) => x.id === id);
     if (!lb || this.conduite || this.lieu?.nom !== 'hall') return;
-    this.conduite = { lb, kmh: -1, t: 0, secousse: 0 };
+    this.conduite = { lb, kmh: -1, t: 0, secousse: 0, jauge: 100, nitro: false };
     lb.objet.userData.detailler?.();
     this.joueur.objet.visible = false;
     this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
@@ -1056,6 +1056,7 @@ export class Monde {
     this.joueur.objet.rotation.y = e.cap + Math.PI;
     this.cam.yaw = e.cap + Math.PI; this.camSnap = true;
     this.conduite = null;
+    if (this.fovBase) { this.camera.fov = this.fovBase; this.camera.updateProjectionMatrix(); }
     this.emettre({ type: 'conduite', active: false });
   }
   // Une course autour du pâté de maisons (course.js), seulement au volant d'une voiture.
@@ -1063,15 +1064,22 @@ export class Monde {
     if (!this.conduite || this.conduite.genre === 'helico') return;
     this.course = nouvelleCourse();
     this.portes?.montrer(this.course.prochaine, true);
+    if (!this.fleche) {
+      this.fleche = new THREE.Group();
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.3, 16), new THREE.MeshStandardMaterial({ color: '#e3a857', emissive: '#e3a857', emissiveIntensity: 0.7, metalness: 0.4, roughness: 0.3 }));
+      cone.rotation.x = Math.PI / 2; this.fleche.add(cone);
+      this.scene.add(this.fleche);
+    }
     this.emettre({ type: 'course', ...this.resumeCourse(), nouvelle: true });
   }
   arreterCourse() {
     if (!this.course) return;
     this.course = null;
+    if (this.fleche) this.fleche.visible = false;
     this.portes?.montrer(0, false);
     this.emettre({ type: 'course', active: false });
   }
-  resumeCourse() { const c = this.course; return { active: true, prochaine: Math.min(c.prochaine, c.circuit.length), total: c.circuit.length, temps: c.temps, finie: c.finie }; }
+  resumeCourse() { const c = this.course; return { active: true, prochaine: Math.min(c.prochaine, c.circuit.length), total: c.circuit.length, temps: c.temps, finie: c.finie, porte: c.circuit[c.prochaine % c.circuit.length] }; }
   // Pédales et volant du téléphone (boutons de l'écran), en plus du clavier et du joystick.
   pedales(p) { this.pedale = { ...(this.pedale || {}), ...p }; }
   avancerVoiture(dt) {
@@ -1081,10 +1089,14 @@ export class Monde {
     // Petits pas de calcul : la voiture va à la bonne vitesse même sur un appareil lent.
     // Obstacles : la circulation et les autres voitures libres (garées ou laissées là).
     const autres = [...V.circulation(), ...V.voituresLibres.filter((x) => x !== c.lb).flatMap((x) => [-1.3, 1.3].map((k) => ({ x: x.etat.x + Math.sin(x.etat.cap) * k, z: x.etat.z + Math.cos(x.etat.cap) * k, rayon: 0.95 })))];
+    // Nitro (Maj, N ou le bouton flamme) : la jauge se vide en 3 s et se recharge doucement.
+    const veutNitro = t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyN') || pd.nitro;
+    c.nitro = veutNitro && gaz > 0 && c.jauge > 0;
+    c.jauge = Math.max(0, Math.min(100, c.jauge + (c.nitro ? -33 : 9) * dt));
     let e = c.lb.etat, choc = 0, reste = Math.min(dt, 0.25);
     while (reste > 1e-4) {
       const h = Math.min(reste, 1 / 60); reste -= h;
-      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space') }, h), V.blocs);
+      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space'), nitro: c.nitro }, h), V.blocs);
       choc = Math.max(choc, e.choc);
       e = heurterVehicules(e, autres);
       choc = Math.max(choc, e.choc);
@@ -1103,7 +1115,16 @@ export class Monde {
     this.joueur.objet.position.set(e.x, 0, e.z); // le joueur est dans la voiture (caméra, soleil, proximité)
     c.t += dt;
     const k = kmh(e.vitesse);
-    if (c.t > 0.15 && k !== c.kmh) { c.t = 0; c.kmh = k; this.emettre({ type: 'conduite', active: true, kmh: k }); }
+    if (c.t > 0.12) { c.t = 0; c.kmh = k; this.emettre({ type: 'conduite', active: true, kmh: k, jauge: Math.round(c.jauge), nitro: c.nitro, x: e.x, z: e.z, cap: e.cap }); }
+    // La flèche au-dessus de la voiture montre la prochaine porte de la course.
+    if (this.fleche) {
+      this.fleche.visible = !!this.course && !this.course.finie;
+      if (this.fleche.visible) {
+        const [px, pz] = this.course.circuit[this.course.prochaine % this.course.circuit.length];
+        this.fleche.position.set(e.x, 2.6 + Math.sin(performance.now() / 300) * 0.12, e.z);
+        this.fleche.rotation.y = Math.atan2(px - e.x, pz - e.z);
+      }
+    }
     if (this.course && !this.course.finie) {
       const avant = this.course.prochaine;
       this.course = avancerCourse(this.course, e.x, e.z, dt);
@@ -1285,6 +1306,9 @@ export class Monde {
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 4));
       if (c.secousse > 0) { this.camera.position.x += (Math.random() - 0.5) * c.secousse; this.camera.position.y += (Math.random() - 0.5) * c.secousse; c.secousse = Math.max(0, c.secousse - dt * 1.5); }
       this.camera.lookAt(e.x + Math.sin(e.cap) * 5 * dir, 1.1, e.z + Math.cos(e.cap) * 5 * dir);
+      // Sensation de vitesse : le champ de vision s'élargit, encore plus avec la nitro.
+      const fov = (this.fovBase ?? (this.fovBase = this.camera.fov)) + Math.min(14, Math.abs(e.vitesse) * 0.4) + (c.nitro ? 7 : 0);
+      if (Math.abs(this.camera.fov - fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
     } else if (this.vueChantiersT != null && this.lieu.nom === 'hall') {
       // La frise du temps : on prend de la hauteur au-dessus du quartier des
       // projets, en se balançant doucement, pour voir les chantiers grandir.
@@ -1338,6 +1362,7 @@ export class Monde {
     this.composer?.setSize(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = w < h ? 70 : 55;
+    this.fovBase = this.camera.fov;
     this.camera.updateProjectionMatrix();
     this.planete?.redimensionner(w, h);
   }

@@ -16,13 +16,17 @@ export const VOITURE = {
 const borne = (x, a, b) => Math.max(a, Math.min(b, x));
 
 // Un pas de conduite. entrees : gaz (-1 recule/freine … 1 accélère), volant (-1 gauche … 1 droite), frein à main.
-export function piloter(e, { gaz = 0, volant = 0, frein = false } = {}, dt, V = VOITURE) {
+export function piloter(e, { gaz = 0, volant = 0, frein = false, nitro = false } = {}, dt, V0 = VOITURE) {
+  // Nitro : accélération doublée et vitesse maxi relevée, tant que la jauge le permet (géré par le moteur).
+  const V = nitro && gaz > 0 ? { ...V0, accel: V0.accel * 2.2, max: V0.max * 1.4 } : V0;
   let v = e.vitesse;
+  if (!nitro && v > V0.max) v = Math.max(V0.max, v - 6 * dt); // après la nitro, on redescend doucement
+  const haut = nitro && gaz > 0 ? V.max : Math.max(V0.max, v);
   if (frein) v -= Math.sign(v) * Math.min(Math.abs(v), V.frein * 1.3 * dt);
   else if (gaz > 0) v += (v < -0.2 ? V.frein : V.accel * (1 - Math.max(0, v) / (V.max * 1.15))) * gaz * dt;
   else if (gaz < 0) v += (v > 0.2 ? -V.frein : -V.accel * 0.6) * -gaz * dt;
   else v -= Math.sign(v) * Math.min(Math.abs(v), (1.4 + Math.abs(v) * 0.08) * dt); // roue libre
-  v = borne(v, -V.arriere, V.max);
+  v = borne(v, -V.arriere, haut);
   // Moins de braquage à grande vitesse, comme une vraie voiture (et pour ne pas partir en toupie).
   const angle = borne(volant, -1, 1) * V.braquage * (1 - Math.min(0.65, (Math.abs(v) / V.max) * 0.65));
   const cap = e.cap - (v / V.empattement) * Math.tan(angle) * dt;
@@ -131,3 +135,10 @@ export function heurterTours(e, tours, H = HELICO) {
   }
   return { ...e, x, z, vx, vz, choc };
 }
+
+// Le circuit des courses (voir course.js) : départ devant l'immeuble, puis à droite à chaque carrefour.
+export const CIRCUIT = [
+  [6, 27], [-14, 27], [-23, 12], [-23, -12], [-10, -19], [14, -19], [23, -8], [23, 16],
+];
+// La grille des rues (voir ville3d.js), pour la mini-carte.
+export const RUES = { x: [-78, -26, 26, 78], z: [-74, -22, 30, 82], largeur: 12 };

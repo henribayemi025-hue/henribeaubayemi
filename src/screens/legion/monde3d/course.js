@@ -4,10 +4,9 @@
 // le record reste dans ce navigateur.
 import * as THREE from 'three';
 
-// Départ devant l'immeuble, puis à droite à chaque carrefour.
-export const CIRCUIT = [
-  [6, 27], [-14, 27], [-23, 12], [-23, -12], [-10, -19], [14, -19], [23, -8], [23, 16],
-];
+import { CIRCUIT } from './conduite';
+
+export { CIRCUIT };
 export const RAYON_PORTE = 7;
 
 // Une course : on part du départ (porte 0), on passe les portes 1…n-1, on revient à la porte 0.

@@ -75,3 +75,14 @@ describe('piloter l\'hélicoptère', () => {
     expect(heurterTours({ ...sol, y: 60, z: 3, vz: 20 }, [tour]).choc).toBe(0);
   });
 });
+
+describe('nitro', () => {
+  const lance = { x: 0, z: 0, cap: 0, vitesse: 20 };
+  const rouler = (e, entrees, s) => { let x = e; for (let k = 0; k < s * 60; k += 1) x = piloter(x, entrees, 1 / 60); return x; };
+  it('va plus vite avec la nitro, puis redescend à la vitesse normale', () => {
+    const sans = rouler(lance, { gaz: 1 }, 4), avec = rouler(lance, { gaz: 1, nitro: true }, 4);
+    expect(avec.vitesse).toBeGreaterThan(VOITURE.max);
+    expect(sans.vitesse).toBeLessThanOrEqual(VOITURE.max);
+    expect(rouler(avec, { gaz: 1 }, 6).vitesse).toBeLessThanOrEqual(VOITURE.max + 0.01);
+  });
+});
