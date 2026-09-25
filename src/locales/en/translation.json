@@ -1301,13 +1301,15 @@
       "lieu": {
         "hall": "Reception",
         "reunion": "Meeting room",
-        "atelier": "Workshop"
+        "atelier": "Workshop",
+        "maisons": "Where agents live"
       },
       "phrase": {
         "hall": "the building lobby, the receptionist welcomes you",
         "reunion": "agents sit here when a meeting is on",
         "atelier": "agents work here when they have a task in progress",
-        "etage": "each agent in the department has a desk; they sit there when they're working"
+        "etage": "each agent in the department has a desk; they sit there when they're working",
+        "maisons": "their villas by the sea; an agent switched off is at home"
       },
       "camera": {
         "tps": "3rd person",

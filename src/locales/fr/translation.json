@@ -1301,13 +1301,15 @@
       "lieu": {
         "hall": "Réception",
         "reunion": "Salle de réunion",
-        "atelier": "Atelier"
+        "atelier": "Atelier",
+        "maisons": "Chez les agents"
       },
       "phrase": {
         "hall": "le hall de l'immeuble, la réceptionniste vous accueille",
         "reunion": "les agents s'y assoient quand une réunion a lieu",
         "atelier": "les agents y travaillent quand ils ont une tâche en cours",
-        "etage": "chaque agent du département a son bureau ; il y est assis quand il travaille"
+        "etage": "chaque agent du département a son bureau ; il y est assis quand il travaille",
+        "maisons": "leurs villas au bord de la mer ; un agent en veille est chez lui"
       },
       "camera": {
         "tps": "3e personne",

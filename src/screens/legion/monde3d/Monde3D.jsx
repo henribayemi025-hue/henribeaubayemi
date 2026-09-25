@@ -319,6 +319,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           {LIEUX.map((l) => (
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.lieu.${l}`)}</button>
           ))}
+          <button type="button" onClick={() => aller('maisons')} title={t('legion.monde.lieu.maisons')} aria-label={t('legion.monde.lieu.maisons')} className={`rounded-pill px-2.5 py-1.5 text-[12px] font-semibold ${lieu === 'maisons' ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>🏡</button>
           {depts.length > 0 && <button type="button" onClick={() => setEtage(true)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${estEtage ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t('legion.monde.etages', { n: depts.length })}</button>}
         </div>
       )}
@@ -327,7 +328,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <div className="w-[min(90%,300px)] rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}>
             <p className="mb-3 text-center text-[13px] font-semibold text-legion-gold">{t('legion.monde.ascenseur')}</p>
             <div className="max-h-[60vh] overflow-y-auto">
-              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: t('legion.monde.lieu.atelier') }, ...Array.from({ length: Math.max(1, ou.reunions?.length || 0) }, (_, i) => ({ id: i ? `reunion:${i + 1}` : 'reunion', nom: i ? t('legion.monde.salleN', { n: i + 1 }) : t('legion.monde.lieu.reunion') })).reverse(), { id: 'hall', nom: t('legion.monde.lieu.hall') }].map((l) => (
+              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: t('legion.monde.lieu.atelier') }, ...Array.from({ length: Math.max(1, ou.reunions?.length || 0) }, (_, i) => ({ id: i ? `reunion:${i + 1}` : 'reunion', nom: i ? t('legion.monde.salleN', { n: i + 1 }) : t('legion.monde.lieu.reunion') })).reverse(), { id: 'hall', nom: t('legion.monde.lieu.hall') }, { id: 'maisons', nom: `🏡 ${t('legion.monde.lieu.maisons')}` }].map((l) => (
                 <button key={l.id} type="button" onClick={() => aller(l.id)} className={`mb-1.5 w-full rounded-card border px-3 py-2 text-left text-[14px] text-legion-ink hover:border-legion-gold ${lieu === l.id ? 'border-legion-gold' : 'border-legion-line'}`}>{l.nom}</button>
               ))}
             </div>

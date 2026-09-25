@@ -21,6 +21,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
+import { construireMaisons } from './maisons3d';
 
 const BASE = '/monde3d/';
 const ANIMS = {
@@ -230,6 +231,7 @@ export class Monde {
     this.envCiel = this.pm.fromScene(sc, 0, 0.1, 2000).texture;
     this.niveauNuit = nuit ? 1 : phase === 'jour' ? 0 : 0.55;
     this.villeVivante?.reglerNuit(this.niveauNuit);
+    if (this.lieux?.maisons) this.lieux.maisons.lampes.emissiveIntensity = (this.niveauNuit || 0) * 1.4;
     this.villeVivante?.majEnv(this.envCiel);
   }
 
@@ -742,6 +744,7 @@ export class Monde {
     const etage = String(lieu).startsWith('etage:') ? String(lieu).slice(6) : null;
     const depts = this.donnees?.departements || [];
     const numero = etage ? depts.indexOf(etage) + 1 : 0;
+    this.villeVivante.racine.visible = lieu !== 'maisons'; // chez les agents : loin de la ville
     this.villeVivante.racine.position.y = etage ? -(12 + numero * 4) : (String(lieu).startsWith('reunion') ? -34 : ({ hall: 0, atelier: -22 }[lieu] ?? 0));
     // Chaque lieu n'est construit qu'une fois ; ensuite on y retourne sans rien recharger.
     this.lieux = this.lieux || {};
@@ -750,8 +753,9 @@ export class Monde {
       // Les étiquettes (noms au-dessus des têtes) ne suivent pas d'un étage à l'autre.
       this.lieu.groupe.traverse((o) => { if (o.isCSS2DObject && o.element.parentNode) o.element.parentNode.removeChild(o.element); });
     }
-    const l = this.lieux[lieu] || (etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise));
+    const l = this.lieux[lieu] || (lieu === 'maisons' ? construireMaisons(this, this.donnees?.agents || []) : etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise));
     this.lieux[lieu] = l;
+    if (lieu === 'maisons') l.lampes.emissiveIntensity = (this.niveauNuit || 0) * 1.4;
     l.nom = lieu;
     this.lieu = l;
     this.scene.add(l.groupe);
@@ -827,6 +831,13 @@ export class Monde {
         const b = ou?.auBureau?.[i];
         p.ecran.userData.redessiner(b ? { actif: true, nom: parId.get(b.id)?.nom, texte: b.tache || b.texte } : { actif: false });
       });
+    }
+    if (this.lieu.nom === 'maisons') {
+      // Chez lui : seulement l'agent en veille (éteint). Allumé, il est à l'immeuble.
+      for (const v of this.lieu.villas || []) {
+        const a = parId.get(v.id);
+        if (a && a.actif === false) voulus.set(a.id, { place: v.place, anim: 'assis', sous: this.langue === 'en' ? 'at home · switched off' : 'chez lui · en veille' });
+      }
     }
     if (String(this.lieu.nom).startsWith('etage:')) {
       const dept = this.lieu.nom.slice(6);

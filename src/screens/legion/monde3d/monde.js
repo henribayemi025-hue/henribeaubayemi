@@ -171,7 +171,7 @@ export function repondre(question, { agents = [], ou, nomEntreprise = '' }, lang
   }
   const cible = agents.filter((a) => !a.user_id).find((a) => q.includes(String(a.nom).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(' ')[0]));
   if (cible) {
-    if (cible.actif === false) return { texte: fr ? `${cible.nom} est en veille aujourd'hui.` : `${cible.nom} is switched off today.` };
+    if (cible.actif === false) return { texte: fr ? `${cible.nom} est en veille aujourd'hui, à la maison (🏡).` : `${cible.nom} is switched off today, at home (🏡).`, aller: 'maisons' };
     if (ou?.reunion?.participants.includes(cible.id)) return { texte: fr ? `${cible.nom} est en réunion.` : `${cible.nom} is in a meeting.`, aller: 'reunion' };
     const b = (ou?.auBureau || []).find((x) => x.id === cible.id);
     if (b) return { texte: fr ? `${cible.nom} travaille à son bureau${b.tache ? ` : ${String(b.tache).slice(0, 80)}` : ''}.` : `${cible.nom} is at their desk.`, aller: 'atelier' };
