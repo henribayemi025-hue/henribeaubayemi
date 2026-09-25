@@ -1335,7 +1335,8 @@
         "helico": "Prendre l'hélicoptère",
         "boutique": "Voir la boutique",
         "client": "Voir le client",
-        "chezmoi": "Entrer chez moi"
+        "chezmoi": "Entrer chez moi",
+        "bateau": "Prendre le bateau"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1366,6 +1367,7 @@
       "planete": "Vue de la planète",
       "vousEtesIci": "Vous êtes ici",
       "planeteAide": "La Terre en ce moment : le côté éclairé est celui où il fait jour. Glissez pour la faire tourner.",
+      "nage": {"titre": "Vous nagez", "air": "Réserve d'air", "aide": "Espace : plonger · vers la plage pour sortir", "plonger": "Plonger"},
       "ville": {"boutiqueResume": "{{nom}} : {{articles}} article(s) en ligne, {{commandes}} commande(s), dont {{livrees}} livrée(s). L'immeuble grandit à chaque commande livrée.", "clientResume": "{{nom}} : {{commandes}} commande(s), dont {{livrees}} livrée(s). Sa maison prend un étage à chaque commande.", "client": "Ce client", "bienvenue": "Bienvenue chez vous, {{nom}} !", "bienvenueSans": "Bienvenue chez vous !", "voirBoutique": "Voir la boutique", "chezMoi": "Chez moi", "ouHabiter": "Où habitez-vous ?", "ouHabiterAide": "Votre chez-vous dans le monde de votre entreprise. Vous pourrez changer plus tard (menu ☰).", "maison": "Une maison", "maisonAide": "Au bord de la mer, près des maisons de vos agents", "cite": "Un appartement en cité", "citeAide": "Dans votre ville, à deux rues de votre immeuble", "plusTard": "Plus tard"},
       "conseil1": "Montez dans la voiture rouge garée devant l'immeuble, puis lancez une course 🏁.",
       "conseil2": "L'hélicoptère attend sur l'héliport, à droite de l'immeuble.",
@@ -1374,7 +1376,7 @@
       "conseil5": "Le bouton 🌍 vous emmène au-dessus de la Terre, éclairée comme en ce moment.",
       "conseil6": "Le soir, vos agents rentrent chez eux : le bouton 🏡 mène à leurs maisons.",
       "course": {"lancer": "Course", "porte": "Porte {{n}} / {{total}}", "versArrivee": "Vers l'arrivée !", "arrivee": "Arrivée", "nouveauRecord": "Nouveau record !", "record": "Votre record : {{temps}}", "rejouer": "Rejouer", "abandonner": "Abandonner la course"},
-      "conduite": {"descendre": "Descendre", "aide": "Z accélérer · S freiner, reculer · Q D tourner · Maj ou N nitro · Espace frein à main · F descendre", "nitro": "Nitro", "aideHelico": "Z avancer · S reculer · Q D tourner · Espace monter · Maj descendre · F descendre (une fois posé)", "monter": "Monter", "descendreAlt": "Descendre", "sePoser": "Posez-vous d'abord pour descendre de l'hélicoptère", "gaz": "Accélérer", "frein": "Freiner / reculer"},
+      "conduite": {"descendre": "Descendre", "aide": "Z accélérer · S freiner, reculer · Q D tourner · Maj ou N nitro · Espace frein à main · F descendre", "nitro": "Nitro", "aideHelico": "Z avancer · S reculer · Q D tourner · Espace monter · Maj descendre · F descendre (une fois posé)", "aideBateau": "Z accélérer · S ralentir, reculer · Q D tourner · F descendre", "monter": "Monter", "descendreAlt": "Descendre", "sePoser": "Posez-vous d'abord pour descendre de l'hélicoptère", "gaz": "Accélérer", "frein": "Freiner / reculer"},
       "frise": {"titre": "Frise du temps", "revoir": "Revoir les chantiers grandir", "pause": "Pause", "aujourdhui": "Aujourd'hui", "retour": "Aujourd'hui", "locale": "fr-FR", "rendues": "{{n}}/{{total}} tâches rendues"},
       "redescendre": "Redescendre en ville",
       "passer": "Passer",

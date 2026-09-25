@@ -21,7 +21,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
-import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours } from './conduite';
+import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
 import { construireQuartiers } from './quartiers3d';
 import { construireMaisons } from './maisons3d';
@@ -1008,7 +1008,7 @@ export class Monde {
       const code = e.code;
       if (e.type === 'keydown') {
         this.touches.add(code);
-        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); else if (this.proche?.type === 'helico') this.monterHelico(); }
+        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); else if (this.proche?.type === 'helico') this.monterHelico(); else if (this.proche?.type === 'bateau') this.monterBateau(); }
         else if (code === 'KeyE') this.interagir();
         if (code === 'KeyV') this.cycleCamera();
       } else this.touches.delete(code);
@@ -1052,9 +1052,104 @@ export class Monde {
     this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
     this.emettre({ type: 'conduite', active: true, genre: 'helico', kmh: 0, alt: 0 });
   }
+  monterBateau() {
+    const b = this.lieu?.bateau;
+    if (!b || this.conduite || this.lieu?.nom !== 'maisons') return;
+    this.conduite = { lb: b, genre: 'bateau', kmh: -1, t: 0, secousse: 0 };
+    this.nage = null; this.joueur.objet.rotation.x = 0; this.joueur.objet.position.y = 0;
+    this.joueur.objet.visible = false;
+    this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
+    this.emettre({ type: 'conduite', active: true, genre: 'bateau', kmh: 0 });
+  }
+  avancerBateau(dt) {
+    const c = this.conduite, t = this.touches, pd = this.pedale || {}, b = c.lb;
+    const gaz = Math.max(-1, Math.min(1, (t.has('KeyW') || t.has('ArrowUp') || pd.gaz ? 1 : 0) - (t.has('KeyS') || t.has('ArrowDown') || pd.frein ? 1 : 0) - this.joy.y));
+    const volant = Math.max(-1, Math.min(1, (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x));
+    // Le rivage et la jetée arrêtent le bateau ; au large, les limites du lieu.
+    const rivage = this.lieu.rivage, J = this.lieu.jetee;
+    const blocs = [{ x0: -400, x1: 400, z0: -400, z1: rivage + 0.8 }, { x0: J.x0 - 0.3, x1: J.x1 + 0.3, z0: J.z0, z1: J.z1 + 0.3 }];
+    let e = b.etat, choc = 0, reste = Math.min(dt, 0.25);
+    while (reste > 1e-4) {
+      const h = Math.min(reste, 1 / 60); reste -= h;
+      e = heurterBlocs(piloter(e, { gaz, volant }, h, BATEAU), blocs, BATEAU);
+      choc = Math.max(choc, e.choc);
+    }
+    const L = this.lieu.limites;
+    e.x = Math.max(L.x0 + 3, Math.min(L.x1 - 3, e.x)); e.z = Math.min(L.z1 - 3, e.z);
+    if (choc > 3) { c.secousse = Math.min(0.5, choc / 30); this.emettre({ type: 'choc', force: choc }); }
+    b.etat = { x: e.x, z: e.z, cap: e.cap, vitesse: e.vitesse };
+    const m = b.animer(dt, e.vitesse);
+    b.objet.position.set(e.x, m.houle, e.z);
+    b.objet.rotation.set(m.tangage, e.cap - Math.PI / 2, -(e.angle || 0) * 0.3 + m.roulis, 'YXZ');
+    this.joueur.objet.position.set(e.x, 0, e.z);
+    c.t += dt;
+    const k = kmh(e.vitesse);
+    if (c.t > 0.12) { c.t = 0; c.kmh = k; this.emettre({ type: 'conduite', active: true, genre: 'bateau', kmh: k, x: e.x, z: e.z, cap: e.cap }); }
+  }
+  // Dans l'eau (lieu des maisons, au-delà du rivage) : on nage ; Espace ou le bouton ▼ pour plonger.
+  nager(dt, ax, az, n, court) {
+    const j = this.joueur, p = j.objet.position, t = this.touches, pd = this.pedale || {};
+    if (!this.nage) { this.nage = { air: NAGE.air, sous: false, prof: 0 }; j.objet.rotation.order = 'YXZ'; }
+    const N = this.nage;
+    const veutPlonger = t.has('Space') || t.has('KeyC') || pd.frein;
+    // À bout de souffle, on remonte et on ne replonge qu'une fois l'air à moitié revenu.
+    if (N.air <= 0.05) N.essouffle = true; else if (N.air >= NAGE.air * 0.5) N.essouffle = false;
+    N.sous = veutPlonger && !N.essouffle;
+    N.air = Math.max(0, Math.min(NAGE.air, N.air + (N.sous ? -dt : dt * 2.5)));
+    // Près du bord, on ne plonge pas plus bas que le fond ne le permet.
+    const maxProf = Math.max(0, -(this.lieu.fond?.(p.z) ?? -9) + NAGE.surface - 0.5);
+    N.prof += ((N.sous ? Math.min(NAGE.profondeur, maxProf) : 0) - N.prof) * Math.min(1, dt * 2.5);
+    if (n > 0.08) {
+      ax /= Math.max(n, 1); az /= Math.max(n, 1);
+      const yaw = this.cam.mode === 'plan' ? Math.PI : this.cam.yaw;
+      const dx = ax * Math.cos(yaw) + az * Math.sin(yaw), dz = -ax * Math.sin(yaw) + az * Math.cos(yaw);
+      const v = (N.sous ? NAGE.plongee : court ? NAGE.course : NAGE.vitesse) * Math.min(1, n) * dt;
+      p.x += dx * v; p.z += dz * v;
+      const cible = Math.atan2(dx, dz);
+      let d = cible - j.objet.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+      j.objet.rotation.y += d * Math.min(1, dt * 6);
+      j.jouer('marche', { fondu: 0.3 }); j.mixer.timeScale = 0.55;
+    } else { j.jouer('repos', { fondu: 0.3 }); j.mixer.timeScale = 1; }
+    this.collisions(p);
+    // Couché dans l'eau, la tête hors de l'eau ; sous l'eau, un peu plus incliné
+    p.y = NAGE.surface - N.prof + Math.sin(performance.now() / 600) * 0.05;
+    j.objet.rotation.x += ((N.sous ? 1.35 : 1.15) - j.objet.rotation.x) * Math.min(1, dt * 4);
+    this.tNage = (this.tNage || 0) + dt;
+    if (this.tNage > 0.15) { this.tNage = 0; this.emettre({ type: 'nage', active: true, sous: N.sous, air: Math.round((N.air / NAGE.air) * 100) }); }
+  }
+  // Sous la surface, l'eau se trouble : un brouillard bleu-vert proche, qui cache aussi le bout de la mer.
+  brouillardSousLEau() {
+    const sous = this.lieu?.fond && this.camera.position.y < -0.08;
+    if (sous && !this.fogEau) {
+      this.fogAvant = this.scene.fog; this.fondAvant = this.scene.background;
+      this.fogEau = new THREE.Fog('#2f7f8f', 1.5, 26); this.scene.fog = this.fogEau; this.scene.background = this.fogEau.color; this.sky.visible = false; // plus de ciel blanc entre la surface et le sable
+    } else if (!sous && this.fogEau) {
+      if (this.scene.fog === this.fogEau) this.scene.fog = this.fogAvant || null;
+      if (this.scene.background === this.fogEau.color) this.scene.background = this.fondAvant ?? null;
+      this.sky.visible = true;
+      this.fogEau = null;
+    }
+  }
+  sortirDeLEau() {
+    if (!this.nage) return;
+    this.nage = null; this.tNage = 0;
+    const j = this.joueur; j.objet.rotation.x = 0; j.objet.position.y = 0; j.mixer.timeScale = 1; j.objet.rotation.order = 'XYZ';
+    this.emettre({ type: 'nage', active: false });
+  }
   descendreVoiture() {
     const c = this.conduite;
     if (!c) return;
+    if (c.genre === 'bateau') {
+      const e = c.lb.etat; e.vitesse = 0;
+      const p = this.joueur.objet.position;
+      p.set(e.x + Math.cos(e.cap) * 2.4, 0, e.z - Math.sin(e.cap) * 2.4);
+      this.collisions(p);
+      this.joueur.objet.rotation.y = e.cap + Math.PI; this.cam.yaw = e.cap + Math.PI; this.camSnap = true;
+      this.joueur.objet.visible = true;
+      this.conduite = null;
+      this.emettre({ type: 'conduite', active: false });
+      return;
+    }
     if (c.genre === 'helico') { // on ne saute pas d'un hélicoptère en vol : il faut se poser
       if (c.lb.etat.y > 0.3) { this.emettre({ type: 'conduite', active: true, genre: 'helico', kmh: c.kmh, alt: Math.round(c.lb.etat.y), sePoser: true }); return; }
       const e = c.lb.etat;
@@ -1184,6 +1279,7 @@ export class Monde {
     if (!this.proche) return;
     if (this.proche.type === 'voiture') { this.monterVoiture(this.proche.id); return; }
     if (this.proche.type === 'helico') { this.monterHelico(); return; }
+    if (this.proche.type === 'bateau') { this.monterBateau(); return; }
     if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
     this.emettre({ type: 'interagir', cible: this.proche });
   }
@@ -1230,14 +1326,19 @@ export class Monde {
   avancer(dt) {
     const j = this.joueur;
     if (!j || !this.lieu) return;
+    this.brouillardSousLEau();
     const t = this.touches;
     let ax = (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x;
     let az = (t.has('KeyS') || t.has('ArrowDown') ? 1 : 0) - (t.has('KeyW') || t.has('ArrowUp') ? 1 : 0) + this.joy.y;
     const n = Math.hypot(ax, az);
     const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 1.4;
-    if (this.conduite && this.lieu.nom !== 'hall') this.descendreVoiture();
+    if (this.conduite && this.conduite.genre !== 'bateau' && this.lieu.nom !== 'hall') this.descendreVoiture(); // voiture et hélico ne vivent qu'en ville
+    const dansLEau = this.lieu.nom === 'maisons' && this.lieu.rivage != null && !this.conduite && j.objet.position.z > this.lieu.rivage + 0.5;
+    if (!dansLEau && this.nage) this.sortirDeLEau();
     if (this.conduite?.genre === 'helico') this.avancerHelico(dt);
+    else if (this.conduite?.genre === 'bateau') this.avancerBateau(dt);
     else if (this.conduite) this.avancerVoiture(dt);
+    else if (dansLEau) this.nager(dt, ax, az, n, court);
     else if (n > 0.08) {
       ax /= Math.max(n, 1); az /= Math.max(n, 1);
       const yaw = this.cam.mode === 'plan' ? Math.PI : this.cam.yaw;
@@ -1291,6 +1392,7 @@ export class Monde {
     // Ce qui est à portée (réceptionniste, ascenseur, agents).
     const p = j.objet.position;
     let proche = null;
+    if (this.lieu.bateau && this.conduite?.genre !== 'bateau') { const bt = this.lieu.bateau, mv = bt.animer(dt, 0); bt.objet.position.y = mv.houle; bt.objet.rotation.x = mv.tangage; const poi = this.lieu.poi.find((x) => x.type === 'bateau'); if (poi) { poi.x = bt.etat.x; poi.z = bt.etat.z; } }
     for (const x of this.lieu.poi) if (Math.hypot(p.x - x.x, p.z - x.z) < x.rayon) proche = x;
     if (this.lieu.nom === 'hall' && this.villeVivante) {
       for (const v of this.villeVivante.voituresLibres) if (Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
@@ -1330,6 +1432,12 @@ export class Monde {
       // Sensation de vitesse : le champ de vision s'élargit, encore plus avec la nitro.
       const fov = (this.fovBase ?? (this.fovBase = this.camera.fov)) + Math.min(14, Math.abs(e.vitesse) * 0.4) + (c.nitro ? 7 : 0);
       if (Math.abs(this.camera.fov - fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
+    } else if (this.nage) {
+      const N = this.nage, d = 5.5;
+      const voulu = new THREE.Vector3(p.x + Math.sin(this.cam.yaw) * d, (N.sous ? -0.6 - N.prof * 0.5 : 1.6), p.z + Math.cos(this.cam.yaw) * d);
+      voulu.y = Math.max(voulu.y, (this.lieu.fond?.(voulu.z) ?? -9) + 0.35); // jamais sous le sable
+      this.camera.position.lerp(voulu, Math.min(1, dt * 5));
+      this.camera.lookAt(p.x, p.y + 0.4, p.z);
     } else if (this.vueChantiersT != null && this.lieu.nom === 'hall') {
       // La frise du temps : on prend de la hauteur au-dessus du quartier des
       // projets, en se balançant doucement, pour voir les chantiers grandir.

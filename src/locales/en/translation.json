@@ -1335,7 +1335,8 @@
         "helico": "Take the helicopter",
         "boutique": "See the shop",
         "client": "See the customer",
-        "chezmoi": "Go home"
+        "chezmoi": "Go home",
+        "bateau": "Take the boat"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1366,6 +1367,7 @@
       "planete": "Planet view",
       "vousEtesIci": "You are here",
       "planeteAide": "Earth right now: the lit side is where it's daytime. Drag to turn it.",
+      "nage": {"titre": "Swimming", "air": "Air left", "aide": "Space: dive · back to the beach to get out", "plonger": "Dive"},
       "ville": {"boutiqueResume": "{{nom}}: {{articles}} item(s) online, {{commandes}} order(s), {{livrees}} delivered. The building grows with every delivered order.", "clientResume": "{{nom}}: {{commandes}} order(s), {{livrees}} delivered. Their house gains a floor with every order.", "client": "This customer", "bienvenue": "Welcome home, {{nom}}!", "bienvenueSans": "Welcome home!", "voirBoutique": "See the shop", "chezMoi": "Home", "ouHabiter": "Where do you live?", "ouHabiterAide": "Your home in your company's world. You can change it later (☰ menu).", "maison": "A house", "maisonAide": "By the sea, near your agents' houses", "cite": "A city apartment", "citeAide": "In your city, two streets from your building", "plusTard": "Later"},
       "conseil1": "Get in the red car parked in front of the building, then start a race 🏁.",
       "conseil2": "The helicopter waits on the helipad, to the right of the building.",
@@ -1374,7 +1376,7 @@
       "conseil5": "The 🌍 button takes you above the Earth, lit as it is right now.",
       "conseil6": "In the evening your agents go home: the 🏡 button leads to their houses.",
       "course": {"lancer": "Race", "porte": "Gate {{n}} / {{total}}", "versArrivee": "To the finish!", "arrivee": "Finish", "nouveauRecord": "New record!", "record": "Your record: {{temps}}", "rejouer": "Race again", "abandonner": "Quit the race"},
-      "conduite": {"descendre": "Get out", "aide": "W accelerate · S brake, reverse · A D steer · Shift or N nitro · Space handbrake · F get out", "nitro": "Nitro", "aideHelico": "W forward · S back · A D turn · Space up · Shift down · F get out (once landed)", "monter": "Climb", "descendreAlt": "Descend", "sePoser": "Land first to get out of the helicopter", "gaz": "Accelerate", "frein": "Brake / reverse"},
+      "conduite": {"descendre": "Get out", "aide": "W accelerate · S brake, reverse · A D steer · Shift or N nitro · Space handbrake · F get out", "nitro": "Nitro", "aideHelico": "W forward · S back · A D turn · Space up · Shift down · F get out (once landed)", "aideBateau": "W throttle · S slow down, reverse · A D steer · F get off", "monter": "Climb", "descendreAlt": "Descend", "sePoser": "Land first to get out of the helicopter", "gaz": "Accelerate", "frein": "Brake / reverse"},
       "frise": {"titre": "Timeline", "revoir": "Replay the sites growing", "pause": "Pause", "aujourdhui": "Today", "retour": "Today", "locale": "en-GB", "rendues": "{{n}}/{{total}} tasks delivered"},
       "redescendre": "Back down to the city",
       "passer": "Skip",

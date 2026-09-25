@@ -4,6 +4,7 @@
 // veille (éteint) — un agent allumé est à l'immeuble. Tout est dessiné ici :
 // aucune image prise sur le web.
 import * as THREE from 'three';
+import { construireBateau, construireJetee } from './bateau3d';
 
 function alea(graine) { let s = graine >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
@@ -13,6 +14,10 @@ function texture(l, h, dessiner) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
 }
+
+// Hauteur du fond de la mer à une distance z : il descend du rivage (z = 58) jusqu'à 5 m,
+// atteints une vingtaine de mètres plus loin. Le nageur et la caméra restent au-dessus.
+export function fondMarin(z) { return Math.max(-5, -0.25 - Math.max(0, z - 58) * 0.19); }
 
 export function construireMaisons(monde, agents = [], { moi = null } = {}) {
   const r = alea(11);
@@ -27,18 +32,26 @@ export function construireMaisons(monde, agents = [], { moi = null } = {}) {
     for (let i = 0; i < 2600; i += 1) { const v = 70 + Math.floor(r() * 70); x.fillStyle = `rgb(${Math.floor(v * 0.6)},${v + 40},${Math.floor(v * 0.35)})`; x.fillRect(r() * w, r() * h, 2, 3 + r() * 4); }
   });
   herbe.repeat.set(60, 60);
-  const sol = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ map: herbe, roughness: 1 }));
-  sol.rotation.x = -Math.PI / 2; sol.position.y = -0.02; sol.receiveShadow = true; g.add(sol);
+  const sol = new THREE.Mesh(new THREE.PlaneGeometry(600, 420), new THREE.MeshStandardMaterial({ map: herbe, roughness: 1 })); // la prairie s'arrête au sable : la mer n'est plus recouverte
+  sol.rotation.x = -Math.PI / 2; sol.position.set(0, -0.02, -176); sol.receiveShadow = true; g.add(sol);
   const sableT = texture(128, 128, (x, w, h) => { x.fillStyle = '#e6d3a8'; x.fillRect(0, 0, w, h); for (let i = 0; i < 900; i += 1) { x.fillStyle = r() < 0.5 ? '#d9c393' : '#f1e2bf'; x.fillRect(r() * w, r() * h, 2, 2); } });
   sableT.repeat.set(40, 4);
   const sable = new THREE.Mesh(new THREE.PlaneGeometry(600, 26), new THREE.MeshStandardMaterial({ map: sableT, roughness: 1 }));
   sable.rotation.x = -Math.PI / 2; sable.position.set(0, 0.0, 47); sable.receiveShadow = true; g.add(sable);
-  const mer = new THREE.Mesh(new THREE.PlaneGeometry(600, 400), new THREE.MeshStandardMaterial({ color: '#1f6f8b', roughness: 0.08, metalness: 0.35, transparent: true, opacity: 0.94 }));
+  const mer = new THREE.Mesh(new THREE.PlaneGeometry(600, 400, 24, 16), new THREE.MeshStandardMaterial({ color: '#1d6a86', roughness: 0.6, metalness: 0, transparent: true, opacity: 0.9, side: THREE.DoubleSide })); // reflets doux ; visible aussi par-dessous quand on plonge
   mer.rotation.x = -Math.PI / 2; mer.position.set(0, -0.05, 258); g.add(mer);
+  // Le fond : du sable en pente douce, visible quand on plonge
+  const geoFond = new THREE.PlaneGeometry(600, 400, 1, 80); geoFond.rotateX(-Math.PI / 2);
+  const pf = geoFond.attributes.position;
+  for (let i = 0; i < pf.count; i += 1) pf.setY(i, fondMarin(pf.getZ(i) + 258));
+  geoFond.computeVertexNormals();
+  const sableFond = sableT.clone(); sableFond.repeat.set(40, 27); // même grain que la plage, sans l'étirer sur 400 m
+  const fond = new THREE.Mesh(geoFond, new THREE.MeshStandardMaterial({ map: sableFond, color: '#9fb6a8', roughness: 1 }));
+  fond.position.set(0, 0, 258); g.add(fond);
   const ecume = new THREE.Mesh(new THREE.PlaneGeometry(600, 1.2), new THREE.MeshStandardMaterial({ color: '#f4f7f8', roughness: 0.6, transparent: true, opacity: 0.7 }));
   ecume.rotation.x = -Math.PI / 2; ecume.position.set(0, 0.01, 59.5); g.add(ecume);
   const chemin = new THREE.Mesh(new THREE.PlaneGeometry(600, 3.5), new THREE.MeshStandardMaterial({ color: '#b9a98a', roughness: 1 }));
-  chemin.rotation.x = -Math.PI / 2; chemin.position.set(0, 0.01, 35.5); // promenade entre les jardins et la plage chemin.receiveShadow = true; g.add(chemin);
+  chemin.rotation.x = -Math.PI / 2; chemin.position.set(0, 0.01, 35.5); chemin.receiveShadow = true; g.add(chemin); // promenade entre les jardins et la plage
 
   // Montagnes et collines au loin
   const roche = new THREE.MeshStandardMaterial({ color: '#6f7d6a', roughness: 1, flatShading: true });
@@ -113,12 +126,22 @@ export function construireMaisons(monde, agents = [], { moi = null } = {}) {
     const toit = new THREE.Mesh(new THREE.ConeGeometry(5.6, 2.6, 4), tuile); toit.position.set(x, 5.3, z); toit.rotation.y = Math.PI / 4; toit.scale.set(1, 1, 0.85); g.add(toit);
   }
 
+  // La jetée et le bateau (Beau, 25/09 : nager, plonger, prendre un bateau)
+  const JX = 30, RIVAGE = 58;
+  const jetee = construireJetee({ longueur: 18, mobile: monde.mobile }); jetee.position.set(JX, 0, RIVAGE - 2); g.add(jetee);
+  murs.push({ x0: JX - 1.55, x1: JX + 1.55, z0: RIVAGE - 2, z1: RIVAGE + 16, h: 1.2, jetee: true });
+  const B = construireBateau({ mobile: monde.mobile });
+  B.groupe.position.set(JX + 4.2, 0, RIVAGE + 12); B.groupe.userData.libre = true; g.add(B.groupe);
+  const bateau = { id: 'bateau', objet: B.groupe, animer: B.animer, etat: { x: JX + 4.2, z: RIVAGE + 12, cap: 0, vitesse: 0 } };
+
   return {
-    groupe: g, murs, villas, lampes,
+    groupe: g, murs, villas, lampes, bateau,
+    // La mer commence à z = RIVAGE ; on peut y nager jusqu'à 150 m du bord.
+    rivage: RIVAGE, fond: fondMarin, jetee: { x0: JX - 1.5, x1: JX + 1.5, z0: RIVAGE - 2, z1: RIVAGE + 16 },
     // On arrive sur la promenade, face aux villas, la mer dans le dos.
     depart: { x: 0, z: 37, yaw: 0 },
     sortieAscenseur: { x: 0, z: 37, yaw: 0 },
-    poi: villas.filter((v) => v.id === 'moi').map((v) => ({ type: 'chezmoi', id: 'chezmoi', x: v.porte.x, z: v.porte.z, rayon: 3 })),
-    limites: { x0: -150, x1: 150, z0: -60, z1: 58 },
+    poi: [...villas.filter((v) => v.id === 'moi').map((v) => ({ type: 'chezmoi', id: 'chezmoi', x: v.porte.x, z: v.porte.z, rayon: 3 })), { type: 'bateau', id: 'bateau', x: JX + 1.2, z: RIVAGE + 12, rayon: 4.2 }],
+    limites: { x0: -150, x1: 150, z0: -60, z1: 200 },
   };
 }

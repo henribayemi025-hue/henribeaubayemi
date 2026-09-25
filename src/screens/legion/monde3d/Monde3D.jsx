@@ -154,6 +154,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [volant, setVolant] = useState(null); // { kmh } pendant qu'on conduit
   const [choc, setChoc] = useState(0);
   const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
+  const [nage, setNage] = useState(null); // { sous, air } quand on nage
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
   const [menu, setMenu] = useState(false);
   const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
@@ -211,6 +212,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'interagir') interagirRef.current?.(e.cible);
             if (e.type === 'conduite' && !e.active) setCourse(null);
             if (e.type === 'conduite') setVolant((v) => (e.active ? { ...(v || {}), ...e, kmh: e.kmh || 0, genre: e.genre || 'voiture', alt: e.alt || 0, sePoser: e.sePoser ? Date.now() : (v?.sePoser || 0) } : null));
+            if (e.type === 'nage') setNage(e.active ? { sous: e.sous, air: e.air } : null);
             if (e.type === 'course') setCourse((avant) => {
               if (!e.active) return null;
               if (e.nouvelle) return { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
@@ -267,6 +269,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     if (!cible) return;
     if (cible.type === 'voiture') { monde.current?.monterVoiture(cible.id); return; }
     if (cible.type === 'helico') { monde.current?.monterHelico(); return; }
+    if (cible.type === 'bateau') { monde.current?.monterBateau(); return; }
     if (cible.type === 'boutique') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.boutiqueResume', { nom: cible.nom, articles: cible.articles, commandes: cible.commandes, livrees: cible.livrees }) }], lien: cible.slug ? `/boutique/${cible.slug}` : null }); return; }
     if (cible.type === 'client') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.clientResume', { nom: cible.nom || t('legion.monde.ville.client'), commandes: cible.commandes, livrees: cible.livrees }) }] }); return; }
     if (cible.type === 'chezmoi') { setDialogue({ lignes: [{ qui: 'elle', texte: prenomMoi ? t('legion.monde.ville.bienvenue', { nom: prenomMoi }) : t('legion.monde.ville.bienvenueSans') }] }); return; }
@@ -501,7 +504,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             </div>
           ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
-            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{['voiture', 'helico'].includes(proche.type) ? 'F' : 'E'}</kbd>}
+            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{['voiture', 'helico', 'bateau'].includes(proche.type) ? 'F' : 'E'}</kbd>}
             {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
           </button>
           )}
@@ -534,18 +537,34 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </div>
       )}
 
+      {/* Dans l'eau : teinte bleue sous la surface, réserve d'air, bouton pour plonger */}
+      {nage && (
+        <>
+          {nage.sous && <div className="pointer-events-none absolute inset-0 z-[4] bg-[#0b3d5c]/45 [box-shadow:inset_0_0_120px_rgba(3,20,40,.8)]" />}
+          <div className={`pointer-events-none absolute z-[5] w-40 rounded-2xl border border-white/20 bg-[#0b1120]/80 px-3 py-2 backdrop-blur ${mobile ? 'left-2 top-12' : 'bottom-4 right-4'}`}>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-legion-muted">{nage.sous ? t('legion.monde.nage.air') : t('legion.monde.nage.titre')}</p>
+            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/15"><div className={`h-full rounded-full transition-[width] ${nage.air < 25 ? 'bg-red-500' : 'bg-[#4cc9f0]'}`} style={{ width: `${nage.air}%` }} /></div>
+            {!mobile && <p className="mt-1 text-[11px] text-legion-muted">{t('legion.monde.nage.aide')}</p>}
+          </div>
+          {mobile && (
+            <button type="button" aria-label={t('legion.monde.nage.plonger')} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ frein: true }); }} onPointerUp={() => monde.current?.pedales({ frein: false })} onPointerCancel={() => monde.current?.pedales({ frein: false })}
+              className="absolute bottom-24 right-4 z-[6] grid h-16 w-16 touch-none select-none place-items-center rounded-full border border-[#4cc9f0] bg-[#0b1120]/80 text-[22px] text-[#4cc9f0] backdrop-blur active:scale-95">▼</button>
+          )}
+        </>
+      )}
+
       {/* Au volant : compteur, descendre, pédales au téléphone */}
       {volant && (
         <>
           <div className={`pointer-events-none absolute z-[5] ${mobile ? 'left-2 top-12' : 'bottom-3 right-4'} ${Date.now() - choc < 400 ? 'animate-pulse' : ''}`}>
-            <Compteur kmh={volant.kmh} jauge={volant.genre === 'helico' ? null : (volant.jauge ?? 100)} nitro={!!volant.nitro} alt={volant.genre === 'helico' ? volant.alt : null} taille={mobile ? 92 : 150} />
+            <Compteur kmh={volant.kmh} jauge={volant.genre === 'voiture' ? (volant.jauge ?? 100) : null} nitro={!!volant.nitro} alt={volant.genre === 'helico' ? volant.alt : null} taille={mobile ? 92 : 150} />
           </div>
           {volant.x != null && (
             <div className={`pointer-events-none absolute z-[5] ${mobile ? 'left-2 top-[9rem]' : 'right-4 top-14'}`}>
               <MiniCarte x={volant.x} z={volant.z} cap={volant.cap || 0} porte={course && !course.finie ? course.porte : null} taille={mobile ? 84 : 124} />
             </div>
           )}
-          {volant.genre !== 'helico' && !course && (
+          {volant.genre === 'voiture' && !course && (
             <button type="button" onClick={() => monde.current?.lancerCourse()} className={`absolute z-[6] rounded-pill border border-legion-gold bg-[#0b1120]/85 px-3 py-1.5 text-[12.5px] font-semibold text-legion-gold backdrop-blur ${mobile ? 'right-3 top-[6.5rem]' : 'bottom-4 left-[calc(50%+5.5rem)]'}`}>🏁 {t('legion.monde.course.lancer')}</button>
           )}
           {course && (
@@ -575,18 +594,18 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <button type="button" onClick={() => monde.current?.descendreVoiture()} className={`absolute z-[6] rounded-pill bg-legion-gold px-4 py-2 text-[13px] font-semibold text-legion-bg shadow ${mobile ? 'right-3 top-14' : 'bottom-4 left-1/2 -translate-x-1/2'}`}>
             {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">F</kbd>}{t('legion.monde.conduite.descendre')}
           </button>
-          {!mobile && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t(volant.genre === 'helico' ? 'legion.monde.conduite.aideHelico' : 'legion.monde.conduite.aide')}</p>}
-          {mobile && volant.genre !== 'helico' && (
+          {!mobile && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t(volant.genre === 'helico' ? 'legion.monde.conduite.aideHelico' : volant.genre === 'bateau' ? 'legion.monde.conduite.aideBateau' : 'legion.monde.conduite.aide')}</p>}
+          {mobile && volant.genre === 'voiture' && (
             <>
               <div className="absolute bottom-5 left-3 z-[6]"><Volant taille={124} surTourner={(v) => { if (monde.current) monde.current.joy = { x: v, y: 0 }; }} /></div>
               <div className="absolute bottom-5 right-3 z-[6]"><Pedales jauge={volant.jauge ?? 100} surAppui={(p) => monde.current?.pedales(p)} etiquettes={{ gaz: t('legion.monde.conduite.gaz'), frein: t('legion.monde.conduite.frein'), nitro: t('legion.monde.conduite.nitro') }} /></div>
             </>
           )}
-          {mobile && volant.genre === 'helico' && (
+          {mobile && volant.genre !== 'voiture' && (
             <div className="absolute bottom-20 right-4 z-[6] flex flex-col gap-3">
               {[['gaz', '▲'], ['frein', '▼']].map(([k, s]) => (
                 <button key={k} type="button" aria-label={t(`legion.monde.conduite.${volant.genre === 'helico' ? (k === 'gaz' ? 'monter' : 'descendreAlt') : k}`)}
-                  onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ [k]: true }); }}
+                  onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ [k]: true }); }} onPointerLeave={undefined}
                   onPointerUp={() => monde.current?.pedales({ [k]: false })} onPointerCancel={() => monde.current?.pedales({ [k]: false })}
                   className={`grid h-16 w-16 touch-none select-none place-items-center rounded-full border text-[22px] font-bold backdrop-blur ${k === 'gaz' ? 'border-legion-gold bg-legion-gold/30 text-legion-gold' : 'border-white/30 bg-white/10 text-white'}`}>{s}</button>
               ))}
@@ -624,7 +643,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       {!mobile && !dialogue && !volant && (
         <p className="pointer-events-none absolute bottom-16 left-3 z-[5] hidden rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted lg:block">{t('legion.monde.aide')}</p>
       )}
-      {mobile && !dialogue && !(volant && volant.genre !== 'helico') && (
+      {mobile && !dialogue && !(volant && volant.genre === 'voiture') && (
         <>
           <div ref={joy} className="absolute bottom-20 left-4 z-[5] h-28 w-28 touch-none rounded-full border border-white/20 bg-white/10"
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); joyBouge(e); }} onPointerMove={(e) => bouton && joyBouge(e)} onPointerUp={joyFin} onPointerCancel={joyFin}>

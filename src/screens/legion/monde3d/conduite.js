@@ -33,6 +33,11 @@ export function piloter(e, { gaz = 0, volant = 0, frein = false, nitro = false }
   return { ...e, vitesse: v, cap, angle, x: e.x + Math.sin(cap) * v * dt, z: e.z + Math.cos(cap) * v * dt };
 }
 
+// Le bateau : plus lent à répondre, tourne large, pas de frein à main. Même pilotage que la voiture.
+export const BATEAU = { accel: 3.5, frein: 5, arriere: 3, max: 14, empattement: 4.5, braquage: 0.6, demiLong: 2.8, rayon: 1.2 };
+// Nager : lent, plus lent encore sous l'eau ; l'air dure 25 s.
+export const NAGE = { vitesse: 1.15, course: 2.0, plongee: 0.9, air: 25, profondeur: 2.2, surface: -0.62 };
+
 // Les deux cercles de la caisse.
 export function cercles(e, V = VOITURE) {
   const d = V.demiLong - V.rayon;
