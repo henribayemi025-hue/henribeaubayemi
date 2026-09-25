@@ -915,16 +915,28 @@ export class Monde {
         { chemin: [[9.2, -1], [0, -2.6], [-4, 0.5], [-3, 6.8], [6, 7.6]], decale: 0.5 },
         { x: -5.72, z: -0.62, rot: -Math.PI / 2 - 0.3, anim: 'assis' }, { x: -5.72, z: 3.42, rot: -Math.PI / 2 + 0.3, anim: 'assis' },
         { x: -10.2, z: 6.2, rot: Math.PI * 0.75, anim: 'parle' }, { x: -9.1, z: 5.1, rot: -Math.PI * 0.25, anim: 'ecoute' },
+        // Beau, 25/09 : « ils sont tous debout ; il doit y en avoir d'assis, au téléphone, qui font les cent
+        // pas, avec un casque dans leur bulle ». Des attitudes en plus, toutes vraies : ce sont des agents libres.
+        { x: 10.6, z: 4.4, rot: -Math.PI / 2, anim: 'telephone', geste: 'telephone' },
+        { chemin: [[-1.5, -7.3], [4.5, -7.3]], decale: 0.3, geste: 'centPas' },
+        { x: 5.4, z: -3.9, rot: 2.4, anim: 'repos', geste: 'casque' },
+        { x: 3.6, z: 5.4, rot: Math.PI, anim: 'telephone', geste: 'telephone' },
+        { chemin: [[-10.5, -6.5], [-10.5, -2.5]], decale: 0.7, geste: 'centPas' },
+        { x: -2.2, z: 4.2, rot: 0.6, anim: 'repos', geste: 'casque' },
       ];
       // … et ceux qui attendent leur tâche, pendant leur pause (voir enPause dans monde.js).
       const enHall = [
         ...(ou?.disponibles || []).map((d) => ({ id: d.id, sous: dispo })),
         ...(ou?.aLeurPoste || []).filter((x) => x.pause).map((x) => ({ id: x.id, sous: `${this.langue === 'en' ? 'break · to do' : 'pause · à faire'} : ${String(x.tache || '').slice(0, 34)}` })),
       ];
-      enHall.filter((d) => !voulus.has(d.id)).slice(0, this.mobile ? 5 : places.length).forEach((d, i) => {
-        const pl = places[i];
-        if (pl.chemin) voulus.set(d.id, { place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous: d.sous, chemin: pl.chemin, decale: pl.decale || 0 });
-        else voulus.set(d.id, { place: pl, anim: pl.anim, sous: d.sous });
+      // Au téléphone, 5 places seulement : une de chaque attitude (marche, assis, téléphone, casque, discussion).
+      const choix = this.mobile ? [0, 3, 10, 12, 1].map((k) => places[k]) : places;
+      enHall.filter((d) => !voulus.has(d.id)).slice(0, choix.length).forEach((d, i) => {
+        const pl = choix[i];
+        const gestes = { telephone: this.langue === 'en' ? 'on the phone · ' : 'au téléphone · ', casque: this.langue === 'en' ? '🎧 headphones on · ' : '🎧 casque sur les oreilles · ', centPas: this.langue === 'en' ? 'pacing, thinking · ' : 'fait les cent pas · ' };
+        const sous = pl.geste ? `${gestes[pl.geste]}${d.sous}` : d.sous;
+        if (pl.chemin) voulus.set(d.id, { place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous, chemin: pl.chemin, decale: pl.decale || 0 });
+        else voulus.set(d.id, { place: pl, anim: pl.anim, sous, casque: pl.geste === 'casque' });
       });
     }
     if (this.lieu.nom === 'atelier') {
@@ -996,6 +1008,13 @@ export class Monde {
         x.perso.objet.rotation.y = v.place.rot;
       }
       x.perso.jouer(v.anim);
+      // Le casque audio, posé sur la tête (arceau + deux écouteurs).
+      if (v.casque && !x.casque) {
+        const c = new THREE.Group(), noir = new THREE.MeshStandardMaterial({ color: '#1b1d22', metalness: 0.4, roughness: 0.45 });
+        const arceau = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.014, 6, 20, Math.PI), noir); arceau.position.y = 1.66; c.add(arceau);
+        for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.035, 14), noir); e.rotation.z = Math.PI / 2; e.position.set(sx * 0.1, 1.64, 0); c.add(e); }
+        x.perso.objet.add(c); x.casque = c;
+      } else if (!v.casque && x.casque) { x.perso.objet.remove(x.casque); x.casque = null; }
       if (x.perso.objet.parent !== this.lieu.groupe) this.lieu.groupe.add(x.perso.objet);
     }
   }
