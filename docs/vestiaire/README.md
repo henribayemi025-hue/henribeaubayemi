@@ -47,3 +47,4 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [43 — « The Illegal Seven » : sept outils libres qui remplacent des logiciels payants](43-illegal-seven.md)
 - [44 — « The $0 Creator Stack » : 5 dépôts libres pour les créateurs](44-creator-stack-zero.md)
 - [45 — Cinq sites pour apprendre l'IA en jouant (TensorFlow Playground, Gandalf, Teachable Machine, Kaggle, Quick, Draw!)](45-cinq-sites-apprendre-ia.md)
+- [46 — GTA San Andreas point par point, et ce que Léo en fait (inspiration seulement, rien de Rockstar)](46-gta-san-andreas.md)
