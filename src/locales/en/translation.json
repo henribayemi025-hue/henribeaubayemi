@@ -1182,6 +1182,8 @@
     "rouvrirTaches": "Reopen the task board",
     "ville": {
       "titre": "The city",
+      "vue3d": "3D city",
+      "vuePlan": "Map",
       "quotidien": "Day to day",
       "sansProjet": "no project",
       "enRetard": "late",
@@ -1359,6 +1361,7 @@
       "planete": "Planet view",
       "vousEtesIci": "You are here",
       "planeteAide": "Earth right now: the lit side is where it's daytime. Drag to turn it.",
+      "frise": {"titre": "Timeline", "revoir": "Replay the sites growing", "pause": "Pause", "aujourdhui": "Today", "retour": "Today", "locale": "en-GB", "rendues": "{{n}}/{{total}} tasks delivered"},
       "redescendre": "Back down to the city",
       "passer": "Skip",
       "bienvenue": "Welcome to {{nom}}",

@@ -1182,6 +1182,8 @@
     "rouvrirTaches": "Rouvrir le tableau des tâches",
     "ville": {
       "titre": "La ville",
+      "vue3d": "Ville 3D",
+      "vuePlan": "Plan",
       "quotidien": "Au quotidien",
       "sansProjet": "sans projet",
       "enRetard": "en retard",
@@ -1359,6 +1361,7 @@
       "planete": "Vue de la planète",
       "vousEtesIci": "Vous êtes ici",
       "planeteAide": "La Terre en ce moment : le côté éclairé est celui où il fait jour. Glissez pour la faire tourner.",
+      "frise": {"titre": "Frise du temps", "revoir": "Revoir les chantiers grandir", "pause": "Pause", "aujourdhui": "Aujourd'hui", "retour": "Aujourd'hui", "locale": "fr-FR", "rendues": "{{n}}/{{total}} tâches rendues"},
       "redescendre": "Redescendre en ville",
       "passer": "Passer",
       "bienvenue": "Bienvenue chez {{nom}}",

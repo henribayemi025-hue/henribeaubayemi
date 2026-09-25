@@ -67,3 +67,40 @@ export function joursRestants(projet, maintenant = Date.now()) {
   const fin = date(projet?.fin);
   return fin == null ? null : Math.ceil((fin + JOUR - maintenant) / JOUR);
 }
+
+// ——— La 4D (Beau, 25/09 : « tu peux pas faire 4D ? ») ———
+// La ville à une date passée, refaite avec les vraies dates : un projet
+// n'existe qu'à partir de sa création, une tâche à partir de la sienne, et
+// elle n'est rendue qu'à sa date de rendu. Une tâche rendue SANS date de
+// rendu ne compte comme rendue qu'aujourd'hui : on n'invente pas le jour.
+export function dateRendue(t) { return date(t.termine_le) ?? date(t.meta?.livre_le); }
+
+export function aLaDate(projets, taches, jour, maintenant = Date.now()) {
+  if (jour == null || jour >= maintenant) return { projets, taches };
+  // Un projet existe dès la première de ces dates : sa création, son début
+  // prévu, ou la création de sa première tâche (le premier étage est du vrai travail).
+  const premiere = new Map();
+  for (const t of taches) { const id = t.meta?.projet_id; const c = date(t.created_at); if (id && c != null && c < (premiere.get(id) ?? Infinity)) premiere.set(id, c); }
+  const ps = projets
+    .filter((p) => { const d = [date(p.created_at), date(p.debut), premiere.get(p.id)].filter((x) => x != null); return !d.length || Math.min(...d) <= jour; })
+    // « fini » n'a pas de date : dans le passé, seules les tâches rendues le disent.
+    .map((p) => (p.statut === 'fini' ? { ...p, statut: 'en_cours' } : p));
+  const ts = taches
+    .filter((t) => { const c = date(t.created_at); return c != null && c <= jour; })
+    .map((t) => {
+      const r = dateRendue(t);
+      const rendue = estRendue(t) && r != null && r <= jour;
+      return { ...t, termine_le: rendue ? (t.termine_le || t.meta?.livre_le) : null, meta: { ...(t.meta || {}), statut: rendue ? 'fait' : 'a_faire' } };
+    });
+  return { projets: ps, taches: ts };
+}
+
+// Les bornes de la frise : du premier projet ou de la première tâche jusqu'à
+// aujourd'hui, au plus un an en arrière. En jours entiers (minuit local).
+export function bornesFrise(projets, taches, maintenant = Date.now()) {
+  const dates = [...projets.map((p) => date(p.created_at) ?? date(p.debut)), ...taches.map((t) => date(t.created_at))].filter((x) => x != null && x <= maintenant);
+  const minuit = (x) => { const d = new Date(x); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const fin = minuit(maintenant);
+  const debut = dates.length ? Math.max(minuit(Math.min(...dates)), fin - 365 * JOUR) : fin;
+  return { debut, fin, jours: Math.round((fin - debut) / JOUR) };
+}

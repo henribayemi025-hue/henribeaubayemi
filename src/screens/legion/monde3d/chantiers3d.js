@@ -105,4 +105,16 @@ export function construireChantier(p, { langue = 'fr', mobile = false } = {}) {
   return { groupe: g, bouger };
 }
 
+// Retirer un chantier (frise du temps : il est refait à chaque jour qui change) :
+// on libère ses formes et son panneau, jamais les matières partagées.
+export function jeterChantier(g) {
+  const partagees = new Set(Object.values(M));
+  g.parent?.remove(g);
+  g.traverse((o) => {
+    if (!o.isMesh) return;
+    o.geometry.dispose();
+    if (!partagees.has(o.material)) { o.material.map?.dispose(); o.material.dispose(); }
+  });
+}
+
 export function lumieresChantiers(niveau) { if (M.pret) M.lumiere.emissiveIntensity = niveau * 1.3; }

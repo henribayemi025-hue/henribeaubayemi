@@ -3,7 +3,7 @@ import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
 import { styleVille } from './region';
 import { estSalleDeMarche, pairesDuJour, activite14j } from './salle-marche3d';
-import { tours as calculerTours } from '../parties/ville';
+import { tours as calculerTours, aLaDate, bornesFrise } from '../parties/ville';
 import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
 import { chargerAffiches } from './affiches';
 
@@ -65,13 +65,44 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     supabase.from('legion_projets').select('*').eq('entreprise_id', entreprise.id).order('debut').then(({ data }) => { if (vivant) setProjets(data || []); });
     return () => { vivant = false; };
   }, [entreprise.id]);
+  // L'historique complet des tâches (l'écran n'en garde que les plus récentes) :
+  // juste les dates, pour la frise. Les tâches fraîches de l'écran passent devant.
+  const [histoire, setHistoire] = useState([]);
+  useEffect(() => {
+    let vivant = true;
+    supabase.from('legion_messages').select('id, created_at, termine_le, assigne_a, meta').eq('entreprise_id', entreprise.id).eq('genre', 'tache').order('created_at').limit(2000)
+      .then(({ data }) => { if (vivant) setHistoire(data || []); });
+    return () => { vivant = false; };
+  }, [entreprise.id]);
+  const toutes = useMemo(() => {
+    const fraiches = new Map((taches || []).map((x) => [x.id, x]));
+    return [...histoire.filter((x) => !fraiches.has(x.id)), ...fraiches.values()];
+  }, [histoire, taches]);
+  // La 4D : une frise pour revoir les chantiers grandir, jour après jour (vraies dates).
+  const frise = useMemo(() => bornesFrise(projets, toutes, maintenant), [projets, toutes, maintenant]);
+  const [jour, setJour] = useState(null); // null = maintenant ; sinon n° du jour depuis frise.debut
+  const [lecture, setLecture] = useState(false);
+  const quand = jour == null ? maintenant : frise.debut + jour * 86_400_000 + 86_399_000; // fin de ce jour-là
+  useEffect(() => {
+    if (!lecture) return undefined;
+    // Tout revoir en 5 à 8 secondes, quelle que soit la durée de l'histoire.
+    const pas = Math.max(1, Math.round(frise.jours / 50));
+    const i = setInterval(() => setJour((j) => {
+      const n = (j ?? 0) + pas;
+      if (n >= frise.jours) { setLecture(false); return null; }
+      return n;
+    }), Math.max(120, Math.min(900, 6000 / Math.max(1, frise.jours / pas))));
+    return () => clearInterval(i);
+  }, [lecture, frise.jours]);
+  useEffect(() => { if (etat === 'pret') monde.current?.vueChantiers(jour != null || lecture); }, [jour, lecture, etat]);
   const chantiers = useMemo(() => {
     const eteints = new Set((agents || []).filter((a) => a.actif === false).map((a) => a.id));
-    return calculerTours(projets, taches || [], maintenant, eteints).map((x) => ({
+    const passe = aLaDate(projets, toutes, quand, maintenant);
+    return calculerTours(passe.projets, passe.taches, Math.min(quand, maintenant), eteints).map((x) => ({
       id: x.id, nom: x.projet ? x.projet.nom : t('legion.ville.quotidien'), debut: x.projet?.debut || null, fin: x.projet?.fin || null,
       rendues: x.rendues, total: x.total, avancement: x.avancement, termine: x.termine, enRetard: x.enRetard, agentsAuTravail: x.agentsAuTravail,
     }));
-  }, [projets, taches, agents, maintenant, t]);
+  }, [projets, toutes, agents, maintenant, quand, t]);
   const [menu, setMenu] = useState(false);
   const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
@@ -321,6 +352,26 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           </div>
           <button type="button" onClick={() => { setChoixAvatar(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🧍 {t('legion.monde.monAvatar')}</button>
           <button type="button" onClick={() => { setIntro(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🎬 {t('legion.monde.revoirIntro')}</button>
+        </div>
+      )}
+
+      {vueVille && etat === 'pret' && !ciel3d && frise.jours > 0 && (
+        <div className="absolute left-3 right-3 top-14 z-[4] mx-auto max-w-xl rounded-2xl border border-legion-line bg-[#0b1120]/85 px-3 py-2 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => { if (lecture) setLecture(false); else { if (jour == null) setJour(0); setLecture(true); } }}
+              aria-label={lecture ? t('legion.monde.frise.pause') : t('legion.monde.frise.revoir')} title={lecture ? t('legion.monde.frise.pause') : t('legion.monde.frise.revoir')}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-legion-gold text-[13px] font-bold text-legion-bg">{lecture ? '❚❚' : '▶'}</button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2 text-[12px]">
+                <span className="truncate font-semibold text-legion-ink">{jour == null ? t('legion.monde.frise.aujourdhui') : new Date(quand).toLocaleDateString(t('legion.monde.frise.locale'), { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                <span className="shrink-0 font-mono text-legion-muted">{t('legion.monde.frise.rendues', { n: chantiers.reduce((a, c) => a + c.rendues, 0), total: chantiers.reduce((a, c) => a + c.total, 0) })}</span>
+              </div>
+              <input type="range" min={0} max={frise.jours} step={1} value={jour == null ? frise.jours : jour}
+                onChange={(e) => { setLecture(false); const v = Number(e.target.value); setJour(v >= frise.jours ? null : v); }}
+                aria-label={t('legion.monde.frise.titre')} className="mt-1 w-full accent-[#e3a857]" />
+            </div>
+            {jour != null && <button type="button" onClick={() => { setLecture(false); setJour(null); }} className="shrink-0 rounded-pill border border-legion-line px-2 py-1 text-[11.5px] text-legion-ink">{t('legion.monde.frise.retour')}</button>}
+          </div>
         </div>
       )}
 

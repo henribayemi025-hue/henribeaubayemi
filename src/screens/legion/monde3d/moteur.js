@@ -1005,6 +1005,8 @@ export class Monde {
     this.cam.mode = { tps: 'fps', fps: 'plan', plan: 'tps' }[this.cam.mode];
     this.emettre({ type: 'camera', mode: this.cam.mode });
   }
+  // Frise du temps (onglet « La ville ») : vue d'ensemble des chantiers, ou retour au joueur.
+  vueChantiers(oui) { if (oui && this.vueChantiersT == null) this.vueChantiersT = 0; if (!oui) this.vueChantiersT = null; }
   reglerCamera(mode) { this.cam.mode = mode; this.emettre({ type: 'camera', mode }); }
   interagir() {
     if (!this.proche) return;
@@ -1123,7 +1125,18 @@ export class Monde {
     // Caméra
     const tete = new THREE.Vector3(p.x, 1.55, p.z);
     j.objet.visible = this.cam.mode !== 'fps';
-    if (this.cam.mode === 'fps') {
+    if (this.vueChantiersT != null && this.lieu.nom === 'hall') {
+      // La frise du temps : on prend de la hauteur au-dessus du quartier des
+      // projets, en se balançant doucement, pour voir les chantiers grandir.
+      this.vueChantiersT += dt;
+      const a = Math.sin(this.vueChantiersT * 0.12) * 0.55;
+      // Assez loin pour que les 3 × 2 chantiers tiennent en largeur, même sur un téléphone debout.
+      const demiLarg = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect;
+      const d = Math.max(34, 17 / demiLarg);
+      const voulu = new THREE.Vector3(Math.sin(a) * d, 8 + d * 0.5, 52.5 - Math.cos(a) * d);
+      this.camera.position.lerp(voulu, Math.min(1, dt * 2));
+      this.camera.lookAt(0, 8, 52.5);
+    } else if (this.cam.mode === 'fps') {
       this.camera.position.set(p.x, 1.62, p.z);
       this.camera.lookAt(p.x - Math.sin(this.cam.yaw) * 5, 1.62 - this.cam.pitch * 3, p.z - Math.cos(this.cam.yaw) * 5);
     } else if (this.cam.mode === 'plan') {

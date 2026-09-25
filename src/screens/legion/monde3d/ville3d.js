@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { STYLES } from './region';
-import { construireChantier, lumieresChantiers } from './chantiers3d';
+import { construireChantier, jeterChantier, lumieresChantiers } from './chantiers3d';
 
 const ROUTES_X = [-78, -26, 26, 78];
 const ROUTES_Z = [-74, -22, 30, 82];
@@ -772,7 +772,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     if (attente > 8) { attente = 0; rang += 1; montrer(); }
   });
 
-  let groupeChantiers = null, bougerChantiers = [];
+  let groupeChantiers = null, bougerChantiers = [], chantiersFaits = new Map();
   fusionner(racine);
   return {
     racine,
@@ -780,19 +780,27 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     avancer: (dt) => { bouger.forEach((f) => f(dt)); for (const f of bougerChantiers) f(dt); },
     // Les projets de l'entreprise, en chantiers (vraies données : ville.js → tours()).
     chantiers: (liste = []) => {
-      if (groupeChantiers) { racine.remove(groupeChantiers); groupeChantiers = null; }
-      bougerChantiers = [];
-      const g2 = new THREE.Group();
+      if (!groupeChantiers) { groupeChantiers = new THREE.Group(); racine.add(groupeChantiers); }
       const places = [[-11, 45], [0, 45], [11, 45], [-11, 60], [0, 60], [11, 60]];
       const pois = [];
+      const gardes = new Map();
+      // Frise du temps : seuls les chantiers qui ont changé sont refaits.
       liste.slice(0, places.length).forEach((p, k) => {
-        const c = construireChantier(p, { langue: monde.langue, mobile: monde.mobile });
         const [x, z] = places[k];
-        c.groupe.position.set(x, 0.18, z); g2.add(c.groupe);
-        bougerChantiers.push(...c.bouger);
+        const sig = JSON.stringify([k, p.nom, p.debut, p.fin, p.rendues, p.total, p.termine, p.enRetard, p.agentsAuTravail]);
+        let e = chantiersFaits.get(p.id);
+        if (!e || e.sig !== sig) {
+          if (e) jeterChantier(e.c.groupe);
+          const c = construireChantier(p, { langue: monde.langue, mobile: monde.mobile });
+          c.groupe.position.set(x, 0.18, z); groupeChantiers.add(c.groupe);
+          e = { c, sig };
+        }
+        gardes.set(p.id, e);
         pois.push({ type: 'chantier', id: p.id, nom: p.nom, x, z: z - 6.5, rayon: 3.2 });
       });
-      racine.add(g2); groupeChantiers = g2;
+      for (const [id, e] of chantiersFaits) if (!gardes.has(id)) jeterChantier(e.c.groupe);
+      chantiersFaits = gardes;
+      bougerChantiers = [...gardes.values()].flatMap((e) => e.c.bouger);
       return pois;
     },
     // liste : [{ nom, image }] — de vraies boutiques (voir affiches.js).
