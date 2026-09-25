@@ -226,6 +226,7 @@ function voiture(peinture, genre = 'berline', leger = false) {
   fusionner(g);
   eclairage(g, M, 4.7, 1.9, 2.4, leger);
   g.userData.lumieres = lumieres;
+  g.userData.demi = 2.5;
   g.userData.roues = [];
   g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
   return g;
@@ -251,6 +252,7 @@ function bus(peinture, leger = false) {
   fusionner(g);
   eclairage(g, M, 11, 2.5, 5.5, leger);
   g.userData.lumieres = [M.phare, M.feu, girouette];
+  g.userData.demi = 5.6;
   g.userData.roues = [];
   g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
   return g;
@@ -394,6 +396,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2 });
   }
   const tours = [];
+  const NEONS = new Map();
   const facades = matieresFacades(monde, envCiel);
   for (const f of facades) nuit.fenetres.push(f.mat);
   const toit = new THREE.MeshStandardMaterial({ color: '#5b5e62', roughness: 0.9 });
@@ -444,7 +447,11 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
         nuit.enseignes.push(em);
         const auvent = new THREE.Mesh(new THREE.BoxGeometry(face * 0.8, 0.08, 1.4), new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.8 }));
         auvent.position.set(bx + nx + Math.sin(rot) * 0.7, 3.5, bz + nz + Math.cos(rot) * 0.7); auvent.rotation.y = rot; auvent.rotation.x = 0; racine.add(auvent);
-        if (r() < 0.35 && h > 30) { // enseigne verticale à la japonaise
+        // Tube de néon sous l'auvent, de la couleur de l'enseigne (s'allume la nuit)
+        if (!NEONS.has(couleur)) { const m = new THREE.MeshStandardMaterial({ color: couleur, emissive: couleur, emissiveIntensity: 0.35 }); NEONS.set(couleur, m); nuit.enseignes.push(m); }
+        const tube = new THREE.Mesh(new THREE.BoxGeometry(face * 0.8, 0.06, 0.06), NEONS.get(couleur));
+        tube.position.set(bx + nx + Math.sin(rot) * 1.38, 3.44, bz + nz + Math.cos(rot) * 1.38); tube.rotation.y = rot; racine.add(tube);
+        if (r() < (dist < 120 ? 0.6 : 0.3) && h > 30) { // enseigne verticale à la japonaise
           const tv = enseigne(nom, couleur, true);
           const mv = new THREE.MeshStandardMaterial({ map: tv, emissive: '#ffffff', emissiveMap: tv, emissiveIntensity: 0.5 });
           const pv = new THREE.Group();
@@ -491,6 +498,27 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     }
   }
 
+  // Distributeurs de boissons éclairés, comme dans les rues de Tokyo (façade dessinée ici).
+  {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 256;
+    const x = c.getContext('2d');
+    x.fillStyle = '#e9eef2'; x.fillRect(0, 0, 128, 256);
+    x.fillStyle = '#0f1a24'; x.fillRect(8, 8, 112, 150);
+    const teintes = ['#e63946', '#f4a261', '#2a9d8f', '#457b9d', '#e9c46a', '#8ecae6'];
+    for (let j = 0; j < 4; j += 1) for (let i = 0; i < 5; i += 1) { x.fillStyle = teintes[(i + j * 2) % teintes.length]; x.fillRect(14 + i * 21, 16 + j * 36, 14, 26); x.fillStyle = '#f7f7f7'; x.fillRect(14 + i * 21, 36 + j * 36, 14, 4); }
+    x.fillStyle = '#1d1f22'; x.fillRect(20, 190, 88, 30); x.fillStyle = '#4ade80'; x.fillRect(96, 170, 10, 6);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const face = new THREE.MeshStandardMaterial({ map: t, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.35 });
+    nuit.enseignes.push(face);
+    const caisse = new THREE.MeshStandardMaterial({ color: '#c8102e', roughness: 0.4, metalness: 0.2 });
+    for (const [px, pz, rot] of [[-19.4, 9.5, Math.PI / 2], [-19.4, 10.3, Math.PI / 2], [19.4, -4.5, -Math.PI / 2]]) {
+      const d = new THREE.Group();
+      const corps = new THREE.Mesh(new THREE.BoxGeometry(0.75, 1.85, 0.7), caisse); corps.position.y = 0.925; d.add(corps);
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(0.68, 1.75), face); f.position.set(0, 0.95, 0.351); d.add(f);
+      d.position.set(px, 0, pz); d.rotation.y = rot; racine.add(d);
+    }
+  }
+
   // Lampadaires et mobilier le long de notre îlot
   (async () => {
     for (const x of [-19.5, 19.5]) for (let z = -14; z <= 22; z += 12) {
@@ -525,13 +553,34 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       nuit.lumieres.push(...o.userData.lumieres);
     }
   });
+  // Passages piétons surveillés : une voiture s'arrête si quelqu'un traverse devant elle,
+  // et ne rentre pas dans celle de devant.
+  const passages = [
+    { axe: 'z', voies: [-29, -23], p0: 21.5, occupe: 0 },
+    { axe: 'x', voies: [27, 33], p0: 17.5, occupe: 0 },
+    { axe: 'x', voies: [27, 33], p0: -34.5, occupe: 0 },
+  ];
+  const TOUR = 260;
+  const ecart = (a, b) => { let d = b - a; while (d > TOUR / 2) d -= TOUR; while (d < -TOUR / 2) d += TOUR; return d; };
   bouger.push((dt) => {
     for (const o of vehicules) {
       const u = o.userData;
-      u.pos += u.vitesse * dt;
-      if (u.pos > 130) u.pos -= 260; if (u.pos < -130) u.pos += 260;
+      const sens = Math.sign(u.vitesse), demi = u.demi || 1.2;
+      let arret = false;
+      for (const ps of passages) {
+        if (!ps.occupe || ps.axe !== u.voie.axe || !ps.voies.includes(u.voie.fixe)) continue;
+        const d = ecart(u.pos, ps.p0) * sens - demi;
+        if (d > 0.5 && d < 12) arret = true;
+      }
+      if (!arret) for (const b of vehicules) {
+        if (b === o || b.userData.voie !== u.voie) continue;
+        const d = ecart(u.pos, b.userData.pos) * sens - demi - (b.userData.demi || 1.2);
+        if (d > -1 && d < 2.5) { arret = true; break; }
+      }
+      u.arret = arret;
+      if (!arret) u.pos += u.vitesse * dt;
+      if (u.pos > 130) u.pos -= TOUR; if (u.pos < -130) u.pos += TOUR;
       if (u.voie.axe === 'z') o.position.set(u.voie.fixe, 0, u.pos); else o.position.set(u.pos, 0, u.voie.fixe);
-      for (const roue of u.roues || []) roue.rotation.z -= (Math.abs(u.vitesse) * dt) / 0.34;
     }
   });
 
@@ -540,7 +589,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   const passants = [];
   (async () => {
     const corps = ['Female_Adult_09', 'Male_Adult_04', 'Female_Party_02'];
-    const combien = monde.mobile ? 3 : 10;
+    const combien = monde.mobile ? 4 : 16;
     for (let k = 0; k < combien; k += 1) {
       const t = trottoirs[k % trottoirs.length];
       const p = await monde.personnage(corps[k % corps.length]);
@@ -550,6 +599,19 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       p.objet.rotation.y = t.axe === 'z' ? (sens > 0 ? 0 : Math.PI) : (sens > 0 ? Math.PI / 2 : -Math.PI / 2);
       racine.add(p.objet);
       passants.push(p);
+    }
+    // Des gens qui traversent aux passages piétons : ils attendent, traversent, attendent, reviennent.
+    const traversees = [
+      { ps: passages[0], a: [-33, 21.5], b: [-19.2, 21.5] },
+      { ps: passages[1], a: [17.5, 23.2], b: [17.5, 36.8] },
+      { ps: passages[2], a: [-34.5, 36.8], b: [-34.5, 23.2] },
+    ].slice(0, monde.mobile ? 2 : 3);
+    for (const [k, tr] of traversees.entries()) {
+      const p = await monde.personnage(['Male_Adult_07', 'Female_Adult_05', 'Male_Adult_12'][k]);
+      p.objet.userData.traverse = { ...tr, etat: 'attend', t: 2 + k * 3, u: 0, aller: true };
+      p.objet.position.set(tr.a[0], tr.a[0] > -20 && tr.a[0] < 20 && tr.a[1] > -16 && tr.a[1] < 24 ? 0 : 0.18, tr.a[1]);
+      p.jouer('repos', { fondu: 0 });
+      racine.add(p.objet); passants.push(p);
     }
     // Des vendeurs ambulants sur la place : étal, parasol, caisses, et le vendeur.
     const toile = ['#d94f30', '#2f7d5b', '#e0a526'];
@@ -581,6 +643,24 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   bouger.push((dt) => {
     for (const p of passants) {
       p.mixer.update(dt);
+      const tv = p.objet.userData.traverse;
+      if (tv) {
+        const [a, b] = tv.aller ? [tv.a, tv.b] : [tv.b, tv.a];
+        if (tv.etat === 'attend') {
+          tv.t -= dt;
+          // On ne s'engage pas si une voiture est déjà sur le passage.
+          const libre = !vehicules.some((o) => { const u = o.userData; return u.voie.axe === tv.ps.axe && tv.ps.voies.includes(u.voie.fixe) && Math.abs(ecart(u.pos, tv.ps.p0)) < (u.demi || 1.2) + 1.5; });
+          if (tv.t <= 0 && libre) { tv.etat = 'traverse'; tv.u = 0; tv.ps.occupe += 1; p.jouer('marche', { fondu: 0.2 }); p.objet.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]); }
+        } else {
+          tv.u += (1.3 * dt) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+          const u = Math.min(tv.u, 1);
+          const px = a[0] + (b[0] - a[0]) * u, pz = a[1] + (b[1] - a[1]) * u;
+          const surNotreIlot = px > -20 && px < 20 && pz > -16 && pz < 24; // notre trottoir affleure le sol
+          p.objet.position.set(px, surNotreIlot || (u > 0.08 && u < 0.92) ? 0 : 0.18, pz);
+          if (tv.u >= 1) { tv.etat = 'attend'; tv.t = 4 + r() * 6; tv.aller = !tv.aller; tv.ps.occupe -= 1; p.jouer('repos', { fondu: 0.3 }); }
+        }
+        continue;
+      }
       const m = p.objet.userData.marche;
       if (!m) continue;
       m.pos += m.sens * m.vitesse * dt;
