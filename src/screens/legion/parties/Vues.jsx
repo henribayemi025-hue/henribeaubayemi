@@ -148,7 +148,8 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
                 <span className="text-[11px] font-normal text-legion-muted">{t('legion.vues.auTravail', { n: d.agents.filter((a) => auTravail.has(a.id)).length })}</span>
               </h3>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {d.agents.map((a) => {
+                {/* Quatre-vingt-dix par service au plus, puis un compteur : une entreprise de 10 000 ne dessine pas 10 000 cartes (essai de charge, 25/09). */}
+                {d.agents.slice(0, 90).map((a) => {
                   const bosse = auTravail.has(a.id);
                   const tache = tacheDe(a.id);
                   return (
@@ -161,6 +162,7 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
                     </button>
                   );
                 })}
+                {d.agents.length > 90 && <div className="flex items-center justify-center rounded-card border border-dashed border-legion-line p-2 text-[12px] font-semibold text-legion-muted">+{(d.agents.length - 90).toLocaleString()}</div>}
               </div>
             </section>
           ))}
@@ -179,7 +181,7 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
                   <rect x={x} y={PAD + 78} width={COL} height={32} rx={8} fill={d.couleur || '#C25E38'} />
                   <text x={cx} y={PAD + 99} textAnchor="middle" fill="#fff" fontSize={13} fontWeight={700}>{court(d.nom, 24)}</text>
                   {d.agents.length > 0 && <text x={cx} y={PAD + 122} textAnchor="middle" fill="#93A1B8" fontSize={10}>{t('legion.vues.auTravail', { n: d.agents.filter((a) => a.actif && auTravail.has(a.id)).length })}</text>}
-                  {rangerEquipe(d.agents).map(({ a, niveau }, j) => {
+                  {rangerEquipe(d.agents.slice(0, 60)).map(({ a, niveau }, j) => {
                     const y = PAD + 132 + j * (H + 12);
                     const bosse = a.actif && auTravail.has(a.id);
                     const gx = x + niveau * RETRAIT;

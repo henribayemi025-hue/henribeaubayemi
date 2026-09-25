@@ -269,6 +269,55 @@ async function choisirNoms(req: Request, corps: { entreprise_id?: string }, apiK
   return json({ ok: true, faits, restants: Math.max(0, liste.length - faits), modele: r.modele });
 }
 
+// --- Les postes du catalogue en anglais (lot 1.7, 25/09) -------------------
+//
+// Beau (audit) : sur un compte anglais, les 3 535 postes restaient en
+// français. Ils se traduisent par lots, par le jeton de la base seulement
+// (un script les enchaîne), et le résultat vit dans un FICHIER de
+// l'application (public/leo/postes-en.json) — pas de migration. Rien n'est
+// écrit en base ici.
+
+const SCHEMA_TRADUCTION = {
+  type: 'OBJECT',
+  properties: {
+    postes: { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+      i: { type: 'INTEGER' }, poste: { type: 'STRING' }, departement: { type: 'STRING' }, mandat: { type: 'STRING' },
+    }, required: ['i', 'poste', 'departement', 'mandat'] } },
+  },
+  required: ['postes'],
+};
+
+async function traduirePostes(req: Request, corps: { de?: number; n?: number }, apiKey: string, json: (b: unknown, s?: number) => Response) {
+  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+  const jeton = req.headers.get('x-finjaro-token');
+  const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_travail').maybeSingle();
+  if (!jeton || !sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
+  const de = Math.max(0, Number(corps.de) || 0);
+  const n = Math.min(120, Math.max(1, Number(corps.n) || 120));
+  const { data: postes, error } = await service.from('studio_modele_postes').select('modele, poste, departement, mandat')
+    .order('modele').order('ordre').range(de, de + n - 1);
+  if (error) return json({ erreur: error.message }, 500);
+  const liste = (postes || []) as Array<{ modele: string; poste: string; departement: string; mandat: string | null }>;
+  if (!liste.length) return json({ ok: true, de, postes: [], fin: true });
+
+  const texte = `Traduis en anglais (registre professionnel, neutre entre anglais britannique et américain, sans nom de marque) ces postes d'entreprise, avec leur département et leur mandat. Garde le sens exact, la longueur et le ton ; un intitulé de poste reste court et à la façon des offres d'emploi anglaises (« Head of Sales », « Payroll Officer »). Deux postes différents en français restent différents en anglais. Réponds pour chaque numéro, dans l'ordre, avec "i" = le numéro.
+
+${liste.map((p, i) => `#${i + 1}\nposte : ${p.poste}\ndépartement : ${p.departement}\nmandat : ${p.mandat || ''}`).join('\n\n')}`;
+  const r = await generer(apiKey, texte, SCHEMA_TRADUCTION, { temperature: 0.2, maxSortie: 16384, reflexion: 0, delaiMs: 150_000, modeles: moteursSimples() });
+  if ('erreur' in r) return json({ erreur: r.erreur });
+  const rendus = (Array.isArray((r.obj as { postes?: unknown }).postes) ? (r.obj as { postes: unknown[] }).postes : []) as Array<Record<string, unknown>>;
+  const sortie: Array<{ modele: string; poste: string; poste_en: string; departement_en: string; mandat_en: string }> = [];
+  for (const x of rendus) {
+    const p = liste[Number(x.i) - 1];
+    if (!p) continue;
+    const poste_en = String(x.poste || '').trim().slice(0, 80);
+    if (!poste_en) continue;
+    sortie.push({ modele: p.modele, poste: p.poste, poste_en, departement_en: String(x.departement || '').trim().slice(0, 60), mandat_en: String(x.mandat || '').trim().slice(0, 300) });
+  }
+  console.log(`traduction ${de}–${de + liste.length - 1} : ${sortie.length}/${liste.length} (${r.modele})`);
+  return json({ ok: true, de, postes: sortie, manques: liste.length - sortie.length, fin: liste.length < n, modele: r.modele });
+}
+
 Deno.serve(compter('legion_modele', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
@@ -282,6 +331,7 @@ Deno.serve(compter('legion_modele', async (req: Request) => {
   try { corps = await req.json(); } catch { corps = {}; }
   if (corps.mode === 'postes') return composerPostes(req, corps, apiKey, json);
   if (corps.mode === 'noms') return choisirNoms(req, corps, apiKey, json);
+  if (corps.mode === 'traduire') return traduirePostes(req, corps as { de?: number; n?: number }, apiKey, json);
   const secteur = String(corps.secteur || '').trim().slice(0, 160);
   if (secteur.length < 3) return json({ erreur: 'Décris le secteur en quelques mots.' }, 400);
 

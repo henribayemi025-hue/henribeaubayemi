@@ -13,7 +13,9 @@ export function BandeAgents({ agents = [], messages = [], taches = [], t, taille
     const machines = agents.filter((a) => !a.user_id);
     const ou = quiOuEst({ agents: machines, messages, taches });
     const rang = { travaille: 0, reunion: 1, rendu: 2, aFaire: 3, pause: 4, dispo: 5, veille: 6 };
-    return machines.map((a) => ({ a, ...etatDe(a, ou, taches) })).sort((x, y) => rang[x.etat] - rang[y.etat]);
+    // Quarante au plus : une entreprise de 10 000 ne fait pas défiler 20 000
+    // pastilles (essai de charge du 25/09) — ceux qui travaillent d'abord.
+    return machines.map((a) => ({ a, ...etatDe(a, ou, taches) })).sort((x, y) => rang[x.etat] - rang[y.etat]).slice(0, 40);
   }, [agents, messages, taches]);
   if (!lignes.length) return <p className={`text-caption text-legion-muted ${className}`}>{t('legion.bande.personne', 'Aucun agent encore.')}</p>;
   // Le texte court d'un état : la tâche, ramenée à quelques mots.

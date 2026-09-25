@@ -12,6 +12,7 @@ import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { ChoixEmoji } from './ChoixEmoji';
 import { PhotoSalon } from './PhotoSalon';
+import { Visionneuse } from './Visionneuse';
 import { RAPIDES } from '../emojis';
 import { GENRES, heure, jourDe, sansAccent, iconeDept, espacerPhrases } from './outils';
 import { Texte, estStructure } from './Plans';
@@ -52,6 +53,7 @@ export function Conversation({
   const [enHaut, setEnHaut] = useState(false);
   const [ouvert, setOuvert] = useState(null); // barre d'actions ouverte (id du message)
   const [picker, setPicker] = useState(null); // 'saisie' | id du message
+  const [enGrand, setEnGrand] = useState(null); // une image ouverte en plein écran (25/09)
   const [reponseA, setReponseA] = useState(null);
   const [copie, setCopie] = useState(null);
 
@@ -365,9 +367,9 @@ export function Conversation({
                         <div className="mb-1 mt-0.5 space-y-1.5">
                           {pieces.map((p, i) => (
                             p.type === 'image' ? (
-                              <a key={i} href={p.url} target="_blank" rel="noreferrer">
+                              <button key={i} type="button" onClick={() => setEnGrand({ url: p.url, nom: p.nom })} title={t('legion.voirEnGrand', 'Voir en grand')} className="block text-left">
                                 <img src={p.url} alt="" className="min-h-[96px] min-w-[140px] max-h-72 w-auto max-w-full rounded-[12px] bg-black/10 object-cover" loading="lazy" />
-                              </a>
+                              </button>
                             ) : p.type === 'audio' ? (
                               <div key={i}>
                                 <audio controls preload="metadata" src={p.url} className="h-10 w-60 max-w-full" />
@@ -530,6 +532,7 @@ export function Conversation({
         }}
       />
       )}
+      {enGrand && <Visionneuse url={enGrand.url} nom={enGrand.nom} onFermer={() => setEnGrand(null)} />}
     </div>
   );
 }

@@ -85,8 +85,22 @@ export default function Entreprise() {
       .from('legion_entreprises').select('*').eq('id', entrepriseId).maybeSingle();
     if (e0) throw e0;
     if (!entreprise) return { refuse: true };
+    // La base ne rend que 1 000 lignes par demande : une entreprise de 1 500
+    // n'affichait que ses 1 000 premiers agents (essai de charge du 25/09).
+    // On lit par pages, jusqu'aux 10 000 que Beau a fixés comme plafond
+    // (plus les humains de l'équipe : le fondateur, les invités).
+    const lireAgents = async () => {
+      const tout = [];
+      for (let de = 0; de < 12000; de += 1000) {
+        const { data: page, error: e } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre').order('id').range(de, de + 999);
+        if (e) return { data: null, error: e };
+        tout.push(...(page || []));
+        if (!page || page.length < 1000) break;
+      }
+      return { data: tout, error: null };
+    };
     const [agents, salons, messages] = await Promise.all([
-      supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre'),
+      lireAgents(),
       supabase.from('legion_canaux').select('*').eq('entreprise_id', entrepriseId).order('ordre'),
       supabase.from('legion_messages').select('*').eq('entreprise_id', entrepriseId).order('created_at', { ascending: false }).limit(MAX_MESSAGES),
     ]);

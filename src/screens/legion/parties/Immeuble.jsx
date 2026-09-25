@@ -218,14 +218,16 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
                 <span className="text-[9px] text-legion-muted">{t('legion.vues.auTravail', { n: auTravail })}</span>
                 {/* Les fenêtres : une allumée par agent qui travaille vraiment. */}
                 <span className="mt-1 flex gap-0.5">
-                  {d.agents.map((a) => {
+                  {d.agents.slice(0, 300).map((a) => {
                     const on = ['ecrit', 'travaille', 'atelier', 'reunion', 'institut'].includes(etat(a));
                     return <span key={a.id} className="h-2 w-1.5 rounded-[1px]" style={{ backgroundColor: on ? '#E3A857' : '#1f2a40', boxShadow: on ? '0 0 4px #E3A857' : 'none' }} />;
                   })}
                 </span>
               </div>
               <div className="flex min-w-0 flex-1 flex-wrap items-end gap-x-1 gap-y-2 px-2 pb-1 pt-2">
-                {d.agents.map((a) => <Poste key={a.id} a={a} />)}
+                {/* Cent vingt par étage au plus : au-delà, un compteur (essai de charge à 10 000, 25/09). */}
+                {d.agents.slice(0, 120).map((a) => <Poste key={a.id} a={a} />)}
+                {d.agents.length > 120 && <span className="self-center text-[11px] font-semibold text-legion-muted">+{(d.agents.length - 120).toLocaleString()}</span>}
               </div>
             </section>
           );
