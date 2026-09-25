@@ -43,6 +43,10 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
   const [maintenant, setMaintenant] = useState(Date.now());
   const [formation, setFormation] = useState(() => new Map()); // agent_id → nom de la compétence
   const [atelierEnCours, setAtelierEnCours] = useState(false);
+  // « Voir comment il travaille » (Beau, 25/09 : « quand je clique sur un
+  // agent au travail, ça doit ouvrir où il travaille, ce qu'il fait, les
+  // chiffres, comment il fait »).
+  const [regard, setRegard] = useState(null);
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
 
   const machines = useMemo(() => agents.filter((a) => !a.user_id), [agents]);
@@ -117,7 +121,7 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
   };
 
   const Personne = ({ a, petit = false }) => (
-    <button type="button" onClick={() => onFiche?.(a)} title={`${a.nom} — ${bulle(a)}`}
+    <button type="button" onClick={() => setRegard(a)} title={`${a.nom} — ${bulle(a)}`}
       className={`imm-personne group flex flex-col items-center ${['ecrit', 'travaille', 'atelier'].includes(etat(a)) ? 'imm-tape' : ''}`}>
       <span className={`rounded-full ${['ecrit', 'travaille', 'atelier', 'reunion', 'institut'].includes(etat(a)) ? 'ring-2 ring-legion-gold' : ''} ${a.actif ? '' : 'opacity-40 grayscale'}`}>
         <Visage a={a} taille={petit ? 30 : 38} />
@@ -258,6 +262,11 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
       </div>
 
       <p className="mx-auto mt-3 max-w-3xl text-center text-[10px] leading-relaxed text-legion-muted">{t('legion.immeuble.regle')}</p>
+      {regard && (
+        <CommentIlTravaille a={regard} etat={etat(regard)} bulle={bulle(regard)} tache={enTache.get(regard.id) || tacheDe(regard)}
+          messages={messages} formation={formation.get(regard.id)} onFiche={() => { const a = regard; setRegard(null); onFiche?.(a); }}
+          onFermer={() => setRegard(null)} t={t} />
+      )}
     </div>
   );
 }
@@ -318,5 +327,98 @@ function FilDirect({ agents, messages, taches, onFiche, t }) {
         {!lignes.length && <li className="px-2 py-3 text-[11px] italic text-legion-muted">{t('legion.immeuble.filVide')}</li>}
       </ol>
     </aside>
+  );
+}
+
+// ——— « Comment il travaille » : ce qu'il fait maintenant, comment il s'y
+// prend (ce qu'il a vérifié dans les chiffres, ses sources sur Internet, le
+// modèle), ce que ça coûte, et ses derniers messages. Tout vient des messages
+// et des tâches réels ; rien n'est deviné.
+function CommentIlTravaille({ a, etat, bulle, tache, messages, formation, onFiche, onFermer, t }) {
+  const siens = messages.filter((m) => m.auteur_id === a.id).sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at));
+  const livrables = siens.filter((m) => m.meta?.livrable);
+  const dernier = livrables[0];
+  const minuit = new Date(); minuit.setHours(0, 0, 0, 0);
+  const aujourdhui = siens.filter((m) => Date.parse(m.created_at) >= minuit.getTime());
+  const coutJour = aujourdhui.reduce((n, m) => n + (Number(m.meta?.cout_eur) || 0), 0);
+  const verifie = Array.isArray(dernier?.meta?.verifie) ? dernier.meta.verifie : [];
+  const sources = Array.isArray(dernier?.meta?.sources) ? dernier.meta.sources : [];
+  const depuis = tache?.meta?.travaille_depuis ? Math.max(1, Math.round((Date.now() - Date.parse(tache.meta.travaille_depuis)) / 60000)) : null;
+  const heure = (q) => new Date(q).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const Bloc = ({ titre, children }) => (
+    <section className="mb-3">
+      <h4 className="mb-1 text-[10px] font-bold uppercase tracking-wider text-legion-gold">{titre}</h4>
+      {children}
+    </section>
+  );
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-end bg-black/40 sm:items-stretch" onMouseDown={(e) => { if (e.target === e.currentTarget) onFermer(); }}>
+      <aside className="imm-arrive max-h-[85vh] w-full overflow-y-auto rounded-t-2xl border border-legion-line bg-legion-panel p-4 sm:max-h-none sm:w-[380px] sm:rounded-none">
+        <div className="mb-3 flex items-center gap-3">
+          <Visage a={a} taille={48} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-body font-bold text-legion-ink">{a.nom}</p>
+            <p className="truncate text-[11px] text-legion-muted">{a.poste}{a.departement ? ` · ${a.departement}` : ''}</p>
+            <p className="mt-0.5 text-[11px] text-legion-gold">{bulle}</p>
+          </div>
+          <button type="button" onClick={onFermer} aria-label={t('common.close', 'Fermer')} className="rounded-full px-2 text-legion-muted hover:text-legion-ink">✕</button>
+        </div>
+
+        <Bloc titre={t('legion.immeuble.regard.maintenant')}>
+          {tache ? (
+            <p className="rounded-card bg-legion-card p-2 text-[12px] text-legion-ink">
+              {tache.texte}
+              {depuis && <span className="mt-1 block text-[10px] text-legion-muted">{t('legion.immeuble.regard.depuis', { n: depuis })}</span>}
+            </p>
+          ) : etat === 'institut' && formation ? (
+            <p className="text-[12px] text-legion-ink">📚 {t('legion.immeuble.regard.apprend', { nom: formation })}</p>
+          ) : <p className="text-[12px] text-legion-muted">{t('legion.immeuble.regard.rien')}</p>}
+        </Bloc>
+
+        {dernier && (
+          <Bloc titre={t('legion.immeuble.regard.comment')}>
+            <ul className="space-y-1 text-[11px] text-legion-ink">
+              {dernier.meta?.modele && <li>🧠 {t('legion.immeuble.regard.modele', { modele: dernier.meta.modele })}</li>}
+              {verifie.length > 0 && <li>🔎 {t('legion.immeuble.regard.verifie')} <span className="text-legion-muted">{verifie.slice(0, 6).map((v) => String(v).split('(')[0]).join(', ')}</span></li>}
+              {sources.length > 0 && (
+                <li>🌐 {t('legion.immeuble.regard.sources', { n: sources.length })}
+                  <span className="mt-0.5 block space-y-0.5">
+                    {sources.slice(0, 4).map((x, i) => {
+                      const url = typeof x === 'string' ? x : x?.url || x?.uri;
+                      const titre = typeof x === 'string' ? x : x?.titre || x?.title || url;
+                      return url ? <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-[#5FC8C0] underline">{titre}</a> : null;
+                    })}
+                  </span>
+                </li>
+              )}
+              {!verifie.length && !sources.length && <li className="text-legion-muted">{t('legion.immeuble.regard.sansVerif')}</li>}
+            </ul>
+          </Bloc>
+        )}
+
+        <Bloc titre={t('legion.immeuble.regard.chiffres')}>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {[[aujourdhui.length, t('legion.immeuble.regard.messagesJour')], [livrables.filter((m) => Date.parse(m.created_at) >= minuit.getTime()).length, t('legion.immeuble.regard.livrablesJour')], [`${coutJour.toFixed(3)} €`, t('legion.immeuble.regard.coutJour')]].map(([v, l]) => (
+              <div key={l} className="rounded-card bg-legion-card p-2"><div className="text-body font-bold text-legion-ink tabular-nums">{v}</div><div className="text-[9px] text-legion-muted">{l}</div></div>
+            ))}
+          </div>
+        </Bloc>
+
+        <Bloc titre={t('legion.immeuble.regard.derniers')}>
+          <ol className="space-y-1.5">
+            {siens.slice(0, 5).map((m) => (
+              <li key={m.id} className="rounded-card bg-legion-card p-2 text-[11px] leading-snug text-legion-ink">
+                <span className="float-right font-mono text-[9px] text-legion-muted">{heure(m.created_at)}</span>
+                {m.meta?.livrable && <span className="mr-1 rounded bg-legion-gold/20 px-1 text-[9px] text-legion-gold">{t('legion.immeuble.regard.livrable')}</span>}
+                {nettoyer(m.texte, 220)}
+              </li>
+            ))}
+            {!siens.length && <li className="text-[11px] text-legion-muted">{t('legion.immeuble.regard.aucunMessage')}</li>}
+          </ol>
+        </Bloc>
+
+        <button type="button" onClick={onFiche} className="w-full rounded-pill border border-legion-gold/60 py-2 text-caption font-semibold text-legion-gold hover:bg-legion-gold/10">{t('legion.immeuble.regard.fiche')}</button>
+      </aside>
+    </div>
   );
 }

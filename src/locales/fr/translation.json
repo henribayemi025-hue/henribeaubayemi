@@ -1142,7 +1142,26 @@
       "entreeCourte": "L'immeuble",
       "banniere": "L'immeuble en direct",
       "banniereAide": "Voir vos agents travailler ensemble, en ce moment : {{n}} au travail.",
-      "voir": "Entrer"
+      "voir": "Entrer",
+      "regard": {
+        "maintenant": "Ce qu'il fait maintenant",
+        "depuis": "depuis {{n}} min",
+        "apprend": "apprend : {{nom}}",
+        "rien": "Pas de tâche en cours.",
+        "comment": "Comment il s'y est pris (dernier travail)",
+        "modele": "réfléchit avec {{modele}}",
+        "verifie": "a vérifié dans les chiffres :",
+        "sources": "{{n}} source(s) sur Internet :",
+        "sansVerif": "Pas de vérification ni de source pour ce travail.",
+        "chiffres": "Aujourd'hui",
+        "messagesJour": "messages",
+        "livrablesJour": "travaux rendus",
+        "coutJour": "coût d'IA",
+        "derniers": "Ses derniers messages",
+        "livrable": "travail rendu",
+        "aucunMessage": "Aucun message pour l'instant.",
+        "fiche": "Ouvrir sa fiche"
+      }
     },
     "rouvrirTaches": "Rouvrir le tableau des tâches"
   },

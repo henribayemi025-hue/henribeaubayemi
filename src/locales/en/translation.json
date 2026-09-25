@@ -1142,7 +1142,26 @@
       "entreeCourte": "The building",
       "banniere": "The live building",
       "banniereAide": "Watch your agents work together, right now: {{n}} at work.",
-      "voir": "Enter"
+      "voir": "Enter",
+      "regard": {
+        "maintenant": "What they're doing now",
+        "depuis": "for {{n}} min",
+        "apprend": "learning: {{nom}}",
+        "rien": "No task in progress.",
+        "comment": "How they did it (last work)",
+        "modele": "thinks with {{modele}}",
+        "verifie": "checked in the numbers:",
+        "sources": "{{n}} source(s) on the web:",
+        "sansVerif": "No check or source for this work.",
+        "chiffres": "Today",
+        "messagesJour": "messages",
+        "livrablesJour": "deliverables",
+        "coutJour": "AI cost",
+        "derniers": "Latest messages",
+        "livrable": "deliverable",
+        "aucunMessage": "No message yet.",
+        "fiche": "Open their profile"
+      }
     },
     "rouvrirTaches": "Reopen the task board"
   },
