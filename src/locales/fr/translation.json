@@ -1285,6 +1285,16 @@
       "junior": "Junior",
       "alternant": "Alternant",
       "stagiaire": "Stagiaire"
+    },
+    "ciel": {
+      "langue": "fr",
+      "nuit": "nuit",
+      "aube": "lever du jour",
+      "jour": "journée",
+      "couchant": "coucher du soleil",
+      "changer": "Changer de ville",
+      "taVille": "Ta ville",
+      "chaud": "Il fait {{t}} à {{ville}} : pense à boire de l'eau."
     }
   },
   "equipe": {

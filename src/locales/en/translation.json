@@ -1285,6 +1285,16 @@
       "junior": "Junior",
       "alternant": "Apprentice",
       "stagiaire": "Intern"
+    },
+    "ciel": {
+      "langue": "en",
+      "nuit": "night",
+      "aube": "sunrise",
+      "jour": "daytime",
+      "couchant": "sunset",
+      "changer": "Change city",
+      "taVille": "Your city",
+      "chaud": "It's {{t}} in {{ville}}: remember to drink some water."
     }
   },
   "equipe": {

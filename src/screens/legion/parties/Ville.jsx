@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Immeuble } from './Immeuble';
 import { tours as calculerTours, joursRestants, QUOTIDIEN } from './ville';
+import { IconSun, IconMoon, IconCloud, IconCloudRain, IconSnowflake, IconCloudFog, IconCloudStorm, IconDroplet } from '@tabler/icons-react';
+import { chargerCiel, phaseDuJour, couleursCiel, ilFaitChaud } from './ciel';
 
 // LA VILLE DE LÉO (proposition du 25/09 à Beau, d'après ses prototypes Google
 // AI Studio) : chaque projet est une tour datée qui pousse avec les tâches
@@ -66,6 +68,28 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
   const [nouveau, setNouveau] = useState(null); // { nom, debut, fin, but }
   const [erreur, setErreur] = useState(null);
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
+  // Le ciel réel : l'heure et la météo de là où est la personne.
+  const [ciel, setCiel] = useState(null);
+  const [autreVille, setAutreVille] = useState(null);
+  const langue = t('legion.ciel.langue', 'fr');
+  useEffect(() => {
+    let vivant = true;
+    const lire = () => chargerCiel({ langue }).then((c) => { if (vivant && c) setCiel(c); }).catch(() => {});
+    lire();
+    const i = setInterval(lire, 30 * 60 * 1000);
+    return () => { vivant = false; clearInterval(i); };
+  }, [langue]);
+  async function changerVille(e) {
+    e.preventDefault();
+    const nom = String(autreVille || '').trim();
+    if (nom.length < 2) return;
+    const c = await chargerCiel({ ville: nom, langue, forcer: true }).catch(() => null);
+    if (c) { setCiel(c); setAutreVille(null); } else setAutreVille(`${nom} `);
+  }
+  const phase = phaseDuJour(maintenant, ciel?.lever, ciel?.coucher);
+  const [haut, milieu, bas] = couleursCiel(phase, ciel?.genre);
+  const IconeCiel = { pluie: IconCloudRain, orage: IconCloudStorm, neige: IconSnowflake, brouillard: IconCloudFog, couvert: IconCloud, nuages: IconCloud }[ciel?.genre] || (phase === 'nuit' ? IconMoon : IconSun);
+  const degres = ciel ? `${ciel.temperature} °${ciel.unite === 'fahrenheit' ? 'F' : 'C'}` : '';
 
   useEffect(() => {
     let vivant = true;
@@ -158,11 +182,28 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
   return (
     <div>
       <style>{`@media (prefers-reduced-motion:no-preference){.ville-scintille{animation:villeScint 3.4s ease-in-out infinite}.ville-grue{transform-box:fill-box;transform-origin:0% 50%;animation:villeGrue 9s ease-in-out infinite}}
-        @keyframes villeScint{0%,100%{opacity:1}50%{opacity:.7}}@keyframes villeGrue{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}`}</style>
+        @keyframes villeScint{0%,100%{opacity:1}50%{opacity:.7}}@media (prefers-reduced-motion:no-preference){.ville-nuages{animation:villeNuages 40s ease-in-out infinite alternate}.ville-pluie{animation:villePluie .7s linear infinite}}@keyframes villeNuages{from{transform:translateX(-18px)}to{transform:translateX(18px)}}@keyframes villePluie{from{transform:translateY(-14px)}to{transform:translateY(0)}}@keyframes villeGrue{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}`}</style>
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
         <p className="text-[13px] text-legion-muted">{t('legion.ville.resume', { tours: projets.length, actifs: auTravail })}</p>
+        {ciel && autreVille == null && (
+          <button type="button" onClick={() => setAutreVille('')} title={t('legion.ciel.changer')}
+            className="flex items-center gap-1.5 rounded-pill border border-legion-line px-2.5 py-1 text-[12.5px] text-legion-ink hover:border-legion-gold">
+            <IconeCiel size={15} className="text-legion-gold" /> {degres} · {ciel.ville} · {t(`legion.ciel.${phase}`)}
+          </button>
+        )}
+        {autreVille != null && (
+          <form onSubmit={changerVille} className="flex items-center gap-1.5">
+            <input autoFocus value={autreVille} onChange={(e) => setAutreVille(e.target.value)} placeholder={t('legion.ciel.taVille')} maxLength={60}
+              className="w-40 rounded-pill border border-legion-line bg-legion-bg px-3 py-1 text-[16px] text-legion-ink sm:text-[13px]" />
+            <button type="submit" className="rounded-pill bg-legion-gold px-3 py-1 text-[12.5px] font-semibold text-legion-bg">OK</button>
+            <button type="button" onClick={() => setAutreVille(null)} className="text-[12.5px] text-legion-muted">{t('common.cancel', 'Annuler')}</button>
+          </form>
+        )}
         {peutAgir && !nouveau && <button type="button" onClick={() => setNouveau({ nom: '', debut: aujourdhui, fin: dansUnMois, but: '' })} className="rounded-pill bg-legion-gold px-3 py-1 text-[13px] font-semibold text-legion-bg">+ {t('legion.ville.nouveauProjet')}</button>}
       </div>
+      {ciel && ilFaitChaud(ciel.temperature, ciel.unite) && (
+        <p className="mx-4 mt-2 flex items-center gap-1.5 text-[12.5px] text-legion-gold"><IconDroplet size={14} /> {t('legion.ciel.chaud', { t: degres, ville: ciel.ville })}</p>
+      )}
       {nouveau && (
         <form onSubmit={creer} className="mx-4 mt-3 grid gap-2 rounded-card border border-legion-line bg-legion-card p-3 sm:grid-cols-[1fr_auto_auto]">
           <input id="ville-nom" value={nouveau.nom} onChange={(e) => setNouveau({ ...nouveau, nom: e.target.value })} placeholder={t('legion.ville.nomProjet')} maxLength={80}
@@ -181,13 +222,32 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${LARG} ${H}`} className="block min-w-[640px] w-full" role="img" aria-label={t('legion.ville.titre')}>
           <defs>
-            <linearGradient id="ville-ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#080E1F" /><stop offset=".7" stopColor="#101A34" /><stop offset="1" stopColor="#1A2340" /></linearGradient>
+            <linearGradient id="ville-ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={haut} /><stop offset=".6" stopColor={milieu} /><stop offset="1" stopColor={bas} /></linearGradient>
+            <radialGradient id="ville-soleil"><stop offset="0" stopColor="#FFF4D6" /><stop offset=".35" stopColor="#FFD98A" stopOpacity=".9" /><stop offset="1" stopColor="#FFB85C" stopOpacity="0" /></radialGradient>
             <linearGradient id="ville-verre" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#1D2944" /><stop offset=".5" stopColor="#26345A" /><stop offset="1" stopColor="#1A2440" /></linearGradient>
           </defs>
           <rect width={LARG} height={H} fill="url(#ville-ciel)" />
-          {Array.from({ length: 60 }).map((_, i) => <circle key={i} cx={(i * 151) % LARG} cy={(i * 67) % 150} r={(i % 3) * 0.4 + 0.4} fill="#EDF1F8" opacity={0.25 + (i % 4) * 0.12} />)}
-          <circle cx={LARG - 80} cy="62" r="24" fill="#F2C98A" opacity=".9" /><circle cx={LARG - 71} cy="56" r="22" fill="#0C1530" />
-          {Array.from({ length: 22 }).map((_, i) => <rect key={i} x={i * 42 - 10} y={SOL - (40 + (i * 53) % 80)} width={28 + (i * 37) % 36} height={40 + (i * 53) % 80} fill="#141D36" opacity=".8" />)}
+          {phase === 'nuit' && !['couvert', 'pluie', 'orage', 'brouillard', 'neige'].includes(ciel?.genre) && Array.from({ length: 60 }).map((_, i) => <circle key={i} cx={(i * 151) % LARG} cy={(i * 67) % 150} r={(i % 3) * 0.4 + 0.4} fill="#EDF1F8" opacity={0.25 + (i % 4) * 0.12} />)}
+          {phase === 'nuit'
+            ? <g><circle cx={LARG - 80} cy="62" r="24" fill="#F2C98A" opacity=".9" /><circle cx={LARG - 71} cy="56" r="22" fill={haut} /></g>
+            : <circle cx={phase === 'aube' ? 110 : phase === 'couchant' ? LARG - 110 : LARG - 120} cy={phase === 'jour' ? 70 : SOL - 70} r={phase === 'jour' ? 70 : 90} fill="url(#ville-soleil)" opacity={['couvert', 'pluie', 'orage', 'brouillard', 'neige'].includes(ciel?.genre) ? 0.35 : 1} />}
+          {['nuages', 'couvert', 'pluie', 'orage', 'neige'].includes(ciel?.genre) && (
+            <g className="ville-nuages" opacity={phase === 'nuit' ? 0.35 : ciel.genre === 'nuages' ? 0.75 : 0.9}>
+              {[[90, 60, 1], [330, 40, 1.3], [560, 75, 0.9], [770, 50, 1.1], ...(ciel.genre === 'nuages' ? [] : [[210, 95, 1.2], [460, 30, 1.4], [680, 100, 1]])].map(([cx, cy, k], i) => (
+                <g key={i} transform={`translate(${cx} ${cy}) scale(${k})`} fill={phase === 'jour' ? '#F4F6FA' : '#8D95A8'}>
+                  <ellipse cx="0" cy="0" rx="46" ry="15" /><ellipse cx="-18" cy="-9" rx="22" ry="15" /><ellipse cx="14" cy="-12" rx="26" ry="18" />
+                </g>
+              ))}
+            </g>
+          )}
+          {Array.from({ length: 22 }).map((_, i) => <rect key={i} x={i * 42 - 10} y={SOL - (40 + (i * 53) % 80)} width={28 + (i * 37) % 36} height={40 + (i * 53) % 80} fill={phase === 'jour' ? '#4A5878' : phase === 'nuit' ? '#141D36' : '#2A3050'} opacity=".8" />)}
+          {(ciel?.genre === 'pluie' || ciel?.genre === 'orage') && (
+            <g className="ville-pluie" stroke={phase === 'jour' ? '#DCE6F2' : '#9FB0CC'} strokeOpacity=".55" strokeWidth="1.2">
+              {Array.from({ length: 70 }).map((_, i) => { const x = (i * 131) % LARG, y = (i * 47) % SOL; return <line key={i} x1={x} y1={y} x2={x - 5} y2={y + 14} />; })}
+            </g>
+          )}
+          {ciel?.genre === 'neige' && Array.from({ length: 60 }).map((_, i) => <circle key={i} className="ville-pluie" cx={(i * 131) % LARG} cy={(i * 47) % SOL} r="1.6" fill="#F4F6FA" opacity=".8" />)}
+          {ciel?.genre === 'brouillard' && <rect width={LARG} height={SOL} fill="#C8CFD8" opacity=".28" />}
           <rect x="0" y={SOL} width={LARG} height={H - SOL} fill="#0A0F1E" />
           <rect x="40" y={SOL} width={LARG - 80} height="4" fill="#E3A857" opacity=".45" />
           {liste.map((x, i) => (
