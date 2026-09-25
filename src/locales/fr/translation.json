@@ -1582,6 +1582,11 @@
       "applique": "Équipe mise à jour : {{a}} ajouté(s), {{r}} retiré(s), {{m}} mandat(s) réécrit(s).",
       "conceptAide": "C'est ta version : modifie-la, les agents la liront avec ton projet.",
       "plusDeMonde": "{{n}} attendent plus de monde"
+    },
+    "arrivee": {
+      "noms": "{{n}} agents ont choisi leur nom et se sont présentés.",
+      "photos": "Les directeurs se font photographier…",
+      "titre": "L'équipe arrive"
     }
   },
   "equipe": {

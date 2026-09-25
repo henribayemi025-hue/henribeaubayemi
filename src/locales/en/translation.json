@@ -1582,6 +1582,11 @@
       "applique": "Team updated: {{a}} added, {{r}} removed, {{m}} mandate(s) rewritten.",
       "conceptAide": "This is your version: edit it, the agents will read it with your project.",
       "plusDeMonde": "{{n}} waiting for more people"
+    },
+    "arrivee": {
+      "noms": "{{n}} agents chose their name and introduced themselves.",
+      "photos": "The directors are having their photo taken…",
+      "titre": "The team is arriving"
     }
   },
   "equipe": {

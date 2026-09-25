@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Navigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconArrowLeft, IconLayoutKanban, IconMessages, IconUsers, IconChecklist, IconSparkles, IconPower, IconCamera, IconHome } from '@tabler/icons-react';
@@ -651,16 +651,18 @@ export default function Entreprise() {
   // lui-même. Beau: « chacun est libre de choisir la photo qu'il veut ».
   // Ce bouton-là DÉPENSE: fabriquer une image se paie, contrairement au
   // dessin. D'où un bouton séparé, qui le dit, et une photo par agent.
-  async function vraiesPhotos(agent) {
+  // `options.directeurs` : seulement les directeurs, en `options.tours`
+  // paquets — le jour de la fondation (25/09), sans bouton.
+  async function vraiesPhotos(agent, options = {}) {
     // Par paquets de trois: fabriquer vingt images d'un coup dépassait le
     // temps accordé à la fonction, et Beau voyait « Edge Function returned a
     // non-2xx status code » alors que les photos, elles, se faisaient.
     setPhotos(true);
     let total = 0;
     try {
-      for (let tour = 0; tour < 12; tour += 1) {
+      for (let tour = 0; tour < (options.tours || 12); tour += 1) {
         const { data: r, error: err } = await supabase.functions.invoke('legion-portrait', {
-          body: { entreprise_id: entrepriseId, ...(agent ? { agent_id: agent.id } : { limite: 3 }) },
+          body: { entreprise_id: entrepriseId, ...(agent ? { agent_id: agent.id } : { limite: 3, ...(options.directeurs ? { directeurs: true } : {}) }) },
         });
         if (err) throw err;
         if (r?.erreur) throw new Error(r.erreur);
@@ -670,7 +672,7 @@ export default function Entreprise() {
           setData((d) => d && ({ ...d, agents: frais }));
           setFiche((f) => (f ? frais.find((x) => x.id === f.id) || f : f));
         }
-        if ((r?.faits ?? 0) === 0 && r?.pourquoi) { toast.error(r.pourquoi); break; }
+        if ((r?.faits ?? 0) === 0) { if (r?.pourquoi) toast.error(r.pourquoi); else if (total) toast.success(t('legion.photosFaites', { faits: total, restants: r?.restants ?? 0 })); break; }
         if (agent || !r?.restants) {
           toast.success(t('legion.photosFaites', { faits: total, restants: r?.restants ?? 0 }));
           break;
@@ -679,6 +681,29 @@ export default function Entreprise() {
     } catch (e) { toast.error(e.message || t('errors.generic')); }
     finally { setPhotos(false); }
   }
+
+  // Le premier jour (Fonder → `?arrivee=1`, 25/09 : « les agents prennent
+  // leurs photos réelles et choisissent leur nom ») : chacun choisit son
+  // nom et se présente (un appel pour toute l'équipe), puis les directeurs
+  // se font photographier. Les autres photos restent au bouton, qui dit
+  // que ça coûte.
+  const arriveeFaite = useRef(false);
+  useEffect(() => {
+    if (arriveeFaite.current || !data?.agents?.length || params.get('arrivee') !== '1') return;
+    arriveeFaite.current = true;
+    try { const u = new URL(window.location.href); u.searchParams.delete('arrivee'); window.history.replaceState(null, '', u.toString()); } catch { /* vieux navigateur */ }
+    (async () => {
+      try {
+        const { data: r, error: err } = await supabase.functions.invoke('legion-modele', { body: { mode: 'noms', entreprise_id: entrepriseId } });
+        if (!err && r?.faits) {
+          const { data: frais } = await supabase.from('legion_agents').select('*').eq('entreprise_id', entrepriseId).order('ordre');
+          if (frais) setData((d) => d && ({ ...d, agents: frais }));
+          toast.success(t('legion.arrivee.noms', { n: r.faits }));
+        }
+      } catch { /* les noms donnés par la base restent */ }
+      await vraiesPhotos(null, { directeurs: true, tours: 3 });
+    })();
+  }, [data?.agents?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Les photos que Beau pose lui-même (22/09: « une photo pour la
   // Direction, et moi aussi je dois pouvoir mettre une photo »). Le fichier

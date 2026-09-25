@@ -272,8 +272,10 @@ export default function Fonder() {
       if (String(i18n.language || '').startsWith('en')) await passerEnAnglais(id);
       await equiperDeveloppeurs(id, `${nom} ${projet} ${objectif} ${modele.cle} ${modele.nom || ''}`);
       // Les agents choisissent leurs compétences dès l'arrivée (Beau: « chaque
-      // type d'entreprise arrive avec ses agents et leurs compétences »).
-      navigate(`/legion/${id}?equiper=1`);
+      // type d'entreprise arrive avec ses agents et leurs compétences »), et,
+      // depuis le 25/09, leur nom et — pour les directeurs — leur vraie photo
+      // (« ils prennent leurs photos réelles et choisissent leur nom »).
+      navigate(`/legion/${id}?equiper=1&arrivee=1`);
     } catch (e) { toast.error(e.message || t('errors.generic')); setEnvoi(false); }
   }
 

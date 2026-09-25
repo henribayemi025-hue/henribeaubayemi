@@ -20,7 +20,7 @@
 // écrit en base : la personne coche, puis fonde.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { compter } from '../_shared/cout.ts';
+import { compter, pourEntreprise } from '../_shared/cout.ts';
 import { generer, moteurs, moteursSimples } from '../_shared/moteur.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -171,6 +171,104 @@ async function composerPostes(req: Request, corps: CorpsPostes, apiKey: string, 
   return json({ ok: true, conseil: String(obj.conseil || '').slice(0, 1200), ajouter, retirer, modifier, modele: r.modele });
 }
 
+// --- Le premier jour : chaque agent choisit son nom et se présente ----------
+//
+// Beau, 25/09 : « les agents doivent déjà automatiquement prendre leurs
+// photos réelles et choisir leur nom » à la création. La base leur donne un
+// nom tiré d'une liste ; ici, le premier jour, chacun choisit le sien
+// (prénom et nom, à l'image de l'entreprise et de son pays) et se présente
+// en trois traits. Une seule demande au moteur pour toute l'équipe (60 au
+// plus par appel). Les photos, c'est legion-portrait (directeurs d'abord).
+
+const SCHEMA_NOMS = {
+  type: 'OBJECT',
+  properties: {
+    agents: { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+      i: { type: 'INTEGER' }, prenom: { type: 'STRING' }, nom: { type: 'STRING' }, personnalite: { type: 'STRING' },
+    }, required: ['i', 'prenom', 'nom', 'personnalite'] } },
+  },
+  required: ['agents'],
+};
+type AgentNom = { id: string; nom: string; poste: string; departement: string | null; est_directeur: boolean; personnalite: string | null };
+
+function inviteNoms(e: { nom: string; projet: string; langue: string; marche: string; modele: string }, agents: AgentNom[]) {
+  const anglais = e.langue === 'en';
+  const liste = agents.map((a, i) => `#${i + 1} ${a.poste}${a.departement ? ` — ${a.departement}` : ''}${a.est_directeur ? ' (dirige le département)' : ''}`).join('\n');
+  return `C'est le premier jour de « ${e.nom} », une entreprise d'agents (modèle : ${e.modele || 'libre'}).${e.marche ? ` Marché : ${e.marche}.` : ''}
+Projet : ${e.projet || '(pas encore écrit)'}
+
+Chaque agent ci-dessous choisit LUI-MÊME son prénom et son nom, puis se présente en trois traits.
+${liste}
+
+Règles :
+- Des noms plausibles et variés : origines, genres et âges mêlés — l'équipe est mondiale. Si le projet ou le marché nomme un pays ou une région, une bonne part des noms en viennent, sans que ce soit tous.
+- Jamais deux fois le même nom dans l'équipe ; jamais le nom d'une personne connue, d'une marque ou d'un personnage de fiction.
+- "personnalite" : le caractère, la façon d'écrire, la manie de l'agent — trois phrases courtes, à la troisième personne, ${anglais ? 'en anglais' : 'en français'}, 200 caractères au plus. Précis et un peu gênant, comme on décrirait un vrai collègue ; pas de mots creux (« rigoureux », « passionné »). Elle doit s'entendre quand il écrira.
+Réponds pour chaque numéro, dans l'ordre, avec "i" = le numéro.`;
+}
+
+async function choisirNoms(req: Request, corps: { entreprise_id?: string }, apiKey: string, json: (b: unknown, s?: number) => Response) {
+  const auth = req.headers.get('Authorization');
+  if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
+  if (!corps.entreprise_id) return json({ erreur: 'Entreprise manquante.' }, 400);
+  // La personne doit être de l'entreprise : la lecture passe par ses droits.
+  const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
+  const { data: e } = await personne.from('legion_entreprises').select('id, nom, projet, langue, modele, marche').eq('id', corps.entreprise_id).maybeSingle();
+  if (!e) return json({ erreur: "Entreprise inconnue, ou tu n'en es pas membre." }, 403);
+  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+
+  // Trois fois par jour et par entreprise, pas plus.
+  const jour = new Date().toISOString().slice(0, 10);
+  const cle = `noms:${e.id}:${jour}`;
+  const { data: compteur } = await service.from('legion_cache').select('valeur').eq('cle', cle).maybeSingle();
+  const n = Number((compteur?.valeur as { n?: number } | null)?.n || 0);
+  if (n >= 3) return json({ ok: true, faits: 0, pourquoi: 'déjà fait aujourd’hui' });
+  await service.from('legion_cache').upsert({ cle, fonction: 'noms', valeur: { n: n + 1 }, expire_le: new Date(Date.now() + 2 * 86_400_000).toISOString() });
+
+  // Ceux qui n'ont pas encore de caractère : les nouveaux venus. Un agent qui
+  // s'est déjà présenté garde son nom. Directeurs d'abord.
+  const { data: agents } = await service.from('legion_agents')
+    .select('id, nom, poste, departement, est_directeur, personnalite')
+    .eq('entreprise_id', e.id).is('user_id', null).neq('moteur', 'claude-code').is('personnalite', null)
+    .order('est_directeur', { ascending: false }).order('ordre').limit(60);
+  const liste = (agents || []) as AgentNom[];
+  if (!liste.length) return json({ ok: true, faits: 0, restants: 0 });
+
+  pourEntreprise(e.id);
+  const r = await generer(apiKey, inviteNoms({ nom: e.nom, projet: String(e.projet || '').slice(0, 600), langue: e.langue || 'fr', marche: String(e.marche || ''), modele: e.modele || '' }, liste),
+    SCHEMA_NOMS, { temperature: 0.9, maxSortie: 8192, reflexion: 0, delaiMs: 90_000, modeles: moteursSimples() });
+  if ('erreur' in r) return json({ erreur: r.erreur });
+  const rendus = (Array.isArray((r.obj as { agents?: unknown }).agents) ? (r.obj as { agents: unknown[] }).agents : []) as Array<Record<string, unknown>>;
+
+  const pris = new Set<string>();
+  let faits = 0;
+  for (const x of rendus) {
+    const i = Number(x.i) - 1;
+    const a = liste[i];
+    if (!a) continue;
+    const prenom = String(x.prenom || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    const nom = String(x.nom || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    const complet = `${prenom} ${nom}`.trim();
+    const k = sansAccent(complet);
+    if (prenom.length < 2 || nom.length < 2 || pris.has(k)) continue;
+    pris.add(k);
+    const personnalite = String(x.personnalite || '').trim().slice(0, 240);
+    const { error } = await service.from('legion_agents').update({ nom: complet, ...(personnalite ? { personnalite } : {}) }).eq('id', a.id).is('personnalite', null);
+    if (error) continue;
+    faits += 1;
+    // Le mot d'accueil du directeur, écrit par la base avec son ancien nom.
+    if (a.nom && a.nom !== complet) {
+      const { data: mots } = await service.from('legion_messages').select('id, texte').eq('entreprise_id', e.id).eq('auteur_id', a.id)
+        .gte('created_at', new Date(Date.now() - 3_600_000).toISOString()).limit(3);
+      for (const m of mots || []) {
+        if (typeof m.texte === 'string' && m.texte.includes(a.nom)) await service.from('legion_messages').update({ texte: m.texte.split(a.nom).join(complet) }).eq('id', m.id);
+      }
+    }
+  }
+  console.log(`noms pour ${e.id.slice(0, 8)} (${r.modele}) : ${faits}/${liste.length}`);
+  return json({ ok: true, faits, restants: Math.max(0, liste.length - faits), modele: r.modele });
+}
+
 Deno.serve(compter('legion_modele', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
@@ -180,9 +278,10 @@ Deno.serve(compter('legion_modele', async (req: Request) => {
   if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-  let corps: CorpsPostes = {};
+  let corps: CorpsPostes & { entreprise_id?: string } = {};
   try { corps = await req.json(); } catch { corps = {}; }
   if (corps.mode === 'postes') return composerPostes(req, corps, apiKey, json);
+  if (corps.mode === 'noms') return choisirNoms(req, corps, apiKey, json);
   const secteur = String(corps.secteur || '').trim().slice(0, 160);
   if (secteur.length < 3) return json({ erreur: 'Décris le secteur en quelques mots.' }, 400);
 

@@ -184,7 +184,7 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
 
-  let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean; action?: string; envie?: string };
+  let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean; action?: string; envie?: string; directeurs?: boolean };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
   if (!corps.entreprise_id) return json({ erreur: 'Entreprise manquante.' }, 400);
   const limite = Math.min(Math.max(Number(corps.limite) || 1, 1), LIMITE_MAX);
@@ -242,6 +242,12 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
   if (corps.agent_id) q = q.eq('id', corps.agent_id);
   // Une photo par agent, jamais deux: ce qui est payé n'est pas repayé.
   else q = q.neq('moteur', 'claude-code').or('apparence->>famille.is.null,apparence->>famille.neq.photo');
+  // Le jour de la fondation (25/09, Beau : « ils prennent leurs vraies photos
+  // dès la création »), seuls les directeurs se font photographier tout de
+  // suite : une entreprise de 150 ne dépense pas 150 photos avant d'avoir
+  // dit un mot. Les autres, au bouton « De vraies photos », ou quand ils
+  // en ont envie.
+  if (corps.directeurs && !corps.agent_id) q = q.eq('est_directeur', true);
   const { data: agents, error } = await q.order('ordre').limit(limite);
   if (error) return json({ erreur: error.message }, 500);
   if (!agents || agents.length === 0) return json({ faits: 0, restants: 0, message: 'Tout le monde a déjà sa photo.' });
