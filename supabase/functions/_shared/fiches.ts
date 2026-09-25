@@ -106,13 +106,17 @@ export async function classerFiches(service: Service, args: Record<string, unkno
   liste.sort((a, b) => b.vues - a.vues || b.ajouts_panier - a.ajouts_panier);
   // Tout le catalogue en ligne, pas seulement les fiches vues (Boussole,
   // 25/09 : « il me manque combien d'articles en ligne n'ont pas de prix »).
+  // Boutiques de test retirées, comme le compteur de la place de marché
+  // (Boussole, 25/09 : 472 ici, 407 là-bas — l'écart, c'était elles).
+  const { data: shopsTest } = test.size ? await service.from('shops').select('id').in('owner_id', [...test].slice(0, 500)) : { data: [] };
+  const horsTest = (q: ReturnType<Service['from']>) => ((shopsTest || []).length ? q.not('shop_id', 'in', `(${(shopsTest || []).map((x: { id: string }) => x.id).join(',')})`) : q);
   const [{ count: enLigne }, { count: surDemande }] = await Promise.all([
-    service.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    service.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('price_on_request', true),
+    horsTest(service.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true)),
+    horsTest(service.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('price_on_request', true)),
   ]);
   return {
     periode_jours: jours,
-    catalogue: { articles_en_ligne: enLigne ?? null, dont_sans_prix_affiche: surDemande ?? null },
+    catalogue: { articles_en_ligne_hors_boutiques_de_test: enLigne ?? null, dont_sans_prix_affiche: surDemande ?? null },
     regle: `comptes de test exclus ; robots retirés : un navigateur qui ouvre plus de ${SEUIL_ROBOT} fiches le même jour, ou plus de ${SEUIL_RAFALE} navigateurs qui ouvrent chacun une seule fiche le même jour`,
     vues_gardees: gardes.length,
     vues_robots_retirees: robots,
