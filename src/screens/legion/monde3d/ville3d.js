@@ -339,53 +339,95 @@ function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = 
 
 // Bus de ville : long, vitré sur les côtés, girouette lumineuse.
 function bus(peinture, leger = false) {
+  // Bus de ville en vrais volumes (Beau, 25/09 : « tout doit être 4D ») : caisse aux angles
+  // arrondis, pare-brise incliné, fenêtres en creux avec leurs montants, portes, passages de
+  // roues, rétroviseurs, bloc de climatisation sur le toit, girouette.
   const M = matVehicules();
   const g = new THREE.Group();
-  const caisse = new THREE.MeshStandardMaterial({ color: peinture, metalness: 0.3, roughness: 0.35 });
-  poser(g, BOITE(11, 2.5, 2.5), caisse, 0, 1.75, 0);
-  poser(g, BOITE(10.2, 1.0, 2.54), M.vitre, -0.2, 2.25, 0);
-  for (let x = -4.6; x <= 4.4; x += 1.5) poser(g, BOITE(0.12, 1.0, 2.58), caisse, x, 2.25, 0); // montants
-  poser(g, BOITE(10.8, 0.25, 2.4), new THREE.MeshStandardMaterial({ color: '#eceae4', roughness: 0.5 }), 0, 3.1, 0); // toit clair
-  poser(g, BOITE(0.06, 1.3, 2.3), M.vitre, 5.51, 2.0, 0);
-  poser(g, BOITE(11.05, 0.12, 2.56), M.plastique, 0, 0.55, 0);
-  poser(g, BOITE(10.6, 0.1, 2.3), M.plastique, 0, 3.05, 0);
+  const caisse = new THREE.MeshStandardMaterial({ color: peinture, metalness: 0.35, roughness: 0.32, envMapIntensity: 0.9 });
+  const clair = new THREE.MeshStandardMaterial({ color: '#eceae4', roughness: 0.5 });
+  const L = 11, H = 2.6, P = 2.5, r = 0.32, Y = 0.95; // la caisse commence à 95 cm : les roues sont visibles dessous
+  // Profil (vue de face) arrondi, extrudé sur la longueur
+  const prof = new THREE.Shape();
+  prof.moveTo(-P / 2 + r, Y); prof.lineTo(P / 2 - r, Y); prof.quadraticCurveTo(P / 2, Y, P / 2, Y + r);
+  prof.lineTo(P / 2, Y + H - r); prof.quadraticCurveTo(P / 2, Y + H, P / 2 - r, Y + H);
+  prof.lineTo(-P / 2 + r, Y + H); prof.quadraticCurveTo(-P / 2, Y + H, -P / 2, Y + H - r);
+  prof.lineTo(-P / 2, Y + r); prof.quadraticCurveTo(-P / 2, Y, -P / 2 + r, Y); prof.closePath();
+  const corps = new THREE.Mesh(new THREE.ExtrudeGeometry(prof, { depth: L - 0.6, bevelEnabled: true, bevelThickness: 0.3, bevelSize: 0.06, bevelSegments: 3, curveSegments: 6 }), caisse);
+  corps.rotation.y = Math.PI / 2; corps.position.x = -(L - 0.6) / 2; g.add(corps);
+  poser(g, BOITE(L - 0.5, 0.6, 2.2), M.plastique, 0, 0.7, 0); // jupe sombre sous la caisse
+  // Pare-brise incliné et lunette arrière, vitres en creux (légèrement en retrait des montants)
+  const pb = new THREE.Mesh(BOITE(0.08, 1.7, 2.2), M.vitre); pb.position.set(L / 2 + 0.04, 2.45, 0); pb.rotation.z = -0.12; g.add(pb);
+  poser(g, BOITE(0.06, 1.2, 2.1), M.vitre, -L / 2 - 0.04, 2.6, 0);
+  for (const z of [-P / 2 - 0.08, P / 2 + 0.08]) {
+    for (let x = -4.4; x <= 3.4; x += 1.6) { poser(g, BOITE(1.35, 1.05, 0.04), M.vitre, x, 2.6, z); }
+    for (let x = -5.2; x <= 4.2; x += 1.6) poser(g, BOITE(0.14, 1.2, 0.08), caisse, x, 2.6, z); // montants
+    poser(g, BOITE(L - 0.4, 0.07, 0.08), M.plastique, -0.3, 3.2, z); // bandeau haut
+    poser(g, BOITE(L - 0.4, 0.07, 0.08), M.plastique, -0.3, 2.0, z); // bandeau bas
+  }
+  // Portes (côté droit) : deux vantaux vitrés avec leur cadre
+  for (const x of [4.2, -1.4]) { poser(g, BOITE(1.1, 2.0, 0.06), M.vitre, x, 2.05, P / 2 + 0.09); poser(g, BOITE(0.08, 2.0, 0.1), M.plastique, x, 2.05, P / 2 + 0.1); poser(g, BOITE(1.2, 0.08, 0.1), M.plastique, x, 1.1, P / 2 + 0.1); }
+  // Passages de roues et roues à jante
+  const pneu = new THREE.CylinderGeometry(0.52, 0.52, 0.36, 22), jante = new THREE.CylinderGeometry(0.34, 0.34, 0.37, 14);
+  for (const [x, z] of [[-3.6, 1.1], [-3.6, -1.1], [3.5, 1.1], [3.5, -1.1]]) {
+    poser(g, pneu, M.noir, x, 0.52, z).rotation.x = Math.PI / 2;
+    poser(g, jante, M.chrome, x, 0.52, z).rotation.x = Math.PI / 2;
+  }
+  // Toit : bloc de climatisation, bandeau clair ; pare-chocs ; rétroviseurs sur bras
+  poser(g, BOITE(2.4, 0.35, 1.8), clair, -1.5, 3.75, 0);
+  poser(g, BOITE(L - 1, 0.06, 2.0), clair, -0.3, 3.6, 0);
+  poser(g, BOITE(0.25, 0.45, 2.45), M.plastique, L / 2 + 0.05, 1.05, 0);
+  poser(g, BOITE(0.25, 0.45, 2.45), M.plastique, -L / 2 - 0.05, 1.05, 0);
+  for (const z of [-1.5, 1.5]) { poser(g, BOITE(0.06, 0.06, 0.45), M.noir, L / 2 - 0.4, 2.75, z); poser(g, BOITE(0.18, 0.4, 0.12), M.noir, L / 2 - 0.4, 2.55, z + Math.sign(z) * 0.2); }
   const girouette = new THREE.MeshStandardMaterial({ color: '#221a05', emissive: '#ffb020', emissiveIntensity: 0 });
-  poser(g, BOITE(0.05, 0.3, 1.6), girouette, 5.53, 2.8, 0);
-  for (const z of [-0.85, 0.85]) { poser(g, BOITE(0.08, 0.16, 0.4), M.phare, 5.52, 0.9, z); poser(g, BOITE(0.08, 0.3, 0.2), M.feu, -5.52, 1.0, z); }
-  const pneu = new THREE.CylinderGeometry(0.5, 0.5, 0.32, 22);
-  for (const [x, z] of [[-3.6, 1.1], [-3.6, -1.1], [3.5, 1.1], [3.5, -1.1]]) poser(g, pneu, M.noir, x, 0.5, z).rotation.x = Math.PI / 2;
+  poser(g, BOITE(0.05, 0.3, 1.6), girouette, L / 2 + 0.08, 3.3, 0);
+  for (const z of [-0.85, 0.85]) { poser(g, BOITE(0.1, 0.2, 0.45), M.phare, L / 2 + 0.08, 1.4, z); poser(g, BOITE(0.1, 0.35, 0.22), M.feu, -L / 2 - 0.08, 1.5, z); }
   fusionner(g);
   eclairage(g, M, 11, 2.5, 5.5, leger);
   g.userData.lumieres = [M.phare, M.feu, girouette];
   g.userData.demi = 5.6;
   g.userData.roues = [];
-  g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
+  g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = !leger; });
   return g;
 }
 
 function moto(peinture) {
+  // Moto en volumes : pneus à jante, réservoir galbé, selle, carénage, fourche double,
+  // pot d'échappement, garde-boue, et un pilote un peu plus dessiné.
   const g = new THREE.Group();
-  const carrosserie = new THREE.MeshStandardMaterial({ color: peinture, metalness: 0.6, roughness: 0.3 });
+  const carrosserie = new THREE.MeshStandardMaterial({ color: peinture, metalness: 0.5, roughness: 0.3, envMapIntensity: 0.9 });
   const noir = new THREE.MeshStandardMaterial({ color: '#101112', roughness: 0.8 });
   const chrome = new THREE.MeshStandardMaterial({ color: '#cfd3d8', metalness: 1, roughness: 0.2 });
-  const roue = new THREE.TorusGeometry(0.3, 0.09, 10, 24);
-  g.userData.roues = [];
+  const pneu = new THREE.TorusGeometry(0.29, 0.1, 10, 26), jante = new THREE.CylinderGeometry(0.2, 0.2, 0.06, 16), disque = new THREE.CylinderGeometry(0.14, 0.14, 0.08, 16);
   for (const x of [-0.72, 0.72]) {
-    const r = new THREE.Mesh(roue, noir); r.position.set(x, 0.39, 0); g.add(r); g.userData.roues.push(r);
+    const r = new THREE.Mesh(pneu, noir); r.position.set(x, 0.39, 0); g.add(r);
+    const j = new THREE.Mesh(jante, chrome); j.rotation.x = Math.PI / 2; j.position.set(x, 0.39, 0); g.add(j);
+    const d = new THREE.Mesh(disque, noir); d.rotation.x = Math.PI / 2; d.position.set(x, 0.39, 0); g.add(d);
+    // Garde-boue : un bout de tore au-dessus de la roue
+    const gb = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.05, 6, 16, Math.PI * 0.9), x > 0 ? carrosserie : noir); gb.position.set(x, 0.39, 0); gb.rotation.z = Math.PI * 0.05; gb.scale.z = 1.6; g.add(gb);
   }
-  const reservoir = new THREE.Mesh(new THREE.CapsuleGeometry(0.17, 0.5, 6, 12), carrosserie); reservoir.rotation.z = Math.PI / 2 - 0.15; reservoir.position.set(0.12, 0.82, 0); g.add(reservoir);
-  const selle = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.28), noir); selle.position.set(-0.35, 0.86, 0); g.add(selle);
-  const moteur = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.3), chrome); moteur.position.set(0, 0.5, 0); g.add(moteur);
-  const fourche = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.75), chrome); fourche.rotation.z = 0.35; fourche.position.set(0.6, 0.72, 0); g.add(fourche);
+  // Réservoir galbé (révolution), carénage avant, selle, moteur
+  const tank = new THREE.Mesh(new THREE.LatheGeometry([[0.02, -0.32], [0.16, -0.28], [0.21, -0.05], [0.19, 0.2], [0.1, 0.34], [0.02, 0.36]].map(([r2, y]) => new THREE.Vector2(r2, y)), 14), carrosserie);
+  tank.rotation.z = Math.PI / 2 - 0.2; tank.position.set(0.1, 0.84, 0); tank.scale.z = 0.85; g.add(tank);
+  const carenage = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), carrosserie); carenage.rotation.z = -Math.PI / 2 + 0.3; carenage.position.set(0.62, 0.95, 0); carenage.scale.set(1, 1.4, 1.1); g.add(carenage);
+  const selle = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.1, 0.3), noir); selle.position.set(-0.32, 0.86, 0); g.add(selle);
+  const dosseret = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.14, 0.28), carrosserie); dosseret.position.set(-0.62, 0.9, 0); dosseret.rotation.z = 0.35; g.add(dosseret);
+  const moteur = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.32, 0.32), chrome); moteur.position.set(0, 0.5, 0); g.add(moteur);
+  const cylindre = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 12), noir); cylindre.rotation.x = Math.PI / 2; cylindre.position.set(0.12, 0.66, 0); g.add(cylindre);
+  // Pot d'échappement, fourche double, guidon, phare
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.9, 10), chrome); pot.rotation.z = Math.PI / 2 + 0.12; pot.position.set(-0.35, 0.45, 0.18); g.add(pot);
+  for (const z of [-0.07, 0.07]) { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.8), chrome); f.rotation.z = 0.35; f.position.set(0.58, 0.72, z); g.add(f); }
   const guidon = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7), noir); guidon.rotation.x = Math.PI / 2; guidon.position.set(0.5, 1.08, 0); g.add(guidon);
-  const phare = new THREE.MeshStandardMaterial({ color: '#fff', emissive: '#fff4d6', emissiveIntensity: 0 });
-  const p = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), phare); p.position.set(0.72, 0.98, 0); g.add(p);
-  g.userData.lumieres = [phare];
-  // Le pilote : casque et silhouette simples, vus de loin.
+  const phareMat = new THREE.MeshStandardMaterial({ color: '#fff', emissive: '#fff4d6', emissiveIntensity: 0 });
+  const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), phareMat); p2.position.set(0.74, 1.0, 0); g.add(p2);
+  g.userData.lumieres = [phareMat];
+  // Le pilote : casque, torse penché, bras vers le guidon, jambes repliées
   const cuir = new THREE.MeshStandardMaterial({ color: '#1c1d20', roughness: 0.7 });
-  const torse = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.42, 6, 10), cuir); torse.rotation.z = -0.45; torse.position.set(-0.12, 1.28, 0); g.add(torse);
-  const casque = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), carrosserie); casque.position.set(0.05, 1.68, 0); g.add(casque);
-  for (const z of [-0.15, 0.15]) { const jambe = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.5, 4, 8), cuir); jambe.rotation.z = 1.1; jambe.position.set(-0.15, 0.85, z); g.add(jambe); }
+  const torse = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.4, 6, 10), cuir); torse.rotation.z = -0.5; torse.position.set(-0.1, 1.27, 0); g.add(torse);
+  for (const z of [-0.2, 0.2]) { const bras = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.42, 4, 8), cuir); bras.rotation.z = 0.9; bras.position.set(0.22, 1.29, z); g.add(bras); } // de l'épaule au guidon
+  const casque = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), carrosserie); casque.position.set(0.08, 1.66, 0); g.add(casque);
+  const visiere = new THREE.Mesh(new THREE.SphereGeometry(0.165, 12, 8, -0.6, 1.2, 0.9, 1.0), noir); visiere.position.set(0.08, 1.66, 0); g.add(visiere);
+  for (const z of [-0.15, 0.15]) { const jambe = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.48, 4, 8), cuir); jambe.rotation.z = 1.1; jambe.position.set(-0.15, 0.85, z); g.add(jambe); const tibia = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.4, 4, 8), cuir); tibia.rotation.z = 0.15; tibia.position.set(0.02, 0.55, z * 1.2); g.add(tibia); }
   g.userData.roues = [];
   fusionner(g);
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
