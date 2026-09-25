@@ -32,3 +32,6 @@ https://polyhaven.com — CC0 (domaine public). Modèles : modern_arm_chair_01, 
 
 ## facades/ et intro.mp4 / intro.webm — créés pour Léo
 Images de façade (verre, pierre, résidence à balcons) et cinématique d'arrivée générées pour Finjaro/Léo avec ElevenLabs (Seedream, Veo), le 25/09/2026. Aucune photo prise sur le web. Les façades sont découpées pour se répéter sans couture ; les cartes « -nuit » (fenêtres allumées) sont dessinées à partir d'elles.
+
+## terre.webp / terre-m.webp — Natural Earth
+Contours des terres émergées : Natural Earth (naturalearthdata.com), domaine public, via le paquet world-atlas (ISC). Texture dessinée pour Léo (couleurs, relief léger), sans photo.
