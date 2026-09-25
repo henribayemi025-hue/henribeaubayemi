@@ -1,0 +1,674 @@
+// Le moteur du monde 3D de Léo (Beau, 25/09 : « du réalisme, au minimum GTA
+// San Andreas ; de vrais buildings où les gens marchent »). Outils gratuits :
+// three.js (MIT), personnages Microsoft Rocketbox (MIT), décor et matières
+// Poly Haven (CC0) — voir public/monde3d/LICENCES.md.
+//
+// Trois lieux : la réception, la salle de réunion, l'atelier. Le joueur
+// dirige son avatar (Z Q S D / W A S D / flèches, Maj pour courir, E pour
+// interagir, V pour la caméra), la réceptionniste l'accueille, et les agents
+// ne sont là que s'ils y travaillent VRAIMENT (monde.js).
+
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { clone as clonerSquelette } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
+
+const BASE = '/monde3d/';
+const ANIMS = {
+  repos: 'idle_neutral_01', marche: 'walk_neutral_01', course: 'run_neutral', salut: 'wave_01',
+  parle: 'gestic_talk_neutral_01', ecoute: 'gestic_listen_accept_01', assis: 'sit_table_idle_neutral_01',
+  travail: 'work_table', telephone: 'cell_phone_talk_01',
+};
+const VITESSE = { marche: 1.45, course: 3.6 };
+const RAYON = 0.32;
+
+const genreDe = (id) => CORPS.find((c) => c.id === id)?.g || 'm';
+
+export class Monde {
+  constructor(conteneur, { mobile = false, langue = 'fr', surEvenement = () => {} } = {}) {
+    this.conteneur = conteneur;
+    this.mobile = mobile;
+    this.langue = langue;
+    this.emettre = surEvenement;
+    this.cache = new Map();
+    this.chargeur = new GLTFLoader();
+    this.textures = new THREE.TextureLoader();
+    this.horloge = new THREE.Clock();
+    this.touches = new Set();
+    this.joy = { x: 0, y: 0 };
+    this.cam = { mode: 'tps', yaw: Math.PI, pitch: 0.18, dist: 3.4 };
+    this.agents = new Map(); // id → { perso, etiquette, lieu }
+    this.lieu = null;
+    this.proche = null;
+    this.vivant = true;
+    this.ciel = { phase: 'jour', genre: 'clair' };
+
+    const r = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: 'high-performance' });
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
+    r.outputColorSpace = THREE.SRGBColorSpace;
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 1.0;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    conteneur.appendChild(r.domElement);
+    r.domElement.style.touchAction = 'none';
+    this.rendu = r;
+
+    this.etiquettes = new CSS2DRenderer();
+    Object.assign(this.etiquettes.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' });
+    conteneur.appendChild(this.etiquettes.domElement);
+
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.05, 900);
+    const pm = new THREE.PMREMGenerator(r);
+    this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.035).texture;
+    this.scene.environmentIntensity = 0.55;
+
+    // Lumière : le soleil (ombres) + le ciel ; réglés par le vrai ciel.
+    this.hemi = new THREE.HemisphereLight('#dfe8f5', '#4b4038', 0.55);
+    this.scene.add(this.hemi);
+    this.soleil = new THREE.DirectionalLight('#fff1dc', 2.4);
+    this.soleil.castShadow = true;
+    this.soleil.shadow.mapSize.set(mobile ? 1024 : 2048, mobile ? 1024 : 2048);
+    Object.assign(this.soleil.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 80 });
+    this.soleil.shadow.bias = -0.0004;
+    this.soleil.shadow.normalBias = 0.03;
+    this.scene.add(this.soleil, this.soleil.target);
+    this.sky = new Sky();
+    this.sky.scale.setScalar(800);
+    this.scene.add(this.sky);
+
+    if (!mobile) {
+      this.composer = new EffectComposer(r);
+      this.composer.addPass(new RenderPass(this.scene, this.camera));
+      const ao = new GTAOPass(this.scene, this.camera, 1, 1);
+      ao.updateGtaoMaterial({ radius: 0.5, distanceExponent: 1.5, thickness: 1.2, scale: 1 });
+      ao.blendIntensity = 0.85;
+      this.composer.addPass(ao);
+      this.composer.addPass(new OutputPass());
+    }
+
+    this.brancherCommandes();
+    this.redimensionner();
+    this.surRedim = () => this.redimensionner();
+    window.addEventListener('resize', this.surRedim);
+  }
+
+  // ——— Chargements ———
+  charger(chemin) {
+    if (!this.cache.has(chemin)) this.cache.set(chemin, this.chargeur.loadAsync(BASE + chemin));
+    return this.cache.get(chemin);
+  }
+  matiere(nom, repetition = 4, reglages = {}) {
+    const t = (fichier, srgb) => {
+      const x = this.textures.load(`${BASE}matieres/${nom}/${fichier}.webp`);
+      x.wrapS = x.wrapT = THREE.RepeatWrapping;
+      x.repeat.set(repetition, repetition * (reglages.ratio || 1));
+      x.anisotropy = 8;
+      if (srgb) x.colorSpace = THREE.SRGBColorSpace;
+      return x;
+    };
+    const arm = t('arm', false);
+    return new THREE.MeshStandardMaterial({ map: t('diffuse', true), normalMap: t('nor_gl', false), aoMap: arm, roughnessMap: arm, metalnessMap: arm, ...reglages.m });
+  }
+  async objet(nom, { x = 0, y = 0, z = 0, rot = 0, echelle = 1, ombre = true } = {}) {
+    const g = await this.charger(`decor/${nom}.glb`);
+    const o = g.scene.clone(true);
+    o.position.set(x, y, z);
+    o.rotation.y = rot;
+    o.scale.setScalar(echelle);
+    o.traverse((m) => { if (m.isMesh) { m.castShadow = ombre; m.receiveShadow = true; } });
+    return o;
+  }
+  async clip(genre, nom) {
+    const fichier = nom === 'telephone' && genre === 'f' ? 'f_cell_phone_talk_01' : `${genre}_${ANIMS[nom]}`;
+    const g = await this.charger(`anims/${fichier}.glb`);
+    const c = g.animations[0].clone();
+    c.tracks = c.tracks.filter((t) => !t.name.startsWith('MotionExtractionHelper'));
+    return c;
+  }
+
+  // ——— Personnages ———
+  async personnage(corps) {
+    const g = await this.charger(`gens/${corps}.glb`);
+    const objet = clonerSquelette(g.scene);
+    objet.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; } });
+    const genre = genreDe(corps);
+    const mixer = new THREE.AnimationMixer(objet);
+    const p = { objet, mixer, genre, corps, action: null, anim: null };
+    p.jouer = async (nom, { fondu = 0.3, unefois = false } = {}) => {
+      if (p.anim === nom) return;
+      p.anim = nom;
+      const c = await this.clip(genre, nom);
+      if (p.anim !== nom) return;
+      const a = mixer.clipAction(c);
+      a.reset();
+      a.setLoop(unefois ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+      a.clampWhenFinished = unefois;
+      a.play();
+      if (p.action && p.action !== a) p.action.crossFadeTo(a, fondu, false);
+      p.action = a;
+    };
+    await p.jouer('repos', { fondu: 0 });
+    return p;
+  }
+  etiquette(texte, sous, photo) {
+    const d = document.createElement('div');
+    d.className = 'monde-etiquette';
+    d.innerHTML = `${photo ? `<img src="${photo}" alt="">` : ''}<span><b></b><i></i></span>`;
+    d.querySelector('b').textContent = texte;
+    d.querySelector('i').textContent = sous || '';
+    const o = new CSS2DObject(d);
+    o.position.set(0, 2.05, 0);
+    return o;
+  }
+
+  // ——— Le ciel réel (ciel.js) ———
+  reglerCiel({ phase = 'jour', genre = 'clair' } = {}) {
+    this.ciel = { phase, genre };
+    const elev = { aube: 4, jour: 52, couchant: 2.5, nuit: -12 }[phase] ?? 45;
+    const azi = { aube: 95, jour: 160, couchant: 265, nuit: 200 }[phase] ?? 160;
+    const gris = ['couvert', 'pluie', 'orage', 'brouillard', 'neige'].includes(genre);
+    const s = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - elev), THREE.MathUtils.degToRad(azi));
+    const u = this.sky.material.uniforms;
+    u.sunPosition.value.copy(s);
+    u.turbidity.value = gris ? 14 : 4;
+    u.rayleigh.value = phase === 'nuit' ? 0.2 : gris ? 0.6 : 1.6;
+    u.mieCoefficient.value = gris ? 0.02 : 0.005;
+    u.mieDirectionalG.value = 0.85;
+    this.soleil.position.copy(s).multiplyScalar(40).add(new THREE.Vector3(0, 0, 0));
+    const nuit = phase === 'nuit';
+    this.soleil.intensity = nuit ? 0.25 : gris ? 0.9 : phase === 'jour' ? 2.6 : 1.4;
+    this.soleil.color.set(nuit ? '#9fb3d9' : phase === 'jour' ? '#fff3e0' : '#ffb27a');
+    this.hemi.intensity = nuit ? 0.25 : gris ? 0.7 : 0.55;
+    this.rendu.toneMappingExposure = nuit ? 0.85 : 1.0;
+    this.scene.fog = gris ? new THREE.Fog(nuit ? '#1a2030' : '#aeb6c0', 30, genre === 'brouillard' ? 60 : 180) : null;
+    for (const f of this.fenetresVille || []) f.material.emissiveIntensity = nuit ? 1.2 : phase === 'jour' ? 0 : 0.6;
+  }
+
+  // ——— La ville vue par les baies ———
+  ville(groupe, { cote = 'x-', loin = 26 } = {}) {
+    const sol = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: '#6f6a64', roughness: 0.95 }));
+    sol.rotation.x = -Math.PI / 2;
+    sol.position.y = -0.02;
+    sol.receiveShadow = true;
+    groupe.add(sol);
+    const tex = this.texFenetres();
+    this.fenetresVille = [];
+    let n = 0;
+    for (let i = 0; i < 70; i += 1) {
+      n = (n * 9301 + 49297 + i * 17) % 233280;
+      const r = n / 233280;
+      const h = 14 + r * r * 70, l = 12 + (i % 5) * 5;
+      const m = new THREE.MeshStandardMaterial({ color: ['#8fa3b8', '#b7c3cf', '#6f8296', '#a9a39a'][i % 4], roughness: 0.3, metalness: 0.35, emissive: '#ffd59a', emissiveMap: tex, emissiveIntensity: 0 });
+      const b = new THREE.Mesh(new THREE.BoxGeometry(l, h, l), m);
+      const rang = Math.floor(i / 14), pos = (i % 14) - 7;
+      const d = loin + rang * 60 + (r * 25);
+      if (cote === 'x-') b.position.set(-d, h / 2, pos * 34 + r * 12);
+      else b.position.set(pos * 34 + r * 12, h / 2, -d);
+      groupe.add(b);
+      this.fenetresVille.push(b);
+    }
+  }
+  texFenetres() {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 256;
+    const x = c.getContext('2d');
+    x.fillStyle = '#000'; x.fillRect(0, 0, 128, 256);
+    for (let i = 0; i < 16; i += 1) for (let j = 0; j < 32; j += 1) {
+      if (((i * 31 + j * 17) % 7) < 3) { x.fillStyle = '#fff'; x.fillRect(i * 8 + 2, j * 8 + 2, 4, 5); }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(2, 4);
+    return t;
+  }
+  ecran(largeur, hauteur, dessiner) {
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = Math.round(1024 * hauteur / largeur);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(largeur, hauteur), new THREE.MeshBasicMaterial({ map: t, toneMapped: false }));
+    m.userData.redessiner = (donnees) => { dessiner(c.getContext('2d'), c.width, c.height, donnees); t.needsUpdate = true; };
+    m.userData.redessiner({});
+    return m;
+  }
+
+  // ——— Les lieux ———
+  mur(groupe, murs, x, z, l, p, h, matiere, collision = true) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(l, h, p), matiere);
+    m.position.set(x, h / 2, z);
+    m.receiveShadow = true;
+    m.castShadow = true;
+    groupe.add(m);
+    if (collision) murs.push({ x0: x - l / 2, x1: x + l / 2, z0: z - p / 2, z1: z + p / 2 });
+    return m;
+  }
+  vitre(groupe, x, z, l, h, rot = 0) {
+    const v = new THREE.Mesh(new THREE.PlaneGeometry(l, h), new THREE.MeshStandardMaterial({ color: '#dcecf5', roughness: 0.04, metalness: 0.2, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
+    v.position.set(x, h / 2, z);
+    v.rotation.y = rot;
+    groupe.add(v);
+    // Montants
+    const acier = new THREE.MeshStandardMaterial({ color: '#2b2f36', metalness: 0.9, roughness: 0.35 });
+    const n = Math.round(l / 2.4);
+    for (let i = 0; i <= n; i += 1) {
+      const mt = new THREE.Mesh(new THREE.BoxGeometry(0.08, h, 0.12), acier);
+      const d = -l / 2 + (i * l) / n;
+      mt.position.set(x + (rot ? 0 : d), h / 2, z + (rot ? d : 0));
+      groupe.add(mt);
+    }
+  }
+  lampes(groupe, points) {
+    for (const [x, z, y = 4.6] of points) {
+      const l = new THREE.PointLight('#ffe2b8', this.mobile ? 6 : 9, 12, 2);
+      l.position.set(x, y, z);
+      groupe.add(l);
+    }
+  }
+  plafond(groupe, l, p, h, couleur = '#f2efe9') {
+    const c = new THREE.Mesh(new THREE.PlaneGeometry(l, p), new THREE.MeshStandardMaterial({ color: couleur, roughness: 0.9 }));
+    c.rotation.x = Math.PI / 2;
+    c.position.y = h;
+    groupe.add(c);
+  }
+  sol(groupe, l, p, matiere) {
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(l, p), matiere);
+    s.rotation.x = -Math.PI / 2;
+    s.receiveShadow = true;
+    groupe.add(s);
+  }
+  ascenseur(groupe, murs, x, z, rot) {
+    const acier = new THREE.MeshStandardMaterial({ color: '#b9bec6', metalness: 1, roughness: 0.28 });
+    const cadre = new THREE.MeshStandardMaterial({ color: '#2a2d33', metalness: 0.8, roughness: 0.4 });
+    const g = new THREE.Group();
+    const f = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.9, 0.12), cadre); f.position.y = 1.45; g.add(f);
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.88, 2.6, 0.06), acier); p.position.set(s * 0.45, 1.3, 0.07); g.add(p); }
+    const e = this.ecran(0.7, 0.18, (x2, w, h) => { x2.fillStyle = '#05080d'; x2.fillRect(0, 0, w, h); x2.fillStyle = '#e3a857'; x2.font = `bold ${h * 0.62}px system-ui`; x2.textAlign = 'center'; x2.fillText('▲ ▼', w / 2, h * 0.75); });
+    e.position.set(0, 3.1, 0.07); g.add(e);
+    g.position.set(x, 0, z);
+    g.rotation.y = rot;
+    groupe.add(g);
+    return g;
+  }
+  async construireHall(nom) {
+    const g = new THREE.Group();
+    const murs = [];
+    const marbre = this.matiere('terrazzo_tiles', 4);
+    const platre = new THREE.MeshStandardMaterial({ color: '#ece7df', roughness: 0.88 });
+    this.sol(g, 24, 18, marbre);
+    this.plafond(g, 24, 18, 5.6);
+    this.mur(g, murs, 0, -9, 24, 0.3, 5.6, platre);            // fond
+    this.mur(g, murs, 12, 0, 0.3, 18, 5.6, platre);            // droite (ascenseurs)
+    this.vitre(g, -12, 0, 18, 5.6, Math.PI / 2);                 // gauche : baie sur la ville
+    murs.push({ x0: -12.2, x1: -11.9, z0: -9, z1: 9 });
+    this.vitre(g, 0, 9, 24, 5.6);                                // entrée vitrée
+    murs.push({ x0: -12, x1: 12, z0: 9, z1: 9.2 });
+    // Le comptoir d'accueil
+    const bois = this.matiere('herringbone_parquet', 1.5);
+    const pierre = this.matiere('terrazzo_tiles', 1, { m: { color: '#f7f5f2' } });
+    const comptoir = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.08, 0.9), bois); comptoir.position.set(0, 0.54, -5.2); comptoir.castShadow = comptoir.receiveShadow = true; g.add(comptoir);
+    const dessus = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.06, 1.05), pierre); dessus.position.set(0, 1.11, -5.2); dessus.castShadow = true; g.add(dessus);
+    murs.push({ x0: -2.7, x1: 2.7, z0: -5.7, z1: -4.7 });
+    const panneau = new THREE.Mesh(new THREE.BoxGeometry(9, 4.6, 0.08), this.matiere('herringbone_parquet', 2, { m: { color: '#b88a5e' } }));
+    panneau.position.set(0, 2.3, -8.8); panneau.receiveShadow = true; g.add(panneau);
+    // Le nom de l'entreprise, lettres de laiton sur le mur du fond
+    const enseigne = this.ecran(7, 1.1, (x2, w, h) => { x2.clearRect(0, 0, w, h); x2.fillStyle = '#c9a35a'; x2.font = `600 ${h * 0.62}px Georgia, serif`; x2.textAlign = 'center'; x2.textBaseline = 'middle'; x2.fillText(nom || 'Léo', w / 2, h / 2); });
+    enseigne.material.transparent = true;
+    enseigne.position.set(0, 3.3, -8.74);
+    g.add(enseigne);
+    // L'écran des faits du jour (vraies données)
+    const faits = this.ecran(3.2, 1.8, (x2, w, h, d) => {
+      x2.fillStyle = '#0b1120'; x2.fillRect(0, 0, w, h);
+      x2.fillStyle = '#e3a857'; x2.font = `bold ${h * 0.09}px system-ui`; x2.fillText(d.titre || '', w * 0.06, h * 0.17);
+      x2.fillStyle = '#edf1f8'; x2.font = `${h * 0.075}px system-ui`;
+      (d.lignes || []).slice(0, 6).forEach((l, i) => x2.fillText(l, w * 0.06, h * (0.34 + i * 0.12)));
+    });
+    faits.position.set(7.2, 2.3, -8.83);
+    g.add(faits);
+    this.ecranFaits = faits;
+    if (this.faits) faits.userData.redessiner(this.faits);
+    // Salon d'attente
+    g.add(await this.objet('sofa_03', { x: -8.4, z: 1.5, rot: Math.PI / 2 }));
+    g.add(await this.objet('modern_arm_chair_01', { x: -5.6, z: -0.6, rot: -Math.PI / 2 - 0.3 }));
+    g.add(await this.objet('modern_arm_chair_01', { x: -5.6, z: 3.4, rot: -Math.PI / 2 + 0.3 }));
+    g.add(await this.objet('modern_coffee_table_01', { x: -7.1, z: 1.5 }));
+    murs.push({ x0: -9.4, x1: -5, z0: -1.4, z1: 4.3 });
+    for (const [x, z] of [[-10.8, -7.8], [10.8, -7.8], [-10.8, 7.8], [4.2, -7.6], [-4.2, -7.6]]) {
+      g.add(await this.objet('potted_plant_04', { x, z, echelle: 3.2 }));
+      murs.push({ x0: x - 0.4, x1: x + 0.4, z0: z - 0.4, z1: z + 0.4 });
+    }
+    for (const [x, z] of [[-6, -3], [6, -3], [-6, 4], [6, 4], [0, 0]]) g.add(await this.objet('modern_ceiling_lamp_01', { x, y: 5.6 - 0.9, z, ombre: false }));
+    this.lampes(g, [[-6, -3], [6, -3], [-6, 4], [6, 4], [0, -1]]);
+    // Ascenseurs à droite
+    this.ascenseur(g, murs, 11.84, -3, -Math.PI / 2);
+    this.ascenseur(g, murs, 11.84, 1.2, -Math.PI / 2);
+    this.ville(g, { cote: 'x-', loin: 120 });
+    // Dehors, devant l'entrée
+    const parvis = new THREE.Mesh(new THREE.PlaneGeometry(40, 20), this.matiere('concrete_pavers', 10));
+    parvis.rotation.x = -Math.PI / 2; parvis.position.set(0, 0.001, 19); parvis.receiveShadow = true; g.add(parvis);
+    const poi = [
+      { type: 'receptionniste', x: 0, z: -4.2, rayon: 2.4 },
+      { type: 'ascenseur', x: 11, z: -3, rayon: 1.8 },
+      { type: 'ascenseur', x: 11, z: 1.2, rayon: 1.8 },
+      { type: 'ecran', x: 7.2, z: -8, rayon: 2.2 },
+    ];
+    return { groupe: g, murs, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -11.6, x1: 11.6, z0: -8.6, z1: 8.7 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
+  }
+  async construireReunion() {
+    const g = new THREE.Group();
+    const murs = [];
+    const parquet = this.matiere('herringbone_parquet', 5);
+    const platre = new THREE.MeshStandardMaterial({ color: '#ebe6de', roughness: 0.88 });
+    this.sol(g, 14, 11, parquet);
+    this.plafond(g, 14, 11, 3.4);
+    this.mur(g, murs, 0, 5.5, 14, 0.3, 3.4, platre);
+    this.mur(g, murs, 7, 0, 0.3, 11, 3.4, platre);
+    this.mur(g, murs, 0, -5.5, 14, 0.3, 3.4, platre, true).visible = false;
+    this.vitre(g, 0, -5.4, 14, 3.4);
+    this.vitre(g, -7, 0, 11, 3.4, Math.PI / 2);
+    murs.push({ x0: -7.2, x1: -6.9, z0: -5.5, z1: 5.5 });
+    const bois = this.matiere('herringbone_parquet', 1.2, { m: { color: '#8a6a4a' } });
+    const table = new THREE.Mesh(new THREE.BoxGeometry(6, 0.07, 1.8), bois); table.position.set(0, 0.76, 0); table.castShadow = table.receiveShadow = true; g.add(table);
+    for (const s of [-2.6, 2.6]) { const pied = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.74, 1.2), new THREE.MeshStandardMaterial({ color: '#22252b', metalness: 0.8, roughness: 0.4 })); pied.position.set(s, 0.37, 0); g.add(pied); }
+    murs.push({ x0: -3.4, x1: 3.4, z0: -1.4, z1: 1.4 });
+    this.places = [];
+    const chaise = [];
+    for (let i = 0; i < 4; i += 1) for (const cote of [-1, 1]) chaise.push([-2.25 + i * 1.5, cote * 1.25, cote > 0 ? Math.PI : 0]);
+    for (const [x, z, rot] of chaise) {
+      g.add(await this.objet('dining_chair_02', { x, z, rot }));
+      this.places.push({ x, z: z + (z > 0 ? 0.08 : -0.08), rot: z > 0 ? Math.PI : 0 });
+    }
+    const ecran = this.ecran(3.4, 1.9, (x2, w, h, d) => {
+      x2.fillStyle = '#0b1120'; x2.fillRect(0, 0, w, h);
+      x2.fillStyle = '#5fc8c0'; x2.font = `bold ${h * 0.08}px system-ui`; x2.fillText(d.etat || '', w * 0.06, h * 0.16);
+      x2.fillStyle = '#edf1f8'; x2.font = `600 ${h * 0.1}px system-ui`;
+      const mots = String(d.sujet || '').split(' '); let ligne = ''; let y = h * 0.36;
+      for (const m of mots) { if ((ligne + m).length > 30) { x2.fillText(ligne, w * 0.06, y); ligne = ''; y += h * 0.13; } ligne += `${m} `; }
+      x2.fillText(ligne, w * 0.06, y);
+    });
+    ecran.position.set(6.83, 1.8, 0); ecran.rotation.y = -Math.PI / 2; g.add(ecran);
+    this.ecranReunion = ecran;
+    g.add(await this.objet('wall_clock', { x: 0, y: 2.6, z: 5.33, rot: Math.PI, ombre: false }));
+    g.add(await this.objet('potted_plant_04', { x: 6.2, z: 4.7, echelle: 1.4 }));
+    this.lampes(g, [[-2.5, 0, 3.1], [2.5, 0, 3.1]]);
+    this.ascenseur(g, murs, -3.5, 5.33, Math.PI);
+    this.ville(g, { cote: 'z-', loin: 120 });
+    return { groupe: g, murs, depart: { x: -3.5, z: 3.2, yaw: 0 }, poi: [{ type: 'ascenseur', x: -3.5, z: 4.4, rayon: 1.6 }, { type: 'table', x: 0, z: 0, rayon: 3.6 }], limites: { x0: -6.7, x1: 6.7, z0: -5.2, z1: 5.2 }, sortieAscenseur: { x: -3.5, z: 4.2, yaw: 0 } };
+  }
+  async construireAtelier() {
+    const g = new THREE.Group();
+    const murs = [];
+    const sol = this.matiere('terrazzo_tiles', 6);
+    const platre = new THREE.MeshStandardMaterial({ color: '#e8e4dd', roughness: 0.88 });
+    this.sol(g, 22, 14, sol);
+    this.plafond(g, 22, 14, 3.6, '#e6e3de');
+    this.mur(g, murs, 0, 7, 22, 0.3, 3.6, platre);
+    this.mur(g, murs, 11, 0, 0.3, 14, 3.6, platre);
+    this.vitre(g, 0, -7, 22, 3.6); murs.push({ x0: -11, x1: 11, z0: -7.2, z1: -6.9 });
+    this.vitre(g, -11, 0, 14, 3.6, Math.PI / 2); murs.push({ x0: -11.2, x1: -10.9, z0: -7, z1: 7 });
+    this.postes = [];
+    const noir = new THREE.MeshStandardMaterial({ color: '#15171b', metalness: 0.4, roughness: 0.35 });
+    for (let rang = 0; rang < 2; rang += 1) for (let i = 0; i < 4; i += 1) {
+      const x = -6 + i * 4, z = -2.6 + rang * 4.4;
+      g.add(await this.objet('metal_office_desk', { x, z, rot: Math.PI }));
+      const moniteur = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.38, 0.04), noir); moniteur.position.set(x, 1.12, z - 0.18); g.add(moniteur);
+      const pied = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), noir); pied.position.set(x, 0.9, z - 0.2); g.add(pied);
+      const ecran = this.ecran(0.58, 0.34, (x2, w, h, d) => {
+        x2.fillStyle = d.actif ? '#0d1117' : '#07090c'; x2.fillRect(0, 0, w, h);
+        if (!d.actif) return;
+        x2.fillStyle = '#e3a857'; x2.font = `bold ${h * 0.1}px ui-monospace, monospace`; x2.fillText(d.nom || '', w * 0.05, h * 0.14);
+        x2.font = `${h * 0.075}px ui-monospace, monospace`;
+        const couleurs = ['#7ee787', '#79c0ff', '#d2a8ff', '#edf1f8'];
+        const txt = String(d.texte || '').replace(/\s+/g, ' ');
+        for (let l = 0; l < 8; l += 1) { x2.fillStyle = couleurs[l % 4]; x2.fillText(txt.slice(l * 34, l * 34 + 34), w * 0.05, h * (0.28 + l * 0.09)); }
+      });
+      ecran.position.set(x, 1.12, z - 0.155); g.add(ecran);
+      g.add(await this.objet('dining_chair_02', { x, z: z + 0.62, rot: Math.PI }));
+      this.postes.push({ x, z: z + 0.7, rot: Math.PI, ecran });
+      murs.push({ x0: x - 0.8, x1: x + 0.8, z0: z - 0.45, z1: z + 0.35 });
+    }
+    for (const [x, z] of [[-10.2, 6.2], [10.2, 6.2], [10.2, -6.2]]) g.add(await this.objet('potted_plant_04', { x, z, echelle: 1.5 }));
+    this.lampes(g, [[-6, -1, 3.3], [0, -1, 3.3], [6, -1, 3.3], [-3, 3, 3.3], [3, 3, 3.3]]);
+    this.ascenseur(g, murs, 8, 6.83, Math.PI);
+    this.ville(g, { cote: 'z-', loin: 120 });
+    return { groupe: g, murs, depart: { x: 6.5, z: 4.6, yaw: 0.5 }, poi: [{ type: 'ascenseur', x: 8, z: 5.9, rayon: 1.6 }], limites: { x0: -10.7, x1: 10.7, z0: -6.7, z1: 6.7 }, sortieAscenseur: { x: 8, z: 5.6, yaw: 0 } };
+  }
+
+  // ——— Aller quelque part ———
+  async allerA(lieu, { nomEntreprise, avatar } = {}) {
+    this.emettre({ type: 'chargement', lieu });
+    if (!this.joueur) {
+      this.joueur = await this.personnage(avatar || 'Male_Adult_07');
+      this.scene.add(this.joueur.objet);
+    }
+    if (!this.receptionniste) {
+      this.receptionniste = await this.personnage(RECEPTIONNISTE);
+      this.receptionniste.objet.add(this.etiquette(this.langue === 'en' ? 'Receptionist' : 'Réceptionniste', nomEntreprise || ''));
+    }
+    if (this.lieu) this.scene.remove(this.lieu.groupe);
+    const l = lieu === 'reunion' ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise);
+    l.nom = lieu;
+    this.lieu = l;
+    this.scene.add(l.groupe);
+    const d = this.dejaVenu ? l.sortieAscenseur : l.depart;
+    this.dejaVenu = true;
+    this.joueur.objet.position.set(d.x, 0, d.z);
+    this.joueur.objet.rotation.y = d.yaw + Math.PI;
+    this.cam.yaw = d.yaw;
+    this.camSnap = true;
+    if (lieu === 'hall') {
+      this.receptionniste.objet.position.set(0, 0, -6.1);
+      this.receptionniste.objet.rotation.y = 0;
+      l.groupe.add(this.receptionniste.objet);
+    }
+    this.placerAgents();
+    this.emettre({ type: 'lieu', lieu });
+  }
+
+  // ——— Les vrais agents ———
+  majDonnees({ agents = [], ou, faits } = {}) {
+    this.donnees = { agents, ou };
+    if (faits) { this.faits = faits; this.ecranFaits?.userData.redessiner(faits); }
+    this.placerAgents();
+  }
+  async placerAgents() {
+    if (!this.lieu || !this.donnees) return;
+    const { agents, ou } = this.donnees;
+    const parId = new Map(agents.map((a) => [a.id, a]));
+    const voulus = new Map(); // id → { lieu, place, anim, sous }
+    const r = ou?.reunion;
+    if (this.lieu.nom === 'reunion') {
+      (r?.participants || []).slice(0, this.places?.length || 0).forEach((id, i) => voulus.set(id, { place: this.places[i], anim: 'assis', sous: id === r.parle ? (this.langue === 'en' ? 'speaking' : 'parle') : (this.langue === 'en' ? 'in the meeting' : 'en réunion') }));
+      this.ecranReunion?.userData.redessiner(r ? { etat: this.langue === 'en' ? '● Meeting in progress' : '● Réunion en cours', sujet: r.sujet } : { etat: this.langue === 'en' ? 'Room free' : 'Salle libre', sujet: this.langue === 'en' ? 'No meeting right now.' : 'Aucune réunion en ce moment.' });
+    }
+    if (this.lieu.nom === 'atelier') {
+      (ou?.auBureau || []).slice(0, this.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.postes[i], anim: 'assis', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
+      (this.postes || []).forEach((p, i) => {
+        const b = ou?.auBureau?.[i];
+        p.ecran.userData.redessiner(b ? { actif: true, nom: parId.get(b.id)?.nom, texte: b.tache || b.texte } : { actif: false });
+      });
+    }
+    for (const [id, x] of this.agents) {
+      if (!voulus.has(id)) { x.perso.objet.parent?.remove(x.perso.objet); this.agents.delete(id); }
+    }
+    for (const [id, v] of voulus) {
+      const a = parId.get(id);
+      if (!a) continue;
+      let x = this.agents.get(id);
+      if (!x) {
+        const perso = await this.personnage(corpsDe(a).id);
+        const etiquette = this.etiquette(a.nom, v.sous, a.apparence?.mini || a.avatar_url);
+        perso.objet.add(etiquette);
+        x = { perso, etiquette, agent: a };
+        this.agents.set(id, x);
+      }
+      x.etiquette.element.querySelector('i').textContent = v.sous || '';
+      x.perso.objet.position.set(v.place.x, 0, v.place.z);
+      x.perso.objet.rotation.y = v.place.rot;
+      x.perso.jouer(v.anim);
+      if (x.perso.objet.parent !== this.lieu.groupe) this.lieu.groupe.add(x.perso.objet);
+    }
+  }
+
+  // ——— Commandes ———
+  brancherCommandes() {
+    const el = this.rendu.domElement;
+    this.surTouche = (e) => {
+      if (e.target?.closest?.('input, textarea, [contenteditable]')) return;
+      const code = e.code;
+      if (e.type === 'keydown') {
+        this.touches.add(code);
+        if (code === 'KeyE') this.interagir();
+        if (code === 'KeyV') this.cycleCamera();
+      } else this.touches.delete(code);
+    };
+    window.addEventListener('keydown', this.surTouche);
+    window.addEventListener('keyup', this.surTouche);
+    let tire = null;
+    el.addEventListener('pointerdown', (e) => { tire = { x: e.clientX, y: e.clientY, id: e.pointerId }; el.setPointerCapture(e.pointerId); });
+    el.addEventListener('pointermove', (e) => {
+      if (!tire || tire.id !== e.pointerId) return;
+      this.cam.yaw -= (e.clientX - tire.x) * 0.006;
+      this.cam.pitch = THREE.MathUtils.clamp(this.cam.pitch + (e.clientY - tire.y) * 0.004, -0.35, 1.1);
+      tire.x = e.clientX; tire.y = e.clientY;
+    });
+    el.addEventListener('pointerup', () => { tire = null; });
+    el.addEventListener('wheel', (e) => { this.cam.dist = THREE.MathUtils.clamp(this.cam.dist + e.deltaY * 0.003, 1.8, 7); }, { passive: true });
+  }
+  cycleCamera() {
+    this.cam.mode = { tps: 'fps', fps: 'plan', plan: 'tps' }[this.cam.mode];
+    this.emettre({ type: 'camera', mode: this.cam.mode });
+  }
+  reglerCamera(mode) { this.cam.mode = mode; this.emettre({ type: 'camera', mode }); }
+  interagir() {
+    if (!this.proche) return;
+    if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
+    this.emettre({ type: 'interagir', cible: this.proche });
+  }
+
+  // ——— La boucle ———
+  demarrer() {
+    const pas = () => {
+      if (!this.vivant) return;
+      this.raf = requestAnimationFrame(pas);
+      const dt = Math.min(this.horloge.getDelta(), 0.05);
+      this.avancer(dt);
+      if (this.composer) this.composer.render(); else this.rendu.render(this.scene, this.camera);
+      this.etiquettes.render(this.scene, this.camera);
+    };
+    pas();
+  }
+  avancer(dt) {
+    const j = this.joueur;
+    if (!j || !this.lieu) return;
+    const t = this.touches;
+    let ax = (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x;
+    let az = (t.has('KeyS') || t.has('ArrowDown') ? 1 : 0) - (t.has('KeyW') || t.has('ArrowUp') ? 1 : 0) + this.joy.y;
+    const n = Math.hypot(ax, az);
+    const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 1.4;
+    if (n > 0.08) {
+      ax /= Math.max(n, 1); az /= Math.max(n, 1);
+      const yaw = this.cam.mode === 'plan' ? Math.PI : this.cam.yaw;
+      const dx = ax * Math.cos(yaw) + az * Math.sin(yaw);
+      const dz = -ax * Math.sin(yaw) + az * Math.cos(yaw);
+      const v = (court ? VITESSE.course : VITESSE.marche) * Math.min(1, n) * dt;
+      const p = j.objet.position;
+      p.x += dx * v; p.z += dz * v;
+      this.collisions(p);
+      const cible = Math.atan2(dx, dz);
+      let d = cible - j.objet.rotation.y;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      j.objet.rotation.y += d * Math.min(1, dt * 10);
+      j.jouer(court ? 'course' : 'marche', { fondu: 0.2 });
+    } else j.jouer('repos', { fondu: 0.25 });
+    j.mixer.update(dt);
+    this.receptionniste?.mixer.update(dt);
+    for (const x of this.agents.values()) x.perso.mixer.update(dt);
+
+    // La réceptionniste se tourne vers le visiteur et le salue une fois.
+    if (this.lieu.nom === 'hall' && this.receptionniste) {
+      const r = this.receptionniste.objet;
+      const dx = j.objet.position.x - r.position.x, dz = j.objet.position.z - r.position.z;
+      const dist = Math.hypot(dx, dz);
+      const vise = dist < 7 ? Math.atan2(dx, dz) : 0;
+      let d = vise - r.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+      r.rotation.y += d * Math.min(1, dt * 3);
+      if (dist < 4.5 && !this.aSalue) {
+        this.aSalue = true;
+        this.receptionniste.jouer('salut', { unefois: true });
+        setTimeout(() => this.receptionniste?.jouer('repos'), 2600);
+      }
+      if (dist > 9) this.aSalue = false;
+    }
+
+    // Ce qui est à portée (réceptionniste, ascenseur, agents).
+    const p = j.objet.position;
+    let proche = null;
+    for (const x of this.lieu.poi) if (Math.hypot(p.x - x.x, p.z - x.z) < x.rayon) proche = x;
+    for (const [id, x] of this.agents) {
+      const q = x.perso.objet.position;
+      if (Math.hypot(p.x - q.x, p.z - q.z) < 1.6) proche = { type: 'agent', id, nom: x.agent.nom };
+    }
+    const cle = proche ? `${proche.type}:${proche.id || proche.x}` : null;
+    if (cle !== this.cleProche) { this.cleProche = cle; this.proche = proche; this.emettre({ type: 'proximite', cible: proche }); }
+
+    // Caméra
+    const tete = new THREE.Vector3(p.x, 1.55, p.z);
+    j.objet.visible = this.cam.mode !== 'fps';
+    if (this.cam.mode === 'fps') {
+      this.camera.position.set(p.x, 1.62, p.z);
+      this.camera.lookAt(p.x - Math.sin(this.cam.yaw) * 5, 1.62 - this.cam.pitch * 3, p.z - Math.cos(this.cam.yaw) * 5);
+    } else if (this.cam.mode === 'plan') {
+      this.camera.position.lerp(new THREE.Vector3(p.x, 16, p.z + 7), Math.min(1, dt * 4));
+      this.camera.lookAt(p.x, 0, p.z);
+    } else {
+      const d = this.cam.dist;
+      const voulu = new THREE.Vector3(p.x + Math.sin(this.cam.yaw) * d * Math.cos(this.cam.pitch), 1.4 + Math.sin(this.cam.pitch) * d + 0.3, p.z + Math.cos(this.cam.yaw) * d * Math.cos(this.cam.pitch));
+      const L = this.lieu.limites;
+      voulu.x = THREE.MathUtils.clamp(voulu.x, L.x0 + 0.25, L.x1 - 0.25);
+      voulu.z = THREE.MathUtils.clamp(voulu.z, L.z0 + 0.25, L.z1 - 0.25);
+      voulu.y = Math.min(voulu.y, this.lieu.nom === 'hall' ? 5.2 : 3.2);
+      if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 8));
+      this.camera.lookAt(tete);
+    }
+    this.soleil.target.position.set(p.x, 0, p.z);
+  }
+  collisions(p) {
+    const L = this.lieu.limites;
+    p.x = THREE.MathUtils.clamp(p.x, L.x0 + RAYON, L.x1 - RAYON);
+    p.z = THREE.MathUtils.clamp(p.z, L.z0 + RAYON, L.z1 - RAYON);
+    for (const b of this.lieu.murs) {
+      if (p.x > b.x0 - RAYON && p.x < b.x1 + RAYON && p.z > b.z0 - RAYON && p.z < b.z1 + RAYON) {
+        const g = p.x - (b.x0 - RAYON), d = (b.x1 + RAYON) - p.x, h = p.z - (b.z0 - RAYON), bas = (b.z1 + RAYON) - p.z;
+        const m = Math.min(g, d, h, bas);
+        if (m === g) p.x = b.x0 - RAYON; else if (m === d) p.x = b.x1 + RAYON; else if (m === h) p.z = b.z0 - RAYON; else p.z = b.z1 + RAYON;
+      }
+    }
+  }
+  redimensionner() {
+    const w = this.conteneur.clientWidth || 800, h = this.conteneur.clientHeight || 600;
+    this.rendu.setSize(w, h);
+    this.etiquettes.setSize(w, h);
+    this.composer?.setSize(w, h);
+    this.camera.aspect = w / h;
+    this.camera.fov = w < h ? 70 : 55;
+    this.camera.updateProjectionMatrix();
+  }
+  detruire() {
+    this.vivant = false;
+    cancelAnimationFrame(this.raf);
+    window.removeEventListener('keydown', this.surTouche);
+    window.removeEventListener('keyup', this.surTouche);
+    window.removeEventListener('resize', this.surRedim);
+    this.rendu.dispose();
+    this.conteneur.innerHTML = '';
+  }
+}
