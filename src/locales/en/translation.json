@@ -1332,7 +1332,10 @@
         "escalier": "Take the stairs",
         "chantier": "See the project",
         "voiture": "Get in the car",
-        "helico": "Take the helicopter"
+        "helico": "Take the helicopter",
+        "boutique": "See the shop",
+        "client": "See the customer",
+        "chezmoi": "Go home"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1363,6 +1366,7 @@
       "planete": "Planet view",
       "vousEtesIci": "You are here",
       "planeteAide": "Earth right now: the lit side is where it's daytime. Drag to turn it.",
+      "ville": {"boutiqueResume": "{{nom}}: {{articles}} item(s) online, {{commandes}} order(s), {{livrees}} delivered. The building grows with every delivered order.", "clientResume": "{{nom}}: {{commandes}} order(s), {{livrees}} delivered. Their house gains a floor with every order.", "client": "This customer", "bienvenue": "Welcome home, {{nom}}!", "bienvenueSans": "Welcome home!", "voirBoutique": "See the shop", "chezMoi": "Home", "ouHabiter": "Where do you live?", "ouHabiterAide": "Your home in your company's world. You can change it later (☰ menu).", "maison": "A house", "maisonAide": "By the sea, near your agents' houses", "cite": "A city apartment", "citeAide": "In your city, two streets from your building", "plusTard": "Later"},
       "conseil1": "Get in the red car parked in front of the building, then start a race 🏁.",
       "conseil2": "The helicopter waits on the helipad, to the right of the building.",
       "conseil3": "Talk to the receptionist: she knows where every agent is.",

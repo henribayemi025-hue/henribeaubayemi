@@ -1332,7 +1332,10 @@
         "escalier": "Monter par l'escalier",
         "chantier": "Voir le projet",
         "voiture": "Monter dans la voiture",
-        "helico": "Prendre l'hélicoptère"
+        "helico": "Prendre l'hélicoptère",
+        "boutique": "Voir la boutique",
+        "client": "Voir le client",
+        "chezmoi": "Entrer chez moi"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1363,6 +1366,7 @@
       "planete": "Vue de la planète",
       "vousEtesIci": "Vous êtes ici",
       "planeteAide": "La Terre en ce moment : le côté éclairé est celui où il fait jour. Glissez pour la faire tourner.",
+      "ville": {"boutiqueResume": "{{nom}} : {{articles}} article(s) en ligne, {{commandes}} commande(s), dont {{livrees}} livrée(s). L'immeuble grandit à chaque commande livrée.", "clientResume": "{{nom}} : {{commandes}} commande(s), dont {{livrees}} livrée(s). Sa maison prend un étage à chaque commande.", "client": "Ce client", "bienvenue": "Bienvenue chez vous, {{nom}} !", "bienvenueSans": "Bienvenue chez vous !", "voirBoutique": "Voir la boutique", "chezMoi": "Chez moi", "ouHabiter": "Où habitez-vous ?", "ouHabiterAide": "Votre chez-vous dans le monde de votre entreprise. Vous pourrez changer plus tard (menu ☰).", "maison": "Une maison", "maisonAide": "Au bord de la mer, près des maisons de vos agents", "cite": "Un appartement en cité", "citeAide": "Dans votre ville, à deux rues de votre immeuble", "plusTard": "Plus tard"},
       "conseil1": "Montez dans la voiture rouge garée devant l'immeuble, puis lancez une course 🏁.",
       "conseil2": "L'hélicoptère attend sur l'héliport, à droite de l'immeuble.",
       "conseil3": "Parlez à la réceptionniste : elle sait où est chaque agent.",

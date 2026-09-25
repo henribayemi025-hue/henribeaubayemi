@@ -23,6 +23,7 @@ import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
+import { construireQuartiers } from './quartiers3d';
 import { construireMaisons } from './maisons3d';
 import { construireSalleMarche } from './salle-marche3d';
 import { construirePlanete } from './planete3d';
@@ -746,6 +747,7 @@ export class Monde {
       this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
       this.portes = construirePortes();
       this.villeVivante.racine.add(this.portes.groupe);
+      if (this.donneesQuartiers || this.habitat) this.majQuartiers(this.donneesQuartiers, this.habitat);
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
       if (this.affichesBoutiques) this.villeVivante.afficher(this.affichesBoutiques);
       if (this.listeChantiers) this.poiChantiers = this.villeVivante.chantiers(this.listeChantiers);
@@ -762,11 +764,11 @@ export class Monde {
       // Les étiquettes (noms au-dessus des têtes) ne suivent pas d'un étage à l'autre.
       this.lieu.groupe.traverse((o) => { if (o.isCSS2DObject && o.element.parentNode) o.element.parentNode.removeChild(o.element); });
     }
-    const l = this.lieux[lieu] || (lieu === 'maisons' ? construireMaisons(this, this.donnees?.agents || []) : etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? (this.salleMarche ? await construireSalleMarche(this) : await this.construireAtelier()) : await this.construireHall(nomEntreprise));
+    const l = this.lieux[lieu] || (lieu === 'maisons' ? construireMaisons(this, this.donnees?.agents || [], { moi: this.habitat?.genre === 'maison' ? this.habitat : null }) : etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? (this.salleMarche ? await construireSalleMarche(this) : await this.construireAtelier()) : await this.construireHall(nomEntreprise));
     this.lieux[lieu] = l;
     if (lieu === 'maisons') l.lampes.emissiveIntensity = (this.niveauNuit || 0) * 1.4;
     if (l.tableau) this.tableauAtelier = l.tableau;
-    if (lieu === 'hall' && !l.poiBase) { l.poiBase = l.poi; l.poi = [...l.poi, ...(this.poiChantiers || [])]; }
+    if (lieu === 'hall' && !l.poiBase) { l.poiBase = l.poi; l.poi = [...l.poi, ...(this.poiChantiers || []), ...(this.quartiers?.pois || [])]; }
     if (l.majMarche && this.donneesMarche) l.majMarche(this.donneesMarche);
     l.nom = lieu;
     this.lieu = l;
@@ -839,7 +841,26 @@ export class Monde {
     const pois = this.villeVivante?.chantiers(liste) || [];
     this.poiChantiers = pois;
     const hall = this.lieux?.hall;
-    if (hall) hall.poi = [...(hall.poiBase || hall.poi.filter((x) => x.type !== 'chantier')), ...pois];
+    if (hall) hall.poi = [...(hall.poiBase || hall.poi.filter((x) => !['chantier', 'boutique', 'client', 'chezmoi'].includes(x.type))), ...pois, ...(this.quartiers?.pois || [])];
+  }
+  // La ville de chacun : ses boutiques, ses clients, son chez-soi (quartiers3d.js).
+  majQuartiers(donnees, habitat) {
+    if (this.habitat?.genre !== habitat?.genre && this.lieux?.maisons && this.lieu?.nom !== 'maisons') delete this.lieux.maisons; // la villa change : on reconstruira
+    this.donneesQuartiers = donnees; this.habitat = habitat;
+    if (!this.villeVivante) return;
+    this.quartiers?.jeter();
+    this.quartiers = construireQuartiers(this, this.villeVivante.ilotsReserves, donnees || {}, { habitat, langue: this.langue });
+    this.villeVivante.racine.add(this.quartiers.groupe);
+    this.toursHelico = null; // recalculées avec les nouveaux bâtiments
+    const hall = this.lieux?.hall;
+    if (hall) hall.poi = [...(hall.poiBase || hall.poi.filter((x) => !['chantier', 'boutique', 'client', 'chezmoi'].includes(x.type))), ...(this.poiChantiers || []), ...this.quartiers.pois];
+  }
+  // Rentrer chez soi : devant sa porte en cité, ou à sa villa (lieu « maisons »).
+  async rentrer() {
+    if (this.habitat?.genre === 'maison') { await this.allerA('maisons'); const v = this.lieu?.villas?.find((x) => x.id === 'moi'); if (v) this.placerJoueur(v.porte.x, v.porte.z + 1.5, Math.PI); return; }
+    if (this.lieu?.nom !== 'hall') await this.allerA('hall');
+    const p = this.quartiers?.pois.find((x) => x.type === 'chezmoi');
+    if (p) this.placerJoueur(p.x, p.z - 1.5, Math.PI);
   }
   // Se poser dans la rue (onglet « La ville » : on arrive dehors, face aux chantiers).
   placerJoueur(x, z, yaw) {
@@ -1139,7 +1160,7 @@ export class Monde {
     const lacet = Math.max(-1, Math.min(1, (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x));
     const monte = (t.has('Space') || pd.gaz ? 1 : 0) - (t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyC') || pd.frein ? 1 : 0);
     // Les immeubles de la ville, et le nôtre (24,8 × 18,8 m, toit à 76 m).
-    if (!this.toursHelico) this.toursHelico = [...V.tours, { x0: -12.4, x1: 12.4, z0: -9.4, z1: 9.4, h: 82 }];
+    if (!this.toursHelico) this.toursHelico = [...V.tours, ...(this.quartiers?.murs || []), { x0: -12.4, x1: 12.4, z0: -9.4, z1: 9.4, h: 82 }];
     let e = h.etat, choc = 0, reste = Math.min(dt, 0.25);
     while (reste > 1e-4) {
       const pas = Math.min(reste, 1 / 60); reste -= pas;
@@ -1346,7 +1367,7 @@ export class Monde {
     const L = this.lieu.limites;
     p.x = THREE.MathUtils.clamp(p.x, L.x0 + RAYON, L.x1 - RAYON);
     p.z = THREE.MathUtils.clamp(p.z, L.z0 + RAYON, L.z1 - RAYON);
-    const murs = this.lieu.nom === 'hall' && this.villeVivante ? [...this.lieu.murs, ...this.villeVivante.tours] : this.lieu.murs;
+    const murs = this.lieu.nom === 'hall' && this.villeVivante ? [...this.lieu.murs, ...this.villeVivante.tours, ...(this.quartiers?.murs || [])] : this.lieu.murs;
     for (const b of murs) {
       if (p.x > b.x0 - RAYON && p.x < b.x1 + RAYON && p.z > b.z0 - RAYON && p.z < b.z1 + RAYON) {
         const g = p.x - (b.x0 - RAYON), d = (b.x1 + RAYON) - p.x, h = p.z - (b.z0 - RAYON), bas = (b.z1 + RAYON) - p.z;

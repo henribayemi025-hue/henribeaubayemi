@@ -8,6 +8,7 @@ import { estSalleDeMarche, pairesDuJour, activite14j } from './salle-marche3d';
 import { tours as calculerTours, aLaDate, bornesFrise } from '../parties/ville';
 import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
 import { chargerAffiches } from './affiches';
+import { batirVille } from './maVille';
 
 // LE MONDE 3D DE LÉO (Beau, 25/09) — l'écran : le moteur three.js (chargé à
 // la demande), et par-dessus : où je suis, l'ascenseur, les caméras, la carte
@@ -68,6 +69,50 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     supabase.from('legion_projets').select('*').eq('entreprise_id', entreprise.id).order('debut').then(({ data }) => { if (vivant) setProjets(data || []); });
     return () => { vivant = false; };
   }, [entreprise.id]);
+  // La ville de chacun (maVille.js) : les vraies boutiques Finjaro de la personne qui a fondé
+  // l'entreprise, leurs articles et leurs clients (comptes de test exclus). Rien → terrains à bâtir.
+  const [maVille, setMaVille] = useState(null);
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      if (!entreprise.owner_id) { setMaVille(batirVille({})); return; }
+      const { data: boutiques } = await supabase.from('shops').select('id, name, slug, avatar_url, banner_url').eq('owner_id', entreprise.owner_id);
+      if (!boutiques?.length) { if (vivant) setMaVille(batirVille({})); return; }
+      const ids = boutiques.map((b) => b.id);
+      const [{ data: articles }, { data: commandes }] = await Promise.all([
+        supabase.from('products').select('shop_id, is_active, images').in('shop_id', ids).limit(2000),
+        supabase.from('orders').select('id, shop_id, buyer_id, guest_id, buyer_name, status, delivered_at, cancelled_at').in('shop_id', ids).limit(2000),
+      ]);
+      const acheteurs = [...new Set((commandes || []).map((c) => c.buyer_id).filter(Boolean))];
+      const reels = new Set();
+      await Promise.all(acheteurs.map(async (u) => { const { data } = await supabase.rpc('compte_reel', { p_user_id: u }); if (data) reels.add(u); }));
+      const photo = (b) => {
+        const p = [b.banner_url, b.avatar_url].find((x) => typeof x === 'string' && x && !/^(blob|data):/.test(x));
+        if (p) return /^https?:/.test(p) ? p : storageThumbUrl('shops', p);
+        const img = (articles || []).find((a) => a.shop_id === b.id && a.is_active !== false && a.images?.length)?.images[0];
+        return img ? (/^https?:/.test(img) ? img : storageThumbUrl('products', img)) : null;
+      };
+      if (vivant) setMaVille(batirVille({ boutiques: boutiques.map((b) => ({ ...b, banner_url: photo(b), avatar_url: null })), articles: articles || [], commandes: commandes || [], reels }));
+    })().catch(() => { if (vivant) setMaVille(batirVille({})); });
+    return () => { vivant = false; };
+  }, [entreprise.id, entreprise.owner_id]);
+  // Où j'habite : une maison (au bord de la mer, près des agents) ou un appartement en cité.
+  // Gardé dans la fiche de la personne dans Léo (sans toucher à la base), sinon dans ce navigateur.
+  const [moiId, setMoiId] = useState(null);
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setMoiId(data?.user?.id || null)).catch(() => {}); }, []);
+  const moi = useMemo(() => (agents || []).find((a) => a.user_id && a.user_id === moiId) || null, [agents, moiId]);
+  const [habitatLocal, setHabitatLocal] = useState(() => lire(`leo:habitat:${entreprise.id}`, ''));
+  const habitat = moi?.apparence?.habitat || habitatLocal || null;
+  const [choixHabitat, setChoixHabitat] = useState(false);
+  async function choisirHabitat(genre) {
+    setChoixHabitat(false);
+    setHabitatLocal(genre); ecrire(`leo:habitat:${entreprise.id}`, genre);
+    if (moi) await supabase.from('legion_agents').update({ apparence: { ...(moi.apparence || {}), habitat: genre } }).eq('id', moi.id).then(() => {}, () => {});
+    setTimeout(() => monde.current?.rentrer(), 300);
+  }
+  const prenomMoi = String(moi?.nom || '').split(/\s+/)[0] || '';
+  useEffect(() => { if (etat === 'pret' && maVille) monde.current?.majQuartiers(maVille, habitat ? { genre: habitat, nom: prenomMoi } : null); }, [maVille, habitat, prenomMoi, etat]);
+  useEffect(() => { if (etat === 'pret' && !habitat && !lire(`leo:habitat-plus-tard:${entreprise.id}`, '')) setChoixHabitat(true); }, [etat, habitat, entreprise.id]);
   // L'historique complet des tâches (l'écran n'en garde que les plus récentes) :
   // juste les dates, pour la frise. Les tâches fraîches de l'écran passent devant.
   const [histoire, setHistoire] = useState([]);
@@ -222,6 +267,9 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     if (!cible) return;
     if (cible.type === 'voiture') { monde.current?.monterVoiture(cible.id); return; }
     if (cible.type === 'helico') { monde.current?.monterHelico(); return; }
+    if (cible.type === 'boutique') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.boutiqueResume', { nom: cible.nom, articles: cible.articles, commandes: cible.commandes, livrees: cible.livrees }) }], lien: cible.slug ? `/boutique/${cible.slug}` : null }); return; }
+    if (cible.type === 'client') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.clientResume', { nom: cible.nom || t('legion.monde.ville.client'), commandes: cible.commandes, livrees: cible.livrees }) }] }); return; }
+    if (cible.type === 'chezmoi') { setDialogue({ lignes: [{ qui: 'elle', texte: prenomMoi ? t('legion.monde.ville.bienvenue', { nom: prenomMoi }) : t('legion.monde.ville.bienvenueSans') }] }); return; }
     if (cible.type === 'receptionniste') {
       const r = repondre('', { agents, ou, nomEntreprise: entreprise.nom }, langue);
       setDialogue({ lignes: [{ qui: 'elle', texte: r.texte }] });
@@ -387,6 +435,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             ))}
           </div>
           <button type="button" onClick={() => { setChoixAvatar(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🧍 {t('legion.monde.monAvatar')}</button>
+          <button type="button" onClick={() => { setChoixHabitat(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🏠 {t('legion.monde.ville.ouHabiter')}</button>
           <button type="button" onClick={() => { setIntro(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🎬 {t('legion.monde.revoirIntro')}</button>
         </div>
       )}
@@ -407,6 +456,23 @@ export default function Monde3D({ entreprise, agents, departements = [], message
                 aria-label={t('legion.monde.frise.titre')} className="mt-1 w-full accent-[#e3a857]" />
             </div>
             {jour != null && <button type="button" onClick={() => { setLecture(false); setJour(null); }} className="shrink-0 rounded-pill border border-legion-line px-2 py-1 text-[11.5px] text-legion-ink">{t('legion.monde.frise.retour')}</button>}
+          </div>
+        </div>
+      )}
+
+      {choixHabitat && (
+        <div className="absolute inset-0 z-[12] flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-legion-line bg-[#0b1120]/95 p-4 text-center backdrop-blur">
+            <p className="font-serif text-[22px] font-semibold text-legion-ink">{t('legion.monde.ville.ouHabiter')}</p>
+            <p className="mt-1 text-[13px] text-legion-muted">{t('legion.monde.ville.ouHabiterAide')}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {[['maison', '🏡'], ['cite', '🏢']].map(([k, ic]) => (
+                <button key={k} type="button" onClick={() => choisirHabitat(k)} className={`rounded-2xl border px-2 py-3 text-[13.5px] font-semibold text-legion-ink hover:border-legion-gold ${habitat === k ? 'border-legion-gold bg-legion-gold/10' : 'border-legion-line'}`}>
+                  <span className="block text-[30px]">{ic}</span>{t(`legion.monde.ville.${k}`)}<span className="mt-1 block text-[11.5px] font-normal text-legion-muted">{t(`legion.monde.ville.${k}Aide`)}</span>
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => { setChoixHabitat(false); ecrire(`leo:habitat-plus-tard:${entreprise.id}`, '1'); }} className="mt-3 text-[12.5px] text-legion-muted underline">{t('legion.monde.ville.plusTard')}</button>
           </div>
         </div>
       )}
@@ -454,6 +520,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               <p key={i} className={`rounded-card px-2.5 py-1.5 text-[13px] ${l.qui === 'moi' ? 'self-end bg-legion-gold/15 text-legion-ink' : 'bg-legion-card text-legion-ink'}`}>{l.texte}</p>
             ))}
           </div>
+          {dialogue.lien && <a href={dialogue.lien} target="_blank" rel="noreferrer" className="mt-2 block w-full rounded-pill bg-legion-gold px-3 py-1.5 text-center text-[13px] font-semibold text-legion-bg">{t('legion.monde.ville.voirBoutique')}</a>}
           {dialogue.aller && <button type="button" onClick={() => aller(dialogue.aller)} className="mt-2 w-full rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg">{t('legion.monde.emmene', { lieu: libelle(dialogue.aller) })}</button>}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {['reunion', 'travail', 'ouAlpha'].map((k) => (
@@ -535,6 +602,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{libelle(l)}</button>
           ))}
           <button type="button" onClick={() => monde.current?.vueCiel(true)} title={t('legion.monde.planete')} aria-label={t('legion.monde.planete')} className="rounded-pill px-2.5 py-1.5 text-[12px] font-semibold text-legion-ink">🌍</button>
+          <button type="button" onClick={() => (habitat ? monde.current?.rentrer() : setChoixHabitat(true))} title={t('legion.monde.ville.chezMoi')} aria-label={t('legion.monde.ville.chezMoi')} className="whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold text-legion-ink">🔑</button>
           <button type="button" onClick={() => aller('maisons')} title={t('legion.monde.lieu.maisons')} aria-label={t('legion.monde.lieu.maisons')} className={`rounded-pill px-2.5 py-1.5 text-[12px] font-semibold ${lieu === 'maisons' ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>🏡</button>
           {depts.length > 0 && <button type="button" onClick={() => setEtage(true)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${estEtage ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t('legion.monde.etages', { n: depts.length })}</button>}
         </div>

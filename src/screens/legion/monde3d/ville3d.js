@@ -480,7 +480,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   for (let i = 0; i < xs.length - 1; i += 1) for (let j = 0; j < zs.length - 1; j += 1) {
     const x0 = xs[i] + (i === 0 ? 0 : LARGEUR_ROUTE / 2), x1 = xs[i + 1] - (i + 1 === xs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
-    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3, heliport: i === 3 && j === 2 }); // en face : le quartier des projets (chantiers3d.js) ; à droite : l'héliport
+    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3, heliport: i === 3 && j === 2, boutiques: i === 1 && j === 2, clients: i === 2 && j === 1, chezMoi: i === 3 && j === 3 }); // en face : les projets (chantiers3d.js) ; à droite : l'héliport ; à gauche : les boutiques, derrière : les clients (quartiers3d.js) ; en diagonale : chez moi
   }
   const tours = [];
   const NEONS = new Map();
@@ -494,7 +494,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     // Notre îlot : son trottoir affleure le sol du hall (0), les autres sont en bordure (+18 cm).
     dalle.position.set((il.x0 + il.x1) / 2, il.centre ? -0.11 : 0.09, (il.z0 + il.z1) / 2); dalle.receiveShadow = true;
     racine.add(dalle);
-    if (il.centre || il.projets || il.heliport) continue; // notre immeuble ; les chantiers des projets ; l'héliport
+    if (il.centre || il.projets || il.heliport || il.boutiques || il.clients || il.chezMoi) continue; // notre immeuble, les projets, l'héliport, la ville de chacun
     if (monde.mobile && Math.hypot((il.x0 + il.x1) / 2, (il.z0 + il.z1) / 2) > 110) continue; // téléphone : seulement les îlots proches
     // 1 à 4 tours par îlot, rez-de-chaussée en boutiques
     const n = l > 60 || p > 60 ? 2 : 1 + Math.floor(r() * 3);
@@ -891,6 +891,8 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     blocs: ilots.map(({ x0, x1, z0, z1 }) => ({ x0, x1, z0, z1 })),
     tours: tours.map(({ bx, bz, w, d, h }) => ({ x0: bx - w / 2 - 1.5, x1: bx + w / 2 + 1.5, z0: bz - d / 2 - 1.5, z1: bz + d / 2 + 1.5, h: h * 1.18 + 1 })),
     helico,
+    // Les îlots de la ville de chacun (quartiers3d.js)
+    ilotsReserves: Object.fromEntries(['boutiques', 'clients', 'chezMoi'].map((k) => { const il = ilots.find((x) => x[k]); return [k, il && { x0: il.x0, x1: il.x1, z0: il.z0, z1: il.z1 }]; })),
     // Chaque véhicule de la circulation, en cercles le long de son axe (un bus en fait quatre).
     circulation: () => vehicules.flatMap((o) => {
       const demi = o.userData.demi || 1.2, axeZ = o.userData.voie.axe === 'z';

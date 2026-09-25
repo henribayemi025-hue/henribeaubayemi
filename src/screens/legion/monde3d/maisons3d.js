@@ -14,7 +14,7 @@ function texture(l, h, dessiner) {
   return t;
 }
 
-export function construireMaisons(monde, agents = []) {
+export function construireMaisons(monde, agents = [], { moi = null } = {}) {
   const r = alea(11);
   const g = new THREE.Group();
   const murs = [];
@@ -51,7 +51,8 @@ export function construireMaisons(monde, agents = []) {
   for (let i = 0; i < 9; i += 1) { const c = new THREE.Mesh(new THREE.SphereGeometry(30 + r() * 25, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), colline); c.scale.y = 0.35; c.position.set(-240 + i * 60, -1, -90 - r() * 30); g.add(c); }
 
   // Les villas : une par agent (les agents humains n'en ont pas), le long du chemin.
-  const siens = agents.filter((a) => !a.user_id).slice(0, monde.mobile ? 5 : 8);
+  // Si la personne a choisi d'habiter en maison, la première villa est la sienne.
+  const siens = [...(moi ? [{ id: 'moi', nom: moi.nom ? (monde.langue === 'en' ? `${moi.nom}'s home` : `Chez ${moi.nom}`) : (monde.langue === 'en' ? 'Home' : 'Chez moi') }] : []), ...agents.filter((a) => !a.user_id)].slice(0, monde.mobile ? 5 : 8);
   const blanc = new THREE.MeshStandardMaterial({ color: '#f2efe8', roughness: 0.8 });
   const bois = new THREE.MeshStandardMaterial({ color: '#8a5a33', roughness: 0.7 });
   const verre = new THREE.MeshStandardMaterial({ color: '#16222c', metalness: 0.5, roughness: 0.08 });
@@ -117,7 +118,7 @@ export function construireMaisons(monde, agents = []) {
     // On arrive sur la promenade, face aux villas, la mer dans le dos.
     depart: { x: 0, z: 37, yaw: 0 },
     sortieAscenseur: { x: 0, z: 37, yaw: 0 },
-    poi: [],
+    poi: villas.filter((v) => v.id === 'moi').map((v) => ({ type: 'chezmoi', id: 'chezmoi', x: v.porte.x, z: v.porte.z, rayon: 3 })),
     limites: { x0: -150, x1: 150, z0: -60, z1: 58 },
   };
 }
