@@ -272,7 +272,8 @@ function simplifier(mat) {
 function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = false) {
   const M = matVehicules();
   const g = new THREE.Group();
-  const couleur = genre === 'taxi' ? '#f2b705' : peinture;
+  const couleur = genre === 'taxi' ? '#f2b705' : genre === 'police' ? '#f4f5f7' : genre === 'luxe' ? '#0d0f13' : peinture;
+  g.userData.genre = genre;
   g.userData.lumieres = [];
   g.userData.demi = 2.3;
   g.userData.roues = [];
@@ -282,7 +283,11 @@ function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = 
   const poser = (detail) => monde.charger(`vehicules/voiture-${detail ? 'haut' : 'bas'}.glb`).then((gltf) => {
     const modele = gltf.scene.clone(true);
     modele.rotation.y = Math.PI / 2;
-    if (genre === 'suv') modele.scale.setScalar(1.06);
+    // Une seule vraie voiture sous licence libre, déclinée en silhouettes (Beau, 25/09 : « les voitures
+    // sont du même modèle ») : SUV haut et large, coupé bas et long, limousine de luxe allongée.
+    // x = largeur, y = hauteur, z = longueur (avant la rotation).
+    const PROPORTIONS = { suv: [1.07, 1.16, 1.04], coupe: [1.0, 0.88, 1.05], luxe: [1.03, 0.97, 1.14], police: [1.03, 1.02, 1.02] };
+    if (PROPORTIONS[genre]) modele.scale.set(...PROPORTIONS[genre]);
     const peint = new Map();
     modele.traverse((m) => {
       if (!m.isMesh) return;
@@ -293,7 +298,7 @@ function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = 
       if (CARROSSERIE.test(nom)) { // chaque voiture a sa couleur (le second ton reste noir)
         if (!peint.has(nom)) {
           const c = (leger ? simplifier(m.material) : m.material).clone();
-          c.color.set(nom.startsWith('Paint 1') ? couleur : '#1b1d21');
+          c.color.set(nom.startsWith('Paint 1') ? couleur : genre === 'police' ? '#111418' : genre === 'luxe' ? '#8d8f94' : '#1b1d21');
           // Peinture satinée : des reflets doux plutôt qu'un chrome qui ondule
           c.metalness = Math.min(c.metalness, 0.45); c.roughness = Math.max(c.roughness, detail ? 0.28 : 0.38); c.envMapIntensity = 0.9;
           peint.set(nom, c);
@@ -326,6 +331,19 @@ function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = 
     monde.surModele?.(g);
   });
   poser(false).then(() => {
+    if (genre === 'police') { // rampe de gyrophares (rouge / bleu, clignote en service) et « POLICE » sur les portières
+      const rouge = new THREE.MeshStandardMaterial({ color: '#5a0a0a', emissive: '#ff1a1a', emissiveIntensity: 0 });
+      const bleu = new THREE.MeshStandardMaterial({ color: '#0a1a5a', emissive: '#1a5cff', emissiveIntensity: 0 });
+      posePiece(g, BOITE(0.34, 0.08, 1.05), new THREE.MeshStandardMaterial({ color: '#15171b', metalness: 0.5, roughness: 0.4 }), -0.35, 1.08, 0);
+      posePiece(g, BOITE(0.26, 0.1, 0.42), rouge, -0.35, 1.16, -0.24);
+      posePiece(g, BOITE(0.26, 0.1, 0.42), bleu, -0.35, 1.16, 0.24);
+      g.userData.gyro = [rouge, bleu];
+      if (monde.ecran) for (const cote of [-1, 1]) {
+        const txt = monde.ecran(1.5, 0.3, (c, w, h) => { c.clearRect(0, 0, w, h); c.fillStyle = '#10223f'; c.font = `800 ${h * 0.8}px system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('POLICE', w / 2, h / 2); });
+        txt.material.transparent = true; txt.position.set(0.15, 0.58, cote * 1.04); txt.rotation.y = cote > 0 ? 0 : Math.PI; g.add(txt);
+      }
+      monde.surModele?.(g);
+    }
     if (genre === 'taxi') { // lanterne TAXI sur le toit
       const lanterne = new THREE.MeshStandardMaterial({ color: '#fff7d0', emissive: '#ffd24a', emissiveIntensity: 0 });
       posePiece(g, BOITE(0.28, 0.18, 0.6), lanterne, -0.2, 1.22, 0);
@@ -745,7 +763,11 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const peinture = PEINTURES[Math.floor(r() * PEINTURES.length)];
       const leger = monde.mobile;
       const s1 = style.motos, s2 = s1 + style.bus, s3 = s2 + style.taxis;
-      const o = t < s1 ? moto(peinture) : t < s2 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < s3 ? voiture3d(monde, peinture, 'taxi', leger) : voiture3d(monde, peinture, t < s3 + (1 - s3) * 0.35 ? 'suv' : 'berline', leger);
+      // Au-delà des taxis : SUV, coupés, berlines, voitures de luxe, et une voiture de police de temps en temps.
+      // La silhouette vient d'un hachage de la position (pas de r() en plus : le plan de la ville ne bouge pas).
+      const h = Math.abs(Math.sin((iv + 1) * 12.9898 + (k + 1) * 78.233) * 43758.5453) % 1;
+      const civile = h < 0.1 ? 'police' : h < 0.35 ? 'suv' : h < 0.55 ? 'coupe' : h < 0.68 ? 'luxe' : 'berline';
+      const o = t < s1 ? moto(peinture) : t < s2 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < s3 ? voiture3d(monde, peinture, 'taxi', leger) : voiture3d(monde, peinture, civile, leger);
       const vitesse = allure;
       const pos = -120 + ((k * 240) / combien) + r() * 30 + iv * 13;
       o.userData = { ...o.userData, voie: v, vitesse, pos };
@@ -781,6 +803,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   const TOUR = 260;
   const ecart = (a, b) => { let d = b - a; while (d > TOUR / 2) d -= TOUR; while (d < -TOUR / 2) d += TOUR; return d; };
   bouger.push((dt) => {
+    // Les gyrophares des voitures de police clignotent (rouge, puis bleu).
+    const phase = Math.floor(performance.now() / 180) % 4;
+    for (const o of vehicules) { const gy = o.userData.gyro; if (gy) { gy[0].emissiveIntensity = phase === 0 || phase === 2 ? 3 : 0.15; gy[1].emissiveIntensity = phase === 1 || phase === 3 ? 3 : 0.15; } }
     for (const o of vehicules) {
       const u = o.userData;
       const sens = Math.sign(u.vitesse), demi = u.demi || 1.2;
