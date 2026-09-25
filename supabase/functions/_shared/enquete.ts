@@ -260,3 +260,13 @@ Réponds par la liste des appels à faire (${maxAppels} au plus), chacun avec le
   return resultats;
 }
 
+// Les vérifications tiennent dans 30 000 caractères au total (25/09 : six
+// pages web lues d'un coup faisaient une consigne si longue que le modèle
+// coupait sa réponse et que le relais dépassait son délai — Traque n'a rien
+// rendu). Chaque résultat garde sa part, le début d'abord.
+export function borneVerifs(verifie: string[], max = 30_000): string[] {
+  const total = verifie.reduce((n, v) => n + v.length, 0);
+  if (total <= max) return verifie;
+  const part = Math.floor(max / verifie.length);
+  return verifie.map((v) => (v.length > part ? `${v.slice(0, part)}… (coupé)` : v));
+}

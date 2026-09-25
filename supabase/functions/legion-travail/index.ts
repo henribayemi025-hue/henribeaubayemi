@@ -37,7 +37,7 @@ import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
 import { lireTickets } from '../_shared/tickets.ts';
 import { blocMarche, blocWiki } from '../_shared/contexte.ts';
-import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
+import { enqueter, verifsPour, borneVerifs, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -273,7 +273,7 @@ CE QUI S'EST DIT RÉCEMMENT (ton salon et la Direction, du plus ancien au plus r
 ${fil.length ? fil.join('\n') : '(rien)'}
 
 ${mesures ? `CHIFFRES MESURÉS À L'INSTANT (connecteur « Mesures Finjaro », lecture seule, comptes de test exclus):\n${mesures}\n` : ''}
-${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → résultat):\n${verifie.join('\n')}\n` : ''}
+${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → résultat):\n${borneVerifs(verifie).join('\n')}\n` : ''}
 ${REGLES_COMMUNES}
 
 ÉCRIS:
@@ -303,7 +303,7 @@ CE QUI S'EST DIT RÉCEMMENT (ton salon et la Direction):
 ${fil.length ? fil.join('\n') : '(rien)'}
 
 ${mesures ? `CHIFFRES MESURÉS À L'INSTANT (lecture seule, comptes de test exclus):\n${mesures}\n` : ''}
-${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → résultat):\n${verifie.join('\n')}\n` : ''}
+${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → résultat):\n${borneVerifs(verifie).join('\n')}\n` : ''}
 ${REGLES_COMMUNES}
 
 ÉCRIS:

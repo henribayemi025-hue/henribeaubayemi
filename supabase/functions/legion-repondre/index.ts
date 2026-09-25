@@ -26,7 +26,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourAgent, pourEntreprise } from '../_shared/cout.ts';
 import { blocSouvenirs, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
-import { enqueter, verifsPour, type Boutique, type Compta } from '../_shared/enquete.ts';
+import { enqueter, verifsPour, type Boutique, type Compta, borneVerifs } from '../_shared/enquete.ts';
 import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
@@ -172,7 +172,7 @@ ${mesures}
 C'est TOI qui vois ces chiffres, à l'instant: ne renvoie jamais la question à un collègue ni à Claude. Donne-les tout de suite, avec leur période (« ces 7 jours », « aujourd'hui »). Pour « combien de visites / de personnes », donne d'abord les visiteurs engagés (de vraies personnes), puis les navigateurs, et dis en une phrase que la différence, ce sont surtout des robots qui parcourent le catalogue (voir « definitions »). Un chiffre qui n'est pas ici, tu ne l'as pas: dis-le.
 
 ` : ''}${verifie.length ? `CE QUE L'ÉQUIPE VIENT DE VÉRIFIER ELLE-MÊME DANS LA BASE, à l'instant (outil appelé → résultat):
-${verifie.join('\n')}
+${borneVerifs(verifie).join('\n')}
 Appuie-toi dessus: c'est vérifié, tu peux le dire (« je viens de vérifier »). Donne les chiffres tels quels, avec leur période.
 
 ` : ''}RÈGLE ABSOLUE — l'honnêteté:
