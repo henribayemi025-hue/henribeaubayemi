@@ -3,6 +3,7 @@ import { quiOuEst, repondre, CORPS, RECEPTIONNISTE } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
 import { styleVille } from './region';
 import { estSalleDeMarche, pairesDuJour, activite14j } from './salle-marche3d';
+import { tours as calculerTours } from '../parties/ville';
 import { supabase, storageUrl, storageThumbUrl } from '../../../lib/supabase';
 import { chargerAffiches } from './affiches';
 
@@ -24,7 +25,7 @@ const JOUR = 86_400_000;
 function lire(cle, defaut) { try { return localStorage.getItem(cle) || defaut; } catch { return defaut; } }
 function ecrire(cle, v) { try { localStorage.setItem(cle, v); } catch { /* navigation privée */ } }
 
-export default function Monde3D({ entreprise, agents, departements = [], messages, taches, onFiche, onParler, onAppeler, onConvoquer, t }) {
+export default function Monde3D({ entreprise, agents, departements = [], messages, taches, onFiche, onParler, onAppeler, onConvoquer, vueVille = false, onChantier, t }) {
   const boite = useRef(null);
   const monde = useRef(null);
   const [etat, setEtat] = useState('chargement'); // chargement | pret | erreur
@@ -42,7 +43,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [avatar, setAvatar] = useState(() => lire('leo:avatar', 'Male_Adult_07'));
   const [maintenant, setMaintenant] = useState(Date.now());
   // La cinématique d'arrivée (vidéo tournée pour Léo) : une fois, puis « Revoir l'intro ».
-  const [intro, setIntro] = useState(() => !lire('leo:intro-vue', ''));
+  const [intro, setIntro] = useState(() => !vueVille && !lire('leo:intro-vue', ''));
   const [introFin, setIntroFin] = useState(false);
   const video = useRef(null);
   function finirIntro() { ecrire('leo:intro-vue', '1'); setIntro(false); setIntroFin(false); }
@@ -57,6 +58,20 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const salleMarche = useMemo(() => estSalleDeMarche(entreprise), [entreprise]);
   const libelle = (l) => t(`legion.monde.lieu.${l === 'atelier' && salleMarche ? 'salleMarche' : l}`);
   useEffect(() => { if (salleMarche) monde.current?.majMarche({ jours: activite14j(taches), maintenant }); }, [salleMarche, taches, maintenant]);
+  // Les projets de l'entreprise, en chantiers en face de l'immeuble (même calcul que la ville 2D).
+  const [projets, setProjets] = useState([]);
+  useEffect(() => {
+    let vivant = true;
+    supabase.from('legion_projets').select('*').eq('entreprise_id', entreprise.id).order('debut').then(({ data }) => { if (vivant) setProjets(data || []); });
+    return () => { vivant = false; };
+  }, [entreprise.id]);
+  const chantiers = useMemo(() => {
+    const eteints = new Set((agents || []).filter((a) => a.actif === false).map((a) => a.id));
+    return calculerTours(projets, taches || [], maintenant, eteints).map((x) => ({
+      id: x.id, nom: x.projet ? x.projet.nom : t('legion.ville.quotidien'), debut: x.projet?.debut || null, fin: x.projet?.fin || null,
+      rendues: x.rendues, total: x.total, avancement: x.avancement, termine: x.termine, enRetard: x.enRetard, agentsAuTravail: x.agentsAuTravail,
+    }));
+  }, [projets, taches, agents, maintenant, t]);
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
   const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
   useEffect(() => { const f = () => { setPortrait(window.innerHeight > window.innerWidth); setTimeout(() => monde.current?.redimensionner(), 120); }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
@@ -127,6 +142,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         chargerAffiches(supabase, (seau, chemin, vignette) => (vignette ? storageThumbUrl : storageUrl)(seau, chemin)).then((l) => { if (!fini && l.length) m.afficherBoutiques(l); }).catch(() => {});
         await m.allerA('hall', { nomEntreprise: entreprise.nom, avatar });
         if (fini) { m.detruire(); return; }
+        if (vueVille) m.placerJoueur(0, 22.6, Math.PI); // dans la rue, face aux chantiers des projets
         m.demarrer();
         clearTimeout(delai);
         setEtat('pret');
@@ -139,6 +155,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   }, [entreprise.id, essai]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { monde.current?.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) }); }, [agents, ou, faits, departements]);
+  useEffect(() => { if (etat === 'pret') monde.current?.majChantiers(chantiers); }, [chantiers, etat]);
 
   const interagirRef = useRef(null);
   interagirRef.current = (c) => interagir(c);
@@ -150,6 +167,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       parler(r.texte);
     } else if (cible.type === 'ascenseur' || cible.type === 'escalier') setEtage(true);
     else if (cible.type === 'agent') onFiche?.(agents.find((a) => a.id === cible.id));
+    else if (cible.type === 'chantier') {
+      if (onChantier) onChantier(cible.id);
+      else {
+        const c = chantiers.find((x) => x.id === cible.id);
+        if (c) setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.chantierResume', { nom: c.nom, rendues: c.rendues, total: c.total }) }] });
+      }
+    }
   }
   // La voix de la réceptionniste : Fish Audio (legion-voix) ; si Fish ne répond
   // pas, la voix du navigateur, pour qu'elle ne reste jamais muette.
@@ -294,7 +318,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
             {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">E</kbd>}
-            {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}
+            {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
           </button>
           )}
         </div>

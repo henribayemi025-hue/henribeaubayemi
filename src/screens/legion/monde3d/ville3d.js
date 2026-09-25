@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { STYLES } from './region';
+import { construireChantier, lumieresChantiers } from './chantiers3d';
 
 const ROUTES_X = [-78, -26, 26, 78];
 const ROUTES_Z = [-74, -22, 30, 82];
@@ -404,7 +405,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   for (let i = 0; i < xs.length - 1; i += 1) for (let j = 0; j < zs.length - 1; j += 1) {
     const x0 = xs[i] + (i === 0 ? 0 : LARGEUR_ROUTE / 2), x1 = xs[i + 1] - (i + 1 === xs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
-    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2 });
+    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3 }); // en face : le quartier des projets (chantiers3d.js)
   }
   const tours = [];
   const NEONS = new Map();
@@ -418,7 +419,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     // Notre îlot : son trottoir affleure le sol du hall (0), les autres sont en bordure (+18 cm).
     dalle.position.set((il.x0 + il.x1) / 2, il.centre ? -0.11 : 0.09, (il.z0 + il.z1) / 2); dalle.receiveShadow = true;
     racine.add(dalle);
-    if (il.centre) continue; // notre immeuble
+    if (il.centre || il.projets) continue; // notre immeuble ; les chantiers des projets
     // 1 à 4 tours par îlot, rez-de-chaussée en boutiques
     const n = l > 60 || p > 60 ? 2 : 1 + Math.floor(r() * 3);
     const lx = (l - TROTTOIR * 2) / (n > 2 ? 2 : n), lz = (p - TROTTOIR * 2) / (n > 2 ? 2 : 1);
@@ -770,11 +771,29 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     if (attente > 8) { attente = 0; rang += 1; montrer(); }
   });
 
+  let groupeChantiers = null, bougerChantiers = [];
   fusionner(racine);
   return {
     racine,
     majEnv: (env) => racine.traverse((o) => { if (o.material?.envMap !== undefined && o.material.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } }),
-    avancer: (dt) => bouger.forEach((f) => f(dt)),
+    avancer: (dt) => { bouger.forEach((f) => f(dt)); for (const f of bougerChantiers) f(dt); },
+    // Les projets de l'entreprise, en chantiers (vraies données : ville.js → tours()).
+    chantiers: (liste = []) => {
+      if (groupeChantiers) { racine.remove(groupeChantiers); groupeChantiers = null; }
+      bougerChantiers = [];
+      const g2 = new THREE.Group();
+      const places = [[-11, 45], [0, 45], [11, 45], [-11, 60], [0, 60], [11, 60]];
+      const pois = [];
+      liste.slice(0, places.length).forEach((p, k) => {
+        const c = construireChantier(p, { langue: monde.langue, mobile: monde.mobile });
+        const [x, z] = places[k];
+        c.groupe.position.set(x, 0.18, z); g2.add(c.groupe);
+        bougerChantiers.push(...c.bouger);
+        pois.push({ type: 'chantier', id: p.id, nom: p.nom, x, z: z - 6.5, rayon: 3.2 });
+      });
+      racine.add(g2); groupeChantiers = g2;
+      return pois;
+    },
     // liste : [{ nom, image }] — de vraies boutiques (voir affiches.js).
     afficher: async (liste = []) => {
       // Mémoire graphique : 8 boutiques à l'ordinateur, 4 au téléphone, en plus petit.
@@ -791,6 +810,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       for (const m of nuit.enseignes) m.emissiveIntensity = 0.35 + niveau * 1.4;
       for (const m of nuit.lumieres) m.emissiveIntensity = niveau * 2.5;
       if (MV) { MV.halo.opacity = niveau * 0.9; MV.cone.opacity = niveau * 0.45; }
+      lumieresChantiers(niveau);
     },
   };
 }

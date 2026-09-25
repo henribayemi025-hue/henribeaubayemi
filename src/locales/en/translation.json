@@ -953,6 +953,8 @@
       "entreeCourte": "Workshop",
       "projet": "Project",
       "aucunProjet": "No project",
+      "vue3d": "3D city",
+      "vuePlan": "Plan",
       "nouveauProjet": "New project",
       "nomProjet": "Project name",
       "pointDeDepart": "Starting point",
@@ -1325,7 +1327,8 @@
         "ecran": "See the screen",
         "table": "The meeting table",
         "defaut": "Interact",
-        "escalier": "Take the stairs"
+        "escalier": "Take the stairs",
+        "chantier": "See the project"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1350,6 +1353,7 @@
       "etage": "Floor {{n}} · {{nom}}",
       "etages": "Floors ({{n}})",
       "reessayer": "Try again",
+      "chantierResume": "Project “{{nom}}”: {{rendues}} of {{total}} task(s) delivered.",
       "passer": "Skip",
       "bienvenue": "Welcome to {{nom}}",
       "revoirIntro": "Replay intro",

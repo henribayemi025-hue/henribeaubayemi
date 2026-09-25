@@ -953,6 +953,8 @@
       "entreeCourte": "Atelier",
       "projet": "Projet",
       "aucunProjet": "Aucun projet",
+      "vue3d": "Ville 3D",
+      "vuePlan": "Plan",
       "nouveauProjet": "Nouveau projet",
       "nomProjet": "Nom du projet",
       "pointDeDepart": "Point de départ",
@@ -1325,7 +1327,8 @@
         "ecran": "Voir l'écran",
         "table": "La table de réunion",
         "defaut": "Interagir",
-        "escalier": "Monter par l'escalier"
+        "escalier": "Monter par l'escalier",
+        "chantier": "Voir le projet"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1350,6 +1353,7 @@
       "etage": "Étage {{n}} · {{nom}}",
       "etages": "Étages ({{n}})",
       "reessayer": "Réessayer",
+      "chantierResume": "Projet « {{nom}} » : {{rendues}} tâche(s) rendue(s) sur {{total}}.",
       "passer": "Passer",
       "bienvenue": "Bienvenue chez {{nom}}",
       "revoirIntro": "Revoir l'intro",

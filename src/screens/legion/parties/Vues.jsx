@@ -53,6 +53,7 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
   // La ville d'abord (25/09) : les projets en tours ; puis l'immeuble.
   // `modeDepart` : Jarvis ouvre directement une pièce (« ouvre l'Académie »).
   const [mode, setMode] = useState(modeDepart || 'ville');
+  const [projetVille, setProjetVille] = useState(null); // un chantier touché dans le monde 3D ouvre son projet
   const [maintenant, setMaintenant] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
   const auTravail = useMemo(() => actifsRecents(messages), [messages, maintenant]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -128,9 +129,9 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
       {!['immeuble', 'ville', 'reunions', 'academie', 'monde3d'].includes(mode) && <p className="mb-3 text-[12px] text-legion-muted">{t('legion.vues.legende')}</p>}
 
       {mode === 'monde3d' ? (
-        <div className="-mx-4 -mb-4"><Suspense fallback={<p className="p-6 text-center text-[13px] text-legion-muted">…</p>}><Monde3D entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onParler={onParler} onAppeler={onAppeler} onConvoquer={peutAgir ? onConvoquer : null} t={t} /></Suspense></div>
+        <div className="-mx-4 -mb-4"><Suspense fallback={<p className="p-6 text-center text-[13px] text-legion-muted">…</p>}><Monde3D entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onParler={onParler} onAppeler={onAppeler} onConvoquer={peutAgir ? onConvoquer : null} onChantier={(id) => { setProjetVille(id); setMode('ville'); }} t={t} /></Suspense></div>
       ) : mode === 'ville' ? (
-        <div className="-mx-4 -mb-4"><Ville entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onMajMessage={onMajMessage} peutAgir={peutAgir} t={t} /></div>
+        <div className="-mx-4 -mb-4"><Ville key={projetVille || 'ville'} choixDepart={projetVille} entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onMajMessage={onMajMessage} peutAgir={peutAgir} t={t} /></div>
       ) : mode === 'reunions' ? (
         <div className="-mx-4 -mb-4"><SalleReunion agents={agents} messages={messages} taches={taches} t={t} /></div>
       ) : mode === 'academie' ? (

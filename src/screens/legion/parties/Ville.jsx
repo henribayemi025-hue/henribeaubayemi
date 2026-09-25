@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Immeuble } from './Immeuble';
 import { tours as calculerTours, joursRestants, QUOTIDIEN } from './ville';
 import { IconSun, IconMoon, IconCloud, IconCloudRain, IconSnowflake, IconCloudFog, IconCloudStorm, IconDroplet } from '@tabler/icons-react';
 import { chargerCiel, phaseDuJour, couleursCiel, ilFaitChaud } from './ciel';
+const Monde3D = lazy(() => import('../monde3d/Monde3D'));
 
 // LA VILLE DE LÉO (proposition du 25/09 à Beau, d'après ses prototypes Google
 // AI Studio) : chaque projet est une tour datée qui pousse avec les tâches
@@ -60,10 +61,13 @@ function Tour({ t, x, largeur, choisie, onChoisir, tr, pas }) {
   );
 }
 
-export function Ville({ entreprise, agents, departements, messages, taches, onFiche, onMajMessage, peutAgir, t }) {
+export function Ville({ entreprise, agents, departements, messages, taches, onFiche, onMajMessage, peutAgir, choixDepart = null, t }) {
+  // Beau, 25/09 (« oui, 4D ») : la ville s'ouvre en 3D, les projets y sont des chantiers ; le plan 2D reste à un clic.
+  const [vue, setVue] = useState(() => { try { return localStorage.getItem('leo:ville-vue') || '3d'; } catch { return '3d'; } });
+  function changerVue(v) { setVue(v); try { localStorage.setItem('leo:ville-vue', v); } catch { /* navigation privée */ } }
   const [projets, setProjets] = useState([]);
   const [charge, setCharge] = useState(false);
-  const [choix, setChoix] = useState(null);
+  const [choix, setChoix] = useState(choixDepart);
   const [maintenant, setMaintenant] = useState(Date.now());
   const [nouveau, setNouveau] = useState(null); // { nom, debut, fin, but }
   const [erreur, setErreur] = useState(null);
@@ -199,6 +203,9 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
             <button type="button" onClick={() => setAutreVille(null)} className="text-[12.5px] text-legion-muted">{t('common.cancel', 'Annuler')}</button>
           </form>
         )}
+        <div className="flex gap-1 rounded-pill border border-legion-line p-0.5">
+          {['3d', 'plan'].map((v) => <button key={v} type="button" onClick={() => changerVue(v)} className={`rounded-pill px-2.5 py-0.5 text-[12px] font-semibold ${vue === v ? 'bg-legion-gold text-legion-bg' : 'text-legion-muted'}`}>{t(v === '3d' ? 'legion.ville.vue3d' : 'legion.ville.vuePlan')}</button>)}
+        </div>
         {peutAgir && !nouveau && <button type="button" onClick={() => setNouveau({ nom: '', debut: aujourdhui, fin: dansUnMois, but: '' })} className="rounded-pill bg-legion-gold px-3 py-1 text-[13px] font-semibold text-legion-bg">+ {t('legion.ville.nouveauProjet')}</button>}
       </div>
       {ciel && ilFaitChaud(ciel.temperature, ciel.unite) && (
@@ -219,6 +226,11 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
           </div>
         </form>
       )}
+      {vue === '3d' ? (
+        <div className="mt-2"><Suspense fallback={<p className="p-6 text-center text-[13px] text-legion-muted">…</p>}>
+          <Monde3D vueVille entreprise={entreprise} agents={agents} departements={departements} messages={messages} taches={taches} onFiche={onFiche} onChantier={(id) => setChoix(id)} t={t} />
+        </Suspense></div>
+      ) : (<>
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${LARG} ${H}`} className="block min-w-[640px] w-full" role="img" aria-label={t('legion.ville.titre')}>
           <defs>
@@ -257,6 +269,7 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
         </svg>
       </div>
       <p className="px-4 pb-3 pt-1 text-[12px] text-legion-muted">{t('legion.ville.legende')}</p>
+      </>)}
     </div>
   );
 }

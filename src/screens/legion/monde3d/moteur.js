@@ -486,7 +486,7 @@ export class Monde {
       { type: 'escalier', x: -8.6, z: -3.2, rayon: 1.6 },
     ];
     await Promise.all(ajouts);
-    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -36, x1: 36, z0: -27, z1: 38 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
+    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -36, x1: 36, z0: -27, z1: 72 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
   }
   async construireReunion() {
     const g = new THREE.Group();
@@ -742,6 +742,7 @@ export class Monde {
       this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
       if (this.affichesBoutiques) this.villeVivante.afficher(this.affichesBoutiques);
+      if (this.listeChantiers) this.poiChantiers = this.villeVivante.chantiers(this.listeChantiers);
     }
     const etage = String(lieu).startsWith('etage:') ? String(lieu).slice(6) : null;
     const depts = this.donnees?.departements || [];
@@ -759,6 +760,7 @@ export class Monde {
     this.lieux[lieu] = l;
     if (lieu === 'maisons') l.lampes.emissiveIntensity = (this.niveauNuit || 0) * 1.4;
     if (l.tableau) this.tableauAtelier = l.tableau;
+    if (lieu === 'hall' && !l.poiBase) { l.poiBase = l.poi; l.poi = [...l.poi, ...(this.poiChantiers || [])]; }
     if (l.majMarche && this.donneesMarche) l.majMarche(this.donneesMarche);
     l.nom = lieu;
     this.lieu = l;
@@ -776,6 +778,23 @@ export class Monde {
     }
     this.placerAgents();
     this.emettre({ type: 'lieu', lieu });
+  }
+
+  // Les projets en chantiers, en face de l'immeuble (chantiers3d.js).
+  majChantiers(liste) {
+    this.listeChantiers = liste;
+    const pois = this.villeVivante?.chantiers(liste) || [];
+    this.poiChantiers = pois;
+    const hall = this.lieux?.hall;
+    if (hall) hall.poi = [...(hall.poiBase || hall.poi.filter((x) => x.type !== 'chantier')), ...pois];
+  }
+  // Se poser dans la rue (onglet « La ville » : on arrive dehors, face aux chantiers).
+  placerJoueur(x, z, yaw) {
+    if (!this.joueur) return;
+    this.joueur.objet.position.set(x, 0, z);
+    this.joueur.objet.rotation.y = yaw + Math.PI;
+    this.cam.yaw = yaw;
+    this.camSnap = true;
   }
 
   // Salle des marchés : taux du jour, activité, heure (vraies données).
