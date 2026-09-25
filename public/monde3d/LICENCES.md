@@ -35,3 +35,6 @@ Images de façade (verre, pierre, résidence à balcons) et cinématique d'arriv
 
 ## terre.webp / terre-m.webp — Natural Earth
 Contours des terres émergées : Natural Earth (naturalearthdata.com), domaine public, via le paquet world-atlas (ISC). Texture dessinée pour Léo (couleurs, relief léger), sans photo.
+
+## vehicules/voiture-haut.glb, vehicules/voiture-bas.glb — Car Concept (Khronos)
+« Car Concept » © 2024 Darmstadt Graphics Group GmbH, Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/). Source : https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept — lui-même tiré d'un modèle du domaine public (CC0) de Unity Fan. Modifié pour Léo le 25/09/2026 : pièces invisibles retirées, géométrie simplifiée, textures réduites (WebP), matières regroupées, couleurs de carrosserie changées dans le jeu.

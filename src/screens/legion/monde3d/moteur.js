@@ -1015,6 +1015,7 @@ export class Monde {
     const lb = this.villeVivante?.voituresLibres.find((x) => x.id === id);
     if (!lb || this.conduite || this.lieu?.nom !== 'hall') return;
     this.conduite = { lb, kmh: -1, t: 0, secousse: 0 };
+    lb.objet.userData.detailler?.();
     this.joueur.objet.visible = false;
     this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
     this.emettre({ type: 'conduite', active: true, kmh: 0 });
@@ -1058,7 +1059,7 @@ export class Monde {
     o.rotation.y = e.cap - Math.PI / 2;
     o.rotation.z = Math.max(-0.03, Math.min(0.03, -gaz * 0.02 * Math.sign(e.vitesse || 1))); // la caisse plonge au freinage
     for (const r of o.userData.roues || []) {
-      r.axe.rotation.z -= (e.vitesse * dt) / 0.35;
+      r.axe.rotation[r.axeRot || 'z'] += ((r.sens || -1) * e.vitesse * dt) / (r.rayon || 0.35);
       if (r.avant) r.pivot.rotation.y = -(e.angle || 0);
     }
     this.joueur.objet.position.set(e.x, 0, e.z); // le joueur est dans la voiture (caméra, soleil, proximité)

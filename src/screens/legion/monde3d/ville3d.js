@@ -175,6 +175,7 @@ function matVehicules() {
 }
 const BOITE = (l, h, p) => new THREE.BoxGeometry(l, h, p);
 function poser(g, geo, mat, x, y, z) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m; }
+const posePiece = poser;
 // Ombre douce sous le véhicule, halos des phares et flaque de lumière devant (visibles la nuit).
 function eclairage(g, M, long, larg, avant, leger) {
   const o = poser(g, new THREE.PlaneGeometry(long + 0.6, larg + 0.6), M.ombre, 0, 0.02, 0); o.rotation.x = -Math.PI / 2; o.userData.garder = true;
@@ -246,6 +247,71 @@ function voiture(peinture, genre = 'berline', leger = false, jouable = false) {
   g.userData.demi = 2.5;
   g.userData.roues = roues;
   g.traverse((m) => { if (m.isMesh && !m.userData.garder) m.castShadow = true; });
+  return g;
+}
+
+// Les vraies voitures (Beau, 25/09 : « les voitures sont en 2D ») : le modèle Car Concept
+// (Khronos, CC-BY 4.0, voir LICENCES.md), allégé pour Léo. « haut » pour celles qu'on
+// conduit à l'ordinateur (roues qui tournent et braquent, sièges, volant), « bas » pour la
+// circulation et le téléphone. Le groupe est rendu tout de suite ; le modèle s'y pose une fois
+// chargé. Son avant est +z : on le tourne pour qu'il regarde +x comme les autres véhicules.
+const CARROSSERIE = /^Paint [12]/;
+function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = false) {
+  const M = matVehicules();
+  const g = new THREE.Group();
+  const couleur = genre === 'taxi' ? '#f2b705' : peinture;
+  g.userData.lumieres = [];
+  g.userData.demi = 2.3;
+  g.userData.roues = [];
+  eclairage(g, M, 4.4, 1.95, 2.3, leger);
+  // Garée ou dans la circulation : version légère. On passe à la version détaillée
+  // (roues qui tournent et braquent, sièges, volant) quand on monte dedans, à l'ordinateur.
+  const poser = (detail) => monde.charger(`vehicules/voiture-${detail ? 'haut' : 'bas'}.glb`).then((gltf) => {
+    const modele = gltf.scene.clone(true);
+    modele.rotation.y = Math.PI / 2;
+    if (genre === 'suv') modele.scale.setScalar(1.06);
+    const peint = new Map();
+    modele.traverse((m) => {
+      if (!m.isMesh) return;
+      m.castShadow = detail; m.receiveShadow = !leger; // la circulation a déjà son ombre peinte au sol
+      const nom = m.material?.name || '';
+      if (CARROSSERIE.test(nom)) { // chaque voiture a sa couleur (le second ton reste noir)
+        if (!peint.has(nom)) { const c = m.material.clone(); c.color.set(nom.startsWith('Paint 1') ? couleur : '#1b1d21'); peint.set(nom, c); }
+        m.material = peint.get(nom);
+      }
+      if (leger && m.material && !m.material.userData.allege) { Object.assign(m.material, { normalMap: null, aoMap: null }); m.material.userData.allege = true; m.material.needsUpdate = true; }
+      if (/^(Headlight|Brakelight)$/.test(nom) && !g.userData.lumieres.includes(m.material)) {
+        m.material.emissive?.set(nom === 'Headlight' ? '#fff1d0' : '#ff2020');
+        g.userData.lumieres.push(m.material);
+      }
+    });
+    const roues = [];
+    if (detail) { // pivot (braquage) → axe (rotation) → pièces de la roue
+      const parRoue = new Map();
+      for (const m of [...modele.children]) { const k = /^(Wheel(?:Front|Rear)[LR])_/.exec(m.name)?.[1]; if (k) { if (!parRoue.has(k)) parRoue.set(k, []); parRoue.get(k).push(m); } }
+      for (const [k, pieces] of parRoue) {
+        const pivot = new THREE.Group(); pivot.position.copy(pieces[0].position); modele.add(pivot);
+        const axe = new THREE.Group(); pivot.add(axe);
+        for (const m of pieces) { m.position.set(0, 0, 0); axe.add(m); }
+        roues.push({ pivot, axe, avant: k.includes('Front'), axeRot: 'x', sens: 1, rayon: 0.38 });
+      }
+    }
+    if (g.userData.modele) g.remove(g.userData.modele);
+    g.userData.modele = modele;
+    g.userData.roues.splice(0, g.userData.roues.length, ...roues);
+    g.add(modele);
+    g.userData.pret = true;
+    monde.surModele?.(g);
+  });
+  poser(false).then(() => {
+    if (genre === 'taxi') { // lanterne TAXI sur le toit
+      const lanterne = new THREE.MeshStandardMaterial({ color: '#fff7d0', emissive: '#ffd24a', emissiveIntensity: 0 });
+      posePiece(g, BOITE(0.28, 0.18, 0.6), lanterne, -0.2, 1.22, 0);
+      g.userData.lumieres.push(lanterne);
+      monde.surModele?.(g);
+    }
+  }).catch(() => { g.add(voiture(peinture, genre, leger)); g.userData.pret = true; }); // hors ligne : l'ancienne voiture dessinée
+  if (jouable && !leger) g.userData.detailler = () => { if (!g.userData.detaille) { g.userData.detaille = true; poser(true).catch(() => {}); } };
   return g;
 }
 
@@ -586,6 +652,8 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     for (const [x, z] of [[-10, 21.5], [10, 21.5], [-18.8, -8], [18.8, -2]]) racine.add(await monde.objet('planter_box_01', { x, y: 0, z, echelle: 1.3 }));
   })();
 
+  // Les vraies voitures arrivent après coup : leurs phares s'allument avec la nuit.
+  monde.surModele = (g) => { for (const m of g.userData.lumieres) if (!nuit.lumieres.includes(m)) nuit.lumieres.push(m); };
   // Circulation : voitures et motos sur les deux sens des rues proches
   const voies = [];
   for (const x of [-26]) { voies.push({ axe: 'z', fixe: x - 3, sens: 1 }); voies.push({ axe: 'z', fixe: x + 3, sens: -1 }); }
@@ -600,7 +668,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       const peinture = PEINTURES[Math.floor(r() * PEINTURES.length)];
       const leger = monde.mobile;
       const s1 = style.motos, s2 = s1 + style.bus, s3 = s2 + style.taxis;
-      const o = t < s1 ? moto(peinture) : t < s2 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < s3 ? voiture(peinture, 'taxi', leger) : voiture(peinture, t < s3 + (1 - s3) * 0.35 ? 'suv' : 'berline', leger);
+      const o = t < s1 ? moto(peinture) : t < s2 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < s3 ? voiture3d(monde, peinture, 'taxi', leger) : voiture3d(monde, peinture, t < s3 + (1 - s3) * 0.35 ? 'suv' : 'berline', leger);
       const vitesse = allure;
       const pos = -120 + ((k * 240) / combien) + r() * 30 + iv * 13;
       o.userData = { ...o.userData, voie: v, vitesse, pos };
@@ -619,7 +687,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     { id: 'v2', peinture: '#1c2b44', genre: 'suv', x: -6, z: 34.8, cap: Math.PI / 2 }, // en face, le long du quartier des projets
     { id: 'v3', peinture: '#f2b705', genre: 'taxi', x: -21.0, z: 8, cap: Math.PI },
   ].map((d) => {
-    const o = voiture(d.peinture, d.genre, monde.mobile, true);
+    const o = voiture3d(monde, d.peinture, d.genre, monde.mobile, true);
     o.userData.libre = true;
     o.position.set(d.x, 0, d.z); o.rotation.y = d.cap - Math.PI / 2;
     racine.add(o);
