@@ -292,12 +292,11 @@ export class Atelier extends DurableObject {
       const action = p[2] || '';
       // Un projet d'une autre entreprise ne s'ouvre pas d'ici.
       if (entrepriseVue && e.projet.entreprise_id !== entrepriseVue) return erreur('Ce projet appartient à une autre entreprise.', 404);
-      // Ranger un ancien projet (créé avant le 25/09, sans entreprise) :
-      // seulement le propriétaire, seulement vers une entreprise dont il est membre.
+      // Ranger un projet (ancien, sans entreprise, ou mal rangé) : seulement
+      // son propriétaire, seulement vers une entreprise dont il est membre.
       if (action === 'entreprise' && methode === 'PUT') {
         const cible = ENT.test(String(corps.entreprise_id || '')) ? corps.entreprise_id : null;
         if (!cible || e.proprietaire !== user) return erreur('Non permis.', 403);
-        if (e.projet.entreprise_id) return erreur('Ce projet est déjà rangé dans une entreprise.', 409);
         if (!(await this.estMembre(jeton, user, cible))) return erreur('Tu n\'es pas membre de cette entreprise.', 403);
         e.projet.entreprise_id = cible;
         const liste = await this.projets();
