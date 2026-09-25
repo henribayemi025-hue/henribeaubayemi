@@ -104,8 +104,15 @@ export async function classerFiches(service: Service, args: Record<string, unkno
   if (tri === 'sans_prix') liste = liste.filter((x) => x.sans_prix);
   if (tri === 'sans_description') liste = liste.filter((x) => x.description_caracteres < 20);
   liste.sort((a, b) => b.vues - a.vues || b.ajouts_panier - a.ajouts_panier);
+  // Tout le catalogue en ligne, pas seulement les fiches vues (Boussole,
+  // 25/09 : « il me manque combien d'articles en ligne n'ont pas de prix »).
+  const [{ count: enLigne }, { count: surDemande }] = await Promise.all([
+    service.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    service.from('products').select('id', { count: 'exact', head: true }).eq('is_active', true).eq('price_on_request', true),
+  ]);
   return {
     periode_jours: jours,
+    catalogue: { articles_en_ligne: enLigne ?? null, dont_sans_prix_affiche: surDemande ?? null },
     regle: `comptes de test exclus ; robots retirés : un navigateur qui ouvre plus de ${SEUIL_ROBOT} fiches le même jour, ou plus de ${SEUIL_RAFALE} navigateurs qui ouvrent chacun une seule fiche le même jour`,
     vues_gardees: gardes.length,
     vues_robots_retirees: robots,

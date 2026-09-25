@@ -626,7 +626,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // Son dépôt de code branché : les agents le lisent (Beau, 25/09).
   const { count: nbDepots } = await service.from('legion_connecteurs').select('id', { count: 'exact', head: true }).eq('entreprise_id', msg.entreprise_id).eq('type', 'github').eq('actif', true);
   const aUnDepot = (nbDepots ?? 0) > 0;
-  const verifie = !appelVocal && (mesures || boutique || compta || aUnDepot) ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta, aUnDepot ? msg.entreprise_id : null) : [];
+  // Lire une page web publique : permis à tout agent (25/09), même sans rien de branché.
+  const verifie = !appelVocal ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta, aUnDepot ? msg.entreprise_id : null) : [];
   // Les chiffres mesurés partent avec la consigne quand la question le
   // demande: une vérification a eu lieu, ou c'est une question de fond
   // (plan, stratégie, bilan, priorités). Beau, 22/09: la « stratégie »

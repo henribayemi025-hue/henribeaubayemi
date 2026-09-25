@@ -616,8 +616,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // côté une tâche qui a échoué trois fois (pas de dépense en boucle).
       tache.meta = { ...(tache.meta || {}), travaille_depuis: new Date().toISOString(), essais: (tache.meta?.essais || 0) + 1 };
       await service.from('legion_messages').update({ meta: tache.meta }).eq('id', tache.id);
-      const peutVerifier = (peut(a, 'mesures') && !!mesures) || (peut(a, 'boutique') && !!boutique) || (peut(a, 'comptabilite') && !!compta) || (peut(a, 'github') && aUnDepot);
-      const verifie = (peutEnqueter || aUnDepot) && peutVerifier ? await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres ou quel code vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null) : [];
+      // Toujours : lire une page web publique est permis à tout agent (25/09) ;
+      // les chiffres et le code, seulement s'il en a le droit.
+      const verifie = await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Livrer la tâche « ${tache.texte} » (${a.poste}): quels chiffres ou quel code vérifier ?`, enDirection, peut(a, 'boutique') ? boutique : null, peut(a, 'mesures') && !!mesures, peut(a, 'comptabilite') ? compta : null, peut(a, 'github') && aUnDepot ? entrepriseId : null);
       // Une tâche reçue en relais: l'agent lit le livrable de celui qui la lui passe.
       let recu = '';
       if (tache.meta?.suite_de?.tache_id) {

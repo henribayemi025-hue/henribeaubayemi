@@ -40,7 +40,7 @@ export async function codeFichiers(d: Depot, args: Record<string, unknown>) {
   return { depot: d.depot, branche: d.branche || 'par défaut', dossier: dossier || '/', fichiers: liste.slice(0, 200).map((x: { name: string; type: string; size: number }) => `${x.type === 'dir' ? '📁 ' : ''}${x.name}${x.type === 'dir' ? '/' : ` (${x.size} o)`}`) };
 }
 
-// Un fichier, par morceaux de 12 000 caractères.
+// Un fichier, par morceaux de 20 000 caractères (Alpha, 25/09 : le carnet en fait 90 000).
 export async function codeLire(d: Depot, args: Record<string, unknown>) {
   const chemin = cheminPropre(args.chemin);
   if (!chemin) return { erreur: 'donne le chemin du fichier' };
@@ -50,7 +50,7 @@ export async function codeLire(d: Depot, args: Record<string, unknown>) {
   const bin = atob(f.content.replace(/\n/g, ''));
   const texte = new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
   const debut = Math.max(0, Number(args.a_partir_de) || 0);
-  const morceau = texte.slice(debut, debut + 12_000);
+  const morceau = texte.slice(debut, debut + 20_000);
   return { chemin, taille: texte.length, a_partir_de: debut, suite: debut + morceau.length < texte.length ? debut + morceau.length : null, contenu: morceau };
 }
 
