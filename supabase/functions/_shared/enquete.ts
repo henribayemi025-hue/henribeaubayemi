@@ -292,16 +292,17 @@ export async function rechercheGuidee(apiKey: string, tache: string, poste: stri
   const resultats: string[] = [];
   const pages: { titre: string; url: string }[] = [];
   const vus = new Set<string>();
-  for (const r of requetes) {
-    const t = await chercherWeb(apiKey, `Recherche précise : ${r}\nRends surtout les pages publiques trouvées (nom, adresse), sans rien inventer.`).catch(() => null);
+  // En parallèle : une recherche lente (Google surchargé, vu à 03 h 15) ne
+  // doit pas faire durer le passage trois fois plus.
+  const trouvailles = await Promise.all(requetes.map((r: string) => chercherWeb(apiKey, `Recherche précise : ${r}\nRends surtout les pages publiques trouvées (nom, adresse), sans rien inventer.`).catch(() => null)));
+  for (const [i, r] of requetes.entries()) {
+    const t = trouvailles[i];
     resultats.push(`chercher_web(${JSON.stringify({ requete: r })}) → ${JSON.stringify(t ? { resume: t.resume.slice(0, 1500), pages: t.sources } : { erreur: 'rien trouvé' }).slice(0, 2500)}`);
     for (const s of t?.sources || []) if (!vus.has(s.url)) { vus.add(s.url); pages.push(s); }
   }
   // Les vraies pages d'abord, les annuaires ensuite ; trois pages ouvertes au plus.
   pages.sort((a, b) => Number(ANNUAIRES.test(`${a.titre} ${a.url}`)) - Number(ANNUAIRES.test(`${b.titre} ${b.url}`)));
-  for (const p of pages.slice(0, 3)) {
-    const lu = await lirePage({ url: p.url }).catch((e: Error) => ({ erreur: e.message }));
-    resultats.push(`lire_page(${JSON.stringify({ url: p.url, titre: p.titre })}) → ${JSON.stringify(lu).slice(0, 5000)}`);
-  }
+  const lus = await Promise.all(pages.slice(0, 3).map((p) => lirePage({ url: p.url }).catch((e: Error) => ({ erreur: e.message }))));
+  pages.slice(0, 3).forEach((p, i) => resultats.push(`lire_page(${JSON.stringify({ url: p.url, titre: p.titre })}) → ${JSON.stringify(lus[i]).slice(0, 5000)}`));
   return resultats;
 }
