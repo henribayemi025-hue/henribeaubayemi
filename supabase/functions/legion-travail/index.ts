@@ -321,6 +321,17 @@ ${REGLES_COMMUNES}
 // semaine et un livrable déjà rendu aujourd'hui ne se refont pas: la
 // chaîne s'arrête d'elle-même.
 const BUDGET_MS = 100_000;
+// Agents par invocation (le reste part en tranche suivante) et nombre de tranches au plus
+// pour une même entreprise et un même lancement — jamais de boucle sans fin.
+const MAX_AGENTS_PAR_PASSAGE = 9;
+const MAX_TRANCHES = 8;
+// Une tâche que le quart d'heure doit prendre : ouverte, pas rendue, moins de trois essais, et
+// soit urgente ou haute, soit confiée à quelqu'un dans les dernières 24 heures.
+function pressante(t: Tache): boolean {
+  if (!t.assigne_a || ['fait', 'revue'].includes(t.meta?.statut || '') || t.meta?.livre_le || (t.meta?.essais || 0) >= 3) return false;
+  if (['urgente', 'haute'].includes(t.meta?.priorite || '')) return true;
+  return Date.now() - Date.parse(t.created_at) < 24 * 3_600_000;
+}
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
 // L'agent écrit sa compétence, si la tâche livrée était difficile (voir
@@ -571,20 +582,32 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const lot = 3;
   // Une tâche URGENTE pas encore livrée n'attend pas le passage suivant.
   const urgente = (a: Agent) => ouvertes.some((t) => t.assigne_a === a.id && t.meta?.priorite === 'urgente' && !t.meta?.livre_le);
-  const presse = (a: Agent) => ouvertes.some((t) => t.assigne_a === a.id && ['urgente', 'haute'].includes(t.meta?.priorite || '') && !t.meta?.livre_le && (t.meta?.essais || 0) < 3);
-  const restants = urgences ? machines.filter(presse) : machines.filter((a) => !dejaLivre.has(a.id) || urgente(a));
-  if (urgences && !restants.length) return false;
-  for (let i = 0; i < restants.length; i += lot) {
+  // Au quart d'heure : ses tâches urgentes ou hautes, et — s'il n'a rien rendu depuis trois
+  // heures — celles confiées dans la journée (pressante), pas encore rendues, moins de trois essais.
+  const aFaireAuQuart = (a: Agent, t: Tache) => t.assigne_a === a.id && pressante(t) && (['urgente', 'haute'].includes(t.meta?.priorite || '') || !dejaLivre.has(a.id));
+  const presse = (a: Agent) => ouvertes.some((t) => aFaireAuQuart(a, t));
+  const eligibles = urgences ? machines.filter(presse) : machines.filter((a) => !dejaLivre.has(a.id) || urgente(a));
+  if (urgences && !eligibles.length) return false;
+  // Le budget du mois de chacun, AVANT de découper : un agent au plafond ne compte pas dans
+  // la tranche (sinon la tranche suivante le retrouverait, et ainsi de suite).
+  const restants: Agent[] = [];
+  for (const a of eligibles) {
+    if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); continue; }
+    restants.push(a);
+  }
+  // Une invocation ne prend que MAX_AGENTS_PAR_PASSAGE agents (25/09 : les 41 de Finjaro d'un
+  // coup dépassaient les ressources du serveur, code 546) ; le reste part dans une tranche
+  // suivante, qui relit qui a déjà rendu.
+  const tranche = restants.slice(0, MAX_AGENTS_PAR_PASSAGE);
+  for (let i = 0; i < tranche.length; i += lot) {
     if (tempsEcoule()) return true;
     // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
     // coûte SON livrable.
-    await Promise.all(restants.slice(i, i + lot).map((a) => aPart(async () => {
+    await Promise.all(tranche.slice(i, i + lot).map((a) => aPart(async () => {
       // Une tâche urgente ou haute passe avant les plus anciennes (file de
       // priorités, point 7 des « agents autonomes »).
       const rang = (t: Tache) => ({ urgente: 0, haute: 1 } as Record<string, number>)[t.meta?.priorite || ''] ?? 2;
-      // Au quart d'heure, seulement ses tâches urgentes ou hautes, pas encore
-      // rendues, et moins de trois essais.
-      const aFaire = (t: Tache) => !urgences || (['urgente', 'haute'].includes(t.meta?.priorite || '') && !t.meta?.livre_le && (t.meta?.essais || 0) < 3);
+      const aFaire = (t: Tache) => !urgences || aFaireAuQuart(a, t);
       let tache = ouvertes.filter((t) => t.assigne_a === a.id && aFaire(t)).sort((x, y) => rang(x) - rang(y))[0];
       // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
       // « vous ne devez pas attendre que je vous demande quelque chose ») :
@@ -616,7 +639,6 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
         tache = nouvelle as Tache;
         journal.push(`${entreprise.nom}: ${a.nom} prend une initiative`);
       }
-      if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); dejaLivre.add(a.id); return; }
       const canal = canalDe(a.departement);
       pourAgent((a as { modele?: string | null }).modele);
       const competences = await competencesPour(service, a.id, String(tache.texte || ''), 4, 2500);
@@ -728,6 +750,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       dejaLivre.add(a.id);
     })));
   }
+  if (restants.length > tranche.length) { journal.push(`${entreprise.nom}: ${restants.length - tranche.length} agent(s) pour la tranche suivante`); return true; }
   return false;
 }
 
@@ -740,7 +763,7 @@ Deno.serve(compter('legion_travail', async (req: Request) => {
   if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-  let corps: { entreprise_id?: string; urgences?: boolean } = {};
+  let corps: { entreprise_id?: string; urgences?: boolean; tranche?: number } = {};
   try { corps = await req.json(); } catch { corps = {}; }
 
   // Deux portes: le cron du matin (jeton partagé, toutes les entreprises),
@@ -754,10 +777,12 @@ Deno.serve(compter('legion_travail', async (req: Request) => {
     else if (corps.urgences) {
       // Le quart d'heure : seulement les entreprises qui ont une tâche urgente
       // ou haute pas encore rendue.
-      const { data } = await service.from('legion_messages').select('entreprise_id, meta').eq('genre', 'tache').is('termine_le', null)
-        .in('meta->>priorite', ['urgente', 'haute']).gte('created_at', new Date(Date.now() - 30 * 86_400_000).toISOString()).limit(2000);
-      entreprises = [...new Set((data || []).filter((t: { meta: Tache['meta'] }) => !['fait', 'revue'].includes(t.meta?.statut || '') && !t.meta?.livre_le)
-        .map((t: { entreprise_id: string }) => t.entreprise_id))];
+      // Depuis le 25/09 au soir (Beau : « ils ont bien fait toutes tes tâches ? » — non : huit
+      // tâches données l'après-midi attendaient le passage du lendemain), le quart d'heure prend
+      // AUSSI les tâches confiées dans la journée, pas seulement les urgentes et les hautes.
+      const { data } = await service.from('legion_messages').select('entreprise_id, meta, assigne_a, created_at').eq('genre', 'tache').is('termine_le', null)
+        .gte('created_at', new Date(Date.now() - 30 * 86_400_000).toISOString()).limit(2000);
+      entreprises = [...new Set(((data || []) as unknown as Array<Tache & { entreprise_id: string }>).filter((t) => pressante(t)).map((t) => t.entreprise_id))];
     } else {
       const { data } = await service.from('legion_agents').select('entreprise_id').eq('actif', true).is('user_id', null).neq('moteur', 'claude-code');
       entreprises = [...new Set((data || []).map((x: { entreprise_id: string }) => x.entreprise_id))];
@@ -789,19 +814,21 @@ Deno.serve(compter('legion_travail', async (req: Request) => {
   const journal: string[] = [];
   const debut = Date.now();
   const aSuivre: string[] = [];
+  const numeroTranche = Number(corps.tranche || 0);
   for (const id of entreprises) {
     try { if (await travailler(service, apiKey, id, journal, debut, !!corps.urgences)) aSuivre.push(id); } catch (e) { journal.push(`${id}: ${(e as Error).message}`); console.error(e); }
   }
   // La tranche suivante, pour ce qui reste: la fonction se rappelle avec le
-  // jeton de la base, sans attendre la réponse.
-  if (aSuivre.length) {
+  // jeton de la base, sans attendre la réponse. Au plus MAX_TRANCHES fois.
+  if (aSuivre.length && numeroTranche >= MAX_TRANCHES) journal.push(`tranches épuisées (${MAX_TRANCHES}) : le reste attend le prochain passage`);
+  if (aSuivre.length && numeroTranche < MAX_TRANCHES) {
     const { data: sec } = await service.from('app_secrets').select('value').eq('name', 'legion_travail').maybeSingle();
     if (sec?.value) {
       for (const id of aSuivre) {
         const suite = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-travail`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`, 'x-finjaro-token': sec.value },
-          body: JSON.stringify({ entreprise_id: id, urgences: !!corps.urgences }),
+          body: JSON.stringify({ entreprise_id: id, urgences: !!corps.urgences, tranche: numeroTranche + 1 }),
         }).catch((e) => console.error('tranche suivante:', (e as Error).message));
         if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(suite);
       }
