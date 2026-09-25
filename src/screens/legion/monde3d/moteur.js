@@ -361,7 +361,9 @@ export class Monde {
     const marbre = this.matiere('terrazzo_tiles', 4);
     const platre = new THREE.MeshStandardMaterial({ color: '#ece7df', roughness: 0.88 });
     this.sol(g, 24, 18, marbre);
-    this.plafond(g, 24, 18, 5.6);
+    // 5.55 et pas 5.6 : à 5.6, le dessous de la corniche et de la tour tombaient pile sur le plafond, et les
+    // deux surfaces se disputaient chaque pixel (Beau, 25/09 : « le plafond change beaucoup, les couleurs vibrent »).
+    this.plafond(g, 24, 18, 5.55);
     this.mur(g, murs, 0, -9, 24, 0.3, 5.6, platre);            // fond
     this.mur(g, murs, 12, 0, 0.3, 18, 5.6, platre);            // droite (ascenseurs)
     this.vitre(g, -12, 0, 18, 5.6, Math.PI / 2);                 // gauche : baie sur la ville
@@ -475,7 +477,7 @@ export class Monde {
     }
     // Des bandeaux lumineux au plafond (photo du couloir).
     const led = new THREE.MeshBasicMaterial({ color: '#fffaf0' });
-    for (const x of [-4, 0, 4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 14), led); b.position.set(x, 5.58, 0); g.add(b); }
+    for (const x of [-4, 0, 4]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 14), led); b.position.set(x, 5.53, 0); g.add(b); }
     // Des cadres aux murs.
     { const t = this.peinture(1.4, 1.0, 1); t.position.set(-11.6, 2.5, 5.5); t.rotation.y = Math.PI / 2; g.add(t); }
     { const t = this.peinture(1.4, 1.0, 2); t.position.set(11.8, 2.5, 5.5); t.rotation.y = -Math.PI / 2; g.add(t); }
