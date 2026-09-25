@@ -70,7 +70,11 @@ export async function classerFiches(service: Service, args: Record<string, unkno
   for (const e of gardes) if (e.target_id) vues.set(e.target_id, (vues.get(e.target_id) || 0) + 1);
   const paniers = new Map<string, number>();
   for (const e of ajouts) if (e.target_id) paniers.set(e.target_id, (paniers.get(e.target_id) || 0) + 1);
-  const ids = [...vues.keys()];
+  // Seuls les vrais identifiants d'article : un événement de test portait
+  // « PLACEHOLDER », et la base refusait toute la lecture (Rigo, Semeur et
+  // Atelier bloqués le 24/09 au soir).
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const ids = [...vues.keys()].filter((id) => UUID.test(id));
   if (!ids.length) return { periode_jours: jours, vues_gardees: 0, vues_robots_retirees: robots, fiches: [] };
   // Par paquets de 100 : 400 identifiants dans une seule adresse dépassaient
   // la longueur permise, et la liste revenait vide sans le dire.
