@@ -10,6 +10,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { STYLES } from './region';
 import { construireChantier, jeterChantier, lumieresChantiers } from './chantiers3d';
 import { construireHelico, construireHeliport } from './helico3d';
+import { reliefTour, nouveauRelief, construireRelief } from './relief3d';
 
 const ROUTES_X = [-78, -26, 26, 78];
 const ROUTES_Z = [-74, -22, 30, 82];
@@ -92,6 +93,7 @@ export function cotesFacade(w, h, d, [tw, th], r) {
   g.setAttribute('position', new THREE.Float32BufferAttribute(garder.flatMap((v) => v.slice(0, 3)), 3));
   g.setAttribute('normal', new THREE.Float32BufferAttribute(garder.flatMap((v) => v.slice(3, 6)), 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(garder.flatMap((v) => v.slice(6)), 2));
+  g.userData.du = du; // le décalage de la tuile : le relief (relief3d.js) se pose dessus
   return g;
 }
 
@@ -257,6 +259,16 @@ function voiture(peinture, genre = 'berline', leger = false, jouable = false) {
 // circulation et le téléphone. Le groupe est rendu tout de suite ; le modèle s'y pose une fois
 // chargé. Son avant est +z : on le tourne pour qu'il regarde +x comme les autres véhicules.
 const CARROSSERIE = /^Paint [12]/;
+// Les vitres du modèle sont en « transmission » : three.js redessine alors toute la scène une
+// seconde fois à chaque image. On les remplace par un verre teinté simple, bien moins coûteux.
+let VITRE_SIMPLE = null;
+const vitreSimple = () => (VITRE_SIMPLE ||= new THREE.MeshStandardMaterial({ name: 'Glass', color: '#1b2531', metalness: 0.3, roughness: 0.04, transparent: true, opacity: 0.62, envMapIntensity: 1.3 }));
+// Au téléphone, le vernis (clearcoat) coûte cher : une matière standard qui garde la couleur et l'éclat.
+function simplifier(mat) {
+  if (!mat?.isMeshPhysicalMaterial) return mat;
+  const m = new THREE.MeshStandardMaterial({ name: mat.name, color: mat.color, metalness: 0.4, roughness: 0.4, map: mat.map, emissive: mat.emissive, emissiveMap: mat.emissiveMap, envMapIntensity: 0.9 });
+  return m;
+}
 function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = false) {
   const M = matVehicules();
   const g = new THREE.Group();
@@ -276,8 +288,17 @@ function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = 
       if (!m.isMesh) return;
       m.castShadow = detail; m.receiveShadow = !leger; // la circulation a déjà son ombre peinte au sol
       const nom = m.material?.name || '';
+      if (m.material?.transmission > 0 || nom === 'Glass') { m.material = vitreSimple(); return; }
+      if (leger && m.material?.isMeshPhysicalMaterial) { const cle = `simple:${m.material.uuid}`; peint.set(cle, peint.get(cle) || simplifier(m.material)); m.material = peint.get(cle); }
       if (CARROSSERIE.test(nom)) { // chaque voiture a sa couleur (le second ton reste noir)
-        if (!peint.has(nom)) { const c = m.material.clone(); c.color.set(nom.startsWith('Paint 1') ? couleur : '#1b1d21'); peint.set(nom, c); }
+        if (!peint.has(nom)) {
+          const c = (leger ? simplifier(m.material) : m.material).clone();
+          c.color.set(nom.startsWith('Paint 1') ? couleur : '#1b1d21');
+          // Peinture satinée : des reflets doux plutôt qu'un chrome qui ondule
+          c.metalness = Math.min(c.metalness, 0.45); c.roughness = Math.max(c.roughness, detail ? 0.28 : 0.38); c.envMapIntensity = 0.9;
+          peint.set(nom, c);
+        }
+        if (!detail && !m.geometry.userData.lisse) { m.geometry = m.geometry.clone(); m.geometry.computeVertexNormals(); m.geometry.userData.lisse = true; }
         m.material = peint.get(nom);
       }
       if (leger && m.material && !m.material.userData.allege) { Object.assign(m.material, { normalMap: null, aoMap: null }); m.material.userData.allege = true; m.material.needsUpdate = true; }
@@ -483,6 +504,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3, heliport: i === 3 && j === 2, boutiques: i === 1 && j === 2, clients: i === 2 && j === 1, chezMoi: i === 3 && j === 3 }); // en face : les projets (chantiers3d.js) ; à droite : l'héliport ; à gauche : les boutiques, derrière : les clients (quartiers3d.js) ; en diagonale : chez moi
   }
   const tours = [];
+  const relief = nouveauRelief();
   const NEONS = new Map();
   const facades = matieresFacades(monde, envCiel);
   for (const f of facades) nuit.fenetres.push(f.mat);
@@ -514,7 +536,10 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       racine.add(tour);
       tours.push({ bx, bz, w, d, h });
       const dessus = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.6, d + 0.4), toit); dessus.position.set(bx, h + 0.3, bz); racine.add(dessus);
-      if (r() < 0.45) { // retrait au sommet
+      const retrait = r() < 0.45;
+      // Le relief : piliers, meneaux, bandeaux, balcons, toiture (sur le toit du retrait s'il y en a un)
+      reliefTour(relief, { nom: f.nom, bx, bz, w, d, hc, base: 5, du: tour.geometry.userData.du, h, toitW: retrait ? w * 0.6 : w, toitD: retrait ? d * 0.6 : d, toitH: retrait ? h + h * 0.18 : h }, { mobile: monde.mobile });
+      if (retrait) { // retrait au sommet
         const t2 = new THREE.Mesh(cotesFacade(w * 0.6, h * 0.18, d * 0.6, f.taille, r), f.mat); t2.position.set(bx, h + h * 0.09, bz); racine.add(t2);
         const d2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6 + 0.3, 0.5, d * 0.6 + 0.3), toit); d2.position.set(bx, h + h * 0.18 + 0.25, bz); racine.add(d2);
       }
@@ -670,7 +695,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   for (const z of [30]) { voies.push({ axe: 'x', fixe: z + 3, sens: 1 }); voies.push({ axe: 'x', fixe: z - 3, sens: -1 }); }
   const vehicules = [];
   voies.forEach((v, iv) => {
-    const combien = monde.mobile ? 2 : 3;
+    const combien = monde.mobile ? 1 : 3; // au téléphone : une voiture par voie (Beau, 25/09 : « ça rame »)
     // Une allure par voie : les véhicules d'une même voie ne se traversent plus.
     const allure = (8 + r() * 3) * v.sens;
     for (let k = 0; k < combien; k += 1) {
@@ -881,6 +906,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   });
 
   let groupeChantiers = null, bougerChantiers = [], chantiersFaits = new Map();
+  racine.add(construireRelief(relief, { mobile: monde.mobile, envCiel }).groupe);
   fusionner(racine);
   return {
     racine,
