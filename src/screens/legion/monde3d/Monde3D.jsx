@@ -144,7 +144,7 @@ export default function Monde3D({ entreprise, agents, messages, taches, onFiche,
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
 
   return (
-    <div className="relative h-[calc(100dvh-9.5rem)] min-h-[420px] overflow-hidden bg-black">
+    <div className="relative h-[calc(100dvh-13rem)] min-h-[420px] sm:h-[calc(100dvh-9.5rem)] overflow-hidden bg-black">
       <div ref={boite} className="absolute inset-0" />
 
       {etat !== 'pret' && (
