@@ -3,6 +3,7 @@ import { IconSearch, IconHash, IconAdjustmentsHorizontal, IconRobot, IconUsers, 
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { dernierMessage, quand, sansAccent, iconeDept, espacerPhrases } from './outils';
+import { PhotoSalon } from './PhotoSalon';
 
 // La deuxième colonne: les salons du département choisi, puis ses agents
 // avec leur interrupteur — comme la liste de WhatsApp Web, avec le dernier
@@ -99,7 +100,7 @@ export function ColonneSalons({
             <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.salonsCollectifs', 'Salons')}</p>
             <ul className="mt-1 space-y-0.5">
               {salonsVisibles.map((s) => {
-                const Icone = iconeDept(s.cle);
+                const Icone = iconeDept(s.cle, s.nom);
                 const dernier = dernierMessage(messages, s.id);
                 const choisi = courant === s.id && !agentPrive;
                 const n = machines.filter((a) => a.departement === s.nom).length;
@@ -107,13 +108,7 @@ export function ColonneSalons({
                   <li key={s.id}>
                     <button type="button" onClick={() => onChoisirSalon(s.id)}
                       className={`flex w-full items-center gap-2.5 rounded-card px-2.5 py-2 text-left transition ${choisi ? 'bg-legion-card shadow-sm ring-1 ring-legion-line' : 'hover:bg-legion-card/70'}`}>
-                      {s.image_url ? (
-                        <img src={s.image_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
-                      ) : (
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-input text-white" style={{ backgroundColor: s.couleur }}>
-                          <Icone size={16} />
-                        </span>
-                      )}
+                      <PhotoSalon salon={s} agents={machines} Icone={Icone} taille={36} arrondi="rounded-input" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline justify-between gap-2">
                           <span className="truncate text-caption font-semibold text-legion-ink">{s.nom}</span>

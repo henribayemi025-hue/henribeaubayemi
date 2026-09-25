@@ -390,7 +390,8 @@
       "vote_contre": "against",
       "vote_abstention": "abstention",
       "ecouter": "Listen to the meeting",
-      "arreterEcoute": "Stop"
+      "arreterEcoute": "Stop",
+      "court": "Meeting"
     },
     "sources": "Sources",
     "appel": {
@@ -564,7 +565,8 @@
       "ecouter": "Listen",
       "alertes_one": "{{count}} alert",
       "alertes_other": "{{count}} alerts",
-      "plafond": "Monthly cap reached: no AI-written report today."
+      "plafond": "Monthly cap reached: no AI-written report today.",
+      "court": "Report"
     },
     "tdb": {
       "titre": "The dashboard",
@@ -1284,7 +1286,8 @@
       "demandeRapport": "@{{nom}} your report: where are you, what’s done, what’s blocking you?",
       "agentInconnu": "I can’t find that agent.",
       "atelierFerme": "The workshop is for the company owner only.",
-      "lecteur": "You’re a reader in this company: I can’t do that."
+      "lecteur": "You’re a reader in this company: I can’t do that.",
+      "parler": "Talk to Léo"
     },
     "grade": {
       "manager": "Manager",
@@ -1491,7 +1494,8 @@
     "champPersoEx": "E.g. warm, direct, loves numbers",
     "agentAToi": "This agent exists only in your company: editing it changes nothing elsewhere.",
     "creerAgent": "Create agent",
-    "modifier": "Edit"
+    "modifier": "Edit",
+    "membresCourt": "Members"
   },
   "equipe": {
     "titre": "The team",

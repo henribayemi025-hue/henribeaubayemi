@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconMicrophone, IconPlayerStopFilled, IconX } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconX } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
 
@@ -167,7 +167,7 @@ export function Jarvis({ entrepriseId, langue, t, onAction, enConversation = fal
   return (
     <>
       {visible && (
-        <div role="status" aria-live="polite" className={`fixed right-4 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-legion-line bg-legion-card p-3 text-[13px] shadow-xl ${enConversation ? 'bottom-[calc(env(safe-area-inset-bottom)+10.5rem)]' : 'bottom-[calc(env(safe-area-inset-bottom)+9.25rem)] lg:bottom-24'}`}>
+        <div role="status" aria-live="polite" className={`fixed right-4 z-40 w-[min(22rem,calc(100vw-2rem))] rounded-card border border-legion-line bg-legion-card p-3 text-[13px] shadow-xl ${enConversation ? 'top-[10.5rem] lg:right-auto lg:left-1/2 lg:top-[3.9rem] lg:-translate-x-1/2' : 'bottom-[calc(env(safe-area-inset-bottom)+9.25rem)] lg:bottom-24'}`}>
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 font-semibold text-legion-gold">Léo</p>
             <button type="button" onClick={() => { couper(); setEtat('repos'); setBulle(null); setAttente(null); try { window.speechSynthesis?.cancel(); } catch { /* rien */ } }} aria-label={t('common.close', 'Fermer')} className="text-legion-muted hover:text-legion-ink"><IconX size={15} /></button>
@@ -203,9 +203,19 @@ export function Jarvis({ entrepriseId, langue, t, onAction, enConversation = fal
           )}
         </div>
       )}
+      {/* Beau, 25/09 : « je vois deux icônes d'audio, je ne comprends pas » — le micro du message vocal et
+          celui de Jarvis se superposaient au-dessus de la zone de saisie. Jarvis n'est plus un micro : c'est
+          le lion de Léo, nommé, et dans un salon il se range en haut à droite, loin du micro du message. */}
       <button type="button" onClick={reveiller} title={t('legion.jarvis.bouton')} aria-label={t('legion.jarvis.bouton')} aria-pressed={etat === 'ecoute'}
-        className={`fixed right-4 z-40 flex h-14 w-14 ${enConversation ? 'bottom-[calc(env(safe-area-inset-bottom)+6rem)]' : 'bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:bottom-6'} items-center justify-center rounded-full shadow-xl transition ${etat === 'ecoute' ? 'bg-legion-danger text-white ring-4 ring-legion-danger/30' : 'bg-legion-gold text-legion-bg hover:brightness-110'}`}>
-        {etat === 'ecoute' ? <IconPlayerStopFilled size={22} /> : <IconMicrophone size={24} />}
+        className={`group fixed right-4 z-40 flex items-center gap-2 rounded-full p-1 pr-1 shadow-xl transition sm:pr-3.5 ${enConversation ? 'top-[6.5rem] lg:right-auto lg:left-1/2 lg:top-[0.45rem] lg:-translate-x-1/2' : 'bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:bottom-6'} ${etat === 'ecoute' ? 'bg-legion-danger text-white ring-4 ring-legion-danger/30' : 'bg-legion-panel text-legion-ink ring-1 ring-legion-gold/50 hover:ring-legion-gold'}`}>
+        <span className={`relative flex ${enConversation ? 'h-9 w-9' : 'h-12 w-12'} items-center justify-center overflow-hidden rounded-full bg-legion-bg`}>
+          {etat === 'ecoute' ? <IconPlayerStopFilled size={20} /> : <img src="/logos/leo.png" alt="" className="h-full w-full object-cover transition group-hover:scale-110" />}
+          {etat === 'ecoute' && <span className="absolute inset-0 animate-ping rounded-full bg-white/20" aria-hidden />}
+        </span>
+        <span className="hidden text-left leading-tight sm:block">
+          <span className="block text-[12px] font-bold">Jarvis</span>
+          <span className="block text-[10px] text-legion-muted group-aria-pressed:text-white/80">{etat === 'ecoute' ? t('legion.jarvis.ecoute', 'Je t’écoute…') : t('legion.jarvis.parler', 'Parle à Léo')}</span>
+        </span>
       </button>
     </>
   );

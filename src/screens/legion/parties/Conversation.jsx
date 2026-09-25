@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChoixModele } from './ChoixModele';
 import {
-  IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban,
+  IconSend, IconMoodSmile, IconPhoto, IconMicrophone, IconPlayerStopFilled, IconAt, IconLayoutKanban, IconPinned,
   IconArrowBackUp, IconCopy, IconCheck, IconPlus, IconX, IconSparkles, IconChecks, IconArrowLeft,
   IconChevronDown, IconCamera, IconUserPlus, IconUsersGroup, IconSwords, IconHandStop, IconPhone, IconPaperclip, IconFileSpreadsheet, IconFileText,
   IconVolume, IconPlayerStop, IconNews,
@@ -11,6 +11,7 @@ import { blobToWavDataUrl } from '../../../lib/audioWav';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { ChoixEmoji } from './ChoixEmoji';
+import { PhotoSalon } from './PhotoSalon';
 import { RAPIDES } from '../emojis';
 import { GENRES, heure, jourDe, sansAccent, iconeDept, espacerPhrases } from './outils';
 import { Texte, estStructure } from './Plans';
@@ -153,7 +154,7 @@ export function Conversation({
   }
   function repondre(m) { setReponseA(m); setOuvert(null); }
 
-  const Icone = iconeDept(salon?.cle);
+  const Icone = iconeDept(salon?.cle, salon?.nom);
   const sousTitre = tape
     ? `${tape.nom} ${t('legion.ecrit', 'écrit…')}`
     : agentPrive
@@ -193,13 +194,7 @@ export function Conversation({
             // Toucher l'icône du salon: lui mettre une photo (Beau, 22/09).
             <button type="button" onClick={() => photoSalon.current?.click()} disabled={!onPhotoSalon}
               title={t('legion.photoDuSalon', 'Changer la photo du salon')} className="shrink-0">
-              {salon?.image_url ? (
-                <img src={salon.image_url} alt="" className="h-[38px] w-[38px] rounded-full object-cover lg:h-10 lg:w-10" />
-              ) : (
-                <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-white lg:h-10 lg:w-10 lg:rounded-card" style={{ backgroundColor: salon?.couleur || '#C25E38' }}>
-                  <Icone size={18} />
-                </span>
-              )}
+              <PhotoSalon salon={salon} agents={agents} Icone={Icone} taille={40} arrondi="rounded-card" />
               <input ref={photoSalon} type="file" accept="image/*" className="hidden"
                 onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onPhotoSalon?.(salon, f); }} />
             </button>
@@ -223,21 +218,21 @@ export function Conversation({
           {!agentPrive && onRapport && (
             <button type="button" onClick={() => { setRapport((v) => !v); setConvoquer(false); setGererMembres(false); }}
               title={t('legion.rapport.titre')} aria-label={t('legion.rapport.titre')}
-              className={`rounded-full p-2 transition ${rapport ? 'text-legion-gold' : 'text-legion-ink'}`}>
-              <IconNews size={20} />
+              className={`flex items-center gap-1.5 rounded-full p-2 transition xl:px-3 ${rapport ? 'text-legion-gold' : 'text-legion-ink'}`}>
+              <IconNews size={20} /><span className="hidden text-[12px] font-semibold xl:inline">{t('legion.rapport.court', 'Rapport')}</span>
             </button>
           )}
           {!agentPrive && onReunion && (
             <button type="button" onClick={() => { setConvoquer((v) => !v); setGererMembres(false); setRapport(false); }} disabled={!!reunion}
               title={reunion ? t('legion.reunion.enCours') : t('legion.reunion.titre')}
-              className={`rounded-full p-2 transition disabled:opacity-40 ${convoquer ? 'text-legion-gold' : 'text-legion-ink'}`}>
-              <IconUsersGroup size={20} />
+              className={`flex items-center gap-1.5 rounded-full p-2 transition disabled:opacity-40 xl:px-3 ${convoquer ? 'text-legion-gold' : 'text-legion-ink'}`}>
+              <IconUsersGroup size={20} /><span className="hidden text-[12px] font-semibold xl:inline">{t('legion.reunion.court', 'Réunion')}</span>
             </button>
           )}
           {!agentPrive && onMembres && (
             <button type="button" onClick={() => { setGererMembres((v) => !v); setConvoquer(false); }} title={t('legion.gererMembres', 'Qui est dans ce salon')}
-              className={`rounded-full p-2 transition ${gererMembres ? 'text-legion-gold' : 'text-legion-ink'}`}>
-              <IconUserPlus size={20} />
+              className={`flex items-center gap-1.5 rounded-full p-2 transition xl:px-3 ${gererMembres ? 'text-legion-gold' : 'text-legion-ink'}`}>
+              <IconUserPlus size={20} /><span className="hidden text-[12px] font-semibold xl:inline">{t('legion.membresCourt', 'Membres')}</span>
             </button>
           )}
           {onTaches && (
@@ -320,7 +315,7 @@ export function Conversation({
                 {sep && <Jour label={jour} />}
                 <div className="flex justify-center">
                   <div className="flex max-w-[90%] items-center gap-2 rounded-card bg-legion-card/90 px-3 py-1.5 text-[12px] text-legion-ink shadow-sm">
-                    <span>📌</span>
+                    <IconPinned size={14} className="shrink-0 text-legion-gold" />
                     <span className="min-w-0 truncate"><span className="font-semibold">{t('legion.genre.tache', 'Tâche')}</span> · {m.texte}</span>
                     {pris && <span className="flex shrink-0 items-center gap-1 text-legion-muted"><Visage a={pris} taille={16} point={false} /> {pris.nom}</span>}
                   </div>
@@ -362,7 +357,7 @@ export function Conversation({
                       )}
                       {genre && genre.cle !== 'info' && !m.meta?.reunion?.fin && (
                         <span className={`mb-0.5 inline-flex items-center gap-1 rounded-pill px-1.5 py-0.5 text-[11px] font-semibold ${mien ? 'bg-black/15' : 'bg-legion-bg text-legion-muted'}`}>
-                          {genre.emoji} {t(`legion.genre.${genre.cle}`)}
+                          {genre.icone ? <genre.icone size={13} /> : genre.emoji} {t(`legion.genre.${genre.cle}`)}
                         </span>
                       )}
                       <EtiquetteReunion m={m} mien={mien} agents={agents} t={t} messages={messages} langue={langue} />
@@ -1130,14 +1125,14 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
           <button key={g.cle} type="button" onClick={() => setGenre(g.cle)}
             className={`flex shrink-0 items-center gap-1 rounded-pill px-2.5 py-1 text-[12px] font-semibold transition ${genre === g.cle ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted hover:text-legion-ink'}`}
             title={g.sonne ? t('legion.sonne', 'Fait sonner le téléphone') : ''}>
-            {g.emoji} {t(`legion.genre.${g.cle}`)}
+            <g.icone size={14} /> {t(`legion.genre.${g.cle}`)}
           </button>
         ))}
       </div>
       {genre !== 'info' && (
         <div className="mx-1 mb-1.5 flex lg:hidden">
           <button type="button" onClick={() => setGenre('info')} className="flex items-center gap-1 rounded-pill bg-legion-gold/20 px-2.5 py-1 text-[12px] font-semibold text-legion-gold">
-            {genreChoisi?.emoji} {t(`legion.genre.${genre}`)} <IconX size={12} />
+            {genreChoisi && <genreChoisi.icone size={13} />} {t(`legion.genre.${genre}`)} <IconX size={12} />
           </button>
         </div>
       )}
@@ -1153,7 +1148,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
             {GENRES.filter((g) => g.cle !== 'info').map((g) => (
               <button key={g.cle} type="button" onClick={() => { setGenre(g.cle); setPlus(false); zone.current?.focus(); }}
                 className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[15px] hover:bg-legion-bg ${genre === g.cle ? 'text-legion-gold' : 'text-legion-ink'}`}>
-                <span className="w-5 text-center">{g.emoji}</span>{t(`legion.genre.${g.cle}`)}
+                <g.icone size={18} className="w-5 shrink-0 text-legion-gold" />{t(`legion.genre.${g.cle}`)}
               </button>
             ))}
           </div>

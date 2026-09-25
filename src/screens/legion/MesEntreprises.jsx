@@ -125,8 +125,10 @@ export default function MesEntreprises() {
                       <Link to={`/legion/${e.id}`}
                         className="group flex h-full flex-col rounded-2xl border border-legion-line bg-gradient-to-br from-legion-card to-legion-panel p-4 shadow-lg transition hover:-translate-y-0.5 hover:border-legion-gold/50">
                         <div className="flex items-start gap-3">
-                          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-card bg-legion-bg text-[24px] ring-1 ring-legion-line">
-                            {e.studio_modeles?.emoji || '🏢'}
+                          {/* Beau, 25/09 : pas d'emoji pour représenter une entreprise — les visages de son équipe. */}
+                          <span className="grid h-12 w-12 shrink-0 grid-cols-2 grid-rows-2 gap-px overflow-hidden rounded-card bg-legion-line ring-1 ring-legion-line">
+                            {siens.filter((a) => a.avatar_url).slice(0, 4).map((a) => <img key={a.id} src={a.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover object-top" />)}
+                            {siens.filter((a) => a.avatar_url).length < 4 && Array.from({ length: 4 - Math.min(4, siens.filter((a) => a.avatar_url).length) }).map((_, i) => <img key={`l${i}`} src="/logos/leo.png" alt="" className="h-full w-full object-cover opacity-60" />)}
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-section font-semibold transition group-hover:text-legion-gold">{e.nom}</span>

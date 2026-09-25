@@ -390,7 +390,8 @@
       "vote_contre": "contre",
       "vote_abstention": "abstention",
       "ecouter": "Écouter la réunion",
-      "arreterEcoute": "Arrêter"
+      "arreterEcoute": "Arrêter",
+      "court": "Réunion"
     },
     "sources": "Sources",
     "appel": {
@@ -564,7 +565,8 @@
       "ecouter": "Écouter",
       "alertes_one": "{{count}} alerte",
       "alertes_other": "{{count}} alertes",
-      "plafond": "Plafond du mois atteint : pas de rapport écrit par l'IA aujourd'hui."
+      "plafond": "Plafond du mois atteint : pas de rapport écrit par l'IA aujourd'hui.",
+      "court": "Rapport"
     },
     "tdb": {
       "titre": "Le tableau de bord",
@@ -1284,7 +1286,8 @@
       "demandeRapport": "@{{nom}} ton rapport : où en es-tu, qu’as-tu fini, qu’est-ce qui te bloque ?",
       "agentInconnu": "Je ne trouve pas cet agent.",
       "atelierFerme": "L’atelier est réservé au propriétaire de l’entreprise.",
-      "lecteur": "Tu es lecteur dans cette entreprise : je ne peux pas le faire."
+      "lecteur": "Tu es lecteur dans cette entreprise : je ne peux pas le faire.",
+      "parler": "Parle à Léo"
     },
     "grade": {
       "manager": "Manager",
@@ -1491,7 +1494,8 @@
     "champPersoEx": "Ex. : chaleureux, direct, adore les chiffres",
     "agentAToi": "Cet agent n’existe que dans ton entreprise : le modifier ne change rien ailleurs.",
     "creerAgent": "Créer l’agent",
-    "modifier": "Modifier"
+    "modifier": "Modifier",
+    "membresCourt": "Membres"
   },
   "equipe": {
     "titre": "L'équipe",

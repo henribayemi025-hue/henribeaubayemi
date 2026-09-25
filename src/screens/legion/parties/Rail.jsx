@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { IconSparkles, IconArrowLeft, IconBuildingSkyscraper, IconCode } from '@tabler/icons-react';
 import { iconeDept } from './outils';
+import { PhotoSalon } from './PhotoSalon';
 
 // Le rail des départements — la colonne de gauche de la maquette que Beau
 // préfère: une icône par département, un point vert si quelqu'un y est
@@ -27,7 +28,7 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
 
       <div className="flex w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-1" style={{ scrollbarWidth: 'none' }}>
         {departements.map((d) => {
-          const Icone = iconeDept(d.cle);
+          const Icone = iconeDept(d.cle, d.nom);
           const desAgents = agents.filter((a) => !a.user_id && a.departement && a.departement === d.nom);
           const allumes = desAgents.filter((a) => a.actif).length;
           const choisi = courant === d.id;
@@ -40,7 +41,7 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
                 className={`relative flex h-11 w-11 items-center justify-center rounded-2xl transition ${choisi ? 'bg-legion-card text-legion-ink shadow-lg' : 'bg-legion-card text-legion-muted hover:bg-legion-card-haut hover:text-legion-ink'}`}
                 style={choisi ? { color: d.couleur } : undefined}
               >
-                {d.image_url ? <img src={d.image_url} alt="" className="h-full w-full rounded-2xl object-cover" /> : <Icone size={20} />}
+                <PhotoSalon salon={d} agents={agents} Icone={Icone} taille={44} arrondi="rounded-2xl" />
                 <span
                   className={`absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-legion-panel ${allumes > 0 ? 'bg-legion-success' : 'bg-legion-line'}`}
                   title={`${allumes}/${desAgents.length}`}
@@ -117,7 +118,7 @@ export function RailPastilles({ departements, courant, onChoisir, onTous, agents
         </button>
       )}
       {departements.map((d) => {
-        const Icone = iconeDept(d.cle);
+        const Icone = iconeDept(d.cle, d.nom);
         const choisi = courant === d.id;
         const allumes = agents.filter((a) => !a.user_id && a.departement === d.nom && a.actif).length;
         return (

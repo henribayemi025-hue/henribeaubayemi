@@ -4,6 +4,10 @@
 // disent la même chose de la même couleur.
 import {
   IconCrown, IconRadar2, IconFlame, IconStack2, IconShieldCheck, IconCoins, IconWorld, IconHash,
+  IconCode, IconPalette, IconShoppingCart, IconHeadset, IconUsers, IconScale, IconChartBar, IconSettings,
+  IconBriefcase, IconFlask, IconPencil, IconTruckDelivery, IconSchool, IconStethoscope, IconBuilding,
+  IconMovie, IconMicrophone2, IconLock, IconCash, IconBulb, IconSpeakerphone, IconChartCandle, IconPlane,
+  IconToolsKitchen2, IconPlant2, IconBolt, IconHammer, IconBed, IconFlower, IconMessageCircle, IconHelpCircle, IconPinned,
 } from '@tabler/icons-react';
 
 // Terre & Or d'abord (terracotta, laiton), puis des teintes franches pour
@@ -15,9 +19,34 @@ const ICONES = {
   qualite: IconShieldCheck, argent: IconCoins, international: IconWorld,
 };
 
-export function iconeDept(cle) {
+// Beau, 25/09 : « les salons, c'est des # tous pareils ». Au-delà des sept départements
+// de Finjaro, chaque modèle a les siens (Gestion, Design & Expérience…) : on reconnaît le
+// métier aux mots de la clé ou du nom, dans l'ordre (le plus précis d'abord).
+const MOTS = [
+  [/direction|board|comite|ceo|pdg/, IconCrown], [/concurren|veille|radar/, IconRadar2],
+  [/march[eé]s?\b.*financ|trading|salle-de-marche|bourse|quant|(?:^|[- ])marches(?:$|[- ])/, IconChartCandle],
+  [/marketing|croissance|growth|acquisition/, IconFlame], [/communication|presse|relations|influence|evenement/, IconSpeakerphone],
+  [/contenu|redaction|editorial|content|ecriture/, IconPencil], [/design|experience|ux|(?:^|[- ])ui(?:$|[- ])|creati|graphi/, IconPalette],
+  [/produit|product/, IconStack2], [/dev|tech|front|mobile|web|ingenier|engineer|code|logiciel|informatique|(?:^|[- ])it(?:$|[- ])|plateforme/, IconCode],
+  [/data|donnee|analy|(?:^|[- ])bi(?:$|[- ])|statisti|etude/, IconChartBar], [/qualite|test|audit|conformite/, IconShieldCheck],
+  [/securite|risque|cyber/, IconLock], [/juridi|legal|droit|avocat|contrat/, IconScale],
+  [/argent|finance|compta|tresor|caisse|paiement|facturation/, IconCoins], [/vente|commercial|sales|boutique|client/, IconShoppingCart],
+  [/support|service-client|sav|accueil|reception|relation-client/, IconHeadset], [/(?:^|[- ])rh(?:$|[- ])|ressources-humaines|recrut|talent|people|equipe/, IconUsers],
+  [/operation|production|usine|fabrication|atelier/, IconSettings], [/logisti|transport|livraison|supply|achat/, IconTruckDelivery],
+  [/recherche|labo|science|r-d|innovation/, IconFlask], [/formation|pedagog|enseign|ecole|academ/, IconSchool],
+  [/sante|medic|soin|clinique|pharma/, IconStethoscope], [/immobili|batiment|chantier|btp|construction/, IconHammer],
+  [/international|export|pays|monde/, IconWorld], [/cinema|video|film|animation|image/, IconMovie], [/musique|(?:^|[- ])son(?:$|[- ])|audio|podcast/, IconMicrophone2],
+  [/gestion|administration|admin|secretariat|office/, IconBriefcase], [/strategie|conseil|idee/, IconBulb],
+  [/banque|credit|epargne|microfinance/, IconCash], [/voyage|aerien|tourisme/, IconPlane], [/hebergement|chambre|etage|hotel/, IconBed], [/bien-etre|spa|beaute|coiffure|esthet/, IconFlower], [/restaura|cuisine|traiteur/, IconToolsKitchen2],
+  [/agri|agro|ferme|elevage/, IconPlant2], [/energie|electri/, IconBolt], [/siege|general|commun/, IconBuilding],
+];
+
+export function iconeDept(cle, nom = '') {
   const k = (cle || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  return ICONES[k] || IconHash;
+  if (ICONES[k]) return ICONES[k];
+  const texte = `${k} ${sansAccent(nom).replace(/\s+/g, '-')}`;
+  for (const [re, Icone] of MOTS) if (re.test(texte)) return Icone;
+  return IconHash;
 }
 
 // Le département d'un salon: sa couleur vient de sa position, stable tant
@@ -56,12 +85,14 @@ export const clePrivee = (a, b) => `dm-${[a, b].sort().join('-')}`;
 
 export const initiales = (nom) => (nom || '?').split(/\s+/).slice(0, 2).map((m) => m[0]).join('').toUpperCase();
 
+// Beau, 25/09 : pas d'emoji pour représenter les choses — une vraie icône par genre
+// (l'emoji reste pour les textes envoyés ailleurs, comme les notifications).
 export const GENRES = [
-  { cle: 'info', emoji: '💬', sonne: false },
-  { cle: 'question', emoji: '❓', sonne: true },
-  { cle: 'proposition', emoji: '💡', sonne: true },
-  { cle: 'decision', emoji: '⚖️', sonne: true },
-  { cle: 'tache', emoji: '📌', sonne: false },
+  { cle: 'info', emoji: '💬', icone: IconMessageCircle, sonne: false },
+  { cle: 'question', emoji: '❓', icone: IconHelpCircle, sonne: true },
+  { cle: 'proposition', emoji: '💡', icone: IconBulb, sonne: true },
+  { cle: 'decision', emoji: '⚖️', icone: IconScale, sonne: true },
+  { cle: 'tache', emoji: '📌', icone: IconPinned, sonne: false },
 ];
 
 export const STATUTS = [

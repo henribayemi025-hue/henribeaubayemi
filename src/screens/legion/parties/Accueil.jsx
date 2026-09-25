@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PhotoSalon } from './PhotoSalon';
 import {
   IconSparkles, IconSend, IconArrowRight, IconRobot, IconPower, IconLayoutKanban,
   IconBuildingSkyscraper, IconChevronRight, IconMessageCircle, IconCamera, IconAlertCircle,
@@ -253,7 +254,7 @@ export function Accueil({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {departements.map((d) => {
-            const Icone = iconeDept(d.cle);
+            const Icone = iconeDept(d.cle, d.nom);
             const siens = machines.filter((a) => a.departement === d.nom);
             const actifs = siens.filter((a) => a.actif).length;
             const chef = siens.find((a) => a.est_directeur) || siens[0];
@@ -262,9 +263,7 @@ export function Accueil({
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-input text-white shadow-sm" style={{ backgroundColor: d.couleur }}>
-                        <Icone size={17} />
-                      </span>
+                      <PhotoSalon salon={d} agents={machines} Icone={Icone} taille={40} arrondi="rounded-input" className="shadow-sm" />
                       <h3 className="truncate text-caption font-bold text-legion-ink transition group-hover:text-legion-gold">{d.nom}</h3>
                     </div>
                     {/* L'interrupteur du département (idée 110 des 200, 24/09) :
