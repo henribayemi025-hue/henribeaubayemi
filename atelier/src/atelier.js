@@ -20,6 +20,7 @@ import { diff } from './diff.js';
 import { fabriquerZip } from './zip.js';
 import { DEPARTS } from './departs.js';
 import { enregistreur } from './supabase.js';
+import { equipe } from './equipe.js';
 
 const TAILLE_PROJET_MAX = 5_000_000;
 const NB_FICHIERS_MAX = 1000;
@@ -45,6 +46,7 @@ export class Atelier extends DurableObject {
     this.etats = new Map();
     this.controleurs = new Map();
     this.arrets = new Set();
+    this.equipes = new Map(); // pid → { ctx, lu } : l'équipe de Léo, relue toutes les 5 min
   }
 
   // ——— Le stockage ———
@@ -138,6 +140,7 @@ export class Atelier extends DurableObject {
     let bac = null;
     return {
       env,
+      leo: acces.leo || null,
       jeton: acces.jeton || null,
       relais: acces.relais || [],
       fichiers,
@@ -160,9 +163,29 @@ export class Atelier extends DurableObject {
     };
   }
 
+  // L'équipe de l'entreprise (equipe.js) : le projet, les collègues, et de
+  // quoi leur confier du travail. Une panne de lecture ne bloque pas l'atelier.
+  async brancherEquipe(pid, e, acces) {
+    if (!e.projet.entreprise_id || !acces?.jeton) return acces;
+    const leo = equipe({ env: this.env, jeton: acces.jeton, user: acces.user, entrepriseId: e.projet.entreprise_id, pid, attendre: (p) => this.ctx.waitUntil?.(p) });
+    if (!leo) return acces;
+    let cache = this.equipes.get(pid);
+    if (!cache || Date.now() - cache.lu > 5 * 60_000) {
+      try {
+        cache = { ctx: await leo.contexte(), lu: Date.now() };
+        this.equipes.set(pid, cache);
+      } catch (err) {
+        console.warn('équipe illisible', err.message);
+        if (!cache) return acces;
+      }
+    }
+    return { ...acces, leo: { ...leo, ctx: cache.ctx } };
+  }
+
   async tourner(pid, e, trace, travail, acces) {
     // Une seule boucle à la fois par projet.
     if (this.controleurs.has(pid)) throw new Error('L\'agent travaille déjà : attends, ou appuie sur Stop.');
+    acces = await this.brancherEquipe(pid, e, acces);
     const deps = this.deps(pid, e, trace, acces);
     // La trace Supabase peut avoir été branchée après la création du projet
     // (migration appliquée plus tard) : on (ré)écrit le projet et la session.
@@ -209,7 +232,7 @@ export class Atelier extends DurableObject {
     // Les modèles du relais Supabase pour ce jeton (gardés 5 min par moteur.js).
     const relais = await modelesRelais(this.env, jeton);
     this.relaisVus = relais;
-    const acces = { jeton, relais };
+    const acces = { jeton, relais, user };
     const p = url.pathname.replace(/^\/api/, '').split('/').filter(Boolean);
     const methode = request.method;
     const corps = ['POST', 'PUT'].includes(methode) ? await request.json().catch(() => ({})) : {};
@@ -249,6 +272,15 @@ export class Atelier extends DurableObject {
       const e = await this.etat(pid);
       if (!e) return erreur('projet introuvable', 404);
       const action = p[2] || '';
+      // Les projets créés avant le 25/09 n'étaient rattachés à aucune
+      // entreprise : l'écran envoie celle d'où on l'ouvre (vérifiée par la base
+      // à chaque lecture, avec le jeton de la personne).
+      if (!e.projet.entreprise_id && /^[0-9a-f-]{36}$/i.test(String(corps.entreprise_id || '')) && e.proprietaire === user) {
+        e.projet.entreprise_id = corps.entreprise_id;
+        const liste = await this.projets();
+        await this.ctx.storage.put('projets', liste.map((x) => (x.id === pid ? { ...x, entreprise_id: corps.entreprise_id } : x)));
+        await this.sauver(pid, e);
+      }
 
       if (!action && methode === 'GET') return json(this.vue(pid, e, this.env));
 

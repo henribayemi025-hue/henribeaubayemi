@@ -162,3 +162,18 @@ describe('modes Accepter les modifications et Tout autoriser (25/09)', () => {
     expect(evaluer('ecrire_fichier', { chemin: '../../etc/passwd', contenu: 'x' }, { mode: 'auto' }).decision).toBe('refuser');
   });
 });
+
+describe('l\'équipe de Léo (25/09)', () => {
+  it('les outils d\'équipe n\'apparaissent que si le projet a une entreprise', () => {
+    expect(outilsPourMode('demander')).not.toContain('equipe');
+    expect(outilsPourMode('demander', true)).toEqual(expect.arrayContaining(['equipe', 'travail_collegues', 'confier_a_collegue', 'recruter']));
+    expect(outilsPourMode('visite', true)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer', 'equipe', 'travail_collegues']);
+  });
+  it('voir et lire : libre ; confier : libre en mode action ; recruter : TOUJOURS une carte', () => {
+    expect(evaluer('equipe', {}, { mode: 'reflechir' }).decision).toBe('auto');
+    expect(evaluer('confier_a_collegue', { collegue: 'Idris', tache: 'tester' }, { mode: 'demander' }).decision).toBe('auto');
+    expect(evaluer('confier_a_collegue', { collegue: 'Idris', tache: 'tester' }, { mode: 'visite' }).decision).toBe('refuser');
+    expect(evaluer('recruter', { nom: 'Léa', poste: 'testeuse' }, { mode: 'auto' }).decision).toBe('demander');
+    expect(regleDepuis('recruter', { nom: 'Léa' })).toBeNull();
+  });
+});

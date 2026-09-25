@@ -1089,7 +1089,15 @@
       "etat_en_attente": "A change is waiting for your approval",
       "etat_en_attente_court": "{{n}} pending",
       "etat_mode": "Mode (click to change)",
-      "etat_cout": "Session cost / limit"
+      "etat_cout": "Session cost / limit",
+      "veutRecruter": "{{nom}} suggests hiring",
+      "pourquoiRecrue": "Why:",
+      "recruterOui": "Hire {{nom}}",
+      "decision_auto_equipe": "team",
+      "outil_confier_a_collegue": "hands off to",
+      "outil_recruter": "hires",
+      "outil_equipe": "looks at the team",
+      "outil_travail_collegues": "reads teammates’ work"
     },
     "droits": {
       "titre": "Permissions",
@@ -1160,8 +1168,10 @@
         "derniers": "Latest messages",
         "livrable": "deliverable",
         "aucunMessage": "No message yet.",
-        "fiche": "Open their profile"
-      }
+        "fiche": "Open their profile",
+        "voir": "See how they work"
+      },
+      "derniereSeance": "Last session: {{nom}}, \"{{projet}}\", on {{quand}}."
     },
     "rouvrirTaches": "Reopen the task board"
   },

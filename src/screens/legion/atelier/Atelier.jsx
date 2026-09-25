@@ -212,7 +212,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     if (!m || travaille || statut === 'attente') return;
     setTexte('');
     setOnglet('conversation');
-    agir(() => appel(`/projets/${pid}/message`, { methode: 'POST', corps: { texte: m, modele } }));
+    agir(() => appel(`/projets/${pid}/message`, { methode: 'POST', corps: { texte: m, modele, entreprise_id: entrepriseId } }));
   };
   // « Tout autoriser » : le mode Auto pour la suite, puis cette carte autorisée une fois.
   const decider = (choix) => agir(async () => {
@@ -220,9 +220,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       await appel(`/projets/${pid}/mode`, { methode: 'POST', corps: { mode: 'auto' } });
       choix = 'une_fois';
     }
-    return appel(`/projets/${pid}/decision`, { methode: 'POST', corps: { demande_id: vue.demande.id, choix } });
+    return appel(`/projets/${pid}/decision`, { methode: 'POST', corps: { demande_id: vue.demande.id, choix, entreprise_id: entrepriseId } });
   });
-  const presenter = () => { setOnglet('conversation'); agir(() => appel(`/projets/${pid}/presenter`, { methode: 'POST', corps: { texte: t('legion.atelier.presenteMoiTexte') } })); };
+  const presenter = () => { setOnglet('conversation'); agir(() => appel(`/projets/${pid}/presenter`, { methode: 'POST', corps: { texte: t('legion.atelier.presenteMoiTexte'), entreprise_id: entrepriseId } })); };
   // Stop passe même quand une requête est en cours : c'est le but.
   const stop = async () => { try { setVue(await appel(`/projets/${pid}/stop`, { methode: 'POST', corps: {} })); } catch (e) { signaler(e); } };
   const changerMode = (mode) => agir(() => appel(`/projets/${pid}/mode`, { methode: 'POST', corps: { mode } }));
@@ -564,7 +564,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
               <p key={a.id} className="truncate">
                 <span className="text-legion-muted">{heure(a.quand)} </span>
                 {a.qui === 'action'
-                  ? <><span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>{a.outil}</span> <span className="text-legion-ink">{a.resume}</span> <span className="text-legion-muted">· {t(`legion.atelier.decision_${a.decision}`, a.decision)}</span></>
+                  ? <><span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>{t(`legion.atelier.outil_${a.outil}`, a.outil)}</span> <span className="text-legion-ink">{a.resume}</span> <span className="text-legion-muted">· {t(`legion.atelier.decision_${a.decision}`, a.decision)}</span></>
                   : <><span className="text-legion-gold">{nomCodeur}</span> <span className="text-legion-ink">{String(a.texte || '').replace(/[*#`]+/g, '').replace(/\s+/g, ' ').slice(0, 160)}</span></>}
               </p>
             )))}
@@ -629,7 +629,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
         {vue?.affichage?.map((a) => (a.qui === 'action' ? (
           <div key={a.id} className="flex items-center gap-2 px-1 font-mono text-[11px] text-legion-muted">
             <span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>●</span>
-            <span className="min-w-0 truncate">{a.outil} {a.resume}</span>
+            <span className="min-w-0 truncate">{t(`legion.atelier.outil_${a.outil}`, a.outil)} {a.resume}</span>
             <span className="shrink-0">{t(`legion.atelier.decision_${a.decision}`, a.decision)}</span>
           </div>
         ) : a.qui === 'agent' ? (

@@ -43,6 +43,7 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
   const [maintenant, setMaintenant] = useState(Date.now());
   const [formation, setFormation] = useState(() => new Map()); // agent_id → nom de la compétence
   const [atelierEnCours, setAtelierEnCours] = useState(false);
+  const [derniereSeance, setDerniereSeance] = useState(null); // { projet, fin, statut }
   // « Voir comment il travaille » (Beau, 25/09 : « quand je clique sur un
   // agent au travail, ça doit ouvrir où il travaille, ce qu'il fait, les
   // chiffres, comment il fait »).
@@ -60,7 +61,12 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
         supabase.from('legion_competences').select('agent_id, nom, etat').in('agent_id', liste).in('etat', ['a_examiner', 'a_valider', 'a_revoir']).limit(200),
         supabase.from('atelier_sessions').select('id, statut').eq('statut', 'en_cours').limit(1),
       ]);
+      // La dernière séance réelle de l'atelier (Beau, 25/09 : « l'atelier dit
+      // personne, pourtant il y a du code »).
+      const { data: der } = await supabase.from('atelier_sessions').select('statut, debut, fin, projet_id, atelier_projets(nom)')
+        .order('debut', { ascending: false }).limit(1);
       if (!vivant) return;
+      setDerniereSeance(der?.[0] ? { projet: der[0].atelier_projets?.nom || '', quand: der[0].fin || der[0].debut } : null);
       setFormation(new Map((comp || []).map((c) => [c.agent_id, c.nom])));
       setAtelierEnCours(!!sess?.length);
     })().catch(() => {});
@@ -121,7 +127,7 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
   };
 
   const Personne = ({ a, petit = false }) => (
-    <button type="button" onClick={() => setRegard(a)} title={`${a.nom} — ${bulle(a)}`}
+    <button type="button" onClick={() => (onFiche ? onFiche(a, (x) => setRegard(x)) : setRegard(a))} title={`${a.nom} — ${bulle(a)}`}
       className={`imm-personne group flex flex-col items-center ${['ecrit', 'travaille', 'atelier'].includes(etat(a)) ? 'imm-tape' : ''}`}>
       <span className={`rounded-full ${['ecrit', 'travaille', 'atelier', 'reunion', 'institut'].includes(etat(a)) ? 'ring-2 ring-legion-gold' : ''} ${a.actif ? '' : 'opacity-40 grayscale'}`}>
         <Visage a={a} taille={petit ? 30 : 38} />
@@ -251,7 +257,12 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
                 {atelierEnCours && <g stroke="#5FC8C0" strokeWidth="1.2" className="imm-ecran"><line x1="6" y1="8" x2="30" y2="8" /><line x1="10" y1="13" x2="44" y2="13" /><line x1="10" y1="18" x2="36" y2="18" /><line x1="6" y1="23" x2="24" y2="23" /></g>}
                 <rect x="24" y="31" width="8" height="6" fill="#2A3550" />
               </svg>
-              {atelierEnCours && codeur ? <Personne a={codeur} petit /> : <span className="text-[11px] italic text-legion-muted">{t('legion.immeuble.atelierVide')}</span>}
+              {atelierEnCours && codeur ? <Personne a={codeur} petit /> : (
+                <span className="text-[11px] italic leading-snug text-legion-muted">
+                  {t('legion.immeuble.atelierVide')}
+                  {derniereSeance && <span className="block not-italic text-legion-ink">{t('legion.immeuble.derniereSeance', { nom: codeur?.nom?.split(' ')[0] || '', projet: derniereSeance.projet, quand: new Date(derniereSeance.quand).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}</span>}
+                </span>
+              )}
             </div>
           </div>
         </section>
@@ -263,7 +274,7 @@ export function Immeuble({ agents, departements, messages, taches, onFiche, t })
 
       <p className="mx-auto mt-3 max-w-3xl text-center text-[10px] leading-relaxed text-legion-muted">{t('legion.immeuble.regle')}</p>
       {regard && (
-        <CommentIlTravaille a={regard} etat={etat(regard)} bulle={bulle(regard)} tache={enTache.get(regard.id) || tacheDe(regard)}
+        <CommentIlTravaille a={regard} etat={etat(regard)} tache={enTache.get(regard.id) || tacheDe(regard)}
           messages={messages} formation={formation.get(regard.id)} onFiche={() => { const a = regard; setRegard(null); onFiche?.(a); }}
           onFermer={() => setRegard(null)} t={t} />
       )}
@@ -334,7 +345,7 @@ function FilDirect({ agents, messages, taches, onFiche, t }) {
 // prend (ce qu'il a vérifié dans les chiffres, ses sources sur Internet, le
 // modèle), ce que ça coûte, et ses derniers messages. Tout vient des messages
 // et des tâches réels ; rien n'est deviné.
-function CommentIlTravaille({ a, etat, bulle, tache, messages, formation, onFiche, onFermer, t }) {
+function CommentIlTravaille({ a, etat, tache, messages, formation, onFiche, onFermer, t }) {
   const siens = messages.filter((m) => m.auteur_id === a.id).sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at));
   const livrables = siens.filter((m) => m.meta?.livrable);
   const dernier = livrables[0];
@@ -353,13 +364,13 @@ function CommentIlTravaille({ a, etat, bulle, tache, messages, formation, onFich
   );
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-end bg-black/40 sm:items-stretch" onMouseDown={(e) => { if (e.target === e.currentTarget) onFermer(); }}>
-      <aside className="imm-arrive max-h-[85vh] w-full overflow-y-auto rounded-t-2xl border border-legion-line bg-legion-panel p-4 sm:max-h-none sm:w-[380px] sm:rounded-none">
+      <aside className="max-h-[85vh] w-full overflow-y-auto rounded-t-2xl border border-legion-line p-4 shadow-2xl sm:max-h-none sm:w-[380px] sm:rounded-none" style={{ backgroundColor: '#0f1728' }}>
         <div className="mb-3 flex items-center gap-3">
           <Visage a={a} taille={48} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-body font-bold text-legion-ink">{a.nom}</p>
             <p className="truncate text-[11px] text-legion-muted">{a.poste}{a.departement ? ` · ${a.departement}` : ''}</p>
-            <p className="mt-0.5 text-[11px] text-legion-gold">{bulle}</p>
+            <p className="mt-0.5 truncate text-[11px] text-legion-gold">{t(`legion.immeuble.etat.${etat}`)}</p>
           </div>
           <button type="button" onClick={onFermer} aria-label={t('common.close', 'Fermer')} className="rounded-full px-2 text-legion-muted hover:text-legion-ink">✕</button>
         </div>

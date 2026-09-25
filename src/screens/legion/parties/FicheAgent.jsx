@@ -327,7 +327,7 @@ function SaConsigne({ agent, t }) {
 // et les deux réglages qui comptent — l'interrupteur, et jusqu'où il a le
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
 // personne ».
-export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer, onAutonomie, onDroits, onEcrireA, onAutreTete, onVraiePhoto, onModifier, onCreer, photosEnCours, t }) {
+export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer, onAutonomie, onDroits, onVoirTravail, onEcrireA, onAutreTete, onVraiePhoto, onModifier, onCreer, photosEnCours, t }) {
   const [change, setChange] = useState(false);
   const [enGrand, setEnGrand] = useState(false);
   const [edition, setEdition] = useState(null); // null | { nom, poste, departement, mandat, personnalite }
@@ -607,6 +607,12 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
               </button>
             )}
           </div>
+          {onVoirTravail && (
+            <button type="button" onClick={() => onVoirTravail(agent)}
+              className="flex items-center gap-1.5 rounded-input border border-legion-gold/60 px-3.5 py-2 text-caption font-semibold text-legion-gold transition hover:bg-legion-gold/10">
+              🔍 {t('legion.immeuble.regard.voir')}
+            </button>
+          )}
           <button type="button" onClick={() => { onEcrireA(agent); onFermer(); }}
             className="flex items-center gap-1.5 rounded-input bg-legion-gold px-3.5 py-2 text-caption font-semibold text-legion-ink shadow-md transition hover:brightness-105">
             <IconMessageCircle size={14} /> {t('legion.ouvrirDiscussion', 'Lui écrire en privé')}

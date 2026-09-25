@@ -30,10 +30,18 @@ export const MODES_ACTION = ['demander', 'accepter', 'auto'];
 export const OUTILS_LECTURE = ['lister', 'lire_fichier', 'chercher', 'montrer'];
 export const OUTILS_ECRITURE = ['ecrire_fichier', 'supprimer_fichier'];
 export const OUTILS_COMMANDE = ['commande'];
+// L'ÉQUIPE (Beau, 25/09 : « elle ne peut pas les voir, leur parler, les
+// coordonner, recruter »). Seulement quand le projet est rattaché à une
+// entreprise de Léo. Voir l'équipe et lire son travail : lecture. Confier une
+// tâche : action interne (elle part au tableau de Léo, rien ne sort). Recruter
+// coûte chaque jour : TOUJOURS une carte, même en « Tout autoriser ».
+export const OUTILS_EQUIPE_LECTURE = ['equipe', 'travail_collegues'];
+export const OUTILS_EQUIPE_ACTION = ['confier_a_collegue', 'recruter'];
 
-export function outilsPourMode(mode) {
-  if (MODES_ACTION.includes(mode)) return [...OUTILS_LECTURE, ...OUTILS_ECRITURE, ...OUTILS_COMMANDE];
-  return [...OUTILS_LECTURE];
+export function outilsPourMode(mode, avecEquipe = false) {
+  const equipe = avecEquipe ? OUTILS_EQUIPE_LECTURE : [];
+  if (MODES_ACTION.includes(mode)) return [...OUTILS_LECTURE, ...equipe, ...OUTILS_ECRITURE, ...OUTILS_COMMANDE, ...(avecEquipe ? OUTILS_EQUIPE_ACTION : [])];
+  return [...OUTILS_LECTURE, ...equipe];
 }
 
 // ——— La liste toujours refusée ———
@@ -208,6 +216,12 @@ export function evaluer(outil, args, { mode = 'demander', regles = [] } = {}) {
       if (erreur) return { decision: 'refuser', raison: erreur };
     }
     return { decision: 'auto', raison: 'lecture' };
+  }
+  if (OUTILS_EQUIPE_LECTURE.includes(outil)) return { decision: 'auto', raison: 'lecture' };
+  if (OUTILS_EQUIPE_ACTION.includes(outil)) {
+    if (!MODES_ACTION.includes(mode)) return { decision: 'refuser', raison: 'mode lecture seule : on ne confie ni ne recrute' };
+    if (outil === 'recruter') return { decision: 'demander', raison: 'recrutement' };
+    return { decision: 'auto', raison: 'équipe', equipe: true };
   }
   if (![...OUTILS_ECRITURE, ...OUTILS_COMMANDE].includes(outil)) return { decision: 'refuser', raison: `outil inconnu (${outil})` };
   if (!MODES_ACTION.includes(mode)) return { decision: 'refuser', raison: 'mode lecture seule : rien ne se modifie ni ne s\'exécute' };

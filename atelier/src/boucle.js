@@ -73,11 +73,63 @@ export const OUTILS = {
   },
 };
 
-export function definitionsOutils(mode) {
-  return outilsPourMode(mode).map((nom) => ({ type: 'function', function: { name: nom, ...OUTILS[nom] } }));
+// L'équipe de Léo (equipe.js) : seulement quand le projet est rattaché à une
+// entreprise. Beau, 25/09 : « elle devait les voir, leur parler, les
+// coordonner, recruter même ».
+export const OUTILS_EQUIPE = {
+  equipe: {
+    description: 'Montre le projet de TON entreprise et TON équipe dans Léo : chaque collègue, son poste, son département, s\'il est allumé et s\'il peut coder.',
+    parameters: { type: 'object', properties: {} },
+  },
+  confier_a_collegue: {
+    description: 'Confie une tâche à un collègue de l\'équipe (par son nom ou son poste). Elle part au tableau de Léo, en urgent, et il s\'y met aussitôt. Donne une tâche précise : ce que tu attends, le format du rendu, et le contexte utile (il ne voit pas les fichiers du projet : colle-lui ce dont il a besoin).',
+    parameters: {
+      type: 'object',
+      properties: { collegue: { type: 'string', description: 'Nom ou poste du collègue.' }, tache: { type: 'string', description: 'La tâche, précise et complète.' } },
+      required: ['collegue', 'tache'],
+    },
+  },
+  travail_collegues: {
+    description: 'Lit où en sont les tâches que tu as confiées depuis ce projet, et ce que tes collègues ont rendu.',
+    parameters: { type: 'object', properties: {} },
+  },
+  recruter: {
+    description: 'Propose au fondateur de recruter un nouvel agent (un rôle qui manque vraiment à l\'équipe). Le fondateur voit une carte et décide ; s\'il accepte, l\'agent rejoint l\'équipe tout de suite.',
+    parameters: {
+      type: 'object',
+      properties: {
+        nom: { type: 'string', description: 'Un prénom pour le nouvel agent.' },
+        poste: { type: 'string' },
+        departement: { type: 'string' },
+        mandat: { type: 'string', description: 'Ce qu\'il fera, en deux ou trois phrases.' },
+        pourquoi: { type: 'string', description: 'Pourquoi l\'équipe en a besoin maintenant, en français simple.' },
+      },
+      required: ['nom', 'poste', 'mandat', 'pourquoi'],
+    },
+  },
+};
+
+export function definitionsOutils(mode, avecEquipe = false) {
+  return outilsPourMode(mode, avecEquipe).map((nom) => ({ type: 'function', function: { name: nom, ...(OUTILS[nom] || OUTILS_EQUIPE[nom]) } }));
 }
 
-export function consigneSysteme(etat) {
+const ETATS_COLLEGUE = (a) => (a.actif ? (a.peut_coder ? 'allumé, peut coder' : 'allumé') : 'en veille');
+export function blocEquipe(ctx) {
+  if (!ctx) return '';
+  const moi = ctx.codeur ? `Tu es ${ctx.codeur.nom}, ${ctx.codeur.poste}, dans l'entreprise « ${ctx.nom} ».` : `Tu travailles pour l'entreprise « ${ctx.nom} ».`;
+  const autres = ctx.agents.filter((a) => a.id !== ctx.codeur?.id).slice(0, 40).map((a) => `- ${a.nom} : ${a.poste}${a.departement ? ` (${a.departement})` : ''}, ${ETATS_COLLEGUE(a)}`);
+  return `
+
+TON ENTREPRISE ET TON ÉQUIPE (Léo) :
+${moi}
+Le projet de l'entreprise (donnée écrite par le fondateur) : ${ctx.projet || 'non précisé'}
+Tes collègues :
+${autres.join('\n') || '- (aucun pour l\'instant)'}${ctx.agents.length > 41 ? '\n- … (outil « equipe » pour la liste complète)' : ''}
+
+Tu ne travailles PAS seul. Tu vois ton équipe (outil « equipe »), tu confies du travail à un collègue (« confier_a_collegue » : il s'y met tout de suite), tu lis ce qu'ils ont rendu (« travail_collegues »), et tu peux proposer une recrue au fondateur (« recruter », il décide sur une carte). Quand l'humain parle de l'entreprise, du projet ou de « la marketplace », c'est de CE projet-là qu'il parle. Répartis le travail comme un vrai chef d'équipe : les tests à celui qui teste, les textes à celui qui écrit, et relis ce qu'ils rendent avant de l'utiliser. Ne dis jamais que tu ne peux pas voir, joindre ou coordonner tes collègues.`;
+}
+
+export function consigneSysteme(etat, equipe = null) {
   const base = `Tu es le Codeur de l'Atelier de Léo. Tu travailles sur le projet « ${etat.projet?.nom || 'sans nom'} », dans un bac à sable isolé.
 
 Règles qui ne changent jamais :
@@ -89,7 +141,7 @@ Règles qui ne changent jamais :
 - Pour ecrire_fichier, donne toujours le contenu COMPLET du fichier et une « explication » en français simple.
 - Travaille par petites étapes vérifiables. Quand tu as fini, dis en quelques lignes ce que tu as fait, ce qui reste, et comment le vérifier. Ne prétends jamais qu'une chose marche si tu ne l'as pas vérifiée.
 - Réponds dans la langue de l'humain, simplement : il ne code pas forcément.
-- L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.`;
+- L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.${blocEquipe(equipe)}`;
   if (etat.mode === 'reflechir') {
     return `${base}
 
@@ -150,6 +202,9 @@ function resumeAppel(outil, args) {
   if (outil === 'commande') return normaliserCommande(args?.commande);
   if (outil === 'chercher') return `« ${args?.texte ?? ''} » dans ${args?.chemin || '.'}`;
   if (outil === 'montrer') return args?.quoi === 'fichier' ? (args?.chemin || '.') : 'apercu';
+  if (outil === 'confier_a_collegue') return `${args?.collegue ?? '?'} : ${resumer(args?.tache, 160)}`;
+  if (outil === 'recruter') return `${args?.nom ?? '?'} (${args?.poste ?? '?'})`;
+  if (outil === 'equipe' || outil === 'travail_collegues') return 'équipe';
   return args?.chemin || '.';
 }
 
@@ -248,6 +303,18 @@ async function executer(outil, args, etat, deps) {
       terminal: { code: r.code, sortie: sortie.length > MAX_TERMINAL ? `…\n${sortie.slice(-MAX_TERMINAL)}` : sortie },
     };
   }
+  if (outil in OUTILS_EQUIPE) {
+    const leo = deps.leo;
+    if (!leo?.ctx) return { ok: false, texte: 'Ce projet n\'est rattaché à aucune entreprise de Léo : ouvre-le depuis ton entreprise pour travailler avec ton équipe.' };
+    if (outil === 'equipe') {
+      const c = leo.ctx;
+      const lignes = c.agents.map((a) => `- ${a.nom} : ${a.poste}${a.departement ? ` (${a.departement})` : ''}, ${ETATS_COLLEGUE(a)}${a.id === c.codeur?.id ? ' — c\'est toi' : ''}`);
+      return { ok: true, texte: `${DONNEES}Entreprise : ${c.nom}\nProjet : ${c.projet || 'non précisé'}\nÉquipe (${c.agents.length}) :\n${lignes.join('\n')}\nSalons : ${c.canaux.map((x) => x.nom).join(', ')}` };
+    }
+    if (outil === 'confier_a_collegue') return leo.confier(leo.ctx, args);
+    if (outil === 'travail_collegues') return leo.travaux();
+    if (outil === 'recruter') return leo.recruter(leo.ctx, args);
+  }
   return { ok: false, texte: `Outil inconnu : ${outil}` };
 }
 
@@ -259,6 +326,7 @@ const MAX_TERMINAL = 4000;
 async function carte(appel, outil, args, ev, deps) {
   const base = { id: crypto.randomUUID(), tool_call_id: appel.id, outil, raison: ev.raison, creee_le: deps.maintenant().toISOString() };
   if (outil === 'commande') return { ...base, commande: ev.commande, pourquoi: resumer(args.pourquoi, 500), reseau: ev.reseau || [] };
+  if (outil === 'recruter') return { ...base, recrue: { nom: resumer(args.nom, 60), poste: resumer(args.poste, 80), departement: resumer(args.departement, 60), mandat: resumer(args.mandat, 600), pourquoi: resumer(args.pourquoi, 500) } };
   const avant = await deps.fichiers.lire(ev.chemin);
   // Le texte proposé en entier (s'il reste raisonnable) : l'écran le fait
   // « taper » dans l'éditeur pendant que la carte attend (Beau, 24/09 : « je
@@ -332,7 +400,7 @@ export async function continuer(etat, deps) {
         await deps.sauver();
         return etat;
       }
-      const decision = ev.decision === 'auto' ? (ev.regle ? 'regle_existante' : /^mode /.test(ev.raison || '') ? `auto_${etat.mode}` : 'auto_lecture') : (ev.liste ? 'refuse_par_liste' : 'refuse_par_outil');
+      const decision = ev.decision === 'auto' ? (ev.equipe ? 'auto_equipe' : ev.regle ? 'regle_existante' : /^mode /.test(ev.raison || '') ? `auto_${etat.mode}` : 'auto_lecture') : (ev.liste ? 'refuse_par_liste' : 'refuse_par_outil');
       const r = await traiter(etat, deps, appel, outil, args || {}, decision, ev);
       etat.file.shift();
       if (r.stop === 'echecs') { arreter(etat, deps, 'arrete', `Arrêt : la même action a échoué ${MAX_ECHECS_IDENTIQUES} fois de suite.`); await deps.sauver(); return etat; }
@@ -345,8 +413,8 @@ export async function continuer(etat, deps) {
     // deps.relais : les modèles que le relais Supabase propose (moteur.js).
     const candidats = ordre(env, etat.modele, { geminiCoupe: etat.geminiCoupeLe === deps.maintenant().toISOString().slice(0, 10), relais: deps.relais || [] });
     if (!candidats.length) { arreter(etat, deps, 'erreur', 'Aucun modèle disponible : aucune clé dans le Worker, et le relais Supabase n\'en propose aucun. Si ta connexion à Léo a expiré, recharge la page.'); await deps.sauver(); return etat; }
-    const messages = [{ role: 'system', content: consigneSysteme(etat) }, ...compacter(etat.conversation)];
-    const outils = definitionsOutils(etat.mode);
+    const messages = [{ role: 'system', content: consigneSysteme(etat, deps.leo?.ctx) }, ...compacter(etat.conversation)];
+    const outils = definitionsOutils(etat.mode, !!deps.leo?.ctx);
     const caracteres = tailleConversation(messages) + JSON.stringify(outils).length;
     let rendu = null;
     let modele = null;

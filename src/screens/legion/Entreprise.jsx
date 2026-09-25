@@ -71,6 +71,8 @@ export default function Entreprise() {
   const [appel, setAppel] = useState(null); // l'agent qu'on appelle (23/09)
   const [renfort, setRenfort] = useState(false); // renforcer un service / un expert (23/09)
   const [outil, setOutil] = useState(null); // 'bureau' | 'frise' | 'presentation' | 'idees' | 'atelier' (24/09)
+  // « Voir comment il travaille » : ouvert depuis la fiche d'un agent de l'immeuble (25/09).
+  const [voirTravail, setVoirTravail] = useState(null);
   const [aideClavier, setAideClavier] = useState(false);
 
   const { data, loading, error, retry, setData } = useAsync(async () => {
@@ -866,7 +868,7 @@ export default function Entreprise() {
       {/* Les grandes vues (24/09) : le bureau, la frise, la présentation, les idées */}
       {outil && (
         <PleinEcran titre={t(`legion.vues.titre.${outil}`)} onFermer={() => setOutil(null)} t={t}>
-          {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={setFiche} t={t} />}
+          {outil === 'bureau' && <Bureau entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} t={t} />}
           {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'atelier' && (
@@ -909,6 +911,7 @@ export default function Entreprise() {
           un formulaire à moitié rempli passait d'un agent à l'autre). */}
       <FicheAgent key={fiche ? fiche.id || 'nouveau' : 'aucun'} agent={fiche} dept={departements.find((d) => d.nom === fiche?.departement)} departements={departements} onFermer={() => setFiche(null)}
         onAllumer={allumer} onAutonomie={autonomie} onDroits={droits} onEcrireA={(a) => { ecrireA(a); }} onAutreTete={autreTete}
+        onVoirTravail={voirTravail && outil === 'bureau' ? (a) => { setFiche(null); voirTravail(a); } : null}
         onModifier={modifierAgent} onCreer={creerAgent}
         onVraiePhoto={vraiesPhotos} photosEnCours={photos} t={t} />
     </div>

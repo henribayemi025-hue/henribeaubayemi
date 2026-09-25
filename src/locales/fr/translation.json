@@ -1089,7 +1089,15 @@
       "etat_en_attente": "Une modification attend ton accord",
       "etat_en_attente_court": "{{n}} en attente",
       "etat_mode": "Mode (cliquez pour changer)",
-      "etat_cout": "Coût de la séance / plafond"
+      "etat_cout": "Coût de la séance / plafond",
+      "veutRecruter": "{{nom}} propose de recruter",
+      "pourquoiRecrue": "Pourquoi :",
+      "recruterOui": "Recruter {{nom}}",
+      "decision_auto_equipe": "équipe",
+      "outil_confier_a_collegue": "confie à",
+      "outil_recruter": "recrute",
+      "outil_equipe": "regarde l’équipe",
+      "outil_travail_collegues": "lit le travail des collègues"
     },
     "droits": {
       "titre": "Ses droits",
@@ -1160,8 +1168,10 @@
         "derniers": "Ses derniers messages",
         "livrable": "travail rendu",
         "aucunMessage": "Aucun message pour l'instant.",
-        "fiche": "Ouvrir sa fiche"
-      }
+        "fiche": "Ouvrir sa fiche",
+        "voir": "Voir comment il travaille"
+      },
+      "derniereSeance": "Dernière séance : {{nom}}, « {{projet}} », le {{quand}}."
     },
     "rouvrirTaches": "Rouvrir le tableau des tâches"
   },

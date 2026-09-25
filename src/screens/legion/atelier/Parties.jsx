@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX } from '@tabler/icons-react';
+import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus } from '@tabler/icons-react';
 import { appel } from './api';
 import { dollars } from './arbre';
 
@@ -68,6 +68,32 @@ export function DiffBloc({ diff, t }) {
 // décide de l'afficher : l'agent ne peut rien écrire ni lancer sans elle.
 export function Carte({ demande, occupe, onDecider, t, nom }) {
   if (!demande) return null;
+  // Recruter (25/09) : l'agent de l'atelier propose une recrue ; seul le
+  // fondateur décide, même en « Tout autoriser ».
+  if (demande.outil === 'recruter' && demande.recrue) {
+    const r = demande.recrue;
+    return (
+      <div className="rounded-card border-2 border-legion-gold/70 bg-legion-card p-3 shadow-lg" role="alertdialog" aria-label={t('legion.atelier.carteTitre')}>
+        <div className="mb-2 flex items-center gap-2 text-[14px] font-semibold text-legion-ink">
+          <IconUserPlus size={18} className="text-legion-gold" />
+          {t('legion.atelier.veutRecruter', { nom })}
+        </div>
+        <p className="text-[17px] font-semibold text-legion-gold-soft">{r.nom} <span className="text-[13px] font-normal text-legion-muted">· {r.poste}{r.departement ? ` · ${r.departement}` : ''}</span></p>
+        {r.mandat && <p className="mt-1 text-caption text-legion-ink">{r.mandat}</p>}
+        {r.pourquoi && <p className="mb-3 mt-1 text-[12.5px] text-legion-muted"><b className="text-legion-ink">{t('legion.atelier.pourquoiRecrue')}</b> {r.pourquoi}</p>}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button type="button" disabled={occupe} onClick={() => onDecider('une_fois')}
+            className="rounded-pill bg-legion-gold px-4 py-2 text-caption font-semibold text-legion-bg disabled:opacity-50">
+            {t('legion.atelier.recruterOui', { nom: r.nom })}
+          </button>
+          <button type="button" disabled={occupe} onClick={() => onDecider('refuser')}
+            className="rounded-pill border border-legion-danger px-4 py-2 text-caption font-semibold text-legion-danger disabled:opacity-50">
+            {t('legion.atelier.refuser')}
+          </button>
+        </div>
+      </div>
+    );
+  }
   const commande = demande.outil === 'commande';
   const Icone = commande ? IconTerminal2 : demande.outil === 'supprimer_fichier' ? IconTrash : IconPencil;
   return (
