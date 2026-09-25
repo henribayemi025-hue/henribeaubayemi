@@ -23,6 +23,7 @@ import { corpsDe, RECEPTIONNISTE, CORPS } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
 import { construireMaisons } from './maisons3d';
 import { construireSalleMarche } from './salle-marche3d';
+import { construirePlanete } from './planete3d';
 
 const BASE = '/monde3d/';
 const ANIMS = {
@@ -781,6 +782,53 @@ export class Monde {
     this.emettre({ type: 'lieu', lieu });
   }
 
+  // Vue du ciel : on monte au-dessus de la ville, puis la planète (planete3d.js).
+  majPlanete(info) { this.infoPlanete = info; if (this.planete && !this.ciel3d) { this.planete.detruire(); this.planete = null; } }
+  vueCiel(monter) {
+    if (monter) {
+      if (this.ciel3d) return;
+      if (!this.planete) {
+        this.planete = construirePlanete({ mobile: this.mobile, ...(this.infoPlanete || {}) });
+        this.planete.redimensionner(this.conteneur.clientWidth || 800, this.conteneur.clientHeight || 600);
+      }
+      this.planete.recommencer();
+      this.ciel3d = { phase: 'monte', t: 0, depart: this.camera.position.clone() };
+    } else if (this.ciel3d) {
+      this.ciel3d.phase = 'revient'; this.planete.zoom(1.12);
+    }
+  }
+  animerCiel(dt) {
+    const c = this.ciel3d, p = this.joueur?.objet.position || new THREE.Vector3();
+    const doux = (x) => x * x * (3 - 2 * x);
+    if (c.phase === 'monte') {
+      c.t += dt / 2.4;
+      const k = doux(Math.min(1, c.t));
+      this.camera.position.set(c.depart.x + (p.x - c.depart.x) * k * 0.3, c.depart.y + (520 - c.depart.y) * k, c.depart.z + (p.z + 40 - c.depart.z) * k);
+      this.camera.lookAt(p.x, 0, p.z);
+      if (c.t >= 1) {
+        c.phase = 'globe'; c.globe = true;
+        // Les étiquettes de la ville restent dans la ville
+        this.scene.traverse((o) => { if (o.isCSS2DObject) o.element.style.display = 'none'; });
+        this.emettre({ type: 'ciel', actif: true });
+      }
+    } else if (c.phase === 'globe' || c.phase === 'revient') {
+      this.planete.avancer(dt);
+      if (c.phase === 'revient' && this.planete.distance() < 1.2) {
+        c.phase = 'descend'; c.globe = false; c.t = 0;
+        this.planete.scene.traverse((o) => { if (o.isCSS2DObject) o.element.style.display = 'none'; });
+        this.emettre({ type: 'ciel', actif: false });
+      }
+    } else if (c.phase === 'descend') {
+      c.t += dt / 1.8;
+      const k = doux(Math.min(1, c.t));
+      const haut = new THREE.Vector3(p.x, 520, p.z + 40);
+      const voulu = this.camera.position.clone(); // position normale calculée par avancer()
+      this.camera.position.lerpVectors(haut, voulu, k);
+      this.camera.lookAt(p.x, 1.2 * k, p.z);
+      if (c.t >= 1) { this.ciel3d = null; this.planete.zoom(3.2); }
+    }
+  }
+
   // Les projets en chantiers, en face de l'immeuble (chantiers3d.js).
   majChantiers(liste) {
     this.listeChantiers = liste;
@@ -945,6 +993,7 @@ export class Monde {
     el.addEventListener('pointerdown', (e) => { tire = { x: e.clientX, y: e.clientY, id: e.pointerId }; el.setPointerCapture(e.pointerId); });
     el.addEventListener('pointermove', (e) => {
       if (!tire || tire.id !== e.pointerId) return;
+      if (this.ciel3d?.globe) { this.planete.tourner(-(e.clientX - tire.x) * 0.006); tire.x = e.clientX; tire.y = e.clientY; return; }
       this.cam.yaw -= (e.clientX - tire.x) * 0.006;
       this.cam.pitch = THREE.MathUtils.clamp(this.cam.pitch + (e.clientY - tire.y) * 0.004, -0.35, 1.1);
       tire.x = e.clientX; tire.y = e.clientY;
@@ -975,6 +1024,12 @@ export class Monde {
       const dt = Math.min(brut, 0.05);
       this.adapter(brut);
       this.avancer(dt);
+      if (this.ciel3d) this.animerCiel(dt);
+      if (this.ciel3d?.globe) {
+        this.rendu.render(this.planete.scene, this.planete.camera);
+        this.etiquettes.render(this.planete.scene, this.planete.camera);
+        return;
+      }
       if (this.composer) this.composer.render(); else this.rendu.render(this.scene, this.camera);
       this.etiquettes.render(this.scene, this.camera);
     };
@@ -1110,6 +1165,7 @@ export class Monde {
     this.camera.aspect = w / h;
     this.camera.fov = w < h ? 70 : 55;
     this.camera.updateProjectionMatrix();
+    this.planete?.redimensionner(w, h);
   }
   detruire() {
     this.vivant = false;

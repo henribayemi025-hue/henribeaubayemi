@@ -155,7 +155,7 @@ export function quiOuEst({ agents = [], messages = [], taches = [], maintenant =
 }
 
 // Ce que répond la réceptionniste, à partir des vraies données.
-export function repondre(question, { agents = [], ou, nomEntreprise = '' }, langue = 'fr') {
+export function repondre(question, { agents = [], ou, nomEntreprise = '', maintenant = Date.now() }, langue = 'fr') {
   const fr = langue !== 'en';
   const q = String(question || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const nomDe = (id) => agents.find((a) => a.id === id)?.nom || '?';
@@ -181,5 +181,15 @@ export function repondre(question, { agents = [], ou, nomEntreprise = '' }, lang
     if ((ou?.disponibles || []).some((x) => x.id === cible.id)) return { texte: fr ? `${cible.nom} est ici, dans le hall, disponible : allez lui parler.` : `${cible.nom} is here in the lobby, available: go and talk to them.` };
     return { texte: fr ? `${cible.nom} n'a rien fait ces dix dernières minutes : pas à son bureau pour l'instant.` : `${cible.nom} hasn't been active in the last ten minutes.` };
   }
-  return { texte: fr ? `Bienvenue chez ${nomEntreprise}. Demandez-moi qui est en réunion, qui travaille, ou où est un agent.` : `Welcome to ${nomEntreprise}. Ask me who's in a meeting, who's working, or where someone is.` };
+  // L'accueil selon le moment (phrases de Plume, relues : un agent en veille ne répond pas).
+  const h = new Date(maintenant).getHours();
+  const moment = h >= 5 && h < 12 ? 'matin' : h < 18 && h >= 12 ? 'jour' : h >= 18 && h < 22 ? 'soir' : 'nuit';
+  const aide = fr ? 'Demandez-moi qui est en réunion, qui travaille, ou où est un agent.' : "Ask me who's in a meeting, who's working, or where someone is.";
+  const accueil = {
+    matin: fr ? `Bonjour, bienvenue chez ${nomEntreprise}. La journée commence.` : `Good morning, welcome to ${nomEntreprise}. The day is just starting.`,
+    jour: fr ? `Bienvenue chez ${nomEntreprise}.` : `Welcome to ${nomEntreprise}.`,
+    soir: fr ? `Bonsoir, bienvenue chez ${nomEntreprise}. La journée se range.` : `Good evening, welcome to ${nomEntreprise}. The day is winding down.`,
+    nuit: fr ? `Il est tard, bienvenue chez ${nomEntreprise}. Je reste à l'accueil.` : `It's late, welcome to ${nomEntreprise}. I'm staying at the desk.`,
+  }[moment];
+  return { texte: `${accueil} ${aide}` };
 }

@@ -73,6 +73,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     }));
   }, [projets, taches, agents, maintenant, t]);
   const [menu, setMenu] = useState(false);
+  const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
   const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
   useEffect(() => { const f = () => { setPortrait(window.innerHeight > window.innerWidth); setTimeout(() => monde.current?.redimensionner(), 120); }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
@@ -123,13 +124,18 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'perdu') setEtat('erreur');
             if (e.type === 'camera') setCamera(e.mode);
             if (e.type === 'proximite') setProche(e.cible);
+            if (e.type === 'ciel') setCiel3d(e.actif);
             if (e.type === 'interagir') interagirRef.current?.(e.cible);
           },
         });
         monde.current = m;
         m.reglerCiel({ phase: phaseDuJour(Date.now()), genre: 'clair' });
         // La météo arrive quand elle arrive : on n'attend pas le réseau pour ouvrir le monde.
-        chargerCiel({ langue }).then((c) => { if (c && !fini) m.reglerCiel({ phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' }); }).catch(() => {});
+        chargerCiel({ langue }).then((c) => {
+          if (!c || fini) return;
+          m.reglerCiel({ phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' });
+          m.majPlanete({ lat: c.lat, lon: c.lon, titre: entreprise.nom, sous: `${t('legion.monde.vousEtesIci')} · ${c.ville}` });
+        }).catch(() => {});
         m.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) });
         // Salle des marchés : les taux du jour (même table que les prix de Finjaro).
         if (salleMarche) {
@@ -318,6 +324,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </div>
       )}
 
+      {ciel3d && (
+        <div className="absolute inset-x-0 bottom-4 z-[9] flex flex-col items-center gap-2 px-4 text-center">
+          <p className="rounded-card bg-black/55 px-3 py-1.5 text-[12.5px] text-white/90 backdrop-blur">{t('legion.monde.planeteAide')}</p>
+          <button type="button" onClick={() => monde.current?.vueCiel(false)} className="rounded-pill bg-legion-gold px-5 py-2 text-[13.5px] font-semibold text-legion-bg">{t('legion.monde.redescendre')}</button>
+        </div>
+      )}
+
       {/* Ce qui est à portée */}
       {proche && !dialogue && !etage && (
         <div className={`absolute z-[5] rounded-2xl border border-legion-gold/40 bg-[#0b1120]/90 p-2.5 text-center backdrop-blur ${mobile ? 'bottom-[5.5rem] right-3 w-[52%]' : 'bottom-24 left-1/2 w-[min(92%,360px)] -translate-x-1/2 p-3'}`}>
@@ -373,6 +386,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           {LIEUX.map((l) => (
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{libelle(l)}</button>
           ))}
+          <button type="button" onClick={() => monde.current?.vueCiel(true)} title={t('legion.monde.planete')} aria-label={t('legion.monde.planete')} className="rounded-pill px-2.5 py-1.5 text-[12px] font-semibold text-legion-ink">🌍</button>
           <button type="button" onClick={() => aller('maisons')} title={t('legion.monde.lieu.maisons')} aria-label={t('legion.monde.lieu.maisons')} className={`rounded-pill px-2.5 py-1.5 text-[12px] font-semibold ${lieu === 'maisons' ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>🏡</button>
           {depts.length > 0 && <button type="button" onClick={() => setEtage(true)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${estEtage ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t('legion.monde.etages', { n: depts.length })}</button>}
         </div>

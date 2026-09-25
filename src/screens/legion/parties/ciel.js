@@ -82,7 +82,7 @@ export async function chargerCiel({ ville: demandee, langue = 'fr', forcer = fal
   const choisie = demandee || villeChoisie()?.nom || villeDuFuseau(tz);
   if (!choisie) return null;
   const garde = lire(CLE);
-  if (!forcer && garde && garde.demande === choisie && Date.now() - garde.le < TRENTE_MIN) return garde.ciel;
+  if (!forcer && garde && garde.demande === choisie && Date.now() - garde.le < TRENTE_MIN) return { ...garde.ciel, lat: garde.lieu?.lat, lon: garde.lieu?.lon };
   const lieu = villeChoisie()?.nom === choisie ? villeChoisie() : garde?.demande === choisie && garde.lieu ? garde.lieu : await chercherVille(choisie, langue);
   if (!lieu) return null;
   if (demandee) ecrire(CLE_VILLE, lieu);
@@ -93,6 +93,7 @@ export async function chargerCiel({ ville: demandee, langue = 'fr', forcer = fal
   const decalage = j.utc_offset_seconds || 0;
   const ciel = {
     ville: lieu.nom,
+    lat: lieu.lat, lon: lieu.lon, // pour la planète du monde 3D
     temperature: Math.round(j.current.temperature_2m),
     unite,
     genre: genreMeteo(j.current.weather_code),

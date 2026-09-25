@@ -82,5 +82,7 @@ describe('monde 3D', () => {
     expect(repondre('Rigo ?', { agents, ou }).texte).toMatch(/rien fait/);
     expect(repondre('Rigo ?', { agents, ou: { ...ou, disponibles: [{ id: 'c' }] } }).texte).toMatch(/dans le hall, disponible/);
     expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro' }).texte).toMatch(/Finjaro/);
+    expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro', maintenant: new Date(2026, 8, 25, 8).getTime() }).texte).toMatch(/^Bonjour, bienvenue chez Finjaro\. La journée commence/);
+    expect(repondre('bonjour', { agents, ou, nomEntreprise: 'Finjaro', maintenant: new Date(2026, 8, 25, 23).getTime() }).texte).toMatch(/^Il est tard/);
   });
 });
