@@ -37,6 +37,12 @@ export class AtelierSandbox extends Sandbox {
   // Internet fermé par défaut ; seuls les domaines de la liste passent.
   enableInternet = false;
   allowedHosts = HOTES_PERMIS;
+  // Sans ceci, le HTTPS n'est pas intercepté par le SDK 0.12.10 : tout le
+  // HTTPS était simplement coupé, npm et GitHub compris (contrôle des
+  // barrières du 25/09 : « npm install » ne pouvait pas marcher). Intercepté,
+  // il passe par `outbound` ci-dessous, qui ne laisse que la lecture vers la
+  // liste ; le bac fait confiance au certificat éphémère de Cloudflare.
+  interceptHttps = true;
 }
 
 // Lecture seulement, même vers les domaines permis (politique.js, sortiePermise).
