@@ -1348,7 +1348,17 @@
       "reessayer": "Try again",
       "modeJeu": "🎮 Full screen",
       "quitterJeu": "Exit",
-      "tourne": "Turn your phone sideways"
+      "tourne": "Turn your phone sideways",
+      "parler": "Talk",
+      "appeler": "Call",
+      "fiche": "Profile",
+      "fairevenir": "Call an agent",
+      "fairevenirTitre": "Who do you call to the workshop?",
+      "salleN": "Meeting room {{n}}",
+      "convoquer": "Call a meeting",
+      "sujet": "Meeting topic",
+      "qui": "Who joins? ({{n}}/6)",
+      "lancer": "Start the meeting"
     }
   },
   "equipe": {

@@ -335,6 +335,17 @@ export default function Entreprise() {
     if (r?.message) setData((d) => (d && !d.messages.some((m) => m.id === r.message.id) ? { ...d, messages: [...d.messages, r.message] } : d));
     return true;
   }
+  // Depuis le monde 3D : une vraie réunion, ouverte dans le salon Direction
+  // (ou le premier salon public), avec les agents choisis.
+  async function convoquerDepuisMonde({ sujet, participants }) {
+    const s0 = (data?.salons || []).filter((x) => !x.prive_entre?.length);
+    const canal = s0.find((x) => sansAccent(x.nom) === 'direction') || s0[0];
+    if (!canal) { toast.error(t('errors.generic')); return false; }
+    const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { canal_id: canal.id, sujet, participants } });
+    if (e || r?.erreur) { toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic')); return false; }
+    if (r?.message) setData((d) => (d && !d.messages.some((m) => m.id === r.message.id) ? { ...d, messages: [...d.messages, r.message] } : d));
+    return true;
+  }
   async function conclureReunion(id) {
     const { data: r, error: e } = await supabase.functions.invoke('legion-reunion', { body: { reunion_id: id, conclure: true } });
     if (e || r?.erreur) toast.error(r?.erreur || (await raisonDe(e)) || e?.message || t('errors.generic'));
@@ -924,7 +935,7 @@ export default function Entreprise() {
       {/* Les grandes vues (24/09) : le bureau, la frise, la présentation, les idées */}
       {outil && (
         <PleinEcran titre={t(`legion.vues.titre.${outil}`)} onFermer={() => setOutil(null)} t={t}>
-          {outil === 'bureau' && <Bureau key={bureauMode} modeDepart={bureauMode} entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} onMajMessage={majMessage} onCreerTache={creerTache} peutAgir={data.role !== 'lecteur'} t={t} />}
+          {outil === 'bureau' && <Bureau key={bureauMode} modeDepart={bureauMode} entreprise={data.entreprise} agents={data.agents} departements={departements} messages={data.messages} taches={taches} onFiche={(a, voir) => { setFiche(a); setVoirTravail(() => voir || null); }} onMajMessage={majMessage} onCreerTache={creerTache} onParler={(a) => { setOutil(null); ecrireA(a); setVue('chat'); }} onConvoquer={convoquerDepuisMonde} onAppeler={(a) => { setOutil(null); appeler(a); }} peutAgir={data.role !== 'lecteur'} t={t} />}
           {outil === 'frise' && <Frise entreprise={data.entreprise} agents={data.agents} langue={langue} t={t} />}
           {outil === 'wiki' && <Wiki entreprise={data.entreprise} lecteur={data.role === 'lecteur'} t={t} />}
           {outil === 'atelier' && (

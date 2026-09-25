@@ -20,7 +20,7 @@ const JOUR = 86_400_000;
 function lire(cle, defaut) { try { return localStorage.getItem(cle) || defaut; } catch { return defaut; } }
 function ecrire(cle, v) { try { localStorage.setItem(cle, v); } catch { /* navigation privée */ } }
 
-export default function Monde3D({ entreprise, agents, departements = [], messages, taches, onFiche, t }) {
+export default function Monde3D({ entreprise, agents, departements = [], messages, taches, onFiche, onParler, onAppeler, onConvoquer, t }) {
   const boite = useRef(null);
   const monde = useRef(null);
   const [etat, setEtat] = useState('chargement'); // chargement | pret | erreur
@@ -33,6 +33,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [question, setQuestion] = useState('');
   const [etage, setEtage] = useState(false);
   const [choixAvatar, setChoixAvatar] = useState(false);
+  const [renfort, setRenfort] = useState(false); // faire venir un agent
+  const [convoc, setConvoc] = useState(null); // { sujet, ids }
   const [avatar, setAvatar] = useState(() => lire('leo:avatar', 'Male_Adult_07'));
   const [maintenant, setMaintenant] = useState(Date.now());
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
@@ -166,7 +168,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
   const depts = nomsDepts(departements, agents);
   const estEtage = String(lieu).startsWith('etage:');
-  const nomLieu = estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : t(`legion.monde.lieu.${lieu}`);
+  const estSalle = String(lieu).startsWith('reunion:');
+  const nomLieu = estSalle ? t('legion.monde.salleN', { n: lieu.split(':')[1] }) : estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : t(`legion.monde.lieu.${lieu}`);
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
 
   return (
@@ -191,7 +194,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {/* Où je suis */}
       <div className="pointer-events-none absolute left-3 top-3 z-[5] rounded-card bg-[#0b1120]/80 px-3 py-2 text-[12.5px] text-legion-ink backdrop-blur">
-        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : lieu}`)}</span>
+        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu}`)}</span>
       </div>
 
       {/* Caméras + avatar */}
@@ -201,6 +204,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             className={`rounded-pill px-2.5 py-1 text-[12px] font-semibold backdrop-blur ${camera === k ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
         ))}
         {mobile && <button type="button" onClick={() => modeJeu(!jeu)} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{jeu ? t('legion.monde.quitterJeu') : t('legion.monde.modeJeu')}</button>}
+        {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => setConvoc({ sujet: '', ids: [] })} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{t('legion.monde.convoquer')}</button>}
+        {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => setRenfort(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-gold backdrop-blur">{t('legion.monde.fairevenir')}</button>}
         <button type="button" onClick={() => setChoixAvatar(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-ink backdrop-blur">{t('legion.monde.monAvatar')}</button>
       </div>
 
@@ -213,10 +218,18 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               <div className="text-left"><p className="text-[14px] font-semibold text-legion-ink">{agentProche.nom}</p><p className="text-[12px] text-legion-muted">{agentProche.poste}</p></div>
             </div>
           )}
+          {agentProche ? (
+            <div className="flex gap-1.5">
+              {onParler && <button type="button" onClick={() => onParler(agentProche)} className="flex-1 rounded-pill bg-legion-gold px-2 py-2 text-[13px] font-semibold text-legion-bg">{t('legion.monde.parler')}</button>}
+              {onAppeler && agentProche.actif !== false && <button type="button" onClick={() => onAppeler(agentProche)} className="flex-1 rounded-pill border border-legion-gold px-2 py-2 text-[13px] font-semibold text-legion-gold">{t('legion.monde.appeler')}</button>}
+              <button type="button" onClick={() => onFiche?.(agentProche)} className="rounded-pill border border-legion-line px-2.5 py-2 text-[13px] text-legion-ink">{t('legion.monde.fiche')}</button>
+            </div>
+          ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
             {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">E</kbd>}
             {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}
           </button>
+          )}
         </div>
       )}
 
@@ -259,7 +272,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <div className="w-[min(90%,300px)] rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}>
             <p className="mb-3 text-center text-[13px] font-semibold text-legion-gold">{t('legion.monde.ascenseur')}</p>
             <div className="max-h-[60vh] overflow-y-auto">
-              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: t('legion.monde.lieu.atelier') }, { id: 'reunion', nom: t('legion.monde.lieu.reunion') }, { id: 'hall', nom: t('legion.monde.lieu.hall') }].map((l) => (
+              {[...depts.map((d, i) => ({ id: `etage:${d}`, nom: t('legion.monde.etage', { n: i + 1, nom: d }) })).reverse(), { id: 'atelier', nom: t('legion.monde.lieu.atelier') }, ...Array.from({ length: Math.max(1, ou.reunions?.length || 0) }, (_, i) => ({ id: i ? `reunion:${i + 1}` : 'reunion', nom: i ? t('legion.monde.salleN', { n: i + 1 }) : t('legion.monde.lieu.reunion') })).reverse(), { id: 'hall', nom: t('legion.monde.lieu.hall') }].map((l) => (
                 <button key={l.id} type="button" onClick={() => aller(l.id)} className={`mb-1.5 w-full rounded-card border px-3 py-2 text-left text-[14px] text-legion-ink hover:border-legion-gold ${lieu === l.id ? 'border-legion-gold' : 'border-legion-line'}`}>{l.nom}</button>
               ))}
             </div>
@@ -282,6 +295,41 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {jeu && portrait && (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 z-[9] mx-auto w-fit rounded-card bg-black/75 px-4 py-3 text-center text-[14px] text-white">↻ {t('legion.monde.tourne')}</div>
+      )}
+      {convoc && (
+        <div className="absolute inset-0 z-[8] flex items-center justify-center bg-black/60" onClick={() => setConvoc(null)}>
+          <form className="max-h-[85%] w-[min(94%,440px)] overflow-y-auto rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}
+            onSubmit={async (e) => { e.preventDefault(); if (convoc.sujet.trim().length < 3 || !convoc.ids.length) return; const ok = await onConvoquer({ sujet: convoc.sujet.trim(), participants: convoc.ids }); if (ok) setConvoc(null); }}>
+            <p className="mb-2 text-[14px] font-semibold text-legion-ink">{t('legion.monde.convoquer')}</p>
+            <input autoFocus value={convoc.sujet} onChange={(e) => setConvoc({ ...convoc, sujet: e.target.value })} placeholder={t('legion.monde.sujet')} maxLength={160} className="mb-3 w-full rounded-card border border-legion-line bg-legion-bg px-3 py-2 text-[16px] text-legion-ink sm:text-[13.5px]" />
+            <p className="mb-1.5 text-[12px] text-legion-muted">{t('legion.monde.qui', { n: convoc.ids.length })}</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {agents.filter((a) => !a.user_id && a.actif !== false).map((a) => {
+                const pris = convoc.ids.includes(a.id);
+                return (
+                  <button key={a.id} type="button" onClick={() => setConvoc({ ...convoc, ids: pris ? convoc.ids.filter((x) => x !== a.id) : [...convoc.ids, a.id].slice(0, 6) })}
+                    className={`flex items-center gap-2 rounded-card border px-2 py-1.5 text-left text-[12.5px] text-legion-ink ${pris ? 'border-legion-gold bg-legion-gold/10' : 'border-legion-line'}`}>
+                    {(a.apparence?.mini || a.avatar_url) && <img src={a.apparence?.mini || a.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />}<span className="truncate">{a.nom}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button type="submit" disabled={convoc.sujet.trim().length < 3 || !convoc.ids.length} className="mt-3 w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg disabled:opacity-40">{t('legion.monde.lancer')}</button>
+          </form>
+        </div>
+      )}
+      {renfort && (
+        <div className="absolute inset-0 z-[8] flex items-center justify-center bg-black/60" onClick={() => setRenfort(false)}>
+          <div className="max-h-[80%] w-[min(94%,420px)] overflow-y-auto rounded-2xl border border-legion-line bg-[#0b1120] p-4" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-3 text-[14px] font-semibold text-legion-ink">{t('legion.monde.fairevenirTitre')}</p>
+            {agents.filter((a) => !a.user_id && a.actif !== false).map((a) => (
+              <button key={a.id} type="button" onClick={() => { setRenfort(false); onAppeler(a); }} className="mb-1.5 flex w-full items-center gap-2.5 rounded-card border border-legion-line px-2.5 py-2 text-left hover:border-legion-gold">
+                {(a.apparence?.mini || a.avatar_url) && <img src={a.apparence?.mini || a.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />}
+                <span className="min-w-0"><span className="block truncate text-[13.5px] font-semibold text-legion-ink">{a.nom}</span><span className="block truncate text-[12px] text-legion-muted">{a.poste}</span></span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
       {choixAvatar && (
         <div className="absolute inset-0 z-[8] flex items-center justify-center bg-black/60" onClick={() => setChoixAvatar(false)}>

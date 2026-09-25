@@ -424,9 +424,11 @@ export class Monde {
     murs.push({ x0: 5, x1: 9.4, z0: 2.4, z1: 6.8 });
     const noirTab = new THREE.MeshStandardMaterial({ color: '#15171a', roughness: 0.5, metalness: 0.3 });
     const cuir = new THREE.MeshStandardMaterial({ color: '#b5612f', roughness: 0.6 });
+    const placesBar = [];
     for (let i = 0; i < 6; i += 1) {
       const a = Math.PI * 0.15 + (i + 0.5) * (Math.PI * 1.1) / 6;
       const x = 7.2 + Math.cos(a) * 2.75, z = 4.6 - Math.sin(a) * 2.75;
+      placesBar.push({ x: 7.2 + Math.cos(a) * 3.2, z: 4.6 - Math.sin(a) * 3.2, rot: Math.atan2(-Math.cos(a), Math.sin(a)) });
       const pied = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.72), noirTab); pied.position.set(x, 0.36, z); g.add(pied);
       const siege = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.07, 18), cuir); siege.position.set(x, 0.75, z); siege.castShadow = true; g.add(siege);
     }
@@ -448,7 +450,7 @@ export class Monde {
       { type: 'escalier', x: -8.6, z: -3.2, rayon: 1.6 },
     ];
     await Promise.all(ajouts);
-    return { groupe: g, murs, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -36, x1: 36, z0: -27, z1: 38 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
+    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -36, x1: 36, z0: -27, z1: 38 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
   }
   async construireReunion() {
     const g = new THREE.Group();
@@ -504,7 +506,7 @@ export class Monde {
     this.ascenseur(g, murs, -3.5, 5.33, Math.PI);
 
     await Promise.all(ajouts);
-    return { groupe: g, murs, depart: { x: -3.5, z: 3.2, yaw: 0 }, poi: [{ type: 'ascenseur', x: -3.5, z: 4.4, rayon: 1.6 }, { type: 'table', x: 0, z: 0, rayon: 3.6 }], limites: { x0: -6.7, x1: 6.7, z0: -5.2, z1: 5.2 }, sortieAscenseur: { x: -3.5, z: 3.0, yaw: 0 } };
+    return { groupe: g, murs, places: this.places, ecran: this.ecranReunion, depart: { x: -3.5, z: 3.2, yaw: 0 }, poi: [{ type: 'ascenseur', x: -3.5, z: 4.4, rayon: 1.6 }, { type: 'table', x: 0, z: 0, rayon: 3.6 }], limites: { x0: -6.7, x1: 6.7, z0: -5.2, z1: 5.2 }, sortieAscenseur: { x: -3.5, z: 3.0, yaw: 0 } };
   }
   async construireAtelier() {
     const g = new THREE.Group();
@@ -651,7 +653,7 @@ export class Monde {
     const etage = String(lieu).startsWith('etage:') ? String(lieu).slice(6) : null;
     const depts = this.donnees?.departements || [];
     const numero = etage ? depts.indexOf(etage) + 1 : 0;
-    this.villeVivante.racine.position.y = etage ? -(12 + numero * 4) : ({ hall: 0, reunion: -34, atelier: -22 }[lieu] ?? 0);
+    this.villeVivante.racine.position.y = etage ? -(12 + numero * 4) : (String(lieu).startsWith('reunion') ? -34 : ({ hall: 0, atelier: -22 }[lieu] ?? 0));
     // Chaque lieu n'est construit qu'une fois ; ensuite on y retourne sans rien recharger.
     this.lieux = this.lieux || {};
     if (this.lieu) {
@@ -659,7 +661,7 @@ export class Monde {
       // Les étiquettes (noms au-dessus des têtes) ne suivent pas d'un étage à l'autre.
       this.lieu.groupe.traverse((o) => { if (o.isCSS2DObject && o.element.parentNode) o.element.parentNode.removeChild(o.element); });
     }
-    const l = this.lieux[lieu] || (etage ? await this.construireEtage(etage, numero) : lieu === 'reunion' ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise));
+    const l = this.lieux[lieu] || (etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? await this.construireAtelier() : await this.construireHall(nomEntreprise));
     this.lieux[lieu] = l;
     l.nom = lieu;
     this.lieu = l;
@@ -691,9 +693,16 @@ export class Monde {
     const parId = new Map(agents.map((a) => [a.id, a]));
     const voulus = new Map(); // id → { lieu, place, anim, sous }
     const r = ou?.reunion;
-    if (this.lieu.nom === 'reunion') {
-      (r?.participants || []).slice(0, this.places?.length || 0).forEach((id, i) => voulus.set(id, { place: this.places[i], anim: 'assis', sous: id === r.parle ? (this.langue === 'en' ? 'speaking' : 'parle') : (this.langue === 'en' ? 'in the meeting' : 'en réunion') }));
-      this.ecranReunion?.userData.redessiner(r ? { etat: this.langue === 'en' ? '● Meeting in progress' : '● Réunion en cours', sujet: r.sujet } : { etat: this.langue === 'en' ? 'Room free' : 'Salle libre', sujet: ou?.derniereReunion ? `${this.langue === 'en' ? 'Last meeting' : 'Dernière réunion'} (${new Date(ou.derniereReunion.quand).toLocaleString(this.langue === 'en' ? 'en' : 'fr', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}) : ${ou.derniereReunion.sujet}` : (this.langue === 'en' ? 'No meeting right now.' : 'Aucune réunion en ce moment.') });
+    if (String(this.lieu.nom).startsWith('reunion')) {
+      // Une salle par réunion en cours : « reunion » = la 1re, « reunion:2 » = la 2e…
+      const idx = this.lieu.nom === 'reunion' ? 0 : Number(this.lieu.nom.split(':')[1]) - 1;
+      const r = (ou?.reunions || [])[idx] || null;
+      (r?.participants || []).slice(0, this.lieu.places?.length || 0).forEach((id, i) => voulus.set(id, { place: this.lieu.places[i], anim: 'assis', sous: id === r.parle ? (this.langue === 'en' ? 'speaking' : 'parle') : (this.langue === 'en' ? 'in the meeting' : 'en réunion') }));
+      this.lieu.ecran?.userData.redessiner(r ? { etat: this.langue === 'en' ? '● Meeting in progress' : '● Réunion en cours', sujet: r.sujet } : { etat: this.langue === 'en' ? 'Room free' : 'Salle libre', sujet: ou?.derniereReunion ? `${this.langue === 'en' ? 'Last meeting' : 'Dernière réunion'} (${new Date(ou.derniereReunion.quand).toLocaleString(this.langue === 'en' ? 'en' : 'fr', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}) : ${ou.derniereReunion.sujet}` : (this.langue === 'en' ? 'No meeting right now.' : 'Aucune réunion en ce moment.') });
+    }
+    if (this.lieu.nom === 'hall') {
+      // Au bar : ceux qui viennent de rendre un travail (dernière demi-heure).
+      (ou?.aupause || []).slice(0, this.lieu.bar?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.bar[i], anim: i % 2 ? 'ecoute' : 'parle', sous: `${this.langue === 'en' ? 'break · delivered' : 'pause · a rendu'} : ${String(b.tache || '').slice(0, 36)}` }));
     }
     if (this.lieu.nom === 'atelier') {
       (ou?.auBureau || []).slice(0, this.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));

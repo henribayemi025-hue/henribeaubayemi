@@ -1348,7 +1348,17 @@
       "reessayer": "Réessayer",
       "modeJeu": "🎮 Plein écran",
       "quitterJeu": "Quitter",
-      "tourne": "Tourne ton téléphone à l’horizontale"
+      "tourne": "Tourne ton téléphone à l’horizontale",
+      "parler": "Parler",
+      "appeler": "Appeler",
+      "fiche": "Fiche",
+      "fairevenir": "Faire venir un agent",
+      "fairevenirTitre": "Qui appeler à l'atelier ?",
+      "salleN": "Salle de réunion {{n}}",
+      "convoquer": "Convoquer une réunion",
+      "sujet": "Le sujet de la réunion",
+      "qui": "Qui participe ? ({{n}}/6)",
+      "lancer": "Lancer la réunion"
     }
   },
   "equipe": {

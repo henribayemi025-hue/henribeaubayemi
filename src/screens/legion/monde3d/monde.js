@@ -62,7 +62,7 @@ export function corpsDe(agent) {
 }
 
 // La réunion en cours (même lecture que la salle de réunion 2D).
-export function reunionEnCours(messages, maintenant = Date.now()) {
+export function reunionsEnCours(messages, maintenant = Date.now()) {
   const m = new Map();
   for (const x of messages || []) {
     const id = x.meta?.reunion?.id;
@@ -76,21 +76,24 @@ export function reunionEnCours(messages, maintenant = Date.now()) {
   // Une réunion sans compte rendu depuis plus d'une heure n'est plus « en cours ».
   const vivantes = [...m.values()].filter((r) => !r.fin && maintenant - r.dernier < 60 * 60 * 1000 && r.propos.length);
   vivantes.sort((a, b) => b.dernier - a.dernier);
-  const r = vivantes[0];
-  if (!r) return null;
+  return vivantes.map(decrireReunion);
+}
+function decrireReunion(r) {
   r.propos.sort((a, b) => (a.meta.reunion.ordre ?? 0) - (b.meta.reunion.ordre ?? 0) || String(a.created_at).localeCompare(String(b.created_at)));
   const participants = [...new Set(r.propos.map((p) => p.auteur_id).filter(Boolean))];
   const parle = r.propos[r.propos.length - 1]?.auteur_id || null;
   const sujet = String(r.propos[0]?.texte || '').split('\n')[0].replace(/[#*]/g, '').slice(0, 90);
   return { id: r.id, participants, parle, sujet };
 }
+export const reunionEnCours = (messages, maintenant) => reunionsEnCours(messages, maintenant)[0] || null;
 
 // Qui est où, maintenant. Rien n'est inventé : sans activité récente, un agent
 // n'est nulle part dans le monde (il est « chez lui »).
 export function quiOuEst({ agents = [], messages = [], taches = [], maintenant = Date.now() }) {
   const machines = agents.filter((a) => !a.user_id && a.actif !== false);
-  const reunion = reunionEnCours(messages, maintenant);
-  const enReunion = new Set(reunion?.participants || []);
+  const reunions = reunionsEnCours(messages, maintenant);
+  const reunion = reunions[0] || null;
+  const enReunion = new Set(reunions.flatMap((x) => x.participants));
   const actifs = new Map();
   for (const m of messages) {
     if (m.user_id || !m.auteur_id || m.meta?.reunion) continue;
@@ -119,7 +122,17 @@ export function quiOuEst({ agents = [], messages = [], taches = [], maintenant =
   // La dernière réunion terminée, pour l'écran de la salle quand elle est vide.
   let derniere = null;
   for (const m of messages) if (m.meta?.reunion?.fin && (!derniere || m.created_at > derniere.created_at)) derniere = m;
+  // Au bar du hall : ceux qui ont RENDU un travail dans la dernière demi-heure.
+  const aupause = [];
+  for (const x of taches) {
+    const rendue = Date.parse(x.meta?.livre_le || '');
+    if (!x.assigne_a || !ids.has(x.assigne_a) || occupes.has(x.assigne_a) || !(maintenant - rendue <= 30 * 60 * 1000)) continue;
+    occupes.add(x.assigne_a);
+    aupause.push({ id: x.assigne_a, tache: x.texte, depuis: rendue });
+  }
   return {
+    reunions: reunions.map((x) => ({ ...x, participants: x.participants.filter((id) => ids.has(id)) })),
+    aupause,
     aLeurPoste,
     derniereReunion: derniere ? { quand: derniere.created_at, sujet: String(derniere.texte || '').split('\n')[0].replace(/^Compte rendu\s*[—-]\s*/i, '').replace(/[#*]/g, '').slice(0, 90) } : null,
     reunion: reunion ? { ...reunion, participants: reunion.participants.filter((id) => ids.has(id)) } : null,
