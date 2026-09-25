@@ -36,6 +36,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [conseil, setConseil] = useState(() => Math.floor(Math.random() * 6));
   const [essai, setEssai] = useState(0);
   const [lieu, setLieu] = useState('hall');
+  const [dehors, setDehors] = useState(false);
   const [camera, setCamera] = useState('tps');
   const [proche, setProche] = useState(null);
   const [dialogue, setDialogue] = useState(null); // { lignes: [{qui, texte}], aller }
@@ -204,6 +205,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           mobile, langue, region: styleVille(tz), salleMarche,
           surEvenement: (e) => {
             if (e.type === 'lieu') setLieu(e.lieu);
+            if (e.type === 'dehors') setDehors(e.dehors);
             if (e.type === 'progression') setProgres(e.total ? Math.round((e.faits / e.total) * 100) : null);
             if (e.type === 'perdu') setEtat('erreur');
             if (e.type === 'camera') setCamera(e.mode);
@@ -272,7 +274,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     if (cible.type === 'bateau') { monde.current?.monterBateau(); return; }
     if (cible.type === 'boutique') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.boutiqueResume', { nom: cible.nom, articles: cible.articles, commandes: cible.commandes, livrees: cible.livrees }) }], lien: cible.slug ? `/boutique/${cible.slug}` : null }); return; }
     if (cible.type === 'client') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.clientResume', { nom: cible.nom || t('legion.monde.ville.client'), commandes: cible.commandes, livrees: cible.livrees }) }] }); return; }
-    if (cible.type === 'chezmoi') { setDialogue({ lignes: [{ qui: 'elle', texte: prenomMoi ? t('legion.monde.ville.bienvenue', { nom: prenomMoi }) : t('legion.monde.ville.bienvenueSans') }] }); return; }
+    if (cible.type === 'chezmoi') { setDialogue({ chezMoi: true, lignes: [{ qui: 'elle', texte: prenomMoi ? t('legion.monde.ville.bienvenue', { nom: prenomMoi }) : t('legion.monde.ville.bienvenueSans') }] }); return; }
     if (cible.type === 'receptionniste') {
       const r = repondre('', { agents, ou, nomEntreprise: entreprise.nom }, langue);
       setDialogue({ lignes: [{ qui: 'elle', texte: r.texte }] });
@@ -356,8 +358,22 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const depts = nomsDepts(departements, agents);
   const estEtage = String(lieu).startsWith('etage:');
   const estSalle = String(lieu).startsWith('reunion:');
-  const nomLieu = estSalle ? t('legion.monde.salleN', { n: lieu.split(':')[1] }) : estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : libelle(lieu);
+  const enVille = lieu === 'hall' && dehors;
+  const nomLieu = estSalle ? t('legion.monde.salleN', { n: lieu.split(':')[1] }) : estEtage ? t('legion.monde.etage', { n: depts.indexOf(lieu.slice(6)) + 1, nom: lieu.slice(6) }) : enVille ? t('legion.monde.lieu.ville') : libelle(lieu);
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
+  // Ce que fait l'agent dont on s'approche (Beau, 25/09 : « je dois voir sa fiche mais aussi ce qu'il est
+  // en train de faire, sur quoi il travaille ») — seulement ce que les données disent.
+  const activiteProche = useMemo(() => {
+    if (!agentProche) return null;
+    const id = agentProche.id;
+    if (agentProche.actif === false) return { etat: 'veille' };
+    const b = ou?.auBureau?.find((x) => x.id === id); if (b) return { etat: 'travaille', texte: b.tache || b.texte };
+    if (ou?.reunions?.some((r) => r.participants.includes(id))) return { etat: 'reunion' };
+    const p = ou?.aLeurPoste?.find((x) => x.id === id); if (p) return { etat: p.pause ? 'pause' : 'aFaire', texte: p.tache };
+    const r = ou?.aupause?.find((x) => x.id === id); if (r) return { etat: 'rendu', texte: r.tache };
+    const ouvertes = (taches || []).filter((x) => x.assigne_a === id && !x.termine_le && !['fait', 'revue'].includes(x.meta?.statut)).length;
+    return { etat: 'dispo', n: ouvertes };
+  }, [agentProche, ou, taches]);
 
   return (
     <div className={`relative ${vueVille ? 'h-[calc(100dvh-12.25rem)] sm:h-[calc(100dvh-10.5rem)]' : 'h-[calc(100dvh-8rem)] sm:h-[calc(100dvh-9.5rem)]'} min-h-[420px] overflow-hidden bg-black ${mobile ? 'monde-leger' : ''}`}>{/* l'onglet « La ville » a deux lignes de plus au-dessus : tout doit tenir dans l'écran */}
@@ -409,7 +425,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {/* Où je suis */}
       <div className="pointer-events-none absolute left-3 top-3 z-[5] rounded-card bg-[#0b1120]/80 px-3 py-2 text-[12.5px] text-legion-ink backdrop-blur">
-        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu === 'atelier' && salleMarche ? 'salleMarche' : lieu}`)}</span>
+        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu === 'atelier' && salleMarche ? 'salleMarche' : enVille ? 'ville' : lieu}`)}</span>
       </div>
 
       {/* En haut à droite : une seule ligne (Beau, 25/09 : « l'arrangement des boutons est horrible »).
@@ -496,6 +512,15 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               <div className="text-left"><p className="text-[14px] font-semibold text-legion-ink">{agentProche.nom}</p><p className="text-[12px] text-legion-muted">{agentProche.poste}</p></div>
             </div>
           )}
+          {agentProche && activiteProche && (
+            <div className="mb-2 rounded-card border border-legion-line bg-legion-card/70 px-2.5 py-1.5 text-left">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-legion-gold">
+                <span className={`h-2 w-2 rounded-full ${activiteProche.etat === 'travaille' ? 'animate-pulse bg-legion-success' : activiteProche.etat === 'veille' ? 'bg-legion-line' : 'bg-legion-gold'}`} />
+                {t(`legion.monde.activite.${activiteProche.etat}`, { n: activiteProche.n ?? 0 })}
+              </p>
+              {activiteProche.texte && <p className="mt-0.5 line-clamp-2 text-[12.5px] text-legion-ink">{String(activiteProche.texte).replace(/^.*?te demande : /, '')}</p>}
+            </div>
+          )}
           {agentProche ? (
             <div className="flex gap-1.5">
               {onParler && <button type="button" onClick={() => onParler(agentProche)} className="flex-1 rounded-pill bg-legion-gold px-2 py-2 text-[13px] font-semibold text-legion-bg">{t('legion.monde.parler')}</button>}
@@ -515,7 +540,11 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       {dialogue && (
         <div className="absolute bottom-3 left-1/2 z-[6] w-[min(94%,440px)] -translate-x-1/2 rounded-2xl border border-legion-line bg-[#0b1120]/95 p-3 backdrop-blur">
           <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-legion-ink"><img src={`/monde3d/gens/${RECEPTIONNISTE}.jpg`} alt="" className="h-7 w-7 rounded-full object-cover" />{t('legion.monde.receptionniste')}</span>
+            {dialogue.chezMoi ? (
+              <span className="flex items-center gap-2 text-[13px] font-semibold text-legion-ink"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-legion-gold/20 text-[14px]">🔑</span>{t('legion.monde.ville.chezMoi')}</span>
+            ) : (
+              <span className="flex items-center gap-2 text-[13px] font-semibold text-legion-ink"><img src={`/monde3d/gens/${RECEPTIONNISTE}.jpg`} alt="" className="h-7 w-7 rounded-full object-cover" />{t('legion.monde.receptionniste')}</span>
+            )}
             <button type="button" onClick={() => setDialogue(null)} className="text-[12.5px] text-legion-muted">{t('common.close', 'Fermer')}</button>
           </div>
           <div className="flex max-h-44 flex-col gap-1.5 overflow-y-auto">
@@ -525,6 +554,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           </div>
           {dialogue.lien && <a href={dialogue.lien} target="_blank" rel="noreferrer" className="mt-2 block w-full rounded-pill bg-legion-gold px-3 py-1.5 text-center text-[13px] font-semibold text-legion-bg">{t('legion.monde.ville.voirBoutique')}</a>}
           {dialogue.aller && <button type="button" onClick={() => aller(dialogue.aller)} className="mt-2 w-full rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg">{t('legion.monde.emmene', { lieu: libelle(dialogue.aller) })}</button>}
+          {!dialogue.chezMoi && <>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {['reunion', 'travail', 'ouAlpha'].map((k) => (
               <button key={k} type="button" onClick={() => demander(t(`legion.monde.q.${k}`, { nom: agents.find((a) => !a.user_id)?.nom || '' }))} className="rounded-pill border border-legion-line px-2.5 py-1 text-[12px] text-legion-muted hover:border-legion-gold">{t(`legion.monde.q.${k}`, { nom: agents.find((a) => !a.user_id)?.nom || '' })}</button>
@@ -534,6 +564,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder={t('legion.monde.demander')} className="min-w-0 flex-1 rounded-pill border border-legion-line bg-legion-bg px-3 py-1.5 text-[16px] text-legion-ink sm:text-[13px]" />
             <button type="submit" className="rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg">OK</button>
           </form>
+          </>}
         </div>
       )}
 

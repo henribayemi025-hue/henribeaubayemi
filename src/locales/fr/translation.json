@@ -1312,7 +1312,8 @@
         "reunion": "Salle de réunion",
         "atelier": "Atelier",
         "maisons": "Chez les agents",
-        "salleMarche": "Salle des marchés"
+        "salleMarche": "Salle des marchés",
+        "ville": "La ville"
       },
       "phrase": {
         "hall": "le hall de l'immeuble, la réceptionniste vous accueille",
@@ -1320,7 +1321,8 @@
         "atelier": "les agents y travaillent quand ils ont une tâche en cours",
         "etage": "chaque agent du département a son bureau ; il y est assis quand il travaille",
         "maisons": "leurs villas au bord de la mer ; un agent en veille est chez lui",
-        "salleMarche": "les taux du jour, l'activité de l'entreprise, l'heure des grandes places ; les agents y travaillent quand ils ont une tâche"
+        "salleMarche": "les taux du jour, l'activité de l'entreprise, l'heure des grandes places ; les agents y travaillent quand ils ont une tâche",
+        "ville": "la ville de ton entreprise : tes projets, tes boutiques, tes clients — la réception est derrière les portes vitrées"
       },
       "camera": {
         "tps": "3e personne",
@@ -1448,7 +1450,16 @@
       "convoquer": "Convoquer une réunion",
       "sujet": "Le sujet de la réunion",
       "qui": "Qui participe ? ({{n}}/6)",
-      "lancer": "Lancer la réunion"
+      "lancer": "Lancer la réunion",
+      "activite": {
+        "travaille": "Travaille en ce moment sur",
+        "reunion": "En réunion",
+        "pause": "En pause · ensuite",
+        "aFaire": "À son poste · à faire",
+        "rendu": "Vient de rendre",
+        "veille": "Éteint (en veille)",
+        "dispo": "Disponible · {{n}} tâche(s) ouverte(s)"
+      }
     },
     "agentModifie": "Enregistré",
     "agentCree": "{{nom}} rejoint l’équipe",

@@ -1312,7 +1312,8 @@
         "reunion": "Meeting room",
         "atelier": "Workshop",
         "maisons": "Where agents live",
-        "salleMarche": "Trading floor"
+        "salleMarche": "Trading floor",
+        "ville": "The city"
       },
       "phrase": {
         "hall": "the building lobby, the receptionist welcomes you",
@@ -1320,7 +1321,8 @@
         "atelier": "agents work here when they have a task in progress",
         "etage": "each agent in the department has a desk; they sit there when they're working",
         "maisons": "their villas by the sea; an agent switched off is at home",
-        "salleMarche": "today's rates, the company's activity, the time on major markets; agents work here when they have a task"
+        "salleMarche": "today's rates, the company's activity, the time on major markets; agents work here when they have a task",
+        "ville": "your company’s city: your projects, your shops, your customers — go through the glass doors for reception"
       },
       "camera": {
         "tps": "3rd person",
@@ -1448,7 +1450,16 @@
       "convoquer": "Call a meeting",
       "sujet": "Meeting topic",
       "qui": "Who joins? ({{n}}/6)",
-      "lancer": "Start the meeting"
+      "lancer": "Start the meeting",
+      "activite": {
+        "travaille": "Working right now on",
+        "reunion": "In a meeting",
+        "pause": "On a break · next up",
+        "aFaire": "At their desk · to do",
+        "rendu": "Just delivered",
+        "veille": "Switched off (on standby)",
+        "dispo": "Available · {{n}} open task(s)"
+      }
     },
     "agentModifie": "Saved",
     "agentCree": "{{nom}} joins the team",

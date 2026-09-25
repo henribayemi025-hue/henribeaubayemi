@@ -1470,6 +1470,10 @@ export class Monde {
       this.camera.lookAt(tete);
     }
     this.soleil.target.position.set(p.x, 0, p.z);
+    // Dedans ou dehors (Beau, 25/09 : « Réception » s'affichait alors qu'il était devant chez lui).
+    const I2 = this.lieu.interieur;
+    const dehors = this.lieu.nom === 'hall' && !!I2 && !(p.x > I2.x0 && p.x < I2.x1 && p.z > I2.z0 && p.z < I2.z1);
+    if (dehors !== this.dehors) { this.dehors = dehors; this.emettre({ type: 'dehors', dehors }); }
   }
   collisions(p) {
     const L = this.lieu.limites;

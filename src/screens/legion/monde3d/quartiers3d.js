@@ -150,10 +150,29 @@ export function construireQuartiers(monde, ilots, donnees, { habitat = null, lan
     const nom = habitat.nom ? (fr ? `Chez ${habitat.nom}` : `${habitat.nom}'s home`) : (fr ? 'Chez moi' : 'Home');
     const lettres = monde.ecran(10, 1.6, (c, cw, ch) => { c.clearRect(0, 0, cw, ch); c.fillStyle = '#f3dfb3'; c.shadowColor = OR; c.shadowBlur = ch * 0.15; c.font = `600 ${ch * 0.62}px Georgia, serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(nom, cw / 2, ch / 2); });
     lettres.position.set(x, h - 3, z - w / 2 - 0.05); lettres.rotation.y = Math.PI; g.add(lettres);
-    const entree = new THREE.Mesh(new THREE.BoxGeometry(4, 3.2, 0.3), new THREE.MeshStandardMaterial({ color: OR, metalness: 0.6, roughness: 0.3 }));
-    entree.position.set(x, 1.6, z - w / 2 - 0.1); g.add(entree);
-    const porte = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.6), new THREE.MeshStandardMaterial({ color: '#16222c', metalness: 0.5, roughness: 0.1 }));
-    porte.position.set(x, 1.3, z - w / 2 - 0.27); porte.rotation.y = Math.PI; g.add(porte);
+    // L'entrée (Beau, 25/09 : la porte n'était qu'une plaque dorée et un trou noir) : un vrai hall
+    // vitré éclairé de l'intérieur, un auvent, un cadre de laiton, deux marches et deux plantes.
+    const zf = z - w / 2; // la façade, côté rue (-z)
+    const laiton = new THREE.MeshStandardMaterial({ color: OR, metalness: 0.75, roughness: 0.3 });
+    const hallLumiere = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.9), new THREE.MeshStandardMaterial({ color: '#3a2a1c', emissive: '#f0c27a', emissiveIntensity: 0.55, roughness: 0.9 }));
+    hallLumiere.position.set(x, 1.55, zf - 0.04); hallLumiere.rotation.y = Math.PI; g.add(hallLumiere);
+    const vitre = new THREE.MeshStandardMaterial({ color: '#a9c2cc', metalness: 0.2, roughness: 0.05, transparent: true, opacity: 0.35, depthWrite: false });
+    for (const dx of [-0.9, 0.9]) { const v = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.8), vitre); v.position.set(x + dx, 1.5, zf - 0.12); v.rotation.y = Math.PI; g.add(v); }
+    for (const [dx, lw, lh, y] of [[-1.85, 0.12, 3.1, 1.55], [1.85, 0.12, 3.1, 1.55], [0, 0.1, 3.0, 1.5], [0, 3.8, 0.14, 3.05]]) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(lw, lh, 0.14), laiton); b.position.set(x + dx, y, zf - 0.14); g.add(b);
+    }
+    const poignees = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.08), laiton); poignees.position.set(x, 1.1, zf - 0.24); g.add(poignees);
+    const auvent = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.22, 2.2), new THREE.MeshStandardMaterial({ color: '#2a2622', metalness: 0.5, roughness: 0.4 }));
+    auvent.position.set(x, 3.55, zf - 1.1); auvent.castShadow = !monde.mobile; g.add(auvent);
+    const liseré = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.05, 0.05), new THREE.MeshBasicMaterial({ color: '#ffdca0' })); liseré.position.set(x, 3.42, zf - 2.15); g.add(liseré);
+    for (const [k, [ww, dd]] of [[0, [4.6, 1.2]], [1, [4.2, 0.7]]].entries()) {
+      const marche = new THREE.Mesh(new THREE.BoxGeometry(ww, 0.14, dd), new THREE.MeshStandardMaterial({ color: '#cfc6b8', roughness: 0.85 }));
+      marche.position.set(x, 0.07 + k * 0.14, zf - dd / 2 - 0.05); marche.receiveShadow = !monde.mobile; g.add(marche);
+    }
+    for (const dx of [-2.6, 2.6]) {
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.3, 0.7, 14), new THREE.MeshStandardMaterial({ color: '#3b3632', roughness: 0.6 })); pot.position.set(x + dx, 0.35, zf - 0.6); g.add(pot);
+      const feuillage = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 1), new THREE.MeshStandardMaterial({ color: '#3f6b3a', roughness: 0.9, flatShading: true })); feuillage.position.set(x + dx, 1.2, zf - 0.6); feuillage.scale.y = 1.3; g.add(feuillage);
+    }
     murs.push({ x0: x - w / 2, x1: x + w / 2, z0: z - w / 2, z1: z + w / 2, h: h + 1 });
     pois.push({ type: 'chezmoi', id: 'chezmoi', x, z: z - w / 2 - 2, rayon: 3 });
   }
