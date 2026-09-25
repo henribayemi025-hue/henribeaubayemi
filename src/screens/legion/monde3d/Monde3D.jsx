@@ -282,7 +282,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {/* Commandes */}
       {!mobile && !dialogue && (
-        <p className="pointer-events-none absolute bottom-3 left-3 z-[5] hidden rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted lg:block">{t('legion.monde.aide')}</p>
+        <p className="pointer-events-none absolute bottom-16 left-3 z-[5] hidden rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted lg:block">{t('legion.monde.aide')}</p>
       )}
       {mobile && !dialogue && (
         <>
