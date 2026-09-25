@@ -57,7 +57,8 @@ export class Monde {
     this.ciel = { phase: 'jour', genre: 'clair' };
 
     const r = new THREE.WebGLRenderer({ antialias: !mobile, powerPreference: 'high-performance' });
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 2));
+    // Téléphone : plus net (Beau : « les pixels sont trop faibles »), l'allègement se fait ailleurs (30 images/s, ville proche seulement).
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.6 : 2));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.0;
@@ -75,7 +76,7 @@ export class Monde {
     conteneur.appendChild(this.etiquettes.domElement);
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(55, 1, 0.05, 900);
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.05, mobile ? 420 : 900);
     const pm = new THREE.PMREMGenerator(r);
     this.scene.environment = pm.fromScene(new RoomEnvironment(), 0.035).texture;
     this.scene.environmentIntensity = 0.9;
@@ -967,7 +968,10 @@ export class Monde {
     const pas = () => {
       if (!this.vivant) return;
       this.raf = requestAnimationFrame(pas);
-      const brut = this.horloge.getDelta();
+      // Au téléphone : 30 images/s régulières plutôt que 60 qui saccadent (et la batterie tient).
+      if (this.mobile) { this.reste = (this.reste || 0) + this.horloge.getDelta(); if (this.reste < 1 / 31) return; }
+      const brut = this.mobile ? this.reste : this.horloge.getDelta();
+      this.reste = 0;
       const dt = Math.min(brut, 0.05);
       this.adapter(brut);
       this.avancer(dt);
@@ -984,9 +988,10 @@ export class Monde {
     if (this.mesure.t < 2) return;
     const ips = this.mesure.n / this.mesure.t;
     const pr = this.rendu.getPixelRatio();
-    const plancher = this.mobile ? 0.75 : 1; // Beau : « trop réduit le nombre de pixels »
-    if (ips < 35 && pr > plancher) this.rendu.setPixelRatio(Math.max(plancher, pr - 0.15));
-    else if (ips > 58 && pr < this.mesure.max) this.rendu.setPixelRatio(Math.min(this.mesure.max, pr + 0.1));
+    const plancher = 1; // jamais en dessous d'un pixel par point (Beau : « trop réduit le nombre de pixels »)
+    const bas = this.mobile ? 24 : 35, haut = this.mobile ? 29 : 58; // au téléphone, on vise 30 images/s
+    if (ips < bas && pr > plancher) this.rendu.setPixelRatio(Math.max(plancher, pr - 0.15));
+    else if (ips > haut && pr < this.mesure.max) this.rendu.setPixelRatio(Math.min(this.mesure.max, pr + 0.1));
     if (ips < 28 && this.rendu.shadowMap.enabled && pr <= plancher) { this.rendu.shadowMap.enabled = false; this.scene.traverse((o) => { if (o.material) o.material.needsUpdate = true; }); }
     if (this.rendu.getPixelRatio() !== pr) { const w = this.conteneur.clientWidth, h = this.conteneur.clientHeight; this.rendu.setSize(w, h); }
     this.mesure.t = 0; this.mesure.n = 0;

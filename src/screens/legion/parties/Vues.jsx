@@ -111,10 +111,11 @@ export function Bureau({ entreprise, agents, departements, messages, taches, onF
 
   return (
     <div className="p-4">
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      {/* Au téléphone, les onglets tiennent sur une ligne qui défile (ils prenaient un tiers de l'écran). */}
+      <div className="-mx-4 mb-3 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:mb-4 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {['monde3d', 'ville', 'immeuble', 'reunions', 'academie', 'bureau', 'organigramme'].map((k) => (
           <button key={k} type="button" onClick={() => setMode(k)}
-            className={`rounded-pill px-3 py-1 text-[13px] font-semibold ${mode === k ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>{t(`legion.vues.${k}`)}</button>
+            className={`shrink-0 whitespace-nowrap rounded-pill px-3 py-1 text-[13px] font-semibold ${mode === k ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>{t(`legion.vues.${k}`)}</button>
         ))}
         {mode === 'organigramme' && (
           <span className="ml-auto flex flex-wrap gap-1.5">

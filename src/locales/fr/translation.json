@@ -1354,6 +1354,8 @@
       "etages": "Étages ({{n}})",
       "reessayer": "Réessayer",
       "chantierResume": "Projet « {{nom}} » : {{rendues}} tâche(s) rendue(s) sur {{total}}.",
+      "menu": "Menu",
+      "vue": "Vue",
       "passer": "Passer",
       "bienvenue": "Bienvenue chez {{nom}}",
       "revoirIntro": "Revoir l'intro",

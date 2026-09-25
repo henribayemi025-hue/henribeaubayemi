@@ -12,7 +12,7 @@ import { chargerAffiches } from './affiches';
 // de ce qui est à portée, la réceptionniste, le joystick au téléphone.
 // Tout ce qui s'y passe vient des vraies données (monde.js).
 
-const STYLE = `.monde-etiquette{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;background:rgba(11,17,32,.8);color:#edf1f8;font:12px system-ui;white-space:nowrap;transform:translateY(-6px)}
+const STYLE = `.monde-leger .monde-etiquette{padding:2px 7px 2px 2px;font-size:11px}.monde-leger .monde-etiquette img{width:18px;height:18px}.monde-leger .monde-etiquette i{display:none}.monde-etiquette{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;background:rgba(11,17,32,.8);color:#edf1f8;font:12px system-ui;white-space:nowrap;transform:translateY(-6px)}
 .monde-etiquette img{width:24px;height:24px;border-radius:50%;object-fit:cover}.monde-etiquette b{display:block;font-weight:700;line-height:1.1}.monde-etiquette i{display:block;font-style:normal;color:#e3a857;font-size:10.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis}`;
 const LIEUX = ['hall', 'reunion', 'atelier'];
 const nomsDepts = (departements, agents) => {
@@ -72,6 +72,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       rendues: x.rendues, total: x.total, avancement: x.avancement, termine: x.termine, enRetard: x.enRetard, agentsAuTravail: x.agentsAuTravail,
     }));
   }, [projets, taches, agents, maintenant, t]);
+  const [menu, setMenu] = useState(false);
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
   const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
   useEffect(() => { const f = () => { setPortrait(window.innerHeight > window.innerWidth); setTimeout(() => monde.current?.redimensionner(), 120); }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
@@ -248,7 +249,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const agentProche = proche?.type === 'agent' ? agents.find((a) => a.id === proche.id) : null;
 
   return (
-    <div className="relative h-[calc(100dvh-13rem)] min-h-[420px] sm:h-[calc(100dvh-9.5rem)] overflow-hidden bg-black">
+    <div className={`relative h-[calc(100dvh-8rem)] min-h-[420px] sm:h-[calc(100dvh-9.5rem)] overflow-hidden bg-black ${mobile ? 'monde-leger' : ''}`}>
       <div ref={boite} className="absolute inset-0" />
 
       {intro && (
@@ -287,18 +288,35 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu === 'atelier' && salleMarche ? 'salleMarche' : lieu}`)}</span>
       </div>
 
-      {/* Caméras + avatar */}
-      <div className="absolute right-3 top-12 z-[5] flex flex-wrap justify-end gap-1.5 sm:top-3">
-        {['tps', 'fps', 'plan'].map((k) => (
-          <button key={k} type="button" onClick={() => monde.current?.reglerCamera(k)}
-            className={`rounded-pill px-2.5 py-1 text-[12px] font-semibold backdrop-blur ${camera === k ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
-        ))}
-        {mobile && <button type="button" onClick={() => modeJeu(!jeu)} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{jeu ? t('legion.monde.quitterJeu') : t('legion.monde.modeJeu')}</button>}
-        {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => setConvoc({ sujet: '', ids: [] })} className="rounded-pill bg-legion-gold px-2.5 py-1 text-[12px] font-semibold text-legion-bg">{t('legion.monde.convoquer')}</button>}
-        {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => setRenfort(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-gold backdrop-blur">{t('legion.monde.fairevenir')}</button>}
-        <button type="button" onClick={() => setIntro(true)} title={t('legion.monde.revoirIntro')} aria-label={t('legion.monde.revoirIntro')} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-ink backdrop-blur">🎬</button>
-        <button type="button" onClick={() => setChoixAvatar(true)} className="rounded-pill bg-[#0b1120]/80 px-2.5 py-1 text-[12px] font-semibold text-legion-ink backdrop-blur">{t('legion.monde.monAvatar')}</button>
+      {/* En haut à droite : une seule ligne (Beau, 25/09 : « l'arrangement des boutons est horrible »).
+          L'action du lieu, le plein écran au téléphone, et un menu pour le reste. */}
+      <div className="absolute right-3 top-3 z-[6] flex items-center gap-1.5">
+        {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => setConvoc({ sujet: '', ids: [] })} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg shadow">{t('legion.monde.convoquer')}</button>}
+        {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => setRenfort(true)} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg shadow">{t('legion.monde.fairevenir')}</button>}
+        {!mobile && (
+          <div className="flex rounded-pill bg-[#0b1120]/80 p-0.5 backdrop-blur">
+            {['tps', 'fps', 'plan'].map((k) => (
+              <button key={k} type="button" onClick={() => monde.current?.reglerCamera(k)}
+                className={`rounded-pill px-2.5 py-1 text-[12px] font-semibold ${camera === k ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
+            ))}
+          </div>
+        )}
+        {mobile && <button type="button" onClick={() => modeJeu(!jeu)} aria-label={jeu ? t('legion.monde.quitterJeu') : t('legion.monde.modeJeu')} title={jeu ? t('legion.monde.quitterJeu') : t('legion.monde.modeJeu')} className="grid h-9 w-9 place-items-center rounded-full bg-[#0b1120]/80 text-[16px] text-legion-ink backdrop-blur">{jeu ? '✕' : '⛶'}</button>}
+        <button type="button" onClick={() => setMenu((v) => !v)} aria-label={t('legion.monde.menu')} aria-expanded={menu} className={`grid h-9 w-9 place-items-center rounded-full text-[18px] backdrop-blur ${menu ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>☰</button>
       </div>
+      {menu && (
+        <div className="absolute right-3 top-14 z-[8] w-56 rounded-2xl border border-legion-line bg-[#0b1120]/95 p-2 shadow-xl backdrop-blur">
+          <p className="px-2 pb-1 text-[11px] uppercase tracking-wide text-legion-muted">{t('legion.monde.vue')}</p>
+          <div className="mb-2 flex rounded-pill bg-black/30 p-0.5">
+            {['tps', 'fps', 'plan'].map((k) => (
+              <button key={k} type="button" onClick={() => { monde.current?.reglerCamera(k); setMenu(false); }}
+                className={`flex-1 rounded-pill px-1 py-1.5 text-[12px] font-semibold ${camera === k ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
+            ))}
+          </div>
+          <button type="button" onClick={() => { setChoixAvatar(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🧍 {t('legion.monde.monAvatar')}</button>
+          <button type="button" onClick={() => { setIntro(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🎬 {t('legion.monde.revoirIntro')}</button>
+        </div>
+      )}
 
       {/* Ce qui est à portée */}
       {proche && !dialogue && !etage && (
@@ -351,7 +369,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {/* L'ascenseur (et les raccourcis) */}
       {!dialogue && (
-        <div className="absolute bottom-3 left-1/2 z-[5] flex -translate-x-1/2 gap-1 rounded-pill bg-[#0b1120]/85 p-1 backdrop-blur">
+        <div className="absolute bottom-3 left-1/2 z-[5] flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-pill bg-[#0b1120]/85 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {LIEUX.map((l) => (
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{libelle(l)}</button>
           ))}

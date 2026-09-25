@@ -420,6 +420,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     dalle.position.set((il.x0 + il.x1) / 2, il.centre ? -0.11 : 0.09, (il.z0 + il.z1) / 2); dalle.receiveShadow = true;
     racine.add(dalle);
     if (il.centre || il.projets) continue; // notre immeuble ; les chantiers des projets
+    if (monde.mobile && Math.hypot((il.x0 + il.x1) / 2, (il.z0 + il.z1) / 2) > 110) continue; // téléphone : seulement les îlots proches
     // 1 à 4 tours par îlot, rez-de-chaussée en boutiques
     const n = l > 60 || p > 60 ? 2 : 1 + Math.floor(r() * 3);
     const lx = (l - TROTTOIR * 2) / (n > 2 ? 2 : n), lz = (p - TROTTOIR * 2) / (n > 2 ? 2 : 1);

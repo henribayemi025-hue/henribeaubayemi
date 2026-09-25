@@ -1354,6 +1354,8 @@
       "etages": "Floors ({{n}})",
       "reessayer": "Try again",
       "chantierResume": "Project “{{nom}}”: {{rendues}} of {{total}} task(s) delivered.",
+      "menu": "Menu",
+      "vue": "View",
       "passer": "Skip",
       "bienvenue": "Welcome to {{nom}}",
       "revoirIntro": "Replay intro",
