@@ -589,6 +589,18 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
       // « vous ne devez pas attendre que je vous demande quelque chose ») :
       // il se donne l'initiative du jour, dans son métier, et la livre.
+      // Avant l'initiative : une tâche LIBRE du tableau, dans son service, que
+      // personne n'a prise (Beau, 25/09 : « qu'ils prennent au tableau ce qui
+      // n'est pas encore pris »). La prise est atomique : un seul agent gagne.
+      if (!tache && !urgences) {
+        const monSalon = canalDe(a.departement)?.id;
+        const libre = ouvertes.find((t) => !t.assigne_a && t.canal_id === monSalon && !priseRecemment(t));
+        if (libre) {
+          const { data: prise } = await service.from('legion_messages').update({ assigne_a: a.id, meta: { ...(libre.meta || {}), pris_au_tableau: true } })
+            .eq('id', libre.id).is('assigne_a', null).select('id, texte, assigne_a, canal_id, meta, created_at').maybeSingle();
+          if (prise) { tache = prise as Tache; libre.assigne_a = a.id; journal.push(`${entreprise.nom}: ${a.nom} prend au tableau une tâche libre`); }
+        }
+      }
       if (!tache) {
         const titre = anglais
           ? `Initiative of the day (${a.poste}): without waiting to be asked, pick the ONE most useful thing in your job to move the company forward today, do it, and say why you chose it`
