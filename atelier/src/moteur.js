@@ -171,6 +171,10 @@ export async function appeler({ modele, messages, outils, env, maxSortie = 8000,
       : { max_tokens: maxSortie, temperature: prefixe === 'km' ? 1 : 0.3 }),
     ...(outils?.length ? { tools: outils, tool_choice: 'auto' } : {}),
   };
+  // OpenAI (GPT-6) : avec des outils, /v1/chat/completions exige
+  // reasoning_effort « none » — sinon HTTP 400 à chaque appel (vu le 25/09 :
+  // GPT-6 Sol n'avait jamais pu servir dans l'atelier).
+  if (prefixe === 'oa' && outils?.length) corps.reasoning_effort = 'none';
   // DeepSeek : réflexion coupée par défaut (plus rapide, coût prévisible) ;
   // ATELIER_REFLEXION=oui la rallume.
   if (prefixe === 'ds') corps.thinking = { type: env?.ATELIER_REFLEXION === 'oui' ? 'enabled' : 'disabled' };

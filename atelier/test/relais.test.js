@@ -226,3 +226,15 @@ describe('la traduction Claude (fonction atelier-modele)', () => {
     expect(o.usage).toEqual({ prompt_tokens: 1000, completion_tokens: 50, total_tokens: 1050, prompt_tokens_details: { cached_tokens: 100 } });
   });
 });
+
+describe('OpenAI avec des outils (25/09)', () => {
+  it('GPT-6 reçoit reasoning_effort « none » quand il a des outils, sinon HTTP 400 à chaque appel', async () => {
+    const f = fauxFetch(() => Response.json(reponseModele('ok')));
+    await appeler({ modele: 'oa:gpt-6-sol', messages, outils: [{ type: 'function', function: { name: 'lister', parameters: { type: 'object', properties: {} } } }], env: { OPENAI_API_KEY: 'sk-x' }, maxSortie: 100, fetchFn: f.fetchFn });
+    expect(f.appels[0].corps.reasoning_effort).toBe('none');
+    expect(f.appels[0].corps.max_completion_tokens).toBe(100);
+    const g = fauxFetch(() => Response.json(reponseModele('ok')));
+    await appeler({ modele: 'oa:gpt-6-sol', messages, outils: [], env: { OPENAI_API_KEY: 'sk-x' }, maxSortie: 100, fetchFn: g.fetchFn });
+    expect(g.appels[0].corps.reasoning_effort).toBeUndefined();
+  });
+});
