@@ -6,6 +6,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
+import { modeleTraduit } from './parties/modelesEn';
 import { useAuth } from '../../hooks/useAuth';
 import { IconLogout } from '@tabler/icons-react';
 import { useAsync } from '../../hooks/useAsync';
@@ -25,7 +26,7 @@ import { Visage } from './parties/Visage';
 // tâches ouvertes. La base ne renvoie que les entreprises dont on est membre.
 
 export default function MesEntreprises() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, loading: authLoading, signOut } = useAuth();
   useFondLegion();
 
@@ -75,10 +76,6 @@ export default function MesEntreprises() {
           <span className="text-body font-semibold">Léo</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/legion/fonder"
-            className="hidden items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-semibold text-legion-bg transition hover:brightness-110 sm:flex">
-            <IconPlus size={15} /> {t('legion.nouvelle')}
-          </Link>
           {/* Beau, 22/09: « j'arrive même pas à me déconnecter dans Legion ». */}
           <button type="button" onClick={() => signOut()} title={t('legion.seDeconnecter', 'Se déconnecter')}
             className="flex items-center gap-1 rounded-pill border border-legion-line px-2.5 py-1 text-caption font-semibold text-legion-muted transition hover:text-legion-danger">
@@ -89,7 +86,7 @@ export default function MesEntreprises() {
 
       <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_300px] lg:px-6">
         <main className="min-w-0 space-y-6">
-          {/* L'ouverture */}
+          {/* L'ouverture — le SEUL bouton « Nouvelle entreprise » de la page (Beau, 25/09 : il y était trois fois). */}
           <section className="relative overflow-hidden rounded-2xl border border-legion-line bg-gradient-to-br from-legion-panel to-legion-bg p-5 md:p-7">
             <span className="inline-flex items-center gap-2 rounded-pill border border-legion-gold/30 bg-legion-gold/10 px-3 py-1 text-[11px] font-medium text-legion-gold">
               <IconSparkles size={13} /> {t('legion.mesEntreprises')}
@@ -134,7 +131,7 @@ export default function MesEntreprises() {
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-section font-semibold transition group-hover:text-legion-gold">{e.nom}</span>
                             <span className="block truncate text-caption text-legion-muted">
-                              {e.studio_modeles?.nom || e.modele} · {t(`legion.taille.${e.taille}`)}
+                              {(e.studio_modeles && modeleTraduit({ ...e.studio_modeles, cle: e.modele }, i18n.language).nom) || e.modele} · {t(`legion.taille.${e.taille}`)}
                             </span>
                           </span>
                           <IconChevronRight size={18} className="mt-1 shrink-0 text-legion-muted transition group-hover:translate-x-0.5 group-hover:text-legion-gold" />
@@ -166,13 +163,6 @@ export default function MesEntreprises() {
                     </li>
                   );
                 })}
-                <li>
-                  <Link to="/legion/fonder"
-                    className="flex h-full min-h-[150px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-legion-line text-legion-muted transition hover:border-legion-gold/50 hover:text-legion-gold">
-                    <IconPlus size={26} />
-                    <span className="text-caption font-semibold">{t('legion.nouvelle')}</span>
-                  </Link>
-                </li>
               </ul>
             )}
           </section>
@@ -196,9 +186,9 @@ export default function MesEntreprises() {
               qui n'utilise pas Finjaro Accounting ? ». La réponse, en quatre
               temps, et en disant ce qui est déjà là et ce qui arrive. */}
           <div className="rounded-2xl border border-legion-line bg-legion-panel p-4">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.commentCaMarche', 'Comment Legion travaille chez toi')}</p>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.commentCaMarche', 'Comment Léo travaille chez toi')}</p>
             <ol className="space-y-2 text-[12px] leading-snug text-legion-ink">
-              <li><b className="text-legion-gold">1.</b> {t('legion.etape1', 'Tu choisis ton métier parmi plus de 50 modèles (cabinet comptable, cabinet d’avocats, laboratoire, entreprise tech, école, projet personnel…) ou tu le décris : Legion pose l’organigramme, chaque poste devient un agent.')}</li>
+              <li><b className="text-legion-gold">1.</b> {t('legion.etape1', 'Tu choisis ton métier parmi plus de 50 modèles (cabinet comptable, cabinet d’avocats, laboratoire, entreprise tech, école, projet personnel…) ou tu le décris : Léo pose l’organigramme, chaque poste devient un agent.')}</li>
               <li><b className="text-legion-gold">2.</b> {t('legion.etape2', 'Tu branches TES outils : ta boutique Finjaro, ton dépôt GitHub — et bientôt ton Google (Agenda, Drive). Pas besoin d’utiliser Finjaro Accounting : les agents lisent ce que tu branches, rien d’autre.')}</li>
               <li><b className="text-legion-gold">3.</b> {t('legion.etape3', 'Tu fixes la feuille de route : le trimestre, le mois, la semaine, le jour. Chaque matin, chaque responsable écrit son plan et chaque agent rend un livrable.')}</li>
               <li><b className="text-legion-gold">4.</b> {t('legion.etape4', 'Tu valides ou tu renvoies avec une remarque. Rien ne part en ton nom sans ton clic, et tu fixes toi-même le budget du mois.')}</li>
@@ -208,7 +198,6 @@ export default function MesEntreprises() {
           <div className="rounded-2xl border border-legion-line bg-legion-panel p-4">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.actionsRapides')}</p>
             <div className="grid grid-cols-2 gap-2">
-              <Action to="/legion/fonder" icone={<IconPlus size={20} />} label={t('legion.nouvelle')} />
               {entreprises[0] && <Action to={`/legion/${entreprises[0].id}`} icone={<IconSparkles size={20} />} label={t('legion.reprendre', { nom: entreprises[0].nom })} />}
               <Action to="/apps" icone={<IconArrowLeft size={20} />} label={t('legion.retourFinjaro')} />
             </div>

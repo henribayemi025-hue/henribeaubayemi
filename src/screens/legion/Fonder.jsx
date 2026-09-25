@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { IconArrowRight, IconArrowLeft, IconMoon } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
+import { modeleTraduit, accueilEnAnglais } from './parties/modelesEn';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
@@ -72,8 +73,17 @@ async function equiperDeveloppeurs(entrepriseId, texte) {
   } catch { /* l'entreprise existe déjà ; l'équipe de code s'ajoute aussi depuis le catalogue */ }
 }
 
+async function passerEnAnglais(entrepriseId) {
+  await supabase.from('legion_entreprises').update({ langue: 'en' }).eq('id', entrepriseId);
+  const { data: mots } = await supabase.from('legion_messages').select('id, texte').eq('entreprise_id', entrepriseId).eq('genre', 'question').is('user_id', null).limit(3);
+  for (const m of mots || []) {
+    const en = accueilEnAnglais(m.texte);
+    if (en) await supabase.from('legion_messages').update({ texte: en }).eq('id', m.id);
+  }
+}
+
 export default function Fonder() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   useFondLegion();
   const toast = useToast();
@@ -143,7 +153,7 @@ export default function Fonder() {
   // faisait planter la page (« Cannot access before initialization »):
   // la page « Fonder » restait blanche. Vu par Beau le 23/09.
   const plat = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const modelesFiltres = (data?.modeles || []).filter((m) => {
+  const modelesFiltres = (data?.modeles || []).map((m) => modeleTraduit(m, i18n.language)).filter((m) => {
     if (modele?.cle === m.cle) return true;
     const q = plat(filtre.trim());
     return !q || plat(`${m.nom} ${m.promesse} ${m.niveau} ${m.secteur_demande || ''}`).includes(q);
@@ -169,6 +179,10 @@ export default function Fonder() {
         p_effectif: Math.max(1, Math.min(10000, Number(effectif) || 1)),
       });
       if (err) throw err;
+      // La langue de l'équipe = celle de l'écran au moment de fonder (Beau, 25/09 : compte en anglais,
+      // mais toute l'équipe répondait en français). Le mot d'accueil, écrit en français par la base,
+      // est remis en anglais.
+      if (String(i18n.language || '').startsWith('en')) await passerEnAnglais(id);
       await equiperDeveloppeurs(id, `${nom} ${projet} ${objectif} ${modele.cle} ${modele.nom || ''}`);
       // Les agents choisissent leurs compétences dès l'arrivée (Beau: « chaque
       // type d'entreprise arrive avec ses agents et leurs compétences »).
@@ -229,7 +243,7 @@ export default function Fonder() {
           </button>
         )}
         {filtre.trim() && modelesFiltres.length === 0 && (
-          <p className="mt-2 text-caption text-legion-muted">{t('legion.aucunSecteur', 'Aucun secteur ne correspond — décris-le ci-dessous, Legion l’écrit.')}</p>
+          <p className="mt-2 text-caption text-legion-muted">{t('legion.aucunSecteur', 'Aucun secteur ne correspond — décris-le ci-dessous, Léo l’écrit.')}</p>
         )}
 
         {/* Ton secteur n'est pas là ? Beau, 22/09: « il y a des milliers de
@@ -237,7 +251,7 @@ export default function Fonder() {
             (fonction legion-modele), et il entre au catalogue pour tous. */}
         <form onSubmit={genererModele} className="mt-3 rounded-card border border-dashed border-legion-line bg-legion-card/60 p-3">
           <p className="text-caption font-semibold text-legion-ink">{t('legion.autreSecteurTitre', 'Ton secteur n’est pas là ?')}</p>
-          <p className="mt-0.5 text-caption text-legion-muted">{t('legion.autreSecteurAide', 'Décris-le en quelques mots : Legion écrit les départements et les métiers, avec leur mandat.')}</p>
+          <p className="mt-0.5 text-caption text-legion-muted">{t('legion.autreSecteurAide', 'Décris-le en quelques mots : Léo écrit les départements et les métiers, avec leur mandat.')}</p>
           <div className="mt-2 flex gap-2">
             <input value={secteur} onChange={(e) => setSecteur(e.target.value)} placeholder={t('legion.autreSecteurPlaceholder', 'Opérateur télécom, clinique privée, salon de coiffure…')}
               className="input min-w-0 flex-1" maxLength={160} />

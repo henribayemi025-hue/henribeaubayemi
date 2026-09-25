@@ -305,7 +305,7 @@ function SaConsigne({ agent, t }) {
     [t('legion.consigne.regles', 'Les règles de la maison'), regles === null ? '…' : (regles.length ? regles.map((r) => `• ${r}`).join('\n') : '—')],
     [t('legion.consigne.competences', 'Ses compétences (4 au plus)'), competences === null ? '…' : (competences.length ? competences.join(', ') : '—')],
     [t('legion.consigne.contexte', 'Le contexte'), t('legion.consigne.contexteTexte', 'Le projet de l’entreprise et sa feuille de route ; les derniers messages du salon et sa mémoire ; ce qui s’est dit ailleurs et le concerne ; ses tâches ouvertes et le plan de son département ; l’équipe (qui est allumé).')],
-    [t('legion.consigne.fixes', 'Les règles fixes de Legion'), t('legion.consigne.fixesTexte', 'Répondre à la question posée, dans la langue du message ; livrer plutôt que proposer ; ton chaleureux d’expert ; aucun chiffre ni travail inventé ; ne rien dire fait qui ne l’est pas (seul ton bouton « Confirmer » exécute une action) ; poser une vraie question quand il lui manque quelque chose. Une relecture vérifie les chiffres avant envoi.')],
+    [t('legion.consigne.fixes', 'Les règles fixes de Léo'), t('legion.consigne.fixesTexte', 'Répondre à la question posée, dans la langue du message ; livrer plutôt que proposer ; ton chaleureux d’expert ; aucun chiffre ni travail inventé ; ne rien dire fait qui ne l’est pas (seul ton bouton « Confirmer » exécute une action) ; poser une vraie question quand il lui manque quelque chose. Une relecture vérifie les chiffres avant envoi.')],
   ].filter(Boolean);
   return (
     <div>
@@ -534,7 +534,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
           <div>
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.sesLimites', 'Ses limites')}</p>
             <div className="space-y-1 rounded-card border border-legion-line bg-legion-card p-3 text-caption leading-relaxed">
-              <p><b className="text-legion-danger">{t('legion.jamais', 'Ce qu’il ne fait jamais')}</b> — {agent.jamais || t('legion.jamaisDefaut', 'rien de précisé : les règles de la maison et celles de Legion s’appliquent (rien d’envoyé ni de modifié sans ton clic).')}</p>
+              <p><b className="text-legion-danger">{t('legion.jamais', 'Ce qu’il ne fait jamais')}</b> — {agent.jamais || t('legion.jamaisDefaut', 'rien de précisé : les règles de la maison et celles de Léo s’appliquent (rien d’envoyé ni de modifié sans ton clic).')}</p>
               <p><b className="text-legion-ink">{t('legion.peutLire', 'Ce qu’il peut lire')}</b> — {Array.isArray(agent.peut_lire) ? (agent.peut_lire.length ? agent.peut_lire.map((x) => t(`legion.source.${x}`)).join(', ') : t('legion.peutLireRien', 'rien au-delà de la conversation')) : t('legion.peutLireTout', 'Tout ce que l’entreprise a branché')}</p>
               <p><b className="text-legion-ink">{t('legion.sonIA', 'Son IA')}</b> — {nomDuModele(agent.modele) || t('legion.commeEquipe', 'Comme l’équipe')}</p>
             </div>

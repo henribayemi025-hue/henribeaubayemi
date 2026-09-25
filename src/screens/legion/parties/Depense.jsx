@@ -69,7 +69,7 @@ export function Depense({ entreprise, t }) {
     <section className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">
       <div className="flex items-center justify-between border-b border-legion-line pb-3">
         <h3 className="flex items-center gap-2 text-caption font-bold text-legion-ink">
-          <IconCoin size={15} className="text-legion-gold" /> {t('legion.depenseTitre', 'Ce que Legion coûte ce mois-ci')}
+          <IconCoin size={15} className="text-legion-gold" /> {t('legion.depenseTitre', 'Ce que Léo coûte ce mois-ci')}
         </h3>
         <span className="text-[11px] text-legion-muted">{t('legion.depenseEstimation', 'estimation')}</span>
       </div>

@@ -25,7 +25,7 @@ export function Inviter({ entreprise, t }) {
   async function copier() {
     try { await navigator.clipboard.writeText(lien); setCopie(true); setTimeout(() => setCopie(false), 1500); } catch { /* le lien reste affiché, sélectionnable */ }
   }
-  const texte = t('legion.inviterMessage', { nom: entreprise.nom, defaultValue: 'Rejoins « {{nom}} » sur Legion, l’équipe d’agents de Finjaro :' });
+  const texte = t('legion.inviterMessage', { nom: entreprise.nom, defaultValue: 'Rejoins « {{nom}} » sur Léo, l’équipe d’agents de Finjaro :' });
 
   return (
     <section className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">

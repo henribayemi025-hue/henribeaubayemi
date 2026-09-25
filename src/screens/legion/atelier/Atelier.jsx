@@ -5,6 +5,7 @@ import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
+import { Visage as VisageAgent } from '../parties/Visage';
 import Palette from './Palette';
 import Onglets, { extension } from './Onglets';
 import BarreEtat from './BarreEtat';
@@ -84,7 +85,15 @@ function Visage({ codeur, taille = 28 }) {
   return <span className="flex shrink-0 items-center justify-center rounded-full bg-legion-gold/20 text-legion-gold" style={{ width: taille, height: taille }}><IconCode size={taille * 0.55} /></span>;
 }
 
-export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId = null }) {
+// Les collègues à qui le Codeur confie du travail (Beau, 25/09 : « elle a confié, mais je ne vois
+// pas ceux à qui elle a confié, avec leur visage »). La ligne d'action porte « Nom : tâche » ;
+// on retrouve l'agent par son nom pour montrer sa photo et son poste.
+function collegueDe(resume, equipe) {
+  const nom = String(resume || '').split(' : ')[0].trim().toLowerCase();
+  return nom ? (equipe || []).find((a) => !a.user_id && String(a.nom || '').toLowerCase() === nom) || null : null;
+}
+
+export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId = null, equipe = [] }) {
   const [moi, setMoi] = useState(null);
   const [acces, setAcces] = useState(null); // null | 'ok' | 'hors_ligne' | 'reserve' | 'connexion' | message
   const [projets, setProjets] = useState([]);
@@ -642,7 +651,34 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     <div className="flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {!vue?.affichage?.length && <p className="rounded-card bg-legion-card p-3 text-caption text-legion-muted">{t('legion.atelier.accueil')}</p>}
-        {vue?.affichage?.map((a) => (a.qui === 'action' ? (
+        {/* Qui travaille avec le Codeur sur cette séance : les visages de ceux à qui il a confié quelque chose. */}
+        {(() => {
+          const vus = new Map();
+          for (const a of vue?.affichage || []) if (a.qui === 'action' && a.outil === 'confier_a_collegue') { const c = collegueDe(a.resume, equipe); if (c) vus.set(c.id, c); }
+          if (!vus.size) return null;
+          return (
+            <div className="flex flex-wrap items-center gap-2 rounded-card border border-legion-line bg-legion-panel px-3 py-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.atelier.avecLui', { nom: codeur?.nom || nomCodeur })}</span>
+              {[...vus.values()].map((c) => (
+                <span key={c.id} className="flex items-center gap-1.5 rounded-pill border border-legion-line bg-legion-bg py-0.5 pl-0.5 pr-2.5" title={c.poste || ''}>
+                  <VisageAgent a={c} taille={22} point={false} /> <span className="text-[12px] text-legion-ink">{c.nom}</span>
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+        {vue?.affichage?.map((a) => (a.qui === 'action' && a.outil === 'confier_a_collegue' && collegueDe(a.resume, equipe) ? (() => {
+          const c = collegueDe(a.resume, equipe);
+          return (
+            <div key={a.id} className="flex items-start gap-2 rounded-card border border-legion-teal/30 bg-legion-teal/5 px-2.5 py-2">
+              <VisageAgent a={c} taille={30} point={false} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] text-legion-ink"><b>{t('legion.atelier.confieA', { nom: codeur?.nom || nomCodeur, collegue: c.nom })}</b>{c.poste && <span className="text-legion-muted"> · {c.poste}</span>}</p>
+                <p className="mt-0.5 line-clamp-2 text-[12px] text-legion-muted">{String(a.resume).split(' : ').slice(1).join(' : ')}</p>
+              </div>
+            </div>
+          );
+        })() : a.qui === 'action' ? (
           <div key={a.id} className="flex items-center gap-2 px-1 font-mono text-[11px] text-legion-muted">
             <span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>●</span>
             <span className="min-w-0 truncate">{t(`legion.atelier.outil_${a.outil}`, a.outil)} {a.resume}</span>
@@ -692,7 +728,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     { type: 'action', label: t('legion.atelier.presenteMoi'), faire: presenter, off: occupeCarte },
     { type: 'action', label: t('legion.atelier.apercu'), faire: () => setOnglet('apercu') },
     { type: 'action', label: t('legion.atelier.nouveauTerminal'), faire: () => { const id = `t${Date.now()}`; setBasOuvert(true); setTerminaux((ts) => [...ts, { id, ids: [] }]); setPanneauBas(id); } },
-    ...['demander', 'accepter', 'auto', 'reflechir'].map((m) => ({ type: 'action', label: `${t('legion.atelier.paletteMode')} ${t(`legion.atelier.mode_${m}`)}`, faire: () => changerMode(m), off: occupeCarte })),
+    ...['demander', 'accepter', 'auto', 'reflechir'].map((m) => ({ type: 'action', label: `${t('legion.atelier.paletteMode')} ${t(`legion.atelier.mode_${m}`)}`, faire: () => changerMode(m) })),
     { type: 'action', label: t('legion.atelier.modifications'), faire: () => setPanneau('modifications') },
     { type: 'action', label: t('legion.atelier.journal'), faire: () => setPanneau('journal') },
     { type: 'action', label: t('legion.atelier.exporter'), faire: exporter, off: travaille },
@@ -716,7 +752,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           <>
             <div className="flex overflow-hidden rounded-pill border border-legion-line text-[12px]" role="radiogroup" aria-label={t('legion.atelier.mode')}>
               {['demander', 'accepter', 'auto', 'reflechir'].map((m) => (
-                <button key={m} type="button" role="radio" aria-checked={vue.mode === m} disabled={travaille} onClick={() => vue.mode !== m && changerMode(m)}
+                <button key={m} type="button" role="radio" aria-checked={vue.mode === m} onClick={() => vue.mode !== m && changerMode(m)}
                   title={t(`legion.atelier.modeAide_${m}`)}
                   className={`px-3 py-1.5 font-semibold ${vue.mode === m ? 'bg-legion-gold text-legion-bg' : 'text-legion-muted'}`}>
                   {t(`legion.atelier.mode_${m}`)}
