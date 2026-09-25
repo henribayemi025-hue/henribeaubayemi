@@ -16,6 +16,17 @@
 
 import { RACINE } from './politique.js';
 
+// Tout le HTTPS du bac passe par la politique de sortie de l'atelier, qui le
+// présente avec un certificat éphémère de Cloudflare (interceptHttps, 25/09).
+// L'image 0.12.10 ne l'ajoute pas elle-même aux certificats de confiance :
+// on le désigne à chaque outil (curl, Node et npm, Python et pip, git).
+// Vérifié le 25/09 : npm répond 200 avec, un site hors liste reste refusé.
+export const CA_CLOUDFLARE = '/etc/cloudflare/certs/cloudflare-containers-ca.crt';
+export const CONFIANCE_CA = {
+  SSL_CERT_FILE: CA_CLOUDFLARE, CURL_CA_BUNDLE: CA_CLOUDFLARE, NODE_EXTRA_CA_CERTS: CA_CLOUDFLARE,
+  npm_config_cafile: CA_CLOUDFLARE, REQUESTS_CA_BUNDLE: CA_CLOUDFLARE, PIP_CERT: CA_CLOUDFLARE, GIT_SSL_CAINFO: CA_CLOUDFLARE,
+};
+
 const TEMOIN = '/workspace/.atelier-pret';
 const EXCLUS = ['node_modules', '.git', '.venv', '__pycache__', 'dist', 'build', '.next', '.cache'];
 const TAILLE_MAX = 300_000; // octets par fichier rapatrié
@@ -115,7 +126,7 @@ export function executant({ sandbox, etat, fichiers, veilleSecondes = 600, horlo
           timeout: 120_000,
           // npm n'a pas besoin de parler à son service d'audit (requête POST,
           // refusée par le relais de sortie, qui n'autorise que la lecture).
-          env: { npm_config_audit: 'false', npm_config_fund: 'false', npm_config_update_notifier: 'false', CI: '1' },
+          env: { npm_config_audit: 'false', npm_config_fund: 'false', npm_config_update_notifier: 'false', CI: '1', ...CONFIANCE_CA },
         });
         r = signal
           ? await Promise.race([execution, new Promise((_, rejeter) => {
