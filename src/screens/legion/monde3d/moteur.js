@@ -736,7 +736,18 @@ export class Monde {
   }
 
   // ——— Aller quelque part ———
+  // Changer de lieu depuis un véhicule : on en descend d'abord — l'hélicoptère
+  // est posé de force. Sans ça (parcours du 25/09), partir « chez les agents »
+  // en plein vol laissait le joueur enfermé dans un hélicoptère invisible,
+  // sans bateau ni nage possibles.
+  quitterVehicule() {
+    const c = this.conduite;
+    if (!c) return;
+    if (c.genre === 'helico') { c.lb.etat.y = 0; c.lb.etat.vy = 0; c.lb.objet.position.y = c.lb.sol; }
+    this.descendreVoiture();
+  }
   async allerA(lieu, { nomEntreprise, avatar } = {}) {
+    if (this.conduite && (lieu !== 'hall' || this.conduite.genre !== 'bateau')) this.quitterVehicule();
     this.emettre({ type: 'chargement', lieu });
     if (!this.joueur || !this.receptionniste) {
       const [j, r] = await Promise.all([this.joueur || this.personnage(avatar || 'Male_Adult_07'), this.receptionniste || this.personnage(RECEPTIONNISTE)]);
@@ -1059,9 +1070,9 @@ export class Monde {
   monterVoiture(id) {
     const lb = this.villeVivante?.voituresLibres.find((x) => x.id === id);
     if (!lb || this.conduite || this.lieu?.nom !== 'hall') return;
-    this.conduite = { lb, kmh: -1, t: 0, secousse: 0, jauge: 100, nitro: false };
+    this.conduite = { lb, kmh: -1, t: 0, secousse: 0, jauge: 100, nitro: false, surTrottoir: false };
     lb.objet.userData.detailler?.();
-    this.joueur.objet.visible = false;
+    this.asseoir(this.joueur, lb, 'conducteur');
     this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
     this.emettre({ type: 'conduite', active: true, kmh: 0 });
   }
@@ -1186,15 +1197,96 @@ export class Monde {
     const e = c.lb.etat;
     e.vitesse = 0;
     this.arreterCourse();
+    if (this.passager) this.descendrePassager();
     const pied = portiere(e);
+    this.lever(this.joueur, pied.x, pied.z, e.cap + Math.PI);
     const p = this.joueur.objet.position;
-    p.set(pied.x, 0, pied.z);
     this.collisions(p);
     this.joueur.objet.rotation.y = e.cap + Math.PI;
     this.cam.yaw = e.cap + Math.PI; this.camSnap = true;
     this.conduite = null;
     if (this.fovBase) { this.camera.fov = this.fovBase; this.camera.updateProjectionMatrix(); }
     this.emettre({ type: 'conduite', active: false });
+  }
+  // Le conducteur est DANS la voiture, visible à travers les vitres (Beau, 25/09 :
+  // « dans une voiture on voit le conducteur »), la passagère à sa droite. Le
+  // personnage devient un enfant du groupe de la voiture : dans ce repère,
+  // l'avant est +x, la gauche -z. Il en ressort avec lever().
+  asseoir(perso, lb, cote) {
+    const g = lb.objet;
+    g.add(perso.objet);
+    perso.objet.position.set(-0.38, -0.34, cote === 'conducteur' ? -0.36 : 0.36); // assis dans le siège, la tête sous le pavillon
+    perso.objet.rotation.set(0, Math.PI / 2, 0);
+    perso.objet.scale.setScalar(1);
+    perso.objet.visible = true;
+    perso.objet.userData.assis = true;
+    perso.jouer('assis', { fondu: 0.1 });
+  }
+  lever(perso, x, z, yaw) {
+    if (perso.objet.parent !== this.scene) this.scene.add(perso.objet);
+    perso.objet.userData.assis = false;
+    perso.objet.scale.setScalar(1);
+    perso.objet.rotation.set(0, yaw, 0);
+    perso.objet.position.set(x, 0, z);
+    perso.objet.visible = true;
+    perso.jouer('repos', { fondu: 0.2 });
+  }
+  // La passagère : un passant à côté de la voiture arrêtée, E → elle monte ; elle
+  // descend fâchée après un choc (« c'est la vraie vie », Beau, 25/09).
+  monterPassager(perso) {
+    const c = this.conduite;
+    if (!c || c.genre || this.passager || !perso) return;
+    perso.objet.userData.marcheAvant = perso.objet.userData.marche || null; perso.objet.userData.marche = null;
+    perso.objet.userData.traverseAvant = perso.objet.userData.traverse || null; perso.objet.userData.traverse = null;
+    this.asseoir(perso, c.lb, 'passager');
+    this.passager = { perso, nom: perso.nom || '', montee: performance.now(), fache: null };
+    this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
+    this.emettre({ type: 'passager', nom: this.passager.nom, monte: true, texte: this.langue === 'en' ? 'Thanks, drive carefully!' : 'Merci, conduis doucement !' });
+  }
+  descendrePassager() {
+    const P = this.passager, c = this.conduite;
+    if (!P) return;
+    const e = c ? c.lb.etat : { x: P.perso.objet.position.x, z: P.perso.objet.position.z, cap: 0 };
+    // Par la portière droite, sur le trottoir si possible.
+    this.lever(P.perso, e.x + Math.cos(e.cap) * 2.2, e.z - Math.sin(e.cap) * 2.2, e.cap + Math.PI / 2);
+    P.perso.objet.userData.marche = P.perso.objet.userData.marcheAvant || null;
+    P.perso.objet.userData.traverse = P.perso.objet.userData.traverseAvant || null;
+    if (P.fache) { P.perso.objet.userData.fache = { t: 4 }; P.perso.jouer('parle', { fondu: 0.2 }); }
+    else if (P.perso.objet.userData.marche) P.perso.jouer('marche', { fondu: 0.2 });
+    this.passager = null;
+    this.emettre({ type: 'passager', nom: P.nom, descend: true, fache: !!P.fache });
+  }
+  // Un choc avec une passagère à bord : elle se fâche, et descend au prochain arrêt.
+  passagerSeFache(force) {
+    const P = this.passager;
+    if (!P || P.fache) return;
+    const fr = ['Doucement ! Tu vas nous tuer !', 'Arrête-toi, je descends !', 'C\'est ça, ta conduite ?!'];
+    const en = ['Slow down! You\'ll get us killed!', 'Stop the car, I\'m getting out!', 'Is this how you drive?!'];
+    const i = Math.min(2, Math.floor(force / 12));
+    P.fache = { texte: (this.langue === 'en' ? en : fr)[i], t: 2.6 };
+    this.emettre({ type: 'passager', nom: P.nom, fache: true, texte: P.fache.texte });
+  }
+  // Un piéton bousculé se fâche et le dit (une fois par bousculade).
+  bousculerPietons(e, dt) {
+    const V = this.villeVivante;
+    if (!V?.passants || Math.abs(e.vitesse) < 2) return;
+    for (const p of V.passants) {
+      const o = p.objet;
+      if (o.userData.assis || o.userData.fache) continue;
+      const dx = o.position.x - e.x, dz = o.position.z - e.z;
+      if (Math.hypot(dx, dz) > 2.2) continue;
+      // Poussé de côté, hors de la trajectoire.
+      const n = Math.hypot(dx, dz) || 1;
+      o.position.x += (dx / n) * 1.6; o.position.z += (dz / n) * 1.6;
+      o.rotation.y = Math.atan2(e.x - o.position.x, e.z - o.position.z);
+      const fr = ['Hé ! Regarde où tu vas !', 'Tu es fou ?!', 'Doucement, on marche ici !'];
+      const en = ['Hey! Watch where you\'re going!', 'Are you crazy?!', 'Easy, people walk here!'];
+      const texte = (this.langue === 'en' ? en : fr)[Math.floor(Math.random() * 3)];
+      o.userData.fache = { t: 3.5, texte };
+      p.jouer('parle', { fondu: 0.1 });
+      this.emettre({ type: 'pieton', nom: p.nom || '', texte });
+      if (this.passager && Math.abs(e.vitesse) > 6) this.passagerSeFache(20);
+    }
   }
   // Une course autour du pâté de maisons (course.js), seulement au volant d'une voiture.
   lancerCourse() {
@@ -1233,13 +1325,20 @@ export class Monde {
     let e = c.lb.etat, choc = 0, reste = Math.min(dt, 0.25);
     while (reste > 1e-4) {
       const h = Math.min(reste, 1 / 60); reste -= h;
-      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space'), nitro: c.nitro }, h), V.blocs);
+      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space'), nitro: c.nitro }, h), V.solides || V.blocs);
       choc = Math.max(choc, e.choc);
       e = heurterVehicules(e, autres);
       choc = Math.max(choc, e.choc);
     }
     e.x = Math.max(-194, Math.min(194, e.x)); e.z = Math.max(-194, Math.min(194, e.z));
-    if (choc > 4) { c.secousse = Math.min(0.6, choc / 30); this.emettre({ type: 'choc', force: choc }); }
+    // Le rebord du trottoir : on y monte (Beau, 25/09 : « il peut monter sur un pavé »), ça secoue et ça freine.
+    const surTrottoir = V.blocs.some((b) => e.x > b.x0 && e.x < b.x1 && e.z > b.z0 && e.z < b.z1);
+    if (surTrottoir !== c.surTrottoir) {
+      c.surTrottoir = surTrottoir;
+      if (Math.abs(e.vitesse) > 1.5) { c.secousse = Math.max(c.secousse, 0.22); e.vitesse *= 0.82; this.emettre({ type: 'trottoir', monte: surTrottoir }); }
+    }
+    if (choc > 4) { c.secousse = Math.min(0.6, choc / 30); this.emettre({ type: 'choc', force: choc }); if (choc > 8) this.passagerSeFache(choc); }
+    this.bousculerPietons(e, dt);
     c.lb.etat = { x: e.x, z: e.z, cap: e.cap, vitesse: e.vitesse };
     const o = c.lb.objet;
     o.position.set(e.x, 0, e.z);
@@ -1249,7 +1348,8 @@ export class Monde {
       r.axe.rotation[r.axeRot || 'z'] += ((r.sens || -1) * e.vitesse * dt) / (r.rayon || 0.35);
       if (r.avant) r.pivot.rotation.y = -(e.angle || 0);
     }
-    this.joueur.objet.position.set(e.x, 0, e.z); // le joueur est dans la voiture (caméra, soleil, proximité)
+    // La passagère fâchée descend dès que la voiture s'arrête (ou après quelques secondes).
+    if (this.passager?.fache) { this.passager.fache.t -= dt; if (Math.abs(e.vitesse) < 1 || this.passager.fache.t <= 0) { e.vitesse = 0; c.lb.etat.vitesse = 0; this.descendrePassager(); } }
     c.t += dt;
     const k = kmh(e.vitesse);
     if (c.t > 0.12) { c.t = 0; c.kmh = k; this.emettre({ type: 'conduite', active: true, kmh: k, jauge: Math.round(c.jauge), nitro: c.nitro, x: e.x, z: e.z, cap: e.cap }); }
@@ -1301,6 +1401,7 @@ export class Monde {
     if (this.proche.type === 'voiture') { this.monterVoiture(this.proche.id); return; }
     if (this.proche.type === 'helico') { this.monterHelico(); return; }
     if (this.proche.type === 'bateau') { this.monterBateau(); return; }
+    if (this.proche.type === 'passant') { const ps = (this.villeVivante?.passants || []).find((x) => (x.nom || '') === this.proche.nom && !x.objet.userData.assis); this.monterPassager(ps); return; }
     if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
     this.emettre({ type: 'interagir', cible: this.proche });
   }
@@ -1353,7 +1454,7 @@ export class Monde {
     let az = (t.has('KeyS') || t.has('ArrowDown') ? 1 : 0) - (t.has('KeyW') || t.has('ArrowUp') ? 1 : 0) + this.joy.y;
     const n = Math.hypot(ax, az);
     const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 1.4;
-    if (this.conduite && this.conduite.genre !== 'bateau' && this.lieu.nom !== 'hall') this.descendreVoiture(); // voiture et hélico ne vivent qu'en ville
+    if (this.conduite && this.conduite.genre !== 'bateau' && this.lieu.nom !== 'hall') this.quitterVehicule(); // voiture et hélico ne vivent qu'en ville
     const dansLEau = this.lieu.nom === 'maisons' && this.lieu.rivage != null && !this.conduite && j.objet.position.z > this.lieu.rivage + 0.5;
     if (!dansLEau && this.nage) this.sortirDeLEau();
     if (this.conduite?.genre === 'helico') this.avancerHelico(dt);
@@ -1410,18 +1511,22 @@ export class Monde {
       if (dist > 9) this.aSalue = false;
     }
 
-    // Ce qui est à portée (réceptionniste, ascenseur, agents).
-    const p = j.objet.position;
+    // Ce qui est à portée (réceptionniste, ascenseur, agents). Assis dans la
+    // voiture, le joueur est un enfant de celle-ci : sa position, c'est la sienne.
+    const p = this.conduite && !this.conduite.genre ? new THREE.Vector3(this.conduite.lb.etat.x, 0, this.conduite.lb.etat.z) : j.objet.position;
     let proche = null;
     if (this.lieu.bateau && this.conduite?.genre !== 'bateau') { const bt = this.lieu.bateau, mv = bt.animer(dt, 0); bt.objet.position.y = mv.houle; bt.objet.rotation.x = mv.tangage; const poi = this.lieu.poi.find((x) => x.type === 'bateau'); if (poi) { poi.x = bt.etat.x; poi.z = bt.etat.z; } }
     for (const x of this.lieu.poi) if (Math.hypot(p.x - x.x, p.z - x.z) < x.rayon) proche = x;
     if (this.lieu.nom === 'hall' && this.villeVivante) {
-      for (const v of this.villeVivante.voituresLibres) if (Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
+      if (this.conduite && !this.conduite.genre && !this.passager && Math.abs(this.conduite.lb.etat.vitesse) < 1.5) {
+        for (const ps of this.villeVivante.passants || []) { const o = ps.objet; if (!o.userData.assis && !o.userData.fache && Math.hypot(p.x - o.position.x, p.z - o.position.z) < 2.8) { proche = { type: 'passant', nom: ps.nom || '' }; break; } }
+      }
+      for (const v of this.villeVivante.voituresLibres) if (!this.conduite && Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
       const hh = this.villeVivante.helico;
       if (hh && hh.etat.y < 0.1 && Math.hypot(p.x - hh.etat.x, p.z - hh.etat.z) < 6) proche = { type: 'helico', id: 'helico' };
       if (hh && !this.conduite) hh.animer(dt, 0); // rotor à l'arrêt, feux éteints
     }
-    if (this.conduite) proche = null;
+    if (this.conduite && proche?.type !== 'passant') proche = null; // au volant, seule la passagère se propose (25/09)
     for (const [id, x] of this.agents) {
       const q = x.perso.objet.position;
       if (Math.hypot(p.x - q.x, p.z - q.z) < 1.6) proche = { type: 'agent', id, nom: x.agent.nom };
@@ -1432,21 +1537,30 @@ export class Monde {
     // Caméra
     const tete = new THREE.Vector3(p.x, 1.55, p.z);
     j.objet.visible = this.cam.mode !== 'fps';
+    // La caméra ne traverse pas les immeubles (parcours du 25/09 : contre une
+    // tour, on voyait la façade de l'intérieur) : si le point voulu est dans
+    // un bloc, on se rapproche du véhicule jusqu'à en sortir.
+    const horsDesMurs = (voulu, cible, boites) => {
+      const dedans = (v) => boites.some((b) => v.x > b.x0 && v.x < b.x1 && v.z > b.z0 && v.z < b.z1 && (b.h == null || v.y < b.h));
+      if (!dedans(voulu)) return voulu;
+      for (let k = 1; k <= 8; k += 1) { const essai = voulu.clone().lerp(cible, k / 8); if (!dedans(essai)) return essai; }
+      return cible.clone();
+    };
     if (this.conduite?.genre === 'helico') {
       const e = this.conduite.lb.etat, c = this.conduite, h = this.conduite.lb;
       j.objet.visible = false;
       const recul = 15 + Math.hypot(e.vx, e.vz) * 0.12;
-      const voulu = new THREE.Vector3(e.x - Math.sin(e.cap) * recul, h.sol + e.y + 5.5, e.z - Math.cos(e.cap) * recul);
+      const voulu = horsDesMurs(new THREE.Vector3(e.x - Math.sin(e.cap) * recul, h.sol + e.y + 5.5, e.z - Math.cos(e.cap) * recul), new THREE.Vector3(e.x, h.sol + e.y + 3, e.z), this.toursHelico || []);
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 3));
       if (this.camera.position.y < 1.2) this.camera.position.y = 1.2;
       if (c.secousse > 0) { this.camera.position.x += (Math.random() - 0.5) * c.secousse; this.camera.position.y += (Math.random() - 0.5) * c.secousse; c.secousse = Math.max(0, c.secousse - dt * 1.5); }
       this.camera.lookAt(e.x + Math.sin(e.cap) * 6, h.sol + e.y + 1.5, e.z + Math.cos(e.cap) * 6);
     } else if (this.conduite) {
       // Derrière la voiture, un peu plus loin quand elle va vite ; petite secousse aux chocs.
+      // Le conducteur reste visible : il est assis dedans (25/09).
       const e = this.conduite.lb.etat, c = this.conduite;
-      j.objet.visible = false;
       const recul = 6.5 + Math.abs(e.vitesse) * 0.12, dir = e.vitesse < -0.5 ? -1 : 1;
-      const voulu = new THREE.Vector3(e.x - Math.sin(e.cap) * recul * dir, 2.6 + Math.abs(e.vitesse) * 0.03, e.z - Math.cos(e.cap) * recul * dir);
+      const voulu = horsDesMurs(new THREE.Vector3(e.x - Math.sin(e.cap) * recul * dir, 2.6 + Math.abs(e.vitesse) * 0.03, e.z - Math.cos(e.cap) * recul * dir), new THREE.Vector3(e.x, 2.2, e.z), this.villeVivante?.tours || []);
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 4));
       if (c.secousse > 0) { this.camera.position.x += (Math.random() - 0.5) * c.secousse; this.camera.position.y += (Math.random() - 0.5) * c.secousse; c.secousse = Math.max(0, c.secousse - dt * 1.5); }
       this.camera.lookAt(e.x + Math.sin(e.cap) * 5 * dir, 1.1, e.z + Math.cos(e.cap) * 5 * dir);

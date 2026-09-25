@@ -1343,7 +1343,8 @@
         "boutique": "See the shop",
         "client": "See the customer",
         "chezmoi": "Go home",
-        "bateau": "Take the boat"
+        "bateau": "Take the boat",
+        "passant": "Let {{nom}} in"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1459,6 +1460,10 @@
         "rendu": "Just delivered",
         "veille": "Switched off (on standby)",
         "dispo": "Available · {{n}} open task(s)"
+      },
+      "passager": {
+        "descend": "{{nom}} gets out. “Thanks!”",
+        "descendFache": "{{nom}} gets out, angry."
       }
     },
     "agentModifie": "Saved",

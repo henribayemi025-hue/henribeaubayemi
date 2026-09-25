@@ -834,7 +834,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     }
   });
 
-  // Passants sur les trottoirs (Rocketbox), qui marchent en boucle
+  // Passants sur les trottoirs (Rocketbox), qui marchent en boucle. Chacun a un prénom :
+  // on peut le prendre en voiture, et il se fâche si on le bouscule (25/09).
+  const PRENOMS = ['Awa', 'Idris', 'Nora', 'Karim', 'Lucas', 'Fatou', 'Sofia', 'Yann', 'Maya', 'Rayan', 'Julie', 'Samuel', 'Inès', 'Adam', 'Léa', 'Omar', 'Chloé', 'Malik', 'Zoé'];
   const trottoirs = [{ axe: 'z', fixe: -18.3 }, { axe: 'z', fixe: 18.3 }, { axe: 'x', fixe: 23 }, { axe: 'x', fixe: 22 }, { axe: 'z', fixe: -33.8 }, { axe: 'x', fixe: 37.8 }, { axe: 'z', fixe: 33.8 }];
   const passants = [];
   (async () => {
@@ -843,6 +845,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     for (let k = 0; k < combien; k += 1) {
       const t = trottoirs[k % trottoirs.length];
       const p = await monde.personnage(corps[k % corps.length]);
+      p.nom = PRENOMS[k % PRENOMS.length]; // pour la passagère et le piéton qui se fâche (25/09)
       const sens = k % 2 ? 1 : -1;
       p.objet.userData.marche = { t, sens, pos: -50 + r() * 100, vitesse: 1.1 + r() * 0.5 };
       p.jouer('marche', { fondu: 0 });
@@ -858,6 +861,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     ].slice(0, monde.mobile ? 2 : 3);
     for (const [k, tr] of traversees.entries()) {
       const p = await monde.personnage(['Male_Adult_07', 'Female_Adult_05', 'Male_Adult_12'][k]);
+      p.nom = PRENOMS[(k + 7) % PRENOMS.length];
       p.objet.userData.traverse = { ...tr, etat: 'attend', t: 2 + k * 3, u: 0, aller: true };
       p.objet.position.set(tr.a[0], tr.a[0] > -20 && tr.a[0] < 20 && tr.a[1] > -16 && tr.a[1] < 24 ? 0 : 0.18, tr.a[1]);
       p.jouer('repos', { fondu: 0 });
@@ -893,6 +897,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   bouger.push((dt) => {
     for (const p of passants) {
       p.mixer.update(dt);
+      const f = p.objet.userData.fache;
+      if (f) { f.t -= dt; if (f.t <= 0) { p.objet.userData.fache = null; p.jouer(p.objet.userData.marche ? 'marche' : 'repos', { fondu: 0.3 }); } else continue; }
+      if (p.objet.userData.assis) continue; // dans la voiture
       const tv = p.objet.userData.traverse;
       if (tv) {
         const [a, b] = tv.aller ? [tv.a, tv.b] : [tv.b, tv.a];
@@ -981,7 +988,10 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     avancer: (dt) => { bouger.forEach((f) => f(dt)); for (const f of bougerChantiers) f(dt); },
     // Pour conduire (conduite.js) : les voitures libres, les trottoirs, la circulation.
     voituresLibres: libres,
+    passants,
     blocs: ilots.map(({ x0, x1, z0, z1 }) => ({ x0, x1, z0, z1 })),
+    // Ce qu'une voiture ne traverse pas : les immeubles (pas les trottoirs — on peut y monter, 25/09).
+    solides: [...tours.map(({ bx, bz, w, d }) => ({ x0: bx - w / 2 - 0.4, x1: bx + w / 2 + 0.4, z0: bz - d / 2 - 0.4, z1: bz + d / 2 + 0.4 })), { x0: -12.8, x1: 12.8, z0: -9.8, z1: 9.8 }],
     tours: tours.map(({ bx, bz, w, d, h }) => ({ x0: bx - w / 2 - 1.5, x1: bx + w / 2 + 1.5, z0: bz - d / 2 - 1.5, z1: bz + d / 2 + 1.5, h: h * 1.18 + 1 })),
     helico,
     // Les îlots de la ville de chacun (quartiers3d.js)

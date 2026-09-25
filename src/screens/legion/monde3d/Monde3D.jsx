@@ -154,6 +154,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   }, [projets, toutes, agents, maintenant, quand, t]);
   const [volant, setVolant] = useState(null); // { kmh } pendant qu'on conduit
   const [choc, setChoc] = useState(0);
+  const [bulle, setBulle] = useState(null); // ce que dit un piéton bousculé ou la passagère (25/09)
   const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
   const [nage, setNage] = useState(null); // { sous, air } quand on nage
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
@@ -227,6 +228,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               return avant?.finie ? avant : { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
             });
             if (e.type === 'choc') { setChoc(Date.now()); try { navigator.vibrate?.(Math.min(120, e.force * 4)); } catch { /* pas de vibreur */ } }
+            // « C'est la vraie vie » (Beau, 25/09) : le piéton bousculé et la passagère parlent.
+            if (e.type === 'pieton' || (e.type === 'passager' && (e.texte || e.descend))) {
+              const quand = Date.now();
+              const texte = e.texte || (e.fache ? t('legion.monde.passager.descendFache', { nom: e.nom }) : t('legion.monde.passager.descend', { nom: e.nom }));
+              setBulle({ nom: e.nom, texte, fache: e.type === 'pieton' || !!e.fache, quand });
+              setTimeout(() => setBulle((b) => (b && b.quand === quand ? null : b)), 4500);
+            }
           },
         });
         monde.current = m;
@@ -520,7 +528,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
             {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{['voiture', 'helico', 'bateau'].includes(proche.type) ? 'F' : 'E'}</kbd>}
-            {t(`legion.monde.action.${proche.type}`, t('legion.monde.action.defaut'))}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
+            {t(`legion.monde.action.${proche.type}`, { defaultValue: t('legion.monde.action.defaut'), nom: proche.nom || '' })}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
           </button>
           )}
         </div>
@@ -575,6 +583,12 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       )}
 
       {/* Au volant : compteur, descendre, pédales au téléphone */}
+      {bulle && (
+        <div className={`pointer-events-none absolute left-1/2 z-[7] -translate-x-1/2 rounded-2xl border px-3.5 py-2 text-center backdrop-blur ${bulle.fache ? 'border-legion-danger/60 bg-[#2a0f12]/90' : 'border-legion-line bg-[#0b1120]/90'} ${mobile ? 'top-[4.5rem] max-w-[86vw]' : 'top-24 max-w-[420px]'}`}>
+          {bulle.nom && <p className="text-[11px] font-semibold uppercase tracking-wide text-legion-gold">{bulle.nom}</p>}
+          <p className="text-[14px] font-semibold leading-snug text-white">{bulle.texte}</p>
+        </div>
+      )}
       {volant && (
         <>
           <div className={`pointer-events-none absolute z-[5] ${mobile ? 'left-2 top-12' : 'bottom-3 right-4'} ${Date.now() - choc < 400 ? 'animate-pulse' : ''}`}>

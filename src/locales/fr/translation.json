@@ -1343,7 +1343,8 @@
         "boutique": "Voir la boutique",
         "client": "Voir le client",
         "chezmoi": "Entrer chez moi",
-        "bateau": "Prendre le bateau"
+        "bateau": "Prendre le bateau",
+        "passant": "Faire monter {{nom}}"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1459,6 +1460,10 @@
         "rendu": "Vient de rendre",
         "veille": "Éteint (en veille)",
         "dispo": "Disponible · {{n}} tâche(s) ouverte(s)"
+      },
+      "passager": {
+        "descend": "{{nom}} descend. « Merci ! »",
+        "descendFache": "{{nom}} descend, fâchée."
       }
     },
     "agentModifie": "Enregistré",
