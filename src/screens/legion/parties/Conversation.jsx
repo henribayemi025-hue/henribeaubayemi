@@ -14,7 +14,7 @@ import { ChoixEmoji } from './ChoixEmoji';
 import { PhotoSalon } from './PhotoSalon';
 import { Visionneuse } from './Visionneuse';
 import { RAPIDES } from '../emojis';
-import { GENRES, heure, jourDe, sansAccent, iconeDept, espacerPhrases } from './outils';
+import { GENRES, heure, jourDe, sansAccent, iconeDept, espacerPhrases, couperCourt } from './outils';
 import { Texte, estStructure } from './Plans';
 
 // La conversation — le centre de l'écran, à la WhatsApp: les bulles
@@ -54,6 +54,7 @@ export function Conversation({
   const [ouvert, setOuvert] = useState(null); // barre d'actions ouverte (id du message)
   const [picker, setPicker] = useState(null); // 'saisie' | id du message
   const [enGrand, setEnGrand] = useState(null); // une image ouverte en plein écran (25/09)
+  const [deplies, setDeplies] = useState({}); // livrables dont on a ouvert le détail (« court d'abord », 25/09)
   const [reponseA, setReponseA] = useState(null);
   const [copie, setCopie] = useState(null);
 
@@ -395,7 +396,28 @@ export function Conversation({
                         // primaire »): titres et listes rendus, pas du
                         // Markdown brut dans une bulle.
                         <div className="mb-3 break-words">
-                          <Texte contenu={m.texte} className={`text-[15px] leading-[1.35] ${mien ? 'text-white' : 'text-legion-ink'}`} titre={mien ? 'text-white/85' : 'text-legion-gold'} />
+                          {(() => {
+                            // « Court d'abord » (25/09) : un livrable montre ses trois lignes, le détail
+                            // s'ouvre d'un geste. Sans séparateur, tout s'affiche comme avant.
+                            const [tete, detail] = m.meta?.livrable ? couperCourt(m.texte) : [m.texte, ''];
+                            const ouvert = !detail || !!deplies[m.id];
+                            return (
+                              <>
+                                <Texte contenu={tete} className={`text-[15px] leading-[1.35] ${mien ? 'text-white' : 'text-legion-ink'}`} titre={mien ? 'text-white/85' : 'text-legion-gold'} />
+                                {detail && (
+                                  <button type="button" onClick={() => setDeplies((d) => ({ ...d, [m.id]: !d[m.id] }))}
+                                    className={`mt-1.5 inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-[12px] font-semibold ${mien ? 'bg-black/15 text-white' : 'bg-legion-bg text-legion-gold'}`}>
+                                    {ouvert ? t('legion.replierDetail', 'Replier') : t('legion.voirDetail', 'Voir le détail')} {ouvert ? '▴' : '▾'}
+                                  </button>
+                                )}
+                                {detail && ouvert && (
+                                  <div className={`mt-2 border-t pt-2 ${mien ? 'border-white/25' : 'border-legion-line'}`}>
+                                    <Texte contenu={detail} className={`text-[15px] leading-[1.35] ${mien ? 'text-white' : 'text-legion-ink'}`} titre={mien ? 'text-white/85' : 'text-legion-gold'} />
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap break-words text-[15.5px] leading-[1.35]">

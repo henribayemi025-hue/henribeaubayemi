@@ -1587,7 +1587,9 @@
       "noms": "{{n}} agents chose their name and introduced themselves.",
       "photos": "The directors are having their photo taken…",
       "titre": "The team is arriving"
-    }
+    },
+    "voirDetail": "See the details",
+    "replierDetail": "Fold"
   },
   "equipe": {
     "titre": "The team",

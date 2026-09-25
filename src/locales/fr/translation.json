@@ -1587,7 +1587,9 @@
       "noms": "{{n}} agents ont choisi leur nom et se sont présentés.",
       "photos": "Les directeurs se font photographier…",
       "titre": "L'équipe arrive"
-    }
+    },
+    "voirDetail": "Voir le détail",
+    "replierDetail": "Replier"
   },
   "equipe": {
     "titre": "L'équipe",

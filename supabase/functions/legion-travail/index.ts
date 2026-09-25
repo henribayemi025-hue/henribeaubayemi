@@ -39,6 +39,7 @@ import { lireTickets } from '../_shared/tickets.ts';
 import { blocMarche, blocWiki } from '../_shared/contexte.ts';
 import { enqueter, verifsPour, borneVerifs, rechercheGuidee, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
+import { decideReveil, heureLocale } from '../_shared/reveil.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -307,7 +308,7 @@ ${verifie.length ? `VÉRIFICATIONS FAITES À L'INSTANT dans la base (outil → r
 ${REGLES_COMMUNES}
 
 ÉCRIS:
-"livrable": le résultat de la tâche, complet et utilisable tel quel, 800 à 2500 signes. Selon la tâche: une analyse (les chiffres, ce qu'ils disent, ce qu'on fait), une proposition (le quoi, le pourquoi, les étapes, ce que ça coûte en effort), un brouillon (texte prêt à l'emploi), une liste précise. Commence par « ## » et le titre de la tâche. Termine par « ## Et maintenant »: la prochaine étape concrète et qui la fait.
+"livrable": le résultat de la tâche, complet et utilisable tel quel, 800 à 2500 signes. COMMENCE PAR TROIS LIGNES, toujours les mêmes, une phrase chacune (en anglais si tu écris en anglais : « Done: », « I suggest: », « I need from you: ») : « Fait : … » (ce que tu as fait), « Je propose : … » (ta recommandation), « J'attends de toi : … » (ce que le fondateur doit décider ou te donner, sinon « rien »). Puis une ligne « --- » seule. Puis le détail, selon la tâche: une analyse (les chiffres, ce qu'ils disent, ce qu'on fait), une proposition (le quoi, le pourquoi, les étapes, ce que ça coûte en effort), un brouillon (texte prêt à l'emploi), une liste précise. Le détail commence par « ## » et le titre de la tâche. Termine par « ## Et maintenant »: la prochaine étape concrète et qui la fait.
 "statut": "termine" si tu as pu livrer; "bloque" si la tâche demande quelque chose que tu n'as pas (un accès, une décision, un outil d'écriture) — dans ce cas "livrable" contient ce que tu as quand même pu faire.
 "besoin": si bloqué, en une phrase, ce qu'il te faut et de qui; sinon "".
 "suite_titre" et "suite_agent": LE RELAIS. Si ta tâche est terminée et que ton livrable appelle une étape suivante qu'un AUTRE agent ALLUMÉ de l'équipe doit faire (le texte est écrit → la relecture; l'analyse est faite → la maquette), l'intitulé court et précis de cette tâche, et le nom exact de cet agent. Sinon "" et "". Une seule suite, et seulement si elle est vraiment nécessaire.`;
@@ -513,9 +514,16 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   // Qui a déjà rendu un livrable dans les 3 dernières heures (une tranche
   // précédente). Depuis le 25/09, l'équipe passe trois fois par jour (matin,
   // fin de matinée, après-midi) : un livrable par passage, pas un par jour.
-  const { data: livresAujourdhui } = await service.from('legion_messages').select('auteur_id')
+  const { data: livresAujourdhui } = await service.from('legion_messages').select('auteur_id, created_at')
     .eq('entreprise_id', entrepriseId).gte('created_at', new Date(Date.now() - 3 * 3_600_000).toISOString()).not('meta->livrable', 'is', null);
   const dejaLivre = new Set((livresAujourdhui || []).map((x: { auteur_id: string }) => x.auteur_id));
+  // Pour le réveil libre : le dernier livrable de chacun, et combien sont « au travail »
+  // (un livrable dans les 45 dernières minutes).
+  const dernierLivrable = new Map<string, string>();
+  for (const x of (livresAujourdhui || []) as Array<{ auteur_id: string; created_at: string }>) {
+    if (!dernierLivrable.has(x.auteur_id) || x.created_at > dernierLivrable.get(x.auteur_id)!) dernierLivrable.set(x.auteur_id, x.created_at);
+  }
+  const auTravail = [...dernierLivrable.values()].filter((iso) => Date.now() - Date.parse(iso) < 45 * 60_000).length;
 
   // 1. LES PLANS — un par département dont le responsable est allumé; la
   // Direction en dernier: son plan est LE plan de l'entreprise, il reprend
@@ -586,7 +594,25 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   // heures — celles confiées dans la journée (pressante), pas encore rendues, moins de trois essais.
   const aFaireAuQuart = (a: Agent, t: Tache) => t.assigne_a === a.id && pressante(t) && (['urgente', 'haute'].includes(t.meta?.priorite || '') || !dejaLivre.has(a.id));
   const presse = (a: Agent) => ouvertes.some((t) => aFaireAuQuart(a, t));
-  const eligibles = urgences ? machines.filter(presse) : machines.filter((a) => !dejaLivre.has(a.id) || urgente(a));
+  // Le réveil libre (lot 2.3, 25/09 — Beau : « pas d'heures fixes, chaque agent décide lui-même »).
+  // Au quart d'heure, chaque agent décide seul s'il travaille maintenant : ses heures à lui, son
+  // dernier livrable, l'âge de ses tâches, l'heure locale de l'entreprise (reveil.ts, pur et
+  // testé). L'urgent et le haut passent quoi qu'il arrive (règle « pressante »).
+  const { heure, jour } = heureLocale(new Date(), entreprise.marche);
+  const tachesReveil = ouvertes.map((t) => ({ id: t.id, priorite: t.meta?.priorite, created_at: t.created_at, assigne_a: t.assigne_a, livre_le: t.meta?.livre_le }));
+  const decisions = new Map<string, ReturnType<typeof decideReveil>>();
+  const decisionDe = (a: Agent) => {
+    let d = decisions.get(a.id);
+    if (!d) {
+      d = decideReveil({ id: a.id, nom: a.nom, personnalite: a.personnalite, est_directeur: a.est_directeur, dernier_livrable_le: dernierLivrable.get(a.id) || null },
+        { heure_locale: heure, jour, taches: tachesReveil, agents_deja_au_travail: auTravail }, new Date());
+      decisions.set(a.id, d);
+    }
+    return d;
+  };
+  const prenable = (a: Agent, t: Tache) => t.assigne_a === a.id && !t.meta?.livre_le && (t.meta?.essais || 0) < 3;
+  const reveille = (a: Agent) => urgences && decisionDe(a).travaille && ouvertes.some((t) => prenable(a, t));
+  const eligibles = urgences ? machines.filter((a) => presse(a) || reveille(a)) : machines.filter((a) => !dejaLivre.has(a.id) || urgente(a));
   if (urgences && !eligibles.length) return false;
   // Le budget du mois de chacun, AVANT de découper : un agent au plafond ne compte pas dans
   // la tranche (sinon la tranche suivante le retrouverait, et ainsi de suite).
@@ -599,6 +625,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   // coup dépassaient les ressources du serveur, code 546) ; le reste part dans une tranche
   // suivante, qui relit qui a déjà rendu.
   const tranche = restants.slice(0, MAX_AGENTS_PAR_PASSAGE);
+  if (urgences) for (const a of tranche) journal.push(`${entreprise.nom}: ${a.nom} — ${presse(a) ? 'tâche pressante' : decisionDe(a).raison}`);
   for (let i = 0; i < tranche.length; i += lot) {
     if (tempsEcoule()) return true;
     // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
@@ -607,7 +634,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // Une tâche urgente ou haute passe avant les plus anciennes (file de
       // priorités, point 7 des « agents autonomes »).
       const rang = (t: Tache) => ({ urgente: 0, haute: 1 } as Record<string, number>)[t.meta?.priorite || ''] ?? 2;
-      const aFaire = (t: Tache) => !urgences || aFaireAuQuart(a, t);
+      const aFaire = (t: Tache) => !urgences || aFaireAuQuart(a, t) || (reveille(a) && prenable(a, t));
       let tache = ouvertes.filter((t) => t.assigne_a === a.id && aFaire(t)).sort((x, y) => rang(x) - rang(y))[0];
       // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
       // « vous ne devez pas attendre que je vous demande quelque chose ») :

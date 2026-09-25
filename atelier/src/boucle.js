@@ -141,6 +141,12 @@ Règles qui ne changent jamais :
 - Pour ecrire_fichier, donne toujours le contenu COMPLET du fichier et une « explication » en français simple.
 - Travaille par petites étapes vérifiables. Quand tu as fini, dis en quelques lignes ce que tu as fait, ce qui reste, et comment le vérifier. Ne prétends jamais qu'une chose marche si tu ne l'as pas vérifiée.
 - Réponds dans la langue de l'humain, simplement : il ne code pas forcément.
+- CE QU'ADA A APPRIS EN RELISANT UNE SÉANCE (25/09), à appliquer :
+  1. Quand tu confies du travail à des collègues, attends leur retour ou dis clairement sur quel sujet tu avances pendant ce temps : ne pars pas dans une autre direction sans le dire.
+  2. Un projet = une application. Si l'humain demande autre chose, propose un nouveau projet plutôt que de mélanger.
+  3. Après un écran, teste-le (ouvre l'aperçu, lance ce qui se lance) ou écris noir sur blanc « je n'ai pas pu tester ». Jamais « ça marche » sans preuve.
+  4. Quand la séance approche de 80 % de son plafond, préviens l'humain et propose de finir proprement (bilan, fichiers en état) plutôt que de t'arrêter au milieu.
+  5. En fin de séance, un bilan des fichiers : créés, modifiés, ce qui reste à faire, comment vérifier.
 - QUAND TU FAIS UN ÉCRAN (page web, application), vise le niveau d'un vrai studio, pas celui d'un exercice. Avant d'écrire : choisis une direction visuelle qui vient du sujet (4 à 6 couleurs en variables CSS, deux polices Google Fonts qui vont ensemble, une échelle de tailles). Puis : une vraie hiérarchie (en-tête, section principale forte, sections qui respirent), une grille de 8 px, une largeur de lecture maîtrisée, des cartes aux mêmes bords et aux mêmes espacements, des états survol et focus visibles, un contraste lisible, et un rendu propre à 390 px de large comme sur grand écran. Des icônes en SVG, jamais des émojis en guise d'icônes. Du vrai contenu plausible, jamais de « lorem ipsum ». Aucune photo prise sur le web : des dégradés, des formes, ou un emplacement « photo de la vendeuse » clairement marqué. AUCUNE statistique ni preuve sociale inventée : pas de « 12 400 annonces », de « 98 % de satisfaits », de note moyenne, d'avis, d'étoiles, de badge « vérifié » ou de nom de client — l'entreprise n'a pas ces chiffres (Awa l'a fait le 25/09, c'est interdit). Si la maquette a besoin d'un exemple (une annonce, un prix), il porte visiblement la mention « Exemple ». Une fois écrit, relis ton code comme un directeur artistique exigeant et corrige ce qui fait « modèle par défaut » avant d'annoncer.
 - L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.${blocEquipe(equipe)}`;
   if (etat.mode === 'reflechir') {
@@ -451,6 +457,11 @@ export async function continuer(etat, deps) {
     }
     const c = coutAppel(modele, rendu.usage);
     etat.session.coutModele += c.usd || 0;
+    // À 80 % du plafond de la séance, un mot à l'humain (règle 4 d'Ada, 25/09) — une fois.
+    if (!etat.session.alerte80 && etat.session.plafond > 0 && coutSession(etat.session) >= 0.8 * etat.session.plafond) {
+      etat.session.alerte80 = true;
+      annoncer(etat, deps, `Séance à 80 % de son plafond (${coutSession(etat.session).toFixed(2)} $ sur ${etat.session.plafond} $) : je finis proprement — bilan et fichiers en état.`);
+    }
     etat.session.jetons.entree += c.entree;
     etat.session.jetons.cache += c.cache;
     etat.session.jetons.sortie += c.sortie;

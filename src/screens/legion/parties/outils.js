@@ -153,3 +153,13 @@ export function raisonLisible(raison, t) {
   if (/[{}]|HTTP \d{3}/.test(r)) return t('legion.reessaie', 'Petit souci de connexion avec les modèles. Réessaie dans un instant.');
   return r.slice(0, 160);
 }
+
+// « Court d'abord » (Beau, lot 2.4, 25/09) : un livrable commence par trois
+// lignes (Fait / Je propose / J'attends de toi), puis une ligne « --- », puis
+// le détail. Rend [tête, détail] ; sans séparateur, tout est tête.
+export function couperCourt(texte) {
+  const t = String(texte || '');
+  const m = /\n[ \t]*-{3,}[ \t]*\n/.exec(t);
+  if (!m) return [t, ''];
+  return [t.slice(0, m.index).trim(), t.slice(m.index + m[0].length).trim()];
+}
