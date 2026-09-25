@@ -1198,7 +1198,8 @@
       "datesInverses": "The end must come after the start.",
       "vide": "No project yet: create the first one and it becomes a tower.",
       "legende": "One tower per project: it rises with delivered tasks, the scaffolding shows what is left, the crane leaves when it is done. A lit window = an agent who took a task less than 10 minutes ago. Tap a tower to go in."
-    }
+    },
+    "bientot": "Coming soon:"
   },
   "equipe": {
     "titre": "The team",

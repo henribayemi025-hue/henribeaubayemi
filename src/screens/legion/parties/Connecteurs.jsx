@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconPlugConnected, IconBuildingStore, IconChartBar, IconBrandGithub, IconRobot, IconCopy, IconCalculator, IconRss, IconListCheck } from '@tabler/icons-react';
+import { LogoMarque, MARQUES } from '../../../components/LogoMarque';
+import { IconPlugConnected, IconBuildingStore, IconChartBar, IconRobot, IconCopy, IconCalculator } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 
 // LEGION — les connecteurs: ce que les agents ont le droit de lire.
@@ -58,7 +59,7 @@ function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onCha
     <>
       {github && (
         <li className="flex items-start gap-2">
-          <IconBrandGithub size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+          <LogoMarque marque="github" taille={26} />
           <div className="min-w-0 flex-1">
             <label className="flex items-center gap-2 font-semibold text-legion-ink">
               <input type="checkbox" checked={!!github.config?.reunion_sur_ticket} disabled={busy} onChange={(e) => options('github', { reunion_sur_ticket: e.target.checked })} />
@@ -70,7 +71,7 @@ function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onCha
         </li>
       )}
       <li className="flex items-start gap-2">
-        <IconRss size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+        <LogoMarque marque="rss" taille={26} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-legion-ink">{t('legion.flux.rss')}</p>
           {rss ? (
@@ -95,7 +96,7 @@ function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onCha
         </div>
       </li>
       <li className="flex items-start gap-2">
-        <IconListCheck size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+        <LogoMarque marque="linear" taille={26} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-legion-ink">Linear</p>
           {linear ? (
@@ -111,7 +112,7 @@ function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onCha
         </div>
       </li>
       <li className="flex items-start gap-2">
-        <IconListCheck size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+        <LogoMarque marque="jira" taille={26} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-legion-ink">Jira</p>
           {jiraC ? (
@@ -237,6 +238,14 @@ export function Connecteurs({ entreprise, t }) {
           <IconPlugConnected size={15} className="text-legion-gold" /> {t('legion.connecteursTitre', 'Ce que les agents peuvent lire')}
         </h3>
       </div>
+      {/* Ce qui vient (Beau, 25/09 : « connecter Supabase, Cloudflare, Vercel… pour
+          chaque nouvel utilisateur »). Pas encore branchable : dit comme tel. */}
+      <div className="flex flex-wrap items-center gap-2 rounded-card border border-dashed border-legion-line px-3 py-2">
+        <span className="text-[11.5px] font-semibold text-legion-muted">{t('legion.bientot')}</span>
+        {['supabase', 'cloudflare', 'vercel', 'notion', 'googledrive', 'gmail', 'googlecalendar', 'slack', 'figma'].map((m) => (
+          <span key={m} className="inline-flex items-center gap-1.5 text-[11.5px] text-legion-muted"><LogoMarque marque={m} taille={20} />{MARQUES[m].titre}</span>
+        ))}
+      </div>
       <ul className="space-y-2 text-[12px]">
         <li className="flex items-start gap-2">
           <IconBuildingStore size={16} className="mt-0.5 shrink-0 text-legion-gold" />
@@ -294,7 +303,7 @@ export function Connecteurs({ entreprise, t }) {
           </div>
         </li>
         <li className="flex items-start gap-2">
-          <IconBrandGithub size={16} className="mt-0.5 shrink-0 text-legion-gold" />
+          <LogoMarque marque="github" taille={26} />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-legion-ink">{t('legion.connecteurGithub', 'Mon dépôt GitHub')}</p>
             {github ? (

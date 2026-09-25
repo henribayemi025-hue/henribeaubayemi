@@ -1198,7 +1198,8 @@
       "datesInverses": "La fin doit venir après le début.",
       "vide": "Aucun projet pour l’instant : crée le premier, il deviendra une tour.",
       "legende": "Une tour par projet : elle monte avec les tâches rendues, l’échafaudage montre ce qui reste, la grue part quand c’est fini. Une fenêtre allumée = un agent qui a pris une tâche il y a moins de 10 minutes. Touche une tour pour entrer."
-    }
+    },
+    "bientot": "Bientôt :"
   },
   "equipe": {
     "titre": "L'équipe",
