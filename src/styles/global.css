@@ -259,7 +259,7 @@
 .legion-modale { background-color: rgb(var(--leo-panel)) !important; color: rgb(var(--leo-ink)); }
 .legion-modale h2 { color: rgb(var(--leo-ink)); }
 .legion-modale option { background-color: rgb(var(--leo-card)); color: rgb(var(--leo-ink)); }
-.legion-app .label { color: rgb(var(--leo-ink)); }
+.legion-app .label, .legion-modale .label { color: rgb(var(--leo-ink)); }
 .legion-app .btn-primary { background: rgb(var(--leo-gold)); color: rgb(var(--leo-bg)); }
 .legion-app .btn-primary:hover { background: rgb(var(--leo-gold-soft)); }
 .legion-app .btn-primary:disabled { background: rgb(var(--leo-line)); color: rgb(var(--leo-muted)); }
@@ -285,3 +285,14 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='none' stroke='%2393A1B8' stroke-opacity='.075' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 40l6-14 8 9 8-9 6 14z'/%3E%3Cpath d='M112 22h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6h-18l-8 7v-7h-2a6 6 0 0 1-6-6V28a6 6 0 0 1 6-6z'/%3E%3Cpath d='M60 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z'/%3E%3Cpath d='M150 110l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z'/%3E%3Ccircle cx='30' cy='150' r='9'/%3E%3Cpath d='M26 150h8M30 146v8'/%3E%3Cpath d='M100 150c0-8 12-8 12 0 0-8 12-8 12 0 0 8-12 14-12 14s-12-6-12-14z'/%3E%3Cpath d='M80 40h14M87 33v14'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 180px 180px;
 }
+
+/* Le bouton Fonder de Léo : un dégradé laiton → terracotta qui respire, et
+   une barre qui avance pendant la fondation (Beau, 25/09 : « le bouton
+   Fonder doit être dynamique »). */
+.leo-fonder { background: linear-gradient(115deg, rgb(var(--leo-gold)), rgb(var(--leo-accent)), rgb(var(--leo-gold))); background-size: 220% 100%; animation: leo-fonder 7s ease-in-out infinite; box-shadow: 0 10px 28px -14px rgb(var(--leo-gold) / 0.9); }
+.leo-fonder:disabled:not([aria-busy="true"]) { animation: none; box-shadow: none; }
+.leo-fonder[aria-busy="true"] { animation-duration: 2.4s; }
+@keyframes leo-fonder { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.leo-fonder-barre { transform-origin: left; animation: leo-fonder-barre 4.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+@keyframes leo-fonder-barre { from { transform: scaleX(0); } to { transform: scaleX(0.96); } }
+@media (prefers-reduced-motion: reduce) { .leo-fonder, .leo-fonder[aria-busy="true"] { animation: none; } }

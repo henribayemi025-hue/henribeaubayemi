@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconArrowRight, IconArrowLeft, IconMoon } from '@tabler/icons-react';
+import { IconArrowLeft, IconMoon, IconPlus } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useFondLegion } from './parties/useFondLegion';
+import { BoutonPalette } from './parties/Palette';
 import { modeleTraduit, accueilEnAnglais } from './parties/modelesEn';
 import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
-import { Button } from '../../components/Button';
 import { Field, TextInput, TextArea } from '../../components/Field';
 import { Skeleton, ErrorState } from '../../components/states';
+import { tailleDe, composer, horsEquipe, repartition, pourLaBase, estModifiee, choixVide, clePoste } from './parties/fonder/equipe';
+import { VisagesModele, BandePostes, Organigramme, FichePoste, AjouterPoste, AideLeo, BoutonFonder } from './parties/fonder/Equipe';
 
 // LEGION — fonder une entreprise d'agents.
 //
@@ -19,26 +21,17 @@ import { Skeleton, ErrorState } from '../../components/states';
 // taille, on nomme, on dit le projet, et l'organigramme se déploie: chacun
 // avec un nom, un visage, un poste, un mandat.
 //
-// Le geste réel est côté serveur (`legion_creer_entreprise`): cet écran ne
-// fait que poser les quatre questions. Il montre aussi, AVANT de fonder, ce
-// que le modèle contient vraiment à chaque taille — y compris les postes qui
-// n'ont pas encore d'agent dans le catalogue. On ne fait pas semblant.
+// Beau, 25/09 (audit de Léo): l'équipe se COMPOSE avant de fonder. Les
+// visages défilent, chaque poste s'ouvre (voir, retirer, remettre, réécrire
+// le mandat, le faire réécrire par Léo), on ajoute un métier du catalogue
+// ou de sa main, on envoie un fichier, et Léo aide à composer. « Ce que
+// c'est » se modifie. Le bouton Fonder dit ce qu'il fonde, puis ce qu'il
+// fait. Le geste réel reste côté serveur (`legion_creer_entreprise`), qui
+// reçoit l'équipe composée telle quelle. On ne fait pas semblant.
 
-const TAILLES = ['cocon', 'startup', 'scaleup', 'megacorp'];
 // L'effectif est un NOMBRE, pas une case: Beau — « c'est à moi de choisir
 // selon ma taille, mon entreprise ». 10 000 est le plafond qu'il a dit.
 const RACCOURCIS = [3, 25, 150, 1500, 10000];
-// Regroupe les postes par département, dans l'ordre où le modèle les donne
-// (directeurs en premier). Pour lire un organigramme, pas une liste.
-function parDepartement(postes) {
-  const m = new Map();
-  for (const p of postes) {
-    if (!m.has(p.departement)) m.set(p.departement, { nom: p.departement, postes: [] });
-    m.get(p.departement).postes.push(p);
-  }
-  return [...m.values()];
-}
-const tailleDe = (n) => (n <= 5 ? 'cocon' : n <= 40 ? 'startup' : n <= 300 ? 'scaleup' : 'megacorp');
 
 // Les outils les plus courants; « D'autres ? » laisse écrire le reste.
 const OUTILS = ['Excel', 'Google Sheets', 'Word', 'Google Docs', 'PowerPoint', 'WhatsApp', 'Gmail', 'Outlook', 'Notion', 'Trello', 'Slack', 'Microsoft Teams', 'Power BI', 'Tableau', 'Canva', 'Finjaro Accounting'];
@@ -82,6 +75,23 @@ async function passerEnAnglais(entrepriseId) {
   }
 }
 
+// Une fonction edge qui refuse (400, 429) met son explication dans le corps ;
+// le client ne la lit pas tout seul.
+async function lisible(err) {
+  try { const j = await err?.context?.json(); if (j?.erreur) return new Error(j.erreur); } catch { /* pas de corps */ }
+  return err;
+}
+
+// Un titre d'étape : le numéro dans une pastille, le mot en capitales.
+function Etape({ n, titre }) {
+  return (
+    <div className="mt-7 flex items-center gap-2">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-legion-gold text-[12px] font-extrabold text-legion-bg">{n}</span>
+      <p className="text-[12px] font-bold uppercase tracking-wider text-legion-muted">{String(titre).replace(/^\d+\.\s*/, '')}</p>
+    </div>
+  );
+}
+
 export default function Fonder() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -106,6 +116,13 @@ export default function Fonder() {
   const [generationErreur, setGenerationErreur] = useState('');
   const [filtre, setFiltre] = useState('');
   const [tous, setTous] = useState(false);
+  // L'équipe composée : ce qu'on a retiré, ajouté, réécrit — par rapport au
+  // modèle. Remis à zéro quand on change de modèle.
+  const [choix, setChoix] = useState(choixVide);
+  const [concept, setConcept] = useState('');
+  const [complets, setComplets] = useState({});
+  const [fiche, setFiche] = useState(null);
+  const [ajoutOuvert, setAjoutOuvert] = useState(false);
 
   // Un nouveau modèle, écrit pour le secteur décrit; puis la liste se
   // recharge et le modèle est sélectionné.
@@ -115,7 +132,7 @@ export default function Fonder() {
     setGeneration(true); setGenerationErreur('');
     try {
       const { data: r, error: err } = await supabase.functions.invoke('legion-modele', { body: { secteur: secteur.trim() } });
-      if (err) throw err;
+      if (err) throw await lisible(err);
       if (r?.erreur) throw new Error(r.erreur);
       try { localStorage.removeItem('legion:modeles:v3'); } catch { /* sans stockage */ }
       await retry();
@@ -149,10 +166,27 @@ export default function Fonder() {
     return { modeles: m.data || [], postes };
   }, [], { cacheKey: 'legion:modeles:v3' });
 
+  // Les postes complets (mandat, poids, clé au catalogue) du modèle choisi,
+  // lus quand on le choisit — les 3 880 mandats ne se chargent pas d'avance.
+  const cleModele = modele?.cle;
+  useEffect(() => {
+    if (!cleModele || complets[cleModele]) return undefined;
+    let vivant = true;
+    supabase.from('studio_modele_postes').select('departement, poste, mandat, des_la_taille, a_ecrire, est_directeur, poids, agent_cle, ordre')
+      .eq('modele', cleModele).order('ordre').range(0, 999)
+      .then(({ data: rows }) => { if (vivant && rows) setComplets((c) => ({ ...c, [cleModele]: rows })); });
+    return () => { vivant = false; };
+  }, [cleModele]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Après useAsync: la liste filtrée lit `data`. Placée avant, elle
   // faisait planter la page (« Cannot access before initialization »):
   // la page « Fonder » restait blanche. Vu par Beau le 23/09.
   const plat = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const postesParModele = useMemo(() => {
+    const m = {};
+    for (const p of data?.postes || []) (m[p.modele] ||= []).push(p);
+    return m;
+  }, [data]);
   const modelesFiltres = (data?.modeles || []).map((m) => modeleTraduit(m, i18n.language)).filter((m) => {
     if (modele?.cle === m.cle) return true;
     const q = plat(filtre.trim());
@@ -160,24 +194,77 @@ export default function Fonder() {
   });
   const modelesVisibles = tous || filtre.trim() ? modelesFiltres : modelesFiltres.slice(0, 12);
 
+  // L'équipe qu'on obtient vraiment, et combien de personnes par poste —
+  // la même règle que la base (equipe.js).
+  const postesModele = (modele && (complets[modele.cle] || postesParModele[modele.cle])) || [];
+  const equipe = useMemo(() => (modele ? composer(postesModele, effectif, choix) : []), [modele, postesModele, effectif, choix]);
+  const dehors = useMemo(() => (modele ? horsEquipe(postesModele, effectif, choix) : []), [modele, postesModele, effectif, choix]);
+  const personnes = Math.max(Number(effectif) || 1, equipe.length);
+  const repartis = useMemo(() => repartition(equipe, personnes), [equipe, personnes]);
+  const departements = useMemo(() => [...new Set(equipe.map((p) => p.departement).filter(Boolean))], [equipe]);
+
   if (loading) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><Skeleton className="h-40 w-full" /></div>;
   if (error) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><ErrorState onRetry={retry} /></div>;
   if (!data) return null;
 
-  const taille = tailleDe(Number(effectif) || 1);
-  const niveau = TAILLES.indexOf(taille);
-  const postesDu = (cle) => data.postes.filter((p) => p.modele === cle && TAILLES.indexOf(p.des_la_taille) <= niveau);
+  function choisirModele(m) {
+    setModele(m); setChoix(choixVide()); setConcept(m.concept || ''); setFiche(null);
+  }
+  // « Déjà là » = dans l'équipe telle qu'elle est (un poste du modèle coupé
+  // par l'effectif n'y est pas : le remettre, c'est l'ajouter par-dessus).
+  const dansLEquipe = (k) => equipe.some((x) => clePoste(x.poste) === k);
+  function retirer(p) {
+    const k = clePoste(p.poste);
+    setChoix((c) => (p.ajoute
+      ? { ...c, ajoutes: c.ajoutes.filter((a) => clePoste(a.poste) !== k) }
+      : { ...c, retires: { ...c.retires, [k]: true } }));
+  }
+  function ajouter(p) {
+    const k = clePoste(p.poste);
+    if (!k) return;
+    setChoix((c) => {
+      const retires = { ...c.retires }; delete retires[k];
+      const deja = c.ajoutes.some((a) => clePoste(a.poste) === k) || (!c.retires[k] && dansLEquipe(k));
+      return { ...c, retires, ajoutes: deja ? c.ajoutes : [...c.ajoutes, p] };
+    });
+  }
+  const changerMandat = (p, mandat) => setChoix((c) => ({ ...c, mandats: { ...c.mandats, [clePoste(p.poste)]: mandat } }));
+  function appliquer({ ajouter: plus, retirer: moins, modifier }) {
+    setChoix((c) => {
+      const n = { retires: { ...c.retires }, ajoutes: [...c.ajoutes], mandats: { ...c.mandats } };
+      for (const poste of moins) { const k = clePoste(poste); n.retires[k] = true; n.ajoutes = n.ajoutes.filter((a) => clePoste(a.poste) !== k); }
+      for (const p of plus) { const k = clePoste(p.poste); const etaitRetire = !!n.retires[k]; delete n.retires[k]; if (!n.ajoutes.some((a) => clePoste(a.poste) === k) && (etaitRetire || !dansLEquipe(k))) n.ajoutes.push(p); }
+      for (const m of modifier) n.mandats[clePoste(m.poste)] = m.mandat;
+      return n;
+    });
+    toast.success(t('legion.fonderEquipe.applique', { a: plus.length, r: moins.length, m: modifier.length }));
+  }
+  async function demanderLeo(consigne, texte = '') {
+    const { data: r, error: err } = await supabase.functions.invoke('legion-modele', {
+      body: { mode: 'postes', consigne, texte, langue: i18n.language, modele_nom: modele?.nom || '', existants: equipe.map((p) => ({ departement: p.departement, poste: p.poste })) },
+    });
+    if (err) throw await lisible(err);
+    if (r?.erreur) throw new Error(r.erreur);
+    return r;
+  }
 
   async function fonder() {
     if (!modele || !user) return;
     setEnvoi(true);
     try {
-      const { data: id, error: err } = await supabase.rpc('legion_creer_entreprise', {
-        p_nom: nom.trim(), p_modele: modele.cle, p_taille: taille,
-        p_projet: [projet.trim(), quiJeSuis.trim() && `Qui je suis : ${quiJeSuis.trim()}`, objectif.trim() && `Ce que je veux obtenir : ${objectif.trim()}`,
-          (outils.length || autresOutils.trim()) && `Mes outils de travail : ${[...outils, ...autresOutils.split(',').map((x) => x.trim()).filter(Boolean)].join(', ')} (rends tes livrables dans ces formats quand c'est utile)`].filter(Boolean).join('\n') || null,
-        p_effectif: Math.max(1, Math.min(10000, Number(effectif) || 1)),
-      });
+      const et = (k) => t(`legion.projetEtiquettes.${k}`);
+      const conceptModifie = concept.trim() && concept.trim() !== String(modele.concept || '').trim();
+      const args = {
+        p_nom: nom.trim(), p_modele: modele.cle, p_taille: tailleDe(personnes),
+        p_projet: [projet.trim(), quiJeSuis.trim() && `${et('qui')} : ${quiJeSuis.trim()}`, objectif.trim() && `${et('objectif')} : ${objectif.trim()}`,
+          (outils.length || autresOutils.trim()) && `${et('outils')} : ${[...outils, ...autresOutils.split(',').map((x) => x.trim()).filter(Boolean)].join(', ')} (${et('outilsNote')})`,
+          conceptModifie && `${et('concept')} : ${concept.trim()}`].filter(Boolean).join('\n') || null,
+        p_effectif: Math.max(1, Math.min(10000, personnes)),
+      };
+      // L'équipe composée ne part que si elle diffère du modèle : sinon la
+      // base fait exactement ce qu'elle a toujours fait.
+      if (estModifiee(choix)) args.p_postes = pourLaBase(equipe);
+      const { data: id, error: err } = await supabase.rpc('legion_creer_entreprise', args);
       if (err) throw err;
       // La langue de l'équipe = celle de l'écran au moment de fonder (Beau, 25/09 : compte en anglais,
       // mais toute l'équipe répondait en français). Le mot d'accueil, écrit en français par la base,
@@ -187,9 +274,10 @@ export default function Fonder() {
       // Les agents choisissent leurs compétences dès l'arrivée (Beau: « chaque
       // type d'entreprise arrive avec ses agents et leurs compétences »).
       navigate(`/legion/${id}?equiper=1`);
-    } catch (e) { toast.error(e.message || t('errors.generic')); }
-    finally { setEnvoi(false); }
+    } catch (e) { toast.error(e.message || t('errors.generic')); setEnvoi(false); }
   }
+
+  const ficheDansEquipe = fiche ? equipe.some((p) => clePoste(p.poste) === clePoste(fiche.poste)) : false;
 
   return (
     // h-dvh + overflow-y-auto, pas min-h-dvh: le <body> de l'application
@@ -201,37 +289,40 @@ export default function Fonder() {
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-legion-line bg-legion-panel/95 px-4 backdrop-blur">
         <Link to="/legion" aria-label={t('common.back')} className="rounded-full p-1 text-legion-muted hover:text-legion-ink"><IconArrowLeft size={20} /></Link>
         <img src="/logos/leo.png" alt="Léo" className="h-8 w-8 rounded-input object-cover" />
-        <h1 className="text-body font-semibold">{t('legion.fonder')}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-body font-semibold">{t('legion.fonder')}</h1>
+        <BoutonPalette t={t} />
       </header>
       <div className="mx-auto w-full max-w-3xl px-4 pt-3">
         <p className="text-body text-legion-muted">{t('legion.fonderIntro')}</p>
 
         {/* 1. Le modèle */}
-        <p className="mt-5 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.etapeModele')}</p>
+        <Etape n={1} titre={t('legion.etapeModele')} />
         {/* Cinquante secteurs et plus (22/09): un champ pour chercher le sien,
             et la liste ne s'étale pas — douze cartes, puis « voir tous ». */}
         <input value={filtre} onChange={(e) => setFiltre(e.target.value)} placeholder={t('legion.chercherSecteur', { n: data.modeles.length, defaultValue: 'Chercher parmi {{n}} secteurs…' })}
           className="input mt-2 w-full" />
         <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {modelesVisibles.map((m) => {
-            const ps = data.postes.filter((p) => p.modele === m.cle);
+            const ps = postesParModele[m.cle] || [];
             const aEcrire = ps.filter((p) => p.a_ecrire).length;
             const choisi = modele?.cle === m.cle;
             return (
               <li key={m.cle}>
-                <button type="button" onClick={() => setModele(m)} data-modele={m.cle}
-                  className={`flex w-full items-start gap-3 rounded-card border p-3 text-left ${
-                    choisi ? 'border-legion-gold bg-legion-gold/15' : 'border-legion-line bg-legion-card'}`}>
-                  <span className="text-title">{m.emoji}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-body font-semibold text-legion-ink">{m.nom}</span>
-                    <span className="block text-caption text-legion-muted">{m.promesse}</span>
-                    <span className="mt-1 block text-caption text-legion-muted">
-                      {t('legion.postesCatalogue', { n: ps.length - aEcrire })}
-                      {' · '}{t('legion.departements', { n: new Set(ps.map((p) => p.departement)).size })}
-                      {aEcrire > 0 && <> · <IconMoon size={11} className="inline" /> {t('legion.postesAEcrire', { n: aEcrire })}</>}
+                <button type="button" onClick={() => choisirModele(m)} data-modele={m.cle} aria-pressed={choisi}
+                  className={`flex w-full flex-col gap-2 rounded-card border p-3 text-left transition ${
+                    choisi ? 'border-legion-gold bg-legion-gold/15 shadow-[0_0_0_1px_rgb(var(--leo-gold))]' : 'border-legion-line bg-legion-card hover:border-legion-gold/50'}`}>
+                  <span className="flex items-center gap-3">
+                    <VisagesModele modele={m.cle} postes={ps} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-body font-bold text-legion-ink">{m.nom}</span>
+                      <span className="block text-[11px] text-legion-muted">
+                        {t('legion.postesCatalogue', { n: ps.length - aEcrire })}
+                        {' · '}{t('legion.departements', { n: new Set(ps.map((p) => p.departement)).size })}
+                        {aEcrire > 0 && <> · <IconMoon size={11} className="inline" /> {t('legion.postesAEcrire', { n: aEcrire })}</>}
+                      </span>
                     </span>
                   </span>
+                  <span className="block text-caption leading-snug text-legion-muted">{m.promesse}</span>
                 </button>
               </li>
             );
@@ -249,14 +340,14 @@ export default function Fonder() {
         {/* Ton secteur n'est pas là ? Beau, 22/09: « il y a des milliers de
             services ». On décrit le secteur, Legion écrit l'organigramme
             (fonction legion-modele), et il entre au catalogue pour tous. */}
-        <form onSubmit={genererModele} className="mt-3 rounded-card border border-dashed border-legion-line bg-legion-card/60 p-3">
+        <form onSubmit={genererModele} className="mt-3 rounded-card border border-legion-line bg-legion-card/60 p-3">
           <p className="text-caption font-semibold text-legion-ink">{t('legion.autreSecteurTitre', 'Ton secteur n’est pas là ?')}</p>
           <p className="mt-0.5 text-caption text-legion-muted">{t('legion.autreSecteurAide', 'Décris-le en quelques mots : Léo écrit les départements et les métiers, avec leur mandat.')}</p>
           <div className="mt-2 flex gap-2">
             <input value={secteur} onChange={(e) => setSecteur(e.target.value)} placeholder={t('legion.autreSecteurPlaceholder', 'Opérateur télécom, clinique privée, salon de coiffure…')}
               className="input min-w-0 flex-1" maxLength={160} />
             <button type="submit" disabled={generation || secteur.trim().length < 3}
-              className="shrink-0 rounded-input bg-legion-gold px-3 py-2 text-caption font-semibold text-legion-ink disabled:opacity-50">
+              className="shrink-0 rounded-input bg-legion-gold px-3 py-2 text-caption font-semibold text-legion-bg disabled:opacity-50">
               {generation ? t('legion.autreSecteurEnCours', 'Écriture… (1 min)') : t('legion.autreSecteurBouton', 'Créer le modèle')}
             </button>
           </div>
@@ -267,32 +358,32 @@ export default function Fonder() {
           <>
             {/* Le concept: c'est quoi, comment c'est organisé, combien de gens
                 d'habitude. Beau: « un cabinet de conseil c'est quoi le concept,
-                combien de personnes, qui y travaille ». */}
+                combien de personnes, qui y travaille ». Depuis le 25/09, il
+                se modifie : c'est la version de la personne, pas du catalogue. */}
             {(modele.concept || modele.effectifs) && (
               <div className="mt-4 rounded-card border border-legion-line bg-legion-card p-3">
-                {modele.concept && (
-                  <>
-                    <p className="text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.conceptTitre')}</p>
-                    <p className="mt-1 text-body text-legion-ink">{modele.concept}</p>
-                  </>
-                )}
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.conceptTitre')}</p>
+                <TextArea value={concept} onChange={(e) => setConcept(e.target.value)} rows={4} maxLength={1500}
+                  className="mt-1 min-h-[80px] border-transparent bg-transparent px-0 py-1 text-body leading-relaxed text-legion-ink focus:border-legion-gold" />
+                <p className="text-[11px] text-legion-muted">{t('legion.fonderEquipe.conceptAide')}</p>
                 {modele.effectifs && (
                   <>
-                    <p className="mt-3 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.effectifsTitre')}</p>
+                    <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.effectifsTitre')}</p>
                     <p className="mt-1 text-body text-legion-ink">{modele.effectifs}</p>
                   </>
                 )}
               </div>
             )}
 
-            {/* 2. L'effectif — un nombre, à lui de choisir */}
-            <p className="mt-6 text-caption font-semibold uppercase tracking-wider text-legion-muted">{t('legion.etapeEffectif')}</p>
+            {/* 2. L'équipe — l'effectif (un nombre, à lui de choisir), puis
+                les gens qu'on obtient vraiment, un par un. */}
+            <Etape n={2} titre={t('legion.fonderEquipe.etapeEquipe')} />
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {RACCOURCIS.map((n) => (
                 <button key={n} type="button" onClick={() => setEffectif(n)}
                   className={`rounded-pill px-3 py-1 text-caption font-semibold ${
                     Number(effectif) === n ? 'bg-legion-gold text-legion-bg' : 'border border-legion-line text-legion-muted'}`}>
-                  {n.toLocaleString('fr-FR')}
+                  {n.toLocaleString(i18n.language)}
                 </button>
               ))}
               <input type="number" min={1} max={10000} inputMode="numeric" value={effectif}
@@ -301,31 +392,26 @@ export default function Fonder() {
             </div>
             <p className="mt-1 text-caption text-legion-muted">{t('legion.effectifAide')}</p>
 
-            {/* Ce qu'on obtient VRAIMENT à cette taille */}
-            <div className="mt-3 rounded-card border border-legion-line bg-legion-card p-3">
-              <p className="text-caption font-semibold text-legion-ink">
-                {t('legion.apercuEffectif', { metiers: postesDu(modele.cle).length, personnes: Math.max(Number(effectif) || 1, postesDu(modele.cle).length) })}
-              </p>
-              {/* Par département, comme un organigramme — pas une liste plate. */}
-              {parDepartement(postesDu(modele.cle)).map((d) => (
-                <div key={d.nom} className="mt-3">
-                  <p className="text-caption font-semibold text-legion-ink">{d.nom} <span className="font-normal text-legion-muted">· {d.postes.length}</span></p>
-                  <p className="mt-0.5 text-caption text-legion-muted">
-                    {d.postes.slice(0, 12).map((p, i) => (
-                      <span key={i}>
-                        {i > 0 && ', '}
-                        <span className={p.est_directeur ? 'font-semibold text-legion-ink' : ''}>{p.est_directeur ? '★ ' : ''}{p.poste}</span>
-                        {p.a_ecrire && <span className="ml-1 rounded-pill bg-legion-gold/15 px-1.5 text-legion-gold">{t('legion.aEcrire')}</span>}
-                      </span>
-                    ))}
-                    {d.postes.length > 12 && <span> {t('legion.etPlus', { n: d.postes.length - 12 })}</span>}
-                  </p>
-                </div>
-              ))}
+            <div className="mt-3 rounded-card border border-legion-line bg-legion-card p-3 sm:p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-body font-bold text-legion-ink">
+                  {t('legion.apercuEffectif', { metiers: equipe.length, personnes })}
+                  {estModifiee(choix) && <span className="ml-2 rounded-pill bg-legion-teal/15 px-2 py-0.5 text-[11px] font-semibold text-legion-teal">✎</span>}
+                </p>
+                <button type="button" onClick={() => setAjoutOuvert(true)} className="inline-flex items-center gap-1.5 rounded-input bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg hover:brightness-110">
+                  <IconPlus size={14} /> {t('legion.fonderEquipe.ajouter')}
+                </button>
+              </div>
+              <p className="mt-0.5 text-[11px] text-legion-muted">{t('legion.fonderEquipe.bande')}</p>
+              <BandePostes modele={modele.cle} equipe={equipe} repartis={repartis} onOuvrir={setFiche} t={t} />
+              <Organigramme equipe={equipe} dehors={dehors} repartis={repartis} onOuvrir={setFiche} onRemettre={ajouter} t={t} />
             </div>
 
-            {/* 3 et 4. Le nom, le projet */}
-            <div className="mt-6 space-y-3">
+            <AideLeo demanderLeo={demanderLeo} onAppliquer={appliquer} t={t} />
+
+            {/* 3. Le nom, le projet */}
+            <Etape n={3} titre={t('legion.fonderEquipe.etapeEntreprise')} />
+            <div className="mt-2 space-y-3">
               <Field label={t('legion.nomEntreprise')} required>
                 {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} placeholder={t('legion.nomExemple')} />}
               </Field>
@@ -356,14 +442,21 @@ export default function Fonder() {
               <Field label={t('legion.projet')} hint={t('legion.projetAide')}>
                 {(id) => <TextArea id={id} rows={3} value={projet} onChange={(e) => setProjet(e.target.value)} />}
               </Field>
-              <Button onClick={fonder} loading={envoi} disabled={nom.trim() === '' || !user}>
-                {t('legion.fonderBouton')} <IconArrowRight size={18} />
-              </Button>
+              <BoutonFonder nom={nom.trim()} personnes={personnes} metiers={equipe.length} envoi={envoi} disabled={nom.trim() === '' || !user} onClick={fonder} t={t} />
               {!user && <p className="text-caption text-legion-muted">{t('legion.connecteToi')}</p>}
             </div>
           </>
         )}
       </div>
+
+      {fiche && modele && (
+        <FichePoste poste={fiche} modele={modele.cle} dansEquipe={ficheDansEquipe} n={repartis[clePoste(fiche.poste)] || 1}
+          onFermer={() => setFiche(null)} onRetirer={retirer} onRemettre={ajouter} onMandat={changerMandat} demanderLeo={demanderLeo} t={t} />
+      )}
+      {ajoutOuvert && modele && (
+        <AjouterPoste catalogue={data.postes} modeles={data.modeles} departements={departements} existants={equipe}
+          onAjouter={(p) => { ajouter(p); setAjoutOuvert(false); }} onFermer={() => setAjoutOuvert(false)} t={t} />
+      )}
     </div>
   );
 }

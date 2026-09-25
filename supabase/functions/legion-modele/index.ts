@@ -12,10 +12,16 @@
 //
 // Deux portes: une personne connectée (trois modèles par jour, le coût),
 // ou le jeton de la base pour remplir le catalogue en série.
+//
+// Deuxième service depuis le 25/09 (`mode: 'postes'`) : sur la page Fonder,
+// Léo aide à COMPOSER l'équipe — « décris ce qu'il te manque », un fichier
+// de postes envoyé, ou « regarde mon projet et dis-moi qui garder » — et
+// rend des postes à ajouter, à retirer, des mandats à réécrire. Rien n'est
+// écrit en base : la personne coche, puis fonde.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter } from '../_shared/cout.ts';
-import { generer, moteurs } from '../_shared/moteur.ts';
+import { generer, moteurs, moteursSimples } from '../_shared/moteur.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -78,6 +84,93 @@ function invite(secteur: string) {
 Le premier département est « Direction » avec le dirigeant (est_directeur true, des_la_taille "cocon").`;
 }
 
+// --- Composer l'équipe avec Léo (page Fonder) --------------------------------
+
+type Existant = { departement?: string; poste?: string };
+type CorpsPostes = {
+  mode?: string; consigne?: string; texte?: string; langue?: string; modele_nom?: string;
+  existants?: Existant[]; secteur?: string;
+};
+const SCHEMA_POSTES = {
+  type: 'OBJECT',
+  properties: {
+    conseil: { type: 'STRING' },
+    ajouter: { type: 'ARRAY', items: { type: 'OBJECT', properties: {
+      departement: { type: 'STRING' }, poste: { type: 'STRING' }, mandat: { type: 'STRING' },
+      est_directeur: { type: 'BOOLEAN' }, poids: { type: 'INTEGER' },
+    }, required: ['departement', 'poste', 'mandat', 'est_directeur', 'poids'] } },
+    retirer: { type: 'ARRAY', items: { type: 'STRING' } },
+    modifier: { type: 'ARRAY', items: { type: 'OBJECT', properties: { poste: { type: 'STRING' }, mandat: { type: 'STRING' } }, required: ['poste', 'mandat'] } },
+  },
+  required: ['conseil', 'ajouter', 'retirer', 'modifier'],
+};
+const PAR_JOUR_POSTES = 40;
+
+function invitePostes(c: { consigne: string; texte: string; anglais: boolean; modele: string; existants: Existant[] }) {
+  const liste = c.existants.map((e) => `- ${e.departement} : ${e.poste}`).join('\n') || '(aucun poste pour l’instant)';
+  return `Tu aides quelqu'un à composer l'équipe d'une entreprise d'agents, dans un logiciel où chaque poste devient un agent avec un mandat. ${c.anglais ? 'Écris TOUT en anglais (conseil, départements, postes, mandats).' : 'Écris en français.'} Aucun nom de marque, aucun nom de personne.
+
+Le modèle choisi : « ${c.modele || 'sans modèle'} ».
+Les postes déjà dans l'équipe (département : poste) :
+${liste}
+
+Ce que la personne demande :
+« ${c.consigne || 'Regarde le document ci-dessous et propose les postes qu’il décrit.'} »
+${c.texte ? `\nDocument fourni (liste de postes, organigramme, fiche de projet…) :\n"""\n${c.texte}\n"""\n` : ''}
+Réponds avec :
+"conseil" : deux à quatre phrases, concrètes, comme un directeur des ressources humaines qui a lu la demande — ce que tu proposes et pourquoi. Pas de formule creuse.
+"ajouter" : les postes à AJOUTER (0 à 40). Pour chacun : "departement" (réutilise un département existant quand il convient, sinon un nom court), "poste" (intitulé unique, absent de la liste ci-dessus), "mandat" (60 à 160 signes, concret : ce dont ce poste répond), "est_directeur" (true seulement si ce poste dirige un département qui n'a pas encore de directeur), "poids" (1 à 8 : combien de personnes ce poste représente en proportion ; 1 pour un poste unique, 8 pour un métier de masse).
+"retirer" : les intitulés EXACTS de postes de la liste ci-dessus qui ne servent pas ce projet (vide si tout sert). Ne retire un poste que si la demande le justifie clairement.
+"modifier" : des postes existants dont le mandat mérite d'être réécrit pour ce projet — "poste" exact et nouveau "mandat" (vide si rien à changer).
+Si la demande décrit un poste précis (« il me faut quelqu'un pour… »), réponds avec ce poste dans "ajouter". Si elle demande d'écrire ou de réécrire le mandat d'un poste existant, réponds dans "modifier".`;
+}
+
+async function composerPostes(req: Request, corps: CorpsPostes, apiKey: string, json: (b: unknown, s?: number) => Response) {
+  const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+  const auth = req.headers.get('Authorization');
+  if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
+  const personne = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
+  const { data: { user } } = await personne.auth.getUser();
+  if (!user) return json({ erreur: 'Il faut être connecté.' }, 401);
+
+  const consigne = String(corps.consigne || '').trim().slice(0, 800);
+  const texte = String(corps.texte || '').trim().slice(0, 15_000);
+  if (consigne.length < 3 && texte.length < 20) return json({ erreur: 'Dis à Léo ce que tu cherches, ou envoie un fichier.' }, 400);
+  const anglais = String(corps.langue || '').toLowerCase().startsWith('en');
+  const existants = (Array.isArray(corps.existants) ? corps.existants : []).slice(0, 400)
+    .map((e) => ({ departement: String(e?.departement || '').slice(0, 60), poste: String(e?.poste || '').slice(0, 80) }))
+    .filter((e) => e.poste);
+
+  // Quarante demandes par jour et par personne : de quoi composer une équipe,
+  // pas de quoi vider le budget. Compté dans legion_cache (nettoyé la nuit).
+  const jour = new Date().toISOString().slice(0, 10);
+  const cle = `fonder-postes:${user.id}:${jour}`;
+  const { data: compteur } = await service.from('legion_cache').select('valeur').eq('cle', cle).maybeSingle();
+  const n = Number((compteur?.valeur as { n?: number } | null)?.n || 0);
+  if (n >= PAR_JOUR_POSTES) return json({ erreur: anglais ? 'Forty requests a day: come back tomorrow.' : 'Quarante demandes par jour, pas plus : reviens demain.' }, 429);
+  await service.from('legion_cache').upsert({ cle, fonction: 'fonder-postes', valeur: { n: n + 1 }, expire_le: new Date(Date.now() + 2 * 86_400_000).toISOString() });
+
+  const r = await generer(apiKey, invitePostes({ consigne, texte, anglais, modele: String(corps.modele_nom || '').slice(0, 80), existants }), SCHEMA_POSTES,
+    { temperature: 0.4, maxSortie: 8192, reflexion: 1024, delaiMs: 90_000, modeles: moteursSimples() });
+  if ('erreur' in r) return json({ erreur: r.erreur });
+  const obj = r.obj as { conseil?: string; ajouter?: unknown; retirer?: unknown; modifier?: unknown };
+
+  const connus = new Map(existants.map((e) => [sansAccent(e.poste), e.poste]));
+  const vus = new Set<string>();
+  const ajouter = (Array.isArray(obj.ajouter) ? obj.ajouter : []).slice(0, 40)
+    .map((p) => { const x = (p || {}) as Record<string, unknown>; return {
+      departement: String(x.departement || '').trim().slice(0, 60), poste: String(x.poste || '').trim().slice(0, 80),
+      mandat: String(x.mandat || '').trim().slice(0, 300), est_directeur: !!x.est_directeur,
+      poids: Math.min(8, Math.max(1, Number(x.poids) || 1)) }; })
+    .filter((p) => { const k = sansAccent(p.poste); if (!p.poste || !p.departement || connus.has(k) || vus.has(k)) return false; vus.add(k); return true; });
+  const retirer = (Array.isArray(obj.retirer) ? obj.retirer : []).map((s) => connus.get(sansAccent(String(s || '')))).filter((s): s is string => !!s).slice(0, 100);
+  const modifier = (Array.isArray(obj.modifier) ? obj.modifier : [])
+    .map((m) => { const x = (m || {}) as Record<string, unknown>; return { poste: connus.get(sansAccent(String(x.poste || ''))) || '', mandat: String(x.mandat || '').trim().slice(0, 300) }; })
+    .filter((m) => m.poste && m.mandat.length >= 10).slice(0, 60);
+  console.log(`postes pour ${user.id.slice(0, 8)} (${r.modele}) : +${ajouter.length} −${retirer.length} ✎${modifier.length}`);
+  return json({ ok: true, conseil: String(obj.conseil || '').slice(0, 1200), ajouter, retirer, modifier, modele: r.modele });
+}
+
 Deno.serve(compter('legion_modele', async (req: Request) => {
   const h = cors(req.headers.get('Origin'));
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...h, 'Content-Type': 'application/json' } });
@@ -87,8 +180,9 @@ Deno.serve(compter('legion_modele', async (req: Request) => {
   if (!apiKey) return json({ erreur: 'Moteur non configuré.' });
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
 
-  let corps: { secteur?: string } = {};
+  let corps: CorpsPostes = {};
   try { corps = await req.json(); } catch { corps = {}; }
+  if (corps.mode === 'postes') return composerPostes(req, corps, apiKey, json);
   const secteur = String(corps.secteur || '').trim().slice(0, 160);
   if (secteur.length < 3) return json({ erreur: 'Décris le secteur en quelques mots.' }, 400);
 
