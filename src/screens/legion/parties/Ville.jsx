@@ -12,8 +12,7 @@ import { tours as calculerTours, joursRestants, QUOTIDIEN } from './ville';
 
 const LARG = 900, SOL = 330, H = 420;
 
-function Tour({ t, x, largeur, choisie, onChoisir, tr }) {
-  const pas = 7;
+function Tour({ t, x, largeur, choisie, onChoisir, tr, pas }) {
   const hFaite = 26 + Math.min(34, t.rendues) * pas;
   const hReste = Math.min(26, t.restantes) * pas;
   const haut = SOL - hFaite, cime = haut - hReste;
@@ -104,6 +103,9 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
   const largeur = Math.max(52, Math.min(120, (LARG - 120) / n - 30));
   const pasX = n > 1 ? (LARG - 120 - largeur) / (n - 1) : 0;
   const xDe = (i) => (n === 1 ? (LARG - largeur) / 2 : 60 + i * pasX);
+  // La plus haute tour tient sous la lune : l'échelle s'adapte.
+  const plusHaute = Math.max(1, ...liste.map((x) => Math.min(34, x.rendues) + Math.min(26, x.restantes)));
+  const pas = Math.min(7, (SOL - 120) / plusHaute);
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const dansUnMois = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
 
@@ -188,7 +190,7 @@ export function Ville({ entreprise, agents, departements, messages, taches, onFi
           <rect x="0" y={SOL} width={LARG} height={H - SOL} fill="#0A0F1E" />
           <rect x="40" y={SOL} width={LARG - 80} height="4" fill="#E3A857" opacity=".45" />
           {liste.map((x, i) => (
-            <Tour key={x.id} t={x} x={xDe(i)} largeur={largeur} choisie={choix === x.id} onChoisir={() => setChoix(x.id)} tr={t} />
+            <Tour key={x.id} t={x} x={xDe(i)} largeur={largeur} choisie={choix === x.id} onChoisir={() => setChoix(x.id)} tr={t} pas={pas} />
           ))}
           {charge && !liste.length && <text x={LARG / 2} y={SOL - 80} textAnchor="middle" fontSize="15" fill="#93A1B8">{t('legion.ville.vide')}</text>}
         </svg>
