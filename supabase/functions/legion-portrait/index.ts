@@ -205,7 +205,7 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
   // Le serveur lui-même (24/09): un agent qui vient d'être engagé se fait
   // sa photo, et un agent qui en a envie en change depuis la conversation.
   // Alléger les portraits relève de l'entretien : le jeton interne (celui de legion-travail) suffit.
-  if (corps.action === 'alleger') {
+  if (corps.action === 'alleger' || corps.action === 'banque') {
     const jeton = req.headers.get('x-finjaro-token');
     if (jeton) {
       const service1 = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
@@ -215,7 +215,8 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
     }
   }
   const parServeur = auth === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
-  if (parServeur && !corps.agent_id && corps.action !== 'alleger') return json({ erreur: 'Agent manquant.' }, 400);
+  if (parServeur && !corps.agent_id && corps.action !== 'alleger' && corps.action !== 'banque') return json({ erreur: 'Agent manquant.' }, 400);
+  if (corps.action === 'banque' && !parServeur) return json({ erreur: 'non autorisé' }, 401);
   const personne = createClient(Deno.env.get('SUPABASE_URL')!, parServeur ? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')! : Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
   const { data: entreprise } = await personne
@@ -244,6 +245,20 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
       if (!e2) faits += 1;
     }
     return json({ faits, restants: Math.max(0, (lourds || []).length - faits) });
+  }
+
+  // La banque de visages de la page Fonder (Beau, 26/09 : « ce doit être de vraies photos ») :
+  // un portrait de personne fictive, rendu en JPEG 320 px, rien n'est stocké ni compté à une entreprise.
+  if (corps.action === 'banque') {
+    const img = await fabriquerImage(apiKey, consignePhoto(envie || 'a professional adult in business attire, neutral office background'));
+    if ('erreur' in img) return json({ erreur: img.erreur }, 502);
+    try {
+      const d = await Dessin.decode(img.octets);
+      d.cover(320, 320);
+      const jpeg = await d.encodeJPEG(84);
+      let bin = ''; for (let i = 0; i < jpeg.length; i += 0x8000) bin += String.fromCharCode(...jpeg.subarray(i, i + 0x8000));
+      return json({ jpeg_base64: btoa(bin) });
+    } catch (e) { return json({ erreur: (e as Error).message }, 500); }
   }
 
   // Alléger les grands portraits PNG déjà stockés (26/09) : JPEG 768 px, l'adresse
