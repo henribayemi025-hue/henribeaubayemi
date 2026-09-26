@@ -7,16 +7,29 @@
 // jamais une consigne (c'est dit à l'agent avec le résultat).
 
 const INTERDITS = [/^localhost$/i, /\.local$/i, /\.internal$/i, /(^|\.)supabase\.(co|in)$/i, /(^|\.)finjaro\.workers\.dev$/i, /^metadata\./i];
+// La préproduction publique de Finjaro reste lisible (les consignes la citent) ; nos autres Workers non.
+const PERMIS = [/^staging-finjaro\.finjaro\.workers\.dev$/i];
+
+// Les modèles écrivent parfois l'adresse entre <…>, en lien Markdown, ou sans « https:// » (Vigie, 26/09 :
+// « toutes mes lectures ont été refusées »). On en retire l'adresse avant de juger.
+function nettoyer(brut: string): string {
+  let t = String(brut || '').trim();
+  const m = t.match(/\((https?:\/\/[^)\s]+)\)/) || t.match(/<(https?:\/\/[^>\s]+)>/) || t.match(/https?:\/\/[^\s"'<>)\]]+/);
+  if (m) t = m[1] || m[0];
+  t = t.replace(/[.,;:!?»”'"]+$/, '');
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(t) && /^[\w-]+(\.[\w-]+)+(\/|$)/.test(t)) t = `https://${t}`;
+  return t;
+}
 
 export function adressePermise(brut: string): URL | null {
   let u: URL;
-  try { u = new URL(String(brut || '').trim()); } catch { return null; }
+  try { u = new URL(nettoyer(brut)); } catch { return null; }
   if (u.protocol !== 'https:') return null;
   if (u.username || u.password) return null;
   if (u.port && u.port !== '443') return null;
   const h = u.hostname;
   if (/^[\d.]+$/.test(h) || h.includes(':') || !h.includes('.')) return null; // IP brute ou nom local
-  if (INTERDITS.some((r) => r.test(h))) return null;
+  if (INTERDITS.some((r) => r.test(h)) && !PERMIS.some((r) => r.test(h))) return null;
   return u;
 }
 

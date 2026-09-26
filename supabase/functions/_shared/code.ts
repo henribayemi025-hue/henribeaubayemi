@@ -44,6 +44,19 @@ export async function codeFichiers(d: Depot, args: Record<string, unknown>) {
 export async function codeLire(d: Depot, args: Record<string, unknown>) {
   const chemin = cheminPropre(args.chemin);
   if (!chemin) return { erreur: 'donne le chemin du fichier' };
+  // Dépôt public sans jeton : on lit le fichier brut (raw.githubusercontent.com), qui ne compte pas
+  // dans la limite de 60 lectures par heure de l'API — partagée par tous les serveurs des fonctions.
+  if (!d.jeton && d.branche) {
+    const r = await fetch(`https://raw.githubusercontent.com/${d.depot}/${encodeURIComponent(d.branche)}/${chemin.split('/').map(encodeURIComponent).join('/')}`, { signal: AbortSignal.timeout(12_000) });
+    if (r.ok) {
+      const texte = await r.text();
+      const debut = Math.max(0, Number(args.a_partir_de) || 0);
+      const morceau = texte.slice(debut, debut + 20_000);
+      return { chemin, taille: texte.length, a_partir_de: debut, suite: debut + morceau.length < texte.length ? debut + morceau.length : null, contenu: morceau };
+    }
+    if (r.status !== 404) throw new Error(`GitHub ${r.status}`);
+    return { erreur: 'fichier introuvable : retrouve le bon chemin avec code_chercher' };
+  }
   const f = await gh(d, `contents/${chemin}${ref(d)}`);
   if (Array.isArray(f)) return { erreur: 'ce chemin est un dossier : liste-le avec code_fichiers' };
   if (f.encoding !== 'base64' || typeof f.content !== 'string') return { erreur: 'fichier trop gros ou illisible ici' };

@@ -149,7 +149,7 @@ export async function enqueter(apiKey: string, service: ReturnType<typeof create
   // `servicesPour` : l'entreprise dont on lit les services branchés (0208).
   const services: Services = servicesPour ? await servicesDe(service, servicesPour).catch(() => ({})) : {};
   const outilsServices = (Object.keys(services) as (keyof Services)[]).map((k) => OUTILS_SERVICES[k]);
-  const maxAppels = depot ? 8 : 6;
+  const maxAppels = depot ? 10 : 6;
   const declarations = [
     ...OUTILS_WEB,
     ...(depot ? OUTILS_CODE : []),
@@ -172,7 +172,7 @@ Le dernier message, auquel il faut répondre: « ${question} »
 Si y répondre demande un chiffre, une vérification dans la base${compta ? ' ou dans la comptabilité' : ''}${depot ? ', dans le code' : ''} ou la lecture d'une page web (une documentation officielle, une page publique — voir_ecran pour vérifier ce qu'un écran d'application MONTRE vraiment), appelle les outils nécessaires (${maxAppels} appels au plus).
 - Une tâche qui cherche DEHORS (prospects, boutiques, concurrents, concours, financements, événements) : lance toi-même 2 ou 3 recherches ciblées avec chercher_web, puis ouvre avec lire_page les pages qui comptent (la vraie page de la boutique ou de l'organisateur, pas un annuaire).
 - Une tâche qui vérifie un ÉCRAN, une page ou un site (finjaro.net, sa préproduction https://staging-finjaro.finjaro.workers.dev, un concurrent) : ouvre-le avec voir_ecran, au téléphone et, si utile, à l'ordinateur.
-- Un agent qui livre sans avoir vérifié se dit « bloqué » : vérifie plutôt que de renoncer.
+${depot ? `- Une tâche sur le CODE, un écran ou une fonction de l'application : code_chercher avec un mot du nom (« Monde3D », « moteur », « Articles », « prix »), PUIS code_lire sur le ou les fichiers trouvés. Ne t'arrête pas à la liste des noms : lis le fichier.\n` : ''}- Un agent qui livre sans avoir vérifié se dit « bloqué » : vérifie plutôt que de renoncer.
 S'il n'y a vraiment rien à vérifier, n'appelle rien et réponds seulement « rien ».` }] }];
   const resultats: string[] = [];
   // Un outil, sa source (la place de marché, SA boutique, SA comptabilité,

@@ -32,6 +32,19 @@ import { Image as Dessin } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 // (la photo « en grand ») et on sert partout une miniature JPEG 256 × 256
 // d'une vingtaine de Ko (idée 134 des 200). La transformation d'images de
 // Supabase n'est pas active sur ce projet (403) : on la fait ici.
+// Le portrait « en grand » : 768 px de large au plus, JPEG 85 — environ 100 Ko
+// au lieu d'un PNG de 1,5 Mo (Beau, 26/09 : le stockage gratuit se remplit).
+async function portraitLeger(octets: Uint8Array): Promise<Uint8Array | null> {
+  try {
+    const img = await Dessin.decode(octets);
+    if (img.width > 768) img.resize(768, Dessin.RESIZE_AUTO);
+    return await img.encodeJPEG(85);
+  } catch (e) {
+    console.error('portraitLeger:', (e as Error).message);
+    return null;
+  }
+}
+
 async function miniature(octets: Uint8Array): Promise<Uint8Array | null> {
   try {
     const img = await Dessin.decode(octets);
@@ -181,7 +194,7 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
 
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) return json({ erreur: 'Moteur non configuré.' }, 503);
-  const auth = req.headers.get('Authorization');
+  let auth = req.headers.get('Authorization');
   if (!auth) return json({ erreur: 'Il faut être connecté.' }, 401);
 
   let corps: { entreprise_id?: string; agent_id?: string; limite?: number; refaire?: boolean; action?: string; envie?: string; directeurs?: boolean };
@@ -191,8 +204,18 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
 
   // Le serveur lui-même (24/09): un agent qui vient d'être engagé se fait
   // sa photo, et un agent qui en a envie en change depuis la conversation.
+  // Alléger les portraits relève de l'entretien : le jeton interne (celui de legion-travail) suffit.
+  if (corps.action === 'alleger') {
+    const jeton = req.headers.get('x-finjaro-token');
+    if (jeton) {
+      const service1 = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+      const { data: sec } = await service1.from('app_secrets').select('value').eq('name', 'legion_travail').maybeSingle();
+      if (!sec?.value || sec.value !== jeton) return json({ erreur: 'non autorisé' }, 401);
+      auth = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+    }
+  }
   const parServeur = auth === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
-  if (parServeur && !corps.agent_id) return json({ erreur: 'Agent manquant.' }, 400);
+  if (parServeur && !corps.agent_id && corps.action !== 'alleger') return json({ erreur: 'Agent manquant.' }, 400);
   const personne = createClient(Deno.env.get('SUPABASE_URL')!, parServeur ? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')! : Deno.env.get('SUPABASE_ANON_KEY')!,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } });
   const { data: entreprise } = await personne
@@ -221,6 +244,34 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
       if (!e2) faits += 1;
     }
     return json({ faits, restants: Math.max(0, (lourds || []).length - faits) });
+  }
+
+  // Alléger les grands portraits PNG déjà stockés (26/09) : JPEG 768 px, l'adresse
+  // de la fiche est mise à jour, puis l'ancien PNG est retiré. Aucun modèle appelé.
+  if (corps.action === 'alleger') {
+    const service0 = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+    const { data: agents } = await service0.from('legion_agents').select('id, avatar_url, apparence').eq('entreprise_id', entreprise.id).like('apparence->>url', '%/legion/%.png').limit(60);
+    const prefixe = '/storage/v1/object/public/legion/';
+    let faits = 0; let gagne = 0; const rates: string[] = [];
+    for (const a of (agents || []).slice(0, 10) as Array<{ id: string; avatar_url: string | null; apparence: Record<string, unknown> }>) {
+      const source = String(a.apparence?.url || '');
+      const ancien = source.includes(prefixe) ? decodeURIComponent(source.split(prefixe)[1].split('?')[0]) : '';
+      if (!ancien.startsWith(`${entreprise.id}/`)) { rates.push(a.id); continue; }
+      const r = await fetch(source);
+      if (!r.ok) { rates.push(a.id); continue; }
+      const brut = new Uint8Array(await r.arrayBuffer());
+      const leger = await portraitLeger(brut);
+      if (!leger || leger.length >= brut.length) { rates.push(a.id); continue; }
+      const chemin = ancien.replace(/\.png$/, '-768.jpg');
+      const { error: e1 } = await service0.storage.from('legion').upload(chemin, leger, { contentType: 'image/jpeg', upsert: true });
+      if (e1) { rates.push(a.id); continue; }
+      const url = service0.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+      const { error: e2 } = await service0.from('legion_agents').update({ apparence: { ...a.apparence, url }, ...(a.avatar_url === source ? { avatar_url: url } : {}) }).eq('id', a.id);
+      if (e2) { rates.push(a.id); continue; }
+      await service0.storage.from('legion').remove([ancien]);
+      faits += 1; gagne += brut.length - leger.length;
+    }
+    return json({ faits, gagne_ko: Math.round(gagne / 1024), rates: rates.length, restants: Math.max(0, (agents || []).length - faits - rates.length) });
   }
 
   // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
@@ -268,10 +319,12 @@ Deno.serve(compter('legion_portrait', async (req: Request) => {
       const img = await fabriquerImage(apiKey, consignePhoto(description));
       if ('erreur' in img) { rates.push(a.nom); pourquoi = pourquoi || img.erreur; return; }
 
-      const ext = img.type.includes('jpeg') ? 'jpg' : 'png';
+      // Stocké léger (JPEG 768 px) ; si l'image ne se décode pas, l'original tel quel.
+      const leger = await portraitLeger(img.octets);
+      const ext = leger || img.type.includes('jpeg') ? 'jpg' : 'png';
       const chemin = `${entreprise.id}/portraits/${a.id}-${Date.now()}.${ext}`;
       const { error: errDepot } = await service.storage.from('legion')
-        .upload(chemin, img.octets, { contentType: img.type, upsert: true });
+        .upload(chemin, leger || img.octets, { contentType: leger ? 'image/jpeg' : img.type, upsert: true });
       if (errDepot) { rates.push(a.nom); pourquoi = pourquoi || errDepot.message; return; }
 
       const url = service.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
