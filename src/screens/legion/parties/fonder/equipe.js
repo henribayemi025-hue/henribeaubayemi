@@ -22,9 +22,27 @@ export const tailleDe = (n) => (n <= 5 ? 'cocon' : n <= 40 ? 'startup' : n <= 30
 export const clePoste = (poste) => sansAccent(String(poste || '')).replace(/\s+/g, ' ').trim();
 export const slugPoste = (s) => sansAccent(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 36);
 
-// Le visage qu'aura l'agent de ce poste avant de choisir sa vraie photo :
-// le même dessin (DiceBear, gratuit) que la base lui donnera à la fondation.
-export const visageDe = (modele, poste) => `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(`${modele}-${slugPoste(poste)}`)}`;
+// Le visage d'un poste avant que l'agent ait sa propre photo (Beau, 26/09 : « ce doit
+// être de vraies photos ») : une banque de 20 portraits photo de personnes fictives
+// (public/leo/visages, générés une fois), toujours le même pour le même poste.
+export const NB_VISAGES = 20;
+export const indexVisage = (graine) => {
+  let h = 0x811c9dc5;
+  for (const c of String(graine || '')) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193);
+  return (h >>> 0) % NB_VISAGES;
+};
+export const urlVisage = (i) => `/leo/visages/${String((((i % NB_VISAGES) + NB_VISAGES) % NB_VISAGES) + 1).padStart(2, '0')}.jpg`;
+export const visageDe = (modele, poste) => urlVisage(indexVisage(`${modele}-${slugPoste(poste)}`));
+// Plusieurs visages côte à côte (la carte d'un modèle) : jamais deux fois le même.
+export const visagesDistincts = (modele, postes) => {
+  const pris = new Set();
+  return postes.map((poste) => {
+    let i = indexVisage(`${modele}-${slugPoste(poste)}`);
+    while (pris.has(i) && pris.size < NB_VISAGES) i = (i + 1) % NB_VISAGES;
+    pris.add(i);
+    return urlVisage(i);
+  });
+};
 
 export const choixVide = () => ({ retires: {}, ajoutes: [], mandats: {} });
 

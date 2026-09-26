@@ -1472,7 +1472,12 @@
         "soir_other": "C'est le soir : {{count}} agents libres sont sortis (plage, terrasse). Retrouve-les dans « Chez les agents ».",
         "weekend_one": "C'est le week-end : {{count}} agent libre est dehors. Retrouve-le dans « Chez les agents ».",
         "weekend_other": "C'est le week-end : {{count}} agents libres sont dehors. Retrouve-les dans « Chez les agents »."
-      }
+      },
+      "quitter": "Quitter la 3D",
+      "pleinEcran": "Plein écran",
+      "sonAllumer": "Allumer le son",
+      "sonCouper": "Couper le son",
+      "allerA": "Aller à"
     },
     "agentModifie": "Enregistré",
     "agentCree": "{{nom}} rejoint l’équipe",

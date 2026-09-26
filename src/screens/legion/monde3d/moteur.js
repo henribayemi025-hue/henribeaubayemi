@@ -1551,7 +1551,8 @@ export class Monde {
       d = Math.atan2(Math.sin(d), Math.cos(d));
       j.objet.rotation.y += d * Math.min(1, dt * 10);
       j.jouer(court ? 'course' : 'marche', { fondu: 0.2 });
-    } else j.jouer('repos', { fondu: 0.25 });
+      this.son?.allure(court ? 2 : 1);
+    } else { j.jouer('repos', { fondu: 0.25 }); this.son?.allure(0); }
     j.mixer.update(dt);
     this.villeVivante?.avancer(dt);
     this.lieu?.avancer?.(dt);

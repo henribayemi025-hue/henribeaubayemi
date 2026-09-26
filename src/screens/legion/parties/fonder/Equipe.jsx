@@ -4,7 +4,7 @@ import { supabase } from '../../../../lib/supabase';
 import { Modal } from '../../../../components/Modal';
 import { Field, TextInput, TextArea } from '../../../../components/Field';
 import { sansAccent } from '../outils';
-import { clePoste, visageDe, parDepartement, lireFichierPostes, TAILLES } from './equipe';
+import { clePoste, visageDe, visagesDistincts, parDepartement, lireFichierPostes, TAILLES } from './equipe';
 
 // La page Fonder, côté équipe (Beau, 25/09 — audit de Léo) :
 //   « des photos d'agents qui défilent, pas un emoji » → BandePostes, VisagesModele ;
@@ -16,17 +16,18 @@ import { clePoste, visageDe, parDepartement, lireFichierPostes, TAILLES } from '
 
 const ORIGINES = { main: 'legion.fonderEquipe.origineMain', leo: 'legion.fonderEquipe.origineLeo', fichier: 'legion.fonderEquipe.origineFichier', catalogue: 'legion.fonderEquipe.origineCatalogue' };
 
-function Visage({ modele, poste, taille = 40, className = '' }) {
-  return <img src={visageDe(modele, poste)} alt="" loading="lazy" width={taille} height={taille} className={`shrink-0 rounded-full border-2 border-legion-card bg-legion-card object-cover ${className}`} style={{ width: taille, height: taille }} />;
+function Visage({ modele, poste, src, taille = 40, className = '' }) {
+  return <img src={src || visageDe(modele, poste)} alt="" loading="lazy" decoding="async" width={taille} height={taille} className={`shrink-0 rounded-full border-2 border-legion-card bg-legion-card object-cover ${className}`} style={{ width: taille, height: taille }} />;
 }
 
 // Cinq visages qui se chevauchent + le compte : la carte d'un modèle, avant
 // même de le choisir, montre des gens, pas un pictogramme.
 export function VisagesModele({ modele, postes, n = 5, taille = 30 }) {
   const tetes = useMemo(() => [...postes].sort((a, b) => Number(!!b.est_directeur) - Number(!!a.est_directeur)).slice(0, n), [postes, n]);
+  const photos = useMemo(() => visagesDistincts(modele, tetes.map((p) => p.poste_fr || p.poste)), [modele, tetes]);
   return (
     <span className="flex shrink-0 items-center">
-      {tetes.map((p, i) => <Visage key={p.poste} modele={modele} poste={p.poste_fr || p.poste} taille={taille} className={i > 0 ? '-ml-2.5' : ''} />)}
+      {tetes.map((p, i) => <Visage key={p.poste} src={photos[i]} taille={taille} className={i > 0 ? '-ml-2.5' : ''} />)}
       {postes.length > n && <span className="-ml-1.5 flex h-[30px] min-w-[30px] items-center justify-center rounded-full border-2 border-legion-card bg-legion-card-haut px-1 text-[10px] font-bold text-legion-ink">+{postes.length - n}</span>}
     </span>
   );

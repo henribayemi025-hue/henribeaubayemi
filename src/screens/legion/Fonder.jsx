@@ -307,7 +307,8 @@ export default function Fonder() {
     <div className="legion-app h-dvh overflow-y-auto bg-legion-bg pb-24 text-legion-ink">
       {/* L'en-tête sombre de Legion, pas celui, crème, de la place de marché. */}
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-legion-line bg-legion-panel/95 px-4 backdrop-blur">
-        <Link to="/legion" aria-label={t('common.back')} className="rounded-full p-1 text-legion-muted hover:text-legion-ink"><IconArrowLeft size={20} /></Link>
+        {/* Beau, 25/09 : « il n'y a pas le bouton pour revenir en arrière » — la flèche seule, grise, ne se voyait pas. */}
+        <Link to="/legion" className="-ml-1 flex shrink-0 items-center gap-1 rounded-pill border border-legion-line px-2.5 py-1.5 text-[13px] font-semibold text-legion-ink hover:bg-legion-card"><IconArrowLeft size={18} />{t('common.back')}</Link>
         <img src="/logos/leo.png" alt="Léo" className="h-8 w-8 rounded-input object-cover" />
         <h1 className="min-w-0 flex-1 truncate text-body font-semibold">{t('legion.fonder')}</h1>
         <BoutonPalette t={t} />

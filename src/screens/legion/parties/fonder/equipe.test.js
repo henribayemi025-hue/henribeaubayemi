@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { composer, horsEquipe, repartition, pourLaBase, parDepartement, lireFichierPostes, choixVide, estModifiee, clePoste, visageDe } from './equipe';
+import { composer, horsEquipe, repartition, pourLaBase, parDepartement, lireFichierPostes, choixVide, estModifiee, clePoste, visageDe, visagesDistincts, urlVisage } from './equipe';
 
 const MODELE = [
   { departement: 'Direction', poste: 'Directrice générale', mandat: 'Tranche.', des_la_taille: 'cocon', est_directeur: true, poids: 1, ordre: 1 },
@@ -96,6 +96,11 @@ describe('lireFichierPostes', () => {
 describe('visageDe', () => {
   it('est stable pour le même poste du même modèle', () => {
     expect(visageDe('conseil', 'Directeur financier')).toBe(visageDe('conseil', 'directeur financier'));
-    expect(visageDe('conseil', 'Directeur financier')).toContain('seed=conseil-directeur-financier');
+    expect(visageDe('conseil', 'Directeur financier')).toMatch(/^\/leo\/visages\/(0[1-9]|1\d|20)\.jpg$/);
+  });
+  it('une carte ne montre jamais deux fois le même visage', () => {
+    const v = visagesDistincts('conseil', ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+    expect(new Set(v).size).toBe(8);
+    expect(urlVisage(0)).toBe('/leo/visages/01.jpg'); expect(urlVisage(19)).toBe('/leo/visages/20.jpg'); expect(urlVisage(20)).toBe('/leo/visages/01.jpg');
   });
 });

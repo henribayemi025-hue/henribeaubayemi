@@ -1472,7 +1472,12 @@
         "soir_other": "It's the evening: {{count}} free agents are out (beach, terrace). Find them in “Where agents live”.",
         "weekend_one": "It's the weekend: {{count}} free agent is out. Find them in “Where agents live”.",
         "weekend_other": "It's the weekend: {{count}} free agents are out. Find them in “Where agents live”."
-      }
+      },
+      "quitter": "Leave 3D",
+      "pleinEcran": "Full screen",
+      "sonAllumer": "Turn sound on",
+      "sonCouper": "Mute",
+      "allerA": "Go to"
     },
     "agentModifie": "Saved",
     "agentCree": "{{nom}} joins the team",

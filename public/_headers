@@ -20,3 +20,6 @@
 
 /manifest.webmanifest
   Cache-Control: no-cache, must-revalidate
+
+/leo/visages/*
+  Cache-Control: public, max-age=2592000
