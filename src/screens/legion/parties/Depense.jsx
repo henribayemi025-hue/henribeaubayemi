@@ -22,7 +22,7 @@ const NOMS = {
 
 export function Depense({ entreprise, t }) {
   const [formule, setFormule] = useState(entreprise.formule || null);
-  const [modele, setModele] = useState(entreprise.modele || '');
+  const [modele, setModele] = useState(entreprise.modele_ia || '');
   const [d, setD] = useState(null);
   const [plafond, setPlafond] = useState('');
   const [enregistre, setEnregistre] = useState(false);
@@ -53,10 +53,11 @@ export function Depense({ entreprise, t }) {
 
   // L'IA de toute l'équipe (0192-0193, Beau 24/09) : Auto en arrivant ; ou
   // un modèle précis, comme on choisit Opus ou Fable dans Claude.
+  // `modele_ia` (0210) : jamais `modele`, le secteur choisi à la fondation.
   async function choisirModele(v) {
     const avant = modele;
     setModele(v);
-    const { error } = await supabase.from('legion_entreprises').update({ modele: v || null, moteur: 'auto' }).eq('id', entreprise.id);
+    const { error } = await supabase.from('legion_entreprises').update({ modele_ia: v || null, moteur: 'auto' }).eq('id', entreprise.id);
     if (error) setModele(avant);
   }
 

@@ -631,11 +631,14 @@ export default function Entreprise() {
   }
 
   // L'IA de toute l'équipe (0193), choisie depuis la zone de saisie.
+  // `modele_ia` (0210) : jamais `modele` tout court, qui est le secteur
+  // choisi à la fondation (studio_modeles) — l'écrire ici violait sa clé
+  // étrangère et l'écran affichait l'erreur Postgres brute.
   async function changerModele(v) {
-    const avant = data?.entreprise?.modele || null;
-    setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele: v || null } }));
-    const { error: err } = await supabase.from('legion_entreprises').update({ modele: v || null, moteur: 'auto' }).eq('id', entrepriseId);
-    if (err) { toast.error(err.message); setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele: avant } })); }
+    const avant = data?.entreprise?.modele_ia || null;
+    setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele_ia: v || null } }));
+    const { error: err } = await supabase.from('legion_entreprises').update({ modele_ia: v || null, moteur: 'auto' }).eq('id', entrepriseId);
+    if (err) { toast.error(err.message); setData((d) => d && ({ ...d, entreprise: { ...d.entreprise, modele_ia: avant } })); }
   }
   async function droits(a, peutModifier) {
     const { error: err } = await supabase.from('legion_agents').update({ peut_coder: peutModifier }).eq('id', a.id);
@@ -922,7 +925,7 @@ export default function Entreprise() {
               reunion={reunion} onReunion={ouvrirReunion} onConclureReunion={conclureReunion} onAppeler={appeler}
               onRapport={salonRapport && salon.id === salonRapport.id ? faireRapport : null} onCreerTache={creerTache}
               entrepriseId={entrepriseId} lecteur={data.role === 'lecteur'} t={t}
-              modele={data.entreprise.modele || ''} onModele={data.role === 'lecteur' ? null : changerModele}
+              modele={data.entreprise.modele_ia || ''} onModele={data.role === 'lecteur' ? null : changerModele}
             />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-caption text-legion-muted"><Veilleur taille={84} />{t('legion.choisisUnSalon', 'Choisis un salon.')}</div>

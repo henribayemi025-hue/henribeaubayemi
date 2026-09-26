@@ -70,7 +70,10 @@ export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: b
   const db = service();
   const debut = new Date(); debut.setUTCDate(1); debut.setUTCHours(0, 0, 0, 0);
   const [{ data: e }, { data: lignes }] = await Promise.all([
-    db.from('legion_entreprises').select('plafond_mois_eur, moteur, modele').eq('id', entrepriseId).maybeSingle(),
+    // modele_ia (0210): le modèle IA précis, dans SA colonne — `modele` tout
+    // court est le secteur de fondation (0136, studio_modeles), une autre
+    // chose, sur laquelle on ne doit jamais écrire ici.
+    db.from('legion_entreprises').select('plafond_mois_eur, moteur, modele_ia').eq('id', entrepriseId).maybeSingle(),
     db.from('ai_usage').select('cost_eur').eq('entreprise_id', entrepriseId).gte('created_at', debut.toISOString()),
   ]);
   const depense = (lignes || []).reduce((t: number, l: { cost_eur: number }) => t + Number(l.cost_eur), 0);
@@ -78,7 +81,7 @@ export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: b
   // L'IA choisie par l'entreprise (0192), lue en même temps que le plafond:
   // toutes les fonctions le lisent avant de faire parler un agent.
   const s = suivi.getStore();
-  if (s) { s.moteur = e?.moteur || 'auto'; s.modele = e?.modele || null; }
+  if (s) { s.moteur = e?.moteur || 'auto'; s.modele = e?.modele_ia || null; }
   if (plafond != null && plafond > 0 && depense >= plafond * 0.8) await signalerSeuil(entrepriseId, depense, plafond);
   return { atteint: plafond != null && depense >= plafond, depense, plafond };
 }
