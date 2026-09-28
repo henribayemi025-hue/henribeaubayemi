@@ -3508,6 +3508,11 @@
       "answered": "Answered",
       "notAnswered": "No reply",
       "messageCount": "{{n}} message(s)",
+      "waitingBuyer": "Orders waiting on the buyer",
+      "waitingBuyerEmpty": "Nobody is keeping a vendor waiting.",
+      "buyerNoAccount": "⚠️ Order placed without an account: NO notification ever reached them. The phone is the only way to reach them.",
+      "buyerNoPush": "They have an account but no notifications: they will only see the price by coming back on their own.",
+      "waBuyer": "Hello, this is Finjaro. {{boutique}} has answered your order {{no}}: the price is waiting for you on finjaro.net. Let us know if it works for you.",
       "buyerWhatsapp": "Buyer on WhatsApp"
     },
     "stuckOrdersBanner": "{{count}} order(s) waiting on the seller for over 24 h",

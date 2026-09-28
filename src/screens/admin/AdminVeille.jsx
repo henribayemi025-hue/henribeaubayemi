@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconMessage2, IconGauge, IconDatabase, IconBrandWhatsapp, IconPhone,
-  IconBellRinging, IconCircleCheck, IconRefresh, IconUserHeart,
+  IconBellRinging, IconCircleCheck, IconRefresh, IconUserHeart, IconClock,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -132,6 +132,7 @@ export default function AdminVeille() {
   if (error) return <ErrorState onRetry={retry} />;
 
   const commandes = data?.commandes_bloquees || [];
+  const attendAcheteur = data?.commandes_attente_acheteur || [];
   const clientes = data?.clientes_reelles || [];
   const convs = data?.conversations_sans_reponse || [];
   const vitesse = data?.vitesse || {};
@@ -256,6 +257,55 @@ export default function AdminVeille() {
                     message={t('admin.veille.waOrder', { no: c.order_no, depuis: attente(t, c.heures) })}
                     waLabel={t('admin.veille.vendorWhatsapp')}
                     waFort={c.push_actif === false}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      {/* La balle est dans le camp de l'ACHETEUR. Cet écran ne montrait que
+          les commandes qui attendent la vendeuse: une fois le prix proposé,
+          la commande disparaissait. Le 28/09, FJ-4Y8MK2 attendait depuis 19 h
+          sans que personne ne la voie.
+
+          Et le pire n'est pas qu'il ne réponde pas: une commande passée SANS
+          COMPTE n'a pas de `buyer_id`, donc le déclencheur qui annonce le prix
+          n'écrit à personne. L'acheteur attend une réponse qui n'est jamais
+          partie. On le dit en toutes lettres, et le téléphone devient l'action
+          principale — c'est le seul canal qui existe. */}
+      <Section icon={IconClock} title={t('admin.veille.waitingBuyer')} count={attendAcheteur.length} tone={attendAcheteur.length ? 'brass' : 'ink'}>
+        {attendAcheteur.length === 0 ? (
+          <p className="text-caption text-muted">{t('admin.veille.waitingBuyerEmpty')}</p>
+        ) : (
+          <ul className="space-y-2">
+            {attendAcheteur.map((c) => (
+              <li key={c.id} className="rounded-card border border-brass/30 bg-white p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-body font-semibold text-ink">#{c.order_no} · <Price fcfa={c.total_fcfa} /></p>
+                    <p className="text-caption text-muted">{c.boutique}</p>
+                  </div>
+                  <span className="shrink-0 rounded-pill bg-brass/10 px-2 py-0.5 text-[11px] font-semibold text-brass">{attente(t, c.heures)}</span>
+                </div>
+                <p className="mt-1.5 text-caption text-ink">
+                  {t('admin.veille.buyer')} : <span className="font-semibold">{c.acheteur}</span>
+                  {c.acheteur_tel ? ` · ${c.acheteur_tel}` : ''}{c.acheteur_email ? ` · ${c.acheteur_email}` : ''}
+                </p>
+                {c.sans_compte ? (
+                  <p className="mt-1.5 text-[11px] font-semibold text-danger">{t('admin.veille.buyerNoAccount')}</p>
+                ) : c.prevenu === false ? (
+                  <p className="mt-1.5 text-[11px] text-brass">{t('admin.veille.buyerNoPush')}</p>
+                ) : null}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Contacts
+                    t={t}
+                    tel={c.acheteur_tel}
+                    pays={c.boutique_pays}
+                    message={t('admin.veille.waBuyer', { no: c.order_no, boutique: c.boutique })}
+                    waLabel={t('admin.veille.buyerWhatsapp')}
+                    waFort={c.sans_compte || c.prevenu === false}
                   />
                 </div>
               </li>

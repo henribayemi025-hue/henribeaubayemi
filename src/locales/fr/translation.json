@@ -3508,6 +3508,11 @@
       "answered": "Répondu",
       "notAnswered": "Sans réponse",
       "messageCount": "{{n}} message(s)",
+      "waitingBuyer": "Commandes qui attendent l'acheteur",
+      "waitingBuyerEmpty": "Personne ne fait attendre une vendeuse.",
+      "buyerNoAccount": "⚠️ Commande sans compte : AUCUNE notification ne lui est parvenue. Le téléphone est le seul moyen de le joindre.",
+      "buyerNoPush": "Il a un compte mais pas les notifications : il ne verra le prix qu'en revenant de lui-même.",
+      "waBuyer": "Bonjour, c'est Finjaro. La boutique {{boutique}} a répondu à votre commande {{no}} : le prix vous attend sur finjaro.net. Dites-nous si elle vous convient.",
       "buyerWhatsapp": "WhatsApp cliente"
     },
     "stuckOrdersBanner": "{{count}} commande(s) attendent la vendeuse depuis plus de 24 h",

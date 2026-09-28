@@ -166,13 +166,32 @@ Le déclencheur qui prévient l'acheteur d'un prix proposé, d'une confirmation 
 d'un refus écrit à `buyer_id`. **Une commande passée sans compte n'a pas de
 `buyer_id`** : la notification ne part vers personne, en silence.
 
-Mesuré sur 60 jours : 12 commandes, 3 sans compte, **2 d'entre elles refusées**.
-Deux personnes refusées sans jamais l'apprendre. Et le cas vivant : la commande
-**FJ-4Y8MK2**, 15 000 FCFA proposés par Patysha le 27/09 à 21 h 25 — l'acheteur
-n'a **reçu aucune notification** et n'a toujours pas répondu.
+Mesuré sur 60 jours : 12 commandes, 3 sans compte — mais **l'une des trois est
+un essai** (« Test Claude », sur une boutique de test). Il reste donc **deux
+vraies personnes** : une refusée sans jamais l'apprendre, et une qui attend un
+prix qu'elle n'a jamais vu passer. Je corrige mon chiffre de la journée, où
+j'avais compté trois.
 
-Ce n'est pas un défaut d'affichage : c'est le parcours qui s'arrête. À réparer
-avec la messagerie Finjaro → utilisateur (point B2, passé en urgent par Beau).
+Le cas vivant : la commande **FJ-4Y8MK2**, 15 000 FCFA proposés par Patysha le
+27/09 à 21 h 25 — l'acheteur n'a **reçu aucune notification** et n'a toujours
+pas répondu 19 h plus tard.
+
+Ce n'est pas un défaut d'affichage : c'est le parcours qui s'arrête.
+
+**Premier morceau réparé** : la Console ne montrait que les commandes qui
+attendent la VENDEUSE. Une fois le prix proposé, la commande disparaissait de
+l'écran — personne ne voyait FJ-4Y8MK2. Il y a maintenant un bloc **« Commandes
+qui attendent l'acheteur »** (migration 0215, additive) qui dit, pour chacune :
+
+- **sans compte** → en rouge, « AUCUNE notification ne lui est parvenue », et le
+  bouton WhatsApp devient l'action principale, avec le message déjà écrit ;
+- **avec un compte mais sans notifications activées** → il ne verra le prix
+  qu'en revenant de lui-même ;
+- le numéro composé avec l'indicatif du pays de la boutique, comme pour les
+  vendeuses (sinon le lien est mort).
+
+Le reste — que Finjaro puisse écrire lui-même à quelqu'un, avec ou sans compte —
+reste à construire (point B2).
 
 ---
 
