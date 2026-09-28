@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   IconShoppingBag, IconMessage2, IconGauge, IconDatabase, IconBrandWhatsapp, IconPhone,
-  IconBellRinging, IconCircleCheck, IconRefresh, IconUserHeart, IconClock,
+  IconBellRinging, IconCircleCheck, IconRefresh, IconUserHeart, IconClock, IconWorld,
 } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -102,6 +102,123 @@ function BoutonRelance({ t, lang, relanceeLe, busy, onClick }) {
   );
 }
 
+// TOUT FINJARO, pas seulement la place de marché.
+//
+// Beau, 28/09 : « Pourquoi sur admin j'ai pas les infos ? J'ai même pas eu
+// l'info que quelqu'un du Congo avait fait ça. » Le 23/09, une personne a
+// fondé un hôtel dans Léo et encaissé deux ventes dans Accounting, depuis
+// Brazzaville, le même soir. Cette Console ne regardait que la place de marché :
+// Beau l'a appris cinq jours plus tard, par hasard.
+//
+// Ce bloc lit `admin_environnement()` à part, avec sa propre requête : s'il
+// échoue, le reste de la veille continue de s'afficher. On n'y montre que des
+// signaux d'activité (nombres, dates, nom d'entreprise, pays), jamais le
+// contenu des livres ou des conversations.
+const APPLIS = {
+  marche: { label: 'Place de marché', unite: 'boutiques' },
+  accounting: { label: 'Accounting', unite: 'espaces' },
+  leo: { label: 'Léo', unite: 'entreprises' },
+  argent: { label: 'Mon argent', unite: 'personnes' },
+};
+
+function Pastille({ children, ton = 'muted' }) {
+  const tons = {
+    muted: 'bg-hairline/60 text-muted',
+    teal: 'bg-teal-light text-teal',
+    brass: 'bg-brass/10 text-brass',
+    success: 'bg-success-bg text-success',
+  };
+  return <span className={`rounded-pill px-2 py-0.5 text-[11px] font-semibold ${tons[ton]}`}>{children}</span>;
+}
+
+function Environnement({ t, lang }) {
+  const { data, loading, error } = useAsync(async () => {
+    const { data: v, error: err } = await supabase.rpc('admin_environnement');
+    if (err) throw err;
+    return v;
+  }, []);
+
+  if (loading) return <Skeleton className="h-40 w-full" />;
+  // En cas d'échec, on le dit en une ligne, sans bloquer la veille.
+  if (error) return <p className="text-caption text-muted">{t('admin.env.unavailable')}</p>;
+
+  const apps = data?.par_appli || [];
+  const venus = data?.nouveaux_venus || [];
+  // Les plus intéressants d'abord : ceux qui ont vraiment FAIT quelque chose.
+  const actifs = venus.filter((v) =>
+    Number(v.articles) > 0 ||
+    Number(v.accounting?.ventes) > 0 ||
+    Number(v.leo?.messages_humains) > 0 ||
+    v.accounting?.entreprise
+  );
+
+  return (
+    <Section icon={IconWorld} title={t('admin.env.title')} count={actifs.length} tone={actifs.length ? 'teal' : 'ink'}>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {apps.map((a) => {
+          const info = APPLIS[a.appli] || { label: a.appli, unite: '' };
+          return (
+            <div key={a.appli} className="rounded-card border border-hairline bg-white p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{info.label}</p>
+              <p className="mt-1 text-title font-semibold tabular-nums text-ink">{a.total}</p>
+              <p className="text-[11px] text-muted">
+                {info.unite} · <span className="text-ink">+{a.ce_mois}</span> {t('admin.env.thisMonth')}
+              </p>
+              <p className="text-[11px] text-muted">
+                {a.dernier ? t('admin.env.last', { when: timeAgo(a.dernier, lang) }) : t('admin.env.never')}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <h3 className="mt-4 mb-2 text-body font-semibold text-ink">{t('admin.env.newcomers', { count: venus.length, active: actifs.length })}</h3>
+      {actifs.length === 0 ? (
+        <p className="text-caption text-muted">{t('admin.env.noneActive')}</p>
+      ) : (
+        <ul className="space-y-2">
+          {actifs.map((v) => (
+            <li key={v.user_id} className="rounded-card border border-hairline bg-white p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-body font-semibold text-ink">{v.nom}</p>
+                  <p className="truncate text-caption text-muted">{v.email}</p>
+                </div>
+                <span className="shrink-0 text-[11px] text-muted">{t('admin.env.joined', { when: timeAgo(v.inscrit_le, lang) })}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {v.boutique && <Pastille ton="teal">{t('admin.env.shop', { name: v.boutique, count: Number(v.articles) })}</Pastille>}
+                {v.accounting && (
+                  <Pastille ton={Number(v.accounting.ventes) > 0 ? 'success' : 'brass'}>
+                    {t('admin.env.accounting', {
+                      name: v.accounting.entreprise || '—',
+                      country: v.accounting.pays || '—',
+                      count: Number(v.accounting.ventes),
+                    })}
+                  </Pastille>
+                )}
+                {v.leo && (
+                  <Pastille ton={Number(v.leo.messages_humains) > 0 ? 'success' : 'brass'}>
+                    {t('admin.env.leo', { name: v.leo.entreprise, count: Number(v.leo.messages_humains) })}
+                  </Pastille>
+                )}
+                {v.mon_argent && <Pastille>{t('admin.env.money')}</Pastille>}
+              </div>
+              {/* 554 messages d'agents pour 2 écrits par la personne : les
+                  agents ont continué à parler (et à coûter) après son départ. */}
+              {v.leo && Number(v.leo.messages_agents) > 50 && Number(v.leo.messages_humains) <= 3 && (
+                <p className="mt-1.5 text-[11px] text-brass">
+                  {t('admin.env.leoRatio', { agents: Number(v.leo.messages_agents), human: Number(v.leo.messages_humains) })}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 export default function AdminVeille() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
@@ -154,6 +271,8 @@ export default function AdminVeille() {
           <IconRefresh size={18} />
         </button>
       </div>
+
+      <Environnement t={t} lang={i18n.language} />
 
       {rienATraiter && (
         <div className="flex items-center gap-2 rounded-card border border-success/30 bg-success-bg p-3 text-body font-semibold text-success">
