@@ -2874,6 +2874,17 @@
     "itemCount_one": "{{count}} item",
     "itemCount_other": "{{count}} items",
     "declineReasonLabel": "Reason",
+    "declineReasonRequired": "Why are you declining? (required)",
+    "declineDetailLabel": "Details",
+    "declineApercu": "The buyer will read: “{{raison}}”",
+    "declineReason": {
+      "rupture": "Item sold out",
+      "prix": "The price does not work",
+      "zone": "I do not deliver there",
+      "delai": "Too short a deadline",
+      "injoignable": "The buyer is not answering",
+      "autre": "Another reason"
+    },
     "markShippingHint": "The buyer will be notified.",
     "markReadyHint": "The buyer will be notified they can come pick up their order.",
     "markDeliveredHint": "Closes the order — the buyer can then leave a review.",

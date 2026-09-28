@@ -60,6 +60,7 @@ export default function VendorOrders() {
   const [busyId, setBusyId] = useState(null);
   const [cancelling, setCancelling] = useState(null); // commande en cours de refus/annulation (modal)
   const [cancelReason, setCancelReason] = useState('');
+  const [motif, setMotif] = useState(''); // motif choisi en un geste (obligatoire depuis le 28/09)
 
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: orders, error: err } = await supabase
@@ -124,14 +125,32 @@ export default function VendorOrders() {
   // en livraison) partagent le même geste — seul le libellé change, parce
   // que dire « refusée » d'une commande déjà validée serait faux.
   const wasAccepted = !['new', 'awaiting_price', 'priced'].includes(cancelling?.status);
+
+  // La raison est OBLIGATOIRE depuis le 28/09. Beau, devant une commande
+  // refusée sans un mot : « qui a decliné et y a-t-il une raison ? » — il n'y
+  // en avait aucune, et personne ne pouvait savoir si c'était le stock, le
+  // prix ou la livraison. Sans raison, on ne peut ni aider la vendeuse ni
+  // expliquer à l'acheteur.
+  //
+  // Des motifs en un geste plutôt qu'un champ vide: les vendeuses répondent
+  // au téléphone, et taper une phrase est le meilleur moyen de faire fuir
+  // tout le monde vers le bouton « Annuler ».
+  const MOTIFS = ['rupture', 'prix', 'zone', 'delai', 'injoignable', 'autre'];
+  const motifTexte = motif && motif !== 'autre' ? t(`vendor.declineReason.${motif}`) : '';
+  const detail = cancelReason.trim();
+  const raisonComplete = motif === 'autre' ? detail : [motifTexte, detail].filter(Boolean).join(' — ');
+  const raisonPrete = motif === 'autre' ? detail.length > 0 : !!motif;
+
   async function confirmCancel() {
     const o = cancelling;
+    if (!raisonPrete) return;
     setCancelling(null);
     await transition(
       o,
-      { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: cancelReason.trim() || null },
+      { status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: raisonComplete },
     );
     setCancelReason('');
+    setMotif('');
   }
 
   // Envoyer les prix. Le serveur recalcule le total lui-même (`set_order_prices`)
@@ -412,7 +431,20 @@ export default function VendorOrders() {
 
       <Modal open={!!cancelling} onClose={() => setCancelling(null)} title={t(wasAccepted ? 'vendor.cancelTitle' : 'vendor.declineTitle')}>
         <p className="mb-3 text-caption text-muted">{t(wasAccepted ? 'vendor.cancelHint' : 'vendor.declineHint')}</p>
-        <Field label={`${t('vendor.declineReasonLabel')} ${t('common.optional')}`}>
+        <p className="mb-2 text-caption font-semibold text-ink">{t('vendor.declineReasonRequired')}</p>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {MOTIFS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMotif(m)}
+              className={`chip ${motif === m ? 'chip-active' : 'text-ink'}`}
+            >
+              {t(`vendor.declineReason.${m}`)}
+            </button>
+          ))}
+        </div>
+        <Field label={motif === 'autre' ? t('vendor.declineReasonLabel') : `${t('vendor.declineDetailLabel')} ${t('common.optional')}`}>
           {(id) => (
             <TextArea
               id={id}
@@ -422,9 +454,13 @@ export default function VendorOrders() {
             />
           )}
         </Field>
+        {/* Ce que l'acheteur lira, mot pour mot — pas de surprise. */}
+        {raisonPrete && (
+          <p className="mt-2 rounded-input bg-base p-2 text-caption text-muted">{t('vendor.declineApercu', { raison: raisonComplete })}</p>
+        )}
         <div className="mt-3 flex gap-2">
           <Button variant="secondary" onClick={() => setCancelling(null)} className="flex-1">{t('common.cancel')}</Button>
-          <Button onClick={confirmCancel} className="flex-1">
+          <Button onClick={confirmCancel} disabled={!raisonPrete} className="flex-1">
             <IconX size={18} /> {t(wasAccepted ? 'vendor.cancelConfirm' : 'vendor.declineConfirm')}
           </Button>
         </div>

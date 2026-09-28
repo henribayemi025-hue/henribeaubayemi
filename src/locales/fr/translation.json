@@ -2876,6 +2876,17 @@
     "itemCount_one": "{{count}} article",
     "itemCount_other": "{{count}} articles",
     "declineReasonLabel": "Raison",
+    "declineReasonRequired": "Pourquoi refusez-vous ? (obligatoire)",
+    "declineDetailLabel": "Précision",
+    "declineApercu": "L'acheteur lira : « {{raison}} »",
+    "declineReason": {
+      "rupture": "Article épuisé",
+      "prix": "Le prix ne convient pas",
+      "zone": "Je ne livre pas jusque-là",
+      "delai": "Délai trop court",
+      "injoignable": "L'acheteur ne répond pas",
+      "autre": "Autre raison"
+    },
     "markShippingHint": "La cliente sera prévenue par notification.",
     "markReadyHint": "La cliente sera prévenue qu'elle peut venir chercher sa commande.",
     "markDeliveredHint": "Clôture la commande — la cliente pourra laisser un avis.",
