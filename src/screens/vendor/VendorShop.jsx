@@ -11,11 +11,27 @@ import { ImageUpload } from '../../components/ImageUpload';
 import { VendorStoryManager } from '../../components/VendorStoryManager';
 import { CATEGORIES, SERVICE_CATEGORIES } from '../../lib/categories';
 import { COUNTRIES, countryLabel } from '../../lib/countries';
-import { currencyForCountry } from '../../lib/currency';
+import { currencyForCountry, convertFromFcfa, toFcfa } from '../../lib/currency';
 import { getPositionWithReason } from '../../lib/geo';
+
+// Les frais de livraison sont STOCKÉS en FCFA (comme les prix) mais se
+// saisissent dans la devise de la boutique. Une vendeuse en France qui tapait
+// « 5 » en pensant 5 € enregistrait 5 FCFA, soit moins d'un centime, et
+// l'acheteuse voyait « 0,01 € » de livraison. Le libellé disait « Frais
+// (FCFA) » à tout le monde, ce qui est aussi un texte qui enferme Finjaro
+// dans un pays. Trouvé à l'audit page par page du 28/09.
+//
+// Deux décimales : assez pour un euro ou un dollar, et ça évite qu'un
+// aller-retour FCFA → devise → FCFA rende « 4.999999 » là où la vendeuse
+// avait tapé 5.
+function arrondiSaisie(montant) {
+  return Math.round((Number(montant) || 0) * 100) / 100;
+}
 
 export default function VendorShop() {
   const { shop } = useOutletContext();
+  // La devise de SA boutique, jamais celle de qui regarde (règle `VendorPrice`).
+  const deviseBoutique = currencyForCountry(shop.country);
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const [hasGeo, setHasGeo] = useState(shop.lat != null);
@@ -59,7 +75,9 @@ export default function VendorShop() {
     avatar_url: shop.avatar_url || null,
     categories: shop.categories || [],
     offers_delivery: shop.offers_delivery || false,
-    delivery_fee_fcfa: String(shop.delivery_fee_fcfa || 0),
+    // Saisi et relu dans la devise de la boutique, jamais en FCFA (voir
+    // `deviseBoutique` plus bas). Le FCFA reste l'unité de STOCKAGE.
+    delivery_fee_fcfa: String(arrondiSaisie(convertFromFcfa(shop.delivery_fee_fcfa || 0, currencyForCountry(shop.country)))),
     rotation_enabled: shop.rotation_enabled || false,
     rotation_days: String(shop.rotation_days || 7),
     // true = l'arrivage passé est supprimé (défaut), false = gardé en brouillon.
@@ -71,7 +89,10 @@ export default function VendorShop() {
     closed_days: shop.opening_hours?.closed_days || [],
     // Zones de livraison: où, combien, sous combien de jours — affichées sur
     // la fiche ET utilisées au checkout (frais par zone, façon Nevo).
-    delivery_zones: Array.isArray(shop.delivery_zones) ? shop.delivery_zones : [],
+    delivery_zones: (Array.isArray(shop.delivery_zones) ? shop.delivery_zones : []).map((z) => ({
+      ...z,
+      fee_fcfa: String(arrondiSaisie(convertFromFcfa(z.fee_fcfa || 0, currencyForCountry(shop.country)))),
+    })),
   });
   const [busy, setBusy] = useState(false);
   // LA VENTE EN DIRECT (0172): la boutique annonce son direct (Instagram,
@@ -172,7 +193,7 @@ export default function VendorShop() {
         avatar_url: form.avatar_url,
         categories: form.categories,
         offers_delivery: form.offers_delivery,
-        delivery_fee_fcfa: Math.max(0, Math.round(Number(form.delivery_fee_fcfa) || 0)),
+        delivery_fee_fcfa: Math.max(0, toFcfa(Number(form.delivery_fee_fcfa) || 0, deviseBoutique)),
         rotation_enabled: form.rotation_enabled,
         // Borné comme la contrainte SQL (1-90) pour que la saisie ne parte
         // jamais en erreur base.
@@ -186,7 +207,7 @@ export default function VendorShop() {
           .filter((z) => z.name && String(z.name).trim())
           .map((z) => ({
             name: String(z.name).trim(),
-            fee_fcfa: Math.max(0, Math.round(Number(z.fee_fcfa) || 0)),
+            fee_fcfa: Math.max(0, toFcfa(Number(z.fee_fcfa) || 0, deviseBoutique)),
             days: Math.max(0, Math.round(Number(z.days) || 0)) || null,
           })),
       })
@@ -342,7 +363,7 @@ export default function VendorShop() {
                 </Field>
               </div>
               <div className="w-24">
-                <Field label={i === 0 ? t('vendor.zoneFee') : undefined}>
+                <Field label={i === 0 ? t('vendor.zoneFee', { currency: deviseBoutique }) : undefined}>
                   {(id) => <TextInput id={id} type="number" inputMode="numeric" value={z.fee_fcfa ?? ''} onChange={(e) => setZone(i, { fee_fcfa: e.target.value })} />}
                 </Field>
               </div>
@@ -359,14 +380,14 @@ export default function VendorShop() {
           <button type="button" onClick={addZone} className="btn-ghost text-caption">
             <IconPlus size={16} /> {t('vendor.addZone')}
           </button>
-          <p className="text-caption text-muted">{t('vendor.zonesHint')}</p>
+          <p className="text-caption text-muted">{t('vendor.zonesHint', { currency: deviseBoutique })}</p>
         </div>
         <label className="flex items-center gap-3 rounded-card border border-hairline p-3">
           <input type="checkbox" checked={form.offers_delivery} onChange={(e) => setForm({ ...form, offers_delivery: e.target.checked })} className="h-5 w-5 accent-[#C25E38]" />
           <span className="flex-1 text-body text-ink">{t('checkout.delivery')}</span>
         </label>
         {form.offers_delivery && (
-          <Field label={t('checkout.deliveryFee')}>
+          <Field label={`${t('checkout.deliveryFee')} (${deviseBoutique})`}>
             {(id) => <TextInput id={id} type="number" inputMode="numeric" value={form.delivery_fee_fcfa} onChange={(e) => setForm({ ...form, delivery_fee_fcfa: e.target.value })} />}
           </Field>
         )}
