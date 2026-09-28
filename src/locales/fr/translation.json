@@ -3941,7 +3941,12 @@
     "autreMonnaie": "Une autre monnaie",
     "tauxDuJour": "Taux du {{date}}, mis à jour chaque jour",
     "tauxSource": "Rates By Exchange Rate API",
-    "tauxFcfa": "Le franc CFA suit sa parité fixe avec l’euro."
+    "tauxFcfa": "Le franc CFA suit sa parité fixe avec l’euro.",
+    "pub": {
+      "titre": "Publicité",
+      "reglage": "Mesurer l’effet de nos publicités (Meta)",
+      "aide": "Nous permet de savoir si nos publicités Facebook et Instagram amènent des visites. Ça ne change rien à votre utilisation de Finjaro. Décochez pour refuser."
+    }
   },
   "kit": {
     "title": "Kit gratuit",

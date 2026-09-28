@@ -3474,8 +3474,8 @@
       "newcomers": "Newcomers over 30 days: {{count}}, {{active}} of whom did something",
       "noneActive": "Nobody has done anything in an app yet this month.",
       "joined": "joined {{when}}",
-      "shop_one": "Shop \u201c{{name}}\u201d · {{count}} item",
-      "shop_other": "Shop \u201c{{name}}\u201d · {{count}} items",
+      "shop_one": "Shop “{{name}}” · {{count}} item",
+      "shop_other": "Shop “{{name}}” · {{count}} items",
       "accounting_one": "Accounting · {{name}} · {{country}} · {{count}} sale",
       "accounting_other": "Accounting · {{name}} · {{country}} · {{count}} sales",
       "leo_one": "Léo · {{name}} · {{count}} message written",
@@ -3941,7 +3941,12 @@
     "autreMonnaie": "Another currency",
     "tauxDuJour": "Rates of {{date}}, updated daily",
     "tauxSource": "Rates By Exchange Rate API",
-    "tauxFcfa": "The CFA franc keeps its fixed parity with the euro."
+    "tauxFcfa": "The CFA franc keeps its fixed parity with the euro.",
+    "pub": {
+      "titre": "Advertising",
+      "reglage": "Measure the effect of our ads (Meta)",
+      "aide": "Tells us whether our Facebook and Instagram ads bring visits. It changes nothing in how you use Finjaro. Untick to refuse."
+    }
   },
   "kit": {
     "title": "Free kit",

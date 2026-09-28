@@ -3,7 +3,7 @@
 // figent les trois promesses : les deux pixels reçoivent la même page, la
 // première page n'est comptée qu'une fois, et chaque nouvel écran est compté.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { chargerPixelMeta, pageVueMeta, PIXEL_IDS, _reinitialiserPixelPourTests } from './pixel';
+import { chargerPixelMeta, pageVueMeta, PIXEL_IDS, lireAccordPixel, reglerAccordPixel, _reinitialiserPixelPourTests } from './pixel';
 
 let appels;
 beforeEach(() => {
@@ -12,6 +12,7 @@ beforeEach(() => {
   window.fbq = (...args) => appels.push(args);
   delete window.Capacitor;
   window.history.replaceState({}, '', '/');
+  try { localStorage.clear(); } catch { /* noop */ }
 });
 
 const pagesVues = () => appels.filter(([a, b]) => a === 'track' && b === 'PageView').length;
@@ -47,5 +48,29 @@ describe('pixel Meta', () => {
     window.Capacitor = { isNativePlatform: () => true };
     chargerPixelMeta();
     expect(appels.length).toBe(0);
+  });
+
+  // Hors Europe le pixel se charge sans bandeau : la politique de
+  // confidentialité promet qu'on peut le refuser dans Paramètres. Ces tests
+  // tiennent cette promesse.
+  it('refuser dans Paramètres coupe l’envoi tout de suite et s’en souvient', () => {
+    chargerPixelMeta();
+    reglerAccordPixel(false);
+    expect(appels).toContainEqual(['consent', 'revoke']);
+    expect(lireAccordPixel()).toBe(false);
+  });
+
+  it('réaccepter rouvre l’envoi sans recharger le pixel', () => {
+    chargerPixelMeta();
+    reglerAccordPixel(false);
+    reglerAccordPixel(true);
+    expect(appels).toContainEqual(['consent', 'grant']);
+    expect(appels.filter(([a]) => a === 'init').length).toBe(PIXEL_IDS.length);
+    expect(lireAccordPixel()).toBe(true);
+  });
+
+  it('accepter depuis Paramètres charge le pixel s’il ne l’était pas', () => {
+    reglerAccordPixel(true);
+    expect(appels.filter(([a]) => a === 'init').length).toBe(PIXEL_IDS.length);
   });
 });

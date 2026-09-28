@@ -67,6 +67,41 @@ export function pageVueMeta(chemin) {
   window.fbq('track', 'PageView');
 }
 
+// Le choix de la personne, gardé sur son appareil : '1' accepté (ou accord
+// implicite hors zone RGPD), '0' refusé. Lu aussi par CookieConsent et
+// InstallAppBanner.
+export const PIXEL_CONSENT_KEY = 'finjaro_pixel_consent';
+
+export function pixelDisponible() {
+  return typeof window !== 'undefined' && !estAppNative();
+}
+
+/** Le pixel est-il permis sur cet appareil ? (null : personne n'a encore choisi) */
+export function lireAccordPixel() {
+  try {
+    const v = localStorage.getItem(PIXEL_CONSENT_KEY);
+    return v === '1' ? true : v === '0' ? false : null;
+  } catch {
+    return null;
+  }
+}
+
+// Hors Europe, le pixel se charge sans bandeau (décision de Beau). Il faut
+// donc un moyen de dire non APRÈS coup, sinon la politique de confidentialité
+// mentirait en parlant d'un refus possible : c'est le réglage de Paramètres.
+// Refuser coupe l'envoi tout de suite (`consent revoke` de Meta : les appels
+// suivants ne partent plus), et le choix est gardé pour les visites d'après.
+export function reglerAccordPixel(accepte) {
+  try { localStorage.setItem(PIXEL_CONSENT_KEY, accepte ? '1' : '0'); } catch { /* noop */ }
+  if (typeof window === 'undefined') return;
+  if (accepte) {
+    if (charge && window.fbq) window.fbq('consent', 'grant');
+    else chargerPixelMeta();
+  } else if (charge && window.fbq) {
+    window.fbq('consent', 'revoke');
+  }
+}
+
 // Pour les tests seulement : repart d'un état vierge.
 export function _reinitialiserPixelPourTests() {
   charge = false;

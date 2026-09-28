@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { track } from '../lib/track';
-import { chargerPixelMeta, pageVueMeta } from '../lib/pixel';
+import { chargerPixelMeta, pageVueMeta, PIXEL_CONSENT_KEY as CONSENT_KEY } from '../lib/pixel';
 import { useSettings } from '../hooks/useSettings';
 
-const CONSENT_KEY = 'finjaro_pixel_consent'; // '1' accepté, '0' refusé
 
 // Zone où le consentement AVANT dépôt d'un cookie publicitaire est LÉGALEMENT
 // requis (RGPD/ePrivacy — UE + EEE + Royaume-Uni + Suisse alignée). Une

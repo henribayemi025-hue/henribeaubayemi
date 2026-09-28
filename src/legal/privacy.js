@@ -20,10 +20,14 @@
 //                      Analytics)
 // Depuis le 01/09: un pixel Meta (Facebook/Instagram Ads) mesure les
 // campagnes de pub, mais UNIQUEMENT sur le site (src/lib/pixel.js se
-// désactive lui-même dans les apps natives, voir son commentaire) et
-// UNIQUEMENT après consentement explicite (src/components/CookieConsent.jsx)
-// — jamais par défaut. Si ce périmètre change (pixel actif en app, ou sans
-// bandeau), ce document doit être corrigé AVANT, pas après.
+// désactive lui-même dans les apps natives, voir son commentaire).
+// Depuis la décision de Beau (« mets dans la politique, c'est suffisant
+// là-bas »), il ne demande l'accord AVANT que dans l'UE, l'EEE, au
+// Royaume-Uni et en Suisse (ou si le pays est inconnu) ; ailleurs il se
+// charge directement, et Paramètres → Publicité permet de le refuser
+// (src/components/CookieConsent.jsx, reglerAccordPixel). Le texte disait
+// « jamais par défaut » jusqu'au 28/09 : corrigé en 1.2. Si ce périmètre
+// change encore, ce document doit être corrigé AVANT, pas après.
 // Sous-traitants réellement appelés: Supabase (eu-west-3 Paris), Cloudflare,
 // Google Gemini (generativelanguage.googleapis.com), Resend, Google Sign-In.
 // Stripe est présent dans le code mais le paiement par carte est MASQUÉ depuis
@@ -38,12 +42,14 @@ export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
 // 1.1 (24/09/2026) : la Finia commune (apprentissage anonyme, réglable) et
 // les modèles de relais (DeepSeek, Moonshot AI…). À RELIRE PAR BEAU avant la
 // mise en ligne.
-export const PRIVACY_VERSION = '1.1';
+// 1.2 (28/09/2026) : le pixel Meta tel qu'il fonctionne vraiment (accord
+// préalable en Europe, actif ailleurs avec refus dans Paramètres).
+export const PRIVACY_VERSION = '1.2';
 
 const fr = {
   title: 'Politique de confidentialité',
   updatedLabel: 'Dernière mise à jour',
-  updatedAt: '24 septembre 2026',
+  updatedAt: '28 septembre 2026',
   versionLabel: 'Version',
   preamble: [
     'La présente politique explique quelles données personnelles Finjaro collecte lorsque vous utilisez la plateforme (site finjaro.net et applications mobiles), pourquoi elle les collecte, avec qui elle les partage, combien de temps elle les conserve et quels sont vos droits.',
@@ -127,7 +133,7 @@ const fr = {
         '• Avec les autres utilisateurs, pour ce que vous publiez volontairement : votre nom public, votre photo de profil, vos avis, et — pour les boutiques — les coordonnées de contact que vous choisissez d’afficher.',
         '• Avec nos prestataires techniques, qui agissent sur nos instructions et n’ont pas le droit d’utiliser vos données pour leur propre compte. Voir la liste à l’article 7.',
         '• Avec les autorités compétentes, lorsque la loi nous y oblige, ou pour établir, exercer ou défendre un droit en justice.',
-        'Sur le SITE finjaro.net (pas dans les applications mobiles), un pixel publicitaire Meta (Facebook/Instagram) mesure l’efficacité de nos campagnes de publicité. Il ne se déclenche qu’après votre accord explicite, donné via le bandeau affiché à la première visite — vous pouvez le refuser sans que cela limite l’usage de la plateforme. Aucun autre traceur publicitaire n’est utilisé, et les applications iOS et Android n’en contiennent aucun.',
+        'Sur le SITE finjaro.net (pas dans les applications mobiles), un pixel publicitaire Meta (Facebook/Instagram) mesure l’efficacité de nos campagnes de publicité. Dans l’Union européenne, l’Espace économique européen, au Royaume-Uni et en Suisse, il ne se déclenche qu’après votre accord explicite, donné via le bandeau affiché à la première visite. Ailleurs, il est actif dès la première visite. Partout, vous pouvez le refuser ou changer d’avis à tout moment dans Paramètres → Publicité, sans que cela limite l’usage de la plateforme. Aucun autre traceur publicitaire n’est utilisé, et les applications iOS et Android n’en contiennent aucun.',
       ],
     },
     {
@@ -197,7 +203,7 @@ const fr = {
       title: '12. Cookies et stockage local',
       body: [
         'La plateforme enregistre sur votre appareil un petit nombre d’informations strictement nécessaires à son fonctionnement : votre session de connexion (pour ne pas devoir vous reconnecter à chaque ouverture), votre langue, votre devise, votre pays et le contenu de votre panier.',
-        'Sur le site (hors applications mobiles), un cookie publicitaire du pixel Meta décrit à l’article 6 peut être déposé, mais uniquement après votre accord explicite via le bandeau de consentement — jamais par défaut.',
+        'Sur le site (hors applications mobiles), un cookie publicitaire du pixel Meta décrit à l’article 6 peut être déposé : après votre accord explicite via le bandeau dans l’Union européenne, l’Espace économique européen, au Royaume-Uni et en Suisse ; dès la première visite ailleurs. Vous pouvez le refuser à tout moment dans Paramètres → Publicité.',
         'Vous pouvez les effacer à tout moment en vidant les données du site dans les réglages de votre navigateur, ou en désinstallant l’application. Vous serez alors déconnecté et votre panier sera vidé.',
       ],
     },
@@ -224,7 +230,7 @@ const fr = {
 const en = {
   title: 'Privacy Policy',
   updatedLabel: 'Last updated',
-  updatedAt: '24 September 2026',
+  updatedAt: '28 September 2026',
   versionLabel: 'Version',
   preamble: [
     'This policy explains what personal data Finjaro collects when you use the platform (finjaro.net and its mobile apps), why we collect it, who we share it with, how long we keep it, and what your rights are.',
@@ -308,7 +314,7 @@ const en = {
         '• With other users, for what you publish voluntarily: your public name, profile picture, reviews, and — for shops — the contact details you choose to display.',
         '• With our technical providers, who act on our instructions and may not use your data for their own purposes. See the list in section 7.',
         '• With competent authorities, where the law requires it, or to establish, exercise or defend a legal claim.',
-        'On the finjaro.net WEBSITE (not in the mobile apps), a Meta (Facebook/Instagram) advertising pixel measures the performance of our ad campaigns. It only activates after your explicit consent, given via the banner shown on your first visit — you can decline it without any impact on using the platform. No other advertising tracker is used, and the iOS and Android apps contain none at all.',
+        'On the finjaro.net WEBSITE (not in the mobile apps), a Meta (Facebook/Instagram) advertising pixel measures the performance of our ad campaigns. In the European Union, the European Economic Area, the United Kingdom and Switzerland, it only activates after your explicit consent, given via the banner shown on your first visit. Elsewhere, it is active from your first visit. Everywhere, you can refuse it or change your mind at any time in Settings → Advertising, without any impact on using the platform. No other advertising tracker is used, and the iOS and Android apps contain none at all.',
       ],
     },
     {
@@ -378,7 +384,7 @@ const en = {
       title: '12. Cookies and local storage',
       body: [
         'The platform stores on your device a small amount of information strictly necessary for it to work: your sign-in session (so you need not log in every time), your language, currency, country, and the contents of your basket.',
-        'On the website (not in the mobile apps), an advertising cookie from the Meta pixel described in section 6 may be set, but only after your explicit consent via the consent banner — never by default.',
+        'On the website (not in the mobile apps), an advertising cookie from the Meta pixel described in section 6 may be set: after your explicit consent via the banner in the European Union, the European Economic Area, the United Kingdom and Switzerland; from your first visit elsewhere. You can refuse it at any time in Settings → Advertising.',
         'You can clear these at any time by clearing the site data in your browser settings, or by uninstalling the app. You will then be signed out and your basket emptied.',
       ],
     },

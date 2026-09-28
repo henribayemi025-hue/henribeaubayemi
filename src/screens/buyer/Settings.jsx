@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconLanguage, IconCoin, IconBell, IconMail, IconFileText, IconChevronRight, IconAlertTriangle, IconSparkles } from '@tabler/icons-react';
+import { IconLanguage, IconCoin, IconBell, IconMail, IconFileText, IconChevronRight, IconAlertTriangle, IconSparkles, IconSpeakerphone } from '@tabler/icons-react';
 import { useSettings } from '../../hooks/useSettings';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -12,6 +12,7 @@ import { Button } from '../../components/Button';
 import { TextArea } from '../../components/Field';
 import { CURRENCIES, currencyForCountry, dateDesTaux, nomMonnaie } from '../../lib/currency';
 import { enablePush } from '../../lib/push';
+import { lireAccordPixel, pixelDisponible, reglerAccordPixel } from '../../lib/pixel';
 import { networkMessage } from '../../lib/netError';
 import { supabase } from '../../lib/supabase';
 
@@ -24,6 +25,9 @@ export default function Settings() {
   const { language, setLanguage, currency, setCurrency, country, dateTaux } = useSettings();
   const { user, signOut } = useAuth();
   const toast = useToast();
+  // Mesure des publicités (pixel Meta) : le moyen de refuser après coup, hors
+  // Europe où le pixel se charge sans bandeau. Voir reglerAccordPixel.
+  const [pubOn, setPubOn] = useState(() => lireAccordPixel() === true);
 
   // Suppression de compte (droit d'effacement, CGU art. 20) — volontairement
   // PAS instantanée. C'est une DEMANDE: la base Supabase de Finjaro héberge
@@ -212,6 +216,30 @@ export default function Settings() {
                   {finia.compte_reel ? t('finiaCommune.aide') : t('finiaCommune.compteTest')}
                   {' '}
                   <Link to="/legal/confidentialite#ia" className="underline">{t('finiaCommune.enSavoirPlus')}</Link>
+                </span>
+              </span>
+            </label>
+          </section>
+        )}
+
+        {/* Pas dans les applications iOS/Android : le pixel n'y tourne jamais,
+            un réglage sans effet n'y a pas sa place. */}
+        {pixelDisponible() && (
+          <section id="publicite">
+            <h2 className="mb-2 flex items-center gap-2 text-section text-ink"><IconSpeakerphone size={20} /> {t('settings.pub.titre')}</h2>
+            <label className="flex items-start gap-3 rounded-card border border-hairline p-3">
+              <input
+                type="checkbox"
+                checked={pubOn}
+                onChange={(e) => { reglerAccordPixel(e.target.checked); setPubOn(e.target.checked); }}
+                className="mt-0.5 h-5 w-5 accent-[#C25E38]"
+              />
+              <span className="flex-1">
+                <span className="block text-body text-ink">{t('settings.pub.reglage')}</span>
+                <span className="mt-0.5 block text-caption text-muted">
+                  {t('settings.pub.aide')}
+                  {' '}
+                  <Link to="/legal/confidentialite" className="underline">{t('finiaCommune.enSavoirPlus')}</Link>
                 </span>
               </span>
             </label>
