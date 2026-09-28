@@ -110,7 +110,7 @@ export default function ProductDetail() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: product, error: err } = await supabase
       .from('products')
-      .select('*, shops(id, name, slug, is_verified, rating, premium_until, whatsapp)')
+      .select('*, shops!inner(id, name, slug, is_verified, rating, premium_until, whatsapp)')
       .eq('id', id)
       .maybeSingle();
     if (err) throw err;

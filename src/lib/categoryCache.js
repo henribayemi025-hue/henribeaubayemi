@@ -22,7 +22,12 @@ async function fetchCategory(categoryId) {
   // garantit qu'aucun produit existant ne disparaît avec le pivot.
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, price_fcfa, compare_at_price_fcfa, images, video_url, price_on_request, category, stock, shop_id, shops(name)')
+    // `shops!inner` et pas `shops` : la règle d'accès de `products` ne regarde
+    // que `is_active` et le compte de test, PAS l'état de la boutique. Un
+    // article d'une boutique suspendue reste donc lisible, et sans jointure
+    // stricte il s'affichait avec une boutique vide — cliquable vers une fiche
+    // qui n'existe plus. Mesuré le 28/09 : un article dans ce cas.
+    .select('id, name, price_fcfa, compare_at_price_fcfa, images, video_url, price_on_request, category, stock, shop_id, shops!inner(name)')
     .in('category', categoryQueryIds(categoryId))
     .eq('is_active', true)
     .order('created_at', { ascending: false });

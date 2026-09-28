@@ -115,7 +115,7 @@ export default function Search() {
           (() => {
             let pq = supabase
               .from('products')
-              .select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops(name)')
+              .select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops!inner(name)')
               .eq('is_active', true)
               .limit(12)
               .abortSignal(signal);
@@ -151,7 +151,7 @@ export default function Search() {
         if (suggestionsCat) {
           const { data: sugRes } = await supabase
             .from('products')
-            .select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops(name)')
+            .select('id,name,price_fcfa,compare_at_price_fcfa,images,video_url,price_on_request,category,stock,shop_id,shops!inner(name)')
             .eq('is_active', true)
             .eq('category', suggestionsCat)
             .limit(8)

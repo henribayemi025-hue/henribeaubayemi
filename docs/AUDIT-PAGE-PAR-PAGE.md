@@ -98,6 +98,35 @@ aller-retour ne rende pas « 4,999999 » là où elle avait tapé 5.
 
 ---
 
+## 🔴 Défaut réel n° 2 — un article survit à sa boutique
+
+La règle d'accès de `products` ne regarde que deux choses :
+
+```
+is_active = true AND NOT boutique_de_test(shop_id)
+```
+
+Elle **ne regarde pas l'état de la boutique**. Un article reste donc lisible
+quand sa boutique, elle, ne l'est plus — suspendue par la modération, ou
+retirée. Mesuré en production, comme une visiteuse : **1 article dans ce cas.**
+
+Un seul aujourd'hui, mais la fiche boutique le filtrait déjà (elle fait une
+jointure stricte) tandis que **la recherche, les rayons et Finia ne le
+faisaient pas** : l'article s'affichait avec un nom de boutique vide, et le
+clic menait vers une fiche qui n'existe plus. Le nombre grandira à chaque
+suspension.
+
+**Corrigé** dans les quatre écrans concernés (recherche, rayons, Finia, fiche
+article) : la boutique doit exister et être visible pour que l'article le soit.
+Un article orphelin donne maintenant une page « introuvable », ce qui est la
+vérité.
+
+Corriger la règle d'accès elle-même serait plus propre — un seul endroit au
+lieu de quatre — mais ça touche la lecture de tout le catalogue en production.
+À faire posément, pas un vendredi soir.
+
+---
+
 ## 🟠 Ce que voit vraiment une visiteuse — les chiffres du catalogue
 
 Mesuré comme une visiteuse non connectée, comptes de test exclus par la base :
@@ -110,13 +139,16 @@ Mesuré comme une visiteuse non connectée, comptes de test exclus par la base :
 | Stock à zéro | 2 | 0,5 % |
 | Nom trop court (< 4 lettres) | 0 | |
 | Boutiques visibles | 66 | |
-| **Boutiques sans aucun article** | **19** | **29 %** |
+| **Boutiques sans aucun article** | **20** | **30 %** |
 
 Deux points à regarder, dans cet ordre :
 
-1. **19 boutiques vides sur 66.** Une visiteuse qui ouvre l'annuaire tombe une
+1. **20 boutiques vides sur 66.** Une visiteuse qui ouvre l'annuaire tombe une
    fois sur trois sur une page sans rien. C'est pire qu'un article sans prix :
-   il n'y a rien à regarder du tout.
+   il n'y a rien à regarder du tout. Elles ne sont pas toutes récentes :
+   **38 jours d'ancienneté en moyenne**, la plus ancienne **58 jours**, et
+   **11 n'ont même pas de photo de boutique**. Cinq seulement ont été ouvertes
+   ce mois-ci — les autres ont eu le temps, et ne sont pas revenues.
 2. **67 % des articles n'ont pas de description.** Sur une place de marché en
    paiement à la livraison, où la confiance est tout, une fiche sans un mot
    d'explication laisse l'acheteuse seule avec une photo.
@@ -125,7 +157,7 @@ Les photos et les stocks, eux, sont sains : 2 articles sur 406 dans chaque cas.
 
 ---
 
-## 🔴 Défaut réel n° 2 — une commande sans compte ne reçoit jamais rien
+## 🔴 Défaut réel n° 3 — une commande sans compte ne reçoit jamais rien
 
 Déjà relevé dans le carnet du 28/09, repris ici parce qu'il appartient à
 l'audit du parcours acheteur.
