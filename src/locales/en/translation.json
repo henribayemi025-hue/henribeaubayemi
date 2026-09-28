@@ -1108,7 +1108,27 @@
       "outil_equipe": "looks at the team",
       "outil_travail_collegues": "reads teammates’ work",
       "avecLui": "Working with {{nom}}",
-      "confieA": "{{nom}} handed a task to {{collegue}}"
+      "confieA": "{{nom}} handed a task to {{collegue}}",
+      "github": {
+        "titre": "Send to GitHub",
+        "pasBranche": "GitHub is not connected yet. On the company home page, under Connectors, click “Sign in with GitHub” and pick your repositories.",
+        "depot": "Repository",
+        "branche": "Branch",
+        "brancheAide": "Always a separate branch starting with “leo/”. The main branch is never touched.",
+        "message": "What changes (commit message)",
+        "messageParDefaut": "Sent from the Léo workshop: {{projet}}",
+        "fusion": "Also open a pull request",
+        "resume_one": "{{count}} file will go to {{depot}}, branch {{branche}}.",
+        "resume_other": "{{count}} files will go to {{depot}}, branch {{branche}}.",
+        "envoyer": "Send…",
+        "sur": "Send to {{depot}}, branch {{branche}}?",
+        "confirmer": "Confirm and send",
+        "encours": "Sending…",
+        "fait_one": "Done: {{count}} file on branch {{branche}}.",
+        "fait_other": "Done: {{count}} files on branch {{branche}}.",
+        "voir": "See the branch on GitHub",
+        "voirFusion": "See the pull request"
+      }
     },
     "droits": {
       "titre": "Permissions",
@@ -1608,7 +1628,17 @@
       "titre": "The team is arriving"
     },
     "voirDetail": "See the details",
-    "replierDetail": "Fold"
+    "replierDetail": "Fold",
+    "github": {
+      "ok_one": "GitHub is connected: {{count}} repository open to the agents.",
+      "ok_other": "GitHub is connected: {{count}} repositories open to the agents.",
+      "erreur": "GitHub could not be connected: {{raison}}",
+      "connecte": "Connected to GitHub ({{compte}}). Agents read the chosen repository; they only write to a “leo/…” branch, after you press “Confirm”.",
+      "aucunDepot": "No repository open: add one on GitHub.",
+      "changer": "Choose other repositories",
+      "seConnecter": "Sign in with GitHub",
+      "ouJeton": "Or, without the app, paste the repository address and a token:"
+    }
   },
   "equipe": {
     "titre": "The team",

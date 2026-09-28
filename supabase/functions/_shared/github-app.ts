@@ -90,3 +90,13 @@ export async function verifierApplication(): Promise<Record<string, unknown>> {
   }
   return { ok: true, secret: cle.nom, app_id: GITHUB_APP_ID, client_id: GITHUB_CLIENT_ID, client_secret: Deno.env.get('GITHUB_APP_CLIENT_SECRET') ? 'présent' : 'absent', nom: a.name, slug: a.slug, permissions: a.permissions, installations: detail };
 }
+
+// Un jeton d'installation d'une heure, limité aux dépôts que la personne a
+// choisis en installant l'application (28/09). Jamais gardé : refait à chaque usage.
+export async function jetonInstallation(installation: number | string): Promise<string> {
+  const cle = clePriveeGithub();
+  if (!cle) throw new Error("clé de l'application GitHub absente (secret GITHUB_APP_PRIVATE_KEY)");
+  const r = await fetch(`https://api.github.com/app/installations/${installation}/access_tokens`, { method: 'POST', headers: GH(await jetonApplication(cle.pem)) });
+  if (!r.ok) throw new Error(r.status === 404 ? "l'application n'est plus installée sur ce compte GitHub" : `GitHub ${r.status}`);
+  return String((await r.json()).token);
+}

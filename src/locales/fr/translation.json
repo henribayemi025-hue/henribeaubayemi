@@ -1108,7 +1108,27 @@
       "outil_equipe": "regarde l’équipe",
       "outil_travail_collegues": "lit le travail des collègues",
       "avecLui": "Travaillent avec {{nom}}",
-      "confieA": "{{nom}} a confié une tâche à {{collegue}}"
+      "confieA": "{{nom}} a confié une tâche à {{collegue}}",
+      "github": {
+        "titre": "Envoyer sur GitHub",
+        "pasBranche": "GitHub n’est pas encore branché. Sur l’accueil de l’entreprise, dans Connecteurs, clique « Se connecter avec GitHub » et choisis tes dépôts.",
+        "depot": "Dépôt",
+        "branche": "Branche",
+        "brancheAide": "Toujours une branche à part, commençant par « leo/ ». La branche principale n’est jamais touchée.",
+        "message": "Ce qui change (le message de l’envoi)",
+        "messageParDefaut": "Envoi depuis l’atelier de Léo : {{projet}}",
+        "fusion": "Ouvrir aussi une demande de fusion",
+        "resume_one": "{{count}} fichier partira sur {{depot}}, branche {{branche}}.",
+        "resume_other": "{{count}} fichiers partiront sur {{depot}}, branche {{branche}}.",
+        "envoyer": "Envoyer…",
+        "sur": "Envoyer sur {{depot}}, branche {{branche}} ?",
+        "confirmer": "Confirmer l’envoi",
+        "encours": "Envoi en cours…",
+        "fait_one": "C’est parti : {{count}} fichier sur la branche {{branche}}.",
+        "fait_other": "C’est parti : {{count}} fichiers sur la branche {{branche}}.",
+        "voir": "Voir la branche sur GitHub",
+        "voirFusion": "Voir la demande de fusion"
+      }
     },
     "droits": {
       "titre": "Ses droits",
@@ -1608,7 +1628,17 @@
       "titre": "L'équipe arrive"
     },
     "voirDetail": "Voir le détail",
-    "replierDetail": "Replier"
+    "replierDetail": "Replier",
+    "github": {
+      "ok_one": "GitHub est branché : {{count}} dépôt ouvert aux agents.",
+      "ok_other": "GitHub est branché : {{count}} dépôts ouverts aux agents.",
+      "erreur": "GitHub n’a pas pu être branché : {{raison}}",
+      "connecte": "Connecté à GitHub ({{compte}}). Les agents lisent le dépôt choisi ; ils n’y écrivent que sur une branche « leo/… », après ton « Confirmer ».",
+      "aucunDepot": "Aucun dépôt ouvert : ajoute-en un sur GitHub.",
+      "changer": "Choisir d’autres dépôts",
+      "seConnecter": "Se connecter avec GitHub",
+      "ouJeton": "Ou, sans l’application, colle l’adresse du dépôt et un jeton :"
+    }
   },
   "equipe": {
     "titre": "L'équipe",

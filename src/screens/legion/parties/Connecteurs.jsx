@@ -218,6 +218,18 @@ export function Connecteurs({ entreprise, t }) {
   const [depot, setDepot] = useState('');
   const [jeton, setJeton] = useState('');
   const [erreurGit, setErreurGit] = useState('');
+  // Le retour de GitHub (atelier-github renvoie ici avec ?github=ok|erreur).
+  const [retourGithub] = useState(() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const g = q.get('github');
+      if (!g) return null;
+      const r = { ok: g === 'ok', depots: q.get('depots'), raison: q.get('raison') };
+      ['github', 'depots', 'raison'].forEach((k) => q.delete(k));
+      window.history.replaceState(null, '', `${window.location.pathname}${q.toString() ? `?${q}` : ''}${window.location.hash}`);
+      return g === 'annule' ? null : r;
+    } catch { return null; }
+  });
   // Finjaro Accounting (0180): les espaces dont la personne est membre, lus
   // avec SES droits (la règle d'Accounting: finia_is_member) — l'identifiant
   // et le nom, rien d'autre.
@@ -270,6 +282,11 @@ export function Connecteurs({ entreprise, t }) {
     }
   }, [entreprise.id, choix]);
   useEffect(() => { charger(); }, [charger]);
+  // De retour de GitHub : on amène l'écran jusqu'ici, sinon le message reste en bas de l'accueil.
+  useEffect(() => {
+    if (!retourGithub || !connecteurs) return;
+    document.getElementById('connecteurs-leo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [retourGithub, !!connecteurs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!connecteurs) return null;
   const mesures = connecteurs.find((c) => c.type === 'finjaro-mesures' && c.actif);
@@ -300,6 +317,24 @@ export function Connecteurs({ entreprise, t }) {
     setBusy(false);
     if (error) setErreurCompta(error.message); else charger();
   }
+  // « Se connecter avec GitHub » (28/09) : l'application GitHub « Finjaro
+  // Atelier ». La personne choisit ses dépôts chez GitHub, aucun jeton à
+  // copier ; les agents reçoivent un jeton d'une heure à chaque lecture.
+  async function connecterGithub() {
+    setBusy(true); setErreurGit('');
+    const retour = `${window.location.origin}${window.location.pathname}`;
+    const { data, error } = await supabase.functions.invoke('atelier-github', { body: { action: 'lien', entreprise_id: entreprise.id, retour } });
+    if (error || !data?.installer) { setBusy(false); setErreurGit(data?.erreur || error?.message || t('errors.generic')); return; }
+    // Déjà installée sur un compte : on repasse par la connexion, GitHub
+    // renvoie ici tout de suite ; sinon, la page d'installation.
+    window.location.href = github?.config?.via_app ? data.reconnecter : data.installer;
+  }
+  async function choisirDepot(depotChoisi) {
+    setBusy(true); setErreurGit('');
+    const { data, error } = await supabase.functions.invoke('atelier-github', { body: { action: 'choisir', entreprise_id: entreprise.id, depot: depotChoisi } });
+    setBusy(false);
+    if (error || data?.erreur) setErreurGit(data?.erreur || error?.message); else charger();
+  }
   async function oublierJeton() {
     setBusy(true);
     await supabase.rpc('legion_oublier_jeton_github', { p_entreprise: entreprise.id });
@@ -307,7 +342,7 @@ export function Connecteurs({ entreprise, t }) {
   }
 
   return (
-    <section className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">
+    <section id="connecteurs-leo" className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">
       <div className="border-b border-legion-line pb-3">
         <h3 className="flex items-center gap-2 text-caption font-bold text-legion-ink">
           <IconPlugConnected size={15} className="text-legion-gold" /> {t('legion.connecteursTitre', 'Ce que les agents peuvent lire')}
@@ -381,7 +416,29 @@ export function Connecteurs({ entreprise, t }) {
           <LogoMarque marque="github" taille={26} />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-legion-ink">{t('legion.connecteurGithub', 'Mon dépôt GitHub')}</p>
-            {github ? (
+            {retourGithub && (
+              <p className={`text-[12px] font-semibold ${retourGithub.ok ? 'text-legion-gold' : 'text-legion-danger'}`}>
+                {retourGithub.ok
+                  ? t('legion.github.ok', { count: Number(retourGithub.depots || 0) })
+                  : t('legion.github.erreur', { raison: retourGithub.raison || '', defaultValue: 'GitHub n’a pas pu être branché : {{raison}}' })}
+              </p>
+            )}
+            {github?.config?.via_app ? (
+              <div className="text-legion-muted">
+                <p>{t('legion.github.connecte', { compte: github.config.compte || '?', defaultValue: 'Connecté à GitHub ({{compte}}). Les agents lisent le dépôt choisi ; ils n’y écrivent que sur une branche « leo/… », après ton « Confirmer ».' })}</p>
+                {(github.config.depots || []).length > 1 ? (
+                  <select value={github.config.depot || ''} disabled={busy} onChange={(e) => choisirDepot(e.target.value)} className="input mt-1 w-full text-[13px]">
+                    {(github.config.depots || []).map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                ) : (
+                  <p className="mt-1 font-semibold text-legion-ink">{github.config.depot || t('legion.github.aucunDepot', 'Aucun dépôt ouvert : ajoute-en un sur GitHub.')}</p>
+                )}
+                <div className="mt-1 flex flex-wrap gap-3">
+                  <button type="button" disabled={busy} onClick={connecterGithub} className="font-semibold text-legion-gold underline">{t('legion.github.changer', 'Choisir d’autres dépôts')}</button>
+                  <button type="button" disabled={busy} onClick={() => brancherGithub(false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button>
+                </div>
+              </div>
+            ) : github ? (
               <p className="text-legion-muted">
                 {t('legion.connecteurGithubBranche', { depot: github.config?.depot, defaultValue: '« {{depot}} » est branché : derniers changements et tickets ouverts.' })}
                 {github.config?.avec_jeton ? ` ${t('legion.connecteurGithubJeton', 'Jeton gardé au coffre.')} ` : ' '}
@@ -389,11 +446,17 @@ export function Connecteurs({ entreprise, t }) {
                 <button type="button" disabled={busy} onClick={() => brancherGithub(false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button>
               </p>
             ) : (
+              <>
+              <button type="button" disabled={busy} onClick={connecterGithub} className="mt-1 flex items-center gap-2 rounded-pill bg-legion-ink px-4 py-2 text-[13px] font-semibold text-legion-bg disabled:opacity-50">
+                <LogoMarque marque="github" taille={16} /> {t('legion.github.seConnecter', 'Se connecter avec GitHub')}
+              </button>
+              <p className="mt-2 text-[11px] text-legion-muted">{t('legion.github.ouJeton', 'Ou, sans l’application, colle l’adresse du dépôt et un jeton :')}</p>
               <form onSubmit={(e) => { e.preventDefault(); brancherGithub(true); }} className="mt-1 flex flex-wrap items-center gap-2">
                 <input value={depot} onChange={(e) => setDepot(e.target.value)} placeholder={t('legion.depotExemple', 'propriétaire/dépôt')} className="input min-w-0 flex-1 text-[13px]" />
                 <input type="password" value={jeton} onChange={(e) => setJeton(e.target.value)} autoComplete="off" placeholder={t('legion.jetonFacultatif', 'Jeton (facultatif si le dépôt est public)')} className="input min-w-0 flex-1 text-[13px]" />
                 <button type="submit" disabled={busy || !depot.trim()} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-50">{t('legion.brancher', 'Brancher')}</button>
               </form>
+              </>
             )}
             <p className="mt-1 text-[11px] leading-snug text-legion-muted">
               {t('legion.connecteurGithubAide', 'Les agents lisent les derniers changements et les tickets ouverts de TON dépôt, en lecture seule. Pour un dépôt privé : sur GitHub, Paramètres › Developer settings › Personal access tokens › Fine-grained, accès à ce seul dépôt, droits « Contents » et « Issues » en lecture. Le jeton est rangé au coffre et ne s’affiche plus jamais.')}

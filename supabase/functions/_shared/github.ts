@@ -1,6 +1,8 @@
 // Le connecteur GitHub (0169): ce que les agents lisent du dépôt de LEUR
 // entreprise — les derniers changements et les tickets ouverts. Lecture
 // seule. Le jeton sort du coffre (vault) au moment de lire, jamais avant.
+import { jetonInstallation } from './github-app.ts';
+
 // deno-lint-ignore no-explicit-any
 type Service = any;
 
@@ -11,7 +13,12 @@ export async function lireGithub(service: Service, entrepriseId: string): Promis
     const { data: c } = await service.from('legion_connecteurs').select('config').eq('entreprise_id', entrepriseId).eq('type', 'github').eq('actif', true).maybeSingle();
     const depot = String(c?.config?.depot || '');
     if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(depot)) return '';
-    const { data: jeton } = await service.rpc('legion_jeton_github', { p_entreprise: entrepriseId });
+    // Branché par l'application GitHub (28/09) : jeton d'une heure ; sinon le jeton du coffre.
+    let jeton: string | null = null;
+    if (c?.config?.installation_id) {
+      try { jeton = await jetonInstallation(c.config.installation_id); } catch (e) { console.error('jeton installation:', (e as Error).message); }
+    }
+    if (!jeton) ({ data: jeton } = await service.rpc('legion_jeton_github', { p_entreprise: entrepriseId }));
     const h: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'Legion-Finjaro' };
     if (jeton) h.Authorization = `Bearer ${jeton}`;
     const lire = async (chemin: string) => {

@@ -63,8 +63,9 @@ jobs:
       # Un fichier de _shared modifié ne redéploie que les fonctions qui s'en
       # servent, directement ou par un autre fichier de _shared (23/09 au soir:
       # un changement d'enquete.ts, utilisé par deux fonctions, en avait
-      # redéployé trente, et la trentième a échoué). config.toml redéploie
-      # tout. Chaque fonction est déployée seule, retentée deux fois.
+      # redéployé trente, et la trentième a échoué). Un changement de
+      # config.toml ne redéploie que les sections touchées (voir plus bas).
+      # Chaque fonction est déployée seule, retentée deux fois.
       - name: Déployer
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -87,9 +88,15 @@ jobs:
             if [ -n "$AVANT" ] && ! echo "$AVANT" | grep -qE '^0+$' && git cat-file -e "$AVANT" 2>/dev/null; then
               CHANGES=$(git diff --name-only "$AVANT" "$APRES" -- supabase/)
               echo "Fichiers changés:"; echo "$CHANGES"
-              if ! echo "$CHANGES" | grep -qE '^supabase/config\.toml$'; then
-                LISTE=$(CHANGES="$CHANGES" python3 .github/scripts/fonctions_touchees.py)
+              # config.toml changé (28/09) : seulement les fonctions dont la
+              # section [functions.X] apparaît dans le changement, plus celles
+              # dont le code a changé. Avant, tout était redéployé — trente
+              # fonctions communes à la production pour une ligne de réglage.
+              SECTIONS=""
+              if echo "$CHANGES" | grep -qE '^supabase/config\.toml$'; then
+                SECTIONS=$(git diff -U0 "$AVANT" "$APRES" -- supabase/config.toml | grep -oE '^[+-]\[functions\.[A-Za-z0-9_-]+\]' | sed -E 's/.*functions\.([^]]+)\]/\1/' | sort -u)
               fi
+              LISTE=$( { CHANGES="$CHANGES" python3 .github/scripts/fonctions_touchees.py; echo "$SECTIONS"; } | grep -v '^$' | sort -u)
             fi
           elif [ -n "$FN" ]; then
             LISTE="$FN"

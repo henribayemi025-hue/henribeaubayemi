@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub } from '@tabler/icons-react';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
-import { Arbre, Carte, Modifications, Journal, NouveauProjet } from './Parties';
+import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
 import { Visage as VisageAgent } from '../parties/Visage';
@@ -794,6 +794,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), false],
             [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), false],
             [IconDownload, t('legion.atelier.exporter'), exporter, travaille],
+            [IconBrandGithub, t('legion.atelier.github.titre'), () => setPanneau('github'), travaille || !(vue?.fichiers || []).length],
             [IconPlus, t('legion.atelier.nouvelleSession'), nouvelleSession, travaille || statut === 'attente'],
           ].filter(Boolean).map(([Icone, label, fn, off]) => (
             <button key={label} type="button" onClick={fn} disabled={off}
@@ -846,6 +847,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       {paletteOuverte && vue && <Palette entrees={entreesPalette} onChoisir={(r) => r.faire()} onFermer={() => setPaletteOuverte(false)} t={t} />}
       {panneau === 'nouveau' && <NouveauProjet onCreer={creer} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'modifications' && pid && <Modifications pid={pid} onFermer={() => setPanneau(null)} t={t} />}
+      {panneau === 'github' && pid && <EnvoyerGithub pid={pid} projet={projets.find((p) => p.id === pid)?.nom} fichiers={vue?.fichiers} entrepriseId={entrepriseId} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'journal' && pid && <Journal pid={pid} regles={vue?.regles} langue={langue} onRetirer={retirerRegle} onFermer={() => setPanneau(null)} t={t} />}
     </div>
   );

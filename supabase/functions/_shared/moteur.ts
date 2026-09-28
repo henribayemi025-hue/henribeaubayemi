@@ -31,7 +31,37 @@
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
 
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
+
+// LE DISJONCTEUR (28/09). Mesuré ce soir : pour un simple « ça va ? »,
+// DeepSeek refusait (solde épuisé, 2 s), OpenAI aussi (0,5 s), puis Kimi ne
+// répondait pas et on l'attendait 20 s avant que Google réponde en 2 s — 25 s
+// au total, À CHAQUE message. Un moteur qui vient de refuser faute de crédit
+// (tout le compte) passe en fin de file 15 minutes ; un modèle qui ne répond
+// pas, 5 minutes. Le réglage vaut pour toutes les fonctions (rangé dans
+// legion_cache). Rien n'est retiré de la file : l'équipe ne reste jamais
+// muette à cause du disjoncteur.
+const famille = (nom: string) => (nom.includes(':') ? nom.split(':')[0] : 'gemini');
+let endormis = new Map<string, number>();
+let endormisLus = 0;
+const base = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+async function lireEndormis() {
+  if (Date.now() - endormisLus < 30_000) return;
+  endormisLus = Date.now();
+  try {
+    const { data } = await base().from('legion_cache').select('cle, expire_le').like('cle', 'moteur:endormi:%');
+    endormis = new Map((data || []).map((r: { cle: string; expire_le: string }) => [r.cle.slice('moteur:endormi:'.length), Date.parse(r.expire_le)]));
+  } catch (e) { console.error('disjoncteur (lire):', (e as Error).message); }
+}
+async function endormir(f: string, ms: number, raison: string) {
+  endormis.set(f, Date.now() + ms);
+  try {
+    await base().from('legion_cache').upsert({ cle: `moteur:endormi:${f}`, fonction: 'moteur', valeur: { raison: raison.slice(0, 200) }, expire_le: new Date(Date.now() + ms).toISOString() });
+  } catch (e) { console.error('disjoncteur (écrire):', (e as Error).message); }
+}
+const SANS_CREDIT = /HTTP 402|insufficient balance|no credits remaining|insufficient_quota|exceeded your current quota|credit balance|spending cap|HTTP 401|invalid.{0,10}api.?key/i;
+const MUET = /timed out|timeout|aborted/i;
 
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 
@@ -232,7 +262,12 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
   let derniere = 'aucun modèle joignable';
   let plafondGoogle = false;
   const liste = o.modeles ?? moteurs();
-  for (const nom of o.sansSecours ? liste : [...liste, ...secours().filter((x) => !liste.includes(x))]) {
+  const candidats = o.sansSecours ? liste : [...liste, ...secours().filter((x) => !liste.includes(x))];
+  await lireEndormis();
+  const dort = (n: string) => Math.max(endormis.get(famille(n)) ?? 0, endormis.get(n) ?? 0) > Date.now();
+  // Ceux qui dorment passent en dernier, sans être retirés : un moteur mis
+  // de côté à tort reste un recours.
+  for (const nom of [...candidats.filter((n) => !dort(n)), ...candidats.filter(dort)]) {
     // Le plafond de dépenses du projet Google vaut pour tous ses modèles
     // (vu le 24/09) : inutile de les essayer un par un, on passe au secours.
     if (plafondGoogle && /^gemini/.test(nom)) continue;
@@ -245,6 +280,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       try { return { obj: nettoyer(JSON.parse(txt)), modele: nom }; } catch { derniere = `${nom}: JSON illisible`; }
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
+      if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
+      // Muet : seulement CE modèle (un Pro lent ne met pas de côté tout Google).
+      else if (MUET.test(derniere)) await endormir(nom, 5 * 60_000, derniere);
       if (/spending cap/i.test(derniere)) plafondGoogle = true;
       // Un solde épuisé chez DeepSeek ou Kimi : Beau est prévenu (une fois par jour).
       if (/HTTP 402|insufficient balance|exceeded your current quota/i.test(derniere)) {

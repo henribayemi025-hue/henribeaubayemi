@@ -8,6 +8,8 @@
 // - LES PAIEMENTS de la place de marché, un par un : sans nom, téléphone ni
 //   adresse, comptes de test exclus.
 
+import { jetonInstallation } from './github-app.ts';
+
 // deno-lint-ignore no-explicit-any
 type Service = any;
 
@@ -18,6 +20,13 @@ export async function depotDe(service: Service, entrepriseId: string): Promise<D
   const { data: c } = await service.from('legion_connecteurs').select('config').eq('entreprise_id', entrepriseId).eq('type', 'github').eq('actif', true).maybeSingle();
   const depot = String(c?.config?.depot || '');
   if (!DEPOT_OK.test(depot)) return null;
+  // Branché par l'application GitHub (28/09) : un jeton d'une heure, limité
+  // aux dépôts choisis. Sinon, le jeton collé à la main, rangé au coffre.
+  if (c?.config?.installation_id) {
+    try {
+      return { depot, branche: String(c?.config?.branche || ''), jeton: await jetonInstallation(c.config.installation_id) };
+    } catch (e) { console.error('jeton installation:', (e as Error).message); }
+  }
   const { data: jeton } = await service.rpc('legion_jeton_github', { p_entreprise: entrepriseId });
   return { depot, branche: String(c?.config?.branche || ''), jeton: jeton || null };
 }

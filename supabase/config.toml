@@ -10,3 +10,10 @@ project_id = "bokwivwizghdlaedczbw"
 # (lg_…) avant de répondre quoi que ce soit.
 [functions.legion-mcp]
 verify_jwt = false
+
+# Le retour de GitHub après « Se connecter avec GitHub » (28/09) : c'est le
+# navigateur de la personne qui revient, sans jeton Léo. La fonction vérifie
+# elle-même un « state » signé et le jeton GitHub de la personne ; ses actions
+# POST exigent la session Léo.
+[functions.atelier-github]
+verify_jwt = false

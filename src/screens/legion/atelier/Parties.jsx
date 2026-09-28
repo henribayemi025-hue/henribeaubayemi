@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus } from '@tabler/icons-react';
 import { appel } from './api';
+import { supabase } from '../../../lib/supabase';
 import { dollars } from './arbre';
 
 // Les morceaux de l'écran Atelier : l'arbre, la carte d'autorisation, les
@@ -255,6 +256,95 @@ export function NouveauProjet({ onCreer, onFermer, t }) {
           {t('legion.atelier.creer')}
         </button>
       </form>
+    </Feuille>
+  );
+}
+
+// ENVOYER SUR GITHUB (28/09) — le plan du 24/09, point 8 : on choisit le
+// dépôt (branché par l'application GitHub), la branche `leo/…` est proposée,
+// le message est modifiable, et RIEN ne part sans « Confirmer ». La branche
+// principale n'est jamais touchée ; la demande de fusion est en option.
+export function EnvoyerGithub({ pid, projet, fichiers, entrepriseId, onFermer, t }) {
+  const [conn, setConn] = useState(undefined);
+  const [depot, setDepot] = useState('');
+  const [branche, setBranche] = useState(() => `leo/${String(projet || 'atelier').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'atelier'}`);
+  const [message, setMessage] = useState('');
+  const [fusion, setFusion] = useState(false);
+  const [confirme, setConfirme] = useState(false);
+  const [etat, setEtat] = useState(null); // { encours } | { ok, … } | { erreur }
+
+  useEffect(() => {
+    supabase.from('legion_connecteurs').select('config').eq('entreprise_id', entrepriseId).eq('type', 'github').eq('actif', true).maybeSingle()
+      .then(({ data }) => { setConn(data?.config || null); setDepot(data?.config?.depot || ''); });
+  }, [entrepriseId]);
+
+  async function envoyer() {
+    setEtat({ encours: true });
+    try {
+      const liste = (fichiers || []).slice(0, 300);
+      const contenus = [];
+      for (const f of liste) {
+        const r = await appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(f.chemin)}`);
+        contenus.push({ chemin: r.chemin, contenu: r.contenu });
+      }
+      const { data, error } = await supabase.functions.invoke('atelier-github', {
+        body: { action: 'envoyer', entreprise_id: entrepriseId, depot, branche, message: message || t('legion.atelier.github.messageParDefaut', { projet: projet || '' }), fichiers: contenus, demande_fusion: fusion },
+      });
+      if (error || data?.erreur) setEtat({ erreur: data?.erreur || error.message });
+      else setEtat(data);
+    } catch (e) { setEtat({ erreur: e.message }); }
+  }
+
+  const viaApp = !!conn?.via_app;
+  return (
+    <Feuille titre={t('legion.atelier.github.titre')} onFermer={onFermer} t={t}>
+      {conn === undefined && <p className="text-caption text-legion-muted">…</p>}
+      {conn !== undefined && !viaApp && (
+        <p className="text-caption text-legion-ink">{t('legion.atelier.github.pasBranche')}</p>
+      )}
+      {viaApp && !etat?.ok && (
+        <div className="space-y-3 text-caption">
+          <label className="block">
+            <span className="mb-1 block font-semibold text-legion-ink">{t('legion.atelier.github.depot')}</span>
+            <select value={depot} onChange={(e) => setDepot(e.target.value)} className="input w-full text-[13px]">
+              {(conn.depots || [depot]).map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block font-semibold text-legion-ink">{t('legion.atelier.github.branche')}</span>
+            <input value={branche} onChange={(e) => setBranche(e.target.value)} className="input w-full font-mono text-[13px]" />
+            <span className="mt-1 block text-[11px] text-legion-muted">{t('legion.atelier.github.brancheAide')}</span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block font-semibold text-legion-ink">{t('legion.atelier.github.message')}</span>
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder={t('legion.atelier.github.messageParDefaut', { projet: projet || '' })} className="input w-full text-[13px]" />
+          </label>
+          <label className="flex items-center gap-2 text-legion-ink">
+            <input type="checkbox" checked={fusion} onChange={(e) => setFusion(e.target.checked)} />
+            {t('legion.atelier.github.fusion')}
+          </label>
+          <p className="text-legion-muted">{t('legion.atelier.github.resume', { count: (fichiers || []).length, depot, branche })}</p>
+          {!confirme ? (
+            <button type="button" disabled={!depot || !(fichiers || []).length} onClick={() => setConfirme(true)} className="rounded-pill bg-legion-gold px-4 py-2 font-semibold text-legion-bg disabled:opacity-50">{t('legion.atelier.github.envoyer')}</button>
+          ) : (
+            <div className="rounded-xl border border-legion-gold p-3">
+              <p className="mb-2 font-semibold text-legion-ink">{t('legion.atelier.github.sur', { depot, branche })}</p>
+              <div className="flex gap-2">
+                <button type="button" disabled={etat?.encours} onClick={envoyer} className="rounded-pill bg-legion-gold px-4 py-2 font-semibold text-legion-bg disabled:opacity-50">{etat?.encours ? t('legion.atelier.github.encours') : t('legion.atelier.github.confirmer')}</button>
+                <button type="button" disabled={etat?.encours} onClick={() => setConfirme(false)} className="rounded-pill border border-legion-line px-4 py-2 text-legion-ink">{t('common.cancel')}</button>
+              </div>
+            </div>
+          )}
+          {etat?.erreur && <p className="text-legion-danger">{etat.erreur}</p>}
+        </div>
+      )}
+      {etat?.ok && (
+        <div className="space-y-2 text-caption text-legion-ink">
+          <p className="font-semibold">{t('legion.atelier.github.fait', { count: etat.fichiers, branche: etat.branche })}</p>
+          <a href={etat.voir} target="_blank" rel="noopener noreferrer" className="block text-legion-gold underline">{t('legion.atelier.github.voir')}</a>
+          {etat.fusion && <a href={etat.fusion} target="_blank" rel="noopener noreferrer" className="block text-legion-gold underline">{t('legion.atelier.github.voirFusion')}</a>}
+        </div>
+      )}
     </Feuille>
   );
 }
