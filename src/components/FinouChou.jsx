@@ -473,7 +473,20 @@ export function FinouChou() {
                         {p.price_on_request || p.prix_sur_demande ? (
                           <p className="text-caption font-semibold text-brass">{t('product.priceOnRequest')}</p>
                         ) : (
-                          <Price fcfa={p.price_fcfa} className="text-caption font-semibold text-teal" />
+                          // Beau, 28/09 (B8) : « même aux vendeuses
+                          // européennes ? à changer ». Un article de SA
+                          // boutique se relit dans la devise où elle l'a saisi
+                          // — c'est la règle de `VendorPrice`. On ne peut pas
+                          // l'employer ici (elle lit le contexte de la route
+                          // vendeuse, et Finia flotte au-dessus de n'importe
+                          // quelle page), donc on passe la devise à la main.
+                          // Les articles des AUTRES boutiques restent dans la
+                          // monnaie de celle qui regarde : là, elle achète.
+                          <Price
+                            fcfa={p.price_fcfa}
+                            currency={p.shop_id && shop?.id === p.shop_id && shop?.country ? currencyForCountry(shop.country) : undefined}
+                            className="text-caption font-semibold text-teal"
+                          />
                         )}
                       </button>
                       {MIRROR_CATEGORIES.includes(p.category) && (

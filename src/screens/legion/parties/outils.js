@@ -147,8 +147,19 @@ export function raisonLisible(raison, t) {
   if (/spending cap/i.test(r)) {
     return t('legion.plafondIA', "Le budget d'intelligence artificielle du mois est épuisé. Les agents reprendront dès qu'il sera relevé.");
   }
+  // Beau, 28/09 (ligne B6) : « à changer ». L'écran accusait Google d'être
+  // saturé alors que la vraie cause était que TOUS les moteurs payants étaient
+  // à court de crédit. Les deux cas partagent le code 429 et le mot
+  // RESOURCE_EXHAUSTED, d'où la confusion — mais ils ne se règlent pas pareil :
+  // saturé, on réessaie dans une minute ; à court de crédit, réessayer ne sert
+  // à rien tant que personne n'a rechargé. On regarde donc d'abord les mots qui
+  // ne veulent dire QUE « plus d'argent » (insufficient_quota, credit balance,
+  // billing…), et on ne garde « saturé » que pour ce qui reste.
+  if (/insufficient[_ ]?quota|insufficient[_ ]?balance|credit balance|out of credits?|no credits?|billing|payment required|\b402\b|exceeded your current quota/i.test(r)) {
+    return t('legion.creditEpuise', "Le compte du moteur d'intelligence artificielle n'a plus de crédit. Réessayer ne changera rien tant qu'il n'est pas rechargé.");
+  }
   if (/\b(503|429)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(r)) {
-    return t('legion.googleSature', 'Les modèles de Google sont saturés en ce moment. Réessaie dans une minute.');
+    return t('legion.moteurSature', 'Le moteur est saturé en ce moment. Réessaie dans une minute.');
   }
   if (/[{}]|HTTP \d{3}/.test(r)) return t('legion.reessaie', 'Petit souci de connexion avec les modèles. Réessaie dans un instant.');
   return r.slice(0, 160);
