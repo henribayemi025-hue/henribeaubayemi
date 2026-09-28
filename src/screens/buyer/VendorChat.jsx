@@ -27,6 +27,7 @@ import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 import { currencyForCountry, convertFromFcfa } from '../../lib/currency';
 import { estPremium } from '../../lib/premium';
+import { whatsappLink } from '../../lib/phone';
 import { FinouAction } from '../../components/FinouAction';
 
 // Mentioning @finouchou (or @finou) inside a buyer<->vendor chat pulls in the
@@ -530,9 +531,11 @@ export default function VendorChat({ vendor = false }) {
   }
 
   const shop = meta?.shops;
-  // Numéros nettoyés une seule fois: un WhatsApp saisi « +237 6 12 34 56 78 »
-  // doit devenir un lien wa.me valide, pas une URL avec des espaces.
-  const waNumber = shop?.whatsapp?.replace(/[^\d]/g, '');
+  // L'indicatif vient du PAYS DE LA BOUTIQUE : le champ WhatsApp est saisi en
+  // format local (« 691024291 ») et `wa.me` exige l'international. Nettoyer
+  // les espaces ne suffisait pas — le lien restait mort pour 45 boutiques sur
+  // 62 (mesuré le 28/09). Sans indicatif sûr, pas de bouton.
+  const waLien = whatsappLink(shop?.whatsapp, shop?.country);
   const telNumber = shop?.phone?.replace(/[^+\d]/g, '');
 
   const thread = (
@@ -578,9 +581,9 @@ export default function VendorChat({ vendor = false }) {
             <span className="block text-[11px] text-muted">{t('chat.viewShop')}</span>
           </Link>
         </div>
-        {waNumber && (
+        {waLien && (
           <a
-            href={`https://wa.me/${waNumber}`}
+            href={waLien}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="WhatsApp"

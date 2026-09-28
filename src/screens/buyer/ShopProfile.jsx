@@ -25,6 +25,7 @@ import { isServiceShop, isServiceCategory } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
+import { whatsappLink } from '../../lib/phone';
 import { StoryViewer } from '../../components/StoryViewer';
 import { useShopStories } from '../../hooks/useShopStories';
 
@@ -372,9 +373,9 @@ export default function ShopProfile() {
         {/* Contact rapide: chaque canal n'apparaît QUE si renseigné. */}
         {(shop.whatsapp || shop.phone || shop.instagram) && (
           <div className="mt-2 flex gap-2 sm:max-w-md">
-            {shop.whatsapp && (
+            {whatsappLink(shop.whatsapp, shop.country) && (
               <a
-                href={`https://wa.me/${shop.whatsapp.replace(/[^\d]/g, '')}?text=${encodeURIComponent(sk('waGreeting', { name: shop.name }))}`}
+                href={whatsappLink(shop.whatsapp, shop.country, sk('waGreeting', { name: shop.name }))}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track('whatsapp_click', shop.id, { source: 'shop_header' })}
@@ -620,9 +621,9 @@ export default function ShopProfile() {
               {(shop.city || shop.country) && (
                 <p className="text-caption text-muted">{t('shop.location')}: {[shop.city, shop.country].filter(Boolean).join(', ')}</p>
               )}
-              {shop.whatsapp && (
+              {whatsappLink(shop.whatsapp, shop.country) && (
                 <a
-                  href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}`}
+                  href={whatsappLink(shop.whatsapp, shop.country)}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => track('whatsapp_click', shop.id, { source: 'shop_about' })}

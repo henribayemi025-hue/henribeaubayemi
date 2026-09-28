@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IconSearch, IconCheck, IconArchive, IconBrandWhatsapp, IconMail } from '@tabler/icons-react';
+import { IconSearch, IconCheck, IconArchive, IconBrandWhatsapp, IconMail, IconPhone } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { Button } from '../../components/Button';
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { whatsappNumber } from '../../lib/phone';
 
 const ONGLETS = ['ouverte', 'traitee', 'close'];
 
@@ -22,13 +23,22 @@ const ONGLETS = ['ouverte', 'traitee', 'close'];
 // contact est le plus gros élément de la carte, cliquable directement en
 // WhatsApp ou en e-mail selon ce qu'elle a laissé — pas un texte à
 // recopier à la main dans une autre application.
+// Le contact est du texte libre tapé par la personne, et cette table ne
+// porte aucun pays — contrairement à une boutique, on n'a rien pour deviner
+// l'indicatif. Or `wa.me` l'exige : `wa.me/691024291` n'ouvre rien.
+//
+// On ne devine donc PAS. WhatsApp seulement si le numéro est déjà
+// international (il commence par « + » ou « 00 ») ; sinon on propose
+// l'appel, qui marche tel quel depuis un téléphone du même pays. Mieux vaut
+// un bouton honnête qu'un lien qui fait croire que le message est parti
+// (même règle que la veille, 28/09).
 function lienContact(contact) {
   const c = String(contact || '').trim();
   if (c.includes('@')) return { href: `mailto:${c}`, Icon: IconMail };
-  // Un contact qui n'est pas un e-mail est un numéro: on ne garde que les
-  // chiffres pour wa.me, qui refuse espaces, tirets et « + ».
+  const num = whatsappNumber(c, null);
+  if (num) return { href: `https://wa.me/${num}`, Icon: IconBrandWhatsapp };
   const chiffres = c.replace(/\D/g, '');
-  if (chiffres.length >= 8) return { href: `https://wa.me/${chiffres}`, Icon: IconBrandWhatsapp };
+  if (chiffres.length >= 8) return { href: `tel:${c.replace(/[^+\d]/g, '')}`, Icon: IconPhone };
   return null;
 }
 

@@ -23,6 +23,7 @@ import { isPriceOnRequest, MIRROR_CATEGORIES } from '../../lib/categories';
 import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
+import { whatsappLink } from '../../lib/phone';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -110,7 +111,7 @@ export default function ProductDetail() {
   const { data, loading, error, retry } = useAsync(async () => {
     const { data: product, error: err } = await supabase
       .from('products')
-      .select('*, shops!inner(id, name, slug, is_verified, rating, premium_until, whatsapp)')
+      .select('*, shops!inner(id, name, slug, is_verified, rating, premium_until, whatsapp, country)')
       .eq('id', id)
       .maybeSingle();
     if (err) throw err;
@@ -190,16 +191,18 @@ export default function ProductDetail() {
   const p = data.product;
   const shop = p.shops;
   const quote = isPriceOnRequest(p);
-  // wa.me n'accepte que des chiffres: ni espaces, ni tirets, ni « + ».
-  // En dessous de 8 chiffres, ce n'est pas un numéro joignable — on préfère
-  // ne rien afficher plutôt qu'un bouton qui tombe dans le vide.
-  const numeroWhatsApp = String(shop?.whatsapp || '').replace(/\D/g, '');
-  const lienWhatsApp =
-    numeroWhatsApp.length >= 8
-      ? `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
-          t('product.askSellerMessage', { name: p.name, url: `${window.location.origin}/product/${p.id}` })
-        )}`
-      : null;
+  // Le bouton de contact le plus important de la place de marché. Il était
+  // MORT pour 45 boutiques sur 62 (mesuré le 28/09) : le champ WhatsApp est
+  // saisi en format local (« 691024291 ») et `wa.me` exige l'international.
+  // L'indicatif vient donc du PAYS DE LA BOUTIQUE, jamais d'une déduction
+  // sur le numéro — un mobile camerounais « 61… » commence aussi par
+  // l'indicatif australien. Sans indicatif sûr, `whatsappLink` rend null et
+  // on n'affiche rien : un lien mort fait croire que le message est parti.
+  const lienWhatsApp = whatsappLink(
+    shop?.whatsapp,
+    shop?.country,
+    t('product.askSellerMessage', { name: p.name, url: `${window.location.origin}/product/${p.id}` })
+  );
   const pct = quote ? null : discountPercent(p.price_fcfa, p.compare_at_price_fcfa);
   const outOfStock = !quote && (p.stock ?? 0) <= 0;
   // La ligne de panier correspond à la VARIANTE sélectionnée: la même robe en

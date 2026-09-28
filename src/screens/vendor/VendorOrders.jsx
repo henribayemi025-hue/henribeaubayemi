@@ -17,6 +17,7 @@ import { OrderStatusBadge, orderAccentColor } from '../../components/OrderStatus
 import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 import { compressForUpload } from '../../lib/image';
+import { whatsappLink } from '../../lib/phone';
 
 // Le VRAI flux marketplace (avant, un seul bouton sautait de « nouvelle » à
 // « envoyée » sans validation ni refus — le constat exact de Beau):
@@ -252,9 +253,15 @@ export default function VendorOrders() {
                         <a href={`tel:${o.buyer_phone.replace(/[^+\d]/g, '')}`} className="flex items-center gap-1 text-caption font-semibold text-teal">
                           <IconPhone size={12} /> {o.buyer_phone}
                         </a>
-                        <a href={`https://wa.me/${o.buyer_phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-caption font-semibold text-success">
-                          <IconBrandWhatsapp size={13} /> WhatsApp
-                        </a>
+                        {/* L'indicatif vient du pays de LA BOUTIQUE : en
+                            paiement à la livraison, l'acheteur est dans la
+                            même ville. Sans indicatif, le lien n'ouvre rien —
+                            c'était le cas pour toutes les commandes. */}
+                        {whatsappLink(o.buyer_phone, shop?.country) && (
+                          <a href={whatsappLink(o.buyer_phone, shop?.country)} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-caption font-semibold text-success">
+                            <IconBrandWhatsapp size={13} /> WhatsApp
+                          </a>
+                        )}
                       </span>
                     )}
                   </div>

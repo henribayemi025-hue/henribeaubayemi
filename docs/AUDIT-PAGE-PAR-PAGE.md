@@ -127,6 +127,54 @@ lieu de quatre — mais ça touche la lecture de tout le catalogue en production
 
 ---
 
+## 🔴🔴 Défaut réel n° 3 — le bouton WhatsApp est mort pour 3 boutiques sur 4
+
+**C'est la plus grosse trouvaille de l'audit.**
+
+Ce matin j'ai corrigé le lien WhatsApp de la Console : il faisait
+`wa.me/691024291` alors que WhatsApp exige l'international. J'ai réparé la
+Console et je suis passé à autre chose. **Je n'ai pas cherché ailleurs.**
+
+Le même lien était construit à la main dans **six** écrans, et cinq avaient le
+même défaut — dont les deux plus importants : **la fiche article** et **la fiche
+boutique**, c'est-à-dire le bouton « contacter la vendeuse » que voit chaque
+visiteuse de finjaro.net.
+
+Mesuré en production, comme une visiteuse :
+
+| | |
+|---|---|
+| Boutiques visibles | 66 |
+| Qui affichent un contact WhatsApp | 62 |
+| **Dont le lien était MORT** | **45** |
+
+**73 % des boutiques.** Sur une place de marché en paiement à la livraison, où
+tout commence par un message, le bouton qui met en relation ne marchait pas
+pour trois vendeuses sur quatre. Ça n'apparaît dans aucune mesure : la visiteuse
+clique, WhatsApp s'ouvre sur « numéro invalide », et elle s'en va.
+
+Les six endroits, et ce qu'ils sont devenus :
+
+| Écran | Qui clique | État |
+|---|---|---|
+| Fiche article | une acheteuse | ✅ indicatif du pays de la boutique |
+| Fiche boutique (en-tête) | une acheteuse | ✅ idem |
+| Fiche boutique (à propos) | une acheteuse | ✅ idem |
+| Conversation | une acheteuse | ✅ idem |
+| Commandes de la vendeuse | la vendeuse écrit à son acheteur | ✅ pays de sa boutique |
+| Console — demandes | l'équipe | ✅ WhatsApp seulement si le numéro est déjà international, **sinon un bouton « appeler »**, parce que cette table ne porte aucun pays et qu'on ne devine pas |
+| Aide | une acheteuse | déjà bon (numéro de support écrit en international) |
+
+Quand l'indicatif n'est pas sûr, **aucun bouton ne s'affiche**. Un lien mort est
+pire que pas de lien : il fait croire que le message est parti.
+
+**Et pour que ça ne revienne pas**, un test lit désormais le code source et
+échoue si un écran recompose un lien `wa.me` à la main au lieu de passer par la
+fonction qui connaît les indicatifs. C'est ce qui manquait ce matin : j'avais
+réparé un endroit, pas la classe de défaut.
+
+---
+
 ## 🟠 Ce que voit vraiment une visiteuse — les chiffres du catalogue
 
 Mesuré comme une visiteuse non connectée, comptes de test exclus par la base :
@@ -157,7 +205,7 @@ Les photos et les stocks, eux, sont sains : 2 articles sur 406 dans chaque cas.
 
 ---
 
-## 🔴 Défaut réel n° 3 — une commande sans compte ne reçoit jamais rien
+## 🔴 Défaut réel n° 4 — une commande sans compte ne reçoit jamais rien
 
 Déjà relevé dans le carnet du 28/09, repris ici parce qu'il appartient à
 l'audit du parcours acheteur.
