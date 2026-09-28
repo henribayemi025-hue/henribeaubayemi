@@ -9,15 +9,25 @@
 //    l'app, actuellement en toute première revue App Store, à un refus ou à
 //    une exigence de bandeau ATT. Le pixel ne sert de toute façon qu'aux
 //    campagnes web (Facebook/Instagram Ads pointant vers finjaro.net).
-// 2. JAMAIS sans consentement explicite. Voir CookieConsent.jsx — le
-//    chargement n'est déclenché que par un clic "Accepter".
-const PIXEL_ID = '3321058288094091';
+// 2. JAMAIS sans consentement là où la loi l'exige. Voir CookieConsent.jsx.
+
+// Deux pixels, et c'est voulu. Beau a envoyé le 28/09 le code de son pixel
+// actuel (`1530672592412912`) ; le code en portait déjà un autre depuis le
+// 04/09 (`3321058288094091`). Remplacer l'ancien aurait coupé les données de
+// toute campagne ou audience qui s'appuie encore dessus, sans que personne ne
+// le voie. Meta accepte plusieurs pixels sur une même page : chaque `init`
+// ajoute un destinataire, et un seul `track` part vers tous. On retirera
+// l'ancien quand Beau aura confirmé qu'il ne sert plus.
+export const PIXEL_IDS = ['1530672592412912', '3321058288094091'];
 
 function estAppNative() {
   return typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.();
 }
 
 let charge = false;
+// Le chemin dont la page vue a déjà été comptée. Sert à ne jamais compter deux
+// fois la même page (voir `pageVueMeta`).
+let derniereVue = null;
 
 export function chargerPixelMeta() {
   if (charge || estAppNative() || typeof document === 'undefined') return;
@@ -33,13 +43,32 @@ export function chargerPixelMeta() {
   script.src = 'https://connect.facebook.net/en_US/fbevents.js';
   document.head.appendChild(script);
 
-  window.fbq('init', PIXEL_ID);
+  for (const id of PIXEL_IDS) window.fbq('init', id);
   window.fbq('track', 'PageView');
+  derniereVue = window.location?.pathname ?? null;
 
-  const img = document.createElement('img');
-  img.height = 1;
-  img.width = 1;
-  img.style.display = 'none';
-  img.src = `https://www.facebook.com/tr?id=${PIXEL_ID}&ev=PageView&noscript=1`;
-  document.body.appendChild(img);
+  // Il n'y a volontairement PAS d'image `facebook.com/tr?…&noscript=1` ici.
+  // Dans l'extrait officiel de Meta, cette image est enveloppée dans
+  // <noscript> : elle ne sert qu'aux navigateurs SANS JavaScript. Injectée par
+  // du JavaScript, elle partait à chaque fois EN PLUS du `track` ci-dessus, et
+  // comptait donc la première page deux fois — des chiffres de pub gonflés.
+}
+
+// Finjaro est une application à une seule page : changer d'écran ne recharge
+// rien, donc l'extrait de Meta ne voyait QUE la première page. Pour une
+// campagne, ça veut dire que Meta ignorait tout ce que la personne regardait
+// ensuite — un article, une boutique, le panier. On signale chaque changement
+// d'écran, une seule fois par chemin, et seulement si le pixel a été chargé
+// (donc seulement si la personne l'a accepté, là où c'est exigé).
+export function pageVueMeta(chemin) {
+  if (!charge || typeof window === 'undefined' || !window.fbq) return;
+  if (!chemin || chemin === derniereVue) return;
+  derniereVue = chemin;
+  window.fbq('track', 'PageView');
+}
+
+// Pour les tests seulement : repart d'un état vierge.
+export function _reinitialiserPixelPourTests() {
+  charge = false;
+  derniereVue = null;
 }

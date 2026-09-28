@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { track } from '../lib/track';
-import { chargerPixelMeta } from '../lib/pixel';
+import { chargerPixelMeta, pageVueMeta } from '../lib/pixel';
 import { useSettings } from '../hooks/useSettings';
 
 const CONSENT_KEY = 'finjaro_pixel_consent'; // '1' accepté, '0' refusé
@@ -65,6 +65,15 @@ export function CookieConsent() {
     // à un camerounais mal détecté que rater un français).
     setShow(true);
   }, [pathname, country]);
+
+  // Chaque changement d'écran compte comme une page vue — mais seulement si
+  // le pixel est déjà chargé, donc seulement avec l'accord de la personne là
+  // où la loi l'exige. Déclaré APRÈS l'effet de consentement : au premier
+  // affichage, le chargement compte déjà la page, et `pageVueMeta` voit que
+  // ce chemin est déjà compté.
+  useEffect(() => {
+    pageVueMeta(pathname);
+  }, [pathname]);
 
   function repondre(accepte) {
     track('cookie_answer', null, { accepte });
