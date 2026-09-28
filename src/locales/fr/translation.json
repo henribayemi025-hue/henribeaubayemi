@@ -3356,6 +3356,8 @@
       "quotes": "Prix demandés"
     },
     "selectionTotal": "{{count}} commande(s)",
+    "horsAnnulees_one": "hors {{count}} annulée",
+    "horsAnnulees_other": "hors {{count}} annulées",
     "voirTests": "voir les tests ({{count}})",
     "reportStatus": {
       "pending": "À traiter",
@@ -3467,6 +3469,9 @@
       "lastReminded": "Relancée {{when}}",
       "neverReminded": "Jamais relancée",
       "vendorWhatsapp": "WhatsApp vendeuse",
+      "noPush": "Cette boutique n'a pas activé les notifications : une relance ne lui arriverait pas. Écris-lui sur WhatsApp.",
+      "waOrder": "Bonjour 👋 Ici Finjaro.\n\nLa commande n° {{no}} attend votre réponse depuis {{depuis}}.\n\nOuvrez finjaro.net → Mes commandes pour l'accepter ou la refuser. Sans réponse, la personne qui a commandé ira acheter ailleurs.",
+      "waChat": "Bonjour 👋 Ici Finjaro.\n\nUne personne a écrit à {{boutique}} il y a {{depuis}} et attend encore une réponse.\n\nOuvrez finjaro.net → Messages pour lui répondre.",
       "call": "Appeler",
       "speed": "Vitesse réelle du site",
       "noSpeed": "Pas encore de mesure — elles arrivent à chaque visite.",

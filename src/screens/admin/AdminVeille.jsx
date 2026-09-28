@@ -10,6 +10,7 @@ import { useToast } from '../../hooks/useToast';
 import { Price } from '../../components/Price';
 import { Skeleton, ErrorState } from '../../components/states';
 import { timeAgo } from '../../lib/format';
+import { whatsappLink } from '../../lib/phone';
 
 // Veille: tout ce qui attend une action, sur un seul écran, avec le bouton
 // pour agir. Les automates (relance à 24 h, boutiques vides…) tournent déjà
@@ -43,19 +44,27 @@ function Section({ icon: Icon, title, count, children, tone = 'ink' }) {
   );
 }
 
-function Contacts({ t, tel, waLabel }) {
+// `pays` est celui de la BOUTIQUE, pas celui de l'appareil: le champ WhatsApp
+// est saisi en format local (« 691024291 »), et `wa.me` exige l'international.
+// Sans indicatif sûr, pas de bouton — un lien mort fait croire que le message
+// est parti (Beau, 28/09).
+function Contacts({ t, tel, pays, message, waLabel, waFort = false }) {
   if (!tel) return null;
-  const num = String(tel).replace(/[^\d]/g, '');
+  const lien = whatsappLink(tel, pays, message);
   return (
     <div className="flex gap-2">
+      {lien && (
       <a
-        href={`https://wa.me/${num}`}
+        href={lien}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 rounded-pill bg-success-bg px-2.5 py-1 text-caption font-semibold text-success"
+        className={waFort
+          ? 'inline-flex items-center gap-1 rounded-pill bg-success px-3 py-1.5 text-caption font-semibold text-white'
+          : 'inline-flex items-center gap-1 rounded-pill bg-success-bg px-2.5 py-1 text-caption font-semibold text-success'}
       >
         <IconBrandWhatsapp size={14} /> {waLabel}
       </a>
+      )}
       <a href={`tel:${tel}`} className="inline-flex items-center gap-1 rounded-pill bg-teal-light px-2.5 py-1 text-caption font-semibold text-teal">
         <IconPhone size={14} /> {t('admin.veille.call')}
       </a>
@@ -186,8 +195,11 @@ export default function AdminVeille() {
                     {c.cliente_email ? ` · ${c.cliente_email}` : ''}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {/* La cliente n'a pas forcément le pays de la boutique;
+                        sans indicatif fiable, `whatsappLink` renvoie null et
+                        seul le bouton Appeler reste. */}
                     <Contacts t={t} tel={c.cliente_tel} waLabel={t('admin.veille.buyerWhatsapp')} />
-                    <Contacts t={t} tel={c.vendeuse_tel} waLabel={t('admin.veille.vendorWhatsapp')} />
+                    <Contacts t={t} tel={c.vendeuse_tel} pays={c.boutique_pays} waLabel={t('admin.veille.vendorWhatsapp')} />
                   </div>
                 </li>
               );
@@ -220,15 +232,31 @@ export default function AdminVeille() {
                     : t('admin.veille.neverReminded')}
                   {c.escaladee_le && ` · ${t('admin.veille.escalated', { when: timeAgo(c.escaladee_le, i18n.language) })}`}
                 </p>
+                {/* La relance passe par une notification push et rien d'autre.
+                    Si la boutique ne les a pas activées, le bouton marquerait
+                    « relancée » sans que personne ne reçoive quoi que ce soit:
+                    on le retire et on dit pourquoi (Beau, 28/09). */}
+                {c.push_actif === false && (
+                  <p className="mt-1.5 text-[11px] text-brass">{t('admin.veille.noPush')}</p>
+                )}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <BoutonRelance
+                  {c.push_actif !== false && (
+                    <BoutonRelance
+                      t={t}
+                      lang={i18n.language}
+                      relanceeLe={relancees[c.id] || c.relancee_le}
+                      busy={busy === c.id}
+                      onClick={() => relancer('admin_relancer_commande', { p_order_id: c.id }, c.id)}
+                    />
+                  )}
+                  <Contacts
                     t={t}
-                    lang={i18n.language}
-                    relanceeLe={relancees[c.id] || c.relancee_le}
-                    busy={busy === c.id}
-                    onClick={() => relancer('admin_relancer_commande', { p_order_id: c.id }, c.id)}
+                    tel={c.vendeuse_tel}
+                    pays={c.boutique_pays}
+                    message={t('admin.veille.waOrder', { no: c.order_no, depuis: attente(t, c.heures) })}
+                    waLabel={t('admin.veille.vendorWhatsapp')}
+                    waFort={c.push_actif === false}
                   />
-                  <Contacts t={t} tel={c.vendeuse_tel} waLabel={t('admin.veille.vendorWhatsapp')} />
                 </div>
               </li>
             ))}
@@ -256,15 +284,27 @@ export default function AdminVeille() {
                     ? t('admin.veille.lastReminded', { when: timeAgo(relancees[c.conversation_id] || c.relancee_le, i18n.language) })
                     : t('admin.veille.neverReminded')}
                 </p>
+                {c.push_actif === false && (
+                  <p className="mt-1.5 text-[11px] text-brass">{t('admin.veille.noPush')}</p>
+                )}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <BoutonRelance
+                  {c.push_actif !== false && (
+                    <BoutonRelance
+                      t={t}
+                      lang={i18n.language}
+                      relanceeLe={relancees[c.conversation_id] || c.relancee_le}
+                      busy={busy === c.conversation_id}
+                      onClick={() => relancer('admin_relancer_conversation', { p_conversation_id: c.conversation_id }, c.conversation_id)}
+                    />
+                  )}
+                  <Contacts
                     t={t}
-                    lang={i18n.language}
-                    relanceeLe={relancees[c.conversation_id] || c.relancee_le}
-                    busy={busy === c.conversation_id}
-                    onClick={() => relancer('admin_relancer_conversation', { p_conversation_id: c.conversation_id }, c.conversation_id)}
+                    tel={c.vendeuse_tel}
+                    pays={c.boutique_pays}
+                    message={t('admin.veille.waChat', { boutique: c.boutique, depuis: attente(t, c.heures) })}
+                    waLabel={t('admin.veille.vendorWhatsapp')}
+                    waFort={c.push_actif === false}
                   />
-                  <Contacts t={t} tel={c.vendeuse_tel} waLabel={t('admin.veille.vendorWhatsapp')} />
                 </div>
               </li>
             ))}

@@ -54,7 +54,15 @@ export default function AdminOrders() {
   const countFor = (tb) => (tb.statuses ? visibles.filter((o) => tb.statuses.includes(o.status)).length : visibles.length);
   const current = TABS.find((x) => x.key === tab);
   const list = current.statuses ? visibles.filter((o) => current.statuses.includes(o.status)) : visibles;
-  const total = list.reduce((n, o) => n + (o.total_fcfa || 0), 0);
+  // Beau, 28/09 (capture): « 3 commandes · 32,01 € », dont une REFUSÉE depuis
+  // le 4 septembre. Le total additionnait de l'argent qui n'existe pas — le
+  // genre de chiffre qui se gonfle tout seul, exactement ce qu'on ne montre
+  // pas. On ne compte plus que ce qui est encore vivant, et on dit ce qu'on a
+  // écarté. Sur l'onglet « Annulées », où l'on demande justement à les voir,
+  // on les compte: c'est la question posée.
+  const comptees = tab === 'cancelled' ? list : list.filter((o) => o.status !== 'cancelled');
+  const total = comptees.reduce((n, o) => n + (o.total_fcfa || 0), 0);
+  const ecartees = list.length - comptees.length;
 
   return (
     <div className="space-y-3 p-4">
@@ -75,7 +83,12 @@ export default function AdminOrders() {
             {t('admin.voirTests', { count: nbTests, defaultValue: 'voir les tests ({{count}})' })}
           </label>
         )}
-        <Price fcfa={total} className="text-section font-semibold text-teal" />
+        <div className="text-right">
+          <Price fcfa={total} className="text-section font-semibold text-teal" />
+          {ecartees > 0 && (
+            <p className="text-[11px] text-muted">{t('admin.horsAnnulees', { count: ecartees, defaultValue: 'hors {{count}} annulée' })}</p>
+          )}
+        </div>
       </div>
 
       {list.length === 0 ? (

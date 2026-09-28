@@ -3356,6 +3356,8 @@
       "quotes": "Price requests"
     },
     "selectionTotal": "{{count}} order(s)",
+    "horsAnnulees_one": "excluding {{count}} cancelled",
+    "horsAnnulees_other": "excluding {{count}} cancelled",
     "voirTests": "show tests ({{count}})",
     "reportStatus": {
       "pending": "To review",
@@ -3467,6 +3469,9 @@
       "lastReminded": "Nudged {{when}}",
       "neverReminded": "Never nudged",
       "vendorWhatsapp": "Seller WhatsApp",
+      "noPush": "This shop has not turned notifications on: a nudge would never reach them. Message them on WhatsApp.",
+      "waOrder": "Hello 👋 This is Finjaro.\n\nOrder no. {{no}} has been waiting for your answer for {{depuis}}.\n\nOpen finjaro.net → My orders to accept or decline it. Without an answer, the person who ordered will buy elsewhere.",
+      "waChat": "Hello 👋 This is Finjaro.\n\nSomeone wrote to {{boutique}} {{depuis}} ago and is still waiting for an answer.\n\nOpen finjaro.net → Messages to reply.",
       "call": "Call",
       "speed": "Real site speed",
       "noSpeed": "No measurement yet — they arrive with every visit.",

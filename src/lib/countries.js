@@ -227,3 +227,18 @@ export function countryFromPhone(phone) {
   }
   return null;
 }
+
+// L'inverse: le pays donne l'indicatif. Utile quand un numéro est stocké
+// SANS indicatif — c'est le cas de presque toutes les boutiques, qui saisissent
+// « 691024291 » et non « +237691024291 ». Un lien wa.me construit sur le numéro
+// nu n'ouvre aucune conversation: WhatsApp exige le numéro international.
+//
+// +1 est partagé; l'inversion garderait le dernier inscrit, on remet donc les
+// deux à la main.
+const COUNTRY_DIAL = Object.fromEntries(Object.entries(DIAL_COUNTRY).map(([d, c]) => [c, d]));
+COUNTRY_DIAL.US = '1';
+COUNTRY_DIAL.CA = '1';
+
+export function dialForCountry(country) {
+  return COUNTRY_DIAL[(country || '').toUpperCase()] || null;
+}
