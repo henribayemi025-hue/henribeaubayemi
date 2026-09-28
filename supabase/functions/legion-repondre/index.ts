@@ -314,6 +314,12 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   if (!corps.message_id) return json({ erreur: 'Message manquant.' }, 400);
 
   const service = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+  // Le temps de chaque étape, noté sur la réponse (meta.temps) : pour savoir
+  // où partent les secondes au lieu de le deviner (Beau, 28/09 : « 12
+  // secondes, c'est long, très long »).
+  const t0 = Date.now();
+  const temps: Record<string, number> = {};
+  const noter = (etape: string) => { temps[etape] = Date.now() - t0; };
 
   // Deux portes. La personne connectée (son jeton: elle ne lit que ce qui
   // est à elle). Ou la base elle-même, quand Claude écrit dans Legion: un
@@ -335,16 +341,15 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   }
   if (!msg) return json({ erreur: 'Message inconnu, ou tu n\'es pas membre.' }, 403);
 
-  const { count: deja } = await service.from('legion_messages').select('id', { count: 'exact', head: true })
-    .eq('canal_id', msg.canal_id).contains('meta', { reponse_a_id: msg.id });
-  if ((deja ?? 0) > 0) return json({ deja: true, messages: [] });
-
-  const [{ data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
+  const [{ count: deja }, { data: entreprise }, { data: salon }, { data: agents }] = await Promise.all([
+    service.from('legion_messages').select('id', { count: 'exact', head: true })
+      .eq('canal_id', msg.canal_id).contains('meta', { reponse_a_id: msg.id }),
     service.from('legion_entreprises').select('nom, projet, formule, marche').eq('id', msg.entreprise_id).single(),
     service.from('legion_canaux').select('id, cle, nom, prive_entre, membres, resume').eq('id', msg.canal_id).single(),
     service.from('legion_agents').select('id, cle, nom, poste, departement, mandat, personnalite, actif, est_directeur, user_id, autonomie, ordre, moteur, jamais, peut_lire, mission, fin_mission, plafond_mois_eur, modele')
       .eq('entreprise_id', msg.entreprise_id).order('ordre'),
   ]);
+  if ((deja ?? 0) > 0) return json({ deja: true, messages: [] });
   if (!entreprise || !salon || !agents) return json({ erreur: 'Entreprise introuvable.' }, 404);
 
   // Le plafond du mois (compteur de dépense): au-delà, on ne rappelle plus Gemini.
@@ -469,6 +474,21 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   if (salutSeul) {
     lignes.push("[Consigne de Léo] Ce message est un SALUT, rien d'autre. Réponds comme un collègue humain qui croise quelqu'un au bureau: une ou deux phrases courtes et chaleureuses, avec ton caractère (« Salut Beau ! Ça va de ton côté ? »). Si tu veux, un mot de ce qui t'occupe, sans détail. AUCUN titre, AUCUNE liste, AUCUN chiffre, AUCUNE proposition, aucun rapport. Pas de tâche.");
   }
+  // LA VOIE RAPIDE (Beau, 28/09 : « 5 secondes, c'est normal pour les
+  // questions faciles »). Mesuré avant : 11,5 s en médiane pour la première
+  // réponse, parce qu'un simple « bonsoir » passait par TROIS appels au modèle
+  // à la suite — l'enquête dans la base (qui décide s'il faut vérifier
+  // quelque chose), la réponse avec 4 096 jetons de réflexion, puis la
+  // relecture. Un salut ou une question courte qui ne demande ni chiffre, ni
+  // vérification, ni document, ni travail n'a besoin d'aucun des trois : un
+  // seul appel, réflexion courte. Au moindre doute, la voie complète.
+  const aDesPieces = (((msg.meta as { pieces?: unknown[] } | null)?.pieces) || []).length > 0;
+  const DEMANDE_DE_FOND = /strat|plan|bilan|object|priorit|analy|result|semaine|mois|trimestre|chiffre|combien|pourquoi|vente|vend|commande|stock|boutique|compta|client|visite|prix|budget|argent|code|ecran|bug|page|site|web|internet|cherch|concurr|rapport|tache|livr|fichier|document|tableau|http|www|verifi|\d/;
+  // Un ordre (« fais… », « prépare… ») demande un travail, pas une réponse courte.
+  const ORDRE = /(^|[.!?,]\s*)(fais|faites|fait|prepare|preparez|redige|ecris|envoie|cree|lance|regarde|trouve|donne|montre|liste|resume|calcule|propose|organise)\b/;
+  const leger = !appelVocal && !tableur && !blocage && !aDesPieces && !(msg.meta as { renvoi?: unknown } | null)?.renvoi
+    && (salutSeul || (tete.length <= 100 && !DEMANDE_DE_FOND.test(t) && !ORDRE.test(tete)));
+
   const pourClaude = !!claude && !estClaude && (cite?.id === claude.id
     || (prive && salon.prive_entre.includes(claude.cle))
     || t.includes('@' + sansAccent(claude.nom))
@@ -544,25 +564,60 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   }
 
 
-  // Le connecteur « Mesures Finjaro »: si l'entreprise l'a branché, les
-  // agents voient les vrais chiffres de la plateforme (des comptes, jamais
-  // une personne). Une panne de mesure ne doit pas empêcher de répondre.
+  // Tout ce qui se lit dans la base avant de répondre part EN MÊME TEMPS
+  // (28/09) : une dizaine de lectures l'une après l'autre coûtaient près d'une
+  // seconde avant même d'appeler le modèle.
+  const idsNoms = Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom]));
+  const [
+    { data: branche }, { data: brancheBoutique }, { data: brancheCompta },
+    { data: tachesOuvertes }, { data: regles }, { data: horsSalon }, { data: tousSalons },
+    { count: nbDepots }, { data: plansRecents }, feuille, wiki,
+  ] = await Promise.all([
+    // Le connecteur « Mesures Finjaro »: si l'entreprise l'a branché, les
+    // agents voient les vrais chiffres de la plateforme (des comptes, jamais
+    // une personne).
+    service.from('legion_connecteurs').select('id')
+      .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle(),
+    // « Se connecter avec Finjaro » (0160): la boutique branchée, s'il y en a une.
+    service.from('legion_connecteurs').select('config')
+      .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-boutique').eq('actif', true).maybeSingle(),
+    // « Se connecter avec Finjaro Accounting » (0180).
+    service.from('legion_connecteurs').select('config')
+      .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-accounting').eq('actif', true).maybeSingle(),
+    // Les tâches ouvertes de l'entreprise (tableau des tâches): chacun voit les
+    // siennes — Beau: « tu avais planifié quoi cette semaine ? ».
+    service.from('legion_messages').select('texte, assigne_a, meta, created_at')
+      .eq('entreprise_id', msg.entreprise_id).eq('genre', 'tache').is('termine_le', null).order('created_at').limit(200),
+    // La mémoire: les règles de la maison, relues avant chaque réponse.
+    service.from('legion_memoire').select('regle')
+      .eq('entreprise_id', msg.entreprise_id).eq('actif', true).order('created_at', { ascending: false }).limit(60),
+    // La mémoire des autres salons (Beau, 22/09: « il ne se souvient pas de
+    // l'autre conversation, où je parle avec lui dans le groupe Direction »).
+    service.from('legion_messages')
+      .select('auteur_id, user_id, texte, created_at, canal_id, genre').eq('entreprise_id', msg.entreprise_id)
+      .neq('canal_id', msg.canal_id).neq('genre', 'tache').order('created_at', { ascending: false }).limit(40),
+    service.from('legion_canaux').select('id, nom, prive_entre').eq('entreprise_id', msg.entreprise_id),
+    // Son dépôt de code branché : les agents le lisent (Beau, 25/09).
+    service.from('legion_connecteurs').select('id', { count: 'exact', head: true }).eq('entreprise_id', msg.entreprise_id).eq('type', 'github').eq('actif', true),
+    // Les plans écrits par les responsables (legion-travail): chacun relit
+    // ceux de son département (semaine et mois), pour ne pas en réinventer.
+    service.from('legion_plans').select('departement, horizon, contenu, created_at')
+      .eq('entreprise_id', msg.entreprise_id).gte('created_at', new Date(Date.now() - 40 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(40),
+    // La feuille de route du fondateur (0168), lue avec le projet.
+    lireFeuille(service, msg.entreprise_id, idsNoms),
+    // La page « Ce qu'on a décidé » du wiki (0190).
+    blocWiki(service, msg.entreprise_id),
+  ]);
+  noter('base');
+  // Une panne de mesure ne doit pas empêcher de répondre.
   let mesures: string | null = null;
-  const { data: branche } = await service.from('legion_connecteurs').select('id')
-    .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-mesures').eq('actif', true).maybeSingle();
   if (branche) {
     const { data: m, error: errMesure } = await service.rpc('legion_mesures_finjaro');
     if (errMesure) console.error('mesures:', errMesure.message);
     else if (m) mesures = JSON.stringify(m);
   }
-  // « Se connecter avec Finjaro » (0160): la boutique branchée, s'il y en a une.
-  const { data: brancheBoutique } = await service.from('legion_connecteurs').select('config')
-    .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-boutique').eq('actif', true).maybeSingle();
   const boutique: Boutique | null = brancheBoutique?.config?.shop_id ? { shop_id: String(brancheBoutique.config.shop_id), nom: String(brancheBoutique.config.nom || 'ma boutique') } : null;
-  // « Se connecter avec Finjaro Accounting » (0180): la comptabilité branchée,
-  // lue seulement si un des agents qui répondent y a droit.
-  const { data: brancheCompta } = await service.from('legion_connecteurs').select('config')
-    .eq('entreprise_id', msg.entreprise_id).eq('type', 'finjaro-accounting').eq('actif', true).maybeSingle();
+  // La comptabilité, lue seulement si un des agents qui répondent y a droit.
   const compta: Compta | null = brancheCompta?.config?.espace_id && allumees.some((a) => peut(a, 'comptabilite'))
     ? { entreprise_id: msg.entreprise_id, nom: String(brancheCompta.config.nom || 'Finjaro Accounting') } : null;
 
@@ -572,10 +627,6 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const equipe = (agents as Agent[]).filter((a) => !a.user_id)
     .map((a) => `- ${a.nom} (${a.poste}) — ${a.actif ? 'allumé' : 'éteint'}`);
 
-  // Les tâches ouvertes de l'entreprise (tableau des tâches): chacun voit les
-  // siennes — Beau: « tu avais planifié quoi cette semaine ? ».
-  const { data: tachesOuvertes } = await service.from('legion_messages').select('texte, assigne_a, meta, created_at')
-    .eq('entreprise_id', msg.entreprise_id).eq('genre', 'tache').is('termine_le', null).order('created_at').limit(200);
   const tachesDe = (id: string) => (tachesOuvertes || [])
     .filter((x: { assigne_a: string | null; meta: { statut?: string } | null }) => x.assigne_a === id && x.meta?.statut !== 'fait')
     .map((x: { texte: string; meta: { statut?: string } | null }) => `- ${x.texte} (${x.meta?.statut || 'a_faire'})`);
@@ -587,9 +638,6 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     return communs / Math.min(A.size, B.size) >= 0.6;
   };
 
-  // La mémoire: les règles de la maison, relues avant chaque réponse.
-  const { data: regles } = await service.from('legion_memoire').select('regle')
-    .eq('entreprise_id', msg.entreprise_id).eq('actif', true).order('created_at', { ascending: false }).limit(60);
   const memoire = (regles || []).map((x: { regle: string }) => x.regle).reverse();
   let retenue = false; // une seule règle par message, même si plusieurs répondent
 
@@ -598,10 +646,6 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // Les 40 derniers messages de l'entreprise hors de ce salon; chaque agent
   // en garde ce qui le concerne: ce qu'a dit le fondateur, ce qu'il a dit
   // lui-même, et ce qui a été dit dans son département ou en Direction.
-  const { data: horsSalon } = await service.from('legion_messages')
-    .select('auteur_id, user_id, texte, created_at, canal_id, genre').eq('entreprise_id', msg.entreprise_id)
-    .neq('canal_id', msg.canal_id).neq('genre', 'tache').order('created_at', { ascending: false }).limit(40);
-  const { data: tousSalons } = await service.from('legion_canaux').select('id, nom, prive_entre').eq('entreprise_id', msg.entreprise_id);
   const nomSalonDe = (id: string) => {
     const c = (tousSalons || []).find((x: { id: string }) => x.id === id);
     return c ? (Array.isArray(c.prive_entre) && c.prive_entre.length ? `privé ${c.nom}` : c.nom) : '?';
@@ -624,10 +668,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     || (prive && machines.some((a) => salon.prive_entre.includes(a.cle) && (sansAccent(a.departement || '') === 'direction')));
   // Au téléphone, pas d'enquête dans la base avant de répondre (trop long).
   // Son dépôt de code branché : les agents le lisent (Beau, 25/09).
-  const { count: nbDepots } = await service.from('legion_connecteurs').select('id', { count: 'exact', head: true }).eq('entreprise_id', msg.entreprise_id).eq('type', 'github').eq('actif', true);
   const aUnDepot = (nbDepots ?? 0) > 0;
   // Lire une page web publique : permis à tout agent (25/09), même sans rien de branché.
-  const verifie = !appelVocal ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta, aUnDepot ? msg.entreprise_id : null, msg.entreprise_id) : [];
+  const verifie = !appelVocal && !leger ? await enqueter(apiKey, service, lignes.join('\n'), String(msg.texte), enDirection, boutique, !!mesures, compta, aUnDepot ? msg.entreprise_id : null, msg.entreprise_id) : [];
   // Les chiffres mesurés partent avec la consigne quand la question le
   // demande: une vérification a eu lieu, ou c'est une question de fond
   // (plan, stratégie, bilan, priorités). Beau, 22/09: la « stratégie »
@@ -635,8 +678,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // été appelé — le tableau des mesures n'arrivait qu'après une enquête.
   // Les plans écrits par les responsables (legion-travail): chacun relit
   // ceux de son département (semaine et mois), pour ne pas en réinventer.
-  const { data: plansRecents } = await service.from('legion_plans').select('departement, horizon, contenu, created_at')
-    .eq('entreprise_id', msg.entreprise_id).gte('created_at', new Date(Date.now() - 40 * 86_400_000).toISOString()).order('created_at', { ascending: false }).limit(40);
+  noter('enquete');
   const plansDe = (dept: string | null) => {
     const vus = new Set<string>();
     return (plansRecents || []).filter((p: { departement: string; horizon: string }) => {
@@ -651,18 +693,16 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // quand la demande regarde dehors (concurrents, événements, prospects…).
   // Formule gratuite (0170): pas de recherche sur Internet, Flash seulement.
   const gratuite = (entreprise as { formule?: string | null }).formule === 'gratuite';
-  const web = !gratuite && aBesoinDuWeb(String(msg.texte))
+  const web = !gratuite && !leger && aBesoinDuWeb(String(msg.texte))
     ? await chercherWeb(apiKey, `${String(msg.texte).slice(0, 800)}\n(Contexte: l'entreprise « ${entreprise.nom} »${entreprise.projet ? ` — ${String(entreprise.projet).slice(0, 300)}` : ''}.)`)
     : null;
 
-  // La feuille de route du fondateur (0168), lue avec le projet.
-  const feuille = await lireFeuille(service, msg.entreprise_id, Object.fromEntries((agents as Agent[]).map((a) => [a.id, a.nom])));
   // Son dépôt GitHub (0169), quand la question parle de code ou de produit.
   // Et ses tickets Linear / Jira (0188), quand la question en parle.
   const depot = (PARLE_DE_CODE.test(String(msg.texte)) ? await lireGithub(service, msg.entreprise_id) : '')
     + (PARLE_DE_TICKETS.test(String(msg.texte)) || PARLE_DE_CODE.test(String(msg.texte)) ? await lireTickets(service, msg.entreprise_id) : '');
   // Le marché de l'entreprise et la page « Ce qu'on a décidé » du wiki (0190).
-  const commun = blocMarche((entreprise as { marche?: string | null }).marche) + await blocWiki(service, msg.entreprise_id);
+  const commun = blocMarche((entreprise as { marche?: string | null }).marche) + wiki;
   const entrepriseVue = { ...entreprise, projet: `${entreprise.projet || ''}${commun}${feuille}${depot}` };
   // Simple (un salut, une question courte) → Flash; complexe → Pro.
   const complexe = !gratuite && !appelVocal && (!!blocage || questionDeFond || !!web || verifie.length > 0 || String(msg.texte).length > 160
@@ -671,7 +711,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // Les documents de l'entreprise (0179): les passages utiles à ce message,
   // cherchés une fois, pour les agents qui ont le droit de les lire.
   let passages: Passage[] = [];
-  if (allumees.some((a) => peut(a, 'documents'))) {
+  if (!leger && allumees.some((a) => peut(a, 'documents'))) {
     try { passages = await chercherPassages(service, apiKey, msg.entreprise_id, String(msg.texte), 5); } catch (e) { console.error('documents:', (e as Error).message); }
   }
   const sourcesDocs = [...new Map(passages.filter((x) => x.url).map((x) => [x.document_id, { titre: x.titre, url: x.url as string }])).values()];
@@ -679,7 +719,8 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const ecrits: unknown[] = [];
   const ont_repondu: string[] = [];
   // Sa mémoire à lui (0185): le vecteur du message, calculé une fois pour tous.
-  const vecteurMessage = vecteurDe(apiKey, String(msg.texte || ''));
+  const vecteurMessage = leger ? null : vecteurDe(apiKey, String(msg.texte || ''));
+  noter('contexte');
   let pourquoi = '';
 
   for (const cible of allumees) {
@@ -700,16 +741,18 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const sesVerifs = verifsPour(verifie, (source) => peut(cible, source));
     const laConsigne = consigne(cible, vue, salon.nom, lignes.join('\n'), auteur.nom, ont_repondu, peut(cible, 'mesures') ? mesuresPour : null, sesVerifs, memoire, competences, ailleursPour(cible), equipe, tachesDe(cible.id), plansDe(cible.departement), peut(cible, 'boutique') ? boutique : null, (salon as { resume?: string | null }).resume || null, peut(cible, 'web') ? web : null);
     const sesDocs = peut(cible, 'documents') ? passages : [];
-    const sesSouvenirs = String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage, 3, () => String(msg.texte || '')) : [];
-    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal);
+    const sesSouvenirs = vecteurMessage && String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage, 3, () => String(msg.texte || '')) : [];
+    // La voie rapide prend les réglages du téléphone : peu de réflexion, 20 s au plus.
+    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal || leger);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
+    noter(`modele_${ont_repondu.length + 1}`);
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
     // et coupé il ressemblait à une réponse bâclée (Beau, 22/09).
     let texte = aerer(String(r.obj.texte).trim()).slice(0, 4000);
     const genre = ['info', 'question', 'proposition'].includes(String(r.obj.genre)) ? String(r.obj.genre) : 'info';
     // La relecture: une proposition, une question, un chiffre, une tâche prise.
     let relu: { corrige: boolean; raison?: string } | null = null;
-    const aRelire = genre !== 'info' || /\d/.test(texte) || (typeof r.obj.tache === 'string' && r.obj.tache.trim() !== '');
+    const aRelire = !leger && (genre !== 'info' || /\d/.test(texte) || (typeof r.obj.tache === 'string' && r.obj.tache.trim() !== ''));
     if (aRelire) {
       // Les documents de l'entreprise sont des faits: sans eux, la relecture
       // retirait un prix écrit dans la FAQ comme « inventé » (vu le 23/09).
@@ -786,7 +829,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, ...(leger ? { rapide: true } : {}), temps: { ...temps, total: Date.now() - t0 }, cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est
