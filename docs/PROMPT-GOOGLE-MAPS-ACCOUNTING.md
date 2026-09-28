@@ -148,25 +148,68 @@ ni avis depuis un an est un commerce qui ne cherche rien.
 
 ---
 
-## Le message à envoyer ensuite — ⏳ il manque UNE décision de Beau
+## Le message à envoyer ensuite
 
-Je ne l'écris pas encore complètement, parce qu'il manque un élément, et
-l'inventer serait exactement ce qu'on s'interdit.
+Beau a tranché le 28/09 : **Accounting est gratuit jusqu'en novembre**, comme
+la place de marché. La date s'écrit toujours — un service annoncé gratuit sans
+limite se lit comme un service sans valeur.
 
-**Accounting n'annonce aujourd'hui aucun prix.** L'écran d'inscription dit
-seulement « Gratuit pour démarrer — aucune carte bancaire ». La place de
-marché, elle, a une règle claire : « gratuit jusqu'en novembre », avec la date
-toujours écrite.
+### Version e-mail (Google Maps)
 
-⏳ **Beau : est-ce qu'Accounting est gratuit jusqu'en novembre lui aussi, ou
-est-ce qu'il reste gratuit sans date ?** Dès que tu réponds, j'écris le
-message en une minute — il est déjà prêt dans ma tête, il ne lui manque que
-cette phrase.
+> **Objet :** Votre caisse et votre comptabilité au même endroit
+>
+> Bonjour,
+>
+> Nous faisons partie de Finjaro. Nous avons vu votre commerce et nous vous
+> écrivons parce que ce que nous construisons a été pensé pour des maisons
+> comme la vôtre.
+>
+> Finjaro Accounting, c'est un comptoir de vente simple, le stock qui suit
+> tout seul, et la comptabilité qui se tient d'elle-même — journal, bilan,
+> audit — sans que vous ayez à y penser. Vous ouvrez votre caisse le matin,
+> vous encaissez, et le soir vos livres sont à jour.
+>
+> Vous pouvez travailler à plusieurs sur le même espace : le caissier, le
+> gérant, le comptable, chacun avec ses droits.
+>
+> **C'est gratuit jusqu'en novembre**, sans carte bancaire. Les commerces
+> inscrits avant novembre gardent la gratuité.
+>
+> accounting.finjaro.net
+>
+> L'équipe Finjaro — finjaro.net
+> *Pour ne plus recevoir nos messages, répondez « stop ».*
 
-Ce qui est certain d'avance, et qui ne changera pas :
-- **la ligne de désabonnement est obligatoire dans un e-mail.** C'est la loi,
-  pas une préférence ;
-- aucun nom de personne dans le message : « nous faisons partie de Finjaro » ;
-- aucun chiffre non mesuré : pas de « des centaines de commerçants » ;
-- aucune phrase qui enferme Finjaro dans un pays ;
-- **rien ne part avant que tu l'aies dit.**
+### Version message privé (Instagram, WhatsApp)
+
+Plus court, et **sans la ligne de désabonnement** — sur un réseau social la
+personne bloque en un geste, la ligne fait administratif. Dans un e-mail elle
+reste obligatoire : c'est la loi.
+
+> Bonjour, nous faisons partie de Finjaro. On a vu votre boutique — et on
+> vient de sortir un outil qui pourrait vous servir : votre caisse, votre
+> stock et votre comptabilité au même endroit, qui se tient toute seule.
+> C'est gratuit jusqu'en novembre. accounting.finjaro.net
+
+### Version pour une vendeuse DÉJÀ sur finjaro.net (le groupe A du test)
+
+C'est l'argument le plus fort, parce qu'il est vrai et qu'il ne demande aucun
+effort : **le pont existe déjà en base.**
+
+> Bonjour, c'est Finjaro. Vous vendez déjà chez nous — et vos ventes peuvent
+> maintenant tenir votre comptabilité toutes seules. Quand une commande est
+> livrée, elle devient une écriture dans vos livres : vous n'avez rien à
+> ressaisir. Votre caisse, votre stock et vos comptes au même endroit.
+> C'est gratuit jusqu'en novembre. accounting.finjaro.net
+
+### Ce qui ne bouge pas
+
+- **La ligne de désabonnement est obligatoire dans un e-mail.**
+- Aucun nom de personne : « nous faisons partie de Finjaro ».
+- **Aucun chiffre non mesuré** : ne jamais écrire « des centaines de
+  commerçants », ni combien de gens l'utilisent.
+- Aucune phrase qui enferme Finjaro dans un pays.
+- **Rien ne part avant que Beau l'ait dit.**
+
+---
+
