@@ -27,7 +27,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourAgent, pourEntreprise } from '../_shared/cout.ts';
 import { blocSouvenirs, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { enqueter, verifsPour, type Boutique, type Compta, borneVerifs } from '../_shared/enquete.ts';
-import { aerer, generer, garder, moteurs, moteursSimples, type Rendu } from '../_shared/moteur.ts';
+import { aerer, endormirMoteur, fileDesMoteurs, generer, garder, moteurs, moteursSimples, type Essai, type Rendu } from '../_shared/moteur.ts';
 import { aBesoinDuWeb, blocWeb, chercherWeb, type Trouvaille } from '../_shared/web.ts';
 import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub, PARLE_DE_CODE } from '../_shared/github.ts';
@@ -281,21 +281,32 @@ const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul
 // moteur, la première demande de tableau a été coupée à 150 s, sans réponse).
 async function demander(apiKey: string, texte: string, complexe = true, tableur = false, appel = false): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
+  const essais: Essai[] = [];
   // Tableau: les trois moteurs simples (Flash, Flash, puis Pro en dernier
   // recours: le 23/09 au soir, les deux Flash répondaient « 503, forte
   // demande »). 45 s chacun au plus: une saturation répond en une seconde.
-  const liste = tableur ? moteursSimples().slice(0, 3) : complexe ? moteurs() : moteursSimples();
+  let liste = tableur ? moteursSimples().slice(0, 3) : complexe ? moteurs() : moteursSimples();
+  // Réponse rapide (téléphone, salut, question courte — 28/09) : pas de Kimi.
+  // K2.6 réfléchit longtemps avant d'écrire ; mesuré ce soir, 20 s perdues à
+  // l'attendre avant que Google réponde en 2 s. Il reste pour les livrables.
+  if (appel) liste = liste.filter((n) => !n.startsWith('km:'));
+  // Le disjoncteur (moteur.ts) : ceux qui viennent de refuser passent en dernier.
+  liste = await fileDesMoteurs(liste);
   for (const nom of liste) {
-    // Au téléphone, on répond vite et court : peu de réflexion, 20 s au plus
-    // par moteur (Beau, 24/09 : « il a répondu après près d'une minute »).
+    // Au téléphone et sur la voie rapide, on répond vite et court : peu de
+    // réflexion, 12 s au plus par moteur (Beau, 24/09 : « il a répondu après
+    // près d'une minute » ; 28/09 : « 5 secondes, c'est normal »).
+    const debut = Date.now();
     const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, appel
-      ? { temperature: 0.7, reflexion: 256, delaiMs: 20_000, maxSortie: 2048, modeles: [nom] }
-      : { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom] });
+      ? { temperature: 0.7, reflexion: 256, delaiMs: 12_000, maxSortie: 2048, modeles: [nom], sansSecours: true }
+      : { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom], sansSecours: true });
+    essais.push(...(r.essais || []));
     if ('erreur' in r) { derniere = r.erreur; continue; }
-    if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return r;
+    if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return { ...r, essais };
     derniere = `${nom}: texte vide`;
+    if (Date.now() - debut > 8_000) await endormirMoteur(nom, 5 * 60_000, derniere);
   }
-  return { erreur: derniere };
+  return { erreur: derniere, essais };
 }
 
 Deno.serve(compter('legion_repondre', async (req: Request) => {
@@ -829,7 +840,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, ...(leger ? { rapide: true } : {}), temps: { ...temps, total: Date.now() - t0 }, cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, ...(leger ? { rapide: true } : {}), temps: { ...temps, total: Date.now() - t0 }, ...(r.essais?.length ? { essais: r.essais } : {}), cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est

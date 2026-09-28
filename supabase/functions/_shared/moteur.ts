@@ -54,6 +54,17 @@ async function lireEndormis() {
     endormis = new Map((data || []).map((r: { cle: string; expire_le: string }) => [r.cle.slice('moteur:endormi:'.length), Date.parse(r.expire_le)]));
   } catch (e) { console.error('disjoncteur (lire):', (e as Error).message); }
 }
+// Exporté : une fonction qui juge une réponse inutilisable (texte vide après
+// 20 s…) peut aussi mettre le modèle en fin de file.
+// La file dans le bon ordre, pour qui essaie les moteurs un par un (legion-repondre) :
+// les éveillés d'abord, les endormis ensuite, et le secours en dernier.
+export async function fileDesMoteurs(liste: string[]): Promise<string[]> {
+  await lireEndormis();
+  const tous = [...liste, ...secours().filter((x) => !liste.includes(x))];
+  const dort = (n: string) => Math.max(endormis.get(famille(n)) ?? 0, endormis.get(n) ?? 0) > Date.now();
+  return [...tous.filter((n) => !dort(n)), ...tous.filter(dort)];
+}
+export async function endormirMoteur(nom: string, ms: number, raison: string) { await endormir(nom, ms, raison); }
 async function endormir(f: string, ms: number, raison: string) {
   endormis.set(f, Date.now() + ms);
   try {
@@ -135,7 +146,9 @@ export function moteursSimples(): string[] {
 }
 
 type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean };
-export type Rendu = { obj: Record<string, unknown>; modele: string } | { erreur: string };
+// `essais` : chaque moteur tenté, avec son temps (28/09) — pour voir où partent les secondes.
+export type Essai = { m: string; ms: number; e?: string };
+export type Rendu = ({ obj: Record<string, unknown>; modele: string } | { erreur: string }) & { essais?: Essai[] };
 
 // Gemini rend parfois « \n » échappé deux fois: on rétablit les vrais
 // retours à la ligne (vu sur le premier livrable d'Alpha, 22/09).
@@ -267,7 +280,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
   const dort = (n: string) => Math.max(endormis.get(famille(n)) ?? 0, endormis.get(n) ?? 0) > Date.now();
   // Ceux qui dorment passent en dernier, sans être retirés : un moteur mis
   // de côté à tort reste un recours.
+  const essais: Essai[] = [];
   for (const nom of [...candidats.filter((n) => !dort(n)), ...candidats.filter(dort)]) {
+    const debut = Date.now();
     // Le plafond de dépenses du projet Google vaut pour tous ses modèles
     // (vu le 24/09) : inutile de les essayer un par un, on passe au secours.
     if (plafondGoogle && /^gemini/.test(nom)) continue;
@@ -277,12 +292,17 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
         : await viaGemini(apiKey, nom, texte, schema, o);
-      try { return { obj: nettoyer(JSON.parse(txt)), modele: nom }; } catch { derniere = `${nom}: JSON illisible`; }
+      try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {
+        derniere = `${nom}: JSON illisible`; essais.push({ m: nom, ms: Date.now() - debut, e: 'JSON illisible' });
+        if (Date.now() - debut > 8_000) await endormir(nom, 5 * 60_000, derniere);
+      }
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
+      essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
       if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
-      // Muet : seulement CE modèle (un Pro lent ne met pas de côté tout Google).
-      else if (MUET.test(derniere)) await endormir(nom, 5 * 60_000, derniere);
+      // Muet, ou lent ET en échec : seulement CE modèle (un Pro lent qui
+      // réussit ne met pas de côté tout Google).
+      else if (MUET.test(derniere) || Date.now() - debut > 8_000) await endormir(nom, 5 * 60_000, derniere);
       if (/spending cap/i.test(derniere)) plafondGoogle = true;
       // Un solde épuisé chez DeepSeek ou Kimi : Beau est prévenu (une fois par jour).
       if (/HTTP 402|insufficient balance|exceeded your current quota/i.test(derniere)) {
@@ -291,7 +311,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       }
     }
   }
-  return { erreur: plafondGoogle && !derniere.includes('spending cap') ? `plafond Google (spending cap) — ${derniere}` : derniere };
+  return { erreur: plafondGoogle && !derniere.includes('spending cap') ? `plafond Google (spending cap) — ${derniere}` : derniere, essais };
 }
 
 // La trace pour nos exemples d'entraînement (0167). Ne casse jamais rien:
