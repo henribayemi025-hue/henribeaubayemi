@@ -175,6 +175,33 @@ réparé un endroit, pas la classe de défaut.
 
 ---
 
+## 🔴 Défaut réel n° 4 — le prix suggéré par l'IA, multiplié par 655
+
+**Écran : Mes articles → dépôt en masse (`/vendor/products/bulk`).**
+
+Quand l'IA propose un prix, elle renvoie une médiane du catalogue **en FCFA**
+(l'unité de stockage). L'écran l'écrivait **telle quelle** dans la case prix —
+une case libellée dans la devise de la boutique, et qui repasse par la
+conversion à l'enregistrement.
+
+Pour une vendeuse en euros : la case affiche « 15000 » sous l'étiquette **EUR**,
+et l'enregistrement en fait **15 000 €**, soit environ **9,8 millions de FCFA**
+là où la suggestion valait 15 000 FCFA (≈ 23 €). **655 fois le prix voulu** — et
+sur autant d'articles qu'elle en dépose d'un coup.
+
+L'écran « créer un article », lui, convertissait déjà correctement. Seul le
+dépôt en masse l'avait oublié — c'est-à-dire l'écran où l'erreur se répète le
+plus.
+
+**Corrigé**, et un test fige l'aller-retour : ce qui s'affiche, une fois
+réenregistré, doit retomber sur le montant de départ, dans les cinq devises.
+
+Les autres écrans vendeuse (statistiques, finances, mes articles) ont été
+vérifiés dans la foulée : ils passent tous par la devise de la boutique, y
+compris l'export comptable. Rien à corriger là.
+
+---
+
 ## 🟠 Ce que voit vraiment une visiteuse — les chiffres du catalogue
 
 Mesuré comme une visiteuse non connectée, comptes de test exclus par la base :
@@ -205,7 +232,7 @@ Les photos et les stocks, eux, sont sains : 2 articles sur 406 dans chaque cas.
 
 ---
 
-## 🔴 Défaut réel n° 4 — une commande sans compte ne reçoit jamais rien
+## 🔴 Défaut réel n° 5 — une commande sans compte ne reçoit jamais rien
 
 Déjà relevé dans le carnet du 28/09, repris ici parce qu'il appartient à
 l'audit du parcours acheteur.

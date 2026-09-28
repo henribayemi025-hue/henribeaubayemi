@@ -14,7 +14,7 @@ import { Button } from '../../components/Button';
 import { Field, TextInput } from '../../components/Field';
 import { categoryHeadFor, defaultPublishCategory } from '../../lib/categories';
 import { CategoryPicker } from '../../components/CategoryPicker';
-import { currencyForCountry, toFcfa } from '../../lib/currency';
+import { currencyForCountry, toFcfa, convertFromFcfa } from '../../lib/currency';
 
 // Ajout en masse. Beau (04/08): il avait 72 photos d'articles DIFFÉRENTS et
 // voulait tout verser d'un coup — la fiche article, elle, plafonne à 10 photos
@@ -274,8 +274,21 @@ export default function VendorProductsBulk() {
                   description: data.description || null,
                   category: data.category || r.category,
                   // Prix suggéré seulement s'il n'y a rien: c'est une aide,
-                  // pas une décision — Beau reste maître de ses prix.
-                  price: r.price !== '' ? r.price : data.price_hint_fcfa ? String(data.price_hint_fcfa) : '',
+                  // pas une décision — la vendeuse reste maîtresse de ses prix.
+                  //
+                  // Et il se CONVERTIT. La médiane vient du serveur en FCFA
+                  // (unité de stockage), alors que ce champ est libellé dans la
+                  // devise de la boutique et repasse par `toFcfa` à
+                  // l'enregistrement. Sans conversion, une vendeuse en euros
+                  // voyait « 15000 » dans une case marquée EUR, et
+                  // l'enregistrement en faisait 15 000 € — soit 655 fois le
+                  // prix voulu. L'écran « créer un article » convertissait
+                  // déjà, celui-ci l'avait oublié (audit du 28/09).
+                  price: r.price !== ''
+                    ? r.price
+                    : data.price_hint_fcfa
+                      ? String(Math.round(convertFromFcfa(data.price_hint_fcfa, shopCurrency)))
+                      : '',
                 }
           )
         );
