@@ -27,6 +27,11 @@ const DEPOT_OK = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const GH = (jeton: string) => ({ Authorization: `Bearer ${jeton}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'Leo-Finjaro' });
 // Ce qui ne se lit pas (lourd, généré, binaire) : jamais proposé au modèle.
 const IGNORE = /(^|\/)(node_modules|dist|build|\.next|coverage|vendor|\.git)\/|\.(png|jpe?g|gif|webp|avif|ico|mp4|webm|mp3|wav|pdf|zip|woff2?|ttf|otf|lock)$|package-lock\.json$|pnpm-lock\.yaml$|yarn\.lock$/i;
+// Jamais écrits par un agent : la base de données et les fonctions serveur.
+// Chez Finjaro, une fusion sur staging DÉPLOIE les fonctions edge, communes à
+// la production et à Finjaro Accounting (CLAUDE.md §4 et §8) ; une migration
+// touche une base partagée. Lus, oui ; modifiés, jamais par ce chemin.
+const INTERDIT_EN_ECRITURE = /^supabase\/(functions|migrations)\/|^\.github\//;
 const MAX_FICHIERS = 6;
 const MAX_OCTETS = 60_000; // par fichier lu
 
@@ -88,7 +93,12 @@ Deno.serve(compter('legion_code', async (req: Request) => {
     const api = (chemin: string, init?: RequestInit) => fetch(`https://api.github.com/repos/${depot}/${chemin}`, { ...init, headers: { ...GH(jeton), 'Content-Type': 'application/json' } });
     const infos = await api('');
     if (!infos.ok) return finir('echec', `Dépôt inaccessible (${infos.status}).`);
-    const principale = String((await infos.json()).default_branch || 'main');
+    // La base : « staging » quand le dépôt en a une (la branche de travail),
+    // sinon la branche par défaut. Vu le 29/09 : chez Finjaro, la branche par
+    // défaut EST la production (finjaro.net) — on ne part jamais d'elle quand
+    // une branche de travail existe, et la demande de fusion vise staging.
+    const parDefaut = String((await infos.json()).default_branch || 'main');
+    const principale = (await api('git/ref/heads/staging')).ok ? 'staging' : parDefaut;
 
     // 1. L'arborescence.
     const arbre = await api(`git/trees/${principale}?recursive=1`);
@@ -130,11 +140,12 @@ Fais la tâche comme un bon développeur :
 - rends dans "fichiers" CHAQUE fichier modifié ou créé avec son contenu COMPLET (jamais un extrait, jamais « … reste inchangé ») ; ne rends pas un fichier que tu ne changes pas ;
 - change le moins possible, garde le style, les noms et la langue du code existant ;
 - aucun secret, aucune clé, aucune donnée personnelle dans le code ;
+- ne modifie JAMAIS un fichier sous supabase/functions, supabase/migrations ou .github (base et serveur partagés) : s'il le faut, dis-le dans "impossible" ;
 - "message" : le message de commit, court, au présent ;
 - "resume" : ce que tu as changé, en deux ou trois phrases simples pour le patron (qui ne code pas), avec ta personnalité ;
 - si la tâche est impossible ou trop floue avec ces fichiers, rends "fichiers": [] et explique pourquoi dans "impossible".`, SCHEMA_CODE, { temperature: 0.2, reflexion: 4096, delaiMs: 90_000, maxSortie: 32_000, modeles: moteurs() });
     if ('erreur' in code) return finir('echec', `Écriture du code impossible (${code.erreur.slice(0, 120)}).`);
-    const permis = new Set([...lus.map((f) => f.chemin), ...nouveaux]);
+    const permis = new Set([...lus.map((f) => f.chemin), ...nouveaux].filter((p) => !INTERDIT_EN_ECRITURE.test(p)));
     const fichiers = ((code.obj.fichiers || []) as Array<{ chemin?: string; contenu?: string }>)
       .map((f) => ({ chemin: String(f.chemin || '').replace(/^\/+/, ''), contenu: String(f.contenu ?? '') }))
       .filter((f) => permis.has(f.chemin) && f.contenu.trim().length > 0 && !/(\.\.\.|…)\s*(reste|rest of|inchang|unchanged)/i.test(f.contenu));
@@ -157,11 +168,11 @@ Fais la tâche comme un bon développeur :
     const sha = String((await commit.json()).sha);
     const creee = await api('git/refs', { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${branche}`, sha }) });
     if (!creee.ok) return finir('echec', `GitHub refuse la branche (${creee.status}).`);
-    const pr = await api('pulls', { method: 'POST', body: JSON.stringify({ title: String(code.obj.message || consigne).split('\n')[0].slice(0, 200), head: branche, base: principale, body: `${String(code.obj.resume || '')}\n\nTâche : ${consigne}\n\n— écrit par ${agent?.nom || 'un agent'} dans Léo, après « Confirmer ». Rien n'est en ligne tant que cette demande n'est pas fusionnée.` }) });
+    const pr = await api('pulls', { method: 'POST', body: JSON.stringify({ title: String(code.obj.message || consigne).split('\n')[0].slice(0, 200), head: branche, base: principale, body: `${String(code.obj.resume || '')}\n\nTâche : ${consigne}\n\n— écrit par ${agent?.nom || 'un agent'} dans Léo, après « Confirmer ». Base : ${principale}. Rien n'est en ligne tant que cette demande n'est pas fusionnée.` }) });
     const fusion = (await pr.json().catch(() => ({}))).html_url || null;
     const resume = String(code.obj.resume || '').trim().slice(0, 1200);
     return finir('faite', `Envoyé sur ${branche}${fusion ? ' (demande de fusion ouverte)' : ''}.`,
-      `C'est poussé ✅\n\n${resume}\n\n- Branche : ${branche}\n- Fichiers : ${fichiers.map((f) => f.chemin).join(', ')}\n${fusion ? `- Demande de fusion : ${fusion}\n` : ''}\nRien n'est en ligne tant que tu ne fusionnes pas.`,
+      `C'est poussé ✅ (c'est un essai : parti de « ${principale} », rien n'est en ligne)\n\n${resume}\n\n- Branche : ${branche}\n- Fichiers : ${fichiers.map((f) => f.chemin).join(', ')}\n${fusion ? `- Demande de fusion : ${fusion}\n` : ''}\nRien n'est en ligne tant que tu ne fusionnes pas.`,
       { depot, branche, fusion, fichiers: fichiers.map((f) => f.chemin) });
   } catch (e) {
     return finir('echec', `Erreur : ${(e as Error).message.slice(0, 200)}`);
