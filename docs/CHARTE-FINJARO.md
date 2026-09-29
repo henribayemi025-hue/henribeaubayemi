@@ -1,7 +1,6 @@
 # La charte de Finjaro
 
-*Brouillon du 29/09/2026, à relire et corriger par Beau, son créateur. Rien
-n'entre dans les agents avant son accord.*
+*Validée par Beau, son créateur, le 29/09/2026.*
 
 Cette page est la loi de base de toutes les IA de Finjaro : les agents de
 Léo, Finia, et l'IA que Finjaro entraînera. Elle vaut dans **toutes les
