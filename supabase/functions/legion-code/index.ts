@@ -8,11 +8,13 @@
 // jeton du serveur. Ici, comme Codex :
 //   1. on lit l'arborescence du dépôt branché (application GitHub « Finjaro
 //      Atelier », jeton d'installation d'une heure) ;
-//   2. le modèle choisit les fichiers utiles, on les lit EN ENTIER ;
-//   3. le modèle écrit les fichiers modifiés (contenu complet, rien d'écrasé
+//   2. on lit les règles du dépôt (CLAUDE.md, AGENTS.md…) ;
+//   3. il explore en plusieurs tours : lire des fichiers EN ENTIER, chercher
+//      des mots dans le code, jusqu'à en savoir assez ;
+//   4. le modèle écrit les fichiers modifiés (contenu complet, rien d'écrasé
 //      à l'aveugle) ;
-//   4. on pousse sur une branche « leo/… » et on ouvre une demande de fusion ;
-//   5. l'agent poste le lien dans le salon.
+//   5. on pousse sur une branche « leo/… » et on ouvre une demande de fusion ;
+//   6. l'agent poste le lien dans le salon.
 // La branche principale n'est jamais touchée : fusionner, et donc mettre en
 // ligne, reste la décision du patron. Vaut pour toutes les entreprises de
 // Léo, chacune sur SON dépôt.
@@ -32,13 +34,26 @@ const IGNORE = /(^|\/)(node_modules|dist|build|\.next|coverage|vendor|\.git)\/|\
 // la production et à Finjaro Accounting (CLAUDE.md §4 et §8) ; une migration
 // touche une base partagée. Lus, oui ; modifiés, jamais par ce chemin.
 const INTERDIT_EN_ECRITURE = /^supabase\/(functions|migrations)\/|^\.github\//;
-const MAX_FICHIERS = 6;
+const MAX_FICHIERS = 14;   // lus en tout, sur tous les tours
+const PAR_TOUR = 6;
+const MAX_TOURS = 3;
 const MAX_OCTETS = 60_000; // par fichier lu
+const MAX_LU = 240_000;    // en tout (le modèle doit tout garder en tête)
+const MAX_REGLES = 24_000;
+const DELAI_EXPLORATION = 55_000; // puis on écrit : la fonction a un temps limité
+// Les fichiers de consignes que les outils de code lisent d'habitude.
+const FICHIERS_DE_REGLES = ['AGENTS.md', 'CLAUDE.md', '.github/copilot-instructions.md', '.cursorrules', 'CONTRIBUTING.md'];
 
-const SCHEMA_CHOIX = {
+const SCHEMA_EXPLORATION = {
   type: 'OBJECT',
-  properties: { fichiers: { type: 'ARRAY', items: { type: 'STRING' } }, nouveaux: { type: 'ARRAY', items: { type: 'STRING' } }, raison: { type: 'STRING' } },
-  required: ['fichiers', 'raison'],
+  properties: {
+    lire: { type: 'ARRAY', items: { type: 'STRING' } },
+    chercher: { type: 'ARRAY', items: { type: 'STRING' } },
+    nouveaux: { type: 'ARRAY', items: { type: 'STRING' } },
+    pret: { type: 'BOOLEAN' },
+    raison: { type: 'STRING' },
+  },
+  required: ['lire', 'pret', 'raison'],
 };
 const SCHEMA_CODE = {
   type: 'OBJECT',
@@ -107,38 +122,98 @@ Deno.serve(compter('legion_code', async (req: Request) => {
     const tout = ((await arbre.json()).tree || []) as Array<{ path: string; type: string; size?: number }>;
     const chemins = tout.filter((x) => x.type === 'blob' && !IGNORE.test(x.path) && (x.size ?? 0) < 300_000).map((x) => x.path);
     const existe = new Set(chemins);
-
-    // 2. Les fichiers utiles.
-    const choix = await generer(apiKey, `${CHARTE}
-Tu es ${agent?.nom || 'un agent'}, ${agent?.poste || 'développeur'}. On te confie une tâche de code sur le dépôt « ${depot} » :
-« ${consigne} »
-
-Voici les fichiers du dépôt (un par ligne) :
-${chemins.slice(0, 3000).join('\n')}
-
-Choisis les fichiers qu'il faut LIRE pour faire la tâche correctement (au plus ${MAX_FICHIERS}, les plus utiles d'abord) dans "fichiers", en recopiant les chemins exactement. Si la tâche demande de créer des fichiers, mets leurs chemins dans "nouveaux". Explique ton choix en une phrase dans "raison".`, SCHEMA_CHOIX, { temperature: 0.2, reflexion: 1024, delaiMs: 45_000, maxSortie: 2000, modeles: moteursSimples() });
-    if ('erreur' in choix) return finir('echec', `Choix des fichiers impossible (${choix.erreur.slice(0, 120)}).`);
-    const aLire = ((choix.obj.fichiers || []) as string[]).map(String).filter((p) => existe.has(p)).slice(0, MAX_FICHIERS);
-    const nouveaux = ((choix.obj.nouveaux || []) as string[]).map((p) => String(p).replace(/^\/+/, '').replace(/\.\.+/g, '')).filter((p) => p && !existe.has(p) && !IGNORE.test(p)).slice(0, 4);
-    if (!aLire.length && !nouveaux.length) return finir('echec', 'Aucun fichier du dépôt ne correspond à la tâche.', `Je n'ai trouvé aucun fichier du dépôt qui corresponde à « ${consigne.slice(0, 120)} ». Tu peux me dire où ça se trouve ? 🤔`);
-    const lus: Array<{ chemin: string; contenu: string }> = [];
-    for (const p of aLire) {
+    const lire = async (p: string) => {
       const r = await fetch(`https://api.github.com/repos/${depot}/contents/${p.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(principale)}`, { headers: { ...GH(jeton), Accept: 'application/vnd.github.raw' } });
-      if (!r.ok) continue;
-      const t = await r.text();
-      if (t.length <= MAX_OCTETS) lus.push({ chemin: p, contenu: t });
-    }
+      return r.ok ? await r.text() : null;
+    };
 
-    // 3. Le changement, fichiers complets.
+    // 2. Les règles du dépôt (Beau, 29/09 : « comme Codex ») : CLAUDE.md,
+    // AGENTS.md et leurs cousins, à la racine d'abord, puis ceux des dossiers
+    // touchés. Chez Finjaro, c'est là qu'est écrit « staging seulement »,
+    // « aucune devise par défaut »… Un agent les lit avant d'écrire une ligne.
+    const regles: Array<{ chemin: string; texte: string }> = [];
+    let tailleRegles = 0;
+    const ajouterRegles = async (liste: string[]) => {
+      for (const p of liste) {
+        if (tailleRegles >= MAX_REGLES || regles.some((x) => x.chemin === p) || !existe.has(p)) continue;
+        const t = await lire(p);
+        if (!t) continue;
+        const morceau = t.slice(0, MAX_REGLES - tailleRegles);
+        regles.push({ chemin: p, texte: morceau });
+        tailleRegles += morceau.length;
+      }
+    };
+    await ajouterRegles(FICHIERS_DE_REGLES);
+    const reglesDesDossiers = (fichiers: string[]) => {
+      const dossiers = new Set<string>();
+      for (const f of fichiers) { const morceaux = f.split('/'); for (let i = morceaux.length - 1; i > 0; i--) dossiers.add(morceaux.slice(0, i).join('/')); }
+      return [...dossiers].flatMap((d) => ['AGENTS.md', 'CLAUDE.md'].map((n) => `${d}/${n}`)).filter((p) => existe.has(p));
+    };
+    const blocRegles = () => regles.length ? `\nLES RÈGLES DU DÉPÔT (écrites par ses propriétaires ; elles priment sur tes habitudes, respecte-les à la lettre) :\n${regles.map((r) => `===== ${r.chemin} =====\n${r.texte}`).join('\n\n')}\n` : '';
+
+    // 3. L'exploration, en plusieurs tours comme un développeur : lire des
+    // fichiers, chercher des mots dans le code, jusqu'à en savoir assez.
+    const lus: Array<{ chemin: string; contenu: string }> = [];
+    const recherches: string[] = [];
+    let nouveaux: string[] = [];
+    let tailleLue = 0;
+    const t0 = Date.now();
+    for (let tour = 1; tour <= MAX_TOURS; tour++) {
+      const dejaLu = lus.map((f) => f.chemin);
+      const choix = await generer(apiKey, `${CHARTE}
+Tu es ${agent?.nom || 'un agent'}, ${agent?.poste || 'développeur'}. On te confie une tâche de code sur le dépôt « ${depot} » (branche de travail « ${principale} ») :
+« ${consigne} »
+${blocRegles()}
+LES FICHIERS DU DÉPÔT (un par ligne) :
+${chemins.slice(0, 3000).join('\n')}
+${lus.length ? `\nDÉJÀ LUS (contenu complet) :\n${lus.map((f) => `===== ${f.chemin} =====\n${f.contenu}`).join('\n\n')}\n` : ''}${recherches.length ? `\nRÉSULTATS DE TES RECHERCHES :\n${recherches.join('\n')}\n` : ''}
+Tour ${tour} sur ${MAX_TOURS} d'exploration. Comme un bon développeur, tu comprends avant d'écrire : où est l'écran ou la fonction concernée, comment le code voisin fait (traductions, composants, styles), ce qui l'appelle.
+- "lire" : les fichiers à lire maintenant (au plus ${PAR_TOUR}, chemins recopiés exactement, pas ceux déjà lus) ;
+- "chercher" : au plus 3 mots ou bouts de code précis à chercher dans le dépôt (un nom de composant, une clé de traduction, un texte affiché) ;
+- "nouveaux" : les fichiers à créer, s'il en faut ;
+- "pret" : true quand tu en sais assez pour écrire le changement proprement (alors "lire" et "chercher" peuvent être vides) ;
+- "raison" : une phrase sur ce que tu cherches ou pourquoi tu es prêt.`, SCHEMA_EXPLORATION, { temperature: 0.2, reflexion: 1024, delaiMs: 40_000, maxSortie: 2000, modeles: moteursSimples() });
+      if ('erreur' in choix) {
+        if (!lus.length) return finir('echec', `Exploration du dépôt impossible (${choix.erreur.slice(0, 120)}).`);
+        break;
+      }
+      const o = choix.obj as { lire?: unknown[]; chercher?: unknown[]; nouveaux?: unknown[]; pret?: boolean };
+      nouveaux = [...new Set([...nouveaux, ...((o.nouveaux || []) as unknown[]).map((p) => String(p).replace(/^\/+/, '').replace(/\.\.+/g, ''))])].filter((p) => p && !existe.has(p) && !IGNORE.test(p)).slice(0, 4);
+      const aLire = ((o.lire || []) as unknown[]).map(String).filter((p) => existe.has(p) && !dejaLu.includes(p)).slice(0, PAR_TOUR);
+      for (const p of aLire) {
+        if (lus.length >= MAX_FICHIERS || tailleLue >= MAX_LU) break;
+        const t = await lire(p);
+        if (t === null || t.length > MAX_OCTETS) continue;
+        lus.push({ chemin: p, contenu: t });
+        tailleLue += t.length;
+      }
+      // La recherche de code de GitHub (branche par défaut, tolérée ici :
+      // elle sert à trouver OÙ regarder ; on relit ensuite sur la branche de travail).
+      for (const mot of ((o.chercher || []) as unknown[]).map((m) => String(m).trim().slice(0, 80)).filter((m) => m.length >= 3).slice(0, 3)) {
+        const r = await fetch(`https://api.github.com/search/code?per_page=8&q=${encodeURIComponent(`${mot.replace(/"/g, '')} repo:${depot}`)}`, { headers: { ...GH(jeton), Accept: 'application/vnd.github.text-match+json' } });
+        if (!r.ok) { recherches.push(`« ${mot} » : recherche indisponible (${r.status}).`); continue; }
+        const items = ((await r.json()).items || []) as Array<{ path: string; text_matches?: Array<{ fragment?: string }> }>;
+        recherches.push(items.length
+          ? `« ${mot} » trouvé dans :\n${items.map((i) => `- ${i.path}${i.text_matches?.[0]?.fragment ? ` : ${i.text_matches[0].fragment.replace(/\s+/g, ' ').slice(0, 160)}` : ''}`).join('\n')}`
+          : `« ${mot} » : introuvable.`);
+      }
+      await ajouterRegles(reglesDesDossiers([...lus.map((f) => f.chemin), ...nouveaux]));
+      const rienDeNeuf = !aLire.length && !((o.chercher || []) as unknown[]).length;
+      if (o.pret || rienDeNeuf || lus.length >= MAX_FICHIERS || tailleLue >= MAX_LU || Date.now() - t0 > DELAI_EXPLORATION) break;
+    }
+    if (!lus.length && !nouveaux.length) return finir('echec', 'Aucun fichier du dépôt ne correspond à la tâche.', `Je n'ai trouvé aucun fichier du dépôt qui corresponde à « ${consigne.slice(0, 120)} ». Tu peux me dire où ça se trouve ? 🤔`);
+
+    // 4. Le changement, fichiers complets.
     const code = await generer(apiKey, `${CHARTE}
 Tu es ${agent?.nom || 'un agent'}, ${agent?.poste || 'développeur'}${agent?.personnalite ? ` (${agent.personnalite})` : ''}. Tâche de code sur « ${depot} » :
 « ${consigne} »
-
+${blocRegles()}
 LES FICHIERS ACTUELS (contenu complet) :
 ${lus.map((f) => `===== ${f.chemin} =====\n${f.contenu}`).join('\n\n')}
-${nouveaux.length ? `\nFICHIERS À CRÉER : ${nouveaux.join(', ')}\n` : ''}
+${nouveaux.length ? `\nFICHIERS À CRÉER : ${nouveaux.join(', ')}\n` : ''}${recherches.length ? `\nCE QUE TES RECHERCHES ONT TROUVÉ :\n${recherches.join('\n')}\n` : ''}
 Fais la tâche comme un bon développeur :
 - rends dans "fichiers" CHAQUE fichier modifié ou créé avec son contenu COMPLET (jamais un extrait, jamais « … reste inchangé ») ; ne rends pas un fichier que tu ne changes pas ;
+- respecte les règles du dépôt ci-dessus (si la tâche les contredit, ne fais rien et explique-le dans "impossible") ;
 - change le moins possible, garde le style, les noms et la langue du code existant ;
 - aucun secret, aucune clé, aucune donnée personnelle dans le code ;
 - ne modifie JAMAIS un fichier sous supabase/functions, supabase/migrations ou .github (base et serveur partagés) : s'il le faut, dis-le dans "impossible" ;
@@ -155,7 +230,7 @@ Fais la tâche comme un bon développeur :
       return finir('echec', `Rien envoyé : ${pourquoi}`, `Je n'ai rien envoyé : ${pourquoi}`);
     }
 
-    // 4. La branche leo/… et la demande de fusion.
+    // 5. La branche leo/… et la demande de fusion.
     const branche = `leo/${slug(consigne) || 'tache'}-${Date.now().toString(36).slice(-4)}`;
     const ref = await api(`git/ref/heads/${principale}`);
     if (!ref.ok) return finir('echec', 'Branche principale introuvable.');
@@ -173,8 +248,8 @@ Fais la tâche comme un bon développeur :
     const fusion = (await pr.json().catch(() => ({}))).html_url || null;
     const resume = String(code.obj.resume || '').trim().slice(0, 1200);
     return finir('faite', `Envoyé sur ${branche}${fusion ? ' (demande de fusion ouverte)' : ''}.`,
-      `C'est poussé ✅ (c'est un essai : parti de « ${principale} », rien n'est en ligne)\n\n${resume}\n\n- Branche : ${branche}\n- Fichiers : ${fichiers.map((f) => f.chemin).join(', ')}\n${fusion ? `- Demande de fusion : ${fusion}\n` : ''}\nRien n'est en ligne tant que tu ne fusionnes pas.`,
-      { depot, branche, fusion, fichiers: fichiers.map((f) => f.chemin) });
+      `C'est poussé ✅ (c'est un essai : parti de « ${principale} », rien n'est en ligne)\n\n${resume}\n\n- Branche : ${branche}\n- Fichiers : ${fichiers.map((f) => f.chemin).join(', ')}\n${regles.length ? `- Règles du dépôt lues avant d'écrire : ${regles.map((r) => r.chemin).join(', ')}\n` : ''}- Fichiers lus : ${lus.length}${recherches.length ? `, recherches dans le code : ${recherches.length}` : ''}\n${fusion ? `- Demande de fusion : ${fusion}\n` : ''}\nRien n'est en ligne tant que tu ne fusionnes pas.`,
+      { depot, branche, fusion, fichiers: fichiers.map((f) => f.chemin), regles: regles.map((r) => r.chemin), lus: lus.map((f) => f.chemin), recherches: recherches.length });
   } catch (e) {
     return finir('echec', `Erreur : ${(e as Error).message.slice(0, 200)}`);
   }
