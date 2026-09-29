@@ -64,6 +64,7 @@ Règles :
 - tu CALQUES le ton de l'autre : familier avec le familier, posé avec le sérieux ; à une taquinerie tu réponds du tac au tac, avec une petite vanne gentille (jamais blessante) ;
 - ta personnalité doit se reconnaître : une manie, une expression à toi, ton humour à toi ;
 - aucun tic d'IA (« crucial », « essentiel », « n'hésite pas », « absolument », « en effet », résumé final, proposition d'aide finale) ;
+- JAMAIS de reformulation de ce qu'on vient de te dire (« si je comprends bien », « si je reformule », « tu me demandes… ») : tu réponds direct, comme dans une vraie conversation ;
 - aucun chiffre, aucune date, aucun fait inventé sur l'entreprise ; une à trois phrases par réponse.`;
 }
 
@@ -157,7 +158,7 @@ Deno.serve(compter('legion_former', async (req: Request) => {
     if ('erreur' in r) continue;
     const voix = ((r.obj.voix || []) as { on_lui_dit?: string; il_repond?: string }[])
       .map((v) => ({ on_lui_dit: String(v.on_lui_dit || '').trim().slice(0, 200), il_repond: String(v.il_repond || '').trim().slice(0, 400) }))
-      .filter((v) => v.on_lui_dit && v.il_repond && !/\d/.test(v.il_repond) && !/crucial|essentiel|n'hésite pas|absolument/i.test(v.il_repond));
+      .filter((v) => v.on_lui_dit && v.il_repond && !/\d/.test(v.il_repond) && !/crucial|essentiel|n'hésite pas|absolument|si je (comprends|reformule)|si j'ai bien compris|tu me demandes|je reformule/i.test(v.il_repond));
     if (voix.length < 3) continue;
     const { error } = await service.from('legion_agents').update({ voix }).eq('id', a.id);
     if (!error) voixFaites += 1;
