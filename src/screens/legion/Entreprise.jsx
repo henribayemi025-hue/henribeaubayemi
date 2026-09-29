@@ -118,7 +118,9 @@ export default function Entreprise() {
     const { data: place } = await supabase.from('legion_membres').select('role').eq('entreprise_id', entrepriseId).eq('user_id', user.id).maybeSingle();
     const lus = Object.fromEntries((lectures || []).map((l) => [l.canal_id, l.lu_le]));
     return { entreprise, agents: agents.data || [], salons: salons.data || [], messages: liste, reactions: reactions || [], lus, role: place?.role || 'membre' };
-  }, [user?.id, entrepriseId], { cacheKey: `legion:v2:${entrepriseId}` });
+    // La clé porte la personne : un cache (gardé sur le disque) ne doit jamais montrer à un compte
+    // ce qu'un autre compte a lu sur le même téléphone, ni un « refusé » d'avant l'adhésion.
+  }, [user?.id, entrepriseId], { cacheKey: `legion:v3:${user?.id || 'anon'}:${entrepriseId}` });
 
   // Le temps réel: les messages, les réactions, les agents (leur interrupteur
   // peut être basculé depuis un autre appareil).
@@ -141,7 +143,7 @@ export default function Entreprise() {
       // de suite. Avant le 24/09, Ada restait absente de la liste, de « @ » et
       // de la recherche jusqu'au rechargement de la page.
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'legion_agents', filter: `entreprise_id=eq.${entrepriseId}` },
-        (c) => setData((d) => (d && !d.agents.some((a) => a.id === c.new.id) ? { ...d, agents: [...d.agents, c.new] } : d)))
+        (c) => setData((d) => (d?.agents && !d.agents.some((a) => a.id === c.new.id) ? { ...d, agents: [...d.agents, c.new] } : d)))
       .subscribe();
     return () => { supabase.removeChannel(abo); };
   }, [entrepriseId, user?.id, setData]);
@@ -153,8 +155,10 @@ export default function Entreprise() {
   const dept = departements.find((d) => d.id === deptId) || null;
   // Le salon où le rapport du soir se lit: le même choix que legion-rapport.
   const salonRapport = useMemo(() => departements.find((s) => sansAccent(s.nom) === 'direction' || sansAccent(s.cle || '') === 'direction') || departements[0] || null, [departements]);
-  const moi = data?.agents.find((a) => a.user_id === user?.id) || null;
-  const agentPrive = useMemo(() => (salon?.prive_entre?.length ? data?.agents.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== moi?.cle) || null : null), [salon, data?.agents, moi]);
+  // `data` vaut { refuse: true } pour qui n'est pas membre (lien d'une autre entreprise) : sans le
+  // second « ?. », la page plantait avant la redirection et restait blanche (Marvellous, 29/09).
+  const moi = data?.agents?.find((a) => a.user_id === user?.id) || null;
+  const agentPrive = useMemo(() => (salon?.prive_entre?.length ? data?.agents?.find((a) => salon.prive_entre.includes(a.cle) && a.cle !== moi?.cle) || null : null), [salon, data?.agents, moi]);
   const messagesDuSalon = useMemo(() => (data?.messages || []).filter((m) => m.canal_id === salonId), [data?.messages, salonId]);
   // La réunion en cours dans ce salon (legion-reunion, 23/09): ouverte il y a
   // moins de 45 minutes, ni terminée, ni close par un compte rendu.
