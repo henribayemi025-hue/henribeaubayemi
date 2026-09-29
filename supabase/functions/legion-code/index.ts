@@ -90,7 +90,8 @@ Deno.serve(compter('legion_code', async (req: Request) => {
 
   try {
     const jeton = await jetonInstallation(installation);
-    const api = (chemin: string, init?: RequestInit) => fetch(`https://api.github.com/repos/${depot}/${chemin}`, { ...init, headers: { ...GH(jeton), 'Content-Type': 'application/json' } });
+    const api = (chemin: string, init?: RequestInit) => fetch(`https://api.github.com/repos/${depot}${chemin ? `/${chemin}` : ''}`, { ...init, headers: { ...GH(jeton), 'Content-Type': 'application/json' } });
+    // Pas de « / » final : GitHub répond 404 à …/repos/x/y/ (vu le 29/09).
     const infos = await api('');
     if (!infos.ok) return finir('echec', `Dépôt inaccessible (${infos.status}).`);
     // La base : « staging » quand le dépôt en a une (la branche de travail),
