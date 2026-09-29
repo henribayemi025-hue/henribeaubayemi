@@ -17,3 +17,7 @@ verify_jwt = false
 # POST exigent la session Léo.
 [functions.atelier-github]
 verify_jwt = false
+
+# La formation des agents (29/09) : appelée par le serveur avec le jeton interne.
+[functions.legion-former]
+verify_jwt = false
