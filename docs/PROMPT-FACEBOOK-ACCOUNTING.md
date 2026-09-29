@@ -10,6 +10,22 @@ Instagram et WhatsApp. C'est là qu'il faut aller.
 
 ---
 
+## ⚠️ La loi d'abord (ajouté le 29/09, signalé par Claudinette)
+
+Au Cameroun, la prospection sans accord préalable est encadrée : loi
+2010/021 art. 7 (e-mail et appels automatiques sans consentement :
+interdits), loi 2024/017 sur les données personnelles (applicable depuis
+le 23/06/2026, art. 41 : consentement préalable ; art. 40 : droit
+d'opposition), loi 2010/012 art. 48 (dire qui écrit et comment dire stop).
+Et **WhatsApp interdit d'écrire à quelqu'un qui ne nous a pas donné son
+numéro lui-même** : le numéro de Finjaro peut être limité puis coupé.
+Détail et sources : `docs/PROSPECTION.md` (dépôt Accounting), section 1.
+
+Donc : **jamais de WhatsApp** à une boutique trouvée sur Facebook ;
+seulement un message **à la main**, par la messagerie de sa **Page de
+commerce**, en petit nombre, en disant qui on est et en laissant dire non.
+Si le volume grandit, à faire valider par un juriste.
+
 ## Trois règles avant de lancer
 
 1. **Des pages de commerce, pas des personnes.** On relève des **Pages
@@ -22,9 +38,10 @@ Instagram et WhatsApp. C'est là qu'il faut aller.
    regarde des pages de boutiques, c'est normal. Un robot qui en ouvre 200,
    non.
 3. **Rien n'est envoyé par Claude.** Il prépare la liste et le message ;
-   **Beau (ou son partenaire) écrit lui-même**, depuis la Page Finjaro ou
-   WhatsApp. Un message écrit par une vraie personne, à une boutique qui
-   affiche son contact pour qu'on lui écrive, c'est du commerce normal.
+   **Beau (ou son partenaire) écrit lui-même**, depuis la Page Finjaro, par
+   Messenger — jamais par WhatsApp (voir la loi ci-dessus). Un message écrit
+   à la main par une vraie personne, qui dit qui elle est et laisse dire
+   non, à une boutique qui affiche sa messagerie pour qu'on lui écrive.
 
 ---
 
@@ -95,14 +112,15 @@ enseignes, les pages qui ne vendent rien (fan clubs, actualité, églises).
 
 ## Le message à envoyer ensuite (Beau l'envoie lui-même)
 
-Par Messenger depuis la Page Finjaro, ou par WhatsApp. Court, sans ligne de
-désabonnement (sur un réseau social la personne bloque en un geste).
+Par Messenger depuis la Page Finjaro — **pas par WhatsApp**. Court, et avec
+une phrase pour dire non (la loi camerounaise l'exige).
 
 > Bonjour ! On a vu votre page, vos articles sont beaux. Nous faisons partie
 > de Finjaro. On a fait un outil pour les boutiques comme la vôtre : vous
 > tapez le montant quand vous vendez, et il tient votre caisse et vos
 > comptes tout seul. Pas besoin de remplir un catalogue avant. C'est gratuit
 > jusqu'en novembre : accounting.finjaro.net
+> Si ça ne vous intéresse pas, dites-le-moi et je ne vous écrirai plus.
 
 **Ce qui ne bouge pas :** « gratuit jusqu'en novembre » toujours avec la
 date ; aucun chiffre non mesuré (« des centaines de boutiques », jamais) ;
