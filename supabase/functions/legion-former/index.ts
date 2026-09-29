@@ -35,6 +35,38 @@ const QUESTIONS = [
 ];
 const DEJA_FORME = 10; // au-delà, l'agent est considéré comme formé
 
+// LA VOIX (0220, Beau 29/09 : « comme les humains, lancer des blagues, troller »).
+// Quelques répliques types, dans des situations qui montrent le caractère ;
+// legion-repondre les montre à l'agent comme exemples de SA façon de parler.
+const SITUATIONS = [
+  'quelqu\'un arrive en mode copain, très familier (« wesh », « frérot », argot)',
+  'une question de travail sérieuse et polie, sur ton métier',
+  'quelqu\'un te taquine ou te lance une petite pique pour rire',
+  'quelqu\'un est agacé parce que quelque chose ne marche pas',
+  'quelqu\'un partage une bonne nouvelle',
+];
+const SCHEMA_VOIX = {
+  type: 'OBJECT',
+  properties: { voix: { type: 'ARRAY', items: { type: 'OBJECT', properties: { on_lui_dit: { type: 'STRING' }, il_repond: { type: 'STRING' } }, required: ['on_lui_dit', 'il_repond'] } } },
+  required: ['voix'],
+};
+function consigneVoix(a: Agent, entreprise: { nom: string; projet: string | null }): string {
+  return `${CHARTE}
+Tu es ${a.nom}, ${a.poste}${a.departement ? ` (département ${a.departement})` : ''} chez « ${entreprise.nom} ».
+Ton mandat : ${a.mandat || 'faire ton métier.'}
+Ta personnalité : ${a.personnalite || 'Direct, précis, chaleureux.'}
+
+Écris ta VOIX : pour chacune de ces situations, invente ce qu'on te dit (« on_lui_dit », une phrase naturelle, comme un vrai message) et ce que TU réponds (« il_repond »), exactement comme tu parlerais :
+${SITUATIONS.map((x, i) => `${i + 1}. ${x}`).join('\n')}
+
+Règles :
+- tu parles comme une vraie personne sur une messagerie : phrases courtes, tutoiement, un emoji quand il vient tout seul, de l'humour ;
+- tu CALQUES le ton de l'autre : familier avec le familier, posé avec le sérieux ; à une taquinerie tu réponds du tac au tac, avec une petite vanne gentille (jamais blessante) ;
+- ta personnalité doit se reconnaître : une manie, une expression à toi, ton humour à toi ;
+- aucun tic d'IA (« crucial », « essentiel », « n'hésite pas », « absolument », « en effet », résumé final, proposition d'aide finale) ;
+- aucun chiffre, aucune date, aucun fait inventé sur l'entreprise ; une à trois phrases par réponse.`;
+}
+
 const SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -43,7 +75,7 @@ const SCHEMA = {
   required: ['reponses'],
 };
 
-type Agent = { id: string; nom: string; poste: string; departement: string | null; mandat: string | null; personnalite: string | null };
+type Agent = { id: string; nom: string; poste: string; departement: string | null; mandat: string | null; personnalite: string | null; voix?: unknown };
 
 function consigne(a: Agent, entreprise: { nom: string; projet: string | null }): string {
   return `${CHARTE}
@@ -81,7 +113,7 @@ Deno.serve(compter('legion_former', async (req: Request) => {
   const limite = Math.min(Math.max(Number(corps.limite) || 5, 1), 10);
 
   // Les agents allumés (pas les humains, pas Claude) qui ne sont pas encore formés.
-  let q = service.from('legion_agents').select('id, entreprise_id, nom, poste, departement, mandat, personnalite')
+  let q = service.from('legion_agents').select('id, entreprise_id, nom, poste, departement, mandat, personnalite, voix')
     .is('user_id', null).eq('actif', true).neq('moteur', 'claude-code');
   if (corps.entreprise_id) q = q.eq('entreprise_id', corps.entreprise_id);
   const { data: agents } = await q.limit(400);
@@ -112,14 +144,33 @@ Deno.serve(compter('legion_former', async (req: Request) => {
     const { error } = await service.from('legion_reponses_apprises').insert(lignes);
     resultats.push({ agent: a.nom, ajoutees: error ? 0 : lignes.length, ...(error ? { erreur: error.message } : {}) });
   }
+  // La voix (0220) : les agents qui n'en ont pas encore, cinq par passage.
+  const sansVoix = ((agents || []) as (Agent & { entreprise_id: string })[]).filter((a) => !a.voix);
+  let voixFaites = 0;
+  for (const a of sansVoix.slice(0, limite)) {
+    if (!entreprises.has(a.entreprise_id)) {
+      const { data: e } = await service.from('legion_entreprises').select('nom, projet').eq('id', a.entreprise_id).maybeSingle();
+      entreprises.set(a.entreprise_id, { nom: e?.nom || 'l’entreprise', projet: e?.projet || null });
+    }
+    pourEntreprise(a.entreprise_id);
+    const r = await generer(apiKey, consigneVoix(a, entreprises.get(a.entreprise_id)!), SCHEMA_VOIX, { temperature: 0.9, reflexion: 1024, delaiMs: 60_000, maxSortie: 3000, modeles: moteursSimples() });
+    if ('erreur' in r) continue;
+    const voix = ((r.obj.voix || []) as { on_lui_dit?: string; il_repond?: string }[])
+      .map((v) => ({ on_lui_dit: String(v.on_lui_dit || '').trim().slice(0, 200), il_repond: String(v.il_repond || '').trim().slice(0, 400) }))
+      .filter((v) => v.on_lui_dit && v.il_repond && !/\d/.test(v.il_repond) && !/crucial|essentiel|n'hésite pas|absolument/i.test(v.il_repond));
+    if (voix.length < 3) continue;
+    const { error } = await service.from('legion_agents').update({ voix }).eq('id', a.id);
+    if (!error) voixFaites += 1;
+  }
+
   // La suite, s'il reste des agents à former (et si ce passage a avancé).
-  const restants = tous.length - aFormer.length;
-  if (restants > 0 && resultats.some((x) => x.ajoutees > 0)) {
+  const restants = tous.length - aFormer.length + Math.max(0, sansVoix.length - limite);
+  if (restants > 0 && (resultats.some((x) => x.ajoutees > 0) || voixFaites > 0)) {
     const suite = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-former`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-finjaro-token': jeton },
       body: JSON.stringify({ ...(corps.entreprise_id ? { entreprise_id: corps.entreprise_id } : {}), limite }),
     }).catch((e) => console.error('suite:', (e as Error).message));
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(suite);
   }
-  return json({ formes: resultats.length, restants, resultats });
+  return json({ formes: resultats.length, voix: voixFaites, restants, resultats });
 }));
