@@ -16,7 +16,7 @@ Léo utilise le même moteur 3D (three.js), donc les idées et les morceaux de c
 - **L'agent qui a besoin de toi se voit de loin** : il saute, une lumière change de couleur, une touche (N) emmène directement à celui qui attend depuis le plus longtemps, et le titre de l'onglet compte les agents en attente. C'est exactement ce qu'il manque aux « questions des agents à l'humain » dans le monde 3D de Léo.
 - **L'agent mime ce qu'il fait** : il feuillette des papiers quand il lit, tape vite quand il écrit. On comprend son travail sans lire de texte.
 - **La carte au-dessus de la tête** : le titre de la tâche et, en une ligne, ce que l'agent fait en ce moment.
-- **Les tickets et pull requests GitHub au mur**, avec « confier ce ticket à un agent », et le gong quand une pull request est fusionnée. Tout cela rejoint le chantier « agents qui codent » et « GitHub par utilisateur ».
+- **Les tickets et pull requests GitHub au mur**, avec « confier ce ticket à un agent », et le gong quand une pull request est fusionnée. Tout cela peut s'appuyer sur le connecteur GitHub déjà branché dans Léo, et rejoint le chantier « agents qui codent ».
 - **Une branche par agent**, puis la pull request ouverte d'une touche. C'est la même idée que la « branche leo/ après Confirmer » prévue.
 - **Le chien, synchronisé sans flux continu** : le serveur envoie seulement l'itinéraire (chemin calculé sur une grille, algorithme A*), et chaque navigateur recalcule la position. Tout le monde voit le chien au même endroit sans que ça coûte de la bande passante. C'est la bonne technique pour le « pays commun » (plusieurs personnes dans le même monde).
 - **La musique et le golf, pareils pour tous** : tout se déduit de l'heure du serveur, rien n'est diffusé en continu.
@@ -36,4 +36,4 @@ Léo utilise le même moteur 3D (three.js), donc les idées et les morceaux de c
 - Si on reprend du code : garder la mention MIT d'AgentSystemLabs dans le fichier concerné.
 
 ## Verdict
-**Très utile comme modèle pour le monde 3D de Léo.** En premier, à reprendre (idée et code MIT) : l'agent qui saute et sonne quand il a besoin de toi, la touche « aller au suivant », la carte au-dessus de la tête et le mime du travail. Ensuite, les tickets GitHub au mur, en même temps que le connecteur GitHub par utilisateur. Rien n'est intégré avant l'accord de Beau.
+**Très utile comme modèle pour le monde 3D de Léo.** En premier, à reprendre (idée et code MIT) : l'agent qui saute et sonne quand il a besoin de toi, la touche « aller au suivant », la carte au-dessus de la tête et le mime du travail. Ensuite, les tickets GitHub au mur, qui liront le connecteur GitHub déjà branché dans Léo (« Se connecter avec GitHub »). Rien n'est intégré avant l'accord de Beau.
