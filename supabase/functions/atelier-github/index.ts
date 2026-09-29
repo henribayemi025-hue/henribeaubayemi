@@ -141,7 +141,10 @@ Deno.serve(async (req: Request) => {
       const installations = i.ok ? ((await i.json()).installations || []) as Array<{ id: number; account?: { login?: string } }> : [];
       const demande = Number(url.searchParams.get('installation_id') || 0);
       const choisie = demande ? installations.find((x) => x.id === demande) : installations[0];
-      if (!choisie) return aller({ github: 'erreur', raison: demande ? "cette installation n'est pas à toi" : "l'application n'est installée sur aucun de tes comptes" });
+      // Pas encore installée : direction la page d'installation, avec le même
+      // laissez-passer (GitHub revient ensuite ici avec installation_id).
+      if (!choisie && !demande) return Response.redirect(`https://github.com/apps/${await slugApp()}/installations/new?state=${encodeURIComponent(url.searchParams.get('state') || '')}`, 302);
+      if (!choisie) return aller({ github: 'erreur', raison: "cette installation n'est pas à toi" });
       const depots = await depotsInstallation(await jetonInstallation(choisie.id));
       const { data: avant } = await service.from('legion_connecteurs').select('config').eq('entreprise_id', etat.e).eq('type', 'github').maybeSingle();
       const depotAvant = String(avant?.config?.depot || '');
@@ -186,7 +189,12 @@ Deno.serve(async (req: Request) => {
       const state = await signer({ e: entreprise, u: qui.user.id, r: retour, x: Date.now() + 30 * 60_000 });
       const slug = await slugApp();
       return json({
-        installer: `https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(state)}`,
+        // 29/09 : l'application déjà installée, la page d'installation de GitHub
+        // restait sur ses réglages sans jamais revenir dans Léo (vu par Beau).
+        // On passe donc d'abord par l'autorisation : elle revient TOUJOURS ici,
+        // et si l'application n'est pas encore installée, on file l'installer.
+        installer: `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&state=${encodeURIComponent(state)}`,
+        installer_github: `https://github.com/apps/${slug}/installations/new?state=${encodeURIComponent(state)}`,
         // Déjà installée : on se reconnecte simplement (GitHub renvoie ici aussi).
         reconnecter: `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&state=${encodeURIComponent(state)}`,
       });
