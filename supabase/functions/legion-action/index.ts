@@ -231,6 +231,19 @@ Deno.serve(async (req: Request) => {
       if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(photo);
       return marquer('faite', `${nom} rejoint l'équipe${departement ? ` (${departement})` : ''}, allumé et supervisé. Il choisit sa photo.`);
     }
+    case 'modifier_code': {
+      // Comme Codex (29/09) : legion-code lit le dépôt, écrit le changement,
+      // pousse sur une branche leo/… et ouvre une demande de fusion ; l'agent
+      // poste le lien dans le salon. Le clic « Confirmer » n'attend pas.
+      const consigne = String(action.valeur || '').trim();
+      if (consigne.length < 5) return marquer('echec', 'La tâche de code est vide.');
+      const travail = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-code`, {
+        method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entreprise_id: msg.entreprise_id, message_id: msg.id, agent_id: msg.auteur_id, consigne }), signal: AbortSignal.timeout(300_000),
+      }).catch((e) => console.error('code:', (e as Error).message));
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(travail);
+      return marquer('en_cours', 'Je lis le dépôt et j’écris le changement (une à trois minutes).');
+    }
     case 'creer_video':
     case 'creer_visuel': {
       // « Créer un visuel » (29/09) : l'image se fabrique en fond, chez

@@ -579,6 +579,8 @@ const LIBELLES_ACTION = {
   // « Créer un visuel » (29/09) : payé sur le budget des visuels de l'entreprise.
   creer_visuel: (a) => `Créer le visuel : « ${a.valeur} »`,
   creer_video: (a) => `Créer la vidéo : « ${a.valeur} »`,
+  // Comme Codex (29/09) : l'agent code et pousse sur une branche leo/… avec une demande de fusion.
+  modifier_code: (a) => `Coder et envoyer sur GitHub (branche leo/…) : « ${a.valeur} »`,
 };
 // Une compétence écrite par un agent et réussie à l'examen (0198) : Mentor
 // la présente ; « Confirmer » l'allume, « Écarter » la laisse éteinte, avec
