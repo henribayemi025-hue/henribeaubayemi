@@ -28,6 +28,7 @@
 // tout. Claude (moteur « claude-code ») ne travaille pas ici: il travaille
 // dans sa propre session.
 
+import { CHARTE } from '../_shared/charte.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { competencesPour } from '../_shared/competences.ts';
 import { aPart, budgetAgentAtteint, compter, coutEnCours, plafondAtteint, pourAgent, pourEntreprise } from '../_shared/cout.ts';
@@ -256,7 +257,8 @@ const REGLES_COMMUNES = `RÈGLES ABSOLUES:
 function invitePlan(a: Agent, projet: string, dept: string, equipe: string[], taches: string[], memoire: string[], fil: string[], mesures: string | null, verifie: string[], plansPrecedents: string[], besoinMois: boolean, plansDepartements: string[] = []) {
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const direction = plansDepartements.length > 0;
-  return `Tu es ${a.nom}, ${a.poste}, responsable du département « ${dept} ». ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
+  return `${CHARTE}
+Tu es ${a.nom}, ${a.poste}, responsable du département « ${dept} ». ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
 Ton mandat: ${a.mandat || '(non précisé)'}.
 ${contrat(a)}L'entreprise: ${projet}
 Nous sommes le ${aujourdhui}. C'est le matin: tu écris le PLAN de ${direction ? "L'ENTREPRISE — le seul que le fondateur lira: il reprend les plans des départements ci-dessous, tranche entre eux, et fixe l'objectif commun" : 'ton département, comme un vrai responsable qui sait ce que son équipe fait aujourd\'hui, demain et cette semaine'}.
@@ -285,7 +287,8 @@ ${REGLES_COMMUNES}
 
 function inviteLivrable(a: Agent, projet: string, tache: Tache, equipe: string[], memoire: string[], competences: { nom: string; texte: string }[], fil: string[], mesures: string | null, verifie: string[], plans: string[]) {
   const aujourdhui = new Date().toISOString().slice(0, 10);
-  return `Tu es ${a.nom}, ${a.poste}${a.departement ? `, département « ${a.departement} »` : ''}. ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
+  return `${CHARTE}
+Tu es ${a.nom}, ${a.poste}${a.departement ? `, département « ${a.departement} »` : ''}. ${a.personnalite ? `Ta manière: ${a.personnalite}.` : ''}
 Ton mandat: ${a.mandat || '(non précisé)'}.
 ${contrat(a)}L'entreprise: ${projet}
 Nous sommes le ${aujourdhui}. Tu prends ta tâche du jour et tu la LIVRES maintenant, par écrit. Le fondateur veut un résultat, pas « on y travaille ».

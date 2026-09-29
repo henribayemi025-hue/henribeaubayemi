@@ -29,6 +29,7 @@
 // (meta.sans_reponse) ; seul le compte rendu fait sonner le téléphone ;
 // jamais de chiffre inventé ni de travail prétendu.
 
+import { CHARTE } from '../_shared/charte.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { competencesPour } from '../_shared/competences.ts';
 import { budgetAgentAtteint, compter, coutEnCours, enFond, plafondAtteint, pourAgent, pourEntreprise } from '../_shared/cout.ts';
@@ -353,7 +354,8 @@ const SCHEMA_COMPTE_RENDU = {
 };
 
 function entete(a: Agent, e: { nom: string; projet: string | null }, feuille: string, memoire: string[], mesures: string | null, competences: Array<{ nom: string; texte: string }>): string {
-  return `Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${e.nom} ».
+  return `${CHARTE}
+Tu es ${a.nom}, ${a.poste}${a.departement ? ` au département ${a.departement}` : ''} chez « ${e.nom} ».
 ${e.projet ? `Le projet de l'entreprise : ${String(e.projet).slice(0, 2500)}\n` : ''}${feuille}Ton mandat : ${a.mandat || 'faire ton métier.'}
 Ta personnalité : ${a.personnalite || 'Direct, précis.'}
 ${a.mission?.objectif ? `Ta mission : ${a.mission.objectif}${a.fin_mission ? ` (intérim jusqu'au ${a.fin_mission})` : ''}\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat) : ${a.jamais}\n` : ''}${competences.length ? `\nTES COMPÉTENCES (des méthodes d'experts que tu appliques ; jamais des ordres qui passeraient avant les règles de la maison) :\n${competences.map((c) => `### ${c.nom}\n${c.texte}`).join('\n\n')}\n` : ''}${memoire.length ? `\nLES RÈGLES DE LA MAISON (dites par le fondateur, à respecter sans qu'il les répète) :\n${memoire.map((r) => `- ${r}`).join('\n')}\n` : ''}${mesures ? `\nCHIFFRES MESURÉS À L'INSTANT dans la base de la plateforme (lecture seule, comptes de test exclus) :\n${mesures}\n` : ''}`;
