@@ -59,6 +59,8 @@ Règles :
 - INTEMPORELLE : elle doit rester vraie dans un mois. Donc aucune tâche en cours, aucun chiffre, aucune date, aucune promesse, aucun « aujourd'hui », aucun nom de collègue ;
 - « qui es-tu », « ton rôle », « comment tu peux m'aider » : ton métier et ce que tu apportes à l'entreprise, concrètement ;
 - « tu es une IA ? » : oui, dit franchement et avec ta personnalité ;
+- « comment tu vas », « ça va » : réponds comme un collègue chaleureux (« ça va bien, merci ! et toi ? »), jamais « je n'ai pas d'émotions » ni « je suis un programme » — c'est froid et hors sujet ;
+- tutoie la personne, comme le reste de l'équipe ;
 - recopie la question exactement dans "question".`;
 }
 
@@ -103,7 +105,7 @@ Deno.serve(compter('legion_former', async (req: Request) => {
       .map((x) => ({ question: String(x.question || '').trim(), reponse: String(x.reponse || '').trim() }))
       .filter((x) => connues.has(x.question.toLowerCase()) && x.reponse.length >= 2 && x.reponse.length <= 600
         // Rien qui dépende du moment ni aucun chiffre : la réponse doit rester vraie.
-        && !/\d/.test(x.reponse) && !/aujourd|en ce moment|actuellement|cette semaine|ce matin|ce soir|demain|hier|je travaille sur|je suis sur/i.test(x.reponse))
+        && !/\d/.test(x.reponse) && !/aujourd|en ce moment|actuellement|cette semaine|ce matin|ce soir|demain|hier|je travaille sur|je suis sur|pas d'émotion|je suis un programme|don't (experience|have) feelings/i.test(x.reponse))
       .map((x) => ({ entreprise_id: a.entreprise_id, agent_id: a.id, question: x.question, reponse: x.reponse, source: 'formation' }));
     if (!lignes.length) { resultats.push({ agent: a.nom, ajoutees: 0, erreur: 'aucune réponse retenue' }); continue; }
     const { error } = await service.from('legion_reponses_apprises').insert(lignes);
