@@ -539,7 +539,10 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   // vérification, ni document, ni travail n'a besoin d'aucun des trois : un
   // seul appel, réflexion courte. Au moindre doute, la voie complète.
   const aDesPieces = (((msg.meta as { pieces?: unknown[] } | null)?.pieces) || []).length > 0;
-  const DEMANDE_DE_FOND = /strat|plan|bilan|object|priorit|analy|result|semaine|mois|trimestre|chiffre|combien|pourquoi|vente|vend|commande|stock|boutique|compta|client|visite|prix|budget|argent|code|ecran|bug|page|site|web|internet|cherch|concurr|rapport|tache|livr|fichier|document|tableau|http|www|verifi|\d/;
+  // « pourquoi » retiré le 29/09 : « pourquoi tu es aussi lente » partait sur la
+  // voie complète et le modèle fort d'Ada (30 s). Un « pourquoi » qui porte sur
+  // du fond contient de toute façon un des autres mots (vente, chiffre, plan…).
+  const DEMANDE_DE_FOND = /strat|plan|bilan|object|priorit|analy|result|semaine|mois|trimestre|chiffre|combien|vente|vend|commande|stock|boutique|compta|client|visite|prix|budget|argent|code|ecran|bug|page|site|web|internet|cherch|concurr|rapport|tache|livr|fichier|document|tableau|http|www|verifi|\d/;
   // Un ordre (« fais… », « prépare… ») demande un travail, pas une réponse courte.
   const ORDRE = /(^|[.!?,]\s*)(fais|faites|fait|prepare|preparez|redige|ecris|envoie|cree|lance|regarde|trouve|donne|montre|liste|resume|calcule|propose|organise)\b/;
   const leger = !appelVocal && !tableur && !blocage && !aDesPieces && !(msg.meta as { renvoi?: unknown } | null)?.renvoi
