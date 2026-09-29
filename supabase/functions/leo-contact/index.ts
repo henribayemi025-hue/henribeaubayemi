@@ -43,13 +43,16 @@ Deno.serve(async (req: Request) => {
   const { data: { user } } = await utilisateur.auth.getUser();
   if (!user) return json({ erreur: 'Connecte-toi d’abord.' }, 401);
 
-  let corps: { genre?: string; message?: string; entreprise_id?: string | null };
+  let corps: { genre?: string; message?: string; entreprise_id?: string | null; app?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
   const genre = String(corps.genre || '');
   if (!GENRES[genre]) return json({ erreur: 'Demande inconnue.' }, 400);
   const message = String(corps.message || '').trim().slice(0, 4000);
   if (genre !== 'premium' && message.length < 3) return json({ erreur: 'Écris quelques mots.' }, 400);
   const entrepriseId = corps.entreprise_id || null;
+  // Finjaro Accounting s'en sert aussi (Beau, 29/09 : « il doit aussi pouvoir
+  // nous contacter ») : l'e-mail dit de quelle application vient la demande.
+  const app = corps.app === 'accounting' ? 'Finjaro Accounting' : 'Léo';
 
   const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
   // Pas plus de 6 demandes par heure et par personne.
@@ -78,9 +81,9 @@ Deno.serve(async (req: Request) => {
   }
 
   const nom = String(profil?.name || user.email || 'Quelqu’un');
-  const sujet = `Léo — ${nom} ${GENRES[genre]}${e?.nom ? ` (${e.nom})` : ''}`;
+  const sujet = `${app} — ${nom} ${GENRES[genre]}${e?.nom ? ` (${e.nom})` : ''}`;
   const lignes = [
-    `<p><b>${echapper(nom)}</b> ${GENRES[genre]}.</p>`,
+    `<p><b>${echapper(nom)}</b> ${GENRES[genre]} (depuis ${app}).</p>`,
     message ? `<blockquote style="border-left:3px solid #c8643c;margin:0;padding:8px 12px;background:#faf5ee">${echapper(message).replace(/\n/g, '<br>')}</blockquote>` : '',
     '<ul>',
     `<li>E-mail : ${echapper(user.email || '—')} (« Répondre » lui écrit directement)</li>`,
