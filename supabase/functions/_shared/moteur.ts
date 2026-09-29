@@ -171,6 +171,14 @@ function nettoyer(obj: Record<string, unknown>) {
   return obj;
 }
 
+// La réflexion. Sur l'offre gratuite, gemini-3.8-flash a dépassé les 12 s de
+// la voie rapide avec un simple budget (29/09, « Signal timed out ») : les
+// modèles 3.x se règlent par niveau, et un salut n'a besoin que du minimum.
+function reflexion(model: string, budget: number, sansFrais: boolean) {
+  if (sansFrais && /^gemini-3/.test(model)) return { thinkingLevel: budget <= 512 ? 'minimal' : budget <= 4096 ? 'low' : 'high' };
+  return { thinkingBudget: budget };
+}
+
 async function viaGemini(apiKey: string, model: string, texte: string, schema: unknown, o: Options, sansFrais = false): Promise<string> {
   // L'offre gratuite ne coûte rien : pas de compteur de dépense.
   const resp = await (sansFrais ? fetch : gemini)(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -178,7 +186,7 @@ async function viaGemini(apiKey: string, model: string, texte: string, schema: u
     headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: texte }] }],
-      generationConfig: { temperature: o.temperature ?? 0.6, maxOutputTokens: o.maxSortie ?? 8192, thinkingConfig: { thinkingBudget: o.reflexion ?? 4096 }, responseMimeType: 'application/json', responseSchema: schema },
+      generationConfig: { temperature: o.temperature ?? 0.6, maxOutputTokens: o.maxSortie ?? 8192, thinkingConfig: reflexion(model, o.reflexion ?? 4096, sansFrais), responseMimeType: 'application/json', responseSchema: schema },
     }),
     signal: AbortSignal.timeout(o.delaiMs ?? 90_000),
   });
