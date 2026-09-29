@@ -232,7 +232,7 @@ Deno.serve(async (req: Request) => {
       return marquer('faite', `${nom} rejoint l'équipe${departement ? ` (${departement})` : ''}, allumé et supervisé. Il choisit sa photo.`);
     }
     case 'modifier_code': {
-      // Comme Codex (29/09) : legion-code lit le dépôt, écrit le changement,
+      // Comme Codex (29/09, redéployé après l’échec du 1er déploiement) : legion-code lit le dépôt, écrit le changement,
       // pousse sur une branche leo/… et ouvre une demande de fusion ; l'agent
       // poste le lien dans le salon. Le clic « Confirmer » n'attend pas.
       const consigne = String(action.valeur || '').trim();

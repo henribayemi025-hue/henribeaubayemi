@@ -48,7 +48,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.118.0  # figée (29/09) : « latest » interroge l’API GitHub, limitée — un déploiement a échoué pour ça
 
       # --use-api: le paquetage se fait chez Supabase, comme avant. Depuis que
       # supabase/config.toml existe (verify_jwt de legion-mcp), la CLI
