@@ -1499,7 +1499,25 @@
       "pleinEcran": "Plein écran",
       "sonAllumer": "Allumer le son",
       "sonCouper": "Couper le son",
-      "allerA": "Aller à"
+      "allerA": "Aller à",
+      "attente": {
+        "bouton_one": "✋ {{count}} agent t'attend",
+        "bouton_other": "✋ {{count}} agents t'attendent",
+        "aller": "Aller au suivant",
+        "question": "a une question pour toi",
+        "decision": "attend ta décision",
+        "bloque": "est bloqué et a besoin de toi",
+        "revue": "a rendu un travail à relire",
+        "depuis": "depuis {{duree}}",
+        "min": "{{n}} min",
+        "h": "{{n}} h",
+        "j": "{{n}} j",
+        "ailleurs": "{{nom}} n'est pas dans ce lieu en ce moment : tu peux lui répondre d'ici.",
+        "repondre": "Répondre",
+        "voirTravail": "Voir son travail",
+        "suivant": "Suivant",
+        "rang": "{{rang}} sur {{total}}"
+      }
     },
     "agentModifie": "Enregistré",
     "agentCree": "{{nom}} rejoint l’équipe",

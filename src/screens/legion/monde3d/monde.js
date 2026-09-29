@@ -95,6 +95,42 @@ function decrireReunion(r) {
 }
 export const reunionEnCours = (messages, maintenant) => reunionsEnCours(messages, maintenant)[0] || null;
 
+// Qui t'attend (idée reprise d'Agent Office, AgentSystemLabs, MIT — Beau, 29/09) :
+// un agent qui a posé une question ou demandé une décision sans réponse, qui est
+// bloqué sur sa tâche, ou qui a rendu un travail que personne n'a encore relu.
+// Un seul motif par agent (le plus ancien), et le plus ancien d'abord : c'est
+// lui qu'on va voir en premier. Uniquement sur les vraies données.
+export function quiTAttend({ agents = [], messages = [], taches = [], maintenant = Date.now() }) {
+  const ids = new Set(agents.filter((a) => !a.user_id && a.actif !== false).map((a) => a.id));
+  const parAgent = new Map();
+  const noter = (id, depuis, raison, texte, messageId) => {
+    if (!ids.has(id) || !Number.isFinite(depuis) || depuis > maintenant) return;
+    const avant = parAgent.get(id);
+    if (!avant || depuis < avant.depuis) parAgent.set(id, { id, depuis, raison, texte: String(texte || '').slice(0, 280), messageId });
+  };
+  for (const m of messages) {
+    if (m.user_id || !m.auteur_id || m.repondu_le || !['question', 'decision'].includes(m.genre)) continue;
+    noter(m.auteur_id, Date.parse(m.created_at), m.genre, m.texte, m.id);
+  }
+  for (const x of taches) {
+    if (!x.assigne_a || x.termine_le || x.meta?.statut === 'fait') continue;
+    const livre = Date.parse(x.meta?.livre_le || '');
+    if (x.meta?.bloque) noter(x.assigne_a, Number.isFinite(livre) ? livre : Date.parse(x.created_at), 'bloque', x.meta.bloque || x.texte, x.id);
+    else if (x.meta?.statut === 'revue') noter(x.assigne_a, Number.isFinite(livre) ? livre : Date.parse(x.created_at), 'revue', x.texte, x.id);
+  }
+  return [...parAgent.values()].sort((a, b) => a.depuis - b.depuis);
+}
+
+// Ce que l'agent mime à son bureau (idée d'Agent Office) : une tâche de lecture
+// (relire, analyser, vérifier…) → il feuillette une pile de papiers ; sinon il tape.
+// On ne connaît que la nature de la tâche, pas le geste de chaque seconde : le
+// mime montre le genre de travail, rien de plus.
+const LIRE = /\b(lire|relire|relis|lis|analys\w*|etudi\w*|verifi\w*|revoir|revois|revue|examin\w*|audit\w*|controle\w*|read|re-?read|review\w*|analy[sz]\w*|study|studies|check\w*|inspect\w*|audit)\b/;
+export function gesteDe(texte) {
+  const t = String(texte || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  return LIRE.test(t) ? 'lit' : 'ecrit';
+}
+
 // Qui est où, maintenant. Rien n'est inventé : sans activité récente, un agent
 // n'est nulle part dans le monde (il est « chez lui »).
 export function quiOuEst({ agents = [], messages = [], taches = [], maintenant = Date.now() }) {
@@ -151,6 +187,7 @@ export function quiOuEst({ agents = [], messages = [], taches = [], maintenant =
     derniereReunion: derniere ? { quand: derniere.created_at, sujet: String(derniere.texte || '').split('\n')[0].replace(/^Compte rendu\s*[—-]\s*/i, '').replace(/[#*]/g, '').slice(0, 90) } : null,
     reunion: reunion ? { ...reunion, participants: reunion.participants.filter((id) => ids.has(id)) } : null,
     auBureau,
+    attendent: quiTAttend({ agents, messages, taches, maintenant }),
   };
 }
 

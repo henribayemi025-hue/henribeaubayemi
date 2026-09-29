@@ -19,7 +19,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe } from './monde';
+import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe, gesteDe } from './monde';
 import { construireVille, matieresFacades, cotesFacade } from './ville3d';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
@@ -200,7 +200,7 @@ export class Monde {
   etiquette(texte, sous, photo) {
     const d = document.createElement('div');
     d.className = 'monde-etiquette';
-    d.innerHTML = `${photo ? `<img src="${photo}" alt="">` : ''}<span><b></b><i></i></span>`;
+    d.innerHTML = `${photo ? `<img src="${photo}" alt="">` : ''}<span><b></b><i></i><em></em></span>`;
     d.querySelector('b').textContent = texte;
     d.querySelector('i').textContent = sous || '';
     const o = new CSS2DObject(d);
@@ -931,6 +931,8 @@ export class Monde {
     if (!this.lieu || !this.donnees) return;
     const { agents, ou } = this.donnees;
     const parId = new Map(agents.map((a) => [a.id, a]));
+    const attente = new Map((ou?.attendent || []).map((x) => [x.id, x]));
+    const en = this.langue === 'en';
     const voulus = new Map(); // id → { lieu, place, anim, sous }
     const r = ou?.reunion;
     if (String(this.lieu.nom).startsWith('reunion')) {
@@ -971,7 +973,6 @@ export class Monde {
       // traversée, notre parvis, la porte) ; à midi, une partie déjeune au marché d'en face
       // s'il y en a un, sinon sur le parvis ; le soir et la nuit, ils sont chez eux (lieu « maisons »).
       const moment = this.momentCourant();
-      const en = this.langue === 'en';
       // Trois chemins vrais : par le passage piéton de l'est (index 1 dans ville3d), par celui de
       // l'ouest (index 0), ou le long de notre trottoir depuis le coin ; `traversees` dit sur quel
       // segment l'agent est sur un passage (les voitures s'arrêtent pour lui, comme pour un passant).
@@ -1021,7 +1022,6 @@ export class Monde {
       // plage, joue au ballon ou prend un verre sur sa terrasse ; éteint, il est chez lui
       // en veille. Au travail ou en réunion, il n'est pas là : il est à l'immeuble.
       const moment = this.momentCourant();
-      const en = this.langue === 'en';
       const R = this.lieu.rivage ?? 58;
       let iPlage = 0;
       for (const v of this.lieu.villas || []) {
@@ -1057,7 +1057,7 @@ export class Monde {
         if (b) {
           const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#0d1117'; x.fillRect(0, 0, w, h); x.fillStyle = '#e3a857'; x.font = `bold ${h * 0.11}px ui-monospace, monospace`; x.fillText(a.nom, w * 0.05, h * 0.16); x.font = `${h * 0.08}px ui-monospace, monospace`; const t = String(b.tache || b.texte || '').replace(/\s+/g, ' '); ['#7ee787', '#79c0ff', '#d2a8ff', '#edf1f8'].forEach((c, l) => { x.fillStyle = c; x.fillText(t.slice(l * 32, l * 32 + 32), w * 0.05, h * (0.34 + l * 0.14)); }); });
           e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
-          voulus.set(a.id, { place: p, anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48) });
+          voulus.set(a.id, { place: p, anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte });
         } else if (attente) {
           // Il a une tâche ouverte : à son poste, sans taper.
           const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#10151d'; x.fillRect(0, 0, w, h); x.fillStyle = '#93a1b8'; x.font = `bold ${h * 0.1}px system-ui`; x.fillText(this.langue === 'en' ? 'To do' : 'À faire', w * 0.05, h * 0.18); x.fillStyle = '#edf1f8'; x.font = `${h * 0.085}px system-ui`; const t = String(attente.tache || ''); for (let l = 0; l < 4; l += 1) x.fillText(t.slice(l * 30, l * 30 + 30), w * 0.05, h * (0.38 + l * 0.14)); });
@@ -1105,7 +1105,63 @@ export class Monde {
         x.perso.objet.add(c); x.casque = c;
       } else if (!v.casque && x.casque) { x.perso.objet.remove(x.casque); x.casque = null; }
       if (x.perso.objet.parent !== this.lieu.groupe) this.lieu.groupe.add(x.perso.objet);
+      // Qui t'attend, qui travaille (idées d'Agent Office, AgentSystemLabs, MIT) : une pastille
+      // sur l'étiquette, une lumière au-dessus de la tête (ambre : il t'attend ; vert : il
+      // travaille), de petits sauts dans avancer(), et le mime de son travail.
+      x.attend = attente.get(id) || null;
+      x.baseY = x.chemin ? null : x.perso.objet.position.y;
+      x.sautMax = ['assis', 'travail'].includes(v.anim) ? 0.07 : 0.16;
+      x.decalSaut = x.decalSaut ?? (id.charCodeAt(0) * 97) % 2600;
+      const travaille = v.anim === 'travail' && !x.attend;
+      const geste = travaille ? gesteDe(v.texte || v.sous) : null;
+      const el = x.etiquette.element;
+      el.classList.toggle('attend', !!x.attend);
+      el.classList.toggle('travaille', travaille);
+      el.querySelector('em').textContent = x.attend ? this.motifAttente(x.attend.raison) : geste === 'lit' ? (en ? '📖 reading' : '📖 lit') : travaille ? (en ? '⌨️ writing' : '⌨️ écrit') : '';
+      const teinte = x.attend ? '#ffb020' : travaille ? '#3fb950' : null;
+      if (teinte && !x.lumiere) {
+        x.lumiere = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), new THREE.MeshBasicMaterial({ color: teinte, toneMapped: false }));
+        x.lumiere.position.y = 1.93;
+        x.perso.objet.add(x.lumiere);
+      }
+      if (x.lumiere) { x.lumiere.visible = !!teinte; if (teinte) x.lumiere.material.color.set(teinte); }
+      // Une tâche de lecture : une pile de feuilles sur la table, dont celle du dessus se tourne.
+      if (geste === 'lit' && !x.papiers) {
+        const g = new THREE.Group(), blanc = new THREE.MeshStandardMaterial({ color: '#f4f1ea', roughness: 0.9 });
+        for (let k = 0; k < 4; k += 1) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.004, 0.297), blanc); f.position.y = k * 0.005; f.rotation.y = (k - 1.5) * 0.06; g.add(f); }
+        const dessus = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.003, 0.297), blanc); dessus.geometry.translate(0.105, 0, 0); dessus.position.set(-0.105, 0.022, 0); g.add(dessus);
+        g.userData.dessus = dessus;
+        g.position.set(0.1, 0.77, 0.42);
+        x.perso.objet.add(g); x.papiers = g;
+      } else if (geste !== 'lit' && x.papiers) { x.perso.objet.remove(x.papiers); x.papiers = null; }
     }
+    // Un nouvel agent qui t'attend : un « ding » (pas à l'ouverture du monde, seulement quand ça change).
+    const ids = new Set(attente.keys());
+    if (this.attenteVue && [...ids].some((id) => !this.attenteVue.has(id))) this.son?.effet('ding');
+    this.attenteVue = ids;
+  }
+
+  motifAttente(raison) {
+    const en = this.langue === 'en';
+    return { question: en ? '✋ has a question for you' : '✋ a une question pour toi', decision: en ? '✋ needs your decision' : '✋ attend ta décision', bloque: en ? '✋ blocked · needs you' : '✋ bloqué · a besoin de toi', revue: en ? '✋ done · check the work' : '✋ a rendu · à relire' }[raison] || (en ? '✋ waiting for you' : '✋ t\'attend');
+  }
+
+  // « Aller au suivant » (touche N, idée d'Agent Office) : on se place derrière l'agent qui
+  // t'attend depuis le plus longtemps, face à ce qu'il fait ; au prochain appui, le suivant.
+  // S'il n'est pas dans ce lieu, la page le dit et propose de lui répondre quand même.
+  allerAuSuivant() {
+    const liste = this.donnees?.ou?.attendent || [];
+    if (!liste.length) return null;
+    this.iSuivant = ((this.iSuivant ?? -1) + 1) % liste.length;
+    const cible = liste[this.iSuivant];
+    const x = this.agents.get(cible.id);
+    const ici = !!x && !this.conduite;
+    if (ici) {
+      const o = x.perso.objet, r = o.rotation.y;
+      this.placerJoueur(o.position.x - Math.sin(r) * 1.5, o.position.z - Math.cos(r) * 1.5, r - Math.PI);
+    }
+    this.emettre({ type: 'suivant', cible, ici, rang: this.iSuivant + 1, total: liste.length });
+    return cible;
   }
 
   // ——— Commandes ———
@@ -1119,6 +1175,7 @@ export class Monde {
         if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); else if (this.proche?.type === 'helico') this.monterHelico(); else if (this.proche?.type === 'bateau') this.monterBateau(); }
         else if (code === 'KeyE') this.interagir();
         if (code === 'KeyV') this.cycleCamera();
+        if (code === 'KeyN') this.allerAuSuivant();
       } else this.touches.delete(code);
     };
     window.addEventListener('keydown', this.surTouche);
@@ -1558,8 +1615,17 @@ export class Monde {
     this.lieu?.avancer?.(dt);
     this.receptionniste?.mixer.update(dt);
     if (this.feuMat) this.feuMat.visible = performance.now() % 1600 < 700; // feu d'obstacle du mât
+    const tps = performance.now();
     for (const x of this.agents.values()) {
       x.perso.mixer.update(dt);
+      // Il t'attend : deux petits sauts toutes les 2,6 s, et sa lumière palpite.
+      if (x.attend && x.baseY != null) {
+        const ph = ((tps + x.decalSaut) % 2600) / 1000;
+        const h = ph < 0.34 ? Math.sin((ph / 0.34) * Math.PI) : ph < 0.68 ? 0.6 * Math.sin(((ph - 0.34) / 0.34) * Math.PI) : 0;
+        x.perso.objet.position.y = x.baseY + h * x.sautMax;
+        if (x.lumiere) x.lumiere.scale.setScalar(1 + 0.35 * Math.max(0, Math.sin(tps / 160)));
+      } else if (x.baseY != null && x.perso.objet.position.y !== x.baseY) x.perso.objet.position.y = x.baseY;
+      if (x.papiers) { const d = x.papiers.userData.dessus; d.rotation.z = -Math.PI * Math.max(0, Math.sin(((tps + x.decalSaut) % 3200) / 3200 * Math.PI * 2) ** 8); }
       const c = x.chemin;
       if (!c) continue;
       // Marche le long de son chemin, en boucle, à allure de promenade.

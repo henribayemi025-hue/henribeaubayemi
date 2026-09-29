@@ -1499,7 +1499,25 @@
       "pleinEcran": "Full screen",
       "sonAllumer": "Turn sound on",
       "sonCouper": "Mute",
-      "allerA": "Go to"
+      "allerA": "Go to",
+      "attente": {
+        "bouton_one": "✋ {{count}} agent is waiting for you",
+        "bouton_other": "✋ {{count}} agents are waiting for you",
+        "aller": "Go to the next one",
+        "question": "has a question for you",
+        "decision": "needs your decision",
+        "bloque": "is blocked and needs you",
+        "revue": "handed in work to check",
+        "depuis": "for {{duree}}",
+        "min": "{{n}} min",
+        "h": "{{n}} h",
+        "j": "{{n}} d",
+        "ailleurs": "{{nom}} isn't here right now: you can answer from here.",
+        "repondre": "Answer",
+        "voirTravail": "See the work",
+        "suivant": "Next",
+        "rang": "{{rang}} of {{total}}"
+      }
     },
     "agentModifie": "Saved",
     "agentCree": "{{nom}} joins the team",

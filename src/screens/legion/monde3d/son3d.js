@@ -7,7 +7,7 @@
 //              la mer chez les agents (vagues) ;
 //   moteur   : voiture, moto, hélicoptère, bateau, selon la vitesse ;
 //   pas      : en marchant, en courant ;
-//   effets   : choc, trottoir, klaxon.
+//   effets   : choc, trottoir, klaxon, ding (un agent t'attend).
 
 const CLE = 'leo:son-coupe';
 
@@ -162,6 +162,8 @@ export function creerSon() {
       if (type === 'choc') coup(Math.min(0.9, 0.2 + force / 30), 220, 0.35);
       else if (type === 'trottoir') coup(0.35, 160, 0.18);
       else if (type === 'klaxon') bip([392, 494], 0.45, 0.2);
+      // Un agent t'attend : deux notes claires, douces (idée d'Agent Office).
+      else if (type === 'ding') { bip([1046.5], 0.22, 0.1, 'sine'); setTimeout(() => bip([1568], 0.4, 0.09, 'sine'), 160); }
     },
     arreter() {
       moteurArreter();

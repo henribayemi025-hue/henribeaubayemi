@@ -17,7 +17,7 @@ import { creerSon } from './son3d';
 // Tout ce qui s'y passe vient des vraies données (monde.js).
 
 const STYLE = `.monde-leger .monde-etiquette{padding:2px 7px 2px 2px;font-size:11px}.monde-leger .monde-etiquette img{width:18px;height:18px}.monde-leger .monde-etiquette i{display:none}.monde-etiquette{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;background:rgba(11,17,32,.8);color:#edf1f8;font:12px system-ui;white-space:nowrap;transform:translateY(-6px)}
-.monde-etiquette img{width:24px;height:24px;border-radius:50%;object-fit:cover}.monde-etiquette b{display:block;font-weight:700;line-height:1.1}.monde-etiquette i{display:block;font-style:normal;color:#e3a857;font-size:10.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis}`;
+.monde-etiquette img{width:24px;height:24px;border-radius:50%;object-fit:cover}.monde-etiquette b{display:block;font-weight:700;line-height:1.1}.monde-etiquette i{display:block;font-style:normal;color:#e3a857;font-size:10.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis}.monde-etiquette em{display:none;font-style:normal;font-weight:700;font-size:10.5px;margin-top:1px}.monde-etiquette.travaille em{display:block;color:#7ee787}.monde-etiquette.attend{background:rgba(58,36,6,.92);box-shadow:0 0 0 2px #ffb020,0 0 14px rgba(255,176,32,.55)}.monde-etiquette.attend em{display:block;color:#ffcf6b}.monde-leger .monde-etiquette.attend em{display:block}`;
 const LIEUX = ['hall', 'reunion', 'atelier'];
 const nomsDepts = (departements, agents) => {
   const n = (departements || []).map((d) => d.nom).filter(Boolean);
@@ -159,6 +159,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [bulle, setBulle] = useState(null); // ce que dit un piéton bousculé ou la passagère (25/09)
   const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
   const [nage, setNage] = useState(null); // { sous, air } quand on nage
+  const [suivant, setSuivant] = useState(null); // l'agent qui t'attend, vers lequel « Aller au suivant » t'a mené
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
   const [menu, setMenu] = useState(false);
   const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
@@ -199,6 +200,20 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
   const ou = useMemo(() => quiOuEst({ agents, messages, taches, maintenant }), [agents, messages, taches, maintenant]);
+  // Les agents qui t'attendent (idée d'Agent Office) : le nombre dans le titre de l'onglet,
+  // pour le voir même depuis un autre onglet.
+  const attendent = ou.attendent || [];
+  useEffect(() => {
+    const sans = (x) => String(x).replace(/^\(\d+\)\s*/, '');
+    document.title = attendent.length ? `(${attendent.length}) ${sans(document.title)}` : sans(document.title);
+    return () => { document.title = sans(document.title); };
+  }, [attendent.length]);
+  const depuisTexte = (ms) => {
+    const min = Math.max(1, Math.round(ms / 60000));
+    if (min < 60) return t('legion.monde.attente.min', { n: min });
+    const h = Math.round(min / 60);
+    return h < 48 ? t('legion.monde.attente.h', { n: h }) : t('legion.monde.attente.j', { n: Math.round(h / 24) });
+  };
   const faits = useMemo(() => {
     const debut = new Date(); debut.setHours(0, 0, 0, 0);
     const rendues = taches.filter((x) => { const d = Date.parse(x.meta?.livre_le || x.termine_le || ''); return d >= debut.getTime() && d < debut.getTime() + JOUR; }).length;
@@ -238,6 +253,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'perdu') setEtat('erreur');
             if (e.type === 'camera') setCamera(e.mode);
             if (e.type === 'proximite') setProche(e.cible);
+            if (e.type === 'suivant') { setDialogue(null); setSuivant(e); }
             if (e.type === 'ciel') setCiel3d(e.actif);
             if (e.type === 'interagir') interagirRef.current?.(e.cible);
             if (e.type === 'conduite' && !e.active) setCourse(null);
@@ -473,6 +489,18 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu === 'atelier' && salleMarche ? 'salleMarche' : enVille ? 'ville' : lieu}`)}</span>
       </div>}
 
+      {/* Les agents qui t'attendent (idée d'Agent Office) : un bouton qui mène au suivant (touche N). */}
+      {etat === 'pret' && !ciel3d && !volant && attendent.length > 0 && (
+        <button type="button" onClick={() => monde.current?.allerAuSuivant()} title={t('legion.monde.attente.aller')}
+          className={`absolute z-[5] flex items-center gap-2 rounded-pill bg-[#ffb020] px-3 py-1.5 text-[12.5px] font-bold text-[#2a1a02] shadow-lg ring-2 ring-[#ffb020]/40 ${mobile ? 'left-2 top-14' : `left-3 ${vueVille && frise.jours > 0 ? 'top-[7.4rem]' : 'top-14'}`}`}
+          style={mobile ? { marginTop: 'env(safe-area-inset-top)' } : undefined}>
+          <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2a1a02]/50" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2a1a02]" /></span>
+          {t('legion.monde.attente.bouton', { count: attendent.length })}
+          <span className="font-semibold opacity-80">· {t('legion.monde.attente.aller')}</span>
+          {!mobile && <kbd className="rounded bg-black/15 px-1.5 text-[11px]">N</kbd>}
+        </button>
+      )}
+
       {/* En haut à droite : une seule ligne (Beau, 25/09 : « l'arrangement des boutons est horrible »).
           L'action du lieu, le plein écran au téléphone, et un menu pour le reste. */}
       <div className={`absolute z-[6] flex items-center gap-1.5 ${mobile ? 'right-2 top-2' : 'right-3 top-3'}`} style={mobile ? { marginTop: 'env(safe-area-inset-top)' } : undefined}>
@@ -596,6 +624,35 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           )}
         </div>
       )}
+
+      {/* L'agent qui t'attend, vers lequel « Aller au suivant » t'a mené */}
+      {suivant && !dialogue && (() => {
+        const a = agents.find((x) => x.id === suivant.cible.id);
+        if (!a) return null;
+        const revue = suivant.cible.raison === 'revue';
+        return (
+          <div className="absolute bottom-3 left-1/2 z-[6] w-[min(94%,440px)] -translate-x-1/2 rounded-2xl border-2 border-[#ffb020] bg-[#0b1120]/95 p-3 backdrop-blur">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-legion-ink">
+                {(a.apparence?.mini || a.avatar_url) ? <img src={a.apparence?.mini || a.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#ffb020]/20">✋</span>}
+                <span className="min-w-0"><b className="block truncate">{a.nom}</b><span className="block text-[11.5px] font-normal text-[#ffcf6b]">{t(`legion.monde.attente.${suivant.cible.raison}`)} · {t('legion.monde.attente.depuis', { duree: depuisTexte(Date.now() - suivant.cible.depuis) })}</span></span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {suivant.total > 1 && <span className="text-[11px] text-legion-muted">{t('legion.monde.attente.rang', { rang: suivant.rang, total: suivant.total })}</span>}
+                <button type="button" onClick={() => setSuivant(null)} className="text-[12.5px] text-legion-muted">{t('common.close', 'Fermer')}</button>
+              </span>
+            </div>
+            {suivant.cible.texte && <p className="line-clamp-3 rounded-card bg-legion-card px-2.5 py-1.5 text-[13px] text-legion-ink">{suivant.cible.texte}</p>}
+            {!suivant.ici && <p className="mt-1.5 text-[11.5px] text-legion-muted">{t('legion.monde.attente.ailleurs', { nom: a.nom })}</p>}
+            <div className="mt-2 flex gap-1.5">
+              {!revue && onParler
+                ? <button type="button" onClick={() => { setSuivant(null); onParler(a); }} className="flex-1 rounded-pill bg-[#ffb020] px-2 py-2 text-[13px] font-bold text-[#2a1a02]">{t('legion.monde.attente.repondre')}</button>
+                : <button type="button" onClick={() => { setSuivant(null); onFiche?.(a); }} className="flex-1 rounded-pill bg-[#ffb020] px-2 py-2 text-[13px] font-bold text-[#2a1a02]">{revue ? t('legion.monde.attente.voirTravail') : t('legion.monde.fiche')}</button>}
+              {suivant.total > 1 && <button type="button" onClick={() => monde.current?.allerAuSuivant()} className="rounded-pill border border-[#ffb020] px-3 py-2 text-[13px] font-semibold text-[#ffcf6b]">{t('legion.monde.attente.suivant')} ›</button>}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* La réceptionniste */}
       {dialogue && (

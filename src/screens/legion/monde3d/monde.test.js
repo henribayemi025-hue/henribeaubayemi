@@ -1,6 +1,6 @@
 // Le monde 3D : qui est où, sur les vraies données uniquement.
 import { describe, it, expect } from 'vitest';
-import { traitsDe, corpsDe, quiOuEst, repondre, enPause, RECEPTIONNISTE, momentDu, journeeDe, tirageDe } from './monde';
+import { traitsDe, corpsDe, quiOuEst, repondre, enPause, RECEPTIONNISTE, momentDu, journeeDe, tirageDe, quiTAttend, gesteDe } from './monde';
 
 const MAINTENANT = Date.parse('2026-09-25T10:00:00Z');
 const il = (min) => new Date(MAINTENANT - min * 60000).toISOString();
@@ -113,5 +113,35 @@ describe('la journée d’un agent (lot 3.2)', () => {
   it('tirage : stable, différent selon l’agent, entre 0 et 1', () => {
     expect(tirageDe('x')).toBe(tirageDe('x')); expect(tirageDe('x')).not.toBe(tirageDe('y'));
     expect(tirageDe('zzz')).toBeLessThan(1); expect(tirageDe('zzz')).toBeGreaterThanOrEqual(0); expect(tirageDe(undefined)).toBeLessThan(1);
+  });
+
+  it('qui t\'attend : questions sans réponse, tâches bloquées ou à relire, le plus ancien d\'abord', () => {
+    const messages = [
+      { id: 'm1', auteur_id: 'a', genre: 'question', texte: 'Quel budget ?', created_at: il(30) },
+      { id: 'm2', auteur_id: 'b', genre: 'decision', texte: 'On publie ?', created_at: il(90) },
+      { id: 'm3', auteur_id: 'c', genre: 'question', texte: 'Déjà répondu', created_at: il(200), repondu_le: il(100) },
+      { id: 'm4', auteur_id: 'd', genre: 'question', texte: 'Agent éteint', created_at: il(300) },
+      { id: 'm5', auteur_id: 'h', user_id: 'u1', genre: 'question', texte: 'Un humain', created_at: il(400) },
+      { id: 'm6', auteur_id: 'a', genre: 'info', texte: 'Simple info', created_at: il(500) },
+    ];
+    const taches = [
+      { id: 't1', assigne_a: 'c', texte: 'Relire la page', created_at: il(600), meta: { statut: 'revue', livre_le: il(60) } },
+      { id: 't2', assigne_a: 'a', texte: 'Écrire le mail', created_at: il(700), meta: { statut: 'en_cours', bloque: 'Il me faut le fichier clients', livre_le: il(120) } },
+      { id: 't3', assigne_a: 'b', texte: 'Fini et validé', created_at: il(800), termine_le: il(10), meta: { statut: 'revue', livre_le: il(700) } },
+    ];
+    const liste = quiTAttend({ agents, messages, taches, maintenant: MAINTENANT });
+    expect(liste.map((x) => [x.id, x.raison])).toEqual([['a', 'bloque'], ['b', 'decision'], ['c', 'revue']]);
+    expect(liste[0].texte).toBe('Il me faut le fichier clients');
+    expect(quiOuEst({ agents, messages, taches, maintenant: MAINTENANT }).attendent).toHaveLength(3);
+    expect(quiTAttend({ agents, messages: [], taches: [], maintenant: MAINTENANT })).toEqual([]);
+  });
+
+  it('le mime suit la nature de la tâche : lire ou écrire', () => {
+    expect(gesteDe('Relire la page d\'accueil')).toBe('lit');
+    expect(gesteDe('Analyser les ventes')).toBe('lit');
+    expect(gesteDe('Review the pricing page')).toBe('lit');
+    expect(gesteDe('Écrire trois annonces')).toBe('ecrit');
+    expect(gesteDe('Livrer le devis')).toBe('ecrit');
+    expect(gesteDe('')).toBe('ecrit');
   });
 });
