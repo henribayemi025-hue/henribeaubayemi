@@ -573,6 +573,8 @@ const LIBELLES_ACTION = {
   },
   // Sa photo, l'agent la choisit lui-même, tout de suite (24/09).
   changer_photo: (a) => `${a.agent || 'L’agent'} change sa photo`,
+  // « Créer un visuel » (29/09) : payé sur le budget des visuels de l'entreprise.
+  creer_visuel: (a) => `Créer le visuel : « ${a.valeur} »`,
 };
 // Une compétence écrite par un agent et réussie à l'examen (0198) : Mentor
 // la présente ; « Confirmer » l'allume, « Écarter » la laisse éteinte, avec
