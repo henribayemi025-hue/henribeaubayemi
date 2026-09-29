@@ -231,6 +231,7 @@ Deno.serve(async (req: Request) => {
       if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(photo);
       return marquer('faite', `${nom} rejoint l'équipe${departement ? ` (${departement})` : ''}, allumé et supervisé. Il choisit sa photo.`);
     }
+    case 'creer_video':
     case 'creer_visuel': {
       // « Créer un visuel » (29/09) : l'image se fabrique en fond, chez
       // legion-visuel, qui vérifie le budget du mois de l'entreprise (0218)
@@ -240,10 +241,10 @@ Deno.serve(async (req: Request) => {
       if (invite.length < 5) return marquer('echec', 'La description du visuel est vide.');
       const travail = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/legion-visuel`, {
         method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entreprise_id: msg.entreprise_id, message_id: msg.id, agent_id: msg.auteur_id, invite }), signal: AbortSignal.timeout(180_000),
+        body: JSON.stringify({ entreprise_id: msg.entreprise_id, message_id: msg.id, agent_id: msg.auteur_id, invite, genre: action.type === 'creer_video' ? 'video' : 'image' }), signal: AbortSignal.timeout(180_000),
       }).catch((e) => console.error('visuel:', (e as Error).message));
       if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(travail);
-      return marquer('en_cours', 'Le visuel se fabrique (une minute environ).');
+      return marquer('en_cours', action.type === 'creer_video' ? 'La vidéo se fabrique (une à trois minutes).' : 'Le visuel se fabrique (une minute environ).');
     }
     default:
       return marquer('echec', 'Action inconnue.');

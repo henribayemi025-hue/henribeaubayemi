@@ -371,6 +371,9 @@ export function Conversation({
                               <button key={i} type="button" onClick={() => setEnGrand({ url: p.url, nom: p.nom })} title={t('legion.voirEnGrand', 'Voir en grand')} className="block text-left">
                                 <img src={p.url} alt="" className="min-h-[96px] min-w-[140px] max-h-72 w-auto max-w-full rounded-[12px] bg-black/10 object-cover" loading="lazy" />
                               </button>
+                            ) : p.type === 'video' ? (
+                              // « Créer la vidéo » (29/09) : lue sur place.
+                              <video key={i} controls playsInline preload="metadata" src={p.url} className="max-h-80 w-auto max-w-full rounded-[12px] bg-black" />
                             ) : p.type === 'audio' ? (
                               <div key={i}>
                                 <audio controls preload="metadata" src={p.url} className="h-10 w-60 max-w-full" />
@@ -575,6 +578,7 @@ const LIBELLES_ACTION = {
   changer_photo: (a) => `${a.agent || 'L’agent'} change sa photo`,
   // « Créer un visuel » (29/09) : payé sur le budget des visuels de l'entreprise.
   creer_visuel: (a) => `Créer le visuel : « ${a.valeur} »`,
+  creer_video: (a) => `Créer la vidéo : « ${a.valeur} »`,
 };
 // Une compétence écrite par un agent et réussie à l'examen (0198) : Mentor
 // la présente ; « Confirmer » l'allume, « Écarter » la laisse éteinte, avec
