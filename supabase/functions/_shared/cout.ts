@@ -66,24 +66,32 @@ const service = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('
 
 // Le plafond: la somme du mois en cours pour cette entreprise, comparée à
 // legion_entreprises.plafond_mois_eur (vide = pas de plafond).
-export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: boolean; depense: number; plafond: number | null }> {
+// Le crédit offert (0221, Beau, 29/09) : hors Premium, une entreprise ne
+// dépense pas plus que ce que Finjaro lui offre chaque mois (2 € par défaut),
+// quel que soit le plafond qu'elle s'est fixé. Épuisé : « Passer à Premium ».
+// en_pause : le travail automatique est suspendu (les salons répondent).
+export async function plafondAtteint(entrepriseId: string): Promise<{ atteint: boolean; depense: number; plafond: number | null; offert: boolean; pause: boolean }> {
   const db = service();
   const debut = new Date(); debut.setUTCDate(1); debut.setUTCHours(0, 0, 0, 0);
   const [{ data: e }, { data: lignes }] = await Promise.all([
     // modele_ia (0210): le modèle IA précis, dans SA colonne — `modele` tout
     // court est le secteur de fondation (0136, studio_modeles), une autre
     // chose, sur laquelle on ne doit jamais écrire ici.
-    db.from('legion_entreprises').select('plafond_mois_eur, moteur, modele_ia').eq('id', entrepriseId).maybeSingle(),
+    db.from('legion_entreprises').select('plafond_mois_eur, moteur, modele_ia, credit_offert_eur, premium, en_pause').eq('id', entrepriseId).maybeSingle(),
     db.from('ai_usage').select('cost_eur').eq('entreprise_id', entrepriseId).gte('created_at', debut.toISOString()),
   ]);
   const depense = (lignes || []).reduce((t: number, l: { cost_eur: number }) => t + Number(l.cost_eur), 0);
-  const plafond = e?.plafond_mois_eur != null ? Number(e.plafond_mois_eur) : null;
+  const choisi = e?.plafond_mois_eur != null ? Number(e.plafond_mois_eur) : null;
+  const credit = e && !e.premium ? Number(e.credit_offert_eur ?? 2) : null;
+  const plafond = credit == null ? choisi : choisi == null ? credit : Math.min(choisi, credit);
+  const offert = credit != null && depense >= credit;
   // L'IA choisie par l'entreprise (0192), lue en même temps que le plafond:
   // toutes les fonctions le lisent avant de faire parler un agent.
   const s = suivi.getStore();
   if (s) { s.moteur = e?.moteur || 'auto'; s.modele = e?.modele_ia || null; }
-  if (plafond != null && plafond > 0 && depense >= plafond * 0.8) await signalerSeuil(entrepriseId, depense, plafond);
-  return { atteint: plafond != null && depense >= plafond, depense, plafond };
+  if (offert) await signalerCreditEpuise(entrepriseId, depense, credit!);
+  else if (plafond != null && plafond > 0 && depense >= plafond * 0.8) await signalerSeuil(entrepriseId, depense, plafond);
+  return { atteint: plafond != null && depense >= plafond, depense, plafond, offert, pause: !!e?.en_pause };
 }
 
 // Ce qu'a coûté jusqu'ici le travail en cours (la requête, ou la part
@@ -230,6 +238,18 @@ export async function signalerCoupure(fournisseur: string, raison: string, lien:
       `⚠️ ${fournisseur} a coupé : ${raison}.\n\nLes agents continuent avec les autres moteurs quand il y en a (DeepSeek d'abord). Ce qui dépend encore de lui peut s'arrêter : chez Google, les photos des agents, la mémoire, la recherche dans les documents et sur Internet.\n\nPour relever : ${lien}`,
       { alerte: { type: 'coupure', fournisseur } });
   } catch (e) { console.error('alerte coupure:', (e as Error).message); }
+}
+
+// Le crédit offert épuisé : dit une fois par mois dans la Direction, avec le
+// chemin vers Premium (le bouton est sur l'accueil de l'entreprise).
+async function signalerCreditEpuise(entrepriseId: string, depense: number, credit: number) {
+  try {
+    const mois = new Date().toISOString().slice(0, 7);
+    if (!(await uneFois(`alerte:credit:${entrepriseId}:${mois}`, 40))) return;
+    await direDansDirection(entrepriseId,
+      `Le crédit offert par Finjaro ce mois-ci est épuisé (${depense.toFixed(2)} € sur ${credit} €) : les agents s'arrêtent jusqu'au mois prochain. Pour qu'ils continuent, touche « Passer à Premium » sur l'accueil de l'entreprise — l'équipe Finjaro te recontacte. Une question ? « Nous contacter », au même endroit.`,
+      { alerte: { type: 'credit' } });
+  } catch (e) { console.error('alerte crédit:', (e as Error).message); }
 }
 
 async function signalerSeuil(entrepriseId: string, depense: number, plafond: number) {

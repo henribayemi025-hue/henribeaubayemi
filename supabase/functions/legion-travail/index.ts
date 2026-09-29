@@ -418,6 +418,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   pourEntreprise(entrepriseId);
   const p = await plafondAtteint(entrepriseId);
   if (p.atteint) { journal.push(`${entrepriseId}: plafond du mois atteint (${p.depense.toFixed(2)} €)`); return false; }
+  if (p.pause) { journal.push(`${entrepriseId}: en pause`); return false; }
 
   const [{ data: entreprise }, { data: agents }, { data: canaux }, { data: regles }, { data: branche }] = await Promise.all([
     service.from('legion_entreprises').select('id, nom, projet, langue, formule, marche').eq('id', entrepriseId).single(),

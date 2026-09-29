@@ -420,7 +420,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   pourEntreprise(msg.entreprise_id);
   {
     const p = await plafondAtteint(msg.entreprise_id);
-    if (p.atteint) return json({ erreur: `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Léo.`, messages: [] });
+    if (p.atteint) return json({ erreur: p.offert
+      ? `Le crédit offert du mois est épuisé (${p.depense.toFixed(2)} € sur ${p.plafond} €) : touche « Passer à Premium » sur l'accueil de l'entreprise pour que tes agents continuent.`
+      : `Plafond du mois atteint : ${p.depense.toFixed(2)} € dépensés sur ${p.plafond} €. Tu peux le monter sur l'accueil de Léo.`, credit_epuise: p.offert, messages: [] });
   }
 
   const auteur = (agents as Agent[]).find((a) => a.id === msg.auteur_id);

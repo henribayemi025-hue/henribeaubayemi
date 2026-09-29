@@ -15,6 +15,7 @@ import { Depense } from './Depense';
 import { Plans } from './Plans';
 import { FeuilleDeRoute } from './FeuilleDeRoute';
 import { Connecteurs } from './Connecteurs';
+import { CreditEtContact } from './Contact';
 import { Documents } from './Documents';
 import { Inviter } from './Inviter';
 import { TableauDeBord } from './TableauDeBord';
@@ -227,6 +228,9 @@ export function Accueil({
           </button>
         </section>
       )}
+
+      {/* Crédit offert, Premium, nous contacter, suggestion (Beau, 29/09) */}
+      <CreditEtContact entreprise={entreprise} t={t} />
 
       {/* 3. Les quatre compteurs — et QUE des chiffres mesurés */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

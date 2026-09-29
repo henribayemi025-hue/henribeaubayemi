@@ -1640,6 +1640,22 @@
       "seConnecter": "Sign in with GitHub",
       "ouJeton": "Or, without the app, paste the repository address and a token:",
       "lectureSeule": "Read-only: agents can't send their work yet. To give them write access:"
+    },
+    "contact": {
+      "credit": "Credit offered by Finjaro this month: {{d}} of {{c}}",
+      "epuise": "This month's offered credit is used up: your agents are paused until next month.",
+      "epuiseAide": "Go Premium so your team keeps working: the Finjaro team will get back to you.",
+      "premium": "Go Premium",
+      "contact": "Contact us",
+      "suggestion": "A suggestion",
+      "premiumAide": "A word for the team (optional): what your company needs.",
+      "suggestionAide": "Your idea to make Léo better.",
+      "contactAide": "Your question or request: the Finjaro team replies by email.",
+      "envoi": "Sending…",
+      "demanderPremium": "Request Premium",
+      "envoyer": "Send",
+      "ok": "Sent ✅ The Finjaro team will reply by email.",
+      "erreur": "Sending failed. Try again in a moment."
     }
   },
   "equipe": {
