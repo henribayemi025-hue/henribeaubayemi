@@ -1834,7 +1834,8 @@
     "continueWithApple": "Continuer avec Apple",
     "phoneRecoverTitle": "On te remet dans ton compte",
     "phoneRecoverBody": "Un compte ouvert avec un numéro n'a pas d'adresse e-mail où envoyer un lien. Écris-nous avec ton numéro et le nom de ta boutique, on s'en occupe à la main.",
-    "phoneConfirmBlocked": "Ton compte est créé mais il attend une confirmation. Écris-nous, on te débloque tout de suite."
+    "phoneConfirmBlocked": "Ton compte est créé mais il attend une confirmation. Écris-nous, on te débloque tout de suite.",
+    "emailNonConfirme": "Ton adresse e-mail n’est pas encore confirmée : on vient de te renvoyer le lien. Ouvre-le, puis reconnecte-toi."
   },
   "nav": {
     "learn": "Apprendre",

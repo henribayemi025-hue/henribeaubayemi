@@ -1834,7 +1834,8 @@
     "continueWithApple": "Continue with Apple",
     "phoneRecoverTitle": "We'll get you back into your account",
     "phoneRecoverBody": "An account opened with a phone number has no email address for us to send a link to. Write to us with your number and your shop name and we'll sort it out by hand.",
-    "phoneConfirmBlocked": "Your account is created but waiting for confirmation. Write to us and we'll unblock it right away."
+    "phoneConfirmBlocked": "Your account is created but waiting for confirmation. Write to us and we'll unblock it right away.",
+    "emailNonConfirme": "Your email address isn’t confirmed yet: we’ve just sent you the link again. Open it, then sign in."
   },
   "nav": {
     "learn": "Learn",

@@ -5,6 +5,7 @@ import { phoneExample } from '../lib/phone';
 import { useSettings } from '../hooks/useSettings';
 import { IconEye, IconEyeOff, IconMail, IconPhone, IconBrandGoogleFilled, IconBrandApple } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabase';
 import { useToast } from '../hooks/useToast';
 import { networkMessage, withTimeout } from '../lib/netError';
 import { souvenirCode } from '../lib/referral';
@@ -107,6 +108,14 @@ export default function Auth({ consoleMode = false }) {
         else toast.success(t('auth.checkEmail'));
       }
     } catch (err) {
+      // La confirmation de l'e-mail (Beau, 29/09 : « la double vérification
+      // sur les mails ») : un compte pas encore confirmé ne se connecte pas —
+      // on renvoie le lien au lieu de laisser la personne devant une erreur.
+      if (err.message === 'Email not confirmed') {
+        await supabase.auth.resend({ type: 'signup', email: form.email.trim() }).catch(() => {});
+        toast.error(t('auth.emailNonConfirme'));
+        return;
+      }
       toast.error(err.message === 'Invalid login credentials' ? t('auth.invalidCredentials') : networkMessage(err, t));
     } finally {
       setBusy(false);
