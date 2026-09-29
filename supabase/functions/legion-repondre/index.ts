@@ -279,6 +279,41 @@ const PARLE_DE_TABLEUR = /excel|xlsx|xls\b|tableur|tableau|csv|feuille de calcul
 // Un tableau: Flash d'abord, deux moteurs au plus, et un délai qui tient
 // dans les 150 secondes d'une fonction (23/09: avec Pro d'abord et 80 s par
 // moteur, la première demande de tableau a été coupée à 150 s, sans réponse).
+// LES RÉPONSES APPRISES (0217, Beau 29/09 : « il pouvait déjà au moins
+// répondre à certains messages »). Une réponse qu'une personne a validée d'un
+// 👍 resservira, sans moteur, quand la même question revient au même agent de
+// la même entreprise. Seulement sur la voie rapide (rien qui dépende d'un
+// chiffre), et jamais pour ce qui dépend du moment (« où en est… »,
+// « aujourd'hui »…) : la réponse d'hier serait fausse aujourd'hui.
+const normQuestion = (s: string) => sansAccent(s).replace(/@\S+/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+// Ressemblance de deux textes (coefficient de Dice sur les paires de lettres) :
+// 1 pour deux textes identiques, 0 pour rien en commun.
+function ressemblance(a: string, b: string): number {
+  if (a === b) return 1;
+  if (a.length < 2 || b.length < 2) return 0;
+  const paires = (x: string) => { const m = new Map<string, number>(); for (let i = 0; i < x.length - 1; i++) { const p = x.slice(i, i + 2); m.set(p, (m.get(p) ?? 0) + 1); } return m; };
+  const pa = paires(a), pb = paires(b);
+  let commun = 0;
+  for (const [p, n] of pa) commun += Math.min(n, pb.get(p) ?? 0);
+  return (2 * commun) / (a.length - 1 + b.length - 1);
+}
+const DU_MOMENT = /aujourd|maintenant|en ce moment|actuellement|hier|demain|ce soir|ce matin|cette nuit|tout a l heure|ou en est|ou en es|ou vous en etes|quoi de neuf|du jour|as tu fini|avez vous fini|t as fini|c est fait|deja fait/;
+const SEUIL_APPRIS = 0.85;
+// deno-lint-ignore no-explicit-any
+async function reponseApprise(service: any, entrepriseId: string, agentId: string, question: string): Promise<{ id: string; reponse: string } | null> {
+  const q = normQuestion(question);
+  if (q.length < 2 || DU_MOMENT.test(q)) return null;
+  const { data, error } = await service.from('legion_reponses_apprises').select('id, question, reponse')
+    .eq('entreprise_id', entrepriseId).eq('agent_id', agentId).order('created_at', { ascending: false }).limit(300);
+  if (error) { console.error('réponses apprises:', error.message); return null; }
+  const bonnes = ((data || []) as { id: string; question: string; reponse: string }[])
+    .filter((x) => ressemblance(q, normQuestion(x.question)) >= SEUIL_APPRIS);
+  if (!bonnes.length) return null;
+  // Plusieurs réponses validées pour la même question : on varie, comme une personne.
+  const choisie = bonnes[Math.floor(Math.random() * bonnes.length)];
+  return { id: choisie.id, reponse: choisie.reponse };
+}
+
 async function demander(apiKey: string, texte: string, complexe = true, tableur = false, appel = false): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
   const essais: Essai[] = [];
@@ -740,10 +775,11 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const avant = coutEnCours();
     if (await budgetAgentAtteint(cible)) { pourquoi = pourquoi || `${cible.nom} : budget du mois atteint.`; continue; }
     pourAgent(cible.modele);
+    const appris = leger ? await reponseApprise(service, msg.entreprise_id, cible.id, String(msg.texte || '')) : null;
     // Ses compétences (chantier 2): 4 fiches au plus, tronquées, pour que le
     // coût reste petit.
     // Les 4 fiches qui servent le plus à CE message (24/09), pas les 4 plus anciennes.
-    const competences = await competencesPour(service, cible.id, String(msg.texte || ''), 4, 2500);
+    const competences = appris ? [] : await competencesPour(service, cible.id, String(msg.texte || ''), 4, 2500);
     // Ce qu'IL a le droit de lire (0177): les chiffres, la boutique,
     // Internet, le dépôt de code — chacun seulement s'il y a droit.
     const saCompta = compta && peut(cible, 'comptabilite') ? `\nL'entreprise a branché SA comptabilité (Finjaro Accounting, « ${compta.nom} »): les totaux de ses livres sont lisibles (vérifications ci-dessous quand elles ont eu lieu); tu parles de « nos comptes ». Un montant se donne avec la devise de l'espace, jamais converti de tête.` : '';
@@ -754,7 +790,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const sesDocs = peut(cible, 'documents') ? passages : [];
     const sesSouvenirs = vecteurMessage && String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage, 3, () => String(msg.texte || '')) : [];
     // La voie rapide prend les réglages du téléphone : peu de réflexion, 20 s au plus.
-    const r = await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal || leger);
+    const r: Rendu = appris
+      ? { obj: { texte: appris.reponse, genre: 'info' }, modele: 'appris', essais: [] }
+      : await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal || leger);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     noter(`modele_${ont_repondu.length + 1}`);
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,
@@ -840,7 +878,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
     const { data: ecrit, error } = await service.from('legion_messages').insert({
       entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
-      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, ...(leger ? { rapide: true } : {}), temps: { ...temps, total: Date.now() - t0 }, ...(r.essais?.length ? { essais: r.essais } : {}), cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
+      texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, ...(appris ? { appris: appris.id } : {}), ...(leger ? { rapide: true } : {}), temps: { ...temps, total: Date.now() - t0 }, ...(r.essais?.length ? { essais: r.essais } : {}), cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
     // Nos exemples d'entraînement (0167): ce qui a été demandé, ce qui est
