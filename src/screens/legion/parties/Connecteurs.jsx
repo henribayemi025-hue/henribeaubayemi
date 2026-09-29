@@ -444,6 +444,12 @@ export function Connecteurs({ entreprise, t }) {
                 {github.config?.avec_jeton ? ` ${t('legion.connecteurGithubJeton', 'Jeton gardé au coffre.')} ` : ' '}
                 {github.config?.avec_jeton && <button type="button" disabled={busy} onClick={oublierJeton} className="mr-2 font-semibold text-legion-muted underline">{t('legion.oublierJeton', 'Effacer le jeton')}</button>}
                 <button type="button" disabled={busy} onClick={() => brancherGithub(false)} className="font-semibold text-legion-danger">{t('legion.debrancher', 'Débrancher')}</button>
+                {/* 29/09 : Beau voyait « branché » et ne trouvait pas le bouton — l'ancien
+                    branchement par jeton est en LECTURE seule ; l'écriture passe par l'application. */}
+                <span className="mt-2 block text-[12px] font-semibold text-legion-ink">{t('legion.github.lectureSeule', 'Lecture seule : les agents ne peuvent pas encore envoyer leur travail. Pour leur donner l’écriture :')}</span>
+                <button type="button" disabled={busy} onClick={connecterGithub} className="mt-1 flex items-center gap-2 rounded-pill bg-legion-ink px-4 py-2 text-[13px] font-semibold text-legion-bg disabled:opacity-50">
+                  <LogoMarque marque="github" taille={16} /> {t('legion.github.seConnecter', 'Se connecter avec GitHub')}
+                </button>
               </p>
             ) : (
               <>

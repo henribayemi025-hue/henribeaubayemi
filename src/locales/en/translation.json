@@ -1637,7 +1637,8 @@
       "aucunDepot": "No repository open: add one on GitHub.",
       "changer": "Choose other repositories",
       "seConnecter": "Sign in with GitHub",
-      "ouJeton": "Or, without the app, paste the repository address and a token:"
+      "ouJeton": "Or, without the app, paste the repository address and a token:",
+      "lectureSeule": "Read-only: agents can't send their work yet. To give them write access:"
     }
   },
   "equipe": {

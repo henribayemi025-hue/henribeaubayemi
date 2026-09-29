@@ -1637,7 +1637,8 @@
       "aucunDepot": "Aucun dépôt ouvert : ajoute-en un sur GitHub.",
       "changer": "Choisir d’autres dépôts",
       "seConnecter": "Se connecter avec GitHub",
-      "ouJeton": "Ou, sans l’application, colle l’adresse du dépôt et un jeton :"
+      "ouJeton": "Ou, sans l’application, colle l’adresse du dépôt et un jeton :",
+      "lectureSeule": "Lecture seule : les agents ne peuvent pas encore envoyer leur travail. Pour leur donner l’écriture :"
     }
   },
   "equipe": {
