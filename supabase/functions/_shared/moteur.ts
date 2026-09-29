@@ -93,7 +93,9 @@ const DS_RAPIDE = () => `ds:${Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepse
 const kimi = () => !!Deno.env.get('KIMI_API_KEY');
 const gratuit = () => Deno.env.get('GEMINI_API_KEY_GRATUIT');
 // Les modèles de l'offre gratuite, du premier essayé au dernier (réglable).
-const GRATUITS = () => (Deno.env.get('LEGION_MODELES_GRATUITS') || 'gemini-2.5-flash').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `gg:${m}`);
+// Google a répondu le 29/09 : gemini-2.5-flash « n'est plus disponible pour les
+// nouveaux utilisateurs » (404) sur un projet neuf — d'où 3.8-flash.
+const GRATUITS = () => (Deno.env.get('LEGION_MODELES_GRATUITS') || 'gemini-3.8-flash,gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `gg:${m}`);
 const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
 // La relève, dans l'ordre : DeepSeek rapide, puis le fort, puis Kimi, puis
 // Google. Le rapide d'abord partout (24/09, premier essai réel) : v4-pro
