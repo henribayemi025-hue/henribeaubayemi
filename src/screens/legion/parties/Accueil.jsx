@@ -220,6 +220,11 @@ export function Accueil({
               <span className="text-[18px]">{e}</span> {t(`legion.vues.titre.${k}`)}
             </button>
           ))}
+          {/* Beau, 29/09 : « on doit trop descendre pour voir les connecteurs » — un raccourci en haut. */}
+          <button type="button" onClick={() => document.getElementById('connecteurs-leo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="flex shrink-0 items-center gap-2 rounded-card border border-legion-line bg-legion-panel px-3.5 py-2.5 text-caption font-semibold text-legion-ink transition hover:border-legion-gold/50">
+            <span className="text-[18px]">🔌</span> {t('legion.vues.connecteurs', 'Connecteurs')}
+          </button>
         </section>
       )}
 

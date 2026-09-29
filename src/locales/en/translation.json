@@ -849,7 +849,8 @@
       "ville": "The city",
       "reunions": "Meeting room",
       "academie": "Academy",
-      "monde3d": "3D world"
+      "monde3d": "3D world",
+      "connecteurs": "Connectors"
     },
     "clavier": {
       "titre": "Keyboard shortcuts",
