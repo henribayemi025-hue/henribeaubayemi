@@ -43,7 +43,12 @@ const MAX_REGLES = 24_000;
 const MAX_INDEX = 450;             // fichiers de code récupérés pour la recherche
 const MAX_INDEX_OCTETS = 6_000_000;
 const CODE_EXT = /\.(jsx?|tsx?|mjs|cjs|vue|svelte|astro|py|rb|go|php|java|kt|swift|cs|dart|rs|html?|css|scss|sass|less|json|ya?ml|toml|sql|mdx?)$/i;
-const DELAI_EXPLORATION = 55_000; // puis on écrit : la fonction a un temps limité
+// Le temps : Supabase gratuit coupe une fonction à 150 s, sans prévenir. Vu
+// le 29/09 : coupée en plein travail, la carte restait « ⏳ » pour toujours.
+// Tout se mesure donc depuis l'arrivée de la demande, et à 135 s on s'arrête
+// proprement en le disant.
+const DELAI_EXPLORATION = 50_000; // puis on écrit
+const MINUTEUR = 135_000;
 // Les fichiers de consignes que les outils de code lisent d'habitude.
 const FICHIERS_DE_REGLES = ['AGENTS.md', 'CLAUDE.md', '.github/copilot-instructions.md', '.cursorrules', 'CONTRIBUTING.md'];
 
@@ -77,6 +82,7 @@ Deno.serve(compter('legion_code', async (req: Request) => {
   if (req.method !== 'POST') return json({ erreur: 'Méthode non permise.' }, 405);
   if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) return json({ erreur: 'non autorisé' }, 401);
   const apiKey = Deno.env.get('GEMINI_API_KEY') || '';
+  const t0 = Date.now();
 
   let corps: { entreprise_id?: string; message_id?: string; agent_id?: string; consigne?: string };
   try { corps = await req.json(); } catch { return json({ erreur: 'Requête illisible.' }, 400); }
@@ -107,7 +113,8 @@ Deno.serve(compter('legion_code', async (req: Request) => {
 
   const { data: agent } = await service.from('legion_agents').select('nom, poste, personnalite').eq('id', corps.agent_id).maybeSingle();
 
-  try {
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  const travail = (async () => { try {
     const jeton = await jetonInstallation(installation);
     const api = (chemin: string, init?: RequestInit) => fetch(`https://api.github.com/repos/${depot}${chemin ? `/${chemin}` : ''}`, { ...init, headers: { ...GH(jeton), 'Content-Type': 'application/json' } });
     // Pas de « / » final : GitHub répond 404 à …/repos/x/y/ (vu le 29/09).
@@ -228,7 +235,6 @@ Deno.serve(compter('legion_code', async (req: Request) => {
       ...[...grands].map(([c, t]) => `===== ${c} (TROP GROS : extraits seulement — ${t.split('\n').length} lignes en tout) =====\n${extraits(t)}`),
     ].join('\n\n');
 
-    const t0 = Date.now();
     for (let tour = 1; tour <= MAX_TOURS; tour++) {
       const dejaLu = [...lus.map((f) => f.chemin), ...grands.keys()];
       const choix = await generer(apiKey, `${CHARTE}
@@ -243,7 +249,7 @@ Tour ${tour} sur ${MAX_TOURS} d'exploration. Comme un bon développeur, tu compr
 - "chercher" : au plus 3 mots ou bouts de code précis à chercher dans le code du dépôt (un nom de composant, une clé de traduction, un texte affiché) ;
 - "nouveaux" : les fichiers à créer, s'il en faut ;
 - "pret" : true quand tu en sais assez pour écrire le changement proprement (alors "lire" et "chercher" peuvent être vides) ;
-- "raison" : une phrase sur ce que tu cherches ou pourquoi tu es prêt.`, SCHEMA_EXPLORATION, { temperature: 0.2, reflexion: 1024, delaiMs: 40_000, maxSortie: 2000, modeles: moteursSimples() });
+- "raison" : une phrase sur ce que tu cherches ou pourquoi tu es prêt.`, SCHEMA_EXPLORATION, { temperature: 0.2, reflexion: 1024, delaiMs: 30_000, maxSortie: 2000, modeles: moteursSimples() });
       if ('erreur' in choix) {
         if (!dejaLu.length) return finir('echec', `Exploration du dépôt impossible (${choix.erreur.slice(0, 120)}).`);
         break;
@@ -279,7 +285,7 @@ Tour ${tour} sur ${MAX_TOURS} d'exploration. Comme un bon développeur, tu compr
     let code: Awaited<ReturnType<typeof generer>> | null = null;
     for (let essai = 1; essai <= 2; essai++) {
       const ecoule = Date.now() - t0;
-      if (essai === 2 && ecoule > 80_000) break;
+      if (essai === 2 && ecoule > 75_000) break;
       code = await generer(apiKey, `${CHARTE}
 Tu es ${agent?.nom || 'un agent'}, ${agent?.poste || 'développeur'}${agent?.personnalite ? ` (${agent.personnalite})` : ''}. Tâche de code sur « ${depot} » :
 « ${consigne} »
@@ -298,7 +304,7 @@ Fais la tâche comme un bon développeur :
 - ne modifie JAMAIS un fichier sous supabase/functions, supabase/migrations ou .github (base et serveur partagés) : s'il le faut, dis-le dans "impossible" ;
 - "message" : le message de commit, court, au présent ;
 - "resume" : ce que tu as changé, en deux ou trois phrases simples pour le patron (qui ne code pas), avec ta personnalité ;
-- si la tâche est impossible ou trop floue avec ces fichiers, rends "fichiers": [], "modifications": [] et explique pourquoi dans "impossible".`, SCHEMA_CODE, { temperature: 0.2, reflexion: 4096, delaiMs: essai === 1 ? 90_000 : Math.max(30_000, 140_000 - ecoule), maxSortie: 32_000, modeles: moteurs() });
+- si la tâche est impossible ou trop floue avec ces fichiers, rends "fichiers": [], "modifications": [] et explique pourquoi dans "impossible".`, SCHEMA_CODE, { temperature: 0.2, reflexion: 2048, delaiMs: Math.max(25_000, Math.min(90_000, MINUTEUR - 5_000 - ecoule)), maxSortie: 32_000, modeles: moteurs() });
       if ('erreur' in code) return finir('echec', `Écriture du code impossible (${code.erreur.slice(0, 120)}).`);
       // Appliquer : d'abord les fichiers complets, puis les remplacements.
       const ecrits = new Map<string, string>();
@@ -360,5 +366,12 @@ Fais la tâche comme un bon développeur :
       { depot, branche, fusion, fichiers: fichiers.map((f) => f.chemin), regles: regles.map((r) => r.chemin), lus: lus.map((f) => f.chemin), recherches: recherches.length, extraits: [...grands.keys()] });
   } catch (e) {
     return finir('echec', `Erreur : ${(e as Error).message.slice(0, 200)}`);
-  }
+  } finally {
+    clearTimeout(minuteur);
+  } })();
+  const tropLong = new Promise<Response>((fin) => {
+    minuteur = setTimeout(() => fin(finir('echec', 'Temps dépassé : rien n\'a été poussé.',
+      "J'ai manqué de temps avant d'avoir fini (le serveur coupe au bout de 2 min 30) : rien n'a été poussé. Réessaie, ou donne-moi une tâche plus ciblée, un seul écran à la fois. ⏱️")), Math.max(5_000, MINUTEUR - (Date.now() - t0)));
+  });
+  return await Promise.race([travail, tropLong]);
 }));
