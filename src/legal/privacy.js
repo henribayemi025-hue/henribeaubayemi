@@ -44,12 +44,15 @@ export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
 // mise en ligne.
 // 1.2 (28/09/2026) : le pixel Meta tel qu'il fonctionne vraiment (accord
 // préalable en Europe, actif ailleurs avec refus dans Paramètres).
-export const PRIVACY_VERSION = '1.2';
+// 1.3 (29/09/2026) : l'offre gratuite de Google Gemini passe en premier
+// (choix de Beau) ; Google peut se servir de ce contenu pour ses produits,
+// ce qui doit être dit.
+export const PRIVACY_VERSION = '1.3';
 
 const fr = {
   title: 'Politique de confidentialité',
   updatedLabel: 'Dernière mise à jour',
-  updatedAt: '28 septembre 2026',
+  updatedAt: '29 septembre 2026',
   versionLabel: 'Version',
   preamble: [
     'La présente politique explique quelles données personnelles Finjaro collecte lorsque vous utilisez la plateforme (site finjaro.net et applications mobiles), pourquoi elle les collecte, avec qui elle les partage, combien de temps elle les conserve et quels sont vos droits.',
@@ -105,6 +108,7 @@ const fr = {
         'Finjaro propose plusieurs fonctions d’intelligence artificielle : l’assistante de discussion Finia, le Miroir IA (essayage virtuel), l’aide à la publication pour les vendeuses, la lecture automatique d’une pièce d’identité et l’estimation d’articles.',
         'Ces fonctions s’appuient d’abord sur le service Google Gemini. Lorsque vous les utilisez, le contenu que vous fournissez à ce moment-là — votre message, la photo que vous envoyez, ou les informations de l’article concerné — est transmis à Google pour produire la réponse.',
         'Quand Google ne répond pas, d’autres modèles d’intelligence artificielle prennent le relais pour que Finia puisse quand même vous répondre : DeepSeek (serveurs situés en Chine), Moonshot AI (Kimi) et, selon notre configuration, Anthropic (Claude) ou OpenAI. Ils reçoivent alors le même contenu que Google aurait reçu. La lecture d’une pièce d’identité et le Miroir IA ne passent jamais par ce relais.',
+        'Pour une partie de ces réponses, nous utilisons l’offre gratuite de Google Gemini. Dans cette offre, Google peut conserver le contenu transmis et s’en servir pour améliorer ses produits, et des personnes chez Google peuvent le relire. N’y écrivez pas d’informations confidentielles.',
         'Ces fonctions ne se déclenchent JAMAIS toutes seules : rien n’est envoyé tant que vous n’ouvrez pas l’assistante, n’envoyez pas un message ou ne lancez pas un essayage.',
         'Vos photos personnelles envoyées au Miroir IA servent uniquement à produire l’image demandée et à vous l’afficher. Elles ne sont pas publiées, ni utilisées pour identifier une personne, ni vendues.',
         'Nous n’utilisons pas vos conversations privées avec les boutiques ni vos photos pour entraîner des modèles d’intelligence artificielle.',
@@ -230,7 +234,7 @@ const fr = {
 const en = {
   title: 'Privacy Policy',
   updatedLabel: 'Last updated',
-  updatedAt: '28 September 2026',
+  updatedAt: '29 September 2026',
   versionLabel: 'Version',
   preamble: [
     'This policy explains what personal data Finjaro collects when you use the platform (finjaro.net and its mobile apps), why we collect it, who we share it with, how long we keep it, and what your rights are.',
@@ -286,6 +290,7 @@ const en = {
         'Finjaro offers several AI features: the Finia chat assistant, the AI Mirror (virtual try-on), publishing assistance for sellers, automatic reading of an identity document, and item valuation.',
         'These features rely first on the Google Gemini service. When you use them, the content you provide at that moment — your message, the photo you send, or the relevant item details — is transmitted to Google in order to produce the response.',
         'When Google does not respond, other artificial intelligence models take over so that Finia can still answer you: DeepSeek (servers located in China), Moonshot AI (Kimi) and, depending on our configuration, Anthropic (Claude) or OpenAI. They then receive the same content Google would have received. Identity document reading and the AI Mirror never go through this relay.',
+        'For some of these answers, we use the free tier of Google Gemini. Under that tier, Google may keep the content sent and use it to improve its products, and people at Google may review it. Do not write confidential information there.',
         'These features NEVER run on their own: nothing is sent unless you open the assistant, send a message, or start a try-on.',
         'Personal photos sent to the AI Mirror are used solely to produce the requested image and show it to you. They are not published, not used to identify anyone, and not sold.',
         'We do not use your private conversations with shops or your photos to train artificial intelligence models.',

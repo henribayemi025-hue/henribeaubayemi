@@ -27,6 +27,13 @@
 // - « km:<modèle> » (24/09, Beau : « ils se prennent le relais ») : Kimi, de
 //   Moonshot AI (secret KIMI_API_KEY, API compatible OpenAI). Quand sa clé
 //   existe, il se place après DeepSeek et avant Google.
+// - « gg:<modèle> » (29/09, Beau) : Gemini avec une DEUXIÈME clé, celle de
+//   l'offre gratuite de Google (secret GEMINI_API_KEY_GRATUIT). Quand elle
+//   existe, elle passe EN TÊTE : « à défaut on a Gemini gratuit ; si Gemini
+//   gratuit ne marche pas on passe à DeepSeek rapide, ensuite le fort,
+//   ensuite Kimi, ensuite Gemini payant, ensuite OpenAI ». Son quota épuisé
+//   (429) la met en fin de file 15 minutes, comme un solde vide ; rien n'est
+//   compté en dépense. Sans ce secret, rien ne change.
 //
 // Et `garder()`: la trace de ce qui a été demandé et rendu, pour nos
 // exemples d'entraînement (0167) — seulement si l'entreprise a dit oui.
@@ -84,6 +91,9 @@ const deepseek = () => !!Deno.env.get('DEEPSEEK_API_KEY');
 const DS_FORT = () => `ds:${Deno.env.get('LEGION_MODELE_DS') || 'deepseek-v4-pro'}`;
 const DS_RAPIDE = () => `ds:${Deno.env.get('LEGION_MODELE_DS_RAPIDE') || 'deepseek-flash'}`;
 const kimi = () => !!Deno.env.get('KIMI_API_KEY');
+const gratuit = () => Deno.env.get('GEMINI_API_KEY_GRATUIT');
+// Les modèles de l'offre gratuite, du premier essayé au dernier (réglable).
+const GRATUITS = () => (Deno.env.get('LEGION_MODELES_GRATUITS') || 'gemini-2.5-flash').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `gg:${m}`);
 const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
 // La relève, dans l'ordre : DeepSeek rapide, puis le fort, puis Kimi, puis
 // Google. Le rapide d'abord partout (24/09, premier essai réel) : v4-pro
@@ -91,6 +101,7 @@ const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
 // flash a répondu — 75 s en tout. Flash seul répond en 10 à 30 s, et sa
 // réponse était la meilleure des deux à l'essai.
 const releve = (fort: boolean) => [
+  ...(gratuit() ? GRATUITS() : []),
   ...(deepseek() ? [DS_RAPIDE()] : []),
   ...(deepseek() && fort ? [DS_FORT()] : []),
   ...(kimi() ? [KIMI()] : []),
@@ -106,6 +117,7 @@ export const MODELES_CHOISIBLES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'k
 function disponible(m: string): boolean {
   if (m.startsWith('ds:')) return deepseek();
   if (m.startsWith('km:')) return kimi();
+  if (m.startsWith('gg:')) return !!gratuit();
   if (m.startsWith('an:')) return !!Deno.env.get('ANTHROPIC_API_KEY');
   if (m.startsWith('oa:')) return !!(Deno.env.get('MOTEUR_OA_URL') || cleOpenAI());
   return true;
@@ -157,8 +169,9 @@ function nettoyer(obj: Record<string, unknown>) {
   return obj;
 }
 
-async function viaGemini(apiKey: string, model: string, texte: string, schema: unknown, o: Options): Promise<string> {
-  const resp = await gemini(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+async function viaGemini(apiKey: string, model: string, texte: string, schema: unknown, o: Options, sansFrais = false): Promise<string> {
+  // L'offre gratuite ne coûte rien : pas de compteur de dépense.
+  const resp = await (sansFrais ? fetch : gemini)(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -291,6 +304,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : nom.startsWith('km:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.moonshot.ai/v1', Deno.env.get('KIMI_API_KEY'))
         : nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
+        : nom.startsWith('gg:') ? await viaGemini(gratuit() || '', nom.slice(3), texte, schema, o, true)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {
         derniere = `${nom}: JSON illisible`; essais.push({ m: nom, ms: Date.now() - debut, e: 'JSON illisible' });
