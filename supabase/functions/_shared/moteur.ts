@@ -175,7 +175,7 @@ function nettoyer(obj: Record<string, unknown>) {
 // la voie rapide avec un simple budget (29/09, « Signal timed out ») : les
 // modèles 3.x se règlent par niveau, et un salut n'a besoin que du minimum.
 function reflexion(model: string, budget: number, sansFrais: boolean) {
-  if (sansFrais && /^gemini-3/.test(model)) return { thinkingLevel: budget <= 512 ? 'minimal' : budget <= 4096 ? 'low' : 'high' };
+  if (sansFrais && /^gemini-3/.test(model)) return { thinkingLevel: budget <= 4096 ? 'low' : 'high' }; // « MINIMAL is not supported » (400) pour 3.8-flash, vu le 29/09
   return { thinkingBudget: budget };
 }
 
