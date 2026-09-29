@@ -327,6 +327,14 @@ async function demander(apiKey: string, texte: string, complexe = true, tableur 
   // K2.6 réfléchit longtemps avant d'écrire ; mesuré ce soir, 20 s perdues à
   // l'attendre avant que Google réponde en 2 s. Il reste pour les livrables.
   if (appel) liste = liste.filter((n) => !n.startsWith('km:'));
+  // Et les modèles « forts » passent après les rapides (29/09 : Ada, qui a
+  // DeepSeek v4-pro comme modèle choisi, a mis 15,8 s pour « comment tu
+  // vas » — 11,4 s de v4-pro pour un texte vide, puis 2,2 s de flash).
+  // Ils restent un recours, jamais le premier essai d'une question simple.
+  if (appel) {
+    const lent = (n: string) => /v4-pro|(^|[-:])pro(-|$)/.test(n);
+    liste = [...liste.filter((n) => !lent(n)), ...liste.filter(lent)];
+  }
   // Le disjoncteur (moteur.ts) : ceux qui viennent de refuser passent en dernier.
   liste = await fileDesMoteurs(liste);
   for (const nom of liste) {
