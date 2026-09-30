@@ -29,3 +29,4 @@ test-*.png
 *.jks
 video-work/assets/
 video-work/*.mp4
+.claude/settings.local.json
