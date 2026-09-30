@@ -390,6 +390,12 @@ export default function CheckoutCOD() {
         >
           {devis ? t('checkout.askForPrice') : t('checkout.payOnDelivery')}
         </Button>
+        {/* Sous le bouton, là où le regard se pose au moment de payer.
+            Rien à dire quand le montant n'existe pas encore (demande de
+            prix): on affirmerait quelque chose que l'écran ne montre pas. */}
+        {!devis && (
+          <p className="text-center text-caption text-muted">{t('checkout.payNote')}</p>
+        )}
       </div>
     </div>
   );

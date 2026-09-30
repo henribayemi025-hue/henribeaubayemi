@@ -2656,6 +2656,7 @@
     "empty": "Your cart is empty, nothing to order.",
     "payByCard": "Pay by card",
     "payOnDelivery": "Pay on delivery",
+    "payNote": "The amount is shown in your currency. Check your order before you pay.",
     "paymentSuccess": "Payment successful! Thanks for your order.",
     "deliveryZone": "Delivery zone",
     "zoneDays_one": "within {{count}} day",
