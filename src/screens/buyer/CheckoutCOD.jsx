@@ -390,6 +390,13 @@ export default function CheckoutCOD() {
         >
           {devis ? t('checkout.askForPrice') : t('checkout.payOnDelivery')}
         </Button>
+        {/* Le montant du récapitulatif est déjà dans LA monnaie de l'acheteuse
+            (voir `Price`). On le dit une fois, en petit, sous le bouton — mais
+            pas sur une demande de prix: là, aucun montant n'est affiché, et
+            l'annonce serait fausse. */}
+        {!devis && (
+          <p className="text-center text-caption text-muted">{t('checkout.currencyNote')}</p>
+        )}
       </div>
     </div>
   );
