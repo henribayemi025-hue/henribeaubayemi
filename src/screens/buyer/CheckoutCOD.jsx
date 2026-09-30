@@ -390,6 +390,11 @@ export default function CheckoutCOD() {
         >
           {devis ? t('checkout.askForPrice') : t('checkout.payOnDelivery')}
         </Button>
+        {/* Phrase d'aide sous le bouton « Payer à la livraison ». Pas de
+            demande de prix ici : dans ce cas le bouton dit autre chose. */}
+        {!devis && (
+          <p className="text-center text-caption text-muted">{t('checkout.payOnDeliveryHelp')}</p>
+        )}
       </div>
     </div>
   );

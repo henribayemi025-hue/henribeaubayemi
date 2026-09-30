@@ -2656,6 +2656,7 @@
     "empty": "Ton panier est vide, impossible de commander.",
     "payByCard": "Payer par carte",
     "payOnDelivery": "Payer à la livraison",
+    "payOnDeliveryHelp": "Aucun paiement en ligne : tu paies à la réception de ta commande.",
     "paymentSuccess": "Paiement réussi ! Merci pour ta commande.",
     "deliveryZone": "Zone de livraison",
     "zoneDays_one": "sous {{count}} jour",
