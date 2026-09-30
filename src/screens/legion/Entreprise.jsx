@@ -129,7 +129,17 @@ export default function Entreprise() {
     const abo = supabase
       .channel(`legion:${entrepriseId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'legion_messages', filter: `entreprise_id=eq.${entrepriseId}` },
-        (c) => setData((d) => (d && !d.messages.some((m) => m.id === c.new.id) ? { ...d, messages: [...d.messages, c.new] } : d)))
+        (c) => {
+          setData((d) => (d && !d.messages.some((m) => m.id === c.new.id) ? { ...d, messages: [...d.messages, c.new] } : d));
+          // Un agent à qui on a dit « écris-moi en privé » ouvre lui-même la
+          // conversation privée (30/09) : elle arrive avec son premier message.
+          setData((d) => {
+            if (!d || d.salons.some((s) => s.id === c.new.canal_id)) return d;
+            supabase.from('legion_canaux').select('*').eq('id', c.new.canal_id).maybeSingle()
+              .then(({ data: s }) => { if (s) setData((d2) => (d2 && !d2.salons.some((x) => x.id === s.id) ? { ...d2, salons: [...d2.salons, s] } : d2)); }, () => {});
+            return d;
+          });
+        })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'legion_messages', filter: `entreprise_id=eq.${entrepriseId}` },
         (c) => setData((d) => (d ? { ...d, messages: d.messages.map((m) => (m.id === c.new.id ? { ...m, ...c.new } : m)) } : d)))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'legion_reactions' },
