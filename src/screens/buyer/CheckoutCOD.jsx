@@ -390,6 +390,13 @@ export default function CheckoutCOD() {
         >
           {devis ? t('checkout.askForPrice') : t('checkout.payOnDelivery')}
         </Button>
+        {/* Sous le bouton, une ligne discrète: le montant qui s'affiche vient
+            de Price/CashPrice, donc de la monnaie de la personne — aucune
+            devise n'est écrite en dur ici. Rien à dire sur une demande de
+            prix: il n'y a alors ni bouton « Payer », ni montant à relire. */}
+        {!devis && (
+          <p className="text-center text-caption text-muted">{t('checkout.currencyNote')}</p>
+        )}
       </div>
     </div>
   );
