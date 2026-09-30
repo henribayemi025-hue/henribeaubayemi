@@ -537,6 +537,15 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
   const sansNoms = machines.reduce((x, a) => x.split(sansAccent(a.nom)).join(' '), t).replace(/@\S*/g, ' ').replace(/\s+/g, ' ').trim();
   const salutSeul = /^(bonjour|bonsoir|salut|coucou|hello|hey|hi|yo|cc|slt|re)\b/.test(sansNoms) && sansNoms.length <= 60
     && !/plan|strat|chiffre|combien|pourquoi|projet|tache|bug|code|vente|commande|rapport|point/.test(sansNoms);
+  // « Écris-moi en privé » (Beau, 30/09 : « quand je dis à Écho de m'écrire en
+  // ib, c'est comme WhatsApp, il doit m'écrire en privé »). Avant, l'agent
+  // répondait dans le salon et disait même ne pas avoir de boîte privée : sa
+  // réponse part maintenant dans leur conversation privée, créée au besoin.
+  const veutPrive = !prive && !!auteur.user_id
+    && /\b(en|par|dans mon|dans ma|sur mon|sur ma|mon|ma)\s+(prive|inbox|ib|dm|mp|message prive|messages prives|boite privee)\b|\bprivately\b|\ben (prive|priver|aparte)\b|\ba part\b.{0,20}\b(ecri|parl)/.test(t);
+  if (veutPrive) {
+    lignes.push("[Consigne de Léo] On te demande d'écrire EN PRIVÉ. Ta réponse part directement dans votre conversation privée (comme un message WhatsApp), pas dans ce salon : écris-la comme un message personnel. Ne dis jamais que tu n'as pas de boîte privée ni que ce salon est ton seul canal.");
+  }
   if (salutSeul) {
     lignes.push("[Consigne de Léo] Ce message est un SALUT, rien d'autre. Réponds comme un collègue humain qui croise quelqu'un au bureau: une ou deux phrases courtes et chaleureuses, avec ton caractère (« Salut Beau ! Ça va de ton côté ? »). Si tu veux, un mot de ce qui t'occupe, sans détail. AUCUN titre, AUCUNE liste, AUCUN chiffre, AUCUNE proposition, aucun rapport. Pas de tâche.");
   }
@@ -904,8 +913,26 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     // Débloqué: la réponse EST le livrable de la tâche (le tableau la met
     // « à revoir », comme un livrable du matin).
     const debloque = !!blocage && cible.id === cite?.id && genre !== 'question';
+    // Demandé en privé : la conversation privée entre la personne et cet agent,
+    // la même que celle qu'ouvre le bouton « Écrire » (même clé, même forme).
+    let canalReponse = msg.canal_id;
+    if (veutPrive) {
+      const entre = [auteur.cle, cible.cle].sort();
+      const cleDm = `dm-${entre.join('-')}`;
+      const { data: dejaDm } = await service.from('legion_canaux').select('id').eq('entreprise_id', msg.entreprise_id).eq('cle', cleDm).maybeSingle();
+      let dmId = dejaDm?.id as string | undefined;
+      if (!dmId) {
+        const { data: cree, error: eDm } = await service.from('legion_canaux').insert({
+          entreprise_id: msg.entreprise_id, cle: cleDm, nom: cible.nom, a_quoi_ca_sert: `Conversation privée avec ${cible.nom}`,
+          emoji: '💬', ordre: 900, prive_entre: entre,
+        }).select('id').single();
+        if (eDm) console.error('conversation privée:', eDm.message);
+        dmId = cree?.id;
+      }
+      if (dmId) canalReponse = dmId;
+    }
     const { data: ecrit, error } = await service.from('legion_messages').insert({
-      entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
+      entreprise_id: msg.entreprise_id, canal_id: canalReponse, auteur_id: cible.id, user_id: null,
       texte, genre, meta: { ...(pieceClasseur ? { pieces: [pieceClasseur] } : {}), ...(action ? { action } : {}), ...(debloque ? { livrable: { tache_id: blocage!.tache_id, tache: blocage!.tache, statut: 'termine', debloque: true } } : {}), par_ia: true, modele: r.modele, ...(appris ? { appris: appris.id } : {}), ...(leger ? { rapide: true } : {}), temps: { ...temps, total: Date.now() - t0 }, ...(r.essais?.length ? { essais: r.essais } : {}), cout_eur: Number((coutEnCours() - avant).toFixed(6)), ...(sesSouvenirs.length ? { souvenirs: sesSouvenirs.length } : {}), reponse_a_id: msg.id, ...(sesVerifs.length ? { verifie: sesVerifs.map((v) => v.split(' → ')[0]) } : {}), ...(retenu ? { retenu } : {}), ...(relu ? { relu } : {}), ...((web?.sources.length || (sesDocs.length && sourcesDocs.length)) ? { sources: [...(sesDocs.length ? sourcesDocs : []), ...(web?.sources || [])] } : {}) },
     }).select().single();
     if (error) { pourquoi = pourquoi || error.message; continue; }
@@ -914,6 +941,15 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     await garder(service, { entreprise_id: msg.entreprise_id, message_id: ecrit.id, fonction: 'legion_repondre', modele: r.modele, consigne: laConsigne, sortie: JSON.stringify({ ...r.obj, texte }) });
     ecrits.push(ecrit);
     ont_repondu.push(cible.nom);
+    // Dans le salon, un mot court dit où est partie la réponse.
+    if (canalReponse !== msg.canal_id) {
+      const { data: signe } = await service.from('legion_messages').insert({
+        entreprise_id: msg.entreprise_id, canal_id: msg.canal_id, auteur_id: cible.id, user_id: null,
+        texte: `📩 Je t'ai écrit en privé, ${auteur.nom.split(' ')[0]}.`, genre: 'info',
+        meta: { par_ia: true, prive_vers: canalReponse, reponse_a_id: msg.id },
+      }).select().single();
+      if (signe) ecrits.push(signe);
+    }
     if (action?.type === 'changer_photo') {
       // La photo se fabrique en fond (15 à 30 s); la carte se met à jour.
       const photo = (async () => {
