@@ -2169,7 +2169,26 @@
     "addToCartOnRequest": "Ask for the price",
     "priceOnRequestHow": "Add it to your cart: the shop sends you its price, you accept or not. Nothing is reserved before that.",
     "translated": "Translated automatically · see original",
-    "seeTranslation": "See translation"
+    "seeTranslation": "See translation",
+    "quickQ": {
+      "dispo": {
+        "label": "Still available?",
+        "text": "Is it still available?"
+      },
+      "prix": {
+        "label": "What price?",
+        "text": "What is its price?"
+      },
+      "livraison": {
+        "label": "Delivery possible?",
+        "text": "Can you deliver it? Where and for how much?"
+      },
+      "variantes": {
+        "label": "Other sizes or colours?",
+        "text": "Do you have other sizes or colours?"
+      }
+    },
+    "quickQuestionMessage": "Hello, I'm writing from Finjaro about “{{name}}”{{variant}}. {{question}}\n{{url}}"
   },
   "shop": {
     "liveBadge": "Live",

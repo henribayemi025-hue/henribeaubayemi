@@ -24,6 +24,7 @@ import { getOrCreateConversation } from '../../lib/chat';
 import { timeAgo } from '../../lib/format';
 import { track } from '../../lib/track';
 import { whatsappLink } from '../../lib/phone';
+import { questionsPour, messageQuestion } from '../../lib/questionsFiche';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -445,6 +446,36 @@ export default function ProductDetail() {
           sans rien dire, le bouton blanc sur blanc ne se voyait pas. */}
       {lienWhatsApp && (
         <div className="sticky bottom-[73px] z-30 border-t border-hairline bg-base px-3 pt-3">
+          {/* Questions toutes prêtes (idée 4 du 01/10) : un appui ouvre
+              WhatsApp avec l'article, la variante choisie et le lien déjà
+              écrits — la cliente n'a plus à rédiger son premier message. */}
+          <div className="no-scrollbar -mx-3 mb-2 flex gap-2 overflow-x-auto px-3">
+            {questionsPour(p).map((q) => {
+              const href = whatsappLink(shop?.whatsapp, shop?.country, messageQuestion(t, {
+                question: q, product: p, size, color, url: `${window.location.origin}/product/${p.id}`,
+              }));
+              if (!href) return null;
+              return (
+                <a
+                  key={q.cle}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    track('contact_intent', p.id, {
+                      shop_id: p.shop_id,
+                      source: 'product_question',
+                      question: q.cle,
+                      connectee: !!user,
+                    })
+                  }
+                  className="shrink-0 rounded-pill border border-teal/40 bg-white px-3 py-1.5 text-caption font-semibold text-teal transition active:scale-95"
+                >
+                  {t(`product.quickQ.${q.cle}.label`, q.defaut)}
+                </a>
+              );
+            })}
+          </div>
           <a
             href={lienWhatsApp}
             target="_blank"
