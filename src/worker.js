@@ -18,10 +18,13 @@ const SUPABASE_HOST = 'bokwivwizghdlaedczbw.supabase.co';
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 jours
 const BROWSER_CACHE = `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TTL_SECONDS}, immutable`;
 
-// Les objets « ids » sont des pièces d'identité. Elles ne sont pas publiques
-// (accès signé côté client via createSignedUrl) — pas question de créer une
-// route non authentifiée qui les rediffuserait.
-const PRIVATE_BUCKETS = new Set(['ids']);
+// Ce relais est PUBLIC et met chaque image en cache 30 jours. Il ne sert donc
+// QUE les dossiers faits pour être vus de tous (liste blanche). Avant le 01/10
+// c'était une liste noire (« ids » seul) : les photos des conversations
+// (« chat ») passaient par ici, restaient en cache 30 jours, et un dossier
+// rendu privé en base continuait d'être servi depuis ce cache. Les dossiers
+// privés (ids, chat, legion-prive) se lisent par lien signé côté site.
+const PUBLIC_BUCKETS = new Set(['products', 'shops', 'reels', 'listings', 'photos']);
 
 // Taille au-delà de laquelle on ne met PAS l'objet dans le cache programmable:
 // on le laisse couler tel quel vers le visiteur. Une photo d'article peut
@@ -293,7 +296,9 @@ async function serveImage(request, url, ctx) {
   const bucket = rest.slice(0, slash);
   const objectPath = rest.slice(slash + 1);
   if (!bucket || !objectPath) return new Response('bad path', { status: 400 });
-  if (PRIVATE_BUCKETS.has(bucket)) return new Response('forbidden', { status: 403 });
+  // Vérifié AVANT toute lecture du cache : une copie gardée d'un dossier
+  // devenu privé ne doit plus sortir.
+  if (!PUBLIC_BUCKETS.has(bucket)) return new Response('not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
 
   // GET/HEAD seulement — pas de POST/PUT/DELETE via ce proxy public.
   if (request.method !== 'GET' && request.method !== 'HEAD') {

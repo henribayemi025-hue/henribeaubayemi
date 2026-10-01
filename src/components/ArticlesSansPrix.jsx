@@ -86,7 +86,7 @@ export function ArticlesSansPrix({ shop, rows, onChange }) {
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
           {visibles.map((p) => {
-            const img = Array.isArray(p.images) && p.images[0] ? storageThumbUrl(p.images[0]) : null;
+            const img = Array.isArray(p.images) && p.images[0] ? storageThumbUrl('products', p.images[0]) : null;
             return (
               <li key={p.id} className="rounded-card bg-white p-2.5 shadow-sm">
                 <div className="flex items-center gap-2.5">
