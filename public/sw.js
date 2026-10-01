@@ -21,7 +21,11 @@ const SHELL_CACHE = 'finjaro-shell-v3';
 // exclusion, ouvrir /kit/guide.html enregistrait ce guide comme coque de
 // l'application — exactement le défaut du plan du site décrit plus bas. La
 // page /kit elle-même (sans barre) reste une page de l'application.
-const HORS_APPLICATION = /^\/(sitemap\.xml|robots\.txt|manifest\.webmanifest|sw\.js|img\/|kit\/)/;
+//
+// `learn` (01/10) : Finjaro Learn est une AUTRE application, servie sous
+// /learn/ (public/learn, copié par scripts/importer-learn.sh). Sans cette
+// exclusion, sa page serait enregistrée comme coque de la place de marché.
+const HORS_APPLICATION = /^\/(sitemap\.xml|robots\.txt|manifest\.webmanifest|sw\.js|img\/|kit\/|learn(\/|$))/;
 
 self.addEventListener('install', () => {
   self.skipWaiting();

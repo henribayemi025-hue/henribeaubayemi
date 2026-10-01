@@ -30,3 +30,4 @@ test-*.png
 video-work/assets/
 video-work/*.mp4
 .claude/settings.local.json
+.wrangler/
