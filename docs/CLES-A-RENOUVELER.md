@@ -1,5 +1,7 @@
 # Renouveler les clés et les sortir de la base — marche à suivre (01/10)
 
+> **VAPID : risque accepté par Beau le 01/10** (« vapid ça va ») — la clé n'est pas renouvelée.
+>
 > **État (01/10, décision de Beau)** : VAPID d'abord, après la mise en ligne
 > du site qui réabonne les navigateurs. Resend, Firebase et Apple : **plus
 > tard**. Le point reste critique et ouvert dans l'audit (C-6) tant que ces
