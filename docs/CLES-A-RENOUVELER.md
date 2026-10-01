@@ -1,5 +1,10 @@
 # Renouveler les clés et les sortir de la base — marche à suivre (01/10)
 
+> **État (01/10, décision de Beau)** : VAPID d'abord, après la mise en ligne
+> du site qui réabonne les navigateurs. Resend, Firebase et Apple : **plus
+> tard**. Le point reste critique et ouvert dans l'audit (C-6) tant que ces
+> trois clés ne sont pas renouvelées et retirées de `app_config`.
+
 Demande de Beau du 01/10 : régénérer la clé privée VAPID, la clé API Resend, la
 clé privée FCM et la clé privée APNs ; les ranger dans les **secrets des
 fonctions** Supabase ; ne garder dans `app_config` que de la configuration
