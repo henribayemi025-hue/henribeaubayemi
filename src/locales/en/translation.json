@@ -4124,5 +4124,21 @@
     "noProducts": "Add at least one item with a photo to make your status.",
     "downloaded": "Image saved, link copied: add them to your status.",
     "downloadedNoCopy": "Image saved: add it to your status with your shop link."
+  },
+  "introuvable": {
+    "surtitre": "Not found",
+    "titre_page": "This page doesn't exist",
+    "texte_page": "The address may be incomplete, or the page has moved. Search for what you need, or start again from a section.",
+    "titre_produit": "This item is no longer for sale",
+    "texte_produit": "The seller removed it or the link is incomplete. Other items are waiting just below.",
+    "titre_boutique": "This shop can't be found",
+    "texte_boutique": "It may have changed its name or closed. Search for it by name, or discover other shops.",
+    "chercher": "Search for an item, a shop…",
+    "rubriques": "Sections",
+    "accueil": "Home",
+    "boutiques": "Shops",
+    "services": "Services",
+    "voirBoutique": "See the {{nom}} shop",
+    "duMoment": "Trending items"
   }
 }

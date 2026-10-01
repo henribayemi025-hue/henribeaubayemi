@@ -22,7 +22,7 @@ import { visitorId } from '../lib/visitor';
 const ICON_SHADOW = { filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.6))' };
 
 // One full-screen reel. Autoplays when >60% visible; muted by default.
-export function ReelPlayer({ reel, muted, onToggleMute, active }) {
+export function ReelPlayer({ reel, muted, onToggleMute, active, onIndisponible }) {
   // reel_view : signal 'cette video a ete vraiment regardee'.
   // Dedupliquee : 1 evenement par (montage, reel) au plus.
   const viewLogged = useRef(false);
@@ -180,6 +180,9 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         }}
         className="h-full w-full object-contain"
         onClick={onToggleMute}
+        // Vidéo absente ou illisible (audit m-4) : le fil la retire plutôt
+        // que de laisser un écran noir.
+        onError={() => onIndisponible?.(reel.id)}
       />
 
       {/* Dégradés de lisibilité, haut ET bas: avant, le texte/les icônes ne

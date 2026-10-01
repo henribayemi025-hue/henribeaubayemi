@@ -33,8 +33,33 @@ import { IconPhoto } from '@tabler/icons-react';
 // pose donc notre propre limite de temps.
 const DELAI_MAX_MS = 10_000;
 
+// Vignettes absentes (audit du 01/10, m-3) : une photo envoyée avant les
+// vignettes coûtait à chaque affichage une requête perdue (erreur 400) avant
+// le repli. On retient sur l'appareil les vignettes déjà vues absentes, et on
+// va droit à la photo la fois suivante. 300 au plus, les plus récentes.
+const CLE_ABSENTES = 'finjaro_vignettes_absentes';
+const MAX_ABSENTES = 300;
+let absentes = null;
+function vignettesAbsentes() {
+  if (absentes) return absentes;
+  try { absentes = new Set(JSON.parse(localStorage.getItem(CLE_ABSENTES) || '[]')); } catch { absentes = new Set(); }
+  return absentes;
+}
+export function vignetteAbsente(src) {
+  return !!src && vignettesAbsentes().has(src);
+}
+export function noterVignetteAbsente(src) {
+  if (!src) return;
+  const set = vignettesAbsentes();
+  set.delete(src);
+  set.add(src);
+  while (set.size > MAX_ABSENTES) set.delete(set.values().next().value);
+  try { localStorage.setItem(CLE_ABSENTES, JSON.stringify([...set])); } catch { /* stockage plein ou refusé */ }
+}
+
 export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = '', rounded = '', fit = 'cover', priority = false, fallback = null }) {
-  const [stage, setStage] = useState('primary'); // 'primary' | 'fallback' | 'failed'
+  const depart = () => (fallbackSrc && fallbackSrc !== src && vignetteAbsente(src) ? 'fallback' : 'primary');
+  const [stage, setStage] = useState(depart); // 'primary' | 'fallback' | 'failed'
   const [loaded, setLoaded] = useState(false);
   const stageRef = useRef(stage);
   stageRef.current = stage;
@@ -44,8 +69,9 @@ export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = 
   loadedRef.current = loaded;
 
   useEffect(() => {
-    setStage('primary');
+    setStage(depart());
     setLoaded(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src, fallbackSrc]);
 
   const current = stage === 'fallback' ? fallbackSrc : src;
@@ -73,7 +99,10 @@ export function SmartImage({ src, fallbackSrc, placeholderSrc, alt, className = 
   }
 
   function handleError() {
-    if (stageRef.current === 'primary' && fallbackSrc && fallbackSrc !== src) setStage('fallback');
+    if (stageRef.current === 'primary' && fallbackSrc && fallbackSrc !== src) {
+      noterVignetteAbsente(src);
+      setStage('fallback');
+    }
     else setStage('failed');
   }
 

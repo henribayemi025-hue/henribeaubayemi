@@ -19,6 +19,9 @@ export default function Fin() {
   const [reels, setReels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  // Réels dont la vidéo ne se charge pas (fichier absent) : retirés du fil.
+  const [indisponibles, setIndisponibles] = useState(() => new Set());
+  const retirer = useCallback((id) => setIndisponibles((s) => (s.has(id) ? s : new Set(s).add(id))), []);
   const [muted, setMuted] = useState(true);
   const [activeIdx, setActiveIdx] = useState(0);
   const containerRef = useRef(null);
@@ -125,10 +128,10 @@ export default function Fin() {
           onScroll={onScroll}
           className="no-scrollbar h-full snap-y snap-mandatory overflow-y-scroll"
         >
-          {reels.map((reel, i) => (
+          {reels.filter((r) => !indisponibles.has(r.id)).map((reel, i) => (
             <div key={reel.id} className="h-full w-full">
               {Math.abs(i - activeIdx) <= 1 ? (
-                <ReelPlayer reel={reel} muted={muted} onToggleMute={() => setMuted((m) => !m)} active={i === activeIdx} />
+                <ReelPlayer reel={reel} muted={muted} onToggleMute={() => setMuted((m) => !m)} active={i === activeIdx} onIndisponible={retirer} />
               ) : (
                 <div className="h-full w-full bg-black" />
               )}

@@ -1,7 +1,8 @@
+import { Introuvable } from '../../components/Introuvable';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconBrandWhatsapp, IconMessage, IconChevronLeft, IconArrowBackUp, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck, IconBell, IconBellRinging } from '@tabler/icons-react';
+import { IconBrandWhatsapp, IconMessage, IconChevronLeft, IconMinus, IconPlus, IconTrash, IconSparkles, IconShieldCheck, IconBell, IconBellRinging } from '@tabler/icons-react';
 import { MirrorModal } from '../../components/MirrorModal';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -179,14 +180,7 @@ export default function ProductDetail() {
   }
   if (error) return <ErrorState onRetry={retry} />;
   if (!data?.product) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-section text-ink">{t('product.notFound')}</p>
-        <Button variant="secondary" className="max-w-xs" onClick={() => navigate('/')}>
-          <IconArrowBackUp size={18} /> {t('common.back')}
-        </Button>
-      </div>
-    );
+    return <Introuvable genre="produit" />;
   }
 
   const p = data.product;

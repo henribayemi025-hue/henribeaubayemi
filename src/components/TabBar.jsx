@@ -43,6 +43,9 @@ export function TabBar({ items, badges = {} }) {
             key={it.key}
             to={it.to}
             end={it.end}
+            // Le libellé n'est visible que sur l'onglet actif : les autres
+            // gardent leur nom pour les lecteurs d'écran (audit m-2).
+            aria-label={t(`nav.${it.key}`)}
             className={({ isActive }) =>
               `relative flex min-w-0 items-center justify-center gap-1.5 rounded-pill py-2.5 transition-all duration-200 ${
                 isActive ? 'flex-[1.7] bg-white shadow-sm' : 'flex-1 active:scale-90'

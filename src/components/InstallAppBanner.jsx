@@ -22,7 +22,32 @@ const DISMISS_DAYS = 14;
 // immersifs plein écran (chat, Fin) où toute la hauteur compte.
 // `/argent` est « Mon argent », une application à part: la présentation
 // de la place de marché et sa bannière n'ont rien à y faire (Beau, 22/09).
-const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/chat', '/fin', '/argent', '/legion', '/equipe'];
+// Audit du 01/10 (M-9) : affichée partout, elle recouvrait la barre d'onglets
+// au téléphone, et les barres d'achat (fiche article, panier, paiement). Elle
+// ne vient donc plus que sur les pages de découverte, posée AU-DESSUS de la
+// barre d'onglets, et seulement à partir de la deuxième visite : on ne
+// demande pas d'installer à quelqu'un qui arrive pour la première fois.
+const PAGES_DECOUVERTE = ['/boutiques', '/services', '/search', '/category'];
+export function pageDeDecouverte(pathname) {
+  return pathname === '/' || PAGES_DECOUVERTE.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
+const VISITES_KEY = 'finjaro_visites';
+const VISITE_SESSION_KEY = 'finjaro_visite_comptee';
+// Compte une visite par session de navigation ; renvoie le total.
+export function compterVisite() {
+  try {
+    let n = Number(localStorage.getItem(VISITES_KEY)) || 0;
+    if (!sessionStorage.getItem(VISITE_SESSION_KEY)) {
+      n += 1;
+      localStorage.setItem(VISITES_KEY, String(n));
+      sessionStorage.setItem(VISITE_SESSION_KEY, '1');
+    }
+    return n;
+  } catch {
+    return 0; // stockage indisponible : on ne sait pas, on ne montre rien
+  }
+}
 
 export function InstallAppBanner() {
   const { t } = useTranslation();
@@ -34,7 +59,9 @@ export function InstallAppBanner() {
     // Déjà dans l'app installée: rien à proposer.
     if (Capacitor.isNativePlatform()) return;
     if (!PLAY_STORE_URL && !APP_STORE_URL) return;
-    if (STANDALONE.some((p) => pathname.startsWith(p))) return;
+    const visites = compterVisite();
+    if (!pageDeDecouverte(pathname)) { setShow(false); return; }
+    if (visites < 2) return;
 
     // Ne pas doubler la bannière de cookies au même instant: si un choix
     // pixel est encore en attente dans un pays RGPD, elle a la priorité
@@ -63,7 +90,10 @@ export function InstallAppBanner() {
   const href = APP_STORE_URL || PLAY_STORE_URL;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-ink p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+    // Téléphone : carte flottante juste au-dessus de la barre d'onglets
+    // (TabBar : environ 64 px + zone de sécurité). Grand écran : pas de barre
+    // d'onglets, le bandeau reprend le bas de l'écran.
+    <div className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+76px)] z-50 rounded-2xl bg-ink p-3 shadow-[0_8px_24px_rgba(0,0,0,0.22)] lg:inset-x-0 lg:bottom-0 lg:rounded-none lg:border-t lg:border-hairline lg:pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div className="mx-auto flex max-w-app items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brass text-title font-semibold text-white">
           F

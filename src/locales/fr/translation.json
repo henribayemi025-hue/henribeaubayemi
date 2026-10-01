@@ -4124,5 +4124,21 @@
     "noProducts": "Ajoute au moins un article avec une photo pour fabriquer ton statut.",
     "downloaded": "Image enregistrée, lien copié : ajoute-les à ton statut.",
     "downloadedNoCopy": "Image enregistrée : ajoute-la à ton statut avec le lien de ta boutique."
+  },
+  "introuvable": {
+    "surtitre": "Introuvable",
+    "titre_page": "Cette page n'existe pas",
+    "texte_page": "L'adresse est peut-être incomplète, ou la page a changé de place. Cherchez ce qu'il vous faut, ou repartez d'une rubrique.",
+    "titre_produit": "Cet article n'est plus en vente",
+    "texte_produit": "La vendeuse l'a retiré ou le lien est incomplet. D'autres articles vous attendent juste en dessous.",
+    "titre_boutique": "Cette boutique est introuvable",
+    "texte_boutique": "Elle a peut-être changé de nom ou fermé. Cherchez-la par son nom, ou découvrez les autres boutiques.",
+    "chercher": "Rechercher un article, une boutique…",
+    "rubriques": "Rubriques",
+    "accueil": "Accueil",
+    "boutiques": "Boutiques",
+    "services": "Services",
+    "voirBoutique": "Voir la boutique {{nom}}",
+    "duMoment": "Articles du moment"
   }
 }

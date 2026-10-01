@@ -1,3 +1,4 @@
+import { Introuvable } from '../../components/Introuvable';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -170,14 +171,7 @@ export default function ShopProfile() {
   }
   if (error) return <ErrorState onRetry={retry} />;
   if (!data?.shop) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-section text-ink">{t('shop.notFound')}</p>
-        <Button variant="secondary" className="max-w-xs" onClick={() => navigate('/')}>
-          <IconArrowBackUp size={18} /> {t('common.back')}
-        </Button>
-      </div>
-    );
+    return <Introuvable genre="boutique" />;
   }
 
   const shop = data.shop;

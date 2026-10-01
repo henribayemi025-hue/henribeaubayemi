@@ -13,6 +13,7 @@ import { AppIntro } from './components/AppIntro';
 import { CookieConsent } from './components/CookieConsent';
 import { BandeauHorsLigne } from './components/BandeauHorsLigne';
 import { InstallAppBanner } from './components/InstallAppBanner';
+import { Introuvable } from './components/Introuvable';
 import { NativePushBootstrap } from './components/NativePushBootstrap';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import { BuyerLayout } from './screens/buyer/BuyerLayout';
@@ -326,6 +327,10 @@ export default function App() {
                       <Route path="become-vendor" element={<RequireAuth><BecomeVendor /></RequireAuth>} />
                       <Route path="relance/:id" element={<RequireAuth><Relance /></RequireAuth>} />
                       <Route path="switch/:direction" element={<RequireAuth><SwitchMode /></RequireAuth>} />
+                      {/* Adresse inconnue (audit du 01/10, M-10) : une vraie page
+                          « introuvable » dans la mise en page acheteuse, plus
+                          l'accueil hors de sa mise en page. */}
+                      <Route path="*" element={<Introuvable />} />
                     </Route>
 
                     <Route path="/vendor" element={<RequireAuth><VendorLayout /></RequireAuth>}>
@@ -348,7 +353,6 @@ export default function App() {
                       <Route path="learn" element={<VendorLearn />} />
                     </Route>
 
-                    <Route path="*" element={<Home />} />
                   </Routes>
                 </Suspense>
               </UIProvider>
