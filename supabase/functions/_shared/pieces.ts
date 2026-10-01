@@ -13,6 +13,7 @@
 import { gemini } from './cout.ts';
 import { classeurEnTexte } from './tableur.ts';
 import { transcrire } from './relais.ts';
+import { ouvrirFichier } from './fichiers.ts';
 
 type Piece = { type?: string; url?: string; nom?: string; transcription?: string; description?: string; texte?: string; mime?: string; cree_par_agent?: boolean };
 
@@ -90,7 +91,7 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
   for (const p of pieces) {
     if (p.type === 'audio' && !p.transcription && p.url) {
       try {
-        const r = await fetch(p.url, { signal: AbortSignal.timeout(20_000) });
+        const r = await ouvrirFichier(p.url);
         if (r.ok) {
           const octets = new Uint8Array(await r.arrayBuffer());
           if (octets.length <= 15 * 1024 * 1024) {
@@ -117,7 +118,7 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
     }
     if (p.type === 'image' && !p.description && p.url) {
       try {
-        const r = await fetch(p.url, { signal: AbortSignal.timeout(20_000) });
+        const r = await ouvrirFichier(p.url);
         if (r.ok) {
           const octets = new Uint8Array(await r.arrayBuffer());
           if (octets.length <= 15 * 1024 * 1024) {
@@ -132,7 +133,7 @@ export async function comprendrePieces(apiKey: string, meta: Record<string, unkn
     // modèle (texte et tableaux). Rangé dans la pièce : jamais relu deux fois.
     if (p.type === 'fichier' && !p.texte && p.url) {
       try {
-        const r = await fetch(p.url, { signal: AbortSignal.timeout(20_000) });
+        const r = await ouvrirFichier(p.url);
         if (r.ok) {
           const octets = new Uint8Array(await r.arrayBuffer());
           const t = await texteDeFichier(apiKey, octets, String(p.nom || p.url), p.mime || mimeDe(p.url, r, 'fichier'));

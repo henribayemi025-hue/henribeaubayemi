@@ -29,3 +29,18 @@ describe('lienSigne', () => {
     expect(createSignedUrl).not.toHaveBeenCalled();
   });
 });
+
+describe('adresses du dossier privé de Léo', async () => {
+  const { cheminLegionPrive, urlLegionPrive } = await import('./fichierPrive');
+  it('reconnaît une adresse privée et en tire le chemin', () => {
+    const u = urlLegionPrive('e1/documents/a b.pdf');
+    expect(u).toContain('/storage/v1/object/authenticated/legion-prive/');
+    expect(cheminLegionPrive(u)).toBe('e1/documents/a b.pdf');
+    expect(cheminLegionPrive('https://x.supabase.co/storage/v1/object/authenticated/legion-prive/e1/a%20b.wav?x=1')).toBe('e1/a b.wav');
+  });
+  it('laisse passer les portraits publics et les sites web', () => {
+    expect(cheminLegionPrive('https://x.supabase.co/storage/v1/object/public/legion/e1/portraits/p.jpg')).toBeNull();
+    expect(cheminLegionPrive('https://example.com/page')).toBeNull();
+    expect(cheminLegionPrive(null)).toBeNull();
+  });
+});

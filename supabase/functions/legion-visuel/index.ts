@@ -21,6 +21,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, compter, coutEnCours, gemini, pourEntreprise } from '../_shared/cout.ts';
+import { deposerPrive } from '../_shared/fichiers.ts';
 import { Image as Dessin } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
@@ -172,10 +173,11 @@ Deno.serve(compter('legion_visuel', async (req: Request) => {
     const octets = new Uint8Array(await dl.arrayBuffer());
     const prix = MODELES_VIDEO.find(([m]) => m === modele)?.[1] ?? 3.5;
     ajouterCout(prix);
-    const chemin = `visuels/${corps.entreprise_id}/${crypto.randomUUID()}.mp4`;
-    const { error: eUpV } = await service.storage.from('legion').upload(chemin, octets, { contentType: 'video/mp4', upsert: false });
-    if (eUpV) return finir('echec', `Rangement impossible : ${eUpV.message}`);
-    const urlV = service.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+    // Dossier PRIVÉ de l'entreprise (audit du 01/10, C-2) : le visuel est à elle.
+    const chemin = `${corps.entreprise_id}/visuels/${crypto.randomUUID()}.mp4`;
+    const depV = await deposerPrive(chemin, octets, 'video/mp4');
+    if (!depV.url) return finir('echec', `Rangement impossible : ${depV.erreur}`);
+    const urlV = depV.url;
     const { error: eMsgV } = await service.from('legion_messages').insert({
       entreprise_id: corps.entreprise_id, canal_id: msg.canal_id, auteur_id: corps.agent_id,
       texte: 'Voici la vidéo.',
@@ -193,10 +195,10 @@ Deno.serve(compter('legion_visuel', async (req: Request) => {
   if (compte < minimum) ajouterCout(minimum - compte);
 
   const petit = await leger(img.octets);
-  const chemin = `visuels/${corps.entreprise_id}/${crypto.randomUUID()}.${petit ? 'jpg' : 'png'}`;
-  const { error: eUp } = await service.storage.from('legion').upload(chemin, petit || img.octets, { contentType: petit ? 'image/jpeg' : 'image/png', upsert: false });
-  if (eUp) return finir('echec', `Rangement impossible : ${eUp.message}`);
-  const url = service.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+  const chemin = `${corps.entreprise_id}/visuels/${crypto.randomUUID()}.${petit ? 'jpg' : 'png'}`;
+  const dep = await deposerPrive(chemin, petit || img.octets, petit ? 'image/jpeg' : 'image/png');
+  if (!dep.url) return finir('echec', `Rangement impossible : ${dep.erreur}`);
+  const url = dep.url;
   const cout = Number((coutEnCours() - avant).toFixed(4));
 
   const { error: eMsg } = await service.from('legion_messages').insert({

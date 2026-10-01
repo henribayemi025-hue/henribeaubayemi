@@ -21,3 +21,13 @@ verify_jwt = false
 # La formation des agents (29/09) : appelée par le serveur avec le jeton interne.
 [functions.legion-former]
 verify_jwt = false
+
+# Déplacement des fichiers de Léo vers le dossier privé (01/10, audit C-2) :
+# appelé par la base (pg_net) avec le jeton interne, sans JWT.
+[functions.legion-vers-prive]
+verify_jwt = false
+
+# Purge du cache des photos de conversation (01/10) : appelée par la base
+# avec le jeton interne, sans JWT.
+[functions.chat-purger-cache]
+verify_jwt = false

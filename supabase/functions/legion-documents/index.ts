@@ -18,6 +18,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { generer, moteursSimples } from '../_shared/moteur.ts';
 import { texteDeFichier } from '../_shared/pieces.ts';
+import { ouvrirFichier } from '../_shared/fichiers.ts';
 import { blocDocuments, chercherPassages, decouper, vecteurs } from '../_shared/documents.ts';
 
 const PROD_HOST = 'finjaro.net';
@@ -80,7 +81,7 @@ Deno.serve(compter('legion_documents', async (req: Request) => {
     };
     try {
       if (!doc.url) return await echec('Pas de fichier.');
-      const r = await fetch(doc.url, { signal: AbortSignal.timeout(30_000) });
+      const r = await ouvrirFichier(doc.url, 30_000);
       if (!r.ok) return await echec(`Fichier illisible (HTTP ${r.status}).`);
       const octets = new Uint8Array(await r.arrayBuffer());
       const texte = await texteDeFichier(apiKey, octets, doc.url, doc.mime || r.headers.get('content-type') || '', 300_000);

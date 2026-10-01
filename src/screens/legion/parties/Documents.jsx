@@ -3,6 +3,8 @@ import { IconFileText, IconTrash, IconUpload, IconCopy, IconCheck, IconInbox } f
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../hooks/useAuth';
 import { DeposerRessource } from './DeposerRessource';
+import { DOSSIER_LEGION_PRIVE, urlLegionPrive } from '../../../lib/fichierPrive';
+import { LienFichier } from '../../../components/FichierLegion';
 
 // LES DOCUMENTS DE L'ENTREPRISE, ET LE TRI DES DEMANDES CLIENTS (0179, 23/09).
 //
@@ -60,9 +62,9 @@ export function Documents({ entreprise, t }) {
     setErreur(''); setOccupe('ajout');
     try {
       const chemin = `${entreprise.id}/documents/${crypto.randomUUID()}.${ext}`;
-      const { error: e1 } = await supabase.storage.from('legion').upload(chemin, blob, { contentType: MIMES[ext], upsert: false });
+      const { error: e1 } = await supabase.storage.from(DOSSIER_LEGION_PRIVE).upload(chemin, blob, { contentType: MIMES[ext], upsert: false });
       if (e1) throw e1;
-      const url = supabase.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+      const url = urlLegionPrive(chemin);
       const { data: doc, error: e2 } = await supabase.from('legion_documents').insert({
         entreprise_id: entreprise.id, titre: nom.slice(0, 120), url, mime: MIMES[ext], ajoute_par: user.id,
       }).select().single();
@@ -145,7 +147,7 @@ export function Documents({ entreprise, t }) {
           {docs.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-2 rounded-input bg-legion-bg px-2.5 py-2">
               <span className="min-w-0">
-                <a href={d.url || undefined} target="_blank" rel="noreferrer" className="block truncate text-[13.5px] font-semibold text-legion-ink underline-offset-2 hover:underline">{d.titre}</a>
+                <LienFichier href={d.url || undefined} target="_blank" rel="noreferrer" className="block truncate text-[13.5px] font-semibold text-legion-ink underline-offset-2 hover:underline">{d.titre}</LienFichier>
                 <span className={`block text-[11.5px] ${d.statut === 'echec' ? 'text-legion-danger' : 'text-legion-muted'}`}>
                   {d.statut === 'lu' ? t('legion.docs.lu', { n: d.morceaux }) : d.statut === 'echec' ? `${t('legion.docs.echec')} ${d.erreur || ''}` : t('legion.docs.aLire')}
                 </span>
@@ -187,7 +189,7 @@ export function Documents({ entreprise, t }) {
             )}
             {tri.manque && <p className="text-[12.5px] text-legion-muted"><b className="text-legion-ink">{t('legion.docs.manque')}</b> {tri.manque}</p>}
             {tri.sources?.length > 0 && (
-              <p className="text-[12.5px] text-legion-muted">🔗 {t('legion.sources', 'Sources')} : {tri.sources.map((s, i) => <a key={i} href={s.url} target="_blank" rel="noreferrer" className="underline">{s.titre}</a>).reduce((a, b) => [a, ', ', b])}</p>
+              <p className="text-[12.5px] text-legion-muted">🔗 {t('legion.sources', 'Sources')} : {tri.sources.map((s, i) => <LienFichier key={i} href={s.url} target="_blank" rel="noreferrer" className="underline">{s.titre}</LienFichier>).reduce((a, b) => [a, ', ', b])}</p>
             )}
           </div>
         )}

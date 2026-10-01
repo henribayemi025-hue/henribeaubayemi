@@ -16,6 +16,8 @@ import { Visionneuse } from './Visionneuse';
 import { RAPIDES } from '../emojis';
 import { GENRES, heure, jourDe, sansAccent, iconeDept, espacerPhrases, couperCourt } from './outils';
 import { Texte, estStructure } from './Plans';
+import { AvecUrl, LienFichier } from '../../../components/FichierLegion';
+import { DOSSIER_LEGION_PRIVE, urlLegionPrive } from '../../../lib/fichierPrive';
 
 // La conversation — le centre de l'écran, à la WhatsApp: les bulles
 // groupées par auteur, le nom en couleur DANS la bulle, la citation, les
@@ -369,26 +371,26 @@ export function Conversation({
                           {pieces.map((p, i) => (
                             p.type === 'image' ? (
                               <button key={i} type="button" onClick={() => setEnGrand({ url: p.url, nom: p.nom })} title={t('legion.voirEnGrand', 'Voir en grand')} className="block text-left">
-                                <img src={p.url} alt="" className="min-h-[96px] min-w-[140px] max-h-72 w-auto max-w-full rounded-[12px] bg-black/10 object-cover" loading="lazy" />
+                                <AvecUrl url={p.url}>{(u) => <img src={u || undefined} alt="" className="min-h-[96px] min-w-[140px] max-h-72 w-auto max-w-full rounded-[12px] bg-black/10 object-cover" loading="lazy" />}</AvecUrl>
                               </button>
                             ) : p.type === 'video' ? (
                               // « Créer la vidéo » (29/09) : lue sur place.
-                              <video key={i} controls playsInline preload="metadata" src={p.url} className="max-h-80 w-auto max-w-full rounded-[12px] bg-black" />
+                              <AvecUrl key={i} url={p.url}>{(u) => <video controls playsInline preload="metadata" src={u || undefined} className="max-h-80 w-auto max-w-full rounded-[12px] bg-black" />}</AvecUrl>
                             ) : p.type === 'audio' ? (
                               <div key={i}>
-                                <audio controls preload="metadata" src={p.url} className="h-10 w-60 max-w-full" />
+                                <AvecUrl url={p.url}>{(u) => <audio controls preload="metadata" src={u || undefined} className="h-10 w-60 max-w-full" />}</AvecUrl>
                                 {/* Ce que l'agent a entendu (transcrit côté serveur, 23/09). */}
                                 {p.transcription && <p className="mt-1 text-[12px] italic opacity-80">« {p.transcription} »</p>}
                               </div>
                             ) : (
-                              <a key={i} href={p.url} target="_blank" rel="noreferrer" download={p.nom || undefined}
+                              <LienFichier key={i} href={p.url} target="_blank" rel="noreferrer" download={p.nom || undefined}
                                 className="flex items-center gap-2 rounded-[12px] bg-black/10 px-2.5 py-2 text-[13px]">
                                 {/\.(xlsx|xls|csv)$/i.test(p.nom || '') ? <IconFileSpreadsheet size={22} className="shrink-0" /> : <IconFileText size={22} className="shrink-0" />}
                                 <span className="min-w-0">
                                   <span className="block truncate font-semibold">{p.nom || t('legion.fichier', 'Fichier')}</span>
                                   <span className="block text-[11px] opacity-75">{p.texte ? t('legion.fichierLu', 'lu par l’équipe') : ''}{p.cree_par_agent ? t('legion.fichierCree', 'préparé par l’agent — télécharger') : ''}</span>
                                 </span>
-                              </a>
+                              </LienFichier>
                             )
                           ))}
                         </div>
@@ -456,7 +458,7 @@ export function Conversation({
                           <p className="mb-0.5">🔗 {t('legion.sources', 'Sources')}</p>
                           <ol className="list-decimal space-y-0.5 pl-4">
                             {m.meta.sources.filter((x) => /^https?:\/\//.test(x?.url || '')).slice(0, 6).map((x, i) => (
-                              <li key={i}><a href={x.url} target="_blank" rel="noreferrer" className="break-words underline">{x.titre || x.url}</a></li>
+                              <li key={i}><LienFichier href={x.url} target="_blank" rel="noreferrer" className="break-words underline">{x.titre || x.url}</LienFichier></li>
                             ))}
                           </ol>
                         </div>
@@ -1058,9 +1060,10 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
 
   async function deposer(blob, ext, contentType) {
     const chemin = `${entrepriseId}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('legion').upload(chemin, blob, { contentType, upsert: false });
+    // Dossier PRIVÉ de l'entreprise (audit du 01/10, C-2) : lu par lien signé.
+    const { error } = await supabase.storage.from(DOSSIER_LEGION_PRIVE).upload(chemin, blob, { contentType, upsert: false });
     if (error) throw error;
-    return supabase.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+    return urlLegionPrive(chemin);
   }
 
   async function photoChoisie(e) {

@@ -38,6 +38,7 @@ import { blocMarche, blocWiki } from '../_shared/contexte.ts';
 import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 import { classeurAvecAdresses, classeurEnTexte, creerClasseur, MIME_XLSX, modifierClasseur, type Feuille, type Operation } from '../_shared/tableur.ts';
 import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
+import { deposerPrive, ouvrirFichier } from '../_shared/fichiers.ts';
 
 const PROD_HOST = 'finjaro.net';
 const TIMEOUT_MS = 25_000;
@@ -483,7 +484,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const source = piecesDe(msg).find(estClasseur) || [...fil].reverse().flatMap((m) => piecesDe(m as { meta?: unknown })).find(estClasseur);
     if (source) {
       try {
-        const rep = await fetch(source.url!, { signal: AbortSignal.timeout(20_000) });
+        const rep = await ouvrirFichier(source.url!);
         if (rep.ok) {
           const octets = new Uint8Array(await rep.arrayBuffer());
           if (octets.length <= 15 * 1024 * 1024) {
@@ -887,9 +888,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
         if (octets) {
           const nomFichier = `${String(f0.nom || 'tableau').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 60) || 'tableau'}.xlsx`;
           const chemin = `${msg.entreprise_id}/${crypto.randomUUID()}.xlsx`;
-          const { error: eUp } = await service.storage.from('legion').upload(chemin, octets, { contentType: MIME_XLSX, upsert: false });
-          if (eUp) console.error('classeur:', eUp.message);
-          else pieceClasseur = { type: 'fichier', url: service.storage.from('legion').getPublicUrl(chemin).data.publicUrl, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, texte: classeurEnTexte(octets) };
+          const dep = await deposerPrive(chemin, octets, MIME_XLSX);
+          if (!dep.url) console.error('classeur:', dep.erreur);
+          else pieceClasseur = { type: 'fichier', url: dep.url, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, texte: classeurEnTexte(octets) };
         }
       } catch (e) { console.error('classeur:', (e as Error).message); }
     }
@@ -902,9 +903,9 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
           const base = classeurSource.nom.replace(/\.(xlsx|xls|csv)$/i, '').replace(/ \(modifié\)$/, '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 60) || 'classeur';
           const nomFichier = `${base} (modifié).xlsx`;
           const chemin = `${msg.entreprise_id}/${crypto.randomUUID()}.xlsx`;
-          const { error: eUp } = await service.storage.from('legion').upload(chemin, m.octets, { contentType: MIME_XLSX, upsert: false });
-          if (eUp) console.error('classeur modifié:', eUp.message);
-          else pieceClasseur = { type: 'fichier', url: service.storage.from('legion').getPublicUrl(chemin).data.publicUrl, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, modifie_de: classeurSource.nom, modifications: m.faites.slice(0, 50), texte: classeurEnTexte(m.octets) };
+          const dep = await deposerPrive(chemin, m.octets, MIME_XLSX);
+          if (!dep.url) console.error('classeur modifié:', dep.erreur);
+          else pieceClasseur = { type: 'fichier', url: dep.url, nom: nomFichier, mime: MIME_XLSX, cree_par_agent: true, modifie_de: classeurSource.nom, modifications: m.faites.slice(0, 50), texte: classeurEnTexte(m.octets) };
         }
         // Ce qui n'a pas pu se faire se dit, au lieu de passer sous silence.
         if (m.refusees.length) texte += `\n\n_${m.octets ? 'Non appliqué' : 'Aucune modification appliquée'} : ${m.refusees.slice(0, 5).join(' ; ')}._`;

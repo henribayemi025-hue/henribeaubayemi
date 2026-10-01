@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Visage } from './Visage';
 import { sansAccent, statutDe } from './outils';
+import { LienFichier } from '../../../components/FichierLegion';
 
 // L'IMMEUBLE de l'entreprise (Beau, 25/09 : « construire les gars dans un site
 // comme ça… un peu comme les Sims » ; « oui, lance l'immeuble, étages et
@@ -399,7 +400,7 @@ function CommentIlTravaille({ a, etat, tache, messages, formation, onFiche, onFe
                     {sources.slice(0, 4).map((x, i) => {
                       const url = typeof x === 'string' ? x : x?.url || x?.uri;
                       const titre = typeof x === 'string' ? x : x?.titre || x?.title || url;
-                      return url ? <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-[#5FC8C0] underline">{titre}</a> : null;
+                      return url ? <LienFichier key={i} href={url} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-[#5FC8C0] underline">{titre}</LienFichier> : null;
                     })}
                   </span>
                 </li>

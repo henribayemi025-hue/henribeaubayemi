@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IconSchool, IconLink, IconExternalLink } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
+import { LienFichier } from '../../../components/FichierLegion';
 
 // « DÉPOSER UNE RESSOURCE » — le vestiaire d'entraînement, sans passer par
 // Claude (Beau, 24/09).
@@ -95,9 +96,9 @@ export function DeposerRessource({ entreprise, onFiche, t }) {
           <div>
             <p className="flex flex-wrap items-center gap-1.5">
               <span className={`rounded-pill px-2 py-0.5 text-[11.5px] font-semibold ${VERDICT_STYLE[fiche.verdict] || VERDICT_STYLE.reserve}`}>{t(`legion.vestiaire.verdict_${fiche.verdict}`)}</span>
-              <a href={fiche.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-legion-ink underline-offset-2 hover:underline">
+              <LienFichier href={fiche.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-legion-ink underline-offset-2 hover:underline">
                 {t('legion.vestiaire.fiche', { n: fiche.numero, titre: fiche.titre })} <IconExternalLink size={13} />
-              </a>
+              </LienFichier>
             </p>
             {fiche.verdict_texte && <p className="mt-1 text-legion-ink">{fiche.verdict_texte}</p>}
             <p className="mt-1 text-[12px] text-legion-muted">

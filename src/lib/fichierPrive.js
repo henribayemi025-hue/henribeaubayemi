@@ -35,3 +35,30 @@ export function useLienSigne(dossier, chemin) {
   }, [dossier, chemin]);
   return url;
 }
+
+// --- Léo : dossier « legion-prive » (audit du 01/10, C-2) -------------------
+//
+// En base, un fichier privé de Léo garde une adresse
+// …/storage/v1/object/authenticated/legion-prive/<chemin>, qui ne s'ouvre pas
+// sans droits. useUrlFichier la change en lien signé pour un membre de
+// l'entreprise, et laisse toute autre adresse (portraits publics, sites web)
+// telle quelle.
+export const DOSSIER_LEGION_PRIVE = 'legion-prive';
+const MOTIF_LEGION = /\/storage\/v1\/object\/(?:public|authenticated|sign)\/legion-prive\/([^?#]+)/;
+
+export function cheminLegionPrive(url) {
+  if (typeof url !== 'string') return null;
+  const m = url.match(MOTIF_LEGION);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+export function urlLegionPrive(chemin) {
+  const base = import.meta.env.VITE_SUPABASE_URL || 'https://bokwivwizghdlaedczbw.supabase.co';
+  return `${base}/storage/v1/object/authenticated/${DOSSIER_LEGION_PRIVE}/${chemin}`;
+}
+
+export function useUrlFichier(url) {
+  const chemin = cheminLegionPrive(url);
+  const signe = useLienSigne(chemin ? DOSSIER_LEGION_PRIVE : null, chemin);
+  return chemin ? signe : url;
+}

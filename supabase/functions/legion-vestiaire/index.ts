@@ -25,6 +25,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { compter, plafondAtteint, pourEntreprise } from '../_shared/cout.ts';
 import { garder, generer, moteurs } from '../_shared/moteur.ts';
+import { deposerPrive } from '../_shared/fichiers.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -562,9 +563,10 @@ Deno.serve(compter('legion_vestiaire', async (req: Request) => {
     const auteur = mentor?.nom || 'Léo';
     const md = ficheMarkdown({ nn, maison: entreprise.nom, obj, r, auteur, agents: agentsFiche, competences });
     const chemin = `${entreprise.id}/documents/${crypto.randomUUID()}.md`;
-    const { error: e1 } = await service.storage.from('legion').upload(chemin, new Blob([String.fromCharCode(0xfeff) + md], { type: 'text/plain' }), { contentType: 'text/plain', upsert: false });
-    if (e1) return json({ erreur: `La fiche est écrite mais n'a pas pu être rangée : ${e1.message}` });
-    const url = service.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+    // Rangée dans le dossier PRIVÉ de l'entreprise (audit du 01/10, C-2).
+    const dep = await deposerPrive(chemin, new Blob([String.fromCharCode(0xfeff) + md], { type: 'text/plain' }), 'text/plain');
+    if (!dep.url) return json({ erreur: `La fiche est écrite mais n'a pas pu être rangée : ${dep.erreur}` });
+    const url = dep.url;
     // Le lien de la fiche sert de source aux compétences d'un texte collé.
     for (const c of competences) if (!c.source) c.source = url;
     const { data: doc, error: e2 } = await service.from('legion_documents').insert({

@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
 import { Visage } from './Visage';
 import { raisonLisible } from './outils';
+import { DOSSIER_LEGION_PRIVE, urlLegionPrive } from '../../../lib/fichierPrive';
 
 // APPELER UN AGENT (23/09).
 //
@@ -138,9 +139,9 @@ export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, 
       let fichier = blob; let ext = (blob.type || '').includes('mp4') ? 'm4a' : 'webm'; let mime = blob.type || 'audio/webm';
       try { const d = await blobToWavDataUrl(blob); fichier = await (await fetch(d)).blob(); ext = 'wav'; mime = 'audio/wav'; } catch { /* l'original */ }
       const chemin = `${entrepriseId}/${crypto.randomUUID()}.${ext}`;
-      const { error: eUp } = await supabase.storage.from('legion').upload(chemin, fichier, { contentType: mime, upsert: false });
+      const { error: eUp } = await supabase.storage.from(DOSSIER_LEGION_PRIVE).upload(chemin, fichier, { contentType: mime, upsert: false });
       if (eUp) throw eUp;
-      const url = supabase.storage.from('legion').getPublicUrl(chemin).data.publicUrl;
+      const url = urlLegionPrive(chemin);
       const { data: ligne, error: eIns } = await supabase.from('legion_messages').insert({
         entreprise_id: entrepriseId, canal_id: salon.id, auteur_id: moi.id, user_id: moi.user_id, texte: '🎤', genre: 'info',
         meta: { pieces: [{ type: 'audio', url }], appel: true },

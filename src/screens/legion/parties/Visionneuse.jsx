@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { IconDownload, IconX } from '@tabler/icons-react';
+import { useUrlFichier } from '../../../lib/fichierPrive';
 
 // Une image en grand (Beau, 25/09 : « l'image générée est trop petite »).
 // Plein écran, sur fond noir, avec le téléchargement ; Échap ou un clic à
 // côté referme. Rendue sur <body> pour passer au-dessus de tout.
-export function Visionneuse({ url, nom, onFermer }) {
+export function Visionneuse({ url: brute, nom, onFermer }) {
+  // Un fichier du dossier privé de Léo s'ouvre par lien signé.
+  const url = useUrlFichier(brute);
   useEffect(() => {
     if (!url) return undefined;
     const touche = (e) => { if (e.key === 'Escape') onFermer(); };
