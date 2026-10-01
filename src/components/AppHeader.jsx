@@ -1,13 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { IconChevronLeft } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 
 // Generic screen header with optional back button, title, and right slot.
 export function AppHeader({ title, back = false, right = null, logo = false }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-hairline bg-white px-4">
       {back && (
-        <button onClick={() => navigate(-1)} aria-label="Back" className="-ml-2 rounded-full p-1 text-ink hover:bg-hairline">
+        <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="-ml-2 rounded-full p-1 text-ink hover:bg-hairline">
           <IconChevronLeft size={24} />
         </button>
       )}
