@@ -324,7 +324,7 @@ téléphone.
 | **Notifications** | Ouvre les dernières alertes (commandes, messages, avis). |
 | **Statistiques** | Ouvre les chiffres de la boutique. |
 | **Mode acheteur** | Repasse côté acheteuse (accueil, panier), sans se déconnecter. |
-| Cartes du jour (statut du jour, articles sans prix, commandes à traiter…) | Ouvrent l'écran concerné ; elles n'apparaissent que s'il y a quelque chose à faire. |
+| Cartes du jour (d’après le code : statut du jour, articles sans prix, commandes à traiter…) | Ouvrent l’écran concerné ; elles n’apparaissent que s’il y a quelque chose à faire (aucune sur la boutique d’essai). |
 
 ## Produits — `/vendor/products`
 
@@ -363,7 +363,7 @@ téléphone.
 | Bouton | Ce qu'il fait |
 |---|---|
 | **Prix demandés** · **Nouvelles** · **En cours** · **Livrées** · **Annulées** | Filtre les commandes par étape. |
-| (sur une commande) Proposer un prix · Accepter · Préparer · Livrée · Annuler · WhatsApp | Fait avancer la commande ; la cliente est prévenue à chaque étape. |
+| (sur une commande — d’après le code, la boutique d’essai n’en a pas) Proposer un prix · Accepter · Préparer · Livrée · Annuler · WhatsApp | Fait avancer la commande ; la cliente est prévenue à chaque étape. |
 
 ## Messages — `/vendor/messages`
 
