@@ -105,6 +105,7 @@ const CheckoutCOD = lazyWithReload(() => import('./screens/buyer/CheckoutCOD'));
 const CheckoutAll = lazyWithReload(() => import('./screens/buyer/CheckoutAll'));
 const NearYou = lazyWithReload(() => import('./screens/buyer/NearYou'));
 const Fin = lazyWithReload(() => import('./screens/buyer/Fin'));
+const MaCommande = lazyWithReload(() => import('./screens/buyer/MaCommande'));
 const Inbox = lazyWithReload(() => import('./screens/buyer/Inbox'));
 const VendorChat = lazyWithReload(() => import('./screens/buyer/VendorChat'));
 const FindPeople = lazyWithReload(() => import('./screens/buyer/FindPeople'));
@@ -293,6 +294,10 @@ export default function App() {
                       <Route path="boutiques" element={<Shops />} />
                       <Route path="boutique/:slug" element={<ShopProfile />} />
                       <Route path="fin" element={<Fin />} />
+                      {/* Suivi d'une demande sans compte (0223) — public: le lien
+                          arrive par WhatsApp, sans connexion. */}
+                      <Route path="ma-commande" element={<MaCommande />} />
+                      <Route path="ma-commande/:id" element={<MaCommande />} />
                       {/* Pivot: l'onglet s'appelle désormais "Services" — /near-you
                           reste servi pour les anciens liens/PWA épinglées. */}
                       <Route path="services" element={<NearYou />} />

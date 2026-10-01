@@ -18,6 +18,7 @@ import { EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { timeAgo } from '../../lib/format';
 import { compressForUpload } from '../../lib/image';
 import { whatsappLink } from '../../lib/phone';
+import { lienSuivi } from '../../lib/mesDemandes';
 
 // Le VRAI flux marketplace (avant, un seul bouton sautait de « nouvelle » à
 // « envoyée » sans validation ni refus — le constat exact de Beau):
@@ -257,8 +258,19 @@ export default function VendorOrders() {
                             paiement à la livraison, l'acheteur est dans la
                             même ville. Sans indicatif, le lien n'ouvre rien —
                             c'était le cas pour toutes les commandes. */}
+                        {/* Sans compte, le message part déjà écrit avec le lien
+                            « Ma commande » (0223) : la cliente suit sa demande
+                            sans compte, et revient. C'est la vendeuse qui
+                            l'envoie, de son téléphone — Finjaro n'écrit à
+                            personne. */}
                         {whatsappLink(o.buyer_phone, shop?.country) && (
-                          <a href={whatsappLink(o.buyer_phone, shop?.country)} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-caption font-semibold text-success">
+                          <a href={whatsappLink(o.buyer_phone, shop?.country, o.buyer_id ? undefined : t('vendor.guestWhatsapp', {
+                              name: (o.buyer_name || '').trim().split(' ')[0],
+                              shop: shop?.name || '',
+                              no: o.order_no,
+                              link: lienSuivi(o.id),
+                              defaultValue: 'Bonjour {{name}}, c’est {{shop}} sur Finjaro. J’ai bien reçu ta demande #{{no}}. Tu peux la suivre ici : {{link}}',
+                            }))} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-caption font-semibold text-success">
                             <IconBrandWhatsapp size={13} /> WhatsApp
                           </a>
                         )}

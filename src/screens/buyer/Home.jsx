@@ -15,6 +15,7 @@ import { ShopCard } from '../../components/ShopCard';
 import { ProductGridSkeleton, EmptyState, ErrorState, Skeleton } from '../../components/states';
 import { Spinner } from '../../components/Spinner';
 import { homeCache, loadHome, fetchProductPage } from '../../lib/homeCache';
+import { isPriceOnRequest } from '../../lib/categories';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -164,6 +165,8 @@ export default function Home() {
           <CategoryStrip />
         </div>
 
+        <PretsACommander products={data?.products} />
+
         <EnDirect shops={data?.live} />
 
         {/* Proposée ici — pas seulement aux vendeuses sur leur tableau de
@@ -304,6 +307,38 @@ function EnDirect({ shops }) {
               <span className="block truncate text-caption text-success">{s.live_title || t('home.liveJoin')}</span>
             </span>
           </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// « Prêts à commander » (idée 2 du 01/10).
+//
+// Mesuré le 29/09, comptes de test exclus : 216 personnes sans compte sur
+// le site, 25 ont ouvert un article. Sur un téléphone, le premier écran ne
+// montrait qu'UN article (le carrousel, souvent « prix sur demande »), puis
+// catégories, services et boutiques : la grille d'articles commençait sous
+// le pli, cachée par la bannière d'installation. Cette rangée met de vrais
+// articles AVEC leur prix juste sous les catégories — de quoi toucher un
+// article sans faire défiler. Rien d'inventé : ce sont les articles déjà
+// chargés pour l'accueil, ceux qui ont une photo et un prix affiché.
+function PretsACommander({ products }) {
+  const { t } = useTranslation();
+  const choix = (products || [])
+    .filter((p) => p.images?.[0] && !isPriceOnRequest(p) && p.price_fcfa > 0 && p.stock !== 0)
+    .slice(0, 10);
+  if (choix.length < 3) return null;
+  return (
+    <section className="mt-4">
+      <h2 className="flex items-center gap-1.5 px-4 text-section text-ink">
+        <IconFlame size={18} className="text-brass" /> {t('home.readyToOrder', 'Prêts à commander')}
+      </h2>
+      <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
+        {choix.map((p) => (
+          <div key={p.id} className="w-40 shrink-0 sm:w-44">
+            <ProductCard product={p} />
+          </div>
         ))}
       </div>
     </section>

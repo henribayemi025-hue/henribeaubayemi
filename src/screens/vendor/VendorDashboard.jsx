@@ -20,6 +20,7 @@ import { estEnAvant } from '../../lib/featured';
 import { estPremium } from '../../lib/premium';
 import { currencyForCountry, formatPrice } from '../../lib/currency';
 import { isServiceShop } from '../../lib/categories';
+import { StatutDuJour } from '../../components/StatutDuJour';
 
 function pct(cur, prev) {
   if (!prev) return cur > 0 ? 100 : 0;
@@ -256,6 +257,10 @@ export default function VendorDashboard() {
             <Action icon={IconMovie} label={t('nav.reels')} onClick={() => navigate('/vendor/reels')} />
             <Action icon={IconTrophy} label={t('vendor.leaderboard')} onClick={() => navigate('/vendor/leaderboard')} />
           </div>
+
+          {/* Le statut WhatsApp du jour (idée 1 du 01/10) : les acheteuses
+              qui commandent viennent du réseau de la vendeuse. */}
+          <StatutDuJour shop={shop} />
 
           {/* Le carnet de crédit (« qui me doit combien ») et l'agenda des
               rendez-vous existent déjà dans Finjaro Accounting, avec le même

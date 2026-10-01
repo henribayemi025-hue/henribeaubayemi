@@ -33,7 +33,12 @@ if (!SANS_ACCUEIL.some((p) => window.location.pathname.startsWith(p))) {
 try {
   if (!sessionStorage.getItem('finjaro-visit-logged')) {
     sessionStorage.setItem('finjaro-visit-logged', '1');
-    track('visit');
+    // La page d'arrivée et le site d'où l'on vient (sans l'adresse complète :
+    // rien de personnel). Sans ça, on ne savait pas si les visiteurs
+    // arrivaient sur l'accueil, sur un article ou sur une boutique (01/10).
+    let ref = null;
+    try { ref = document.referrer ? new URL(document.referrer).hostname : null; } catch { /* referrer illisible */ }
+    track('visit', null, { path: window.location.pathname, ref });
   }
 } catch {
   /* sessionStorage unavailable (private mode) — skip, non-critical */

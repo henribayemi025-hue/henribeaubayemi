@@ -2056,7 +2056,8 @@
     "noProducts": "Aucun produit pour le moment. Reviens bientôt !",
     "noShops": "Aucune boutique à afficher pour l'instant.",
     "servicesSubtitle": "Ménage, coiffure, plomberie, BTP…",
-    "endOfFeed": "Tu as tout vu pour le moment"
+    "endOfFeed": "Tu as tout vu pour le moment",
+    "readyToOrder": "Prêts à commander"
   },
   "search": {
     "placeholder": "Rechercher catégories, boutiques, articles…",
@@ -2627,7 +2628,8 @@
     "later": "Plus tard, je continue mes achats",
     "sentTitle": "Demande envoyée",
     "sentBody": "{{shop}} reçoit ta demande maintenant et te répond sur WhatsApp pour le prix, la livraison et le paiement.",
-    "tooMany": "Trop de demandes aujourd'hui depuis cet appareil. Réessaie demain, ou crée un compte."
+    "tooMany": "Trop de demandes aujourd'hui depuis cet appareil. Réessaie demain, ou crée un compte.",
+    "follow": "Suivre ma demande"
   },
   "checkout": {
     "title": "Commande",
@@ -3025,7 +3027,8 @@
       "raison3": "Un prix affiché lui évite la gêne de demander : elle avance, en confiance.",
       "legitime": "« Sur demande » reste juste pour le sur-mesure, ou un prix qui change souvent.",
       "champCourt": "Ton prix"
-    }
+    },
+    "guestWhatsapp": "Bonjour {{name}}, c’est {{shop}} sur Finjaro. J’ai bien reçu ta demande #{{no}}. Tu peux la suivre ici : {{link}}"
   },
   "orderStatus": {
     "new": "En attente de validation",
@@ -4074,5 +4077,33 @@
     },
     "nextImport": "Tes articles s'importent depuis ce classeur. Gratuit pour démarrer, avec le même compte que Finjaro.",
     "nextCta": "Essayer Finjaro Accounting"
+  },
+  "suivi": {
+    "title": "Ma commande",
+    "mine": "Mes demandes",
+    "none": "Aucune demande depuis ce téléphone",
+    "follow": "Suivre",
+    "notFound": "Commande introuvable",
+    "notFoundHint": "Le lien est peut-être incomplet. Demande à la boutique de te le renvoyer sur WhatsApp.",
+    "hello": "Bonjour {{name}},",
+    "devis": "La boutique prépare son prix et te l’envoie sur WhatsApp. Rien n’est réservé et tu ne dois rien tant que vous n’êtes pas d’accord.",
+    "waiting": "La boutique a reçu ta demande. Elle te répond sur WhatsApp pour confirmer, puis cette page avance avec elle.",
+    "total": "Total à régler à la boutique",
+    "seeShop": "Voir la boutique",
+    "keep": "Garde ce lien : il montre toujours où en est ta commande. Pour la livraison et le paiement, la boutique t’écrit sur WhatsApp."
+  },
+  "statut": {
+    "cardTitle": "Ton statut WhatsApp du jour",
+    "cardHint": "3 de tes articles et le lien de ta boutique, prêts à poster",
+    "imageTitle": "Ma sélection du jour",
+    "imageInvite": "Commandez sur ma boutique",
+    "priceOnRequest": "Prix sur demande",
+    "shareText": "Ma sélection du jour 👉 {{link}}",
+    "share": "Partager",
+    "download": "Enregistrer l’image",
+    "howTo": "Partage-la sur WhatsApp et choisis « Mon statut ». Demain, l’image change toute seule.",
+    "noProducts": "Ajoute au moins un article avec une photo pour fabriquer ton statut.",
+    "downloaded": "Image enregistrée, lien copié : ajoute-les à ton statut.",
+    "downloadedNoCopy": "Image enregistrée : ajoute-la à ton statut avec le lien de ta boutique."
   }
 }

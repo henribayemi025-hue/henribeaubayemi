@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { IconBrandWhatsapp, IconX, IconCircleCheckFilled } from '@tabler/icons-react';
 import { useCart } from '../hooks/useCart';
 import { useToast } from '../hooks/useToast';
@@ -8,6 +9,7 @@ import { phoneExample } from '../lib/phone';
 import { supabase } from '../lib/supabase';
 import { track, getAnonId } from '../lib/track';
 import { Button } from './Button';
+import { garderDemande } from '../lib/mesDemandes';
 
 // « Le panier, c'est une commande » (Beau, 22/09).
 //
@@ -29,6 +31,7 @@ export default function DemandeInvite() {
   const { country } = useSettings();
   const { t } = useTranslation();
   const toast = useToast();
+  const navigate = useNavigate();
   const { demande, fermerDemande, clearShop, dismissJustAdded } = useCart();
   const [form, setForm] = useState(lire);
   const [busy, setBusy] = useState(false);
@@ -57,7 +60,10 @@ export default function DemandeInvite() {
       const order = Array.isArray(data) ? data[0] : data;
       track('order_placed', demande.shop_id, { guest: true, count: demande.items.length });
       clearShop(demande.shop_id);
-      setEnvoyee(order?.order_no || '');
+      // Gardée sur ce téléphone pour « Mes demandes », et le lien de suivi
+      // s'affiche tout de suite (idée 3 du 01/10).
+      garderDemande({ id: order?.id, no: order?.order_no, shop: demande.shop_name });
+      setEnvoyee({ no: order?.order_no || '', id: order?.id || null });
     } catch (err) {
       const [code, name] = String(err?.message || '').split(':');
       const connus = {
@@ -86,9 +92,15 @@ export default function DemandeInvite() {
             <p className="text-section font-semibold text-ink">{t('guest.sentTitle', 'Demande envoyée')}</p>
             <p className="text-body text-muted">
               {t('guest.sentBody', { shop: demande.shop_name, defaultValue: '{{shop}} reçoit ta demande maintenant et te répond sur WhatsApp pour le prix, la livraison et le paiement.' })}
-              {envoyee ? ` (#${envoyee})` : ''}
+              {envoyee.no ? ` (#${envoyee.no})` : ''}
             </p>
-            <Button onClick={fermerDemande}>{t('common.ok', 'OK')}</Button>
+            {envoyee.id ? (
+              <Button onClick={() => { fermerDemande(); navigate(`/ma-commande/${envoyee.id}`); }}>
+                {t('guest.follow', 'Suivre ma demande')}
+              </Button>
+            ) : (
+              <Button onClick={fermerDemande}>{t('common.ok', 'OK')}</Button>
+            )}
           </div>
         ) : (
           <form onSubmit={envoyer} className="space-y-3">

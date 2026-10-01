@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { IconBuildingStore, IconShieldCheck, IconSparkles } from '@tabler/icons-react';
+import { Capacitor } from '@capacitor/core';
 import { track } from '../lib/track';
 
 const SEEN_KEY = 'finjaro:intro-seen';
@@ -45,6 +46,26 @@ const SLIDES = [
 // bouton « Se connecter ».
 const STANDALONE = ['/auth', '/legal', '/landing', '/a-propos', '/suppression-compte', '/demo', '/apps', '/argent', '/legion', '/equipe', '/relais'];
 
+// Mesuré le 01/10 : depuis le 24/09, 452 visiteurs du site ont eu cette
+// présentation en plein écran, 15 l'ont fermée. Les autres sont partis
+// devant elle. Deux défauts, corrigés ici :
+//
+// 1. Elle couvrait aussi les liens profonds. Quelqu'un qui touche une pub ou
+//    un lien WhatsApp vers UN article tombait sur trois écrans d'explication
+//    au lieu de l'article. Beau l'avait demandée pour le premier lancement de
+//    l'APPLICATION (« dès que quelqu'un télécharge l'application ») : dans
+//    l'application, rien ne change. Sur le site, elle ne s'ouvre plus qu'à
+//    l'accueil (« / »), là où l'on arrive sans savoir ce qu'est Finjaro.
+// 2. Sans stockage local (navigateurs intégrés de certaines applications),
+//    la marque « déjà vue » ne s'écrivait jamais : la présentation revenait à
+//    chaque page. La fermeture est maintenant aussi gardée en mémoire pour
+//    la durée de la visite.
+let fermeeCetteVisite = false;
+
+function pageDuSite(pathname) {
+  return pathname === '/' || pathname === '';
+}
+
 export function AppIntro() {
   const { t } = useTranslation();
   const { pathname, search } = useLocation();
@@ -77,20 +98,23 @@ export function AppIntro() {
       } catch { /* URL illisible: sans gravité */ }
       return;
     }
+    if (fermeeCetteVisite) return;
+    if (!Capacitor.isNativePlatform() && !pageDuSite(pathname)) return;
     try {
       if (localStorage.getItem(SEEN_KEY)) return;
-    } catch { /* stockage indisponible: on montre */ }
+    } catch { /* stockage indisponible: on montre, une fois par visite */ }
     setShow(true);
     // Trois écrans se placent entre une visiteuse et Finjaro: celui-ci, le
     // bandeau cookies et l'invitation à installer l'application. Aucun des
     // trois n'enregistrait quoi que ce soit, donc on ignorait combien de gens
     // s'arrêtent là — le tout premier pas du parcours était invisible.
-    track('intro_shown');
+    track('intro_shown', null, { path: pathname });
   }, [pathname, search]);
 
   // `ecran` dit OÙ la personne est sortie: passer au premier écran et finir
   // les trois n'ont pas du tout le même sens.
   function close(sortie = 'passer') {
+    fermeeCetteVisite = true;
     try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* noop */ }
     track('intro_closed', null, { sortie, ecran: i + 1, total: SLIDES.length });
     setShow(false);

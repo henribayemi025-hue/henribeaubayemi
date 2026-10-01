@@ -2056,7 +2056,8 @@
     "noProducts": "No products yet. Check back soon!",
     "noShops": "No shops to show yet.",
     "servicesSubtitle": "Cleaning, hair, plumbing, construction…",
-    "endOfFeed": "That's everything for now"
+    "endOfFeed": "That's everything for now",
+    "readyToOrder": "Ready to order"
   },
   "search": {
     "placeholder": "Search categories, shops, items…",
@@ -2627,7 +2628,8 @@
     "later": "Later, I'll keep shopping",
     "sentTitle": "Request sent",
     "sentBody": "{{shop}} is receiving your request now and will reply on WhatsApp about price, delivery and payment.",
-    "tooMany": "Too many requests today from this device. Try again tomorrow, or create an account."
+    "tooMany": "Too many requests today from this device. Try again tomorrow, or create an account.",
+    "follow": "Track my request"
   },
   "checkout": {
     "title": "Checkout",
@@ -3025,7 +3027,8 @@
       "raison3": "A visible price spares her the awkwardness of asking; she moves forward with confidence.",
       "legitime": "“On request” stays fair for made-to-measure work, or a price that changes often.",
       "champCourt": "Your price"
-    }
+    },
+    "guestWhatsapp": "Hello {{name}}, this is {{shop}} on Finjaro. I received your request #{{no}}. You can track it here: {{link}}"
   },
   "orderStatus": {
     "new": "Awaiting validation",
@@ -4074,5 +4077,33 @@
     },
     "nextImport": "Your items import from this workbook. Free to start, with the same account as Finjaro.",
     "nextCta": "Try Finjaro Accounting"
+  },
+  "suivi": {
+    "title": "My order",
+    "mine": "My requests",
+    "none": "No request from this phone yet",
+    "follow": "Track",
+    "notFound": "Order not found",
+    "notFoundHint": "The link may be incomplete. Ask the shop to send it again on WhatsApp.",
+    "hello": "Hello {{name}},",
+    "devis": "The shop is preparing its price and will send it to you on WhatsApp. Nothing is reserved and you owe nothing until you both agree.",
+    "waiting": "The shop has received your request. It will reply on WhatsApp to confirm, and this page moves forward with it.",
+    "total": "Total to pay the shop",
+    "seeShop": "See the shop",
+    "keep": "Keep this link: it always shows where your order is. For delivery and payment, the shop writes to you on WhatsApp."
+  },
+  "statut": {
+    "cardTitle": "Your WhatsApp status of the day",
+    "cardHint": "3 of your items and your shop link, ready to post",
+    "imageTitle": "Today's picks",
+    "imageInvite": "Order from my shop",
+    "priceOnRequest": "Price on request",
+    "shareText": "Today's picks 👉 {{link}}",
+    "share": "Share",
+    "download": "Save the image",
+    "howTo": "Share it on WhatsApp and choose “My status”. Tomorrow, the image changes by itself.",
+    "noProducts": "Add at least one item with a photo to make your status.",
+    "downloaded": "Image saved, link copied: add them to your status.",
+    "downloadedNoCopy": "Image saved: add it to your status with your shop link."
   }
 }
