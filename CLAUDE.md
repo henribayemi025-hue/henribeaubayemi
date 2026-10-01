@@ -138,7 +138,11 @@ https://finjaro.net/**
 https://accounting.finjaro.net/**
 https://finjaro-admin.finjaro.workers.dev/**
 https://staging-finjaro.finjaro.workers.dev/**
+https://learn.finjaro.net/**
 ```
+
+(Liste réelle au 01/10, lue dans Supabase : ces 5 + `https://www.finjaro.net/**`
+et `https://automatisation-des-candidatures.finjaro.workers.dev/**`.)
 
 Le `/**` est nécessaire: on revient sur la page exacte, pas sur la racine.
 Et le code appelant doit passer `redirectTo`. Supabase **ignore en silence**
