@@ -98,7 +98,11 @@ nouvelles marchent.**
    Android et e-mail comptés comme livrés, et Beau confirme qu'il l'a reçu.
    Pour le web, Beau active les notifications sur finjaro.net dans un
    navigateur, puis Claude renvoie un test.
-3. Retrait des valeurs secrètes de `app_config`. Restent l'expéditeur des
+3. Retrait des valeurs secrètes de `app_config`. Pour Resend, **seulement
+   après le « clé OK » de Claudinette** : elle vérifie la nouvelle clé sur le
+   vrai passage des rappels Accounting de 18 h UTC (pas d'envoi de test
+   possible sans écrire à de vrais utilisateurs). Sinon, une clé mal collée
+   ferait tomber ses rappels en erreur. Restent l'expéditeur des
    e-mails, les identifiants d'équipe et d'appli Apple, l'identifiant du
    projet Firebase et la clé publique VAPID. Diagnostic relancé : tout doit
    rester `secret` / `valide`.
