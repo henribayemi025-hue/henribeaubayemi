@@ -79,11 +79,37 @@ export async function fetchApps() {
 // applications d'équipe à un visiteur ordinaire. Ce filtre reste pour le
 // cache local et pour un compte admin qui consulte la liste complète.
 export function visibleApps(apps, { isAdmin = false, isVendor = false, origine = typeof window !== 'undefined' ? window.location.origin : '' } = {}) {
-  return (apps || []).filter((a) => {
+  const liste = enPreproduction(origine) && !(apps || []).some((a) => a.key === LEARN_PREPROD.key)
+    ? [...(apps || []), LEARN_PREPROD].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    : apps;
+  return (liste || []).filter((a) => {
     if (a.audience === 'admin') return isAdmin;
     if (a.audience === 'vendeuse') return isVendor || isAdmin;
     return true;
   }).map((a) => ({ ...a, url: adresseIci(a.url, origine), relais: a.relais ? adresseIci(a.relais, origine) : a.relais }));
+}
+
+// Finjaro Learn n'existe que sur la préproduction (Beau, 01/10 : « laisse
+// Learn sur staging, on ne se presse pas »). Il n'est donc PAS dans la table
+// finjaro_apps, commune à finjaro.net et à Accounting : on l'ajoute ici, sur
+// la préproduction seulement. Le jour où Beau l'ouvre sur finjaro.net, la
+// ligne en base prend le relais (même clé, pas de doublon).
+export const LEARN_PREPROD = {
+  key: 'learn',
+  name: 'Finjaro Learn',
+  tagline: "Apprendre à coder et l'IA, seul ou à plusieurs, avec un tuteur.",
+  url: 'https://finjaro.net/learn/',
+  accent: 'brass',
+  audience: 'tous',
+  sort_order: 27,
+};
+
+export function enPreproduction(origine) {
+  try {
+    return /(\.workers\.dev|localhost|127\.0\.0\.1)$/.test(new URL(origine).hostname);
+  } catch {
+    return false;
+  }
 }
 
 // En préproduction (Beau, 25/09 : « je clique Legion, ça me renvoie sur
