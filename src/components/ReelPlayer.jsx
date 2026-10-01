@@ -145,9 +145,12 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
     } catch { toast.error(t('errors.generic')); }
   }
 
+  // L'événement `comment` se déclenchait à l'OUVERTURE du panneau : chaque
+  // curieux comptait comme un commentaire, et les chiffres qui en sortaient
+  // étaient faux. Il part maintenant quand un commentaire est vraiment publié
+  // (onAdded du panneau, ci-dessous).
   function openComments() {
     setCommentsOpen(true);
-    track('comment', reel.id);
   }
 
   function buyProduct() {
@@ -280,7 +283,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active }) {
         open={commentsOpen}
         onClose={() => setCommentsOpen(false)}
         reelId={reel.id}
-        onAdded={() => setCommentCount((n) => n + 1)}
+        onAdded={() => { setCommentCount((n) => n + 1); track('comment', reel.id); }}
       />
     </div>
   );
