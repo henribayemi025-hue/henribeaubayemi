@@ -23,3 +23,11 @@
 
 /leo/visages/*
   Cache-Control: public, max-age=2592000
+
+# En-têtes de sécurité sur tout le site (audit du 01/10, M-1) — les mêmes que
+# EN_TETES_SECURITE dans src/worker.js, pour les fichiers servis sans lui.
+/*
+  Strict-Transport-Security: max-age=15552000
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: frame-ancestors 'self' https://*.finjaro.net https://*.finjaro.workers.dev

@@ -34,3 +34,22 @@ describe('relais /img/', () => {
     fetchSpy.mockRestore();
   });
 });
+
+describe('en-têtes de sécurité (M-1)', () => {
+  it('chaque page servie par le Worker les porte', async () => {
+    const r = await demande('/services');
+    expect(await r.text()).toBe('page');
+    expect(r.headers.get('Strict-Transport-Security')).toBe('max-age=15552000');
+    expect(r.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(r.headers.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
+    expect(r.headers.get('Content-Security-Policy')).toMatch(/^frame-ancestors 'self' /);
+  });
+
+  it('public/_headers porte les mêmes valeurs pour les fichiers servis sans le Worker', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { EN_TETES_SECURITE } = await import('./worker');
+    const fichier = readFileSync(`${process.cwd()}/public/_headers`, 'utf8');
+    const bloc = fichier.slice(fichier.indexOf('\n/*\n'));
+    for (const [cle, valeur] of Object.entries(EN_TETES_SECURITE)) expect(bloc).toContain(`${cle}: ${valeur}`);
+  });
+});

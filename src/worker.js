@@ -50,6 +50,25 @@ function cacheProgrammableUtilisable(url) {
   return !url.hostname.endsWith('.workers.dev');
 }
 
+// En-têtes de sécurité (audit du 01/10, M-1). Les fichiers servis
+// directement (sans passer par ce Worker) les reçoivent par public/_headers ;
+// ce qui passe ici (fiches, plan du site, repli) les reçoit ci-dessous.
+// frame-ancestors : seuls nos propres sites peuvent afficher finjaro.net dans
+// un cadre (contre le détournement de clic). Les applications Android et iOS
+// ne l'encadrent pas : elles l'ouvrent directement.
+export const EN_TETES_SECURITE = {
+  'Strict-Transport-Security': 'max-age=15552000',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': "frame-ancestors 'self' https://*.finjaro.net https://*.finjaro.workers.dev",
+};
+
+function securiser(reponse) {
+  const r = new Response(reponse.body, reponse);
+  for (const [cle, valeur] of Object.entries(EN_TETES_SECURITE)) r.headers.set(cle, valeur);
+  return r;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -61,17 +80,17 @@ export default {
     // Le plan de site est fabriqué à la demande à partir de la base: écrit à
     // la main, il déclarait 7 pages et aucune boutique (voir plus bas).
     if (url.pathname === '/sitemap.xml') {
-      return servirPlanDuSite(url, ctx);
+      return securiser(await servirPlanDuSite(url, ctx));
     }
 
     // Une page de boutique ou d'article reçoit SON titre et SA photo avant
     // d'être servie (voir reecrireEnTete).
     const fiche = ficheDemandee(url.pathname);
     if (fiche) {
-      return servirAvecSonEnTete(request, url, env, fiche);
+      return securiser(await servirAvecSonEnTete(request, url, env, fiche));
     }
 
-    return env.ASSETS.fetch(request);
+    return securiser(await env.ASSETS.fetch(request));
   },
 };
 
