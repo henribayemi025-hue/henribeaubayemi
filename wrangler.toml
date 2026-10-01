@@ -16,8 +16,9 @@ not_found_handling = "single-page-application"
 # Learn (public/learn) reste réservé à la préproduction tant que Beau ne l'a
 # pas décidé (01/10 : « laisse Learn sur staging, on ne se presse pas »). Ses
 # fichiers passent donc d'abord par le Worker, qui les refuse sur finjaro.net
-# (voir learnFerme dans src/worker.js).
-run_worker_first = ["/learn", "/learn/*"]
+# (voir learnFerme dans src/worker.js). /csp-rapport reçoit les rapports de la
+# CSP en mode rapport (M-1).
+run_worker_first = ["/learn", "/learn/*", "/csp-rapport"]
 
 # --- Test/staging -----------------------------------------------------------
 # PAS un environnement wrangler séparé — testé et abandonné (`--env staging`

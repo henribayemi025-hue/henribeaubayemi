@@ -56,17 +56,72 @@ function cacheProgrammableUtilisable(url) {
 // frame-ancestors : seuls nos propres sites peuvent afficher finjaro.net dans
 // un cadre (contre le détournement de clic). Les applications Android et iOS
 // ne l'encadrent pas : elles l'ouvrent directement.
+// CSP complète en MODE RAPPORT (M-1 suite) : elle ne bloque rien, elle
+// signale au navigateur (console) et à /csp-rapport ce qui serait bloqué.
+// Inventaire du 01/10 (parcours de 14 pages + lecture du code) : le site,
+// Supabase (API et temps réel), Google Fonts, les tuiles de la carte
+// (OpenFreeMap, ArcGIS), la météo de Léo (Open-Meteo), le pixel Facebook,
+// le Worker de l'atelier, raw.githubusercontent.com (fiches d'agents).
+// Images : toute adresse https (photos des boutiques, avatars Google…).
+// 'wasm-unsafe-eval' : détourage des photos (onnxruntime, fichier local).
+// À NE PAS passer en mode bloquant avant d'avoir sorti l'aperçu de l'atelier
+// (iframe srcdoc qui hérite de cette règle) sur une autre origine.
+const SUPABASE_ORIGINE = 'https://bokwivwizghdlaedczbw.supabase.co';
+function csp({ evalPermis = false } = {}) {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'wasm-unsafe-eval'${evalPermis ? " 'unsafe-eval'" : ''} https://connect.facebook.net`,
+    "worker-src 'self' blob:",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https:",
+    `media-src 'self' data: blob: ${SUPABASE_ORIGINE}`,
+    `connect-src 'self' ${SUPABASE_ORIGINE} ${SUPABASE_ORIGINE.replace('https:', 'wss:')} https://tiles.openfreemap.org https://server.arcgisonline.com https://api.open-meteo.com https://geocoding-api.open-meteo.com https://raw.githubusercontent.com https://finjaro-atelier.finjaro.workers.dev https://www.facebook.com https://connect.facebook.net`,
+    "frame-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    'report-uri /csp-rapport',
+  ].join('; ');
+}
+// Un objet, pas deux textes : l'environnement des Workers refuse qu'un module
+// exporte une simple chaîne (le Worker ne démarre plus — vu en local le 01/10).
+// Learn (/learn/) exécute le code de l'élève avec new Function dans un Worker
+// isolé : il lui faut 'unsafe-eval', et à lui seul.
+export const CSP_RAPPORT = { site: csp(), learn: csp({ evalPermis: true }) };
+
 export const EN_TETES_SECURITE = {
   'Strict-Transport-Security': 'max-age=15552000',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Content-Security-Policy': "frame-ancestors 'self' https://*.finjaro.net https://*.finjaro.workers.dev",
+  'Content-Security-Policy-Report-Only': CSP_RAPPORT.site,
 };
 
-function securiser(reponse) {
+function securiser(reponse, { learn = false } = {}) {
   const r = new Response(reponse.body, reponse);
   for (const [cle, valeur] of Object.entries(EN_TETES_SECURITE)) r.headers.set(cle, valeur);
+  if (learn) r.headers.set('Content-Security-Policy-Report-Only', CSP_RAPPORT.learn);
   return r;
+}
+
+// Rapports de la CSP : une ligne compacte dans les journaux du Worker
+// (tableau de bord Cloudflare → Workers → finjaro → Logs). Rien n'est stocké.
+async function recevoirRapportCsp(request) {
+  if (request.method !== 'POST') return new Response(null, { status: 405 });
+  try {
+    const texte = (await request.text()).slice(0, 8000);
+    const brut = JSON.parse(texte);
+    const liste = Array.isArray(brut) ? brut.map((x) => x.body || x) : [brut['csp-report'] || brut];
+    for (const v of liste.slice(0, 10)) {
+      console.log('csp', JSON.stringify({
+        directive: v['effective-directive'] || v.effectiveDirective || v['violated-directive'],
+        bloque: String(v['blocked-uri'] || v.blockedURL || '').slice(0, 200),
+        page: String(v['document-uri'] || v.documentURL || '').replace(/[?#].*$/, '').slice(0, 200),
+      }));
+    }
+  } catch { /* rapport illisible : ignoré */ }
+  return new Response(null, { status: 204 });
 }
 
 // Finjaro Learn est servi sous /learn/ sur la préproduction seulement : Beau
@@ -84,6 +139,10 @@ export function learnFerme(url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname === '/csp-rapport') {
+      return recevoirRapportCsp(request);
+    }
 
     if (learnFerme(url)) {
       return securiser(new Response(null, { status: 302, headers: { Location: '/', 'Cache-Control': 'no-store' } }));
@@ -106,7 +165,8 @@ export default {
       return securiser(await servirAvecSonEnTete(request, url, env, fiche));
     }
 
-    return securiser(await env.ASSETS.fetch(request));
+    const learn = url.pathname === '/learn' || url.pathname.startsWith('/learn/');
+    return securiser(await env.ASSETS.fetch(request), { learn });
   },
 };
 

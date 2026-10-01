@@ -74,3 +74,31 @@ describe('Learn réservé à la préproduction', () => {
     expect(r.status).toBe(200);
   });
 });
+
+describe('CSP en mode rapport (M-1 suite)', () => {
+  it('le site la porte, sans eval', async () => {
+    const r = await demande('/services');
+    const v = r.headers.get('Content-Security-Policy-Report-Only');
+    expect(v).toContain("default-src 'self'");
+    expect(v).toContain('report-uri /csp-rapport');
+    expect(v).not.toContain("'unsafe-eval'");
+    // la protection contre l'encadrement reste, elle, bloquante
+    expect(r.headers.get('Content-Security-Policy')).toContain('frame-ancestors');
+  });
+
+  it('Learn seul reçoit unsafe-eval (code de l’élève dans un Worker)', async () => {
+    const r = await worker.fetch(new Request('https://staging-finjaro.finjaro.workers.dev/learn/'), env, ctx);
+    expect(r.headers.get('Content-Security-Policy-Report-Only')).toContain("'unsafe-eval'");
+  });
+
+  it('/csp-rapport accepte un rapport et ne renvoie rien', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const corps = JSON.stringify({ 'csp-report': { 'effective-directive': 'script-src', 'blocked-uri': 'https://mal.example/x.js', 'document-uri': 'https://finjaro.net/?jeton=secret' } });
+    const r = await worker.fetch(new Request('https://finjaro.net/csp-rapport', { method: 'POST', body: corps }), env, ctx);
+    expect(r.status).toBe(204);
+    expect(log.mock.calls[0][1]).toContain('script-src');
+    expect(log.mock.calls[0][1]).not.toContain('secret');
+    log.mockRestore();
+    expect((await demande('/csp-rapport')).status).toBe(405);
+  });
+});
