@@ -1,0 +1,122 @@
+diff --git a/supabase/functions/send-push/index.ts b/supabase/functions/send-push/index.ts
+index d636616..666cfe4 100644
+--- a/supabase/functions/send-push/index.ts
++++ b/supabase/functions/send-push/index.ts
+@@ -552,19 +552,32 @@ function emailHtml(title: string, body: string, url: string): string {
+ </body></html>`;
+ }
+ 
++// Resend limite à 10 requêtes par seconde : quand plusieurs notifications
++// partent ensemble, des lots reviennent en 429 (68 e-mails perdus le 30/09 à
++// 9 h 34, audit M-21). On réessaie un lot refusé pour 429 ou 5xx, au plus 3
++// fois, après le délai demandé par Resend (retry-after) ou 1 s, 2 s, 4 s.
++const ESSAIS_EMAIL = 3;
++export function delaiAvantNouvelEssai(status: number, retryAfter: string | null, essai: number): number | null {
++  if (essai >= ESSAIS_EMAIL) return null;
++  if (status !== 429 && status < 500) return null;
++  const demande = Number(retryAfter);
++  const base = Number.isFinite(demande) && demande > 0 ? demande * 1000 : 1000 * 2 ** (essai - 1);
++  return Math.min(base, 8000) + Math.floor(Math.random() * 250);
++}
++
+ async function sendEmails(
+   sb: Admin,
+   recipients: string[],
+   payload: Record<string, unknown>,
+-): Promise<number> {
++): Promise<{ envoyes: number; echecs: number }> {
+   const { cle: apiKey, conf } = await resendConfig(sb);
+-  if (!apiKey) return 0;
++  if (!apiKey) return { envoyes: 0, echecs: 0 };
+   const from = conf?.from ?? 'Finjaro <onboarding@resend.dev>';
+ 
+   // emails_for_users écarte déjà les personnes ayant coupé les e-mails —
+   // impossible de l'oublier ici par mégarde.
+   const { data: rows, error } = await sb.rpc('emails_for_users', { p_ids: recipients });
+-  if (error || !rows || rows.length === 0) return 0;
++  if (error || !rows || rows.length === 0) return { envoyes: 0, echecs: 0 };
+ 
+   const title = String(payload.title ?? 'Finjaro');
+   const body = String(payload.body ?? '');
+@@ -573,34 +586,45 @@ async function sendEmails(
+   const html = emailHtml(title, body, url);
+ 
+   let sent = 0;
++  let echecs = 0;
+   for (let i = 0; i < rows.length; i += RESEND_BATCH_MAX) {
+     const chunk = rows.slice(i, i + RESEND_BATCH_MAX);
+-    try {
+-      const resp = await fetch('https://api.resend.com/emails/batch', {
+-        method: 'POST',
+-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+-        body: JSON.stringify(
+-          chunk.map((r: { email: string }) => ({
+-            from,
+-            to: [r.email],
+-            reply_to: [SUPPORT_EMAIL],
+-            subject: title,
+-            html,
+-          })),
+-        ),
+-        signal: AbortSignal.timeout(15_000),
+-      });
+-      if (resp.ok) {
+-        sent += chunk.length;
+-      } else {
++    const corps = JSON.stringify(
++      chunk.map((r: { email: string }) => ({
++        from,
++        to: [r.email],
++        reply_to: [SUPPORT_EMAIL],
++        subject: title,
++        html,
++      })),
++    );
++    let ok = false;
++    for (let essai = 1; essai <= ESSAIS_EMAIL && !ok; essai++) {
++      try {
++        const resp = await fetch('https://api.resend.com/emails/batch', {
++          method: 'POST',
++          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
++          body: corps,
++          signal: AbortSignal.timeout(15_000),
++        });
++        if (resp.ok) {
++          ok = true;
++          break;
++        }
+         // Jamais la clé dans les journaux — seulement le motif du refus.
+-        console.error('resend batch failed', resp.status, (await resp.text()).slice(0, 300));
++        console.error('resend batch failed', resp.status, `essai ${essai}`, (await resp.text()).slice(0, 300));
++        const attente = delaiAvantNouvelEssai(resp.status, resp.headers.get('retry-after'), essai);
++        if (attente === null) break;
++        await new Promise((r) => setTimeout(r, attente));
++      } catch (e) {
++        console.error('resend batch exception', `essai ${essai}`, e);
++        if (essai < ESSAIS_EMAIL) await new Promise((r) => setTimeout(r, 1000 * 2 ** (essai - 1)));
+       }
+-    } catch (e) {
+-      console.error('resend batch exception', e);
+     }
++    if (ok) sent += chunk.length;
++    else echecs += chunk.length;
+   }
+-  return sent;
++  return { envoyes: sent, echecs };
+ }
+ 
+ // --- Où sont les clés (audit du 01/10, lot 1) ------------------------------
+@@ -797,11 +821,11 @@ Deno.serve(async (req: Request) => {
+       }),
+       sendEmails(sb, recipients, payload).catch((e) => {
+         console.error('email channel failed', e);
+-        return 0;
++        return { envoyes: 0, echecs: 0 };
+       }),
+     ]);
+ 
+-    return json({ push, android, ios, native: android + ios, email });
++    return json({ push, android, ios, native: android + ios, email: email.envoyes, email_echecs: email.echecs });
+   } catch (err) {
+     console.error('send-push exception', err);
+     return json({ error: 'internal_error' }, 500);
