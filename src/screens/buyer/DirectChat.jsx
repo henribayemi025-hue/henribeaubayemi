@@ -16,8 +16,7 @@ import { ChatHeaderMenu } from '../../components/chat/ChatHeaderMenu';
 import { ActionSheet } from '../../components/chat/ActionSheet';
 import { MessageGesture } from '../../components/chat/MessageGesture';
 import { QuotedMessage } from '../../components/chat/QuotedMessage';
-import { VoiceMessage } from '../../components/chat/VoiceMessage';
-import { ChatImage } from '../../components/chat/ChatImage';
+import { ChatImagePrivee, VocalPrive } from '../../components/chat/FichiersChat';
 import { Skeleton, ErrorState } from '../../components/states';
 import { clockTime } from '../../lib/format';
 
@@ -461,13 +460,10 @@ export default function DirectChat() {
                   ) : (
                   <>
                   {m.image_url && (
-                    <ChatImage
-                      src={storageUrl('chat', m.image_url)}
-                      onClick={() => setViewerUrl(storageUrl('chat', m.image_url))}
-                    />
+                    <ChatImagePrivee chemin={m.image_url} onOuvrir={setViewerUrl} />
                   )}
                   {m.audio_url && (
-                    <VoiceMessage src={storageUrl('chat', m.audio_url)} seconds={m.audio_seconds} mine={mine} />
+                    <VocalPrive chemin={m.audio_url} seconds={m.audio_seconds} mine={mine} />
                   )}
                   {m.body && <p className="whitespace-pre-wrap break-words text-body">{m.body}</p>}
                   </>

@@ -30,7 +30,7 @@ function mmss(s) {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export function VoiceMessage({ src, seconds = null, mine = false }) {
+export function VoiceMessage({ src, graine, seconds = null, mine = false }) {
   const { t } = useTranslation();
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -42,7 +42,9 @@ export function VoiceMessage({ src, seconds = null, mine = false }) {
   // celle du fichier quand le navigateur arrive à la lire (mp4/ogg).
   const duree = seconds || dureeFichier || 0;
   const avance = duree > 0 ? Math.min(1, current / duree) : 0;
-  const ondes = barres(src || 'x');
+  // La forme de l'onde suit le fichier (son chemin), pas son adresse : un lien
+  // signé change à chaque ouverture.
+  const ondes = barres(graine || src || 'x');
 
   useEffect(() => {
     const a = audioRef.current;
