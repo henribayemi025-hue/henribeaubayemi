@@ -67,7 +67,7 @@ function lienItineraire(x) {
 // Une boutique: sa photo (ou son initiale) dans un rond, posé sur une
 // petite pointe — une vraie épingle de carte, ancrée en bas, pas un rond
 // flottant. Beau (10/09): « les icônes doivent être propres ».
-function elementBoutique(x) {
+export function elementBoutique(x) {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'finjaro-shop-pin';
@@ -79,13 +79,24 @@ function elementBoutique(x) {
     filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))`;
   // L'initiale est toujours là, sous la photo: si l'image ne charge pas,
   // elle se retire et l'initiale reste.
-  const visuel = initial + (src
-    ? `<img src="${src}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9999px" onerror="this.remove()" />`
-    : '');
-  el.innerHTML =
-    `<span style="position:absolute;left:50%;bottom:0;width:12px;height:12px;margin-left:-6px;background:#fff;transform:translateY(-4px) rotate(45deg);border-radius:2px"></span>` +
-    `<span style="position:absolute;inset:0 0 8px 0;border-radius:9999px;border:2.5px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;
-      background-image:linear-gradient(135deg, ${g.from}, ${g.to});font:700 16px 'Fraunces', Georgia, serif;color:#fff">${visuel}</span>`;
+  // Construit pièce par pièce, jamais en HTML brut : le nom et la photo
+  // viennent de la vendeuse, et une adresse piégée dans innerHTML
+  // s'exécutait chez chaque visiteur de la carte (audit du 01/10, C-1).
+  const pointe = document.createElement('span');
+  pointe.style.cssText = 'position:absolute;left:50%;bottom:0;width:12px;height:12px;margin-left:-6px;background:#fff;transform:translateY(-4px) rotate(45deg);border-radius:2px';
+  const rond = document.createElement('span');
+  rond.style.cssText = `position:absolute;inset:0 0 8px 0;border-radius:9999px;border:2.5px solid #fff;overflow:hidden;display:flex;align-items:center;justify-content:center;
+    background-image:linear-gradient(135deg, ${g.from}, ${g.to});font:700 16px 'Fraunces', Georgia, serif;color:#fff`;
+  rond.textContent = initial;
+  if (src && /^(https:\/\/|\/)/.test(src)) {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:9999px';
+    img.addEventListener('error', () => img.remove());
+    img.src = src;
+    rond.appendChild(img);
+  }
+  el.append(pointe, rond);
   return el;
 }
 
