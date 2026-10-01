@@ -8,7 +8,7 @@ ou publié pendant le relevé).
 
 - **Partie 1 — Visiteur sans compte** (21 pages) : ci-dessous, relevée le 01/10
   sur la préproduction.
-- Partie 2 — Acheteuse connectée : à venir.
+- **Partie 2 — Acheteuse connectée** (12 pages) : plus bas, relevée le 01/10 sur la **base de test** avec un compte de test.
 - Partie 3 — Vendeuse (espace boutique) : à venir.
 - Partie 4 — Léo, Mon argent, Learn : à venir.
 
@@ -196,3 +196,106 @@ Lors du relevé, aucune vidéo ne s'est affichée côté visiteur : seuls les de
 ## Textes légaux — `/legal/terms`, `/legal/confidentialite`, `/suppression-compte`
 
 Pages de lecture : seul le bouton **Retour** y figure.
+
+---
+
+# Partie 2 — Acheteuse connectée
+
+Relevée sur la base de test (`qiyvoaljqmbfldephobp`) avec un compte de test,
+pour ne rien commander ni envoyer sur la vraie base. Cette base est une copie
+ancienne : deux écrans (Messages, Messages personnels) n'ont pas pu se charger
+et affichent « Réessayer » ; leurs boutons seront relevés quand la base de test
+sera remise à jour.
+
+## Première connexion — fenêtre « Pourquoi viens-tu ? »
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Je viens acheter** | Garde l'application en mode acheteuse (accueil, recherche, panier). |
+| **Je viens vendre** | Mène à l'ouverture de la boutique (« Devenir vendeur »). C'est gratuit. |
+| **Plus tard** | Ferme la fenêtre ; elle ne revient plus. |
+
+## Bandeau en haut (quand l'équipe en publie un)
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Le bandeau (ex. « Seconde main & Ventes flash ») | Ouvre la rubrique annoncée. |
+| **Fermer** | Masque le bandeau. |
+
+## Accueil connecté — `/`
+
+Les mêmes boutons que pour le visiteur (partie 1), plus :
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Activer** (notifications) | Demande l'autorisation d'envoyer des notifications (commande, message, baisse de prix). |
+
+## Profil — `/profile`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Modifier le profil** | Ouvre la modification du nom et de la photo. |
+| **Tu vends des articles ? Ouvre ta boutique Finjaro** | Ouvre l'ouverture de boutique. Gratuit jusqu'en novembre. |
+| **Commandes** / **Mes commandes** | Ouvre la liste de ses commandes. |
+| **Favoris** / **Mes favoris** | Ouvre les articles mis en favori. |
+| **Mon argent** | Ouvre Mon argent. |
+| **Messages personnels** | Ouvre les conversations avec d'autres personnes (pas les boutiques). |
+| **Inviter des amis** | Ouvre la page d'invitation (lien de parrainage). |
+| **Applications Finjaro** | Ouvre la page des applications. |
+| **Paramètres** · **Aide** · **Conditions générales** · **Politique de confidentialité** | Ouvrent ces pages. |
+| **Déconnexion** | Ferme la session sur cet appareil. |
+
+## Modifier le profil — `/profile/edit`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Choisir une image** | Choisit la photo de profil depuis le téléphone ou l'ordinateur. |
+| **Enregistrer** | Enregistre le nom et la photo. |
+
+## Mes commandes — `/profile/orders` · Mes favoris — `/profile/favorites`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| (liste vide sur le compte de test) | Chaque commande ouvre son détail (suivi, accepter le prix proposé par la boutique) ; chaque favori ouvre la fiche de l'article. |
+
+## Trouver quelqu'un — `/profile/people`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Champ de recherche | Cherche une personne par son nom pour lui écrire. |
+
+## Inviter des amis — `/profile/invite`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Copier** | Copie son lien d'invitation. |
+| **Partager mon lien** | Ouvre le partage du téléphone (WhatsApp, SMS…) avec le lien. |
+
+## Messages (boutiques) — `/inbox` · Messages personnels — `/profile/messages`
+
+Non relevés : la base de test n'a pas encore ces tables (écran « Réessayer »).
+
+## Panier — `/cart`
+
+Comme pour le visiteur ; une fois connectée, **Commander** mène au paiement à la livraison avec l'adresse et la zone de livraison.
+
+## Devenir vendeur — `/become-vendor`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Pays** (liste de tous les pays) | Choisit le pays de la boutique ; la monnaie des prix en découle. |
+| **Des articles** · **Des services** · **Les deux** | Ce que la boutique propose. |
+| **Rayons** (Mode Femme, Mode Homme, Enfants, High-Tech, Beauté, Bijoux, Maison, Événementiel, Alimentaire, Jus naturels, Seconde main, Véhicules, Immobilier, Musique, Sport, Électroménager, Livres, Santé, Animaux, Jardin, Équipement pro, Autre) | Choisit le ou les rayons de la boutique. |
+| **Continuer** | Passe à l'étape suivante (nom, WhatsApp, photo), puis envoie la demande d'ouverture. |
+
+## Paramètres connectée — `/profile/settings`
+
+Les mêmes que pour le visiteur, plus :
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Activer les notifications** | Demande l'autorisation des notifications sur cet appareil. |
+| Case **E-mails** | Reçoit ou non les e-mails de Finjaro (commandes, messages). |
+| Case **Finia commune** | Autorise ou non Finia à apprendre de ses questions (sans effet sur les comptes de test). |
+| Case **Publicité** (site web seulement) | Accepte ou refuse le pixel publicitaire. |
+| **Supprimer mon compte** (bouton) | Envoie la demande de suppression du compte (le lien du même nom explique la démarche). |
