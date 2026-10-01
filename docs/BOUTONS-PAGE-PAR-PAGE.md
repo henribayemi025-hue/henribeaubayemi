@@ -9,7 +9,7 @@ ou publié pendant le relevé).
 - **Partie 1 — Visiteur sans compte** (21 pages) : ci-dessous, relevée le 01/10
   sur la préproduction.
 - **Partie 2 — Acheteuse connectée** (12 pages) : plus bas, relevée le 01/10 sur la **base de test** avec un compte de test.
-- Partie 3 — Vendeuse (espace boutique) : à venir.
+- **Partie 3 — Vendeuse** (13 pages de l'espace boutique) : plus bas, relevée le 01/10 sur la base de test avec une boutique d'essai.
 - Partie 4 — Léo, Mon argent, Learn : à venir.
 
 ## Ce qui revient sur presque toutes les pages
@@ -299,3 +299,115 @@ Les mêmes que pour le visiteur, plus :
 | Case **Finia commune** | Autorise ou non Finia à apprendre de ses questions (sans effet sur les comptes de test). |
 | Case **Publicité** (site web seulement) | Accepte ou refuse le pixel publicitaire. |
 | **Supprimer mon compte** (bouton) | Envoie la demande de suppression du compte (le lien du même nom explique la démarche). |
+
+---
+
+# Partie 3 — Vendeuse (espace boutique, `/vendor`)
+
+Relevée sur la base de test avec une boutique d'essai (un article). Les prix y
+sont dans la devise **de la boutique** (euros pour une boutique en France,
+FCFA au Cameroun, dollars canadiens au Canada…), jamais dans celle du
+téléphone.
+
+## Ce qui revient sur toutes les pages de l'espace boutique
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Barre de l'espace boutique : **Tableau de bord · Produits · Commandes · Boutique · Apprendre** | Passe d'une partie à l'autre de l'espace boutique. |
+| **Finjaro** (logo) | Revient au tableau de bord de la boutique. |
+| **Applications Finjaro** · **Finia** | Comme côté acheteuse. |
+
+## Tableau de bord — `/vendor`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Notifications** | Ouvre les dernières alertes (commandes, messages, avis). |
+| **Statistiques** | Ouvre les chiffres de la boutique. |
+| **Mode acheteur** | Repasse côté acheteuse (accueil, panier), sans se déconnecter. |
+| Cartes du jour (statut du jour, articles sans prix, commandes à traiter…) | Ouvrent l'écran concerné ; elles n'apparaissent que s'il y a quelque chose à faire. |
+
+## Produits — `/vendor/products`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Ajouter un produit** | Ouvre le formulaire d'un nouvel article. |
+| **En masse** | Ajoute plusieurs articles d'un coup à partir de photos. |
+| **En ligne (n)** · **Brouillons (n)** · **Arrivages passés (n)** | Filtre la liste : articles visibles, non publiés, ou arrivages retirés automatiquement. |
+| Un article de la liste | Ouvre sa modification. |
+| **Retirer** | Retire l'article de la vente (il reste dans les brouillons). |
+
+## Nouvel article — `/vendor/products/new` · Modifier — `/vendor/products/:id`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Ajouter des photos** | Choisit les photos (le fond peut être détouré automatiquement). |
+| **Tu as plusieurs articles différents ? Ajoute-les tous d'un coup** | Ouvre l'ajout en masse. |
+| Case **Prix sur demande** | L'article s'affiche sans prix ; les clientes demandent le prix. |
+| **Rayon** puis **sous-rayon** (listes) | Range l'article dans la bonne catégorie. |
+| **XS · S · M · L · XL · XXL · 3XL · 4XL** et **Ajouter** | Choisit les tailles proposées ; « Ajouter » crée une taille ou une couleur personnalisée. |
+| **Générer avec l'IA** | Écrit la description à partir du nom et des photos. |
+| **Générer un script vidéo (Reel/TikTok)** | Propose un petit texte pour filmer l'article. |
+| **Corriger** (modification) | Corrige l'orthographe de la description. |
+| Case **Article permanent** | L'article n'est jamais retiré automatiquement par la rotation des arrivages. |
+| **Supprimer** (modification) | Supprime l'article (après confirmation). |
+| **Enregistrer** | Publie ou enregistre les changements. |
+
+## Ajouter plusieurs articles — `/vendor/products/bulk`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Choisir mes photos** | Choisit plusieurs photos : un article est préparé par photo, à compléter (nom, prix) avant de publier. |
+
+## Commandes — `/vendor/orders`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Prix demandés** · **Nouvelles** · **En cours** · **Livrées** · **Annulées** | Filtre les commandes par étape. |
+| (sur une commande) Proposer un prix · Accepter · Préparer · Livrée · Annuler · WhatsApp | Fait avancer la commande ; la cliente est prévenue à chaque étape. |
+
+## Messages — `/vendor/messages`
+
+Non relevé : la base de test n'a pas encore ces tables (écran « Réessayer »).
+
+## Reels — `/vendor/reels`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Publier un reel** | Choisit une vidéo, la relie à un article, et la publie dans Fin. |
+
+## Ma boutique — `/vendor/shop`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Partager la boutique** | Partage le lien de la boutique (WhatsApp, statut…). |
+| **Passer en mode acheteur** | Repasse côté acheteuse. |
+| **Choisir une image** | Change la photo ou la bannière de la boutique. |
+| **Rayons** (articles) et **métiers** (services : coiffure à domicile, ménage, BTP, informatique, électricité, livraison, traiteur, location, photo, couture, mécanique, soins, garde d'enfants, transport, cours, événementiel, médecin, coaching, design, community manager, vidéaste, makeup, comptable, voyage, pressing, imprimerie… et « Autre service ») | Dit ce que la boutique vend ou propose ; sert aux filtres de Services et de la recherche. |
+| **dim. · lun. · mar. · mer. · jeu. · ven. · sam.** | Choisit les jours d'ouverture (horaires). |
+| **Je suis en direct** | Signale qu'on est ouverte ou en vente en direct maintenant. |
+| Case **Livraison** et frais | Dit si la boutique livre, et à quel prix (dans la devise de la boutique). |
+| **Ajouter une zone** | Ajoute une zone de livraison avec son prix. |
+| **Définir la position de ma boutique** | Place la boutique sur la carte (pour « Autour de moi »). |
+| **Pays** (liste) | Pays de la boutique ; il fixe la devise des prix. |
+| **Enregistrer** | Enregistre la boutique. |
+
+## Statistiques — `/vendor/stats` · Finances — `/vendor/finances`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **7j · 30j · 3 mois · 1 an** | Change la période affichée. |
+| **Exporter** (statistiques) | Télécharge les chiffres. |
+| **Télécharger le relevé (Excel/CSV)** (finances) | Télécharge le relevé des ventes et des encaissements. |
+
+## Classement des vendeurs — `/vendor/leaderboard`
+
+Page de lecture (points des vendeuses) : seul le bouton **Retour**.
+
+## Apprendre — `/vendor/learn`
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Publier ton premier article** | Ouvre Produits ; la leçon se valide quand un article est vraiment publié. |
+| **Répondre à une cliente** | Ouvre Messages ; validée quand une vraie réponse est envoyée. |
+| **Mener une commande jusqu'au bout** | Ouvre Commandes ; validée quand une commande est livrée. |
+| **Ouvrir Finjaro Accounting** | Ouvre Accounting pour tenir la caisse et le stock. |
