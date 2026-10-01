@@ -82,13 +82,16 @@ describe('CSP en mode rapport (M-1 suite)', () => {
     expect(v).toContain("default-src 'self'");
     expect(v).toContain('report-uri /csp-rapport');
     expect(v).not.toContain("'unsafe-eval'");
+    expect(v).not.toContain('cdn.jsdelivr.net');
     // la protection contre l'encadrement reste, elle, bloquante
     expect(r.headers.get('Content-Security-Policy')).toContain('frame-ancestors');
   });
 
   it('Learn seul reçoit unsafe-eval (code de l’élève dans un Worker)', async () => {
     const r = await worker.fetch(new Request('https://staging-finjaro.finjaro.workers.dev/learn/'), env, ctx);
-    expect(r.headers.get('Content-Security-Policy-Report-Only')).toContain("'unsafe-eval'");
+    const v = r.headers.get('Content-Security-Policy-Report-Only');
+    expect(v).toContain("'unsafe-eval'");
+    expect(v).toContain('https://cdn.jsdelivr.net'); // Pyodide (Python dans le navigateur)
   });
 
   it('/csp-rapport accepte un rapport et ne renvoie rien', async () => {

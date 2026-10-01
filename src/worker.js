@@ -70,13 +70,13 @@ const SUPABASE_ORIGINE = 'https://bokwivwizghdlaedczbw.supabase.co';
 function csp({ evalPermis = false } = {}) {
   return [
     "default-src 'self'",
-    `script-src 'self' 'wasm-unsafe-eval'${evalPermis ? " 'unsafe-eval'" : ''} https://connect.facebook.net`,
+    `script-src 'self' 'wasm-unsafe-eval'${evalPermis ? " 'unsafe-eval' https://cdn.jsdelivr.net" : ''} https://connect.facebook.net`,
     "worker-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
     `media-src 'self' data: blob: ${SUPABASE_ORIGINE}`,
-    `connect-src 'self' ${SUPABASE_ORIGINE} ${SUPABASE_ORIGINE.replace('https:', 'wss:')} https://tiles.openfreemap.org https://server.arcgisonline.com https://api.open-meteo.com https://geocoding-api.open-meteo.com https://raw.githubusercontent.com https://finjaro-atelier.finjaro.workers.dev https://www.facebook.com https://connect.facebook.net`,
+    `connect-src 'self' ${SUPABASE_ORIGINE} ${SUPABASE_ORIGINE.replace('https:', 'wss:')} https://tiles.openfreemap.org https://server.arcgisonline.com https://api.open-meteo.com https://geocoding-api.open-meteo.com https://raw.githubusercontent.com https://finjaro-atelier.finjaro.workers.dev https://www.facebook.com https://connect.facebook.net${evalPermis ? ' https://cdn.jsdelivr.net' : ''}`,
     "frame-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
@@ -87,7 +87,8 @@ function csp({ evalPermis = false } = {}) {
 // Un objet, pas deux textes : l'environnement des Workers refuse qu'un module
 // exporte une simple chaîne (le Worker ne démarre plus — vu en local le 01/10).
 // Learn (/learn/) exécute le code de l'élève avec new Function dans un Worker
-// isolé : il lui faut 'unsafe-eval', et à lui seul.
+// isolé, et Python avec Pyodide (version figée, chargée depuis jsDelivr) : il
+// lui faut 'unsafe-eval' et cdn.jsdelivr.net, et à lui seul.
 export const CSP_RAPPORT = { site: csp(), learn: csp({ evalPermis: true }) };
 
 export const EN_TETES_SECURITE = {
