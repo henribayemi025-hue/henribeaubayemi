@@ -10,7 +10,7 @@ ou publié pendant le relevé).
   sur la préproduction.
 - **Partie 2 — Acheteuse connectée** (12 pages) : plus bas, relevée le 01/10 sur la **base de test** avec un compte de test.
 - **Partie 3 — Vendeuse** (13 pages de l'espace boutique) : plus bas, relevée le 01/10 sur la base de test avec une boutique d'essai.
-- Partie 4 — Léo, Mon argent, Learn : à venir.
+- **Partie 4 — Finjaro Learn** : plus bas (préproduction sans compte, et base de test avec un compte de test). **Léo et Mon argent** : à venir, après la mise à jour de la base de test (il lui manque leurs tables).
 
 ## Ce qui revient sur presque toutes les pages
 
@@ -411,3 +411,54 @@ Page de lecture (points des vendeuses) : seul le bouton **Retour**.
 | **Répondre à une cliente** | Ouvre Messages ; validée quand une vraie réponse est envoyée. |
 | **Mener une commande jusqu'au bout** | Ouvre Commandes ; validée quand une commande est livrée. |
 | **Ouvrir Finjaro Accounting** | Ouvre Accounting pour tenir la caisse et le stock. |
+
+---
+
+# Partie 4 — Finjaro Learn (`/learn/`, préproduction seulement)
+
+Relevée le 01/10 sur la version 5e5ddf2 : sans compte sur la préproduction,
+puis connectée sur la base de test.
+
+## En haut, sur tous les écrans
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Connexion** / **Déconnexion** | Se connecte avec le compte Finjaro (le même que la place de marché), ou se déconnecte sur cet appareil. |
+| **Changer de thème (Finjaro / Noir)** | Passe du thème crème et terracotta au thème noir, et inversement. |
+| **Sans** / **IA** | Travailler sans intelligence artificielle, ou avec le tuteur IA. |
+| **EN** / **FR** | Change la langue. |
+| **Leçons · Espaces · Outils · Entraide** | Les quatre parties de Learn. |
+
+## Leçons
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Cartes des parcours (Programmation, Data science, IA et deep learning, AI engineering, Prompt engineering) | Choisit le parcours ; un parcours s'ouvre quand le précédent est fini. |
+| Liste des leçons (1, 2, 3…) | Ouvre la leçon. |
+| Zone **À toi de jouer** | On y écrit son code (JavaScript ou Python). |
+| **Lancer** | Exécute le code et vérifie s'il réussit la leçon (« Bravo, ça marche ! » ou « Pas encore »). |
+| **Un indice** | Donne un indice sans la réponse. |
+| **Voir la solution** | Montre la solution. |
+| 🔊 | Lit l'explication à voix haute (voix du navigateur). |
+
+## Espaces (connectée)
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Nom de l'espace et **type** (liste) | Nomme le groupe et choisit son type (amis, classe, équipe…). |
+| **Créer** | Crée l'espace ; on y invite ensuite par lien, on y discute en direct, on y code à plusieurs et on y lance des défis. |
+
+## Outils (connectée)
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| **Fiches de révision** · **CV et lettres** · **Actualités** | Choisit l'outil. |
+| Zone **Colle ici le texte de ton cours…** | Le texte à transformer en fiches. |
+| Nombre de fiches (5, 8, 12, 15) et de questions (3, 5, 8, 10) | Règle la quantité. |
+| **Créer mes fiches** | Fabrique les fiches de révision et le quiz à partir du texte. |
+
+## Entraide (connectée)
+
+| Bouton | Ce qu'il fait |
+|---|---|
+| Pseudo et **Enregistrer** | Choisit le pseudo affiché aux autres (demandé une seule fois). Ensuite : poser une question, répondre, choisir la meilleure réponse, signaler. |
