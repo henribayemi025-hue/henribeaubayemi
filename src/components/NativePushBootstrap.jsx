@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../hooks/useAuth';
-import { enableNativePushIfUndecided, linkNativePushToUser } from '../lib/push';
+import { enableNativePushIfUndecided, linkNativePushToUser, resyncWebPush } from '../lib/push';
 
 // Demande l'autorisation de notification DÈS LA TOUTE PREMIÈRE OUVERTURE de
 // l'app installée — avant même qu'un compte existe.
@@ -38,6 +38,8 @@ export function NativePushBootstrap() {
   useEffect(() => {
     if (!user) return;
     linkNativePushToUser(user.id).catch(() => {});
+    // Navigateur : réabonne en silence si la clé du serveur a changé.
+    resyncWebPush(user.id).catch(() => {});
   }, [user]);
 
   return null;

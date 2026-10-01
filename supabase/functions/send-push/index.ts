@@ -10,6 +10,8 @@
 //   { audience: 'shop_followers', shop_id, title, body, url? }  -> abonnés d'une boutique
 //   { audience: 'country', country, except_user_id?, ... }      -> tout un pays
 //   { audience: 'all' | 'vendors' | 'buyers', title, body, ... } -> diffusion
+//   { diagnostic: true }  -> état des clés, sans rien envoyer (admin / service)
+//   { cle_publique: true } -> clé publique Web Push (sans authentification)
 //
 // QUI A LE DROIT D'ENVOYER
 // Trouvé en audit sécurité du 07/09: un envoi à UNE personne n'exigeait
@@ -46,7 +48,7 @@
 // rien sur l'app » (Beau, 04/09). Voir aussi migration 0073.
 // Android passe par Firebase (FCM). iOS n'a PAS de pont Firebase côté app
 // (@capacitor/push-notifications donne le jeton APNs brut) — on parle donc
-// directement à Apple avec la clé .p8 (app_config.apns_key).
+// directement à Apple avec la clé .p8 (secret APNS_PRIVATE_KEY).
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import * as webpush from 'jsr:@negrel/webpush@0.3';
@@ -200,14 +202,7 @@ async function sendPush(
 
   // Clés VAPID: le secret d'environnement d'abord, sinon la table privée
   // app_config (pour pouvoir tout provisionner depuis l'outillage).
-  let keysJson: unknown = null;
-  const rawKeys = Deno.env.get('VAPID_KEYS');
-  if (rawKeys) {
-    keysJson = JSON.parse(rawKeys);
-  } else {
-    const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'vapid_keys').maybeSingle();
-    if (cfg?.value) keysJson = cfg.value;
-  }
+  const { cles: keysJson } = await clesVapid(sb);
   if (!keysJson) return 0;
 
   const vapidKeys = await webpush.importVapidKeys(keysJson, { extractable: false });
@@ -247,7 +242,7 @@ async function sendPush(
 //
 // Contrairement au Web Push (clés VAPID publiques), envoyer via FCM exige un
 // jeton OAuth2 obtenu en signant un JWT avec la clé privée du compte de
-// service Firebase (app_config.fcm_service_account — jamais dans un fichier
+// service Firebase (secret FCM_SERVICE_ACCOUNT — jamais dans un fichier
 // versionné, voir le commentaire de la migration 0073). On le fait à la main
 // avec Web Crypto plutôt que d'ajouter une dépendance: c'est ~30 lignes et
 // évite un SDK Node lourd, mal adapté à Deno Edge.
@@ -259,6 +254,11 @@ function base64url(bytes: ArrayBuffer | Uint8Array): string {
   let str = '';
   for (const b of arr) str += String.fromCharCode(b);
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function depuisBase64url(b64: string): Uint8Array {
+  const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64.length % 4)) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
 
 function pemToPkcs8(pem: string): ArrayBuffer {
@@ -275,10 +275,7 @@ function pemToPkcs8(pem: string): ArrayBuffer {
 async function getFcmAccessToken(
   sb: Admin,
 ): Promise<{ token: string; projectId: string } | null> {
-  const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'fcm_service_account').maybeSingle();
-  const sa = cfg?.value as
-    | { project_id?: string; client_email?: string; private_key?: string; token_uri?: string }
-    | null;
+  const { sa } = await fcmServiceAccount(sb);
   if (!sa?.project_id || !sa.client_email || !sa.private_key) return null;
 
   const now = Math.floor(Date.now() / 1000);
@@ -418,18 +415,15 @@ async function sendFcmPush(
 // dans son code source: didRegisterForRemoteNotificationsWithDeviceToken),
 // pas un jeton FCM — il n'y a pas de pont Firebase côté app. On parle donc
 // directement à Apple, avec un jeton d'autorité ES256 signé à partir de la
-// clé .p8 (app_config.apns_key — jamais dans un fichier versionné, même
-// principe que fcm_service_account).
+// clé .p8 (secret APNS_PRIVATE_KEY — jamais dans un fichier versionné, même
+// principe que FCM_SERVICE_ACCOUNT).
 
 let cachedApnsToken: { token: string; exp: number } | null = null;
 
 async function getApnsAuth(
   sb: Admin,
 ): Promise<{ jwt: string; bundleId: string } | null> {
-  const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'apns_key').maybeSingle();
-  const k = cfg?.value as
-    | { key_id?: string; team_id?: string; bundle_id?: string; private_key?: string }
-    | null;
+  const { k } = await apnsKey(sb);
   if (!k?.key_id || !k.team_id || !k.private_key) return null;
   const bundleId = k.bundle_id ?? 'net.finjaro.app';
 
@@ -563,9 +557,7 @@ async function sendEmails(
   recipients: string[],
   payload: Record<string, unknown>,
 ): Promise<number> {
-  const { data: cfg } = await sb.from('app_config').select('value').eq('key', 'resend').maybeSingle();
-  const conf = (cfg?.value ?? null) as { api_key?: string; from?: string } | null;
-  const apiKey = Deno.env.get('RESEND_API_KEY') ?? conf?.api_key;
+  const { cle: apiKey, conf } = await resendConfig(sb);
   if (!apiKey) return 0;
   const from = conf?.from ?? 'Finjaro <onboarding@resend.dev>';
 
@@ -611,6 +603,126 @@ async function sendEmails(
   return sent;
 }
 
+// --- Où sont les clés (audit du 01/10, lot 1) ------------------------------
+//
+// Les clés privées vivent dans les secrets des fonctions (Deno.env), pas en
+// base : une copie de la base (export, sauvegarde) ne doit jamais emporter de
+// quoi écrire au nom de Finjaro. app_config ne sert plus que de REPLI, le
+// temps que chaque secret soit collé dans Supabase → Edge Functions →
+// Secrets ; il ne garde ensuite que la configuration non sensible
+// (expéditeur des e-mails, identifiants d'équipe et d'appli Apple).
+//
+// Noms attendus : VAPID_KEYS (JSON { publicKey, privateKey } en JWK),
+// FCM_SERVICE_ACCOUNT (le fichier JSON de Google, tel quel),
+// APNS_PRIVATE_KEY (contenu du fichier .p8) et APNS_KEY_ID,
+// RESEND_API_KEY.
+
+type Source = 'secret' | 'app_config' | null;
+
+async function lireConfig(sb: Admin, cle: string): Promise<Record<string, unknown> | null> {
+  const { data } = await sb.from('app_config').select('value').eq('key', cle).maybeSingle();
+  return (data?.value ?? null) as Record<string, unknown> | null;
+}
+
+async function clesVapid(sb: Admin): Promise<{ cles: unknown; source: Source }> {
+  const brut = Deno.env.get('VAPID_KEYS');
+  if (brut) {
+    try { return { cles: JSON.parse(brut), source: 'secret' }; } catch { console.error('VAPID_KEYS illisible (JSON attendu)'); }
+  }
+  const cfg = await lireConfig(sb, 'vapid_keys');
+  return cfg?.privateKey ? { cles: cfg, source: 'app_config' } : { cles: null, source: null };
+}
+
+type CompteFcm = { project_id?: string; client_email?: string; private_key?: string; token_uri?: string };
+
+async function fcmServiceAccount(sb: Admin): Promise<{ sa: CompteFcm | null; source: Source }> {
+  const brut = Deno.env.get('FCM_SERVICE_ACCOUNT');
+  if (brut) {
+    try { return { sa: JSON.parse(brut) as CompteFcm, source: 'secret' }; } catch { console.error('FCM_SERVICE_ACCOUNT illisible (JSON attendu)'); }
+  }
+  const cfg = (await lireConfig(sb, 'fcm_service_account')) as CompteFcm | null;
+  return cfg?.private_key ? { sa: cfg, source: 'app_config' } : { sa: null, source: null };
+}
+
+type CleApns = { key_id?: string; team_id?: string; bundle_id?: string; private_key?: string };
+
+async function apnsKey(sb: Admin): Promise<{ k: CleApns | null; source: Source }> {
+  const cfg = ((await lireConfig(sb, 'apns_key')) ?? {}) as CleApns;
+  const pk = Deno.env.get('APNS_PRIVATE_KEY');
+  if (pk) {
+    return {
+      k: {
+        key_id: Deno.env.get('APNS_KEY_ID') ?? cfg.key_id,
+        team_id: Deno.env.get('APNS_TEAM_ID') ?? cfg.team_id,
+        bundle_id: cfg.bundle_id,
+        // Collé dans un champ d'une ligne, le .p8 arrive parfois avec des « \n » littéraux.
+        private_key: pk.replace(/\\n/g, '\n'),
+      },
+      source: 'secret',
+    };
+  }
+  return cfg.private_key ? { k: cfg, source: 'app_config' } : { k: null, source: null };
+}
+
+async function resendConfig(sb: Admin): Promise<{ cle: string | null; conf: { from?: string } | null; source: Source }> {
+  const conf = (await lireConfig(sb, 'resend')) as { api_key?: string; from?: string } | null;
+  const env = Deno.env.get('RESEND_API_KEY');
+  if (env) return { cle: env, conf, source: 'secret' };
+  return conf?.api_key ? { cle: conf.api_key, conf, source: 'app_config' } : { cle: null, conf, source: null };
+}
+
+// Diagnostic, sans rien envoyer à personne : d'où vient chaque clé, et
+// est-elle acceptée ? Web Push : la clé s'importe. FCM : Google délivre un
+// jeton d'accès. APNs : la clé signe (seul un envoi réel prouve qu'Apple
+// l'accepte). Resend : l'API répond à une lecture de la liste des domaines.
+// Ne renvoie jamais une valeur de clé.
+async function diagnostic(sb: Admin) {
+  const out: Record<string, { source: Source; valide: boolean; detail?: string }> = {};
+
+  const v = await clesVapid(sb);
+  try {
+    if (v.cles) await webpush.importVapidKeys(v.cles as never, { extractable: false });
+    out.web = { source: v.source, valide: !!v.cles };
+  } catch (e) { out.web = { source: v.source, valide: false, detail: String((e as Error).message).slice(0, 120) }; }
+
+  const f = await fcmServiceAccount(sb);
+  cachedFcmToken = null;
+  const jeton = f.sa ? await getFcmAccessToken(sb).catch(() => null) : null;
+  out.android = { source: f.source, valide: !!jeton };
+
+  // iOS : on présente la clé à Apple avec un numéro d'appareil inventé. Apple
+  // vérifie la clé AVANT l'appareil : « BadDeviceToken » (400) prouve qu'elle
+  // est acceptée, « InvalidProviderToken » (403) qu'elle est refusée. Personne
+  // ne reçoit rien.
+  const a = await apnsKey(sb);
+  cachedApnsToken = null;
+  const signe = a.k ? await getApnsAuth(sb).catch((e) => { out.ios = { source: a.source, valide: false, detail: String((e as Error).message).slice(0, 120) }; return null; }) : null;
+  if (signe) {
+    const rep = await fetch(`https://api.push.apple.com/3/device/${'0'.repeat(64)}`, {
+      method: 'POST',
+      headers: { authorization: `bearer ${signe.jwt}`, 'apns-topic': signe.bundleId, 'apns-push-type': 'alert', 'content-type': 'application/json' },
+      body: JSON.stringify({ aps: { alert: { title: 'diagnostic', body: '' } } }),
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    const raison = rep ? String(((await rep.json().catch(() => ({}))) as { reason?: string }).reason ?? '') : 'injoignable';
+    out.ios = { source: a.source, valide: raison === 'BadDeviceToken', detail: `Apple : ${rep?.status ?? '-'} ${raison}` };
+  } else if (!out.ios) out.ios = { source: a.source, valide: false };
+
+  const r = await resendConfig(sb);
+  if (r.cle) {
+    const rep = await fetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${r.cle}` },
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    // Une clé « envoi seulement » n'a pas le droit de lire les domaines : Resend
+    // répond 401 restricted_api_key, ce qui prouve qu'il l'a reconnue.
+    const limitee = rep?.status === 401 && /restricted/i.test(await rep.text().catch(() => ''));
+    out.email = { source: r.source, valide: !!rep?.ok || limitee, detail: limitee ? 'clé limitée à l’envoi' : rep ? `HTTP ${rep.status}` : 'injoignable' };
+  } else out.email = { source: null, valide: false };
+
+  return out;
+}
+
 // --- Point d'entrée --------------------------------------------------------
 
 Deno.serve(async (req: Request) => {
@@ -627,6 +739,26 @@ Deno.serve(async (req: Request) => {
     // Verrou d'accès — voir le commentaire "QUI A LE DROIT D'ENVOYER" en
     // tête de fichier pour le détail des trois preuves acceptées côté
     // envoi à une personne.
+    // La clé PUBLIQUE de Web Push (publique par nature) : le site la demande ici
+    // plutôt que de l'avoir écrite en dur, pour qu'un changement de clé côté
+    // serveur ne demande pas de republier le site (src/lib/push.js réabonne
+    // alors le navigateur tout seul). Dérivée du même secret que la clé
+    // privée : les deux ne peuvent pas se désaccorder.
+    if (payload.cle_publique === true) {
+      const { cles } = await clesVapid(sb);
+      const pub = (cles as { publicKey?: { x?: string; y?: string } } | null)?.publicKey;
+      if (!pub?.x || !pub?.y) return json({ publicKey: null });
+      return json({ publicKey: base64url(new Uint8Array([4, ...depuisBase64url(pub.x), ...depuisBase64url(pub.y)])) });
+    }
+
+    if (payload.diagnostic === true) {
+      if (!(await hasSharedSecret(sb, req)) && !isServiceRole(req)) {
+        const { isAdmin } = await callerRights(sb, req);
+        if (!isAdmin) return json({ error: 'forbidden' }, 403);
+      }
+      return json({ diagnostic: await diagnostic(sb) });
+    }
+
     if (payload.user_id) {
       if (!(await hasSharedSecret(sb, req)) && !isServiceRole(req)) {
         const { isAdmin } = await callerRights(sb, req);
@@ -669,7 +801,7 @@ Deno.serve(async (req: Request) => {
       }),
     ]);
 
-    return json({ push, native: android + ios, email });
+    return json({ push, android, ios, native: android + ios, email });
   } catch (err) {
     console.error('send-push exception', err);
     return json({ error: 'internal_error' }, 500);

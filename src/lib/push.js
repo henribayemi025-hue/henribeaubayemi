@@ -2,8 +2,9 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from './supabase';
 
-// Public VAPID application-server key (public by design). Hardcoded default so
-// Web Push works even when the host doesn't inject VITE_* at build time.
+// Public VAPID application-server key (public by design). Repli seulement :
+// la clé en vigueur est demandée au serveur (clePubliqueVapid), pour qu'un
+// changement de clé côté serveur n'exige pas de republier le site.
 const VAPID_PUBLIC_KEY =
   import.meta.env.VITE_VAPID_PUBLIC_KEY ||
   'BMd-k0e9sRisx9rduYzSe9TWZx64zvpqjMlIhJP9NtPnsp_fjDxkHKCs17J9emm1NJcd3J3z8pkVGJjx4W6392A';
@@ -138,6 +139,52 @@ export async function linkNativePushToUser(userId) {
 }
 
 // ─── Web Push (navigateur uniquement) ───────────────────────────────────────
+// La clé en vigueur, donnée par send-push à partir du même secret que la clé
+// privée (audit du 01/10 : les clés VAPID sont renouvelées). Repli sur la
+// clé écrite ici si le serveur ne répond pas.
+async function clePubliqueVapid() {
+  try {
+    const { data } = await supabase.functions.invoke('send-push', { body: { cle_publique: true } });
+    if (data?.publicKey) return data.publicKey;
+  } catch {
+    // repli ci-dessous
+  }
+  return VAPID_PUBLIC_KEY;
+}
+
+function memesOctets(a, b) {
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+// Abonne le navigateur avec la clé en vigueur. Un abonnement fait avec une
+// ANCIENNE clé ne peut plus recevoir (le serveur signe avec la nouvelle) et
+// empêche d'en créer un autre : on le résilie d'abord.
+async function abonner(reg) {
+  const voulu = urlBase64ToUint8Array(await clePubliqueVapid());
+  const existant = await reg.pushManager.getSubscription();
+  if (existant) {
+    const actuel = existant.options?.applicationServerKey;
+    if (actuel && memesOctets(new Uint8Array(actuel), voulu)) return existant;
+    await existant.unsubscribe().catch(() => {});
+  }
+  return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: voulu });
+}
+
+async function enregistrer(userId, sub) {
+  const json = sub.toJSON();
+  await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: userId,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth_key: json.keys.auth,
+    },
+    { onConflict: 'endpoint' }
+  );
+}
+
 // Subscribe the browser to Web Push and persist the subscription.
 // Returns { ok, reason }. Degrades cleanly when VAPID isn't configured yet.
 async function enableWebPush(userId) {
@@ -150,21 +197,20 @@ async function enableWebPush(userId) {
   if (permission !== 'granted') return { ok: false, reason: 'denied' };
 
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-  });
-  const json = sub.toJSON();
-  await supabase.from('push_subscriptions').upsert(
-    {
-      user_id: userId,
-      endpoint: json.endpoint,
-      p256dh: json.keys.p256dh,
-      auth_key: json.keys.auth,
-    },
-    { onConflict: 'endpoint' }
-  );
+  await enregistrer(userId, await abonner(reg));
   return { ok: true };
+}
+
+// À chaque ouverture, une personne connectée qui a DÉJÀ dit oui garde un
+// abonnement valable : nouvelle clé côté serveur, abonnement effacé après un
+// échec d'envoi… Jamais de fenêtre de permission ici.
+export async function resyncWebPush(userId) {
+  if (!userId || Capacitor.isNativePlatform()) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) return;
+  await enregistrer(userId, await abonner(reg));
 }
 
 // Point d'entrée unique, appelé par PushPrompt.jsx et Settings.jsx — le
