@@ -427,8 +427,12 @@ export function Conversation({
                       ) : (
                         <p className="whitespace-pre-wrap break-words text-[15.5px] leading-[1.35]">
                           {m.meta?.par_ia ? espacerPhrases(m.texte) : m.texte}
-                          {/* La place de l'heure, pour qu'elle ne chevauche jamais le texte */}
-                          <span className={`inline-block ${mien ? 'w-[58px]' : 'w-[40px]'}`} />
+                          {/* La place de l'heure : une copie invisible de l'étiquette, donc toujours
+                              à sa vraie largeur (« 12:42 PM ✓✓ » débordait de 58 px fixes, Beau 02/10). */}
+                          <span aria-hidden="true" className="invisible ml-1.5 inline-flex items-center gap-0.5 text-[11px]">
+                            {heure(m.created_at, langue)}
+                            {mien && <IconChecks size={15} />}
+                          </span>
                         </p>
                       ))}
                       {(m.meta?.plan || m.meta?.livrable) && (
