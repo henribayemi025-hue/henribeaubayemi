@@ -1,0 +1,6 @@
+{
+  "name": "Finjaro Pulse · Flux IA & Veille Quotidienne",
+  "description": "Flux d'actualité et newsletter IA ultra-premium pour créateurs et ingénieurs. Repos GitHub tendances, prompt engineering du jour et synthèses d'actualités IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

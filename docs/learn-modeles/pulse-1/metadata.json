@@ -1,0 +1,6 @@
+{
+  "name": "Finjaro Pulse - Flux IA",
+  "description": "Section Newsletter & Flux d'Actu IA ultra-premium en dark mode profond avec top repos GitHub, prompt du jour et actualités IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
