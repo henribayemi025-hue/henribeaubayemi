@@ -38,6 +38,7 @@ import { lireFeuille } from '../_shared/feuille.ts';
 import { lireGithub } from '../_shared/github.ts';
 import { lireTickets } from '../_shared/tickets.ts';
 import { blocMarche, blocWiki } from '../_shared/contexte.ts';
+import { derniersPassages, ordreDePassage, tachesDansLOrdre } from '../_shared/rotation.ts';
 import { enqueter, verifsPour, borneVerifs, rechercheGuidee, type Boutique, type Compta } from '../_shared/enquete.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { decideReveil, heureLocale } from '../_shared/reveil.ts';
@@ -498,7 +499,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const equipe = (agents as Agent[]).filter((a) => !a.user_id).map((a) => `- ${a.nom} (${a.poste}${a.departement ? `, ${a.departement}` : ''}) — ${a.actif ? 'allumé' : 'éteint'}`);
 
   const { data: tachesOuvertes } = await service.from('legion_messages').select('id, texte, assigne_a, canal_id, meta, created_at')
-    .eq('entreprise_id', entrepriseId).eq('genre', 'tache').is('termine_le', null).order('created_at').limit(300);
+    .eq('entreprise_id', entrepriseId).eq('genre', 'tache').is('termine_le', null)
+    // Les tâches rendues (« revue ») et faites ne se reprennent pas : on les écarte AVANT la
+    // limite, sinon 185 tâches en revue cachaient les plus récentes à faire (02/10).
+    .or('meta->>statut.is.null,meta->>statut.not.in.(fait,revue)')
+    .order('created_at').limit(300);
   // Une tâche prise il y a moins de 10 minutes est en cours chez quelqu'un
   // (un autre passage tourne peut-être encore) : on ne la refait pas.
   const priseRecemment = (t: Tache) => !!t.meta?.travaille_depuis && Date.now() - Date.parse(t.meta.travaille_depuis) < 10 * 60_000;
@@ -591,7 +596,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   }
 
   // 2. LES LIVRABLES — chaque agent allumé prend sa tâche la plus ancienne.
-  const lot = 3;
+  // Deux agents à la fois (trois avant le 02/10) : le serveur arrêtait encore des passages
+  // de Finjaro faute de mémoire (code 546), et la tranche suivante ne partait pas.
+  const lot = 2;
   // Une tâche URGENTE pas encore livrée n'attend pas le passage suivant.
   const urgente = (a: Agent) => ouvertes.some((t) => t.assigne_a === a.id && t.meta?.priorite === 'urgente' && !t.meta?.livre_le);
   // Au quart d'heure : ses tâches urgentes ou hautes, et — s'il n'a rien rendu depuis trois
@@ -628,7 +635,13 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   // Une invocation ne prend que MAX_AGENTS_PAR_PASSAGE agents (25/09 : les 41 de Finjaro d'un
   // coup dépassaient les ressources du serveur, code 546) ; le reste part dans une tranche
   // suivante, qui relit qui a déjà rendu.
-  const tranche = restants.slice(0, MAX_AGENTS_PAR_PASSAGE);
+  // Le moins récemment servi passe en premier (02/10) : un passage interrompu ne
+  // recommence plus toujours par les mêmes agents en laissant les autres de côté.
+  const { data: livresRecents } = await service.from('legion_messages').select('auteur_id, created_at')
+    .eq('entreprise_id', entrepriseId).gte('created_at', new Date(Date.now() - 14 * 86_400_000).toISOString())
+    .not('meta->livrable', 'is', null).order('created_at', { ascending: false }).limit(1000);
+  const servi = derniersPassages((livresRecents || []) as Array<{ auteur_id: string; created_at: string }>, (tachesOuvertes || []) as Tache[]);
+  const tranche = ordreDePassage(restants, servi).slice(0, MAX_AGENTS_PAR_PASSAGE);
   if (urgences) for (const a of tranche) journal.push(`${entreprise.nom}: ${a.nom} — ${presse(a) ? 'tâche pressante' : decisionDe(a).raison}`);
   for (let i = 0; i < tranche.length; i += lot) {
     if (tempsEcoule()) return true;
@@ -637,9 +650,10 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     await Promise.all(tranche.slice(i, i + lot).map((a) => aPart(async () => {
       // Une tâche urgente ou haute passe avant les plus anciennes (file de
       // priorités, point 7 des « agents autonomes »).
-      const rang = (t: Tache) => ({ urgente: 0, haute: 1 } as Record<string, number>)[t.meta?.priorite || ''] ?? 2;
+      // Puis une tâche jamais rendue avant une tâche rendue qui attend une réponse, et une
+      // tâche essayée moins de trois fois avant une qui échoue (rotation.ts, 02/10).
       const aFaire = (t: Tache) => !urgences || aFaireAuQuart(a, t) || (reveille(a) && prenable(a, t));
-      let tache = ouvertes.filter((t) => t.assigne_a === a.id && aFaire(t)).sort((x, y) => rang(x) - rang(y))[0];
+      let tache = tachesDansLOrdre(ouvertes.filter((t) => t.assigne_a === a.id && aFaire(t)))[0];
       // Sans tâche, un agent ne reste plus les bras croisés (Beau, 24/09 :
       // « vous ne devez pas attendre que je vous demande quelque chose ») :
       // il se donne l'initiative du jour, dans son métier, et la livre.
