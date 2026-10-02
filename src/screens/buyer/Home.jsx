@@ -20,7 +20,7 @@ import { isPriceOnRequest } from '../../lib/categories';
 export default function Home() {
   const { t } = useTranslation();
   const { count } = useCart();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { country } = useSettings();
   const [data, setData] = useState(homeCache);
   const [loading, setLoading] = useState(!homeCache);
@@ -202,6 +202,27 @@ export default function Home() {
             <IconChevronRight size={18} className="shrink-0 text-brass" />
           </Link>
         </section>
+
+        {/* L'offre aux vendeuses, visible depuis l'accueil (agent Atelier, 02/10 :
+            elle n'était lisible que dans la recherche et le profil). Même bande
+            fine que les services ; masquée pour qui a déjà une boutique. */}
+        {!profile?.is_vendor && (
+          <section className="mt-2 px-4">
+            <Link
+              to="/become-vendor"
+              className="flex items-center gap-3 rounded-card border border-teal/25 bg-teal-light/40 px-3.5 py-3 shadow-sm transition-transform duration-150 active:scale-[0.99]"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-teal shadow-sm">
+                <IconBuildingStore size={19} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-body font-semibold text-ink">{t('search.becomeVendorCta')}</span>
+                <span className="block truncate text-caption text-muted">{t('search.becomeVendorHint')}</span>
+              </span>
+              <IconChevronRight size={18} className="shrink-0 text-teal" />
+            </Link>
+          </section>
+        )}
 
         {loading ? (
           <div className="space-y-4 p-4">

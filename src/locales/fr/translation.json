@@ -3116,6 +3116,7 @@
   "becomeVendor": {
     "title": "Devenir vendeur",
     "stepLabel": "Étape {{current}} sur 4",
+    "offre": "Ouvrir ta boutique est gratuit jusqu'en novembre, et les boutiques ouvertes avant gardent la gratuité.",
     "step1Title": "Ta boutique",
     "step2Title": "Tes informations personnelles",
     "step3Title": "Profil public",

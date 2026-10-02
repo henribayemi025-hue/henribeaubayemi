@@ -199,6 +199,10 @@ export default function BecomeVendor() {
       <div className="space-y-4 p-4">
         {step === 1 && (
           <>
+            {/* L'offre, au moment où la vendeuse décide (Beau, 18/09 : « gratuit
+                jusqu'en novembre », le mois s'écrit ; l'agent Atelier, 02/10 : elle
+                n'était écrite nulle part sur cette page). */}
+            <p className="rounded-card border border-brass/40 bg-brass/10 p-3 text-caption text-ink">{t('becomeVendor.offre')}</p>
             <h2 className="text-section text-ink">{t('becomeVendor.step1Title')}</h2>
             <Field label={providerWording ? t('becomeVendor.providerName') : t('becomeVendor.shopName')} required>{(id) => <TextInput id={id} value={form.shop_name} onChange={(e) => set({ shop_name: e.target.value })} />}</Field>
             <Field label={t('becomeVendor.country')} required>{(id) => <Select id={id} value={form.country} onChange={(e) => set({ country: e.target.value })}>{COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}</Select>}</Field>

@@ -3116,6 +3116,7 @@
   "becomeVendor": {
     "title": "Become a vendor",
     "stepLabel": "Step {{current}} of 4",
+    "offre": "Opening your shop is free until November, and shops opened before then stay free.",
     "step1Title": "Your shop",
     "step2Title": "Your personal details",
     "step3Title": "Public profile",
