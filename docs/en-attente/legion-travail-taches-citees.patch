@@ -1,0 +1,44 @@
+diff --git a/supabase/functions/legion-travail/index.ts b/supabase/functions/legion-travail/index.ts
+index d804112..b7a81b5 100644
+--- a/supabase/functions/legion-travail/index.ts
++++ b/supabase/functions/legion-travail/index.ts
+@@ -40,6 +40,7 @@ import { lireTickets } from '../_shared/tickets.ts';
+ import { blocMarche, blocWiki } from '../_shared/contexte.ts';
+ import { derniersPassages, ordreDePassage, tachesDansLOrdre } from '../_shared/rotation.ts';
+ import { enqueter, verifsPour, borneVerifs, rechercheGuidee, type Boutique, type Compta } from '../_shared/enquete.ts';
++import { identifiantsCites, blocCites, type Cite } from '../_shared/cites.ts';
+ import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
+ import { decideReveil, heureLocale } from '../_shared/reveil.ts';
+ 
+@@ -716,11 +717,30 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
+           .eq('meta->livrable->>tache_id', tache.meta.suite_de.tache_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+         if (avant?.texte) recu = `\n\nCETTE TÂCHE T'EST PASSÉE EN RELAIS par ${tache.meta.suite_de.par}, qui vient de livrer « ${tache.meta.suite_de.tache} ». SON LIVRABLE (pars de là, ne le refais pas):\n${String(avant.texte).slice(0, 3000)}`;
+       }
++      // Les tâches citées par leur identifiant (relecture, reprise) : leur
++      // texte et leur dernier livrable, dans la même entreprise seulement.
++      let cites = '';
++      const ids = identifiantsCites(String(tache.texte || ''), tache.id);
++      if (ids.length) {
++        const [{ data: tc }, { data: lv }] = await Promise.all([
++          service.from('legion_messages').select('id, texte, assigne_a, meta').eq('entreprise_id', entrepriseId).eq('genre', 'tache').in('id', ids),
++          service.from('legion_messages').select('texte, created_at, meta').eq('entreprise_id', entrepriseId).in('meta->livrable->>tache_id', ids).order('created_at', { ascending: false }).limit(ids.length * 3),
++        ]);
++        const dernier = new Map<string, { texte: string; created_at: string }>();
++        for (const l of (lv || []) as { texte: string; created_at: string; meta: { livrable?: { tache_id?: string } } }[]) {
++          const t = l.meta?.livrable?.tache_id;
++          if (t && !dernier.has(t)) dernier.set(t, l);
++        }
++        const liste: Cite[] = ((tc || []) as { id: string; texte: string; assigne_a: string | null; meta: { statut?: string } | null }[])
++          .sort((x, y) => ids.indexOf(x.id) - ids.indexOf(y.id))
++          .map((t) => ({ id: t.id, texte: t.texte, agent: t.assigne_a ? nomDe(t.assigne_a) : undefined, statut: t.meta?.statut, livrable: dernier.get(t.id)?.texte ?? null, livre_le: dernier.get(t.id)?.created_at ?? null }));
++        cites = blocCites(liste);
++      }
+       // Sa mémoire à lui (0185): ce qu'il a déjà livré de proche, les leçons
+       // reçues, ce qui a plu.
+       await rattraper(service, apiKey, entrepriseId, a.id);
+       const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte), 3, () => String(tache.texte || ''));
+-      const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
++      const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + cites + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
+       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
+       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
+       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
