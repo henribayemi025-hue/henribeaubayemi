@@ -112,7 +112,7 @@ export const LETTRE_PREPROD = {
   key: 'lettre-ia',
   name: "La Lettre de l'IA",
   tagline: "Chaque jour : les nouveautés de l'IA, les dépôts GitHub à suivre, une astuce.",
-  url: 'https://finjaro.net/learn/#lettre',
+  url: 'https://finjaro.net/learn/#/lettre',
   emoji: '📰',
   accent: 'brass',
   audience: 'tous',
