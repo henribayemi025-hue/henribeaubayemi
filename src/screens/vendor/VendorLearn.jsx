@@ -162,7 +162,7 @@ export default function VendorLearn() {
               <p className="text-body font-semibold text-ink">{t('learn.comptes.titre')}</p>
               <p className="mt-0.5 text-caption text-muted">{t('learn.comptes.quoi')}</p>
               <a
-                href="https://accounting.finjaro.net"
+                href="https://accounting.finjaro.net/?src=apprendre-finjaro"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-1 rounded-pill bg-teal px-3 py-2 text-caption font-semibold text-white"
