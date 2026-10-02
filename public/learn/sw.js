@@ -37,11 +37,24 @@ const networkFirst = async (req) => {
   }
 }
 
+// La lettre change chaque jour : réseau d'abord, dernière copie lue en secours hors ligne.
+const reseauDabord = async (req) => {
+  const c = await caches.open(CACHE)
+  try {
+    const res = await fetch(req)
+    if (res.ok) c.put(req, res.clone())
+    return res
+  } catch {
+    return (await c.match(req, { ignoreSearch: true })) || Response.error()
+  }
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (req.mode === 'navigate' && url.origin === location.origin && url.pathname.startsWith(SCOPE)) return e.respondWith(networkFirst(req))
+  if (url.origin === location.origin && url.pathname.startsWith(SCOPE + 'lettre/')) return e.respondWith(reseauDabord(req))
   if (url.origin === location.origin && url.pathname.startsWith(SCOPE + 'assets/')) return e.respondWith(cacheFirst(req))
   if (url.origin === location.origin && url.pathname.startsWith(SCOPE + 'visages/')) return e.respondWith(cacheFirst(req))
   if (req.url.startsWith(PYODIDE)) return e.respondWith(cacheFirst(req))
