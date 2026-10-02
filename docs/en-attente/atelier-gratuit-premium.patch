@@ -1,0 +1,663 @@
+diff --git a/atelier/src/atelier.js b/atelier/src/atelier.js
+index 6eaea6f..5309dd1 100644
+--- a/atelier/src/atelier.js
++++ b/atelier/src/atelier.js
+@@ -22,6 +22,7 @@ import { fabriquerZip } from './zip.js';
+ import { DEPARTS } from './departs.js';
+ import { enregistreur } from './supabase.js';
+ import { equipe } from './equipe.js';
++import { formuleDe, modelesPermis, plafondPour, MESSAGE_SANS_MACHINE } from './formule.js';
+ 
+ const TAILLE_PROJET_MAX = 5_000_000;
+ const NB_FICHIERS_MAX = 1000;
+@@ -144,6 +145,9 @@ export class Atelier extends DurableObject {
+       leo: acces.leo || null,
+       jeton: acces.jeton || null,
+       relais: acces.relais || [],
++      // La formule (formule.js) : modèles permis, et pas de machine en gratuit.
++      permis: acces.formule?.modeles || null,
++      sansMachine: acces.formule ? !acces.formule.machine : false,
+       fichiers,
+       get bac() {
+         bac ||= executant({ sandbox: getSandbox(env.Sandbox, `p-${pid}`, { sleepAfter: env.ATELIER_VEILLE || '10m' }), etat: e, fichiers, veilleSecondes: veilleSecondes(env) });
+@@ -168,6 +172,8 @@ export class Atelier extends DurableObject {
+   // quoi leur confier du travail. Une panne de lecture ne bloque pas l'atelier.
+   async brancherEquipe(pid, e, acces) {
+     if (!e.projet.entreprise_id || !acces?.jeton) return acces;
++    // L'équipe de Léo travaille aux frais de l'entreprise : formule Premium.
++    if (acces.formule && !acces.formule.machine) return acces;
+     const leo = equipe({ env: this.env, jeton: acces.jeton, user: acces.user, entrepriseId: e.projet.entreprise_id, pid, attendre: (p) => this.ctx.waitUntil?.(p) });
+     if (!leo) return acces;
+     let cache = this.equipes.get(pid);
+@@ -187,6 +193,9 @@ export class Atelier extends DurableObject {
+     // Une seule boucle à la fois par projet.
+     if (this.controleurs.has(pid)) throw new Error('L\'agent travaille déjà : attends, ou appuie sur Stop.');
+     acces = await this.brancherEquipe(pid, e, acces);
++    // Le plafond de la séance suit la formule du moment (gratuit → Premium
++    // le relève, l'inverse le baisse), jamais au-dessus de celui du Worker.
++    if (acces.formule) e.session.plafond = plafondPour(acces.formule.nom, plafondSession(this.env));
+     const deps = this.deps(pid, e, trace, acces);
+     // La trace Supabase peut avoir été branchée après la création du projet
+     // (migration appliquée plus tard) : on (ré)écrit le projet et la session.
+@@ -210,7 +219,9 @@ export class Atelier extends DurableObject {
+       projet: e.projet,
+       mode: e.mode,
+       modele: e.modele,
+-      modeles: disponibles(env, { geminiCoupe: e.geminiCoupeLe === new Date().toISOString().slice(0, 10), relais: this.relaisVus || [] }),
++      modeles: disponibles(env, { geminiCoupe: e.geminiCoupeLe === new Date().toISOString().slice(0, 10), relais: this.relaisVus || [], permis: this.formuleVue?.modeles || null }),
++      formule: this.formuleVue?.nom || 'premium',
++      machine: this.formuleVue ? this.formuleVue.machine : true,
+       session: {
+         id: s.id, debut: s.debut, statut: s.statut, raison: s.raison, plafond: s.plafond,
+         cout_modele: arrondi(s.coutModele), cout_machine: arrondi(s.coutMachine), cout: coutSession(s),
+@@ -241,9 +252,11 @@ export class Atelier extends DurableObject {
+     if (!user) return erreur('non authentifié', 401);
+     const trace = enregistreur(this.env, jeton);
+     // Les modèles du relais Supabase pour ce jeton (gardés 5 min par moteur.js).
+-    const relais = await modelesRelais(this.env, jeton);
++    const formule = formuleDe(request.headers.get('x-atelier-formule'));
++    this.formuleVue = formule;
++    const relais = modelesPermis(formule.nom, await modelesRelais(this.env, jeton));
+     this.relaisVus = relais;
+-    const acces = { jeton, relais, user };
++    const acces = { jeton, relais, user, formule };
+     const p = url.pathname.replace(/^\/api/, '').split('/').filter(Boolean);
+     const methode = request.method;
+     const corps = ['POST', 'PUT'].includes(methode) ? await request.json().catch(() => ({})) : {};
+@@ -266,13 +279,13 @@ export class Atelier extends DurableObject {
+         if (!nom) return erreur('Donne un nom au projet.');
+         const depart = DEPARTS[corps.depart] ? corps.depart : 'vide';
+         const liste = await this.projets();
+-        if (liste.length >= 30) return erreur('30 projets au plus en V0.');
++        if (liste.length >= formule.projetsMax) return erreur(formule.machine ? `${formule.projetsMax} projets au plus.` : `${formule.projetsMax} projets au plus en formule gratuite.`, 402);
+         // L'entreprise de Léo d'où l'on crée le projet (vérifiée par les règles
+         // d'accès de la base : il faut en être membre, sinon rien n'est rattaché).
+         const entreprise = ENT.test(String(corps.entreprise_id || '')) ? corps.entreprise_id : null;
+         if (entreprise && !(await this.estMembre(jeton, user, entreprise))) return erreur('Tu n\'es pas membre de cette entreprise.', 403);
+         const projet = { id: crypto.randomUUID(), nom, depart, cree_le: new Date().toISOString(), entreprise_id: entreprise };
+-        const e = nouvelEtat(projet, new Date(), plafondSession(this.env));
++        const e = nouvelEtat(projet, new Date(), plafondPour(formule.nom, plafondSession(this.env)));
+         e.proprietaire = user;
+         e.sales = {};
+         e.index = {};
+@@ -335,6 +348,7 @@ export class Atelier extends DurableObject {
+       // « toujours refusé » tient, le plafond de la session aussi, et tout
+       // s'écrit au journal et dans le terminal.
+       if (action === 'commande' && methode === 'POST') {
++        if (!formule.machine) return erreur(MESSAGE_SANS_MACHINE, 402);
+         if (['en_cours', 'attente'].includes(e.session.statut)) return erreur('L\'agent travaille : attends ou appuie sur Stop avant de taper une commande.', 409);
+         const commande = normaliserCommande(corps.commande);
+         if (!commande) return erreur('commande vide');
+@@ -423,7 +437,7 @@ export class Atelier extends DurableObject {
+         e.session.statut = 'fermee';
+         e.session.fin = new Date().toISOString();
+         await trace.session(this.sessionPourSupabase(pid, e));
+-        e.session = nouvelleSession(new Date(), plafondSession(this.env));
++        e.session = nouvelleSession(new Date(), plafondPour(formule.nom, plafondSession(this.env)));
+         e.conversation = [];
+         e.affichage = [];
+         e.file = [];
+diff --git a/atelier/src/boucle.js b/atelier/src/boucle.js
+index f906798..82c148f 100644
+--- a/atelier/src/boucle.js
++++ b/atelier/src/boucle.js
+@@ -15,6 +15,7 @@ import { evaluer, regleDepuis, signatureEchec, cheminSur, outilsPourMode, normal
+ import { appeler, ordre, cleDe, ErreurMoteur } from './moteur.js';
+ import { coutAppel, estimationMaxAppel, arrondi } from './cout.js';
+ import { diff } from './diff.js';
++import { MESSAGE_SANS_MACHINE } from './formule.js';
+ 
+ // 80 appels au modèle par demande (30 jusqu'au 25/09 : Ada s'est arrêtée au milieu
+ // du tableur, un vrai travail long). Le plafond de dépense reste la vraie barrière.
+@@ -109,10 +110,15 @@ export const OUTILS_EQUIPE = {
+   },
+ };
+ 
+-export function definitionsOutils(mode, avecEquipe = false) {
+-  return outilsPourMode(mode, avecEquipe).map((nom) => ({ type: 'function', function: { name: nom, ...(OUTILS[nom] || OUTILS_EQUIPE[nom]) } }));
++export function definitionsOutils(mode, avecEquipe = false, avecMachine = true) {
++  return outilsPourMode(mode, avecEquipe, avecMachine).map((nom) => ({ type: 'function', function: { name: nom, ...(OUTILS[nom] || OUTILS_EQUIPE[nom]) } }));
+ }
+ 
++// Formule gratuite (formule.js) : pas de machine. L'agent le sait, pour ne
++// pas promettre un « npm install » qu'il ne peut pas lancer.
++const BLOC_GRATUIT = `
++- CE PROJET EST EN FORMULE GRATUITE : tu n'as PAS d'outil « commande » (ni terminal, ni npm, ni Python). Tu lis, écris et montres les fichiers ; l'aperçu tourne dans le navigateur de l'humain. Fais donc des pages qui marchent sans installation (HTML, CSS, JavaScript du navigateur, bibliothèques chargées par un lien CDN). Si l'humain demande une commande, dis-lui simplement qu'elle fait partie de l'atelier Premium, puis propose ce que tu peux faire sans.`;
++
+ const ETATS_COLLEGUE = (a) => (a.actif ? (a.peut_coder ? 'allumé, peut coder' : 'allumé') : 'en veille');
+ export function blocEquipe(ctx) {
+   if (!ctx) return '';
+@@ -129,7 +135,7 @@ ${autres.join('\n') || '- (aucun pour l\'instant)'}${ctx.agents.length > 41 ? '\
+ Tu ne travailles PAS seul. Tu vois ton équipe (outil « equipe »), tu confies du travail à un collègue (« confier_a_collegue » : il s'y met tout de suite), tu lis ce qu'ils ont rendu (« travail_collegues »), et tu peux proposer une recrue au fondateur (« recruter », il décide sur une carte). Quand l'humain parle de l'entreprise, du projet ou de « la marketplace », c'est de CE projet-là qu'il parle. Répartis le travail comme un vrai chef d'équipe : les tests à celui qui teste, les textes à celui qui écrit, et relis ce qu'ils rendent avant de l'utiliser. Ne dis jamais que tu ne peux pas voir, joindre ou coordonner tes collègues.`;
+ }
+ 
+-export function consigneSysteme(etat, equipe = null) {
++export function consigneSysteme(etat, equipe = null, { sansMachine = false } = {}) {
+   const base = `Tu es le Codeur de l'Atelier de Léo. Tu travailles sur le projet « ${etat.projet?.nom || 'sans nom'} », dans un bac à sable isolé.
+ 
+ Règles qui ne changent jamais :
+@@ -148,7 +154,7 @@ Règles qui ne changent jamais :
+   4. Quand la séance approche de 80 % de son plafond, préviens l'humain et propose de finir proprement (bilan, fichiers en état) plutôt que de t'arrêter au milieu.
+   5. En fin de séance, un bilan des fichiers : créés, modifiés, ce qui reste à faire, comment vérifier.
+ - QUAND TU FAIS UN ÉCRAN (page web, application), vise le niveau d'un vrai studio, pas celui d'un exercice. Avant d'écrire : choisis une direction visuelle qui vient du sujet (4 à 6 couleurs en variables CSS, deux polices Google Fonts qui vont ensemble, une échelle de tailles). Puis : une vraie hiérarchie (en-tête, section principale forte, sections qui respirent), une grille de 8 px, une largeur de lecture maîtrisée, des cartes aux mêmes bords et aux mêmes espacements, des états survol et focus visibles, un contraste lisible, et un rendu propre à 390 px de large comme sur grand écran. Des icônes en SVG, jamais des émojis en guise d'icônes. Du vrai contenu plausible, jamais de « lorem ipsum ». Aucune photo prise sur le web : des dégradés, des formes, ou un emplacement « photo de la vendeuse » clairement marqué. AUCUNE statistique ni preuve sociale inventée : pas de « 12 400 annonces », de « 98 % de satisfaits », de note moyenne, d'avis, d'étoiles, de badge « vérifié » ou de nom de client — l'entreprise n'a pas ces chiffres (Awa l'a fait le 25/09, c'est interdit). Si la maquette a besoin d'un exemple (une annonce, un prix), il porte visiblement la mention « Exemple ». Une fois écrit, relis ton code comme un directeur artistique exigeant et corrige ce qui fait « modèle par défaut » avant d'annoncer.
+-- L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.${blocEquipe(equipe)}`;
++- L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.${sansMachine ? BLOC_GRATUIT : ''}${blocEquipe(equipe)}`;
+   if (etat.mode === 'reflechir') {
+     return `${base}
+ 
+@@ -289,6 +295,9 @@ async function executer(outil, args, etat, deps) {
+     return { ok: existait, texte: existait ? `Supprimé : ${chemin}.` : `Fichier introuvable : ${chemin}` };
+   }
+   if (outil === 'commande') {
++    // Formule gratuite (formule.js) : pas de machine, même si le modèle
++    // demande l'outil sans qu'on le lui ait proposé.
++    if (deps.sansMachine) return { ok: false, texte: `Refusé : ${MESSAGE_SANS_MACHINE}` };
+     // Le plafond vaut aussi pour la machine : 2 minutes au pire.
+     const pire = (deps.prixMachineSeconde || 0) * 180;
+     if (coutSession(etat.session) + pire > etat.session.plafond) {
+@@ -418,10 +427,10 @@ export async function continuer(etat, deps) {
+     // 2. Le modèle.
+     if (etat.pas >= MAX_PAS) { arreter(etat, deps, 'arrete', `Arrêt après ${MAX_PAS} étapes : dis-moi si je continue.`); await deps.sauver(); return etat; }
+     // deps.relais : les modèles que le relais Supabase propose (moteur.js).
+-    const candidats = ordre(env, etat.modele, { geminiCoupe: etat.geminiCoupeLe === deps.maintenant().toISOString().slice(0, 10), relais: deps.relais || [] });
++    const candidats = ordre(env, etat.modele, { geminiCoupe: etat.geminiCoupeLe === deps.maintenant().toISOString().slice(0, 10), relais: deps.relais || [], permis: deps.permis || null });
+     if (!candidats.length) { arreter(etat, deps, 'erreur', 'Aucun modèle disponible : aucune clé dans le Worker, et le relais Supabase n\'en propose aucun. Si ta connexion à Léo a expiré, recharge la page.'); await deps.sauver(); return etat; }
+-    const messages = [{ role: 'system', content: consigneSysteme(etat, deps.leo?.ctx) }, ...compacter(etat.conversation)];
+-    const outils = definitionsOutils(etat.mode, !!deps.leo?.ctx);
++    const messages = [{ role: 'system', content: consigneSysteme(etat, deps.leo?.ctx, { sansMachine: !!deps.sansMachine }) }, ...compacter(etat.conversation)];
++    const outils = definitionsOutils(etat.mode, !!deps.leo?.ctx, !deps.sansMachine);
+     const caracteres = tailleConversation(messages) + JSON.stringify(outils).length;
+     let rendu = null;
+     let modele = null;
+diff --git a/atelier/src/formule.js b/atelier/src/formule.js
+new file mode 100644
+index 0000000..2f2c30b
+--- /dev/null
++++ b/atelier/src/formule.js
+@@ -0,0 +1,63 @@
++// LES DEUX FORMULES DE L'ATELIER (Beau, 02/10 : « comme VS Code : ça marche
++// normalement même si tu ne payes pas, seulement certaines fonctionnalités
++// ne marchent pas »).
++//
++// - GRATUIT, pour tout compte connecté (Léo ou Learn, le même compte) :
++//   l'éditeur, les fichiers du projet, l'aperçu de la page (il tourne dans le
++//   navigateur de la personne : il ne nous coûte rien), l'agent avec les
++//   modèles les moins chers, un petit plafond par séance. Pas de machine :
++//   ni terminal, ni commande lancée par l'agent (le conteneur est ce qui
++//   coûte).
++// - PREMIUM : tout — la machine (terminal, npm, Python), tous les modèles,
++//   le plafond de séance réglé dans le Worker, l'équipe de Léo. Accordé à
++//   une entreprise par l'équipe Finjaro seulement (legion_entreprises.premium,
++//   protégé par un déclencheur), ou à un identifiant de ATELIER_UTILISATEURS.
++//
++// Ce module est pur : testé tel quel (test/formule.test.js). La fonction
++// Supabase atelier-modele applique les MÊMES modèles et son propre plafond
++// du jour : le Worker ne décide pas seul de ce qui se dépense.
++
++// Les moins chers des modèles publiés (cout.js) : quelques centimes pour une
++// vraie séance de travail. Dans l'ordre d'« Auto ».
++export const MODELES_GRATUITS = ['ds:deepseek-flash', 'gm:gemini-2.5-flash'];
++
++export const FORMULES = {
++  gratuit: {
++    nom: 'gratuit',
++    machine: false,
++    modeles: MODELES_GRATUITS,
++    plafondSessionUsd: 0.05,
++    projetsMax: 5,
++  },
++  premium: {
++    nom: 'premium',
++    machine: true,
++    modeles: null, // tous ceux qui ont une clé
++    plafondSessionUsd: null, // celui du Worker (ATELIER_PLAFOND_SESSION_USD)
++    projetsMax: 30,
++  },
++};
++
++export function formuleDe(nom) {
++  return FORMULES[nom] || FORMULES.gratuit;
++}
++
++// Premium si l'identifiant est dans la liste du Worker, ou si la personne
++// voit au moins une entreprise Premium dont elle est membre.
++export function choisirFormule({ dansListe = false, entreprisesPremium = 0 } = {}) {
++  return dansListe || entreprisesPremium > 0 ? 'premium' : 'gratuit';
++}
++
++// Les modèles qu'une formule permet, parmi ceux qui sont joignables.
++export function modelesPermis(formule, modeles) {
++  const f = formuleDe(formule);
++  return f.modeles ? modeles.filter((m) => f.modeles.includes(m)) : [...modeles];
++}
++
++// Le plafond d'une séance : jamais plus haut que celui du Worker.
++export function plafondPour(formule, plafondWorker) {
++  const f = formuleDe(formule);
++  return f.plafondSessionUsd == null ? plafondWorker : Math.min(f.plafondSessionUsd, plafondWorker);
++}
++
++export const MESSAGE_SANS_MACHINE = 'Le terminal et les commandes font partie de l\'atelier Premium. En gratuit, tu gardes l\'éditeur, l\'aperçu de la page et l\'agent pour écrire le code.';
+diff --git a/atelier/src/index.js b/atelier/src/index.js
+index 606dff5..506a173 100644
+--- a/atelier/src/index.js
++++ b/atelier/src/index.js
+@@ -5,8 +5,8 @@
+ //
+ // Trois pièces :
+ // 1. Ce point d'entrée : origines permises (CORS), vérification de la
+-//    session Supabase, accès réservé (V0 : Beau), puis passage au Durable
+-//    Object de la personne.
++//    session Supabase, formule gratuite ou Premium (formule.js, 02/10), puis
++//    passage au Durable Object de la personne.
+ // 2. `Atelier` (atelier.js) : les projets, la boucle de l'agent, le journal.
+ // 3. `AtelierSandbox` : le bac à sable Cloudflare (Sandbox SDK
+ //    @cloudflare/sandbox 0.12.10), un par projet, SANS AUCUNE CLÉ, réseau
+@@ -27,6 +27,7 @@ import { disponibles, modelesRelais } from './moteur.js';
+ import { plafondSession } from './atelier.js';
+ import { HOTES_PERMIS, sortiePermise } from './politique.js';
+ import { voirEcran } from './ecran.js';
++import { formuleDe, modelesPermis, plafondPour } from './formule.js';
+ 
+ export { Atelier } from './atelier.js';
+ // Nécessaire pour que le filtrage du réseau sortant fonctionne (doc
+@@ -115,18 +116,27 @@ export default {
+     const jeton = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+     const qui = await identifier(env, jeton).catch(() => null);
+     if (!qui) return avec(Response.json({ erreur: 'Connecte-toi à Léo.' }, { status: 401 }), entetes);
+-    if (!qui.autorise) return avec(Response.json({ erreur: 'L\'atelier est réservé pour l\'instant.' }, { status: 403 }), entetes);
++    const formule = formuleDe(qui.formule);
+ 
+     if (url.pathname === '/api/moi') {
+-      // Les modèles du Worker ET ceux du relais Supabase (clés de Léo).
++      // Les modèles du Worker ET ceux du relais Supabase (clés de Léo), dans
++      // la limite de la formule (formule.js).
+       const relais = await modelesRelais(env, jeton);
+-      return avec(Response.json({ user: qui.user, modeles: disponibles(env, { relais }), plafond_session_usd: plafondSession(env), taille: env.ATELIER_TAILLE || 'standard-1' }), entetes);
++      return avec(Response.json({
++        user: qui.user,
++        formule: formule.nom,
++        machine: formule.machine,
++        modeles: modelesPermis(formule.nom, disponibles(env, { relais })),
++        plafond_session_usd: plafondPour(formule.nom, plafondSession(env)),
++        projets_max: formule.projetsMax,
++        taille: env.ATELIER_TAILLE || 'standard-1',
++      }), entetes);
+     }
+ 
+     const stub = env.ATELIER.get(env.ATELIER.idFromName(qui.user.id));
+     const transmis = new Request(request.url, {
+       method: request.method,
+-      headers: { 'Content-Type': 'application/json', 'x-atelier-user': qui.user.id, 'x-atelier-jeton': jeton },
++      headers: { 'Content-Type': 'application/json', 'x-atelier-user': qui.user.id, 'x-atelier-jeton': jeton, 'x-atelier-formule': formule.nom },
+       body: ['POST', 'PUT'].includes(request.method) ? await request.text() : undefined,
+     });
+     return avec(await stub.fetch(transmis), entetes);
+diff --git a/atelier/src/moteur.js b/atelier/src/moteur.js
+index 1be8e68..4a88c3c 100644
+--- a/atelier/src/moteur.js
++++ b/atelier/src/moteur.js
+@@ -63,8 +63,9 @@ export const cleDe = (env, m) => {
+ 
+ // `relais` : les modèles que la fonction Supabase atelier-modele propose
+ // pour cette personne (modelesRelais) ; une clé du Worker suffit sinon.
+-export function disponibles(env, { geminiCoupe = false, relais = [] } = {}) {
+-  return MODELES.filter((m) => (cleDe(env, m) || relais.includes(m)) && !(geminiCoupe && m.startsWith('gm:')));
++// `permis` : les modèles de la formule (formule.js) ; null = tous.
++export function disponibles(env, { geminiCoupe = false, relais = [], permis = null } = {}) {
++  return MODELES.filter((m) => (cleDe(env, m) || relais.includes(m)) && !(geminiCoupe && m.startsWith('gm:')) && (!permis || permis.includes(m)));
+ }
+ 
+ // ——— Le relais Supabase ———
+@@ -122,7 +123,8 @@ export async function modelesRelais(env, jeton, fetchFn = fetch) {
+ // L'ordre d'essai pour un choix donné (« auto » ou un modèle précis).
+ export function ordre(env, choix = 'auto', etat = {}) {
+   const reglage = String(env?.ATELIER_MODELES || '').split(',').map((s) => s.trim()).filter((m) => MODELES.includes(m));
+-  const auto = (reglage.length ? reglage : AUTO_PAR_DEFAUT);
++  // En formule gratuite, Auto passe par les modèles permis, dans leur ordre.
++  const auto = etat.permis ? [...etat.permis] : (reglage.length ? reglage : AUTO_PAR_DEFAUT);
+   const dispo = new Set(disponibles(env, etat));
+   // Un modèle choisi, c'est CE modèle seulement, sans relais vers un autre
+   // (Beau, 25/09 : « on dit qu'elle travaille seulement avec DeepSeek, pour
+diff --git a/atelier/src/politique.js b/atelier/src/politique.js
+index e254abb..03fa47f 100644
+--- a/atelier/src/politique.js
++++ b/atelier/src/politique.js
+@@ -38,9 +38,10 @@ export const OUTILS_COMMANDE = ['commande'];
+ export const OUTILS_EQUIPE_LECTURE = ['equipe', 'travail_collegues'];
+ export const OUTILS_EQUIPE_ACTION = ['confier_a_collegue', 'recruter'];
+ 
+-export function outilsPourMode(mode, avecEquipe = false) {
++// `avecMachine` : faux en formule gratuite (formule.js) — pas de commande.
++export function outilsPourMode(mode, avecEquipe = false, avecMachine = true) {
+   const equipe = avecEquipe ? OUTILS_EQUIPE_LECTURE : [];
+-  if (MODES_ACTION.includes(mode)) return [...OUTILS_LECTURE, ...equipe, ...OUTILS_ECRITURE, ...OUTILS_COMMANDE, ...(avecEquipe ? OUTILS_EQUIPE_ACTION : [])];
++  if (MODES_ACTION.includes(mode)) return [...OUTILS_LECTURE, ...equipe, ...OUTILS_ECRITURE, ...(avecMachine ? OUTILS_COMMANDE : []), ...(avecEquipe ? OUTILS_EQUIPE_ACTION : [])];
+   return [...OUTILS_LECTURE, ...equipe];
+ }
+ 
+diff --git a/atelier/src/supabase.js b/atelier/src/supabase.js
+index dfc4066..8c52319 100644
+--- a/atelier/src/supabase.js
++++ b/atelier/src/supabase.js
+@@ -2,9 +2,9 @@
+ //
+ // - Le Worker vérifie la session Supabase de l'utilisateur (son jeton
+ //   d'accès) auprès de Supabase lui-même.
+-// - Qui entre : le PROPRIÉTAIRE de n'importe quelle entreprise de Léo (depuis
+-//   le 25/09), ou un identifiant listé dans ATELIER_UTILISATEURS — lu dans
+-//   legion_membres avec SON jeton, sous les règles d'accès déjà en place.
++// - Qui entre : tout compte connecté (depuis le 02/10), en formule gratuite ou
++//   Premium (formule.js) — Premium lu dans legion_entreprises avec SON jeton,
++//   sous les règles d'accès déjà en place, ou par ATELIER_UTILISATEURS.
+ // - Aucune clé de service : le Worker n'a que la clé publique (celle qui est
+ //   déjà dans chaque navigateur) et le jeton de la personne. Il écrit donc
+ //   dans les tables atelier_* sous les règles d'accès (RLS), comme elle.
+@@ -12,7 +12,9 @@
+ //   appliquée, l'atelier marche quand même (tout est aussi gardé dans le
+ //   Durable Object), et on le dit une fois dans les journaux du Worker.
+ 
+-const cacheAcces = new Map(); // jeton → { user, autorise, expire }
++import { choisirFormule } from './formule.js';
++
++const cacheAcces = new Map(); // jeton → { user, autorise, formule, expire }
+ 
+ function entetes(env, jeton) {
+   return { apikey: env.SUPABASE_ANON_KEY, Authorization: `Bearer ${jeton}`, 'Content-Type': 'application/json' };
+@@ -27,19 +29,23 @@ export async function identifier(env, jeton, fetchFn = fetch) {
+   const user = await r.json();
+   if (!user?.id) return null;
+   const liste = String(env.ATELIER_UTILISATEURS || '').split(',').map((s) => s.trim()).filter(Boolean);
+-  let autorise = liste.includes(user.id);
+-  // 25/09 (Beau : « tout ce qu'on construit, tout le monde doit y avoir
+-  // accès ») : l'atelier est ouvert au PROPRIÉTAIRE de n'importe quelle
+-  // entreprise de Léo, plus l'ancienne porte (entreprise Finjaro) si elle est
+-  // réglée. Le plafond par séance et par jour et par personne reste la règle.
+-  if (!autorise) {
+-    const q = await fetchFn(`${env.SUPABASE_URL}/rest/v1/legion_membres?select=role,entreprise_id&user_id=eq.${encodeURIComponent(user.id)}&role=eq.proprietaire&limit=1`, { headers: entetes(env, jeton) });
+-    if (q.ok) {
+-      const lignes = await q.json();
+-      autorise = Array.isArray(lignes) && lignes.some((l) => l.role === 'proprietaire');
++  // 02/10 (Beau : « comme VS Code, ça marche même si tu ne payes pas ») :
++  // tout compte connecté entre. La FORMULE décide de ce qu'il peut faire
++  // (formule.js) : Premium si l'identifiant est listé, ou si la personne est
++  // membre d'une entreprise Premium (lue avec SON jeton, sous les règles
++  // d'accès : elle ne voit que ses entreprises). Une lecture en panne laisse
++  // la formule gratuite, jamais l'inverse.
++  const dansListe = liste.includes(user.id);
++  let entreprisesPremium = 0;
++  if (!dansListe) {
++    const q = await fetchFn(`${env.SUPABASE_URL}/rest/v1/legion_entreprises?select=id&premium=eq.true&limit=1`, { headers: entetes(env, jeton) }).catch(() => null);
++    if (q?.ok) {
++      const lignes = await q.json().catch(() => []);
++      entreprisesPremium = Array.isArray(lignes) ? lignes.length : 0;
+     }
+   }
+-  const rendu = { user: { id: user.id, email: user.email || null }, autorise, expire: Date.now() + 5 * 60_000 };
++  const formule = choisirFormule({ dansListe, entreprisesPremium });
++  const rendu = { user: { id: user.id, email: user.email || null }, autorise: true, formule, expire: Date.now() + 5 * 60_000 };
+   cacheAcces.set(jeton, rendu);
+   if (cacheAcces.size > 200) cacheAcces.delete(cacheAcces.keys().next().value);
+   return rendu;
+diff --git a/atelier/test/formule.test.js b/atelier/test/formule.test.js
+new file mode 100644
+index 0000000..7853048
+--- /dev/null
++++ b/atelier/test/formule.test.js
+@@ -0,0 +1,84 @@
++// @vitest-environment node
++import { describe, it, expect } from 'vitest';
++import { choisirFormule, formuleDe, modelesPermis, plafondPour, MODELES_GRATUITS } from '../src/formule.js';
++import { ordre, disponibles } from '../src/moteur.js';
++import { outilsPourMode } from '../src/politique.js';
++import { envoyer, consigneSysteme } from '../src/boucle.js';
++import { identifier } from '../src/supabase.js';
++import { fauxFichiers, fauxBac, fauxModele, fausseDeps, fauxEtat } from './faux.js';
++
++const TOUTES_LES_CLES = { DEEPSEEK_API_KEY: 'x', KIMI_API_KEY: 'x', GEMINI_API_KEY: 'x', OPENAI_API_KEY: 'sk-x' };
++
++describe('les formules de l\'atelier', () => {
++  it('Premium par la liste du Worker ou par une entreprise Premium ; gratuit sinon', () => {
++    expect(choisirFormule({ dansListe: true })).toBe('premium');
++    expect(choisirFormule({ entreprisesPremium: 1 })).toBe('premium');
++    expect(choisirFormule({})).toBe('gratuit');
++    expect(formuleDe('nimporte').nom).toBe('gratuit'); // une valeur inconnue ne donne jamais Premium
++  });
++
++  it('gratuit : modèles les moins chers, petit plafond, jamais au-dessus du Worker', () => {
++    expect(modelesPermis('gratuit', ['oa:gpt-6-sol', 'ds:deepseek-flash', 'gm:gemini-2.5-flash'])).toEqual(['ds:deepseek-flash', 'gm:gemini-2.5-flash']);
++    expect(modelesPermis('premium', ['oa:gpt-6-sol', 'ds:deepseek-flash'])).toEqual(['oa:gpt-6-sol', 'ds:deepseek-flash']);
++    expect(plafondPour('gratuit', 1)).toBe(0.05);
++    expect(plafondPour('gratuit', 0.02)).toBe(0.02);
++    expect(plafondPour('premium', 1)).toBe(1);
++  });
++
++  it('les clés du Worker ne contournent pas la formule', () => {
++    expect(disponibles(TOUTES_LES_CLES, { permis: MODELES_GRATUITS })).toEqual(['ds:deepseek-flash', 'gm:gemini-2.5-flash']);
++    // Auto en gratuit : les modèles permis, dans leur ordre ; un modèle fort choisi retombe sur Auto.
++    expect(ordre(TOUTES_LES_CLES, 'auto', { permis: MODELES_GRATUITS })).toEqual(['ds:deepseek-flash', 'gm:gemini-2.5-flash']);
++    expect(ordre(TOUTES_LES_CLES, 'oa:gpt-6-astra', { permis: MODELES_GRATUITS })).toEqual(['ds:deepseek-flash', 'gm:gemini-2.5-flash']);
++    // Premium : inchangé.
++    expect(ordre(TOUTES_LES_CLES, 'oa:gpt-6-astra', {})).toEqual(['oa:gpt-6-astra']);
++  });
++
++  it('sans machine, l\'agent ne reçoit pas l\'outil « commande »', () => {
++    expect(outilsPourMode('auto', false, false)).not.toContain('commande');
++    expect(outilsPourMode('auto', false, false)).toContain('ecrire_fichier');
++    expect(outilsPourMode('auto')).toContain('commande');
++    expect(consigneSysteme(fauxEtat(), null, { sansMachine: true })).toContain('FORMULE GRATUITE');
++    expect(consigneSysteme(fauxEtat(), null)).not.toContain('FORMULE GRATUITE');
++  });
++
++  it('sans machine, une commande demandée quand même est refusée sans toucher au bac', async () => {
++    const f = fauxFichiers({ 'index.html': '<h1>Salut</h1>' });
++    const bac = fauxBac(f, {});
++    const modele = fauxModele([
++      { outils: [['commande', { commande: 'npm install', pourquoi: 'installer' }]] },
++      { texte: 'D\'accord, je fais sans.' },
++    ]);
++    const deps = { ...fausseDeps({ fichiers: f, bac, fetchFn: modele.fetchFn }), sansMachine: true, permis: MODELES_GRATUITS };
++    const etat = fauxEtat(0.05);
++    etat.mode = 'auto';
++    await envoyer(etat, deps, 'installe les dépendances');
++    expect(bac.lancees).toEqual([]);
++    expect(modele.requetes[0].corps.tools.map((t) => t.function.name)).not.toContain('commande');
++    expect(modele.requetes[0].corps.model).toBe('deepseek-flash');
++    const retour = modele.requetes[1].corps.messages.find((m) => m.role === 'tool');
++    expect(retour.content).toMatch(/Premium/);
++  });
++});
++
++describe('la porte du Worker', () => {
++  const env = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_ANON_KEY: 'publique', ATELIER_UTILISATEURS: 'u-liste' };
++  const faux = (id, premium) => async (url) => {
++    if (url.endsWith('/auth/v1/user')) return Response.json({ id, email: `${id}@essai` });
++    if (url.includes('legion_entreprises')) return premium === 'panne' ? new Response('non', { status: 500 }) : Response.json(premium ? [{ id: 'e1' }] : []);
++    throw new Error(`inattendu : ${url}`);
++  };
++
++  it('tout compte connecté entre ; la formule suit les entreprises Premium', async () => {
++    expect(await identifier(env, 'j-gratuit', faux('u1', false))).toMatchObject({ autorise: true, formule: 'gratuit' });
++    expect(await identifier(env, 'j-premium', faux('u2', true))).toMatchObject({ autorise: true, formule: 'premium' });
++    expect(await identifier(env, 'j-liste', faux('u-liste', false))).toMatchObject({ formule: 'premium' });
++    // Une lecture en panne laisse la formule gratuite, jamais Premium.
++    expect(await identifier(env, 'j-panne', faux('u3', 'panne'))).toMatchObject({ formule: 'gratuit' });
++  });
++
++  it('sans session valide, personne n\'entre', async () => {
++    expect(await identifier(env, 'j-mort', async () => new Response('', { status: 401 }))).toBeNull();
++    expect(await identifier(env, '', faux('u1', true))).toBeNull();
++  });
++});
+diff --git a/supabase/functions/atelier-modele/index.ts b/supabase/functions/atelier-modele/index.ts
+index 0e45f21..f179b0f 100644
+--- a/supabase/functions/atelier-modele/index.ts
++++ b/supabase/functions/atelier-modele/index.ts
+@@ -17,11 +17,11 @@
+ //   Claude seul est traduit (anthropic.ts) : il ne parle pas ce format.
+ //
+ // La porte : le jeton Supabase de la personne, et la MÊME règle que le
+-// Worker (atelier/src/supabase.js) — propriétaire de n'importe quelle
+-// entreprise de Léo (legion_membres, rôle « proprietaire », depuis le 25/09),
+-// lu avec SON jeton sous les règles d'accès, ou identifiant listé dans
+-// ATELIER_UTILISATEURS.
+-// Aucune clé de service ici : ce relais ne voit que ce que la personne voit.
++// Worker (atelier/src/formule.js, 02/10) — tout compte connecté, en formule
++// gratuite ou Premium (membre d'une entreprise Premium, lu avec SON jeton
++// sous les règles d'accès, ou identifiant listé dans ATELIER_UTILISATEURS).
++// La clé de service ne sert qu'à une chose : additionner la dépense du jour
++// de tout l'atelier, pour fermer le gratuit quand la journée a assez coûté.
+ //
+ // Pas de CORS : seul le serveur du Worker appelle ce relais, jamais une
+ // page. Une requête qui arrive avec un en-tête Origin (un navigateur) est
+@@ -35,7 +35,7 @@
+ // ATTENTION : comme toute fonction edge, elle est COMMUNE à staging et à la
+ // production (CLAUDE.md §4). Elle n'est appelée que par l'atelier.
+ 
+-import { createClient } from 'jsr:@supabase/supabase-js@2';
++import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+ import { cleOpenAI } from '../_shared/cout.ts';
+ import { depuisAnthropic, versAnthropic } from './anthropic.ts';
+ 
+@@ -82,8 +82,18 @@ function masquer(texte: string, cle: string): string {
+ }
+ 
+ // ——— La porte ———
+-type Personne = { id: string; client: ReturnType<typeof createClient> };
+-const cacheAcces = new Map<string, { id: string; autorise: boolean; expire: number }>();
++// 02/10 (Beau : « comme VS Code : ça marche même si tu ne payes pas,
++// seulement certaines fonctionnalités ne marchent pas ») : tout compte
++// connecté passe, en formule GRATUITE ou PREMIUM — la même règle que le
++// Worker (atelier/src/formule.js), recalculée ici : le relais ne croit pas le
++// Worker sur parole. Gratuit = les modèles les moins chers, un petit plafond
++// par jour et par personne, et un plafond du jour pour TOUT le gratuit.
++type Formule = 'gratuit' | 'premium';
++// deno-lint-ignore no-explicit-any
++type Client = SupabaseClient<any, any, any>;
++type Personne = { id: string; client: Client; formule: Formule };
++const cacheAcces = new Map<string, { id: string; formule: Formule; expire: number }>();
++export const MODELES_GRATUITS = ['ds:deepseek-flash', 'gm:gemini-2.5-flash'];
+ 
+ // L'échéance du jeton (champ « exp », en secondes), lue sans le vérifier :
+ // la vérification, c'est getUser() plus bas. Elle sert à ne pas garder en
+@@ -105,24 +115,21 @@ async function verifier(auth: string): Promise<{ personne?: Personne; statut?: n
+   if (fin != null && fin <= Date.now()) return { statut: 401, erreur: 'Ta connexion à Léo a expiré : reconnecte-toi.' };
+   const client = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: `Bearer ${jeton}` } }, auth: { persistSession: false } });
+   const deja = cacheAcces.get(jeton);
+-  if (deja && deja.expire > Date.now()) {
+-    return deja.autorise ? { personne: { id: deja.id, client } } : { statut: 403, erreur: 'L\'atelier est réservé pour l\'instant.' };
+-  }
++  if (deja && deja.expire > Date.now()) return { personne: { id: deja.id, client, formule: deja.formule } };
+   const { data: { user } } = await client.auth.getUser();
+   if (!user) return { statut: 401, erreur: 'Ta connexion à Léo a expiré : reconnecte-toi.' };
+   const liste = String(Deno.env.get('ATELIER_UTILISATEURS') || '').split(',').map((s) => s.trim()).filter(Boolean);
+-  let autorise = liste.includes(user.id);
+-  // 25/09 (Beau : « oui, ouvre le relais ») : même porte que le Worker de l'atelier
+-  // (atelier/src/supabase.js) — le PROPRIÉTAIRE de n'importe quelle entreprise de Léo. Avant, un
+-  // nouveau compte entrait dans l'atelier mais ce relais lui refusait tout modèle. Le plafond
+-  // par personne et par jour, plus bas, reste la protection.
+-  if (!autorise) {
+-    const { data } = await client.from('legion_membres').select('role').eq('user_id', user.id).eq('role', 'proprietaire').limit(1);
+-    autorise = Array.isArray(data) && data.length > 0;
++  // Premium : identifiant listé, ou membre d'une entreprise Premium (lue avec
++  // SON jeton : elle ne voit que ses entreprises). Une lecture en panne
++  // laisse le gratuit, jamais l'inverse.
++  let formule: Formule = liste.includes(user.id) ? 'premium' : 'gratuit';
++  if (formule === 'gratuit') {
++    const { data, error } = await client.from('legion_entreprises').select('id').eq('premium', true).limit(1);
++    if (!error && Array.isArray(data) && data.length > 0) formule = 'premium';
+   }
+-  cacheAcces.set(jeton, { id: user.id, autorise, expire: Math.min(Date.now() + 5 * 60_000, fin ?? Infinity) });
++  cacheAcces.set(jeton, { id: user.id, formule, expire: Math.min(Date.now() + 5 * 60_000, fin ?? Infinity) });
+   if (cacheAcces.size > 200) cacheAcces.delete(cacheAcces.keys().next().value!);
+-  return autorise ? { personne: { id: user.id, client } } : { statut: 403, erreur: 'L\'atelier est réservé pour l\'instant.' };
++  return { personne: { id: user.id, client, formule } };
+ }
+ 
+ // ——— Le plafond du jour ———
+@@ -130,19 +137,40 @@ async function verifier(auth: string): Promise<{ personne?: Personne; statut?: n
+ // règles d'accès de atelier_couts ne lui montrent que ses projets. Si la
+ // table n'existe pas encore (migration 0200 pas appliquée), il n'y a rien
+ // à compter : le plafond dur de chaque session reste la protection.
+-const plafondJour = () => {
+-  const n = Number(Deno.env.get('ATELIER_PLAFOND_JOUR_USD'));
+-  return Number.isFinite(n) && n > 0 ? n : 1;
++const reglage = (nom: string, defaut: number) => {
++  const n = Number(Deno.env.get(nom));
++  return Number.isFinite(n) && n > 0 ? n : defaut;
+ };
++// Premium : 1 $ par personne et par jour (24/09). Gratuit : 0,10 $ par
++// personne, et 2 $ pour tout le gratuit réuni — la dépense la pire d'une
++// journée est donc connue d'avance.
++const plafondJour = (f: Formule) => f === 'premium' ? reglage('ATELIER_PLAFOND_JOUR_USD', 1) : reglage('ATELIER_PLAFOND_GRATUIT_JOUR_USD', 0.1);
++const plafondGratuitTotal = () => reglage('ATELIER_PLAFOND_GRATUIT_TOTAL_USD', 2);
++
++// La dépense du jour de TOUT l'atelier (tous comptes), avec la clé de
++// service : les règles d'accès ne montrent à chacun que ses projets. Elle ne
++// sert qu'à fermer le gratuit quand la journée a assez coûté ; illisible, le
++// gratuit se ferme (prudence), le Premium n'en dépend pas.
++async function depenseTotaleDuJour(): Promise<number | null> {
++  const url = Deno.env.get('SUPABASE_URL');
++  const cle = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
++  if (!url || !cle) return null;
++  const service = createClient(url, cle, { auth: { persistSession: false } });
++  return sommeDuJour(service);
++}
+ 
+ async function depenseDuJour(p: Personne): Promise<number | null> {
++  return sommeDuJour(p.client);
++}
++
++async function sommeDuJour(client: Client): Promise<number | null> {
+   const debut = new Date();
+   debut.setUTCHours(0, 0, 0, 0);
+   // Par pages de 1 000 lignes (le plafond de lignes de l'API Supabase) :
+   // une seule requête sous-compterait une grosse journée.
+   let total = 0;
+   for (let page = 0; page < 20; page++) {
+-    const { data, error } = await p.client.from('atelier_couts').select('cout_usd').gte('quand', debut.toISOString()).order('id').range(page * 1000, page * 1000 + 999);
++    const { data, error } = await client.from('atelier_couts').select('cout_usd').gte('quand', debut.toISOString()).order('id').range(page * 1000, page * 1000 + 999);
+     if (error) {
+       console.warn(`atelier-modele : dépense du jour illisible (${error.message}) — seul le plafond de session protège.`);
+       return null;
+@@ -162,11 +190,21 @@ async function appeler(p: Personne, modele: string, corps: Record<string, unknow
+   if (!cle) return repondre({ erreur: `${modele} : pas de clé dans Supabase`, code: 'cle' }, 400);
+   if (!corps || typeof corps !== 'object' || !Array.isArray(corps.messages)) return repondre({ erreur: 'corps invalide (messages manquants)', code: 'corps' }, 400);
+ 
++  if (p.formule === 'gratuit' && !MODELES_GRATUITS.includes(modele)) {
++    return repondre({ erreur: `${modele} fait partie de l'atelier Premium.`, code: 'formule' }, 403);
++  }
++
+   const depense = await depenseDuJour(p);
+-  const plafond = plafondJour();
++  const plafond = plafondJour(p.formule);
+   if (depense != null && depense >= plafond) {
+     return repondre({ erreur: `Plafond du jour de l'atelier atteint (${depense.toFixed(2)} $ sur ${plafond} $) : reprends demain.`, code: 'plafond_jour' }, 429);
+   }
++  if (p.formule === 'gratuit') {
++    const total = await depenseTotaleDuJour();
++    if (total == null || total >= plafondGratuitTotal()) {
++      return repondre({ erreur: 'L\'atelier gratuit a atteint sa limite du jour pour tout le monde : reprends demain, ou passe à Premium.', code: 'plafond_jour' }, 429);
++    }
++  }
+ 
+   const envoi: Record<string, unknown> = { model: nom };
+   for (const c of CHAMPS) if (corps[c] !== undefined) envoi[c] = corps[c];
+@@ -222,14 +260,15 @@ Deno.serve(async (req: Request) => {
+   });
+   if (!acces.personne) return repondre({ erreur: acces.erreur, code: acces.statut === 401 ? 'jeton' : 'acces' }, acces.statut || 401);
+ 
+-  if (req.method === 'GET') return repondre({ modeles: disponibles() });
++  const permis = (liste: string[]) => acces.personne!.formule === 'premium' ? liste : liste.filter((m) => MODELES_GRATUITS.includes(m));
++  if (req.method === 'GET') return repondre({ modeles: permis(disponibles()), formule: acces.personne.formule });
+ 
+   const texte = await req.text();
+   if (new TextEncoder().encode(texte).length > TAILLE_MAX) return repondre({ erreur: 'requête trop grande', code: 'taille' }, 413);
+   let demande: { action?: string; modele?: string; corps?: Record<string, unknown> } = {};
+   try { demande = JSON.parse(texte || '{}'); } catch { return repondre({ erreur: 'JSON invalide' }, 400); }
+ 
+-  if (!demande.action || demande.action === 'modeles') return repondre({ modeles: disponibles() });
++  if (!demande.action || demande.action === 'modeles') return repondre({ modeles: permis(disponibles()), formule: acces.personne.formule });
+   if (demande.action === 'appel') return appeler(acces.personne, String(demande.modele || ''), demande.corps || {});
+   return repondre({ erreur: 'action inconnue' }, 400);
+ });

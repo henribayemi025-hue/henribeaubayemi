@@ -588,12 +588,15 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           </>
         ) : (
           <>
-            {!ongletActif.ids.length && <p className="text-legion-muted">{t('legion.atelier.terminalVide')}</p>}
+            {!ongletActif.ids.length && moi?.machine !== false && <p className="text-legion-muted">{t('legion.atelier.terminalVide')}</p>}
             {(vue?.affichage || []).filter((a) => ongletActif.ids.includes(a.id)).map(blocCommande)}
           </>
         )}
       </div>
-      {ongletActif && (
+      {ongletActif && moi?.machine === false && (
+        <p className="border-t border-legion-line px-3 py-1.5 text-[12px] text-legion-muted">{t('legion.atelier.terminalPremium')}</p>
+      )}
+      {ongletActif && moi?.machine !== false && (
         <form onSubmit={lancerCommande} className="flex items-center gap-2 border-t border-legion-line px-3 py-1 font-mono text-[12px]">
           {vue?.terminal?.dossier && <span className="max-w-[40%] truncate text-legion-muted" title={vue.terminal.dossier}>~/{vue.terminal.dossier}</span>}
           <span className="text-legion-success">›</span>
@@ -764,6 +767,12 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
               {['auto', ...(moi?.modeles || [])].map((m) => <option key={m} value={m}>{NOMS_MODELES[m] || m}</option>)}
             </select>
 
+            {moi?.formule && (
+              <span title={t(`legion.atelier.formuleAide_${moi.formule}`)}
+                className={`rounded-pill border px-2 py-0.5 text-[11px] font-semibold ${moi.formule === 'premium' ? 'border-legion-gold text-legion-gold' : 'border-legion-line text-legion-muted'}`}>
+                {t(`legion.atelier.formule_${moi.formule}`)}
+              </span>
+            )}
             <div className="min-w-[128px] flex-1 sm:flex-none" title={s ? t('legion.atelier.coutDetail', { modele: dollars(s.cout_modele, langue), machine: dollars(s.cout_machine, langue), appels: s.appels }) : ''}>
               <div className="flex items-baseline justify-between gap-2 text-[12px]">
                 <span className="hidden text-legion-muted sm:inline">{t('legion.atelier.cout')}</span>
