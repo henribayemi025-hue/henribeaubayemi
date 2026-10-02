@@ -33,6 +33,13 @@ describe('relais /img/', () => {
     expect(String(fetchSpy.mock.calls[0][0])).toContain('/storage/v1/object/public/products/u1/a.webp');
     fetchSpy.mockRestore();
   });
+
+  it('une vignette absente répond 404, pas 400 (audit m-17)', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"statusCode":"404","error":"not_found","message":"Object not found"}', { status: 400 }));
+    const r = await demande('/img/products/u1/a_thumb.webp');
+    expect(r.status).toBe(404);
+    fetchSpy.mockRestore();
+  });
 });
 
 describe('en-têtes de sécurité (M-1)', () => {

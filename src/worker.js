@@ -420,11 +420,13 @@ async function serveImage(request, url, ctx) {
   });
 
   if (!upstream.ok) {
-    // 404 sur une image sans vignette est un cas normal (SmartImage retombe sur
-    // la pleine taille). On renvoie le statut tel quel, sans cacher les erreurs
-    // longtemps — 30 s suffit à absorber les burst.
-    return new Response(upstream.body, {
-      status: upstream.status,
+    // Une image sans vignette est un cas normal (SmartImage retombe sur la
+    // pleine taille). Le stockage répond alors 400 « Object not found » : on
+    // le traduit en 404, sinon chaque visiteur voit une erreur rouge dans sa
+    // console (audit m-17). Les erreurs ne restent en cache que 30 s.
+    const absent = upstream.status === 400 || upstream.status === 404;
+    return new Response(absent ? 'not found' : upstream.body, {
+      status: absent ? 404 : upstream.status,
       headers: { 'Cache-Control': 'public, max-age=30' },
     });
   }
