@@ -118,10 +118,22 @@ Deno.serve(compter('legion_former', async (req: Request) => {
     .is('user_id', null).eq('actif', true).neq('moteur', 'claude-code');
   if (corps.entreprise_id) q = q.eq('entreprise_id', corps.entreprise_id);
   const { data: agents } = await q.limit(400);
-  const { data: formes } = await service.from('legion_reponses_apprises').select('agent_id').eq('source', 'formation');
+  // Combien de réponses de formation a CHAQUE agent, compté agent par agent.
+  // Lire toute la table plafonnait à 1 000 lignes (réglage du serveur) : au-delà,
+  // presque tous les agents paraissaient « pas formés », étaient reformés chaque
+  // matin, et d'autres jamais (02/10 : 34 035 lignes pour 19 questions, Semeur
+  // 1 356, Ada 0). En cas d'erreur de lecture, l'agent est compté comme formé :
+  // mieux vaut le former demain que le recopier en boucle.
   const nb = new Map<string, number>();
-  for (const f of (formes || []) as { agent_id: string }[]) nb.set(f.agent_id, (nb.get(f.agent_id) ?? 0) + 1);
-  const tous = ((agents || []) as (Agent & { entreprise_id: string })[]).filter((a) => (nb.get(a.id) ?? 0) < DEJA_FORME);
+  const liste = (agents || []) as (Agent & { entreprise_id: string })[];
+  for (let i = 0; i < liste.length; i += 25) {
+    await Promise.all(liste.slice(i, i + 25).map(async (a) => {
+      const { count, error } = await service.from('legion_reponses_apprises').select('id', { count: 'exact', head: true })
+        .eq('agent_id', a.id).eq('source', 'formation');
+      nb.set(a.id, error ? DEJA_FORME : count ?? 0);
+    }));
+  }
+  const tous = liste.filter((a) => (nb.get(a.id) ?? 0) < DEJA_FORME);
   const aFormer = tous.slice(0, limite);
 
   const entreprises = new Map<string, { nom: string; projet: string | null }>();

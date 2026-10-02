@@ -311,8 +311,11 @@ function ressemblance(a: string, b: string): number {
 const DU_MOMENT = /aujourd|maintenant|en ce moment|actuellement|hier|demain|ce soir|ce matin|cette nuit|tout a l heure|ou en est|ou en es|ou vous en etes|quoi de neuf|du jour|as tu fini|avez vous fini|t as fini|c est fait|deja fait/;
 const SEUIL_APPRIS = 0.85;
 // deno-lint-ignore no-explicit-any
-async function reponseApprise(service: any, entrepriseId: string, agentId: string, question: string): Promise<{ id: string; reponse: string } | null> {
-  const q = normQuestion(question);
+async function reponseApprise(service: any, entrepriseId: string, agentId: string, question: string, nom = ''): Promise<{ id: string; reponse: string } | null> {
+  // « bonjour Ada », « merci Rigo » : le nom de l'agent qui répond ne change pas
+  // la question (02/10 : avec le nom, « bonjour » n'était jamais reconnu).
+  const mots = normQuestion(nom).split(' ').filter((m) => m.length >= 2);
+  const q = normQuestion(question).split(' ').filter((m) => !mots.includes(m)).join(' ');
   if (q.length < 2 || DU_MOMENT.test(q)) return null;
   const { data, error } = await service.from('legion_reponses_apprises').select('id, question, reponse')
     .eq('entreprise_id', entrepriseId).eq('agent_id', agentId).order('created_at', { ascending: false }).limit(300);
@@ -808,7 +811,7 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const avant = coutEnCours();
     if (await budgetAgentAtteint(cible)) { pourquoi = pourquoi || `${cible.nom} : budget du mois atteint.`; continue; }
     pourAgent(cible.modele);
-    const appris = leger ? await reponseApprise(service, msg.entreprise_id, cible.id, String(msg.texte || '')) : null;
+    const appris = leger ? await reponseApprise(service, msg.entreprise_id, cible.id, String(msg.texte || ''), cible.nom) : null;
     // Ses compétences (chantier 2): 4 fiches au plus, tronquées, pour que le
     // coût reste petit.
     // Les 4 fiches qui servent le plus à CE message (24/09), pas les 4 plus anciennes.
