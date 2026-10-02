@@ -10,7 +10,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
 import { Field, TextInput, TextArea } from '../../components/Field';
-import { Skeleton, ErrorState } from '../../components/states';
+import { ErrorState } from '../../components/states';
+import ChargementLeo from './parties/ChargementLeo';
 import { tailleDe, composer, horsEquipe, repartition, pourLaBase, estModifiee, choixVide, clePoste } from './parties/fonder/equipe';
 import { VisagesModele, BandePostes, Organigramme, FichePoste, AjouterPoste, AideLeo, BoutonFonder } from './parties/fonder/Equipe';
 import { chargerPostesEn, enAnglais, traduirePostes } from './parties/fonder/postesEn';
@@ -219,7 +220,7 @@ export default function Fonder() {
   const repartis = useMemo(() => repartition(equipe, personnes), [equipe, personnes]);
   const departements = useMemo(() => [...new Set(equipe.map((p) => p.departement).filter(Boolean))], [equipe]);
 
-  if (loading) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><Skeleton className="h-40 w-full" /></div>;
+  if (loading) return <ChargementLeo />;
   if (error) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><ErrorState onRetry={retry} /></div>;
   if (!data) return null;
 

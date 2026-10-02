@@ -255,7 +255,11 @@
 .legion-modale .input::placeholder { color: rgb(var(--leo-muted)); }
 .legion-app .input:focus,
 .legion-modale .input:focus { border-color: rgb(var(--leo-gold)); }
-.legion-app .skeleton { background-color: rgb(var(--leo-card)); }
+.legion-app .skeleton {
+  /* Le reflet clair de la place de marché scintillait en blanc sur le fond nuit (Beau, 02/10). */
+  background-color: rgb(var(--leo-card));
+  background-image: linear-gradient(90deg, rgb(var(--leo-card)) 0px, rgb(var(--leo-card-haut)) 200px, rgb(var(--leo-card)) 400px);
+}
 .legion-modale { background-color: rgb(var(--leo-panel)) !important; color: rgb(var(--leo-ink)); }
 .legion-modale h2 { color: rgb(var(--leo-ink)); }
 .legion-modale option { background-color: rgb(var(--leo-card)); color: rgb(var(--leo-ink)); }

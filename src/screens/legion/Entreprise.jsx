@@ -11,7 +11,8 @@ import { useSettings } from '../../hooks/useSettings';
 import { IconLogout } from '@tabler/icons-react';
 import { useAsync } from '../../hooks/useAsync';
 import { useToast } from '../../hooks/useToast';
-import { Skeleton, ErrorState } from '../../components/states';
+import { ErrorState } from '../../components/states';
+import ChargementLeo from './parties/ChargementLeo';
 import { Rail, RailPastilles } from './parties/Rail';
 import { ColonneSalons } from './parties/ColonneSalons';
 import { Conversation } from './parties/Conversation';
@@ -810,9 +811,9 @@ export default function Entreprise() {
     supabase.functions.invoke('legion-portrait', { body: { action: 'compresser', entreprise_id: entrepriseId } }).then(() => {}, () => {});
   }, [data?.agents, allege, entrepriseId]);
 
-  if (authLoading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
+  if (authLoading) return <ChargementLeo />;
   if (!user) return <Navigate to="/auth" state={{ from: `/legion/${entrepriseId}` }} replace />;
-  if (loading) return <div className="p-4"><Skeleton className="h-40 w-full" /></div>;
+  if (loading) return <ChargementLeo />;
   if (error) return <ErrorState onRetry={retry} />;
   if (!data) return null;
   if (data.refuse) return <Navigate to="/legion" replace />;

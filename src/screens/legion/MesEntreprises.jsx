@@ -12,7 +12,8 @@ import { BoutonPalette } from './parties/Palette';
 import { useAuth } from '../../hooks/useAuth';
 import { IconLogout } from '@tabler/icons-react';
 import { useAsync } from '../../hooks/useAsync';
-import { Skeleton, ErrorState } from '../../components/states';
+import { ErrorState } from '../../components/states';
+import ChargementLeo from './parties/ChargementLeo';
 
 // LEGION — la porte d'entrée: mes entreprises, ou en fonder une.
 //
@@ -60,9 +61,9 @@ export default function MesEntreprises() {
     return { entreprises: rows || [], agents: agents || [], attente: compter(ouverts.data), taches: compter(taches.data), tachesPar: parEntreprise(taches.data), messagesPar: parEntreprise(recents.data) };
   }, [user?.id], { cacheKey: `legion:mes:v3:${user?.id || 'anon'}` });
 
-  if (authLoading) return <Chargement />;
+  if (authLoading) return <ChargementLeo />;
   if (!user) return <Navigate to="/auth" state={{ from: '/legion' }} replace />;
-  if (loading) return <Chargement />;
+  if (loading) return <ChargementLeo />;
   if (error) return <div className="legion-app min-h-dvh bg-legion-bg p-4"><ErrorState onRetry={retry} /></div>;
 
   const { entreprises, agents, attente, taches, tachesPar = {}, messagesPar = {} } = data;
@@ -233,13 +234,5 @@ function Action({ to, icone, label }) {
       <span className="text-legion-gold">{icone}</span>
       <span className="line-clamp-2">{label}</span>
     </Link>
-  );
-}
-
-function Chargement() {
-  return (
-    <div className="legion-app min-h-dvh bg-legion-bg p-4">
-      <Skeleton className="mx-auto h-40 w-full max-w-6xl" />
-    </div>
   );
 }
