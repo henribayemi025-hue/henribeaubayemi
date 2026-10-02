@@ -79,8 +79,9 @@ export async function fetchApps() {
 // applications d'équipe à un visiteur ordinaire. Ce filtre reste pour le
 // cache local et pour un compte admin qui consulte la liste complète.
 export function visibleApps(apps, { isAdmin = false, isVendor = false, origine = typeof window !== 'undefined' ? window.location.origin : '' } = {}) {
-  const liste = enPreproduction(origine) && !(apps || []).some((a) => a.key === LEARN_PREPROD.key)
-    ? [...(apps || []), LEARN_PREPROD].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const enPlus = enPreproduction(origine) ? PREPROD_SEULEMENT.filter((x) => !(apps || []).some((a) => a.key === x.key)) : [];
+  const liste = enPlus.length
+    ? [...(apps || []), ...enPlus].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     : apps;
   return (liste || []).filter((a) => {
     if (a.audience === 'admin') return isAdmin;
@@ -103,6 +104,22 @@ export const LEARN_PREPROD = {
   audience: 'tous',
   sort_order: 27,
 };
+
+// La Lettre de l'IA (Beau, 02/10 : « soit dans Finjaro Learn, soit un truc
+// dans les 6 points » → les deux) : elle vit dans Learn, ce raccourci y mène
+// directement. Préproduction seulement, comme Learn.
+export const LETTRE_PREPROD = {
+  key: 'lettre-ia',
+  name: "La Lettre de l'IA",
+  tagline: "Chaque jour : les nouveautés de l'IA, les dépôts GitHub à suivre, une astuce.",
+  url: 'https://finjaro.net/learn/#lettre',
+  emoji: '📰',
+  accent: 'brass',
+  audience: 'tous',
+  sort_order: 28,
+};
+
+const PREPROD_SEULEMENT = [LEARN_PREPROD, LETTRE_PREPROD];
 
 export function enPreproduction(origine) {
   try {

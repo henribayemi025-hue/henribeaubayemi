@@ -19,7 +19,7 @@ describe('Finjaro Learn dans le menu', () => {
   const base = [{ key: 'marketplace', sort_order: 10, url: 'https://finjaro.net', audience: 'tous' }, { key: 'legion', sort_order: 25, url: 'https://finjaro.net/legion', audience: 'tous' }, { key: 'athlo', sort_order: 30, url: 'https://x.netlify.app', audience: 'tous' }];
   it('apparaît sur la préproduction, après Léo, avec l’adresse de la préproduction', () => {
     const l = visibleApps(base, { origine: 'https://staging-finjaro.finjaro.workers.dev' });
-    expect(l.map((a) => a.key)).toEqual(['marketplace', 'legion', 'learn', 'athlo']);
+    expect(l.map((a) => a.key)).toEqual(['marketplace', 'legion', 'learn', 'lettre-ia', 'athlo']);
     expect(l[2].url).toBe('https://staging-finjaro.finjaro.workers.dev/learn/');
   });
   it('n’apparaît pas sur finjaro.net', () => {
