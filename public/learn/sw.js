@@ -56,7 +56,7 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate' && url.origin === location.origin && url.pathname.startsWith(SCOPE)) return e.respondWith(networkFirst(req))
   if (url.origin === location.origin && url.pathname.startsWith(SCOPE + 'lettre/')) return e.respondWith(reseauDabord(req))
   if (url.origin === location.origin && url.pathname.startsWith(SCOPE + 'assets/')) return e.respondWith(cacheFirst(req))
-  if (url.origin === location.origin && url.pathname.startsWith(SCOPE + 'visages/')) return e.respondWith(cacheFirst(req))
+  if (url.origin === location.origin && (url.pathname.startsWith(SCOPE + 'visages/') || url.pathname.startsWith(SCOPE + 'images/'))) return e.respondWith(cacheFirst(req))
   if (req.url.startsWith(PYODIDE)) return e.respondWith(cacheFirst(req))
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') return e.respondWith(cacheFirst(req))
 })
