@@ -4029,7 +4029,7 @@
   "settings": {
     "autreMonnaie": "Une autre monnaie",
     "tauxDuJour": "Taux du {{date}}, mis à jour chaque jour",
-    "tauxSource": "Rates By Exchange Rate API",
+    "tauxSource": "Taux fournis par Exchange Rate API",
     "tauxFcfa": "Le franc CFA suit sa parité fixe avec l’euro.",
     "pub": {
       "titre": "Publicité",
