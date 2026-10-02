@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { origine } from './origine';
 
 const ANON_ID_KEY = 'finjaro-anon-id';
 
@@ -29,12 +30,14 @@ export function getAnonId() {
 export function track(type, targetId = null, meta = {}) {
   try {
     const anonId = getAnonId();
+    // Le canal qui a amené la personne (?src= du lien partagé, 02/10).
+    const o = origine();
     supabase
       .from('events')
       .insert({
         type,
         target_id: targetId != null ? String(targetId) : null,
-        meta: anonId ? { anon_id: anonId, ...meta } : meta,
+        meta: { ...(anonId ? { anon_id: anonId } : {}), ...(o ? { src: o.src, ...(o.medium ? { medium: o.medium } : {}), ...(o.campagne ? { campagne: o.campagne } : {}), ...(o.premiere ? { src_premiere: true } : {}) } : {}), ...meta },
       })
       .then(
         () => {},

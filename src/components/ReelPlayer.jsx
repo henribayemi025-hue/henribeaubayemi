@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { avecOrigine } from '../lib/origine';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ReportButton } from './ReportButton';
@@ -125,7 +126,7 @@ export function ReelPlayer({ reel, muted, onToggleMute, active, onIndisponible }
   }
 
   async function share() {
-    const url = `${window.location.origin}/boutique/${reel.shops?.slug}`;
+    const url = avecOrigine(`${window.location.origin}/boutique/${reel.shops?.slug}`, 'reel');
     track('share_reel', reel.id, { shop_id: reel.shop_id });
     // Le compteur passe par une fonction serveur: l'UPDATE direct d'avant
     // était refusé en silence par la RLS pour toute personne autre que la

@@ -1,4 +1,5 @@
 import { Introuvable } from '../../components/Introuvable';
+import { avecOrigine } from '../../lib/origine';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -112,7 +113,7 @@ export default function ShopProfile() {
   }, [data?.shop?.id]);
 
   async function share() {
-    const url = `${window.location.origin}/boutique/${slug}`;
+    const url = avecOrigine(`${window.location.origin}/boutique/${slug}`, 'partage-boutique');
     if (data?.shop?.id) track('share_shop', data.shop.id);
     if (navigator.share) {
       try {

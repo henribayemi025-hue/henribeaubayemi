@@ -6,6 +6,7 @@ import App from './App';
 import { prefetchHome } from './lib/homeCache';
 import { rechargerDepuisLeDisque } from './lib/queryCache';
 import { track } from './lib/track';
+import { retenirOrigine } from './lib/origine';
 import { reportPageLoad } from './lib/perf';
 import { creerGardienRechargement } from './lib/swUpdate';
 
@@ -27,6 +28,10 @@ const SANS_ACCUEIL = ['/demo', '/legal', '/suppression-compte', '/a-propos'];
 if (!SANS_ACCUEIL.some((p) => window.location.pathname.startsWith(p))) {
   prefetchHome();
 }
+
+// L'étiquette du lien d'arrivée (?src=whatsapp…), retenue AVANT le premier
+// événement pour qu'il la porte (02/10).
+retenirOrigine();
 
 // One "visit" per browser tab session (not every reload) — feeds the admin
 // dashboard's visits count. Fire-and-forget, never blocks boot.

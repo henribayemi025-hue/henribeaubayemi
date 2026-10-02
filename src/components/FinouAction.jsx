@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { avecOrigine } from '../lib/origine';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconLogin2, IconBuildingStore, IconPlus, IconShare2, IconTrash, IconGift, IconArrowRight, IconExternalLink } from '@tabler/icons-react';
@@ -62,7 +63,7 @@ export function FinouAction({ action, onNavigate, onStartWizard, onStartDelete }
   }, [action]);
 
   async function shareShop() {
-    const url = `${window.location.origin}/boutique/${shop.slug}`;
+    const url = avecOrigine(`${window.location.origin}/boutique/${shop.slug}`, 'partage-boutique');
     if (navigator.share) {
       try {
         await navigator.share({ title: shop.name, url });

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useToast } from '../hooks/useToast';
 import { track } from '../lib/track';
 import { choisirArticles, dessinerStatut, lienBoutique } from '../lib/statutDuJour';
+import { avecOrigine } from '../lib/origine';
 import { Button } from './Button';
 
 // « Ton statut du jour » dans l'espace vendeuse (idée 1 du 01/10, voir
@@ -58,7 +59,8 @@ export function StatutDuJour({ shop }) {
     }
   }
 
-  const lien = `https://${lienBoutique(shop.slug)}`;
+  // Étiqueté : une visite venue du statut se reconnaît (02/10).
+  const lien = avecOrigine(`https://${lienBoutique(shop.slug)}`, 'statut');
   const texte = t('statut.shareText', { link: lien, defaultValue: 'Ma sélection du jour 👉 {{link}}' });
 
   async function partager() {
