@@ -457,15 +457,19 @@ export function Conversation({
                       {/* Les sources d'une recherche sur Internet (23/09): gardées en
                           base depuis le début, jamais montrées jusqu'ici. Une
                           réponse qui s'appuie sur le web doit dire d'où. */}
+                      {/* Repliées par défaut (Beau, 02/10 : « pas un bloc de sources, un petit truc en bas où je
+                          clique si je veux voir ; si je ne clique pas, ça reste fermé »). */}
                       {Array.isArray(m.meta?.sources) && m.meta.sources.some((x) => /^https?:\/\//.test(x?.url || '')) && (
-                        <div className="mb-3 mt-1 border-t border-legion-line/60 pt-1.5 text-[12px] text-legion-muted">
-                          <p className="mb-0.5">🔗 {t('legion.sources', 'Sources')}</p>
-                          <ol className="list-decimal space-y-0.5 pl-4">
+                        <details className="mb-3 mt-1 text-[12px] text-legion-muted">
+                          <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-pill px-1.5 py-0.5 hover:bg-legion-bg/60 [&::-webkit-details-marker]:hidden">
+                            🔗 {t('legion.sources', 'Sources')} ({m.meta.sources.filter((x) => /^https?:\/\//.test(x?.url || '')).slice(0, 6).length}) ▾
+                          </summary>
+                          <ol className="mt-1 list-decimal space-y-0.5 border-t border-legion-line/60 pl-4 pt-1.5">
                             {m.meta.sources.filter((x) => /^https?:\/\//.test(x?.url || '')).slice(0, 6).map((x, i) => (
                               <li key={i}><LienFichier href={x.url} target="_blank" rel="noreferrer" className="break-words underline">{x.titre || x.url}</LienFichier></li>
                             ))}
                           </ol>
-                        </div>
+                        </details>
                       )}
                       {(m.meta?.verifie?.length > 0 || m.meta?.retenu || m.meta?.relu?.corrige) && (
                         <div className="mb-3 mt-1 space-y-1 border-t border-legion-line/60 pt-1.5 text-[12px] text-legion-muted">
