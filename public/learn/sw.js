@@ -2,7 +2,8 @@
    - Pages : réseau d'abord, copie en cache en secours (on voit toujours la dernière version quand on est en ligne).
    - Fichiers de l'appli (noms avec empreinte) et Python (Pyodide, version figée) : cache d'abord.
    - Tout le reste (connexion, base, fonctions IA) : jamais mis en cache, toujours le réseau. */
-const CACHE = 'learn-v1'
+// Un cache par version publiée (sw.js?v=<empreinte>) : à l'activation, les fichiers des versions précédentes sont purgés.
+const CACHE = 'learn-' + (new URL(self.location.href).searchParams.get('v') || 'dev')
 const SCOPE = new URL(self.registration.scope).pathname // ex. /learn/
 const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/'
 
@@ -19,8 +20,9 @@ const cacheFirst = async (req) => {
   const hit = await c.match(req)
   if (hit) return hit
   const res = await fetch(req)
-  // « opaque » : script chargé sans CORS (ex. importScripts de Pyodide) ; on le garde aussi pour le hors-ligne.
-  if (res.ok || res.type === 'opaque') c.put(req, res.clone())
+  // Réponse « opaque » (script chargé sans CORS, ex. importScripts de Pyodide) : gardée SEULEMENT pour les fichiers Pyodide,
+  // dont l'adresse est figée par version ; jamais pour le reste, car une réponse opaque peut cacher un échec.
+  if (res.ok || (res.type === 'opaque' && req.url.startsWith(PYODIDE))) c.put(req, res.clone())
   return res
 }
 
