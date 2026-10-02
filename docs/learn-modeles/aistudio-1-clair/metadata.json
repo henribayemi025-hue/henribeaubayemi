@@ -1,0 +1,6 @@
+{
+  "name": "Finjaro Learn",
+  "description": "Le hub de l'IA de Finjaro. Apprenez à coder et maîtriser l'intelligence artificielle en pratiquant dès la première minute, en français et en anglais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

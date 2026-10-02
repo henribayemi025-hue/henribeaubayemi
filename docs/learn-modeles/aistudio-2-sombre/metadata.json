@@ -1,0 +1,6 @@
+{
+  "name": "Finjaro Learn",
+  "description": "Plateforme ultra-premium d'apprentissage de l'IA et du code, immersion cyber dark mode et parcours interactifs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
