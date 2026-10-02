@@ -222,3 +222,25 @@ Claudinette est prévenue, car la base est commune.
 Chaque lot se termine par la même preuve : tests qui passent, compilation,
 parcours réel des pages touchées (téléphone et grand écran), captures, et pour
 la base un essai en rôle visiteur.
+
+## 6. Règle commune pour les migrations (02/10)
+
+Signalé par Claudinette dans sa veille du 02/10, puis vérifié dans la doc
+Supabase (« Default privileges for new tables and functions »). Échéance
+indiquée : le 30/10/2026. Les **nouvelles** tables et fonctions du schéma
+`public` ne recevront plus de droits automatiques (SELECT/INSERT/UPDATE/DELETE,
+EXECUTE). Au 02/10, `pg_default_acl` de la base commune donne encore tout à
+`anon`, `authenticated` et `service_role` : la règle n'est pas encore active.
+Les tables existantes ne changent pas.
+
+**Règle adoptée des deux côtés (place de marché et Accounting) :** toute
+migration qui crée une table lue par une application, ou une fonction appelée
+par une application, porte elle-même ses `grant`, dans le même fichier que sa
+RLS et ses policies, sans compter sur les droits par défaut. C'est aussi plus
+sûr dès aujourd'hui : avec les droits actuels, une table créée sans RLS est
+lisible par les visiteurs dès sa création.
+
+Vérifié le 02/10 : la migration en attente de Learn (`learn_quotas`,
+`learn_quota_global`) n'a rien à ajouter. Ces tables n'ont aucune policy et ne
+sont touchées que par `learn_quota_consume` (SECURITY DEFINER, déjà accordée à
+`authenticated`).
