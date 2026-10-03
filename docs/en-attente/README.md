@@ -44,3 +44,24 @@ Pour l'appliquer : `git apply docs/en-attente/atelier-gratuit-premium.patch`
 Accounting n'est pas concerné (il n'appelle ni le Worker ni ce relais).
 Réglages facultatifs de la fonction : `ATELIER_PLAFOND_GRATUIT_JOUR_USD`,
 `ATELIER_PLAFOND_GRATUIT_TOTAL_USD`.
+
+## Les outils des agents quand Google ne répond pas (03/10) — `_shared/enquete.ts`
+
+Cause trouvée dans les journaux (03/10, 02 h 30 UTC) : les crédits prépayés
+Google (Gemini) sont épuisés (`402 prepayment credits are depleted`). La
+recherche web et l'appel d'outils des agents passent par Google ; le moteur de
+secours (DeepSeek, Kimi…) prend le relais, mais rendait les paramètres sous
+d'autres noms (« query », « lien »), emballés ou entourés de texte : les
+agents ont passé la nuit avec des recherches « sans requête » et des pages
+« refusées ».
+
+Correctif écrit et essayé (4 tests verts dans `args-relais.test.ts`, aucune
+nouvelle erreur de types) : le moteur de secours reçoit un exemple avec les
+vrais noms de paramètres, et sa réponse est relue (synonymes, valeur emballée,
+JSON entouré de texte). Ne remplace pas les crédits Google : sans eux, la
+recherche web (`chercher_web`) reste muette ; la lecture de page et la base
+remarchent.
+
+Pas mis en ligne : `supabase/functions/**` est commun à staging et à la
+production. Pour l'appliquer : `git apply docs/en-attente/agents-outils-secours.patch`
+(ou `git stash pop` de « outils des agents »). Touche Léo seulement.
