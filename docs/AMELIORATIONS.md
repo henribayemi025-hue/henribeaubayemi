@@ -50,3 +50,7 @@ tu as la décision finale. »
 | 05/10 | Mon argent | Montants tapés avec une virgule (« 12,50 ») lus correctement partout : avant, ils devenaient 0 sans rien dire | Claude | montant.test.js (4 tests) | en ligne 05/10 |
 | 05/10 | Accounting | Page de connexion en anglais : 4 textes restaient en français | Claude | 7e3e6d8, vérifié sur accounting.finjaro.net en anglais | en ligne |
 | 05/10 | Léo + Finia | IA gratuite : réflexion de Gemma 4 coupée — les réponses longues n'étaient plus coupées ni hors délai (les agents retombaient sur OpenAI payant) | Claude | 714bd94 ; essai sur finjaro.net : 11 jetons au lieu d'environ 150 | en ligne |
+| 05/10 | Mon argent | Essai réel (compte de test) : montants à centimes affichés « 120,50 » (et non « 120,5 »), « pas encore saisi » au lieu de « −0 », titre qui ne se coupe plus sur téléphone | Claude | 8b7e463, montant.test.js ; essai sur staging | en ligne |
+| 05/10 | Mon argent | Une ligne de budget peut être rattachée à un compte : le solde du compte bouge enfin avec le budget (Caisse 120,50 → −391,90 après un loyer de 512,40) | Claude | 8b7e463, MonArgent.test.jsx ; essai réel | en ligne |
+| 05/10 | Mon argent | Analyste : choix du mois (‹ ›) et plus gros poste de dépense dit en clair (idées de Tirelire relues) | Claude | Analyste.test.jsx (2 tests) ; essai réel | en ligne |
+| 05/10 | Mon argent | Après un ajout, on n'est plus renvoyé à la liste (espace partagé), et l'activité montre le nom de qui a payé au lieu de « Quelqu'un » | Claude | 08b6bb6, 368253f ; essai réel | en ligne |
