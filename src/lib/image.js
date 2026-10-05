@@ -45,23 +45,48 @@ async function resizeToCanvas(file, maxDim) {
 //
 // 1200 px reste largement au-dessus de ce que la fiche produit affiche sur un
 // grand écran, et le WebP retire encore 25 à 35 % à qualité perçue égale.
-// AVIF fait encore -30 % par rapport au WebP à qualité perçue égale; on l'essaie
-// en premier et on retombe sur WebP puis JPEG selon ce que le navigateur du
-// vendeur sait encoder (Chrome/Edge OK, Safari récent OK, vieux Safari retombe
-// sur JPEG). Repli JPEG si le navigateur n'encode ni AVIF ni WebP.
+// Repli JPEG si le navigateur n'encode pas le WebP (vieux Safari).
+//
+// 05/10 : 64 photos « .avif » en base étaient en réalité des PNG sans perte
+// (jusqu'à 2,5 Mo la photo, 490 Ko la vignette) — certains navigateurs
+// annoncent `blob.type = 'image/avif'` tout en livrant du PNG. C'était la
+// première cause des pages produit « Poor » dans Cloudflare. On ne croit donc
+// plus `blob.type` : on lit les premiers octets du fichier (`formatReel`).
+// L'AVIF n'est plus tenté — le WebP fait ses preuves en base (46 Ko en moyenne
+// la photo, 14 Ko la vignette) et le gain restant ne vaut pas ce risque.
+export async function formatReel(blob) {
+  if (!blob) return null;
+  const tete = blob.slice(0, 16);
+  // FileReader plutôt que Blob.arrayBuffer() : absent des vieux Safari.
+  const buf = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsArrayBuffer(tete);
+  });
+  const b = new Uint8Array(buf);
+  const txt = (i, n) => String.fromCharCode(...b.slice(i, i + n));
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b[0] === 0x89 && txt(1, 3) === 'PNG') return 'image/png';
+  if (txt(0, 4) === 'RIFF' && txt(8, 4) === 'WEBP') return 'image/webp';
+  if (txt(4, 4) === 'ftyp' && /^avi[fs]$/.test(txt(8, 4))) return 'image/avif';
+  return null;
+}
+
 export async function compressImage(file, { maxDim = 1200, quality = 0.72 } = {}) {
   const canvas = await resizeToCanvas(file, maxDim);
   const encode = (type) =>
     new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), type, quality));
 
-  // toBlob renvoie du PNG quand le format demandé n'est pas supporté — on
-  // vérifie le type effectif pour ne PAS envoyer des octets PNG annoncés AVIF.
-  const avif = await encode('image/avif');
-  if (avif && avif.type === 'image/avif') return avif;
-
-  const webp = await encode('image/webp');
-  if (webp && webp.type === 'image/webp') return webp;
-  return (await encode('image/jpeg')) || file;
+  // toBlob renvoie du PNG quand le format demandé n'est pas supporté : on ne
+  // garde un résultat que si ses octets sont bien ceux du format demandé.
+  for (const type of ['image/webp', 'image/jpeg']) {
+    const blob = await encode(type);
+    if (blob && (await formatReel(blob)) === type) {
+      return blob.type === type ? blob : new Blob([blob], { type });
+    }
+  }
+  return file;
 }
 
 // Le format de sortie dépend maintenant du navigateur (AVIF, WebP ou JPEG):
