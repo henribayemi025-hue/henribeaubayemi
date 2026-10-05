@@ -70,6 +70,12 @@ applications tierces** qui utilisent le même `auth.users`.
 - Les applications Android et iOS chargent `https://finjaro.net`: une mise en
   ligne atteint les utilisateurs sans repasser par les magasins.
 - **Ne jamais ouvrir de pull request sans que Beau l'ait demandé.**
+- **Mise en ligne autonome (Beau, 05/10)** : « oui, tout seul ». Les
+  améliorations vérifiées (tests, compilation, essai sur staging) partent
+  sur finjaro.net — et les fonctions de Léo — sans attendre sa phrase, une
+  fois par jour au plus, avec le compte rendu le soir. Restent soumis à son
+  mot, toujours : authentification, Site URL et redirections, suppression de
+  données ou de comptes, toute dépense. Registre : `docs/AMELIORATIONS.md`.
 
 ## 6. Style — c'est celui de Beau, pas le mien
 
