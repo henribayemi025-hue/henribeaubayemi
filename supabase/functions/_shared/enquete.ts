@@ -7,6 +7,7 @@ import { gemini } from './cout.ts';
 import { generer, moteursSimples } from './moteur.ts';
 import { classerFiches, voirFiche } from './fiches.ts';
 import { depotDe, codeFichiers, codeLire, codeChercher, paiements } from './code.ts';
+import { fichiersALire } from './code-lignes.ts';
 import { lirePage, voirEcran } from './pageweb.ts';
 import { chercherWeb } from './web.ts';
 import { servicesDe, OUTILS_SERVICES, NOMS_OUTILS_SERVICES, lireService, type Services } from './services.ts';
@@ -70,7 +71,7 @@ const MAX_APPELS = 4;
 const OUTILS_CODE = [
   { name: 'code_fichiers', description: "Lister les fichiers d'un dossier du dépôt de code de l'entreprise (vide = la racine).",
     parameters: { type: 'OBJECT', properties: { dossier: { type: 'STRING', description: 'Par exemple « src/screens/vendor ».' } } } },
-  { name: 'code_lire', description: 'Lire un fichier du dépôt de code (20 000 caractères à la fois ; « a_partir_de » pour la suite).',
+  { name: 'code_lire', description: 'Lire un fichier du dépôt de code, chaque ligne précédée de son numéro (« 124│ … ») à citer tel quel ; par morceaux, « a_partir_de » = la valeur « suite » pour lire la suite.',
     parameters: { type: 'OBJECT', properties: { chemin: { type: 'STRING' }, a_partir_de: { type: 'INTEGER' } }, required: ['chemin'] } },
   { name: 'code_chercher', description: "Retrouver des fichiers du dépôt par un mot de leur NOM ou de leur chemin (par exemple « vendor », « checkout », « prix »).",
     parameters: { type: 'OBJECT', properties: { mot: { type: 'STRING' } }, required: ['mot'] } },
@@ -85,7 +86,7 @@ const OUTILS_WEB = [
   { name: 'voir_ecran', description: "Ouvrir une page PUBLIQUE dans un vrai navigateur, comme une personne (le JavaScript tourne) : le texte affiché et une description de la capture. Pour VÉRIFIER un écran d'une application ou d'un site (finjaro.net, sa préproduction staging-finjaro.finjaro.workers.dev, le site d'un concurrent) — ce que lire_page ne voit pas. Pages publiques seulement : aucun compte, aucun clic.",
     parameters: { type: 'OBJECT', properties: { url: { type: 'STRING' }, largeur: { type: 'STRING', enum: ['telephone', 'ordinateur'] } }, required: ['url'] } },
 ];
-const LONGUEUR = (nom: string) => (nom === 'code_lire' ? 20_500 : nom === 'lire_page' || nom === 'voir_ecran' ? 11_000 : nom === 'chercher_web' || nom === 'supabase_projet' || nom === 'cloudflare_services' || nom === 'vercel_deploiements' ? 6000 : nom === 'fiches' || nom === 'voir_fiche' || nom === 'paiements' ? 7000 : 3000);
+const LONGUEUR = (nom: string) => (nom === 'code_lire' ? 21_000 : nom === 'lire_page' || nom === 'voir_ecran' ? 11_000 : nom === 'chercher_web' || nom === 'supabase_projet' || nom === 'cloudflare_services' || nom === 'vercel_deploiements' ? 6000 : nom === 'fiches' || nom === 'voir_fiche' || nom === 'paiements' ? 7000 : 3000);
 
 // Réservés à la Direction (Beau, 22/09: « qui sont ces personnes ? »): qui a
 // fait une action, et la fiche d'une personne — noms et activité, jamais
@@ -255,6 +256,8 @@ S'il n'y a vraiment rien à vérifier, n'appelle rien et réponds seulement « r
   // il choisit en une fois les vérifications à faire, et la base y répond.
   if (googleMuet && !resultats.length) {
     const permis = new Map(declarations.map((d) => [d.name, d]));
+    const lus = new Set<string>();
+    const trouves: string[] = [];
     const liste = declarations.map((d) => `- ${d.name} : ${d.description} Paramètres : ${JSON.stringify(d.parameters?.properties ?? {})}`).join('\n');
     const r = await generer(apiKey, `${(contents[0] as { parts: { text: string }[] }).parts[0].text}
 
@@ -272,6 +275,16 @@ Réponds par la liste des appels à faire (${maxAppels} au plus), chacun avec le
         try { const x = JSON.parse(String(a.parametres || '{}')); if (x && typeof x === 'object' && !Array.isArray(x)) args = x; } catch { /* paramètres illisibles : l'outil prend ses valeurs par défaut */ }
         const resultat = await executer(nom, args);
         resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, LONGUEUR(nom))}`);
+        if (nom === 'code_lire') lus.add(String(args.chemin || ''));
+        if (nom === 'code_chercher') trouves.push(...(((resultat as { fichiers?: string[] })?.fichiers) || []));
+      }
+      // Le relais choisit ses appels en une fois : il ne peut pas lire un
+      // fichier qu'il vient seulement de trouver. Les agents s'arrêtaient à la
+      // liste des noms et se disaient « bloqués » (Nino, Ada, Atelier, 05/10).
+      // On lit donc nous-mêmes les fichiers trouvés les plus utiles.
+      for (const chemin of fichiersALire(trouves, lus, Math.max(0, Math.min(2, maxAppels - resultats.length)))) {
+        const resultat = await executer('code_lire', { chemin });
+        resultats.push(`code_lire(${JSON.stringify({ chemin })}) → ${JSON.stringify(resultat).slice(0, LONGUEUR('code_lire'))}`);
       }
     } else console.error('enquête (relais):', r.erreur);
   }

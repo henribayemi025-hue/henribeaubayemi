@@ -9,6 +9,7 @@
 //   adresse, comptes de test exclus.
 
 import { jetonInstallation } from './github-app.ts';
+import { morceauNumerote, motCherche } from './code-lignes.ts';
 
 // deno-lint-ignore no-explicit-any
 type Service = any;
@@ -49,9 +50,10 @@ export async function codeFichiers(d: Depot, args: Record<string, unknown>) {
   return { depot: d.depot, branche: d.branche || 'par défaut', dossier: dossier || '/', fichiers: liste.slice(0, 200).map((x: { name: string; type: string; size: number }) => `${x.type === 'dir' ? '📁 ' : ''}${x.name}${x.type === 'dir' ? '/' : ` (${x.size} o)`}`) };
 }
 
-// Un fichier, par morceaux de 20 000 caractères (Alpha, 25/09 : le carnet en fait 90 000).
+// Un fichier, par morceaux (Alpha, 25/09 : le carnet en fait 90 000), chaque
+// ligne avec son numéro pour être citée exactement (05/10).
 export async function codeLire(d: Depot, args: Record<string, unknown>) {
-  const chemin = cheminPropre(args.chemin);
+  const chemin = cheminPropre(args.chemin ?? args.fichier ?? args.path);
   if (!chemin) return { erreur: 'donne le chemin du fichier' };
   // Dépôt public sans jeton : on lit le fichier brut (raw.githubusercontent.com), qui ne compte pas
   // dans la limite de 60 lectures par heure de l'API — partagée par tous les serveurs des fonctions.
@@ -59,9 +61,7 @@ export async function codeLire(d: Depot, args: Record<string, unknown>) {
     const r = await fetch(`https://raw.githubusercontent.com/${d.depot}/${encodeURIComponent(d.branche)}/${chemin.split('/').map(encodeURIComponent).join('/')}`, { signal: AbortSignal.timeout(12_000) });
     if (r.ok) {
       const texte = await r.text();
-      const debut = Math.max(0, Number(args.a_partir_de) || 0);
-      const morceau = texte.slice(debut, debut + 20_000);
-      return { chemin, taille: texte.length, a_partir_de: debut, suite: debut + morceau.length < texte.length ? debut + morceau.length : null, contenu: morceau };
+      return { chemin, taille: texte.length, a_partir_de: Math.max(0, Number(args.a_partir_de) || 0), ...morceauNumerote(texte, Number(args.a_partir_de) || 0) };
     }
     if (r.status !== 404) throw new Error(`GitHub ${r.status}`);
     return { erreur: 'fichier introuvable : retrouve le bon chemin avec code_chercher' };
@@ -71,15 +71,13 @@ export async function codeLire(d: Depot, args: Record<string, unknown>) {
   if (f.encoding !== 'base64' || typeof f.content !== 'string') return { erreur: 'fichier trop gros ou illisible ici' };
   const bin = atob(f.content.replace(/\n/g, ''));
   const texte = new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
-  const debut = Math.max(0, Number(args.a_partir_de) || 0);
-  const morceau = texte.slice(debut, debut + 20_000);
-  return { chemin, taille: texte.length, a_partir_de: debut, suite: debut + morceau.length < texte.length ? debut + morceau.length : null, contenu: morceau };
+  return { chemin, taille: texte.length, a_partir_de: Math.max(0, Number(args.a_partir_de) || 0), ...morceauNumerote(texte, Number(args.a_partir_de) || 0) };
 }
 
 // Retrouver des fichiers par leur nom ou leur chemin (le contenu, GitHub ne
 // le cherche qu'avec un jeton).
 export async function codeChercher(d: Depot, args: Record<string, unknown>) {
-  const mot = String(args.mot || '').toLowerCase().trim();
+  const mot = motCherche(args);
   if (mot.length < 3) return { erreur: 'au moins 3 lettres' };
   const branche = d.branche || (await gh(d, '')).default_branch;
   const arbre = await gh(d, `git/trees/${encodeURIComponent(branche)}?recursive=1`);
