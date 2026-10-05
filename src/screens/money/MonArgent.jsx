@@ -16,7 +16,7 @@ import { Skeleton, ErrorState, EmptyState } from '../../components/states';
 import ChatEspace from './ChatEspace';
 import Analyste from './Analyste';
 import { MoneyShell } from './MoneyShell';
-import { montant } from './montant';
+import { montant, lireMontant, montantOuZero } from './montant';
 
 // Les pastilles de compte. Ce sont EXACTEMENT les six couleurs que les
 // comptes existants portent déjà en base (`accounts.color`) — pas le
@@ -187,7 +187,7 @@ function Comptes({ devise, comptes, lang, t, userId, onDone }) {
       const { error } = await supabase.from('accounts').insert({
         user_id: userId,
         name: nom.trim(),
-        balance: Number(solde) || 0,
+        balance: montantOuZero(solde),
         glyph: nom.trim().charAt(0).toUpperCase(),
         color: COULEURS[Math.floor(Math.random() * COULEURS.length)],
       });
@@ -224,7 +224,7 @@ function Comptes({ devise, comptes, lang, t, userId, onDone }) {
             {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
           </Field>
           <Field label={t('money.accountBalance')}>
-            {(id) => <TextInput id={id} type="number" inputMode="decimal" value={solde} onChange={(e) => setSolde(e.target.value)} />}
+            {(id) => <TextInput id={id} inputMode="decimal" value={solde} onChange={(e) => setSolde(e.target.value)} />}
           </Field>
           <div className="flex gap-2">
             <Button onClick={ajouter} loading={envoi} disabled={nom.trim() === ''}>{t('common.add')}</Button>
@@ -268,7 +268,7 @@ function CarteCompte({ devise, compte: c, lang, t, onDone }) {
     setEnvoi(true);
     try {
       const { error } = await supabase.from('accounts')
-        .update({ name: nom.trim(), balance: Number(depart) || 0 })
+        .update({ name: nom.trim(), balance: montantOuZero(depart) })
         .eq('id', c.id);
       if (error) throw error;
       setEdition(false);
@@ -295,7 +295,7 @@ function CarteCompte({ devise, compte: c, lang, t, onDone }) {
           {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
         </Field>
         <Field label={t('money.openingBalance')} hint={t('money.openingBalanceHint')}>
-          {(id) => <TextInput id={id} type="number" inputMode="decimal" value={depart} onChange={(e) => setDepart(e.target.value)} />}
+          {(id) => <TextInput id={id} inputMode="decimal" value={depart} onChange={(e) => setDepart(e.target.value)} />}
         </Field>
         {mouvements !== 0 && (
           <p className="text-caption text-money-muted">
@@ -341,25 +341,32 @@ function CarteCompte({ devise, compte: c, lang, t, onDone }) {
 // Un espace partagé: un compte commun avec quelqu'un. Qui a mis quoi, qui a
 // sorti quoi. « L'activité (qui a payé) » est la seule question qui compte
 // entre deux personnes qui partagent une caisse.
-function Espaces({ devise, espaces, moi, lang, t, onDone }) {
+export function Espaces({ devise, espaces, moi, lang, t, onDone }) {
   const toast = useToast();
   const [actif, setActif] = useState(null);
   const espace = espaces.find((e) => e.id === actif);
+  // Un petit formulaire dans la page (05/10) au lieu de deux fenêtres
+  // window.prompt à la suite : dans l'application installée, ces fenêtres
+  // s'affichent mal ou pas du tout, et on ne voyait plus le libellé en
+  // tapant le montant.
+  const [saisie, setSaisie] = useState(null); // 'in' | 'out' | null
+  const [libelle, setLibelle] = useState('');
+  const [brut, setBrut] = useState('');
+  const [envoi, setEnvoi] = useState(false);
 
-  async function mouvement(kind) {
-    const label = window.prompt(t('money.txLabel'));
-    if (label === null) return;
-    const brut = window.prompt(t('money.txAmount'));
-    if (brut === null) return;
-    const somme = Number(String(brut).replace(',', '.'));
-    if (!Number.isFinite(somme) || somme <= 0) { toast.error(t('money.txBadAmount')); return; }
+  async function mouvement() {
+    const somme = lireMontant(brut);
+    if (!(somme > 0)) { toast.error(t('money.txBadAmount')); return; }
+    setEnvoi(true);
     try {
       const { enFile } = await ajouterHorsLigne('space_tx', {
-        space_id: espace.id, user_id: moi, kind, label: label.trim() || null, amount: somme,
+        space_id: espace.id, user_id: moi, kind: saisie, label: libelle.trim() || null, amount: somme,
       });
+      setSaisie(null); setLibelle(''); setBrut('');
       if (enFile) toast.info(t('offline.queued'));
       else onDone();
     } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
   }
 
   if (espace) {
@@ -380,14 +387,32 @@ function Espaces({ devise, espaces, moi, lang, t, onDone }) {
           )}
         </div>
 
-        <div className="mt-3 flex gap-2">
-          <button onClick={() => mouvement('in')} className="flex-1 rounded-pill bg-success px-3 py-2 text-body font-semibold text-white">
-            + {t('money.moneyIn')}
-          </button>
-          <button onClick={() => mouvement('out')} className="flex-1 rounded-pill bg-danger px-3 py-2 text-body font-semibold text-white">
-            + {t('money.moneyOut')}
-          </button>
-        </div>
+        {saisie ? (
+          <div className="mt-3 space-y-2 rounded-card border border-money-line p-3 bg-money-card">
+            <p className={`text-body font-semibold ${saisie === 'in' ? 'text-money-success' : 'text-money-danger'}`}>
+              + {saisie === 'in' ? t('money.moneyIn') : t('money.moneyOut')}
+            </p>
+            <Field label={t('money.txLabel')}>
+              {(id) => <TextInput id={id} value={libelle} onChange={(e) => setLibelle(e.target.value)} autoFocus />}
+            </Field>
+            <Field label={t('money.txAmount')} required>
+              {(id) => <TextInput id={id} inputMode="decimal" value={brut} onChange={(e) => setBrut(e.target.value)} />}
+            </Field>
+            <div className="flex gap-2">
+              <Button onClick={mouvement} loading={envoi} disabled={!(lireMontant(brut) > 0)}>{t('common.add')}</Button>
+              <Button variant="secondary" onClick={() => { setSaisie(null); setLibelle(''); setBrut(''); }}>{t('common.cancel')}</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 flex gap-2">
+            <button onClick={() => setSaisie('in')} className="flex-1 rounded-pill bg-success px-3 py-2 text-body font-semibold text-white">
+              + {t('money.moneyIn')}
+            </button>
+            <button onClick={() => setSaisie('out')} className="flex-1 rounded-pill bg-danger px-3 py-2 text-body font-semibold text-white">
+              + {t('money.moneyOut')}
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 rounded-card border border-money-line p-3 bg-money-card">
           <p className="text-caption font-semibold text-money-muted">{t('money.members')}</p>
@@ -511,8 +536,8 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
         user_id: userId,
         kind,
         category: cat.trim(),
-        planned: Number(prevu) || 0,
-        actual: Number(reel) || 0,
+        planned: montantOuZero(prevu),
+        actual: montantOuZero(reel),
         period: periode,
       });
       setCat(''); setPrevu(''); setReel(''); setOuvert(false);
@@ -590,10 +615,10 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
           </Field>
           <div className="flex gap-2">
             <Field label={t('money.planned')}>
-              {(id) => <TextInput id={id} type="number" inputMode="numeric" value={prevu} onChange={(e) => setPrevu(e.target.value)} />}
+              {(id) => <TextInput id={id} inputMode="decimal" value={prevu} onChange={(e) => setPrevu(e.target.value)} />}
             </Field>
             <Field label={t('money.actual')}>
-              {(id) => <TextInput id={id} type="number" inputMode="numeric" value={reel} onChange={(e) => setReel(e.target.value)} />}
+              {(id) => <TextInput id={id} inputMode="decimal" value={reel} onChange={(e) => setReel(e.target.value)} />}
             </Field>
           </div>
           <div className="flex gap-2">
@@ -607,26 +632,119 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
         <EmptyState title={t('money.noBudget')} />
       ) : (
         <ul className="mt-4 space-y-2">
-          {lignes.map((l) => {
-            const depasse = l.kind !== 'income' && Number(l.actual) > Number(l.planned) && Number(l.planned) > 0;
-            return (
-              <li key={l.id} className="flex items-center justify-between rounded-card border border-money-line p-3 bg-money-card">
-                <div className="min-w-0">
-                  <p className="truncate text-body text-money-ink">{l.category}</p>
-                  <p className="text-caption text-money-muted">
-                    {t('money.plannedShort')} {montant(l.planned, lang, devise)}
-                    {l._enAttente && <span className="ml-2 text-money-accent">· {t('offline.waiting', 'en attente d’envoi')}</span>}
-                  </p>
-                </div>
-                <span className={`shrink-0 text-body font-semibold ${depasse ? 'text-money-danger' : 'text-money-ink'}`}>
-                  {l.kind === 'income' ? '+' : '−'}{montant(l.actual, lang, devise)}
-                </span>
-              </li>
-            );
-          })}
+          {lignes.map((l, i) => (
+            <LigneBudget key={l.id || `attente-${i}`} ligne={l} devise={devise} lang={lang} t={t} onDone={onDone} />
+          ))}
         </ul>
       )}
     </>
+  );
+}
+
+// Une ligne de budget (05/10). On ne pouvait que l'AJOUTER : impossible de
+// saisir le réel au fil du mois — c'est pourtant toute la méthode écrite plus
+// haut (on prévoit, on saisit le réel, on compare) — ni de corriger une
+// faute de frappe, ni de retirer une ligne en trop. Une ligne encore en file
+// d'attente (hors ligne) n'a pas d'id en base : elle se lit, elle ne se
+// modifie qu'une fois envoyée.
+export function LigneBudget({ ligne: l, devise, lang, t, onDone }) {
+  const toast = useToast();
+  const [edition, setEdition] = useState(false);
+  const [retrait, setRetrait] = useState(false);
+  const [cat, setCat] = useState(l.category || '');
+  const [prevu, setPrevu] = useState(String(l.planned ?? ''));
+  const [reel, setReel] = useState(String(l.actual ?? ''));
+  const [envoi, setEnvoi] = useState(false);
+  const depasse = l.kind !== 'income' && Number(l.actual) > Number(l.planned) && Number(l.planned) > 0;
+  const modifiable = !l._enAttente && !!l.id;
+
+  async function enregistrer() {
+    const p = lireMontant(prevu === '' ? '0' : prevu);
+    const r = lireMontant(reel === '' ? '0' : reel);
+    if (!Number.isFinite(p) || !Number.isFinite(r)) { toast.error(t('money.txBadAmount')); return; }
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('budget_entries')
+        .update({ category: cat.trim(), planned: p, actual: r })
+        .eq('id', l.id);
+      if (error) throw error;
+      setEdition(false);
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  async function retirer() {
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('budget_entries').delete().eq('id', l.id);
+      if (error) throw error;
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); setEnvoi(false); }
+  }
+
+  if (edition) {
+    return (
+      <li className="space-y-2 rounded-card border border-money-line p-3 bg-money-card">
+        <Field label={t('money.category')} required>
+          {(id) => <TextInput id={id} value={cat} onChange={(e) => setCat(e.target.value)} />}
+        </Field>
+        <div className="flex gap-2">
+          <Field label={t('money.planned')}>
+            {(id) => <TextInput id={id} inputMode="decimal" value={prevu} onChange={(e) => setPrevu(e.target.value)} />}
+          </Field>
+          <Field label={t('money.actual')}>
+            {(id) => <TextInput id={id} inputMode="decimal" value={reel} onChange={(e) => setReel(e.target.value)} autoFocus />}
+          </Field>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={enregistrer} loading={envoi} disabled={cat.trim() === ''}>{t('common.save')}</Button>
+          <Button variant="secondary" onClick={() => { setEdition(false); setCat(l.category || ''); setPrevu(String(l.planned ?? '')); setReel(String(l.actual ?? '')); }}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded-card border border-money-line p-3 bg-money-card">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-body text-money-ink">{l.category}</p>
+          <p className="text-caption text-money-muted">
+            {t('money.plannedShort')} {montant(l.planned, lang, devise)}
+            {l._enAttente && <span className="ml-2 text-money-accent">· {t('offline.waiting', 'en attente d’envoi')}</span>}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <span className={`text-body font-semibold ${depasse ? 'text-money-danger' : 'text-money-ink'}`}>
+            {l.kind === 'income' ? '+' : '−'}{montant(l.actual, lang, devise)}
+          </span>
+          {modifiable && (
+            <>
+              <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editLine', { name: l.category })}
+                className="flex h-9 w-9 items-center justify-center text-money-muted">
+                <IconPencil size={16} />
+              </button>
+              <button type="button" onClick={() => setRetrait(true)} aria-label={t('money.deleteLine', { name: l.category })}
+                className="flex h-9 w-9 items-center justify-center text-money-muted">
+                <IconX size={16} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      {retrait && (
+        <div className="mt-2 flex items-center justify-between gap-2 rounded-card bg-money-danger/10 px-3 py-2">
+          <span className="text-caption text-money-ink">{t('money.deleteLineConfirm')}</span>
+          <span className="flex shrink-0 gap-2">
+            <button type="button" onClick={retirer} disabled={envoi} className="text-caption font-semibold text-money-danger">{t('common.delete')}</button>
+            <button type="button" onClick={() => setRetrait(false)} className="text-caption font-semibold text-money-muted">{t('common.cancel')}</button>
+          </span>
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -643,7 +761,7 @@ function Epargne({ devise, objectifs, lang, t, userId, onDone }) {
     setEnvoi(true);
     try {
       const { error } = await supabase.from('savings_goals').insert({
-        user_id: userId, name: nom.trim(), target: Number(cible) || 0, saved: 0,
+        user_id: userId, name: nom.trim(), target: montantOuZero(cible), saved: 0,
       });
       if (error) throw error;
       setNom(''); setCible(''); setOuvert(false); onDone();
@@ -688,10 +806,10 @@ function Epargne({ devise, objectifs, lang, t, userId, onDone }) {
             {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
           </Field>
           <Field label={t('money.goalTarget')} required>
-            {(id) => <TextInput id={id} type="number" inputMode="numeric" value={cible} onChange={(e) => setCible(e.target.value)} />}
+            {(id) => <TextInput id={id} inputMode="decimal" value={cible} onChange={(e) => setCible(e.target.value)} />}
           </Field>
           <div className="flex gap-2">
-            <Button onClick={ajouter} loading={envoi} disabled={nom.trim() === '' || !Number(cible)}>{t('common.add')}</Button>
+            <Button onClick={ajouter} loading={envoi} disabled={nom.trim() === '' || !(lireMontant(cible) > 0)}>{t('common.add')}</Button>
             <Button variant="secondary" onClick={() => setOuvert(false)}>{t('common.cancel')}</Button>
           </div>
         </div>
@@ -730,7 +848,7 @@ function CarteObjectif({ devise, objectif: o, lang, t, onDone }) {
     : 0;
 
   async function mettre() {
-    const combien = Number(ajout);
+    const combien = lireMontant(ajout);
     if (!Number.isFinite(combien) || combien === 0) return;
     setEnvoi(true);
     try {
@@ -749,7 +867,7 @@ function CarteObjectif({ devise, objectif: o, lang, t, onDone }) {
     setEnvoi(true);
     try {
       const { error } = await supabase.from('savings_goals')
-        .update({ name: nom.trim(), target: Number(cible) || 0 })
+        .update({ name: nom.trim(), target: montantOuZero(cible) })
         .eq('id', o.id);
       if (error) throw error;
       setEdition(false);
@@ -776,10 +894,10 @@ function CarteObjectif({ devise, objectif: o, lang, t, onDone }) {
           {(id) => <TextInput id={id} value={nom} onChange={(e) => setNom(e.target.value)} />}
         </Field>
         <Field label={t('money.goalTarget')} required>
-          {(id) => <TextInput id={id} type="number" inputMode="decimal" value={cible} onChange={(e) => setCible(e.target.value)} />}
+          {(id) => <TextInput id={id} inputMode="decimal" value={cible} onChange={(e) => setCible(e.target.value)} />}
         </Field>
         <div className="flex gap-2">
-          <Button onClick={enregistrer} loading={envoi} disabled={nom.trim() === '' || !Number(cible)}>{t('common.save')}</Button>
+          <Button onClick={enregistrer} loading={envoi} disabled={nom.trim() === '' || !(lireMontant(cible) > 0)}>{t('common.save')}</Button>
           <Button variant="secondary" onClick={() => { setEdition(false); setNom(o.name || ''); setCible(String(o.target ?? '')); }}>
             {t('common.cancel')}
           </Button>
@@ -810,14 +928,13 @@ function CarteObjectif({ devise, objectif: o, lang, t, onDone }) {
       </p>
       <div className="mt-2 flex items-center gap-2">
         <TextInput
-          type="number"
           inputMode="decimal"
           value={ajout}
           onChange={(e) => setAjout(e.target.value)}
           placeholder={t('money.addAmount')}
           aria-label={t('money.addToGoal', { name: o.name })}
         />
-        <Button onClick={mettre} loading={envoi} disabled={!Number(ajout)}>{t('common.add')}</Button>
+        <Button onClick={mettre} loading={envoi} disabled={!(Number.isFinite(lireMontant(ajout)) && lireMontant(ajout) !== 0)}>{t('common.add')}</Button>
       </div>
     </li>
   );
@@ -844,40 +961,107 @@ function Projets({ devise, projets, lang, t, onDone }) {
         <EmptyState title={t('money.noProject')} />
       ) : (
         <ul className="mt-4 space-y-3">
-          {projets.map((p) => {
-            const pct = Number(p.goal) > 0 ? Math.min(100, Math.round((p.recu / Number(p.goal)) * 100)) : 0;
-            return (
-              <li key={p.id} className="rounded-card border border-money-line p-3 bg-money-card">
-                <div className="flex items-baseline justify-between">
-                  <p className="truncate text-body font-semibold text-money-ink">
-                    {p.emoji ? `${p.emoji} ` : ''}{p.name}
-                  </p>
-                  {p.invite_code && (
-                    <span className="shrink-0 text-caption text-money-muted"><IconLink size={12} className="inline" /> {p.invite_code}</span>
-                  )}
-                </div>
-                {Number(p.goal) > 0 && (
-                  <>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-white/10">
-                      <div className="h-full rounded-pill bg-money-gold" style={{ width: `${pct}%` }} />
-                    </div>
-                    <p className="mt-1 text-caption text-money-muted">
-                      {montant(p.recu, lang, devise)} / {montant(p.goal, lang, devise)}
-                    </p>
-                  </>
-                )}
-              </li>
-            );
-          })}
+          {projets.map((p) => (
+            <CarteProjet key={p.id} projet={p} devise={devise} lang={lang} t={t} onDone={onDone} />
+          ))}
         </ul>
       )}
     </>
   );
 }
 
+// Un projet commun (05/10) : la barre montrait ce qui était reçu, mais
+// personne ne pouvait AJOUTER sa part depuis l'application — la table
+// `project_contributions` accepte pourtant l'ajout d'un membre pour lui-même
+// (règle « add contributions »). Le nom affiché est celui du profil.
+export function CarteProjet({ projet: p, devise, lang, t, onDone }) {
+  const toast = useToast();
+  const { user, profile } = useAuth();
+  const [ouvert, setOuvert] = useState(false);
+  const [somme, setSomme] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const pct = Number(p.goal) > 0 ? Math.min(100, Math.round((p.recu / Number(p.goal)) * 100)) : 0;
+
+  async function contribuer() {
+    const v = lireMontant(somme);
+    if (!(v > 0)) { toast.error(t('money.txBadAmount')); return; }
+    setEnvoi(true);
+    try {
+      const { error } = await supabase.from('project_contributions').insert({
+        project_id: p.id, user_id: user.id, name: profile?.name || null, amount: v,
+      });
+      if (error) throw error;
+      setSomme(''); setOuvert(false);
+      toast.success(t('money.contributed'));
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(false); }
+  }
+
+  return (
+    <li className="rounded-card border border-money-line p-3 bg-money-card">
+      <div className="flex items-baseline justify-between">
+        <p className="truncate text-body font-semibold text-money-ink">
+          {p.emoji ? `${p.emoji} ` : ''}{p.name}
+        </p>
+        {p.invite_code && (
+          <span className="shrink-0 text-caption text-money-muted"><IconLink size={12} className="inline" /> {p.invite_code}</span>
+        )}
+      </div>
+      {Number(p.goal) > 0 && (
+        <>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-pill bg-white/10">
+            <div className="h-full rounded-pill bg-money-gold" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="mt-1 text-caption text-money-muted">
+            {montant(p.recu, lang, devise)} / {montant(p.goal, lang, devise)}
+          </p>
+        </>
+      )}
+      {ouvert ? (
+        <div className="mt-2 flex items-center gap-2">
+          <TextInput inputMode="decimal" value={somme} onChange={(e) => setSomme(e.target.value)} autoFocus
+            placeholder={t('money.addAmount')} aria-label={t('money.contributeTo', { name: p.name })} />
+          <Button onClick={contribuer} loading={envoi} disabled={!(lireMontant(somme) > 0)}>{t('common.add')}</Button>
+          <Button variant="secondary" onClick={() => { setOuvert(false); setSomme(''); }}>{t('common.cancel')}</Button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setOuvert(true)}
+          className="mt-2 flex min-h-[40px] items-center gap-1 text-body font-semibold text-money-accent">
+          <IconPlus size={16} /> {t('money.contribute')}
+        </button>
+      )}
+    </li>
+  );
+}
+
 /* -------------------------------- njangi ------------------------------ */
 
-function Njangi({ devise, njangis, moi, lang, t, onDone }) {
+export function Njangi({ devise, njangis, moi, lang, t, onDone }) {
+  const toast = useToast();
+  const { profile } = useAuth();
+  const [envoi, setEnvoi] = useState(null);
+
+  // « J'ai payé ce tour » (05/10). La liste disait qui avait payé, mais
+  // personne ne pouvait le dire lui-même : il fallait que quelqu'un l'écrive
+  // en base. Chaque membre coche SA ligne (règle « add njangi pay ») et peut
+  // la retirer s'il s'est trompé (« delete own njangi pay »).
+  async function basculer(x, dejaPaye) {
+    setEnvoi(x.id);
+    try {
+      const { error } = dejaPaye
+        ? await supabase.from('njangi_payments').delete()
+          .eq('njangi_id', x.id).eq('round', x.current_round).eq('user_id', moi)
+        : await supabase.from('njangi_payments').insert({
+          njangi_id: x.id, round: x.current_round, user_id: moi, name: profile?.name || null,
+        });
+      if (error) throw error;
+      if (!dejaPaye) toast.success(t('money.paidNoted'));
+      onDone();
+    } catch (e) { toast.error(e.message || t('errors.generic')); }
+    finally { setEnvoi(null); }
+  }
+
   return (
     <>
       <CreerParSoiMeme
@@ -920,6 +1104,13 @@ function Njangi({ devise, njangis, moi, lang, t, onDone }) {
                   <p className="mt-1 text-caption text-brass">
                     {t('money.thisRoundFor', { name: beneficiaire.name || t('work.someone') })}
                   </p>
+                )}
+                {x.membres.some((m) => m.user_id === moi) && (
+                  <button type="button" onClick={() => basculer(x, paye.has(moi))} disabled={envoi === x.id}
+                    className={`mt-2 w-full rounded-pill px-3 py-2 text-body font-semibold ${paye.has(moi)
+                      ? 'border border-money-line text-money-muted' : 'bg-money-accent text-white'}`}>
+                    {paye.has(moi) ? t('money.undoPaid') : t('money.iPaid', { round: x.current_round })}
+                  </button>
                 )}
                 <ul className="mt-2 space-y-1">
                   {x.membres.map((m) => (
@@ -977,7 +1168,7 @@ function CreerParSoiMeme({ table, libelle, champs, t, onDone }) {
         if (c.cle === 'name') return;
         const v = valeurs[c.cle];
         if (v === undefined || v === '') return;
-        ligne[c.cle] = c.type === 'number' ? Number(v) || 0 : v;
+        ligne[c.cle] = c.type === 'number' ? montantOuZero(v) : v;
       });
       const { error } = await supabase.from(table).insert(ligne);
       if (error) throw error;
@@ -1008,7 +1199,7 @@ function CreerParSoiMeme({ table, libelle, champs, t, onDone }) {
                 {c.options.map((o) => <option key={o.valeur} value={o.valeur}>{t(o.libelle)}</option>)}
               </Select>
             ) : (
-              <TextInput id={id} type={c.type === 'number' ? 'number' : 'text'}
+              <TextInput id={id}
                 inputMode={c.type === 'number' ? 'decimal' : undefined}
                 value={valeurs[c.cle] ?? ''}
                 onChange={(e) => setValeurs((v) => ({ ...v, [c.cle]: e.target.value }))} />

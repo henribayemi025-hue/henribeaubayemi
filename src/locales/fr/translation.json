@@ -4025,7 +4025,16 @@
     "chatEmpty": "Rien encore.",
     "chatEmptyHint": "Écris le premier message de cet espace.",
     "chatPlaceholder": "Écrire un message",
-    "chatSend": "Envoyer le message"
+    "chatSend": "Envoyer le message",
+    "editLine": "Modifier la ligne « {{name}} »",
+    "deleteLine": "Supprimer la ligne « {{name}} »",
+    "deleteLineConfirm": "Supprimer cette ligne ?",
+    "contribute": "Ajouter ma part",
+    "contributeTo": "Montant de ma part pour « {{name}} »",
+    "contributed": "Merci, ta part est enregistrée.",
+    "iPaid": "J’ai payé le tour {{round}}",
+    "undoPaid": "Je me suis trompé·e : retirer mon paiement",
+    "paidNoted": "C’est noté : tu as payé ce tour."
   },
   "relais": {
     "enCours": "Connexion en cours…",

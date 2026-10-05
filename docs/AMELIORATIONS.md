@@ -43,3 +43,8 @@ tu as la décision finale. »
 | 05/10 | Finjaro | Athlo retiré du menu des applications tant que sa base est en pause (le lien menait à une connexion cassée) | Claude | finjaro_apps.is_active = false | en ligne |
 | 05/10 | Finjaro | Mise en ligne de tout staging sur finjaro.net (origine des visiteurs ?src=, bandeau « Devenir vendeur », Léo, politique de confidentialité 1.4) | Claude | 43b8d8c ; 13 pages × 2 tailles sans erreur sur staging, contrôle sur finjaro.net | en ligne |
 | 05/10 | Léo + Finjaro | IA gratuite de Cloudflare branchée pour les agents et Finia, avant tout moteur payant, avec un compteur qui coupe à 8 000 neurones par jour (zéro facture) | Claude | 29ea0b3 + 0231 ; essai réel par la fonction de Léo : réponse en 10 s, coût 0, compteur à jour ; faux jeton refusé | en ligne |
+| 05/10 | Mon argent | Budget : on peut enfin saisir le RÉEL d'une ligne au fil du mois, la corriger ou la supprimer (on ne pouvait que l'ajouter) | Claude | MonArgent.test.jsx (3 tests) | staging |
+| 05/10 | Mon argent | Projets communs : bouton « Ajouter ma part » (la barre montrait le reçu, personne ne pouvait contribuer) | Claude | MonArgent.test.jsx | staging |
+| 05/10 | Mon argent | Njangi : « J'ai payé le tour N » et « retirer mon paiement » (la liste disait qui avait payé, personne ne pouvait le dire) | Claude | MonArgent.test.jsx (2 tests) | staging |
+| 05/10 | Mon argent | Espaces partagés : entrée/sortie saisie dans la page au lieu de deux fenêtres surgissantes (mal affichées dans l'application installée) | Claude | MonArgent.test.jsx | staging |
+| 05/10 | Mon argent | Montants tapés avec une virgule (« 12,50 ») lus correctement partout : avant, ils devenaient 0 sans rien dire | Claude | montant.test.js (4 tests) | staging |

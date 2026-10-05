@@ -4025,7 +4025,16 @@
     "chatEmpty": "Nothing yet.",
     "chatEmptyHint": "Write the first message of this space.",
     "chatPlaceholder": "Write a message",
-    "chatSend": "Send the message"
+    "chatSend": "Send the message",
+    "editLine": "Edit the line “{{name}}”",
+    "deleteLine": "Delete the line “{{name}}”",
+    "deleteLineConfirm": "Delete this line?",
+    "contribute": "Add my share",
+    "contributeTo": "My share for “{{name}}”",
+    "contributed": "Thanks, your share is saved.",
+    "iPaid": "I paid round {{round}}",
+    "undoPaid": "My mistake: remove my payment",
+    "paidNoted": "Noted: you paid this round."
   },
   "relais": {
     "enCours": "Signing you in…",
