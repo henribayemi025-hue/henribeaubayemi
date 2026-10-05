@@ -40,6 +40,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, signalerCoupure } from './cout.ts';
 import { PRIX_DS, PRIX_OPENAI } from './moteur.ts';
+import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT } from './gratuit.ts';
 
 type Json = Record<string, unknown>;
 export type Image = { mime: string; data: string }; // base64 SANS le préfixe data:
@@ -47,6 +48,13 @@ export type Morceau = { texte: string } | { image: Image };
 export type OutilGemini = { name: string; description?: string; parameters?: unknown };
 
 type Fournisseur = { nom: string; url: string; cle: string; modele: string; images: boolean; kimi: boolean; openai?: boolean };
+
+// L'IA gratuite de Cloudflare (05/10, gratuit.ts) : texte et outils, pas de
+// photo (une image coûte cher en neurones). Ni adresse ni clé ici : c'est
+// appelGratuit qui passe par le Worker et tient le plafond du jour.
+const cloudflare = (): Fournisseur | null => iaGratuiteActive()
+  ? { nom: 'cf', url: '', cle: '', modele: MODELE_GRATUIT(), images: false, kimi: false }
+  : null;
 
 const kimi = (): Fournisseur | null => {
   const cle = Deno.env.get('KIMI_API_KEY');
@@ -173,6 +181,13 @@ function extraireJson(txt: string): unknown {
 
 // ——— Les appels ———
 async function appelOpenAI(f: Fournisseur, corps: Json, delaiMs: number): Promise<{ message: Json; finish: string; cout: number }> {
+  if (f.nom === 'cf') {
+    const { response_format: _rf, ...reste } = corps;
+    const body = await appelGratuit({ model: f.modele, ...reste }, delaiMs);
+    const choix = (body.choices as Json[] | undefined)?.[0];
+    if (!choix?.message) throw new Error('réponse sans message');
+    return { message: choix.message as Json, finish: String(choix.finish_reason ?? ''), cout: 0 };
+  }
   const resp = await fetch(`${f.url}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${f.cle}` },
@@ -230,6 +245,8 @@ export type Genere = { texte: string; obj?: unknown; modele: string } | { erreur
 export async function relaisGenerer(o: OptionsGenerer): Promise<Genere> {
   const avecImages = o.contenu.some((m) => 'image' in m);
   const liste: Array<Fournisseur | 'an'> = [];
+  // Gratuit d'abord (05/10) : Cloudflare, puis les moteurs payants.
+  if (!avecImages) { const c = cloudflare(); if (c) liste.push(c); }
   if (!avecImages) { const d = deepseek(); if (d) liste.push(d); }
   const k = kimi(); if (k) liste.push(k);
   const g = openai(); if (g) liste.push(g);
@@ -421,13 +438,19 @@ export type OptionsConversation = {
   delaiMs?: number;
 };
 
-// Kimi d'abord (il lit les photos), OpenAI ensuite (photos aussi), DeepSeek
+// L'IA gratuite de Cloudflare d'abord (05/10, sauf photo jointe), puis
+// Kimi (il lit les photos), OpenAI ensuite (photos aussi), DeepSeek
 // en dernier (texte seul). Un outil
 // déjà exécuté ne l'est jamais deux fois : si Kimi tombe en plein milieu,
 // DeepSeek reprend la MÊME conversation, résultats d'outils compris — un
 // message envoyé à une boutique ne part pas en double.
 export async function relaisConversation(o: OptionsConversation): Promise<{ texte: string; modele: string } | { erreur: string }> {
-  const liste = [kimi(), openai(), deepseek()].filter(Boolean) as Fournisseur[];
+  // Cloudflare en tête (05/10) : gratuit, et les trois autres étaient à sec.
+  // Sauf avec une photo jointe : il ne la voit pas, Kimi et OpenAI si — il
+  // passe alors en dernier.
+  const photo = /"(inlineData|inline_data)"/.test(JSON.stringify(o.contents));
+  const cf = cloudflare();
+  const liste = (photo ? [kimi(), openai(), deepseek(), cf] : [cf, kimi(), openai(), deepseek()]).filter(Boolean) as Fournisseur[];
   if (!liste.length) return { erreur: 'aucun relais configuré' };
   const tools = outilsOpenAI(o.declarations);
   const maxTours = o.maxTours ?? 4;

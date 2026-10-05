@@ -1,0 +1,29 @@
+// L'IA gratuite : le compte des neurones doit réserver large, jamais court —
+// c'est lui qui empêche Cloudflare de facturer (gratuit.ts).
+import { describe, it, expect } from 'vitest';
+import { jetonsEstimes, neurones, NEURONES, SORTIE_MAX } from './gratuit-compte';
+
+describe('neurones', () => {
+  it('suit les prix publiés de gemma-4, arrondis au-dessus', () => {
+    expect(neurones('gemma-4', 1_000_000, 0)).toBe(9091);
+    expect(neurones('gemma-4', 0, 1_000_000)).toBe(27273);
+    expect(neurones('gemma-4', 1, 1)).toBe(1);
+  });
+
+  it('ne laisse jamais passer un modèle inconnu', () => {
+    expect(neurones('kimi-k2.6', 10, 10)).toBe(Infinity);
+  });
+
+  it('le pire appel permis par le Worker tient sous le plafond du jour (8 000)', () => {
+    for (const alias of Object.keys(NEURONES)) {
+      expect(neurones(alias, 200_000 / 2.5, SORTIE_MAX)).toBeLessThan(8000);
+    }
+  });
+});
+
+describe('jetonsEstimes', () => {
+  it('compte plus large que la réalité du français (≈ 4 signes par jeton)', () => {
+    const texte = 'Bonjour, voici la tâche du jour pour l’équipe commerciale. '.repeat(100);
+    expect(jetonsEstimes({ messages: [{ role: 'user', content: texte }] })).toBeGreaterThan(texte.length / 3);
+  });
+});

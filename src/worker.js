@@ -14,6 +14,8 @@
 // Les autres URLs continuent d'être servies par le binding ASSETS (SPA
 // statique). C'est le comportement d'avant, on ne fait qu'ajouter la branche
 // /img/*.
+import { servirIa } from './ia.js';
+
 const SUPABASE_HOST = 'bokwivwizghdlaedczbw.supabase.co';
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 jours
 const BROWSER_CACHE = `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TTL_SECONDS}, immutable`;
@@ -161,6 +163,11 @@ export default {
 
     if (url.pathname === '/geo') {
       return securiser(geoDuVisiteur(request));
+    }
+
+    // L'IA gratuite de Cloudflare pour Léo et Finia (src/ia.js).
+    if (url.pathname === '/ia/chat/completions') {
+      return securiser(await servirIa(request, env));
     }
 
     if (learnFerme(url)) {

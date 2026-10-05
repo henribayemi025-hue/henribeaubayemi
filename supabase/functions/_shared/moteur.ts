@@ -40,6 +40,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
+import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT } from './gratuit.ts';
 
 // LE DISJONCTEUR (28/09). Mesuré ce soir : pour un simple « ça va ? »,
 // DeepSeek refusait (solde épuisé, 2 s), OpenAI aussi (0,5 s), puis Kimi ne
@@ -97,6 +98,11 @@ const gratuit = () => Deno.env.get('GEMINI_API_KEY_GRATUIT');
 // nouveaux utilisateurs » (404) sur un projet neuf — d'où 3.8-flash.
 const GRATUITS = () => (Deno.env.get('LEGION_MODELES_GRATUITS') || 'gemini-3.8-flash,gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `gg:${m}`);
 const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
+// « cf: » (05/10, Beau : « oui branche cloudflare gratuit ») : l'IA gratuite
+// de Cloudflare, par le Worker de finjaro.net (gratuit.ts). Rien ne la paie :
+// elle passe juste après Gemini gratuit, avant tout moteur payant, et
+// s'arrête d'elle-même au plafond du jour.
+const CF = () => `cf:${MODELE_GRATUIT()}`;
 // La relève, dans l'ordre : DeepSeek rapide, puis le fort, puis Kimi, puis
 // Google. Le rapide d'abord partout (24/09, premier essai réel) : v4-pro
 // réfléchit longtemps et a dépassé les 45 s d'une réponse de salon, puis
@@ -104,6 +110,7 @@ const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
 // réponse était la meilleure des deux à l'essai.
 const releve = (fort: boolean) => [
   ...(gratuit() ? GRATUITS() : []),
+  ...(iaGratuiteActive() ? [CF()] : []),
   ...(deepseek() ? [DS_RAPIDE()] : []),
   ...(deepseek() && fort ? [DS_FORT()] : []),
   ...(kimi() ? [KIMI()] : []),
@@ -115,9 +122,10 @@ const releve = (fort: boolean) => [
 // Les modèles qu'on peut choisir un par un (0193). Le choix passe en premier;
 // derrière lui, la relève Auto — un modèle en panne ne laisse jamais
 // l'équipe muette.
-export const MODELES_CHOISIBLES = ['ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'oa:gpt-6-astra', 'oa:gpt-5.4-mini', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash', 'an:claude-sonnet-5'];
+export const MODELES_CHOISIBLES = ['cf:gemma-4', 'ds:deepseek-flash', 'ds:deepseek-v4-pro', 'km:kimi-k2.6', 'oa:gpt-6-astra', 'oa:gpt-5.4-mini', 'gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash', 'an:claude-sonnet-5'];
 function disponible(m: string): boolean {
   if (m.startsWith('ds:')) return deepseek();
+  if (m.startsWith('cf:')) return iaGratuiteActive();
   if (m.startsWith('km:')) return kimi();
   if (m.startsWith('gg:')) return !!gratuit();
   if (m.startsWith('an:')) return !!Deno.env.get('ANTHROPIC_API_KEY');
@@ -265,6 +273,27 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   return a > 0 || (b >= 0 && b < net.length - 1) ? net.slice(a, b + 1) : net;
 }
 
+// L'IA gratuite de Cloudflare : même consigne JSON que viaOpenAI, coût nul
+// (le plafond du jour est tenu par gratuit.ts).
+async function viaGratuit(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
+  const body = await appelGratuit({
+    model,
+    temperature: o.temperature ?? 0.6,
+    max_tokens: Math.min(8192, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048)),
+    messages: [
+      { role: 'system', content: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT), sans texte autour ni balises de code:\n${JSON.stringify(schema)}` },
+      { role: 'user', content: texte },
+    ],
+  }, o.delaiMs ?? 90_000);
+  const choix = (body.choices as Array<{ message?: { content?: unknown }; finish_reason?: string }> | undefined)?.[0];
+  if (choix?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
+  const txt = String(choix?.message?.content ?? '').trim();
+  if (!txt) throw new Error('réponse vide');
+  const net = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  const a = net.indexOf('{'), b = net.lastIndexOf('}');
+  return a > 0 || (b >= 0 && b < net.length - 1) ? net.slice(a, b + 1) : net;
+}
+
 async function viaAnthropic(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const cle = Deno.env.get('ANTHROPIC_API_KEY');
   if (!cle) throw new Error('ANTHROPIC_API_KEY absent');
@@ -297,6 +326,8 @@ function secours(): string[] {
   if (Deno.env.get('MOTEUR_OA_URL') && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
   // OpenAI (clé de Beau), GPT-5.4 mini par défaut (réglable : LEGION_MODELE_OA).
   else if (cleOpenAI()) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA') || 'gpt-5.4-mini'}`);
+  // L'IA gratuite reste un recours même quand LEGION_MOTEURS fixe la file.
+  if (iaGratuiteActive()) s.push(CF());
   return s;
 }
 
@@ -323,6 +354,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : nom.startsWith('km:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.moonshot.ai/v1', Deno.env.get('KIMI_API_KEY'))
         : nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
+        : nom.startsWith('cf:') ? await viaGratuit(nom.slice(3), texte, schema, o)
         : nom.startsWith('gg:') ? await viaGemini(gratuit() || '', nom.slice(3), texte, schema, o, true)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {

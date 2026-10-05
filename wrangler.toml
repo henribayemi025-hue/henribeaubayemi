@@ -9,6 +9,18 @@ compatibility_date = "2026-07-23"
 # ASSETS et reste servi tel quel depuis ./dist.
 main = "src/worker.js"
 
+# L'IA gratuite de Cloudflare (Workers AI) pour Léo et Finia, servie sur
+# /ia/chat/completions (src/ia.js). Le plafond du jour est tenu par la base
+# (ia_gratuite_reserver, migration 0231) : le compte est sur l'offre payante
+# Workers, Cloudflare facturerait au-delà de sa part gratuite.
+[ai]
+binding = "AI"
+
+# Empreinte SHA-256 du jeton « ia_gratuite » (coffre de Supabase). Publique
+# sans risque : elle ne permet pas de retrouver le jeton.
+[vars]
+IA_JETON_SHA256 = "ede16ea3f92fc3baf752f76a573ebb46720516389a502475c893157d34f06da8"
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"
@@ -18,7 +30,7 @@ not_found_handling = "single-page-application"
 # fichiers passent donc d'abord par le Worker, qui les refuse sur finjaro.net
 # (voir learnFerme dans src/worker.js). /csp-rapport reçoit les rapports de la
 # CSP en mode rapport (M-1).
-run_worker_first = ["/learn", "/learn/*", "/csp-rapport", "/geo"]
+run_worker_first = ["/learn", "/learn/*", "/csp-rapport", "/geo", "/ia/*"]
 
 # --- Test/staging -----------------------------------------------------------
 # PAS un environnement wrangler séparé — testé et abandonné (`--env staging`
