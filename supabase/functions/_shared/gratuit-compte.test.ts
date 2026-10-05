@@ -28,7 +28,7 @@ describe('jetonsEstimes', () => {
   });
 });
 
-import { reparerJson } from './gratuit-compte';
+import { reparerJson, adapterAuSchema, champsManquants } from './gratuit-compte';
 
 describe('reparerJson', () => {
   it('lit un JSON propre', () => {
@@ -45,5 +45,23 @@ describe('reparerJson', () => {
   });
   it('rend null pour un JSON vraiment cassé', () => {
     expect(reparerJson('{"texte": "coupé au mil')).toBeNull();
+  });
+});
+
+describe('adapterAuSchema / champsManquants', () => {
+  const schema = { type: 'OBJECT', properties: { texte: { type: 'STRING' }, genre: { type: 'STRING' } }, required: ['genre'] };
+  it('reprend « text » ou « réponse » comme texte', () => {
+    expect(adapterAuSchema({ text: 'Salut', genre: 'info' }, schema)).toEqual({ texte: 'Salut', genre: 'info' });
+    expect((adapterAuSchema({ 'réponse': 'Oui', genre: 'info' }, schema) as { texte: string }).texte).toBe('Oui');
+  });
+  it('retire un emballage d\'un seul objet', () => {
+    expect(adapterAuSchema({ reponse: { texte: 'A', genre: 'info' } }, schema)).toEqual({ texte: 'A', genre: 'info' });
+  });
+  it('laisse une réponse déjà conforme telle quelle', () => {
+    expect(adapterAuSchema({ texte: 'A', genre: 'info' }, schema)).toEqual({ texte: 'A', genre: 'info' });
+  });
+  it('signale le texte vide même s\'il n\'est pas exigé', () => {
+    expect(champsManquants({ texte: '  ', genre: 'info' }, schema)).toEqual(['texte']);
+    expect(champsManquants({ texte: 'ok', genre: 'info' }, schema)).toEqual([]);
   });
 });

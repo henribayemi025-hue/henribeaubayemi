@@ -55,3 +55,41 @@ export function reparerJson(brut: string): unknown {
   const sansVirgule = sortie.replace(/,\s*([}\]])/g, '$1');
   try { return JSON.parse(sansVirgule); } catch { return null; }
 }
+
+// Un petit modèle range parfois sa réponse sous un autre nom que celui du
+// schéma (« text », « réponse »…) ou l'emballe dans un objet de plus : le
+// moteur y lisait un « texte vide » et endormait l'IA gratuite (05/10).
+const SYNONYMES: Record<string, string[]> = {
+  texte: ['text', 'reponse', 'response', 'message', 'contenu', 'content', 'answer', 'reply'],
+};
+const norme = (k: string) => k.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const vide = (v: unknown) => v === undefined || v === null || (typeof v === 'string' && !v.trim());
+
+export function adapterAuSchema(obj: unknown, schema: unknown): unknown {
+  const props = (schema as { properties?: Record<string, unknown> } | null)?.properties;
+  if (!props || !obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+  let o = obj as Record<string, unknown>;
+  const attendus = Object.keys(props);
+  // { "reponse": { "texte": … } } : on retire l'emballage.
+  const cles = Object.keys(o);
+  if (!cles.some((k) => attendus.includes(k)) && cles.length === 1 && o[cles[0]] && typeof o[cles[0]] === 'object' && !Array.isArray(o[cles[0]])) {
+    o = o[cles[0]] as Record<string, unknown>;
+  }
+  const r: Record<string, unknown> = { ...o };
+  for (const k of attendus) {
+    if (!vide(r[k])) continue;
+    const candidats = [norme(k), ...(SYNONYMES[k] || [])];
+    const trouve = Object.keys(o).find((x) => x !== k && !attendus.includes(x) && candidats.includes(norme(x)) && !vide(o[x]));
+    if (trouve) { r[k] = o[trouve]; delete r[trouve]; }
+  }
+  return r;
+}
+
+// Les champs que la réponse DOIT remplir : ceux que le schéma exige, et
+// toujours « texte » quand il en a un (c'est ce que l'agent dit).
+export function champsManquants(obj: unknown, schema: unknown): string[] {
+  const s = schema as { properties?: Record<string, unknown>; required?: string[] } | null;
+  if (!s?.properties || !obj || typeof obj !== 'object') return [];
+  const exiges = new Set([...(s.required || []), ...('texte' in s.properties ? ['texte'] : [])]);
+  return [...exiges].filter((k) => vide((obj as Record<string, unknown>)[k]));
+}

@@ -41,7 +41,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
 import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT } from './gratuit.ts';
-import { reparerJson } from './gratuit-compte.ts';
+import { reparerJson, adapterAuSchema, champsManquants } from './gratuit-compte.ts';
 
 // LE DISJONCTEUR (28/09). Mesuré ce soir : pour un simple « ça va ? »,
 // DeepSeek refusait (solde épuisé, 2 s), OpenAI aussi (0,5 s), puis Kimi ne
@@ -293,8 +293,15 @@ async function viaGratuit(model: string, texte: string, schema: unknown, o: Opti
   // Réparé ici (balises, retours à la ligne dans les textes, virgules en
   // trop) : sinon le disjoncteur rangeait l'IA gratuite et les agents
   // repartaient sur un moteur payant (05/10).
-  const obj = reparerJson(txt);
+  const obj = adapterAuSchema(reparerJson(txt), schema);
   if (obj === null || typeof obj !== 'object') throw new Error('JSON illisible');
+  // Un JSON valide mais sans ce que l'agent dit : on passe au moteur suivant
+  // en gardant un extrait dans les journaux, pour comprendre ce qu'il a rendu.
+  const manque = champsManquants(obj, schema);
+  if (manque.length) {
+    console.error(`ia gratuite, hors schéma (${manque.join(', ')}) :`, txt.slice(0, 300));
+    throw new Error(`réponse hors schéma (${manque.join(', ')} vide)`);
+  }
   return JSON.stringify(obj);
 }
 
