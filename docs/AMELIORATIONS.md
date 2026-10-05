@@ -58,3 +58,5 @@ tu as la décision finale. »
 | 05/10 | Léo (toutes les entreprises) | Les agents lisent le code avec ses numéros de ligne, et les fichiers trouvés sont lus d'office quand Google ne répond pas | Claude | 36e5025, 4 tests ; après correction, Ada et Nino citent de vraies lignes (CheckoutCOD.jsx:286) au lieu de « ligne 0 » | en ligne (fonctions) |
 | 05/10 | Finjaro | Accueil : seulement les articles avec un prix affiché (décision de Beau, remarque de Miroir) | Claude | e6efed5, 3 tests ; finjaro.net mesuré : 8 « sur demande » avant, 0 après, 52 articles affichés | en ligne 05/10 |
 | 05/10 | Mon argent | Petits textes violets lisibles : contraste 4,1:1 → 6,6:1 (relevé par Nino, calcul refait et ligne corrigée) | Nino (relu) + Claude | f2fe46a ; 17 tests money | staging (finjaro.net demain) |
+| 05/10 | Accounting | Date du jour en heure locale (la caisse du soir ne bascule plus au lendemain en UTC), sans réécrire le passé | Claudinette | 074b79d ; accounting.finjaro.net /api/health 200 | en ligne |
+| 05/10 | Accounting | Vente « à crédit » possible dans le rattrapage | Claudinette | 662838b | en ligne |
