@@ -65,6 +65,11 @@ export function corpsPourCloudflare(b) {
   const alias = typeof b.model === 'string' && MODELES_IA[b.model] ? b.model : MODELE_PAR_DEFAUT;
   const max = Math.max(1, Math.min(SORTIE_MAX, Number(b.max_tokens ?? b.max_completion_tokens ?? 2048) || 2048));
   const entree = { messages, max_tokens: max };
+  // Gemma 4 « réfléchit » avant de répondre, et cette réflexion compte dans
+  // la sortie : le 05/10, des livrables d'agents sont sortis coupés ou ont
+  // dépassé le délai. Coupée ici : réponse plus courte, plus rapide, moins
+  // de neurones dépensés.
+  if (alias === 'gemma-4') entree.chat_template_kwargs = { enable_thinking: false };
   if (typeof b.temperature === 'number') entree.temperature = Math.max(0, Math.min(2, b.temperature));
   if (Array.isArray(b.tools) && b.tools.length) {
     entree.tools = b.tools;

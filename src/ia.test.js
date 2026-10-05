@@ -65,6 +65,11 @@ describe('corpsPourCloudflare', () => {
     expect(c.entree.response_format).toBeUndefined();
   });
 
+  it('coupe la réflexion de Gemma 4 (elle comptait dans la sortie et faisait couper les réponses)', () => {
+    const c = corpsPourCloudflare({ model: 'gemma-4', messages: [{ role: 'user', content: 'x' }] });
+    expect(c.entree.chat_template_kwargs).toEqual({ enable_thinking: false });
+  });
+
   it('refuse une entrée démesurée ou vide', () => {
     expect(corpsPourCloudflare({ messages: [] }).erreur).toBeTruthy();
     expect(corpsPourCloudflare({ messages: [{ role: 'user', content: 'a'.repeat(250_000) }] }).erreur).toBeTruthy();
