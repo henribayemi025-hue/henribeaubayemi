@@ -123,6 +123,6 @@ describe("mouvement d'espace partagé", () => {
     fireEvent.click(screen.getByText('common.add'));
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     expect(prompt).not.toHaveBeenCalled();
-    expect(horsLigne).toHaveBeenCalledWith('space_tx', { space_id: 's1', user_id: 'u1', kind: 'out', label: 'Courses', amount: 18.9 });
+    expect(horsLigne).toHaveBeenCalledWith('space_tx', { space_id: 's1', user_id: 'u1', name: 'Awa', kind: 'out', label: 'Courses', amount: 18.9 });
   });
 });

@@ -347,6 +347,7 @@ function CarteCompte({ devise, compte: c, lang, t, onDone }) {
 // entre deux personnes qui partagent une caisse.
 export function Espaces({ devise, espaces, moi, lang, t, onDone }) {
   const toast = useToast();
+  const { profile } = useAuth();
   const [actif, setActif] = useState(null);
   const espace = espaces.find((e) => e.id === actif);
   // Un petit formulaire dans la page (05/10) au lieu de deux fenêtres
@@ -364,7 +365,9 @@ export function Espaces({ devise, espaces, moi, lang, t, onDone }) {
     setEnvoi(true);
     try {
       const { enFile } = await ajouterHorsLigne('space_tx', {
-        space_id: espace.id, user_id: moi, kind: saisie, label: libelle.trim() || null, amount: somme,
+        // Le nom de qui a payé (05/10) : sans lui, l'activité affichait
+        // « Quelqu'un » — la seule question de cet écran est « qui ».
+        space_id: espace.id, user_id: moi, name: profile?.name || null, kind: saisie, label: libelle.trim() || null, amount: somme,
       });
       setSaisie(null); setLibelle(''); setBrut('');
       if (enFile) toast.info(t('offline.queued'));
@@ -441,7 +444,7 @@ export function Espaces({ devise, espaces, moi, lang, t, onDone }) {
               {espace.tx.map((m, i) => (
                 <li key={i} className="flex justify-between text-body">
                   <span className="truncate text-money-ink">
-                    {m.label || t('money.movement')} · <span className="text-money-muted">{m._enAttente ? t('offline.waiting', 'en attente d’envoi') : (m.name || t('work.someone'))}</span>
+                    {m.label || t('money.movement')} · <span className="text-money-muted">{m._enAttente ? t('offline.waiting', 'en attente d’envoi') : (m.name || (m.user_id === moi ? t('money.me') : t('work.someone')))}</span>
                   </span>
                   <span className={`shrink-0 font-semibold ${m.kind === 'in' ? 'text-money-success' : 'text-money-danger'}`}>
                     {m.kind === 'in' ? '+' : '−'}{montant(m.amount, lang, devise)}
