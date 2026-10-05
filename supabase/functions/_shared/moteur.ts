@@ -206,6 +206,14 @@ export const PRIX_DS: Record<string, [number, number, number]> = {
   // Kimi K2.6, prix relevés le 24/09 (OpenRouter).
   'kimi-k2.6': [0.1284, 0.4972, 2.97],
 };
+// Prix OpenAI lus sur la page officielle (developers.openai.com, 24/09), en
+// dollars le million de jetons : [entrée en cache, entrée, sortie]. Partagé
+// avec relais.ts. 05/10 : viaOpenAI ne lisait que PRIX_DS, donc les livrables
+// passés par gpt-5.4-mini (depuis la panne de crédits Google du 03/10) ne
+// comptaient rien dans ai_usage — le plafond du mois ne les arrêtait plus.
+export const PRIX_OPENAI: Record<string, [number, number, number]> = {
+  'gpt-5.4-mini': [0.075, 0.75, 4.5],
+};
 
 // Sans adresse réglée, « oa: » va chez OpenAI avec la clé de Beau, reconnue
 // à sa forme (24/09 : il l'a rangée sous le nom « Leo »).
@@ -240,7 +248,8 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   });
   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
   const body = await resp.json();
-  const prix = PRIX_DS[model];
+  const prix = PRIX_DS[model] ?? PRIX_OPENAI[model];
+  if (!prix) console.error(`coût inconnu pour ${model} : rien n'est compté dans ai_usage`);
   if (prix) {
     const u = body?.usage ?? {};
     const cache = u.prompt_cache_hit_tokens ?? u.cached_tokens ?? u.prompt_tokens_details?.cached_tokens ?? 0;

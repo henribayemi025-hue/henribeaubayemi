@@ -39,7 +39,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, signalerCoupure } from './cout.ts';
-import { PRIX_DS } from './moteur.ts';
+import { PRIX_DS, PRIX_OPENAI } from './moteur.ts';
 
 type Json = Record<string, unknown>;
 export type Image = { mime: string; data: string }; // base64 SANS le préfixe data:
@@ -67,12 +67,8 @@ const anthropicModele = () => Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude
 // de la fonction appelante — il entre donc dans le même plafond du mois que
 // les appels à Google. ———
 const USD_EN_EUR = 0.92;
-// Prix OpenAI lus sur la page officielle (developers.openai.com/api/docs/pricing,
-// 24/09), en dollars le million de jetons : [entrée en cache, entrée, sortie].
-// Un modèle absent d'ici est compté à 0 — on n'invente pas un prix.
-const PRIX_OPENAI: Record<string, [number, number, number]> = {
-  'gpt-5.4-mini': [0.075, 0.75, 4.5],
-};
+// Prix OpenAI : PRIX_OPENAI, dans moteur.ts (partagé avec viaOpenAI).
+// Un modèle absent est compté à 0 — on n'invente pas un prix.
 // Transcription, en dollars la MINUTE (même page, 24/09).
 const PRIX_TRANSCRIPTION: Record<string, number> = {
   'gpt-4o-mini-transcribe': 0.003,

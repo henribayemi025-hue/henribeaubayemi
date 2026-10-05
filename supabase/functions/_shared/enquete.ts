@@ -155,7 +155,12 @@ export async function enqueter(apiKey: string, service: ReturnType<typeof create
     ...(depot ? OUTILS_CODE : []),
     ...outilsServices,
     ...(mesures ? OUTILS[0].functionDeclarations : []),
-    ...(direction ? OUTILS_DIRECTION : []),
+    // 05/10 : « qui / fiche » lisent les personnes de la place de marché
+    // Finjaro. Ils ne s'ouvraient qu'avec la Direction, sans regarder
+    // l'entreprise : la Direction de N'IMPORTE QUELLE entreprise de Léo
+    // pouvait lire les noms et l'activité des utilisateurs de Finjaro. Il faut
+    // maintenant AUSSI le connecteur « Mesures Finjaro » (que seule Finjaro a).
+    ...(direction && mesures ? OUTILS_DIRECTION : []),
     ...(boutique ? OUTILS_BOUTIQUE : []),
     ...(compta ? OUTILS_COMPTA : []),
   ];
@@ -177,7 +182,13 @@ S'il n'y a vraiment rien à vérifier, n'appelle rien et réponds seulement « r
   const resultats: string[] = [];
   // Un outil, sa source (la place de marché, SA boutique, SA comptabilité,
   // les personnes pour la Direction) : toujours une requête fixe côté base.
+  // Seuls les outils DÉCLARÉS pour cette entreprise s'exécutent : un nom
+  // d'outil reconstruit par un modèle de secours (args-relais) ou inventé ne
+  // doit jamais ouvrir les données de la place de marché à une autre
+  // entreprise (05/10).
+  const declares = new Set(declarations.map((d) => d.name));
   const executer = async (nom: string, args: Record<string, unknown>): Promise<unknown> => {
+    if (!declares.has(nom)) return { erreur: 'outil non disponible pour cette entreprise' };
     let appel: Promise<{ data: unknown; error: { message: string } | null }>;
     if (NOMS_OUTILS_SERVICES.has(nom)) {
       appel = lireService(services, nom, args).then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: { message: e.message } }));
@@ -199,7 +210,7 @@ S'il n'y a vraiment rien à vérifier, n'appelle rien et réponds seulement « r
     } else if (OUTILS_MA_BOUTIQUE.has(nom)) {
       appel = boutique ? service.rpc('legion_outil_boutique', { p_nom: nom.replace('ma_boutique_', ''), p_params: args, p_shop: boutique.shop_id }) : Promise.resolve({ data: null, error: { message: 'aucune boutique branchée' } });
     } else if (OUTILS_PERSONNES.has(nom)) {
-      appel = direction ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction' } });
+      appel = direction && mesures ? service.rpc('legion_outil_personnes', { p_nom: nom, p_params: args }) : Promise.resolve({ data: null, error: { message: 'outil réservé à la Direction de Finjaro' } });
     } else if (nom === 'fiches' || nom === 'voir_fiche') {
       appel = (nom === 'fiches' ? classerFiches(service, args) : voirFiche(service, args))
         .then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: { message: e.message } }));
