@@ -134,8 +134,12 @@ export default function MyMoney() {
       <div className="px-4 pt-3">{contenu}</div>
     </MoneyShell>
   );
-  if (loading) return enveloppe(<Skeleton className="h-40 w-full" />);
-  if (error) return enveloppe(<ErrorState onRetry={recharger} />);
+  // Le squelette seulement au PREMIER chargement (05/10, essai réel) : après
+  // chaque ajout on relit la base, et le squelette démontait l'écran — on
+  // était renvoyé de l'espace « Maison » à la liste des espaces, un
+  // formulaire ouvert se refermait. Pendant une relecture, l'écran reste.
+  if (loading && !data) return enveloppe(<Skeleton className="h-40 w-full" />);
+  if (error && !data) return enveloppe(<ErrorState onRetry={recharger} />);
   if (!data) return null;
   const vus = file >= 0; // relit la file à chaque changement de `file`
   const budgetAffiche = vus ? [...data.budget, ...enAttente('budget_entries')
