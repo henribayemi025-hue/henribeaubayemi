@@ -34,9 +34,11 @@ tu as la décision finale. »
 
 | Date | Produit | Amélioration | Auteur | Preuve | État |
 | --- | --- | --- | --- | --- | --- |
-| 05/10 | Finjaro | Photos : vrai format vérifié avant l'envoi, plus d'AVIF déguisé en PNG de 2,5 Mo | Claude | 877b258, 3 tests | staging |
+| 05/10 | Finjaro | Photos : vrai format vérifié avant l'envoi, plus d'AVIF déguisé en PNG de 2,5 Mo | Claude | 877b258, 3 tests | en ligne 05/10 |
 | 05/10 | Léo | Outils « qui a fait / fiche personne » réservés à Finjaro (fuite vers les autres entreprises fermée) | Claude | 1528e25, code en ligne vérifié (legion-repondre v147) | en ligne |
 | 05/10 | Léo | Coût des agents passés par OpenAI enfin compté : le plafond du mois les arrête de nouveau | Claude | 1528e25 | en ligne |
-| 05/10 | Finjaro | Pays et ville approximative de chaque visite (Cloudflare /geo) | Claude | 9a71f81, 2 tests, visite d'essai enregistrée | staging |
-| 05/10 | Learn | Lettre de l'IA n° 2 publiée et vérifiée à 390 et 1440 px | Claude | bcaf8f1 | staging |
+| 05/10 | Finjaro | Pays et ville approximative de chaque visite (Cloudflare /geo) | Claude | 9a71f81, 2 tests ; visite réelle sur finjaro.net enregistrée avec pays et ville | en ligne 05/10 |
+| 05/10 | Learn | Lettre de l'IA n° 2 publiée et vérifiée à 390 et 1440 px | Claude | bcaf8f1 | staging (Learn reste fermé sur finjaro.net) |
 | 05/10 | Accounting | Base de test alignée sur la production (garde « membre retiré ») | Claude | empreinte md5 identique | test |
+| 05/10 | Finjaro | Athlo retiré du menu des applications tant que sa base est en pause (le lien menait à une connexion cassée) | Claude | finjaro_apps.is_active = false | en ligne |
+| 05/10 | Finjaro | Mise en ligne de tout staging sur finjaro.net (origine des visiteurs ?src=, bandeau « Devenir vendeur », Léo, politique de confidentialité 1.4) | Claude | 43b8d8c ; 13 pages × 2 tailles sans erreur sur staging, contrôle sur finjaro.net | en ligne |
