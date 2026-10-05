@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { detectCountrySync } from './countries';
 import { avantDabord } from './featured';
+import { isPriceOnRequest } from './categories';
 
 // Shared with Home.jsx, but kept in its own tiny module (not part of the
 // lazy-loaded Home chunk) so main.jsx can kick off the fetch the INSTANT the
@@ -70,6 +71,14 @@ export function initialCursor(country) {
 // fil par boutique (voir la migration pour le détail) — un tri chronologique
 // simple laissait une seule boutique ayant versé un gros lot occuper tout le
 // haut du fil.
+// L'accueil ne montre que des articles AVEC un prix affiché (Beau, 05/10 :
+// « oui, cache les articles sans prix »). Miroir l'a relevé en visiteuse :
+// un « prix sur demande » dès le premier écran fait fuir. Ils restent
+// visibles dans leur catégorie, la recherche et la page de leur boutique.
+export function aPrixAffiche(p) {
+  return !isPriceOnRequest(p) && Number(p?.price_fcfa) > 0;
+}
+
 export async function fetchProductPage(country, cursor) {
   let { phase, local, rest, allowRest } = cursor || initialCursor(country);
   const items = [];
@@ -78,11 +87,15 @@ export async function fetchProductPage(country, cursor) {
     const need = HOME_PAGE_SIZE - items.length;
     const isLocal = phase === 'local';
     const offset = isLocal ? local : rest;
+    // On lit le double de ce qui manque : une bonne part du catalogue n'a pas
+    // encore de prix, et sans cette marge une page demanderait plusieurs
+    // allers-retours. Les décalages comptent les lignes LUES, pas gardées.
+    const demande = Math.max(need * 2, 12);
 
     const pageCall = supabase.rpc('home_feed_page', {
       p_local_country: isLocal ? country : null,
       p_exclude_country: isLocal ? null : country,
-      p_limit: need,
+      p_limit: demande,
       p_offset: offset,
     });
 
@@ -112,12 +125,12 @@ export async function fetchProductPage(country, cursor) {
     }
     if (pageRes.error) throw pageRes.error;
     const rows = pageRes.data || [];
-    items.push(...rows);
+    items.push(...rows.filter(aPrixAffiche));
     if (isLocal) local += rows.length;
     else rest += rows.length;
     // Flux local épuisé: on ne bascule vers l'étranger que si le pays du
     // visiteur était trop pauvre pour se suffire.
-    if (rows.length < need) phase = isLocal && allowRest ? 'rest' : 'done';
+    if (rows.length < demande) phase = isLocal && allowRest ? 'rest' : 'done';
   }
 
   return {
