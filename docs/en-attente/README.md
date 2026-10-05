@@ -65,3 +65,8 @@ remarchent.
 Pas mis en ligne : `supabase/functions/**` est commun à staging et à la
 production. Pour l'appliquer : `git apply docs/en-attente/agents-outils-secours.patch`
 (ou `git stash pop` de « outils des agents »). Touche Léo seulement.
+
+
+## modeles-image-google.patch (05/10)
+
+Google a arrêté `gemini-2.5-flash-image` le 02/10 et les modèles « -preview » le 25/06. legion-visuel, legion-portrait et miroir-ia passent à `['gemini-3.1-flash-image', 'gemini-3-pro-image']`. Fonctions communes à staging et à la production : déploiement sur la phrase de Beau. Sans effet tant que les crédits Google ne sont pas rechargés.
