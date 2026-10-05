@@ -125,6 +125,20 @@ async function recevoirRapportCsp(request) {
   return new Response(null, { status: 204 });
 }
 
+// D'OÙ VIENNENT LES VISITEURS (Beau, 05/10 : « ajoute le pays et la ville des
+// visiteurs »). Cloudflare connaît déjà, pour chaque requête, le pays et la
+// ville approximative déduits de l'adresse IP (request.cf) ; on les rend au
+// site, qui les joint à l'événement « visit ». Rien d'autre : ni l'adresse IP,
+// ni les coordonnées, ni rien qui désigne une personne. Jamais mis en cache.
+export function geoDuVisiteur(request) {
+  const cf = request.cf || {};
+  const propre = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+  const corps = { pays: propre(cf.country, 2), ville: propre(cf.city, 80), region: propre(cf.region, 80) };
+  return new Response(JSON.stringify(corps), {
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
+  });
+}
+
 // Finjaro Learn est servi sous /learn/ sur la préproduction seulement : Beau
 // (01/10) « laisse Learn sur staging, on ne se presse pas ». Comme finjaro.net
 // reprend tout staging à chaque mise en ligne, ses fichiers y partiraient avec
@@ -143,6 +157,10 @@ export default {
 
     if (url.pathname === '/csp-rapport') {
       return recevoirRapportCsp(request);
+    }
+
+    if (url.pathname === '/geo') {
+      return securiser(geoDuVisiteur(request));
     }
 
     if (learnFerme(url)) {

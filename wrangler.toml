@@ -18,7 +18,7 @@ not_found_handling = "single-page-application"
 # fichiers passent donc d'abord par le Worker, qui les refuse sur finjaro.net
 # (voir learnFerme dans src/worker.js). /csp-rapport reçoit les rapports de la
 # CSP en mode rapport (M-1).
-run_worker_first = ["/learn", "/learn/*", "/csp-rapport"]
+run_worker_first = ["/learn", "/learn/*", "/csp-rapport", "/geo"]
 
 # --- Test/staging -----------------------------------------------------------
 # PAS un environnement wrangler séparé — testé et abandonné (`--env staging`

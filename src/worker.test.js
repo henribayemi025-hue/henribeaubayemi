@@ -112,3 +112,24 @@ describe('CSP en mode rapport (M-1 suite)', () => {
     expect((await demande('/csp-rapport')).status).toBe(405);
   });
 });
+
+describe('/geo — pays et ville du visiteur (05/10)', () => {
+  const geo = (cf) => {
+    const req = new Request('https://finjaro.net/geo');
+    Object.defineProperty(req, 'cf', { value: cf });
+    return worker.fetch(req, env, ctx);
+  };
+
+  it('rend le pays, la ville et la région donnés par Cloudflare, sans cache', async () => {
+    const r = await geo({ country: 'CM', city: 'Douala', region: 'Littoral', latitude: '4.05', longitude: '9.7' });
+    expect(r.headers.get('Cache-Control')).toBe('no-store');
+    expect(await r.json()).toEqual({ pays: 'CM', ville: 'Douala', region: 'Littoral' });
+  });
+
+  it("ne rend jamais les coordonnées, et des champs vides sans information", async () => {
+    const r = await geo(undefined);
+    const corps = await r.json();
+    expect(corps).toEqual({ pays: null, ville: null, region: null });
+    expect(JSON.stringify(corps)).not.toMatch(/latitude|longitude/);
+  });
+});

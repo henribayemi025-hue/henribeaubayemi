@@ -47,12 +47,14 @@ export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
 // 1.3 (29/09/2026) : l'offre gratuite de Google Gemini passe en premier
 // (choix de Beau) ; Google peut se servir de ce contenu pour ses produits,
 // ce qui doit être dit.
-export const PRIVACY_VERSION = '1.3';
+// 1.4 (05/10/2026) : pays et ville approximative de chaque visite (déduits
+// de l'adresse IP par Cloudflare, l'adresse elle-même n'est pas gardée).
+export const PRIVACY_VERSION = '1.4';
 
 const fr = {
   title: 'Politique de confidentialité',
   updatedLabel: 'Dernière mise à jour',
-  updatedAt: '29 septembre 2026',
+  updatedAt: '5 octobre 2026',
   versionLabel: 'Version',
   preamble: [
     'La présente politique explique quelles données personnelles Finjaro collecte lorsque vous utilisez la plateforme (site finjaro.net et applications mobiles), pourquoi elle les collecte, avec qui elle les partage, combien de temps elle les conserve et quels sont vos droits.',
@@ -82,7 +84,7 @@ const fr = {
         '• Notifications : si vous les activez, l’identifiant technique de notification fourni par votre navigateur ou votre téléphone.',
         '• Contenus publiés : photos d’articles, vidéos, images envoyées dans la messagerie ou à l’assistante IA.',
         '• Usage : pages et fiches consultées, recherches effectuées, articles mis en favori, afin de mesurer l’audience et d’améliorer le service.',
-        '• Techniques : adresse IP, type d’appareil et de navigateur, date et heure de connexion, journaux de sécurité.',
+        '• Techniques : adresse IP, type d’appareil et de navigateur, date et heure de connexion, journaux de sécurité. Pour compter nos visites par pays, nous gardons aussi le pays et la ville approximative déduits de l’adresse IP au moment de la visite (jamais l’adresse IP elle-même ni une position précise).',
         'Nous ne collectons PAS : vos coordonnées bancaires (aucun paiement n’est encaissé dans l’application, voir l’article 7), votre localisation en arrière-plan, vos contacts, votre agenda, ni le contenu d’autres applications de votre téléphone.',
       ],
     },
@@ -234,7 +236,7 @@ const fr = {
 const en = {
   title: 'Privacy Policy',
   updatedLabel: 'Last updated',
-  updatedAt: '29 September 2026',
+  updatedAt: '5 October 2026',
   versionLabel: 'Version',
   preamble: [
     'This policy explains what personal data Finjaro collects when you use the platform (finjaro.net and its mobile apps), why we collect it, who we share it with, how long we keep it, and what your rights are.',
@@ -264,7 +266,7 @@ const en = {
         '• Notifications: if you enable them, the technical notification identifier provided by your browser or phone.',
         '• Published content: product photos, videos, and images sent through messaging or to the AI assistant.',
         '• Usage: pages and listings viewed, searches made, items favourited, in order to measure audience and improve the service.',
-        '• Technical: IP address, device and browser type, connection date and time, security logs.',
+        '• Technical: IP address, device and browser type, connection date and time, security logs. To count our visits by country, we also keep the country and approximate city derived from the IP address at the time of the visit (never the IP address itself nor a precise location).',
         'We do NOT collect: your bank card details (no payment is taken inside the app, see section 7), your background location, your contacts, your calendar, or the content of other apps on your phone.',
       ],
     },

@@ -43,7 +43,18 @@ try {
     // arrivaient sur l'accueil, sur un article ou sur une boutique (01/10).
     let ref = null;
     try { ref = document.referrer ? new URL(document.referrer).hostname : null; } catch { /* referrer illisible */ }
-    track('visit', null, { path: window.location.pathname, ref });
+    // Pays et ville approximative, donnés par Cloudflare (/geo, 05/10). Si la
+    // réponse tarde ou échoue, la visite part quand même, sans eux.
+    const lieu = fetch('/geo', { signal: AbortSignal.timeout?.(2500) })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    lieu.then((g) => track('visit', null, {
+      path: window.location.pathname,
+      ref,
+      ...(g?.pays ? { pays: g.pays } : {}),
+      ...(g?.ville ? { ville: g.ville } : {}),
+      ...(g?.region ? { region: g.region } : {}),
+    }));
   }
 } catch {
   /* sessionStorage unavailable (private mode) — skip, non-critical */
