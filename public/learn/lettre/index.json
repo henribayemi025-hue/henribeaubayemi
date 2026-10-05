@@ -1,3 +1,4 @@
 [
-  { "date": "2026-10-02", "numero": 1, "titre": "Numéro 1 · vendredi 2 octobre 2026", "fichier": "2026-10-02.md" }
+  {"date": "2026-10-05", "numero": 2, "titre": "Numéro 2 · lundi 5 octobre 2026", "fichier": "2026-10-05.md"},
+  {"date": "2026-10-02", "numero": 1, "titre": "Numéro 1 · vendredi 2 octobre 2026", "fichier": "2026-10-02.md"}
 ]
