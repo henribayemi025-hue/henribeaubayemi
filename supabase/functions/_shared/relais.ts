@@ -41,6 +41,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, signalerCoupure } from './cout.ts';
 import { PRIX_DS, PRIX_OPENAI } from './moteur.ts';
 import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT } from './gratuit.ts';
+import { reparerJson } from './gratuit-compte.ts';
 
 type Json = Record<string, unknown>;
 export type Image = { mime: string; data: string }; // base64 SANS le préfixe data:
@@ -173,6 +174,9 @@ export function conforme(v: unknown, schema: unknown, chemin = '$'): string | nu
 function extraireJson(txt: string): unknown {
   const net = txt.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
   try { return JSON.parse(net); } catch { /* on cherche l'objet ou le tableau */ }
+  // La réparation des petits modèles (gratuit-compte.ts) avant d'abandonner.
+  const repare = reparerJson(net);
+  if (repare !== null) return repare;
   const debut = net.search(/[[{]/);
   const fin = Math.max(net.lastIndexOf('}'), net.lastIndexOf(']'));
   if (debut < 0 || fin <= debut) throw new Error('JSON illisible');

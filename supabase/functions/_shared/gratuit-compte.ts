@@ -20,3 +20,38 @@ export function neurones(alias: string, entree: number, sortie: number): number 
 export function jetonsEstimes(corps: Record<string, unknown>): number {
   return Math.ceil((JSON.stringify(corps.messages ?? []).length + JSON.stringify(corps.tools ?? []).length) / 2.5);
 }
+
+// Réparer le JSON d'un petit modèle (05/10). Gemma 4 n'a pas de « mode JSON »
+// garanti chez Cloudflare, et le disjoncteur rangeait l'IA gratuite pour
+// « JSON illisible » — les agents repartaient alors sur OpenAI, payant. Les
+// fautes vues sont toujours les mêmes : des balises ```json, un mot avant ou
+// après l'objet, de VRAIS retours à la ligne au milieu d'un texte (interdits
+// en JSON), une virgule avant } ou ]. On répare ça, et rien d'autre : un
+// JSON vraiment cassé reste illisible (rend null).
+export function reparerJson(brut: string): unknown {
+  const net = String(brut ?? '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  try { return JSON.parse(net); } catch { /* on répare */ }
+  const debut = net.search(/[[{]/);
+  const fin = Math.max(net.lastIndexOf('}'), net.lastIndexOf(']'));
+  if (debut < 0 || fin <= debut) return null;
+  const morceau = net.slice(debut, fin + 1);
+  try { return JSON.parse(morceau); } catch { /* suite */ }
+  // Retours à la ligne et tabulations À L'INTÉRIEUR des chaînes → \n, \t.
+  let dedans = false, echappe = false, sortie = '';
+  for (const c of morceau) {
+    if (dedans) {
+      if (echappe) { sortie += c; echappe = false; continue; }
+      if (c === '\\') { sortie += c; echappe = true; continue; }
+      if (c === '"') { dedans = false; sortie += c; continue; }
+      if (c === '\n') { sortie += '\\n'; continue; }
+      if (c === '\r') continue;
+      if (c === '\t') { sortie += '\\t'; continue; }
+      sortie += c;
+    } else {
+      if (c === '"') dedans = true;
+      sortie += c;
+    }
+  }
+  const sansVirgule = sortie.replace(/,\s*([}\]])/g, '$1');
+  try { return JSON.parse(sansVirgule); } catch { return null; }
+}

@@ -41,6 +41,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
 import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT } from './gratuit.ts';
+import { reparerJson } from './gratuit-compte.ts';
 
 // LE DISJONCTEUR (28/09). Mesuré ce soir : pour un simple « ça va ? »,
 // DeepSeek refusait (solde épuisé, 2 s), OpenAI aussi (0,5 s), puis Kimi ne
@@ -289,9 +290,12 @@ async function viaGratuit(model: string, texte: string, schema: unknown, o: Opti
   if (choix?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
   const txt = String(choix?.message?.content ?? '').trim();
   if (!txt) throw new Error('réponse vide');
-  const net = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-  const a = net.indexOf('{'), b = net.lastIndexOf('}');
-  return a > 0 || (b >= 0 && b < net.length - 1) ? net.slice(a, b + 1) : net;
+  // Réparé ici (balises, retours à la ligne dans les textes, virgules en
+  // trop) : sinon le disjoncteur rangeait l'IA gratuite et les agents
+  // repartaient sur un moteur payant (05/10).
+  const obj = reparerJson(txt);
+  if (obj === null || typeof obj !== 'object') throw new Error('JSON illisible');
+  return JSON.stringify(obj);
 }
 
 async function viaAnthropic(model: string, texte: string, schema: unknown, o: Options): Promise<string> {

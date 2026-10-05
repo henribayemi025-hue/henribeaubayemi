@@ -27,3 +27,23 @@ describe('jetonsEstimes', () => {
     expect(jetonsEstimes({ messages: [{ role: 'user', content: texte }] })).toBeGreaterThan(texte.length / 3);
   });
 });
+
+import { reparerJson } from './gratuit-compte';
+
+describe('reparerJson', () => {
+  it('lit un JSON propre', () => {
+    expect(reparerJson('{"texte":"ok"}')).toEqual({ texte: 'ok' });
+  });
+  it('enlève les balises et le texte autour', () => {
+    expect(reparerJson('Voici :\n```json\n{"texte":"ok"}\n```\nBonne journée')).toEqual({ texte: 'ok' });
+  });
+  it('accepte de vrais retours à la ligne dans un texte', () => {
+    expect(reparerJson('{"texte":"Fait : une ligne\nJe propose : une autre"}')).toEqual({ texte: 'Fait : une ligne\nJe propose : une autre' });
+  });
+  it('enlève une virgule en trop', () => {
+    expect(reparerJson('{"a":[1,2,],"b":"x",}')).toEqual({ a: [1, 2], b: 'x' });
+  });
+  it('rend null pour un JSON vraiment cassé', () => {
+    expect(reparerJson('{"texte": "coupé au mil')).toBeNull();
+  });
+});
