@@ -1,0 +1,57 @@
+diff --git a/supabase/functions/_shared/moteur.ts b/supabase/functions/_shared/moteur.ts
+index ab1275c..5029c1f 100644
+--- a/supabase/functions/_shared/moteur.ts
++++ b/supabase/functions/_shared/moteur.ts
+@@ -206,6 +206,14 @@ export const PRIX_DS: Record<string, [number, number, number]> = {
+   // Kimi K2.6, prix relevés le 24/09 (OpenRouter).
+   'kimi-k2.6': [0.1284, 0.4972, 2.97],
+ };
++// Prix OpenAI lus sur la page officielle (developers.openai.com, 24/09), en
++// dollars le million de jetons : [entrée en cache, entrée, sortie]. Partagé
++// avec relais.ts. 05/10 : viaOpenAI ne lisait que PRIX_DS, donc les livrables
++// passés par gpt-5.4-mini (depuis la panne de crédits Google du 03/10) ne
++// comptaient rien dans ai_usage — le plafond du mois ne les arrêtait plus.
++export const PRIX_OPENAI: Record<string, [number, number, number]> = {
++  'gpt-5.4-mini': [0.075, 0.75, 4.5],
++};
+ 
+ // Sans adresse réglée, « oa: » va chez OpenAI avec la clé de Beau, reconnue
+ // à sa forme (24/09 : il l'a rangée sous le nom « Leo »).
+@@ -240,7 +248,8 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
+   });
+   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
+   const body = await resp.json();
+-  const prix = PRIX_DS[model];
++  const prix = PRIX_DS[model] ?? PRIX_OPENAI[model];
++  if (!prix) console.error(`coût inconnu pour ${model} : rien n'est compté dans ai_usage`);
+   if (prix) {
+     const u = body?.usage ?? {};
+     const cache = u.prompt_cache_hit_tokens ?? u.cached_tokens ?? u.prompt_tokens_details?.cached_tokens ?? 0;
+diff --git a/supabase/functions/_shared/relais.ts b/supabase/functions/_shared/relais.ts
+index 993615d..51bdc68 100644
+--- a/supabase/functions/_shared/relais.ts
++++ b/supabase/functions/_shared/relais.ts
+@@ -39,7 +39,7 @@
+ 
+ import { createClient } from 'jsr:@supabase/supabase-js@2';
+ import { ajouterCout, cleOpenAI, signalerCoupure } from './cout.ts';
+-import { PRIX_DS } from './moteur.ts';
++import { PRIX_DS, PRIX_OPENAI } from './moteur.ts';
+ 
+ type Json = Record<string, unknown>;
+ export type Image = { mime: string; data: string }; // base64 SANS le préfixe data:
+@@ -67,12 +67,8 @@ const anthropicModele = () => Deno.env.get('LEGION_MODELE_ANTHROPIC') || 'claude
+ // de la fonction appelante — il entre donc dans le même plafond du mois que
+ // les appels à Google. ———
+ const USD_EN_EUR = 0.92;
+-// Prix OpenAI lus sur la page officielle (developers.openai.com/api/docs/pricing,
+-// 24/09), en dollars le million de jetons : [entrée en cache, entrée, sortie].
+-// Un modèle absent d'ici est compté à 0 — on n'invente pas un prix.
+-const PRIX_OPENAI: Record<string, [number, number, number]> = {
+-  'gpt-5.4-mini': [0.075, 0.75, 4.5],
+-};
++// Prix OpenAI : PRIX_OPENAI, dans moteur.ts (partagé avec viaOpenAI).
++// Un modèle absent est compté à 0 — on n'invente pas un prix.
+ // Transcription, en dollars la MINUTE (même page, 24/09).
+ const PRIX_TRANSCRIPTION: Record<string, number> = {
+   'gpt-4o-mini-transcribe': 0.003,

@@ -70,3 +70,7 @@ production. Pour l'appliquer : `git apply docs/en-attente/agents-outils-secours.
 ## modeles-image-google.patch (05/10)
 
 Google a arrêté `gemini-2.5-flash-image` le 02/10 et les modèles « -preview » le 25/06. legion-visuel, legion-portrait et miroir-ia passent à `['gemini-3.1-flash-image', 'gemini-3-pro-image']`. Fonctions communes à staging et à la production : déploiement sur la phrase de Beau. Sans effet tant que les crédits Google ne sont pas rechargés.
+
+## cout-openai-agents.patch (05/10) — URGENT
+
+Depuis la panne des crédits Google (03/10), les agents de Léo passent par OpenAI (`gpt-5.4-mini`). `viaOpenAI` (moteur.ts) ne lisait que la table des prix DeepSeek/Kimi : chaque livrable passé par OpenAI coûtait 0 € dans `ai_usage`. Le plafond du mois (10 € pour Finjaro) ne voyait plus rien et ne pouvait plus arrêter les agents. Dernière ligne `ai_usage` de Finjaro : 03/10 08h47, alors que 33 livrables ont été rendus dans les 14 h précédant le 05/10 06h30. Correctif : la table `PRIX_OPENAI` (prix officiels déjà relevés le 24/09, ceux de relais.ts) passe dans moteur.ts et sert aux deux, plus un message dans les journaux pour tout modèle sans prix. `deno check` sans erreur. Fonction commune → phrase de Beau.
