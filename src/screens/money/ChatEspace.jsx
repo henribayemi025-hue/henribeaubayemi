@@ -91,7 +91,7 @@ export default function ChatEspace({ spaceId, moi, t }) {
       ) : error ? (
         <div className="mt-2">
           <p className="text-body text-money-danger">{t('errors.generic')}</p>
-          <button type="button" onClick={retry} className="mt-1 text-caption font-semibold text-money-accent">
+          <button type="button" onClick={retry} className="mt-1 text-caption font-semibold text-money-accent-text">
             {t('common.retry')}
           </button>
         </div>

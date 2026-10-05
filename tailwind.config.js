@@ -67,6 +67,9 @@ export default {
           muted: '#8A8A93', // texte secondaire
           accent: '#7C5CFC', // le violet
           'accent-soft': '#8B5CF6', // l'autre bout du dégradé
+          // Le violet en PETIT texte : #7C5CFC ne fait que 4,1:1 sur une carte
+          // (sous le seuil de 4,5:1 — relevé par Nino, 05/10). Celui-ci fait 6,6:1.
+          'accent-text': '#A78BFA',
           gold: '#F5B544',
           danger: '#FB7185',
           success: '#34D399',

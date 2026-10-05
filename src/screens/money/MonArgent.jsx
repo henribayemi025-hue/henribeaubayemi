@@ -216,7 +216,7 @@ function Comptes({ devise, comptes, lang, t, userId, onDone }) {
       <div className="mt-6 flex items-center justify-between">
         <p className="text-caption font-semibold uppercase tracking-wider text-money-muted">{t('money.tab.comptes')}</p>
         {!ouvert && (
-          <button onClick={() => setOuvert(true)} className="flex items-center gap-1 text-body font-semibold text-money-accent">
+          <button onClick={() => setOuvert(true)} className="flex items-center gap-1 text-body font-semibold text-money-accent-text">
             <IconPlus size={18} /> {t('money.addAccount')}
           </button>
         )}
@@ -485,7 +485,7 @@ export function Espaces({ devise, espaces, moi, lang, t, onDone }) {
                     {t('money.memberCount', { count: e.membres.length })}
                   </span>
                 </span>
-                <span className="shrink-0 text-body font-semibold text-money-accent">{montant(e.solde, lang, devise)}</span>
+                <span className="shrink-0 text-body font-semibold text-money-accent-text">{montant(e.solde, lang, devise)}</span>
               </button>
             </li>
           ))}
@@ -746,7 +746,7 @@ export function LigneBudget({ ligne: l, comptes = [], devise, lang, t, onDone })
           <p className="text-caption text-money-muted">
             {t('money.plannedShort')} {montant(l.planned, lang, devise)}
             {nomCompte && <span> · {nomCompte}</span>}
-            {l._enAttente && <span className="ml-2 text-money-accent">· {t('offline.waiting', 'en attente d’envoi')}</span>}
+            {l._enAttente && <span className="ml-2 text-money-accent-text">· {t('offline.waiting', 'en attente d’envoi')}</span>}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -1065,7 +1065,7 @@ export function CarteProjet({ projet: p, devise, lang, t, onDone }) {
         </div>
       ) : (
         <button type="button" onClick={() => setOuvert(true)}
-          className="mt-2 flex min-h-[40px] items-center gap-1 text-body font-semibold text-money-accent">
+          className="mt-2 flex min-h-[40px] items-center gap-1 text-body font-semibold text-money-accent-text">
           <IconPlus size={16} /> {t('money.contribute')}
         </button>
       )}
