@@ -42,3 +42,4 @@ tu as la décision finale. »
 | 05/10 | Accounting | Base de test alignée sur la production (garde « membre retiré ») | Claude | empreinte md5 identique | test |
 | 05/10 | Finjaro | Athlo retiré du menu des applications tant que sa base est en pause (le lien menait à une connexion cassée) | Claude | finjaro_apps.is_active = false | en ligne |
 | 05/10 | Finjaro | Mise en ligne de tout staging sur finjaro.net (origine des visiteurs ?src=, bandeau « Devenir vendeur », Léo, politique de confidentialité 1.4) | Claude | 43b8d8c ; 13 pages × 2 tailles sans erreur sur staging, contrôle sur finjaro.net | en ligne |
+| 05/10 | Léo + Finjaro | IA gratuite de Cloudflare branchée pour les agents et Finia, avant tout moteur payant, avec un compteur qui coupe à 8 000 neurones par jour (zéro facture) | Claude | 29ea0b3 + 0231 ; essai réel par la fonction de Léo : réponse en 10 s, coût 0, compteur à jour ; faux jeton refusé | en ligne |
