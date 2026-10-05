@@ -158,7 +158,7 @@ export default function MyMoney() {
         {onglet === 'analyste' && (
           <Analyste devise={devise} lignes={data.budget} comptes={data.comptes} epargne={data.epargne} lang={lang} t={t} />
         )}
-        {onglet === 'budget' && <Budget devise={devise} lignes={budgetAffiche} lang={lang} t={t} userId={user.id} onDone={recharger} />}
+        {onglet === 'budget' && <Budget devise={devise} lignes={budgetAffiche} comptes={data.comptes} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'epargne' && <Epargne devise={devise} objectifs={data.epargne} lang={lang} t={t} userId={user.id} onDone={recharger} />}
         {onglet === 'projets' && <Projets devise={devise} projets={data.projets} lang={lang} t={t} onDone={recharger} />}
         {onglet === 'njangi' && <Njangi devise={devise} njangis={data.njangis} moi={user.id} lang={lang} t={t} onDone={recharger} />}
@@ -511,7 +511,7 @@ function moisVoisin(p, pas) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
+function Budget({ devise, lignes: toutes, comptes = [], lang, t, userId, onDone }) {
   const toast = useToast();
   const [periode, setPeriode] = useState(moisCourant());
   const lignes = toutes.filter((l) => (l.period || moisCourant()) === periode);
@@ -520,6 +520,7 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
   const [cat, setCat] = useState('');
   const [prevu, setPrevu] = useState('');
   const [reel, setReel] = useState('');
+  const [compte, setCompte] = useState('');
   const [envoi, setEnvoi] = useState(false);
 
   const revenus = lignes.filter((l) => l.kind === 'income');
@@ -539,8 +540,9 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
         planned: montantOuZero(prevu),
         actual: montantOuZero(reel),
         period: periode,
+        account_id: compte || null,
       });
-      setCat(''); setPrevu(''); setReel(''); setOuvert(false);
+      setCat(''); setPrevu(''); setReel(''); setCompte(''); setOuvert(false);
       if (enFile) toast.info(t('offline.queued'));
       else onDone();
     } catch (e) {
@@ -621,6 +623,16 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
               {(id) => <TextInput id={id} inputMode="decimal" value={reel} onChange={(e) => setReel(e.target.value)} />}
             </Field>
           </div>
+          {comptes.length > 0 && (
+            <Field label={t('money.lineAccount')} hint={t('money.lineAccountHint')}>
+              {(id) => (
+                <Select id={id} value={compte} onChange={(e) => setCompte(e.target.value)}>
+                  <option value="">{t('money.noAccountOption')}</option>
+                  {comptes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </Select>
+              )}
+            </Field>
+          )}
           <div className="flex gap-2">
             <Button onClick={ajouter} loading={envoi} disabled={cat.trim() === ''}>{t('common.add')}</Button>
             <Button variant="secondary" onClick={() => setOuvert(false)}>{t('common.cancel')}</Button>
@@ -633,7 +645,7 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
       ) : (
         <ul className="mt-4 space-y-2">
           {lignes.map((l, i) => (
-            <LigneBudget key={l.id || `attente-${i}`} ligne={l} devise={devise} lang={lang} t={t} onDone={onDone} />
+            <LigneBudget key={l.id || `attente-${i}`} ligne={l} comptes={comptes} devise={devise} lang={lang} t={t} onDone={onDone} />
           ))}
         </ul>
       )}
@@ -647,14 +659,16 @@ function Budget({ devise, lignes: toutes, lang, t, userId, onDone }) {
 // faute de frappe, ni de retirer une ligne en trop. Une ligne encore en file
 // d'attente (hors ligne) n'a pas d'id en base : elle se lit, elle ne se
 // modifie qu'une fois envoyée.
-export function LigneBudget({ ligne: l, devise, lang, t, onDone }) {
+export function LigneBudget({ ligne: l, comptes = [], devise, lang, t, onDone }) {
   const toast = useToast();
   const [edition, setEdition] = useState(false);
   const [retrait, setRetrait] = useState(false);
   const [cat, setCat] = useState(l.category || '');
   const [prevu, setPrevu] = useState(String(l.planned ?? ''));
   const [reel, setReel] = useState(String(l.actual ?? ''));
+  const [compte, setCompte] = useState(l.account_id || '');
   const [envoi, setEnvoi] = useState(false);
+  const nomCompte = comptes.find((c) => c.id === l.account_id)?.name;
   const depasse = l.kind !== 'income' && Number(l.actual) > Number(l.planned) && Number(l.planned) > 0;
   const modifiable = !l._enAttente && !!l.id;
 
@@ -665,7 +679,7 @@ export function LigneBudget({ ligne: l, devise, lang, t, onDone }) {
     setEnvoi(true);
     try {
       const { error } = await supabase.from('budget_entries')
-        .update({ category: cat.trim(), planned: p, actual: r })
+        .update({ category: cat.trim(), planned: p, actual: r, account_id: compte || null })
         .eq('id', l.id);
       if (error) throw error;
       setEdition(false);
@@ -697,6 +711,16 @@ export function LigneBudget({ ligne: l, devise, lang, t, onDone }) {
             {(id) => <TextInput id={id} inputMode="decimal" value={reel} onChange={(e) => setReel(e.target.value)} autoFocus />}
           </Field>
         </div>
+        {comptes.length > 0 && (
+          <Field label={t('money.lineAccount')} hint={t('money.lineAccountHint')}>
+            {(id) => (
+              <Select id={id} value={compte} onChange={(e) => setCompte(e.target.value)}>
+                <option value="">{t('money.noAccountOption')}</option>
+                {comptes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </Select>
+            )}
+          </Field>
+        )}
         <div className="flex gap-2">
           <Button onClick={enregistrer} loading={envoi} disabled={cat.trim() === ''}>{t('common.save')}</Button>
           <Button variant="secondary" onClick={() => { setEdition(false); setCat(l.category || ''); setPrevu(String(l.planned ?? '')); setReel(String(l.actual ?? '')); }}>
@@ -714,13 +738,20 @@ export function LigneBudget({ ligne: l, devise, lang, t, onDone }) {
           <p className="truncate text-body text-money-ink">{l.category}</p>
           <p className="text-caption text-money-muted">
             {t('money.plannedShort')} {montant(l.planned, lang, devise)}
+            {nomCompte && <span> · {nomCompte}</span>}
             {l._enAttente && <span className="ml-2 text-money-accent">· {t('offline.waiting', 'en attente d’envoi')}</span>}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <span className={`text-body font-semibold ${depasse ? 'text-money-danger' : 'text-money-ink'}`}>
-            {l.kind === 'income' ? '+' : '−'}{montant(l.actual, lang, devise)}
-          </span>
+          {/* « −0 $US » sur une ligne pas encore payée (essai du 05/10) : on
+              montre qu'il n'y a encore rien de saisi, pas un montant nul. */}
+          {Number(l.actual) === 0 ? (
+            <span className="text-caption text-money-muted">{t('money.notEnteredYet')}</span>
+          ) : (
+            <span className={`text-body font-semibold ${depasse ? 'text-money-danger' : 'text-money-ink'}`}>
+              {l.kind === 'income' ? '+' : '−'}{montant(l.actual, lang, devise)}
+            </span>
+          )}
           {modifiable && (
             <>
               <button type="button" onClick={() => setEdition(true)} aria-label={t('money.editLine', { name: l.category })}

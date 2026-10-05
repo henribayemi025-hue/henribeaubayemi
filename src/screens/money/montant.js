@@ -14,12 +14,17 @@ export function montant(n, lang, devise = '') {
       // `minimumFractionDigits: 0`: sinon le style monétaire force « 0,00 € »
       // et « 10,00 € » là où ses captures disent « €0 » et « €10 ». Les
       // centimes n'apparaissent que s'il y en a.
+      // 05/10, essai réel : « 120,5 $US » au lieu de « 120,50 $US ». Un
+      // montant qui a des centimes en montre toujours deux.
+      const centimes = !Number.isInteger(Math.round(v * 100) / 100) ? 2 : 0;
       return new Intl.NumberFormat(lang, {
-        style: 'currency', currency: devise, minimumFractionDigits: 0, maximumFractionDigits: 2,
+        style: 'currency', currency: devise, minimumFractionDigits: centimes, maximumFractionDigits: 2,
       }).format(v);
     } catch { /* code inconnu: on retombe sur le nombre + le code */ }
   }
-  const nombre = new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(v);
+  const nombre = new Intl.NumberFormat(lang, {
+    minimumFractionDigits: !Number.isInteger(Math.round(v * 100) / 100) ? 2 : 0, maximumFractionDigits: 2,
+  }).format(v);
   return devise ? `${nombre} ${devise}` : nombre;
 }
 

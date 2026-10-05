@@ -4034,7 +4034,12 @@
     "contributed": "Thanks, your share is saved.",
     "iPaid": "I paid round {{round}}",
     "undoPaid": "My mistake: remove my payment",
-    "paidNoted": "Noted: you paid this round."
+    "paidNoted": "Noted: you paid this round.",
+    "lineAccount": "Which account",
+    "lineAccountHint": "This account’s balance will move with this line.",
+    "noAccountOption": "No account",
+    "notEnteredYet": "not entered yet",
+    "anBiggest": "Biggest item: {{name}} ({{pct}}% of what went out)."
   },
   "relais": {
     "enCours": "Signing you in…",

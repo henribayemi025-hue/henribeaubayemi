@@ -46,7 +46,7 @@ describe('ligne de budget', () => {
     fireEvent.change(screen.getByLabelText('money.actual'), { target: { value: '512,40' } });
     fireEvent.click(screen.getByText('common.save'));
     await waitFor(() => expect(onDone).toHaveBeenCalled());
-    expect(appels).toEqual([['update', 'budget_entries', { category: 'Loyer', planned: 500, actual: 512.4 }, 'id', 'b1']]);
+    expect(appels).toEqual([['update', 'budget_entries', { category: 'Loyer', planned: 500, actual: 512.4, account_id: null }, 'id', 'b1']]);
   });
 
   it('supprime après confirmation dans la page', async () => {
@@ -56,6 +56,20 @@ describe('ligne de budget', () => {
     fireEvent.click(screen.getByText('common.delete'));
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     expect(appels).toEqual([['delete', 'budget_entries', [['id', 'b1']]]]);
+  });
+
+  it('rattache la ligne à un compte : le solde du compte bougera avec elle', async () => {
+    render(<ul><LigneBudget ligne={ligne} comptes={[{ id: 'c1', name: 'Caisse' }]} devise="EUR" lang="fr-FR" t={t} onDone={onDone} /></ul>);
+    fireEvent.click(screen.getByLabelText('money.editLine'));
+    fireEvent.change(screen.getByLabelText('money.lineAccount'), { target: { value: 'c1' } });
+    fireEvent.click(screen.getByText('common.save'));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(appels[0][2]).toMatchObject({ account_id: 'c1' });
+  });
+
+  it("une ligne pas encore payée dit « pas encore saisi », pas « −0 »", () => {
+    render(<ul><LigneBudget ligne={ligne} devise="EUR" lang="fr-FR" t={t} onDone={onDone} /></ul>);
+    expect(screen.getByText('money.notEnteredYet')).toBeTruthy();
   });
 
   it("une ligne encore en file d'attente ne se modifie pas", () => {

@@ -42,7 +42,7 @@ function Marque({ t }) {
       <span className="flex h-9 w-9 items-center justify-center rounded-card bg-gradient-to-br from-money-accent to-money-accent-soft text-body font-bold text-white">
         F
       </span>
-      <span className="text-section font-semibold">{t('money.title')}</span>
+      <span className="whitespace-nowrap text-section font-semibold">{t('money.title')}</span>
     </div>
   );
 }

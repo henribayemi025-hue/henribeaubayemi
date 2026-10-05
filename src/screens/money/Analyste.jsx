@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { IconChartBar, IconAlertTriangle } from '@tabler/icons-react';
 import { EmptyState } from '../../components/states';
 
@@ -45,10 +46,14 @@ export default function Analyste({ devise = '', lignes, comptes, epargne, lang, 
   const toutes = Array.isArray(lignes) ? lignes : [];
   const lesComptes = Array.isArray(comptes) ? comptes : [];
   const lEpargne = Array.isArray(epargne) ? epargne : [];
+  // Le mois lu (05/10, idée de Tirelire relue) : l'Analyste ne montrait que
+  // le mois en cours. Une ligne rangée sur un autre mois (le loyer de
+  // novembre saisi en octobre) semblait perdue ; on peut maintenant aller
+  // la voir, comme dans l'onglet Budget.
+  const [mois, setMois] = useState(moisCourant);
 
   if (toutes.length === 0) return <EmptyState icon={IconChartBar} title={t('money.anNothing')} />;
 
-  const mois = moisCourant();
   const avant = moisVoisin(mois, -1);
   const du = (p) => toutes.filter((l) => periodeDe(l) === p);
 
@@ -130,9 +135,16 @@ export default function Analyste({ devise = '', lignes, comptes, epargne, lang, 
 
       {/* 1 — le mois en cours, et ce qui a changé depuis le mois dernier */}
       <section className="rounded-card border border-money-line p-3">
-        <p className="text-caption text-money-muted">
-          {nomMois(mois, lang, { month: 'long', year: 'numeric' })}
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" onClick={() => setMois(moisVoisin(mois, -1))} aria-label={t('money.prevMonth')}
+            className="flex h-9 w-9 items-center justify-center rounded-pill border border-money-line text-body text-money-ink">‹</button>
+          <p className="text-center text-caption text-money-muted">
+            {nomMois(mois, lang, { month: 'long', year: 'numeric' })}
+            {mois === moisCourant() && <span className="block">{t('money.thisMonth')}</span>}
+          </p>
+          <button type="button" onClick={() => setMois(moisVoisin(mois, 1))} aria-label={t('money.nextMonth')}
+            className="flex h-9 w-9 items-center justify-center rounded-pill border border-money-line text-body text-money-ink">›</button>
+        </div>
         <p className={`text-title ${ce.reste < 0 ? 'text-money-danger' : 'text-money-accent'}`}>
           {montant(ce.reste, lang, devise)}
         </p>
@@ -171,6 +183,12 @@ export default function Analyste({ devise = '', lignes, comptes, epargne, lang, 
           {categories.length === 0 ? (
             <p className="mt-2 text-caption text-money-muted">{t('money.anNoExpense')}</p>
           ) : (
+            <>
+            {categories.length > 1 && totalSorti > 0 && (
+              <p className="mt-1 text-caption text-money-muted">
+                {t('money.anBiggest', { name: categories[0].categorie, pct: Math.round((categories[0].reel / totalSorti) * 100) })}
+              </p>
+            )}
             <ul className="mt-3 space-y-3">
               {categories.map((c) => {
                 const pct = totalSorti > 0 ? Math.round((c.reel / totalSorti) * 100) : 0;
@@ -190,6 +208,7 @@ export default function Analyste({ devise = '', lignes, comptes, epargne, lang, 
                 );
               })}
             </ul>
+            </>
           )}
         </section>
 

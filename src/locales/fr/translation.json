@@ -4034,7 +4034,12 @@
     "contributed": "Merci, ta part est enregistrée.",
     "iPaid": "J’ai payé le tour {{round}}",
     "undoPaid": "Je me suis trompé·e : retirer mon paiement",
-    "paidNoted": "C’est noté : tu as payé ce tour."
+    "paidNoted": "C’est noté : tu as payé ce tour.",
+    "lineAccount": "Sur quel compte",
+    "lineAccountHint": "Le solde de ce compte bougera avec cette ligne.",
+    "noAccountOption": "Aucun compte",
+    "notEnteredYet": "pas encore saisi",
+    "anBiggest": "Le plus gros poste : {{name}} ({{pct}} % de ce qui est sorti)."
   },
   "relais": {
     "enCours": "Connexion en cours…",
