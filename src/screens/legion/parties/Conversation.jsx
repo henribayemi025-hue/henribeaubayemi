@@ -371,7 +371,9 @@ export function Conversation({
                           {pieces.map((p, i) => (
                             p.type === 'image' ? (
                               <button key={i} type="button" onClick={() => setEnGrand({ url: p.url, nom: p.nom })} title={t('legion.voirEnGrand', 'Voir en grand')} className="block text-left">
-                                <AvecUrl url={p.url}>{(u) => <img src={u || undefined} alt="" className="min-h-[96px] min-w-[140px] max-h-72 w-auto max-w-full rounded-[12px] bg-black/10 object-cover" loading="lazy" />}</AvecUrl>
+                                {/* A16 (relevé du 25/09) : un visuel créé (jusqu'à 1 280 px) s'affichait en vignette, rogné.
+                                    Il prend maintenant toute la largeur de la bulle (34 rem au plus), entier, sans rognage. */}
+                                <AvecUrl url={p.url}>{(u) => <img src={u || undefined} alt="" className="block h-auto max-h-[34rem] w-[34rem] max-w-full rounded-[12px] bg-black/10 object-contain" loading="lazy" />}</AvecUrl>
                               </button>
                             ) : p.type === 'video' ? (
                               // « Créer la vidéo » (29/09) : lue sur place.
