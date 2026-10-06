@@ -205,14 +205,24 @@ function usePrefetchRoutes() {
     // Un par un: huit téléchargements simultanés se disputeraient la bande
     // passante avec les photos de l'accueil, qui, elles, sont visibles.
     let i = 0;
+    let handle;
     const next = () => {
       if (cancelled || i >= PREFETCH.length) return;
-      PREFETCH[i++]().catch(() => {}).then(() => idle(next));
+      PREFETCH[i++]().catch(() => {}).then(() => { if (!cancelled) handle = idle(next); });
     };
-    const handle = idle(next);
+    // Pas avant la fin du chargement de la page, plus 2,5 s (05/10, LCP
+    // « Poor » sur les fiches) : ouverte directement depuis une pub ou un
+    // statut, une fiche voyait sa grande photo se disputer la connexion avec
+    // une vingtaine de fichiers d'écrans que personne n'avait demandés.
+    let attente;
+    const demarrer = () => { attente = setTimeout(() => { if (!cancelled) handle = idle(next); }, 2500); };
+    if (document.readyState === 'complete') demarrer();
+    else window.addEventListener('load', demarrer, { once: true });
     return () => {
       cancelled = true;
-      cancelIdle(handle);
+      window.removeEventListener('load', demarrer);
+      clearTimeout(attente);
+      if (handle) cancelIdle(handle);
     };
   }, []);
 }
