@@ -198,10 +198,18 @@ function JournalDesChoix({ agent, t }) {
     return () => { vivant = false; };
   }, [agent.id]);
   if (!lignes) return null;
+  // Le dernier passage (0235) : ce qu'il a fait, ou pourquoi il n'a rien rendu.
+  const dp = agent.dernier_passage;
   const quoi = (m) => (m.meta?.livrable ? t('legion.journal.livrable') : m.meta?.plan ? t('legion.journal.plan') : m.meta?.reunion ? t('legion.journal.reunion') : m.meta?.rapport ? t('legion.journal.rapport') : t('legion.journal.reponse'));
   return (
     <div>
       <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-legion-muted">{t('legion.journal.titre')}</p>
+      {dp?.quand && (
+        <p className={`mb-1.5 rounded-card border p-2.5 text-caption ${dp.livre ? 'border-legion-line bg-legion-card text-legion-ink' : 'border-legion-gold/50 bg-legion-card text-legion-ink'}`}>
+          <span className="font-semibold text-legion-gold">{t('legion.journal.dernierPassage', { quand: new Date(dp.quand).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) })}</span>
+          {' · '}{dp.livre ? t('legion.journal.aLivre') : t('legion.journal.rienRendu', { raison: dp.raison || '' })}
+        </p>
+      )}
       {lignes.length === 0 ? (
         <p className="rounded-card border border-legion-line bg-legion-card p-3 text-caption text-legion-muted">{t('legion.journal.vide')}</p>
       ) : (

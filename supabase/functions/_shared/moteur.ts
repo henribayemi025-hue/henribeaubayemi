@@ -352,6 +352,11 @@ function secours(): string[] {
 export async function generer(apiKey: string, texte: string, schema: unknown, o: Options = {}): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
   let plafondGoogle = false;
+  // Combien de moteurs ont échoué, et combien faute de crédit ou de part
+  // gratuite : quand c'est tous, on le dit en clair (Beau, 26/09 : le
+  // message accusait Google alors que TOUS les moteurs étaient à sec).
+  let echecs = 0;
+  let aSec = 0;
   const liste = o.modeles ?? moteurs();
   const candidats = o.sansSecours ? liste : [...liste, ...secours().filter((x) => !liste.includes(x))];
   await lireEndormis();
@@ -378,6 +383,8 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       }
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
+      echecs++;
+      if (SANS_CREDIT.test(derniere)) aSec++;
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
       if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
       // Un modèle que le fournisseur ne connaît pas (renommé, retiré) : de côté pour la journée.
@@ -392,6 +399,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         else if (nom.startsWith('km:')) await signalerCoupure('Kimi', 'le solde du compte est épuisé', 'https://platform.moonshot.ai');
       }
     }
+  }
+  if (echecs > 0 && aSec === echecs) {
+    return { erreur: `aucune IA disponible : les moteurs payants n'ont plus de crédit et la part gratuite du jour est épuisée (elle repart à minuit UTC) — ${derniere}`, essais };
   }
   return { erreur: plafondGoogle && !derniere.includes('spending cap') ? `plafond Google (spending cap) — ${derniere}` : derniere, essais };
 }

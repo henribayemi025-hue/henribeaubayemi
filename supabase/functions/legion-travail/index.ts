@@ -628,9 +628,15 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   if (urgences && !eligibles.length) return false;
   // Le budget du mois de chacun, AVANT de découper : un agent au plafond ne compte pas dans
   // la tranche (sinon la tranche suivante le retrouverait, et ainsi de suite).
+  // Le dernier passage, lisible sur la fiche de l'agent (0235, B9) : la
+  // raison d'un « rien rendu » ne reste plus dans le seul journal technique.
+  const passage = (a: Agent, livre: boolean, raison: string) => {
+    service.from('legion_agents').update({ dernier_passage: { quand: new Date().toISOString(), livre, raison: raison.slice(0, 300) } }).eq('id', a.id)
+      .then(({ error }) => { if (error) console.error('dernier_passage:', error.message); });
+  };
   const restants: Agent[] = [];
   for (const a of eligibles) {
-    if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); continue; }
+    if (await budgetAgentAtteint(a)) { journal.push(`${entreprise.nom}: ${a.nom}, budget du mois atteint`); passage(a, false, 'budget du mois atteint'); continue; }
     restants.push(a);
   }
   // Une invocation ne prend que MAX_AGENTS_PAR_PASSAGE agents (25/09 : les 41 de Finjaro d'un
@@ -676,7 +682,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       // précédent, souvent un échec) : elle n'est pas dans `ouvertes`, mais il en a une.
       // Sans ce garde-fou, chaque tranche lui créait une initiative de plus (06/10 : 45
       // initiatives en double en une soirée sans moteur, jusqu'à 4 par agent).
-      if (!tache && aDejaUneTache(a)) { journal.push(`${entreprise.nom}: ${a.nom}, tâche déjà en cours ailleurs`); dejaLivre.add(a.id); return; }
+      if (!tache && aDejaUneTache(a)) { journal.push(`${entreprise.nom}: ${a.nom}, tâche déjà en cours ailleurs`); passage(a, false, 'tâche déjà en cours dans un autre passage'); dejaLivre.add(a.id); return; }
       if (!tache) {
         const titre = anglais
           ? `Initiative of the day (${a.poste}): without waiting to be asked, pick the ONE most useful thing in your job to move the company forward today, do it, and say why you chose it`
@@ -686,7 +692,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
           entreprise_id: entrepriseId, canal_id: canalA.id, auteur_id: a.id, user_id: null, texte: titre, genre: 'tache', assigne_a: a.id,
           meta: { par_ia: true, statut: 'a_faire', priorite: 'moyenne', initiative: true },
         }).select('id, texte, assigne_a, canal_id, meta, created_at').single();
-        if (!nouvelle) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); dejaLivre.add(a.id); return; }
+        if (!nouvelle) { journal.push(`${entreprise.nom}: ${a.nom} n'a pas de tâche ouverte`); passage(a, false, "pas de tâche ouverte, et pas d'initiative à prendre"); dejaLivre.add(a.id); return; }
         tache = nouvelle as Tache;
         journal.push(`${entreprise.nom}: ${a.nom} prend une initiative`);
       }
@@ -728,7 +734,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte), 3, () => String(tache.texte || ''));
       const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
-      if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
+      if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); passage(a, false, r.erreur); return; }
       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
       // tentatives de Rigo, grille de Mentor) s'arrêtaient en pleine phrase.
       // 25/09 : Ada (code React demandé) rendait un « livrable vide » : le
@@ -743,7 +749,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
         if (autres.length) corpsLivrable = [corpsLivrable, ...autres].filter(Boolean).join('\n\n');
       }
       const livrable = aerer(corpsLivrable.trim()).slice(0, 16000);
-      if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide (champs rendus : ${Object.keys(r.obj || {}).join(', ')} ; livrable de ${String(brut ?? '').length} caractères)`); return; }
+      if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide (champs rendus : ${Object.keys(r.obj || {}).join(', ')} ; livrable de ${String(brut ?? '').length} caractères)`); passage(a, false, 'le modèle a rendu un livrable vide'); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
       const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
@@ -798,6 +804,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
         if (suite) { ouvertes.push(suite as Tache); relais = `, relais à ${suivant.nom}`; }
       }
       journal.push(`${entreprise.nom}: ${a.nom} a livré « ${tache.texte.slice(0, 60)} » (${bloque ? 'bloqué' : 'terminé'}, ${r.modele}${relais})`);
+      passage(a, true, `${bloque ? 'livré, bloqué' : 'livré'} : « ${tache.texte.slice(0, 120)} »`);
       dejaLivre.add(a.id);
     })));
   }
