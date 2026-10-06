@@ -48,9 +48,9 @@ Signes : ✅ fait · 🔧 en cours · ⬜ à faire · ⏳ attend Beau · ✗ éc
 | 8 | ✅ L'import d'un agent garde ses compétences (F6) | relevé 25/09 | 008f664 |
 | 9 | ✅ « Mon ordinateur » : réglage « Tout autoriser » (propriétaire, éteint par défaut ; payer, supprimer, mot de passe toujours demandés) | carnet 25/09 | 88b9faa |
 | 10 | ⬜ Monde 3D — la vie des agents (se lever, marché, travail, sport, dormir) (E9) | relevé 25/09, lot 3.2 | |
-| 11 | ⬜ Monde 3D — grande carte sans plantage (E10), conducteur visible, trottoir, passagère (E8) | lot 3.3-3.4 | |
-| 12 | ⬜ Monde 3D — police (poursuite), basket, stade, arcade (E6, E11) | lot 3.5-3.6 | |
-| 13 | ⬜ Monde 3D — monde de rêve, pays commun à toutes les entreprises (E12, E18) | lot 3.7-3.9 | |
+| 11 | 🔧 Monde 3D — conducteur visible, trottoir, passagère : déjà faits (vérifié le 06/10). Reste la grande carte en quartiers chargés à l'approche (E10) | lot 3.3-3.4 | |
+| 12 | 🔧 Monde 3D — ✅ police : étoiles, poursuite, sirène, arrestation pour de faux (3b99c37) ; ✅ basket jouable (e544998) ; ✅ foot à 5, tirs au but contre un gardien (03112fd). Reste l'arcade : logique du casse-briques confiée à Forge (tâche difficile), à relire puis brancher | lot 3.5-3.6 | |
+| 13 | 🔧 Monde 3D — ✅ monde de rêve : couloirs aériens et voitures volantes, parc suspendu, aurores, dauphins (35b110d). ⏳ pays commun (E18) : touche la base partagée et ce que chaque entreprise montre aux autres → décision de Beau (section 3) | lot 3.7-3.9 | |
 | 14 | ✅ Salut humain : déjà en place (plusieurs agents répondent à un salut, en une ou deux phrases, par la voie rapide du 28/09) ; vérifié dans legion-repondre | carnet 26/09 | ne marche que quand une IA est disponible |
 | 15 | ✅ Connecteurs : vérifié le 06/10 — GitHub (« Se connecter avec GitHub », plusieurs dépôts par entreprise), Supabase, Cloudflare et Vercel (lecture seule, 0208) existent par entreprise. Reste Gmail par personne : demande une application Google vérifiée (section 3) | relevé 25/09, carnet 26/09 | |
 | 16 | ✅ Les 15 éléments des 5 prototypes AI Studio (C13) : vérifié le 06/10, 10 sont faits (onglets, barre d'état, Ctrl+K, erreurs soulignées, demander sur une sélection, terminaux, tâches en arrière-plan, plusieurs agents, renfort, équipe). Recherche dans tout le projet faite le 06/10 (bouton, Ctrl+Maj+F, un clic ouvre la ligne). Avant / après côte à côte fait le 06/10 (l'aperçu montre la page actuelle et la page avec la proposition). Points de retour faits le 06/10 (5 au plus, retour d'un clic, annulable). Barre d'activité à gauche faite le 06/10 (ordinateur : fichiers repliables, recherche, modifications, points, journal, tâches, GitHub). Entretien d'embauche mesuré fait le 06/10, sur la conception de Mentor (3 exercices, tests cachés posés seulement au moment de noter, 5 signes de triche, grade proposé). **Les 15 sont faits** | relevé 25/09 | |
@@ -76,6 +76,7 @@ Chaque point fait est coché ici et noté au registre (`AMELIORATIONS.md`).
 | ⏳ Les deux clés Gemini viennent-elles du même compte Google ? | |
 | ⏳ Prix face à « Caisse Boutique », reprise du catalogue dans Accounting | décisions |
 | ⏳ Ouvrir Learn sur finjaro.net | décision (« on ne se presse pas », 01/10) |
+| ⏳ Pays commun du monde 3D (E18) | ce qu'une entreprise montre aux autres (nom, immeuble, nombre d'agents ?), réglage éteint par défaut ; il faut une colonne de plus dans la base partagée avec Accounting (ajout seulement) |
 | ⏳ Gmail branché par chaque personne dans Léo | une application Google vérifiée (console Google, écran de consentement, examen par Google) : démarche à son nom |
 
 ## 4. Les quatre grandes listes d'idées — jamais triées en entier

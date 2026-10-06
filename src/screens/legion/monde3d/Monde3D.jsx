@@ -32,7 +32,7 @@ function lire(cle, defaut) { try { return localStorage.getItem(cle) || defaut; }
 function ecrire(cle, v) { try { localStorage.setItem(cle, v); } catch { /* navigation privée */ } }
 
 // La jauge du basket : elle va et vient (basket.js) ; on tire quand elle est dans le vert.
-function JaugeBasket({ b, mobile, t, onTirer }) {
+export function JaugeBasket({ b, mobile, t, onTirer }) {
   const [v, setV] = useState(0);
   useEffect(() => {
     if (!b.tient) return undefined;
@@ -63,7 +63,7 @@ function JaugeBasket({ b, mobile, t, onTirer }) {
 }
 
 // Les tirs au but : la visée (de gauche à droite), puis la puissance (foot.js).
-function JaugeFoot({ f, mobile, t, onAppui }) {
+export function JaugeFoot({ f, mobile, t, onAppui }) {
   const [s, setS] = useState(0);
   useEffect(() => {
     if (f.etape !== 'visee' && f.etape !== 'puissance') return undefined;
