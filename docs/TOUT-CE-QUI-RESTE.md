@@ -38,23 +38,23 @@ Signes : ✅ fait · 🔧 en cours · ⬜ à faire · ⏳ attend Beau · ✗ éc
 
 | # | Point | Source | Remarque |
 | --- | --- | --- | --- |
-| 1 | ⬜ Atelier : panneau « Tâches en arrière-plan » (C8) | relevé 25/09, lot 4 | |
-| 2 | ⬜ Atelier : une tâche de code donnée à un agent se déroule visiblement dans l'atelier (C10) | relevé 25/09, lot 4 | |
+| 1 | ✅ Atelier : panneau « Tâches en arrière-plan » (C8) | relevé 25/09, lot 4 | fc34ae1 |
+| 2 | ✅ Atelier : les tâches de code des agents visibles dans l'atelier (C10) | relevé 25/09, lot 4 | fc34ae1 (statut, branche, demande de fusion) |
 | 3 | ✅ Atelier : messages du Worker dans la langue du compte (C4) | relevé 25/09 | 330f05b |
-| 4 | ⬜ Appeler un agent : ça sonne, il décroche, mains libres, voix par agent (D3) | relevé 25/09, lot 4 | voix gratuites du navigateur |
-| 5 | ⬜ Jarvis : réveil d'un geste (D1) | relevé 25/09 | caméra du navigateur, rien d'envoyé |
+| 4 | ✅ Appeler un agent : ça sonne, il décroche (« Allô ? »), mains libres, voix d'homme ou de femme propre à chaque agent (D3) | relevé 25/09, lot 4 | cebbac0 |
+| 5 | ✅ Jarvis : réveil d'un signe de la main (D1), réglage « Geste » éteint par défaut, rien gardé ni envoyé | relevé 25/09 | 662abfc |
 | 6 | ✅ Immeuble : vraie icône au lieu de 🏢 (A13) ; les raccourcis Hall / Réunion / Atelier existaient déjà dans le monde 3D | relevé 25/09 | 1847bfa |
-| 7 | ⬜ Une image créée dans un salon ne sort qu'en petit (A16) | relevé 25/09 | |
-| 8 | ⬜ Studio de contenu : l'import d'un agent perd ses compétences (F6) | relevé 25/09 | |
-| 9 | ⬜ « Mon ordinateur » : réglage « Tout autoriser » choisi par l'utilisateur | carnet 25/09 | |
+| 7 | ✅ Une image créée dans un salon s'affiche en grand et entière (A16) | relevé 25/09 | 5bd… voir registre |
+| 8 | ✅ L'import d'un agent garde ses compétences (F6) | relevé 25/09 | 008f664 |
+| 9 | ✅ « Mon ordinateur » : réglage « Tout autoriser » (propriétaire, éteint par défaut ; payer, supprimer, mot de passe toujours demandés) | carnet 25/09 | 88b9faa |
 | 10 | ⬜ Monde 3D — la vie des agents (se lever, marché, travail, sport, dormir) (E9) | relevé 25/09, lot 3.2 | |
 | 11 | ⬜ Monde 3D — grande carte sans plantage (E10), conducteur visible, trottoir, passagère (E8) | lot 3.3-3.4 | |
 | 12 | ⬜ Monde 3D — police (poursuite), basket, stade, arcade (E6, E11) | lot 3.5-3.6 | |
 | 13 | ⬜ Monde 3D — monde de rêve, pays commun à toutes les entreprises (E12, E18) | lot 3.7-3.9 | |
-| 14 | ⬜ Salut humain : plusieurs agents répondent à un « bonjour », vite | carnet 26/09 | dépend des IA disponibles |
+| 14 | ✅ Salut humain : déjà en place (plusieurs agents répondent à un salut, en une ou deux phrases, par la voie rapide du 28/09) ; vérifié dans legion-repondre | carnet 26/09 | ne marche que quand une IA est disponible |
 | 15 | ⬜ Connecteurs par utilisateur : GitHub (OAuth), puis Gmail, Supabase, Vercel (C11) | relevé 25/09, carnet 26/09 | |
 | 16 | ⬜ Reprendre les 11 éléments restants des 5 prototypes AI Studio (C13) | relevé 25/09 | |
-| 17 | ⬜ Lettre de l'IA affichée dans Learn | carnet 02/10 | côté Learn, je fais le raccourci |
+| 17 | ✅ Lettre de l'IA affichée dans Learn : déjà en place (numéros publiés dans Learn, importés sur staging) | carnet 02/10 | |
 | 18 | ⬜ Les quatre grandes listes d'idées : les trier puis faire ce qui est retenu (section 4) | | avec les agents |
 
 Chaque point fait est coché ici et noté au registre (`AMELIORATIONS.md`).
