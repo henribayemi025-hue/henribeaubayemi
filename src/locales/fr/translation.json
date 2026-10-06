@@ -741,6 +741,7 @@
     "exporter": "Exporter",
     "exporterAide": "Sa fiche et ses compétences dans un fichier, pour le recréer dans une autre entreprise Léo.",
     "importer": {
+      "competencesRatees": "Ces compétences n'ont pas pu être reprises : {{liste}}. Tu peux les ajouter depuis sa fiche.",
       "titre": "Importer un agent",
       "fichier": "Un fichier…",
       "lienPlaceholder": "ou son lien (GitHub…)",

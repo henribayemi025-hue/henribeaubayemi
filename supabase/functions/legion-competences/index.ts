@@ -149,7 +149,23 @@ Deno.serve(compter('legion_competences', async (req: Request) => {
     const { data: lignes } = await service.from('studio_catalogue').select('cle, nom, description, categorie, source_repo, source_chemin, licence')
       .eq('cle', corps.catalogue_cle).eq('genre', 'skill').order('source_repo').limit(1);
     const f = lignes?.[0];
-    if (!a || !f) return json({ erreur: 'Agent ou compétence introuvable.' }, 404);
+    if (!a) return json({ erreur: 'Agent ou compétence introuvable.' }, 404);
+    if (!f) {
+      // F6 (relevé du 25/09) : les compétences livrées avec un modèle (le
+      // « Studio de contenu », 0196) ne sont pas dans studio_catalogue mais
+      // dans studio_modele_competences, avec leur texte. À l'import d'un agent
+      // exporté, elles étaient introuvables et se perdaient sans un mot.
+      const { data: m } = await service.from('studio_modele_competences').select('cle, nom, description, contenu, source')
+        .eq('cle', corps.catalogue_cle).limit(1);
+      const c = m?.[0];
+      if (!c) return json({ erreur: 'Agent ou compétence introuvable.' }, 404);
+      const { error } = await service.from('legion_competences').upsert({
+        entreprise_id: entreprise.id, agent_id: (a as Agent).id, catalogue_cle: c.cle, nom: c.nom, description: c.description,
+        contenu: c.contenu, source_repo: null, source_chemin: c.source, licence: null,
+        ajoutee_par: 'fondateur', pourquoi: 'Reprise avec l\'agent importé.', actif: true,
+      }, { onConflict: 'agent_id,catalogue_cle' });
+      return json(error ? { erreur: error.message } : { ok: true, lue: !!c.contenu });
+    }
     return json(await poser(a as Agent, f as Fiche, 'fondateur', null));
   }
 

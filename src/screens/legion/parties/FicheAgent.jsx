@@ -3,6 +3,7 @@ import { ChoixModele, nomDuModele } from './ChoixModele';
 import { IconMessageCircle, IconRobot, IconRefresh, IconCircleCheck, IconCamera, IconPencil, IconSearch, IconDownload } from '@tabler/icons-react';
 import { Modal } from '../../../components/Modal';
 import { supabase } from '../../../lib/supabase';
+import { useToast } from '../../../hooks/useToast';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
 import { AUTONOMIES } from './outils';
@@ -146,7 +147,7 @@ function lireFicheImportee(brut) {
   return {
     champs: { nom: s(j.nom, 40), poste: s(j.poste, 80), departement: s(j.departement, 60), mandat: s(j.mandat, 600), personnalite: s(j.personnalite, 400), jamais: s(j.jamais, 400),
       peut_lire: Array.isArray(j.peut_lire) ? j.peut_lire.filter((x) => SOURCES.includes(x)) : null, fin_mission: '' },
-    competences: (Array.isArray(j.competences) ? j.competences : []).map((c) => s(c?.catalogue_cle, 120)).filter(Boolean).slice(0, 4),
+    competences: (Array.isArray(j.competences) ? j.competences : []).map((c) => s(c?.catalogue_cle, 120)).filter(Boolean).slice(0, 12),
   };
 }
 function ImporterAgent({ t, onLu }) {
@@ -336,6 +337,7 @@ function SaConsigne({ agent, t }) {
 // droit d'aller sans demander. Beau: « commençons par l'audit de chaque
 // personne ».
 export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer, onAutonomie, onDroits, onVoirTravail, onEcrireA, onAutreTete, onVraiePhoto, onModifier, onCreer, photosEnCours, t }) {
+  const toast = useToast();
   const [change, setChange] = useState(false);
   const [enGrand, setEnGrand] = useState(false);
   const [edition, setEdition] = useState(null); // null | { nom, poste, departement, mandat, personnalite }
@@ -366,9 +368,13 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
         if (nouveau) {
           const cree = await onCreer(propre);
           // Les compétences d'un agent importé, reprises à leur source.
+          // F6 : une compétence qui ne se reprend pas n'est plus perdue en silence.
+          const ratees = [];
           for (const cle of cree?.id ? importees : []) {
-            await supabase.functions.invoke('legion-competences', { body: { action: 'equiper', entreprise_id: cree.entreprise_id, agent_id: cree.id, catalogue_cle: cle } });
+            const { data: r, error: e } = await supabase.functions.invoke('legion-competences', { body: { action: 'equiper', entreprise_id: cree.entreprise_id, agent_id: cree.id, catalogue_cle: cle } });
+            if (e || r?.erreur) ratees.push(cle);
           }
+          if (ratees.length) toast.error(t('legion.importer.competencesRatees', { liste: ratees.join(', ') }));
           setEdition(null); onFermer();
         } else { await onModifier(agent, propre); setEdition(null); }
       } finally { setChange(false); }

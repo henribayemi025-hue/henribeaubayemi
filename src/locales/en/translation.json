@@ -741,6 +741,7 @@
     "exporter": "Export",
     "exporterAide": "Their profile and skills in a file, to recreate them in another Léo company.",
     "importer": {
+      "competencesRatees": "These skills could not be brought over: {{liste}}. You can add them from the agent's card.",
       "titre": "Import an agent",
       "fichier": "A file…",
       "lienPlaceholder": "or its link (GitHub…)",
