@@ -5,6 +5,7 @@ import { blobToWavDataUrl } from '../../../lib/audioWav';
 import { Visage } from './Visage';
 import { raisonLisible } from './outils';
 import { DOSSIER_LEGION_PRIVE, urlLegionPrive } from '../../../lib/fichierPrive';
+import { choisirVoix, genreDe, sonner, tonDe } from './voixAgent';
 
 // APPELER UN AGENT (23/09).
 //
@@ -43,7 +44,7 @@ function pourLaVoix(t) {
 }
 
 export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, onRaccrocher }) {
-  const [etat, setEtat] = useState('pret'); // pret | ecoute | envoi | reflechit | parle | erreur
+  const [etat, setEtat] = useState('sonne'); // sonne | pret | ecoute | envoi | reflechit | parle | erreur
   const [dernier, setDernier] = useState(''); // ce que l'agent vient de dire
   const [erreur, setErreur] = useState('');
   const [niveau, setNiveau] = useState(0);
@@ -55,6 +56,17 @@ export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, 
   const minuteur = useRef(null);
 
   useEffect(() => () => { actif.current = false; arreterTout(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // D3 (relevé du 25/09) : ça sonne deux fois, l'agent décroche (« Allô ? »)
+  // et l'écoute part toute seule — mains libres. Les voix du navigateur se
+  // chargent parfois après coup : on les demande pendant la sonnerie.
+  useEffect(() => {
+    try { window.speechSynthesis?.getVoices(); } catch { /* rien */ }
+    sonner(2).then(() => {
+      if (!actif.current) return;
+      parler(t('legion.appel.decroche', { nom: agent.nom }));
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function arreterTout() {
     try { window.speechSynthesis?.cancel(); } catch { /* rien */ }
@@ -171,10 +183,13 @@ export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, 
     if (!synth || typeof SpeechSynthesisUtterance === 'undefined' || !phrase) { setEtat('pret'); return; }
     const u = new SpeechSynthesisUtterance(phrase);
     const code = langue === 'en' ? 'en' : 'fr';
-    const voix = synth.getVoices().filter((v) => v.lang?.toLowerCase().startsWith(code));
-    if (voix.length) u.voice = voix.find((v) => /female|femme|amelie|audrey|marie|google/i.test(v.name)) || voix[0];
+    // Sa voix à lui : homme ou femme selon son portrait, toujours la même,
+    // avec un ton qui lui est propre (voixAgent.js).
+    const voix = choisirVoix(synth.getVoices(), code, genreDe(agent), agent.id || agent.nom);
+    if (voix) u.voice = voix;
     u.lang = code === 'en' ? 'en-US' : 'fr-FR';
     u.rate = 1.02;
+    u.pitch = tonDe(agent.id || agent.nom);
     let fini = false;
     const suite = () => { if (fini) return; fini = true; if (actif.current) ecouter(); };
     u.onend = suite;
@@ -192,6 +207,7 @@ export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, 
   }
 
   const libelle = {
+    sonne: t('legion.appel.sonne'),
     pret: t('legion.appel.toucherPourParler'),
     ecoute: t('legion.appel.ecoute'),
     envoi: t('legion.appel.envoi'),
@@ -199,13 +215,13 @@ export function Appel({ agent, salon, moi, entrepriseId, langue, t, onMessages, 
     parle: t('legion.appel.parle', { nom: agent.nom }),
     erreur: erreur || t('errors.generic'),
   }[etat];
-  const occupe = etat === 'envoi' || etat === 'reflechit';
+  const occupe = etat === 'envoi' || etat === 'reflechit' || etat === 'sonne';
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-legion-bg/95 px-6 pb-10 pt-16 backdrop-blur" role="dialog" aria-label={t('legion.appel.titre', { nom: agent.nom })}
       style={{ paddingTop: 'max(4rem, env(safe-area-inset-top))', paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))' }}>
       <div className="flex flex-col items-center text-center">
-        <div className={`rounded-full p-1.5 transition ${etat === 'parle' ? 'bg-legion-gold/30 animate-pulse' : etat === 'ecoute' ? 'bg-legion-success/20' : 'bg-transparent'}`}>
+        <div className={`rounded-full p-1.5 transition ${etat === 'parle' ? 'bg-legion-gold/30 animate-pulse' : etat === 'sonne' ? 'bg-legion-gold/20 animate-bounce' : etat === 'ecoute' ? 'bg-legion-success/20' : 'bg-transparent'}`}>
           <Visage a={agent} taille={132} point={false} />
         </div>
         <h2 className="mt-4 text-[24px] font-semibold text-legion-ink">{agent.nom}</h2>

@@ -395,6 +395,8 @@
     },
     "sources": "Sources",
     "appel": {
+      "sonne": "Ça sonne…",
+      "decroche": "Allô ? C’est {{nom}}, je t’écoute.",
       "appeler": "Appeler {{nom}}",
       "enParler": "En parler avec {{nom}} de vive voix",
       "titre": "Appel avec {{nom}}",

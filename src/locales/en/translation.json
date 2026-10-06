@@ -395,6 +395,8 @@
     },
     "sources": "Sources",
     "appel": {
+      "sonne": "Ringing…",
+      "decroche": "Hello? It’s {{nom}}, I’m listening.",
       "appeler": "Call {{nom}}",
       "enParler": "Talk it over with {{nom}}",
       "titre": "Call with {{nom}}",
