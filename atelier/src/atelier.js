@@ -12,10 +12,10 @@
 import { DurableObject } from 'cloudflare:workers';
 import { getSandbox } from '@cloudflare/sandbox';
 import { nouvelEtat, nouvelleSession, envoyer, decider, arreter, coutSession, compacter, chercherDans } from './boucle.js';
-import { executant } from './bac.js';
+import { executant, assurer } from './bac.js';
 import { disponibles, modelesRelais, MODELES } from './moteur.js';
 import { prixMachineParSeconde, arrondi } from './cout.js';
-import { cheminSur, MODES, normaliserCommande, commandeInterdite } from './politique.js';
+import { cheminSur, MODES, normaliserCommande, commandeInterdite, RACINE } from './politique.js';
 import { enveloppe, lireDossier, retenir } from './terminal.js';
 import { diff } from './diff.js';
 import { fabriquerZip } from './zip.js';
@@ -23,6 +23,7 @@ import { DEPARTS } from './departs.js';
 import { enregistreur } from './supabase.js';
 import { equipe } from './equipe.js';
 import { listePoints, creerPoint, restaurerPoint, supprimerPoint } from './points.js';
+import { EXERCICES, fichiersDeDepart, fichierExemples, messageDeDepart, scriptVerif, lireResultats, noter, nomsDesTests } from './entretien.js';
 
 const TAILLE_PROJET_MAX = 5_000_000;
 const NB_FICHIERS_MAX = 1000;
@@ -323,6 +324,76 @@ export class Atelier extends DurableObject {
         const texte = String(url.searchParams.get('texte') || '').slice(0, 200);
         if (!texte.trim()) return erreur('texte à chercher manquant');
         return json(await chercherDans(this.fichiers(pid, e), texte, '.', 300));
+      }
+
+      // L'entretien d'embauche (entretien.js) : lancer, puis noter avec les
+      // tests cachés, posés dans le bac HORS du projet le temps de la note.
+      if (action === 'entretien') {
+        const offre = Object.values(EXERCICES).map((x) => ({ niveau: x.niveau, titre: x.titre, plafondMinutes: x.plafondMinutes, plafondAppels: x.plafondAppels, tests: nomsDesTests(x).length }));
+        if (!p[3] && methode === 'GET') return json({ entretien: e.entretien || null, historique: e.entretiens || [], offre });
+        if (['en_cours', 'attente'].includes(e.session.statut)) return erreur('Arrête d\'abord le travail en cours.', 409);
+        if (!p[3] && methode === 'POST') {
+          const ex = EXERCICES[corps.niveau];
+          if (!ex) return erreur('niveau inconnu');
+          const f = this.fichiers(pid, e);
+          const permis = new Set(['README.md', '.gitignore', ...Object.values(EXERCICES).flatMap((x) => Object.keys(fichiersDeDepart(x)))]);
+          if ((await f.liste()).some((x) => !permis.has(x.chemin))) return erreur('Lance l\'entretien dans un projet vide (+ Nouveau projet → Vide).', 409);
+          for (const [chemin, contenu] of Object.entries(fichiersDeDepart(ex))) await f.ecrire(chemin, contenu);
+          e.entretien = { niveau: ex.niveau, debut: new Date().toISOString(), journalN: e.journalN || 0, sessionId: e.session.id, coutDebut: coutSession(e.session), candidat: String(corps.candidat || '').slice(0, 60) || null, modele: e.modele || 'auto', bulletin: null };
+          await this.journaliser(pid, e, { acteur: 'humain', outil: 'entretien', entree_resumee: `entretien ${ex.niveau} lancé${e.entretien.candidat ? ` (${e.entretien.candidat})` : ''}`, resultat_resume: null, decision: 'humain', mode: e.mode, cout_usd: 0 }, trace);
+          // Pendant l'entretien, le candidat travaille seul (« Tout autoriser » :
+          // la liste « toujours refusé » et le plafond restent). Le mode revient après.
+          const avant = e.mode;
+          e.mode = 'auto';
+          try {
+            await this.tourner(pid, e, trace, (deps) => envoyer(e, deps, messageDeDepart(ex)), acces);
+          } finally {
+            e.mode = avant;
+            await this.sauver(pid, e);
+          }
+          return json({ ...this.vue(pid, e, this.env), entretien: e.entretien });
+        }
+        if (p[3] === 'noter' && methode === 'POST') {
+          const ent = e.entretien;
+          const ex = ent && EXERCICES[ent.niveau];
+          if (!ex) return erreur('aucun entretien en cours', 404);
+          if (coutSession(e.session) >= e.session.plafond) return erreur(`Plafond de la session atteint (${e.session.plafond} $).`, 402);
+          const f = this.fichiers(pid, e);
+          const sandbox = getSandbox(this.env.Sandbox, `p-${pid}`, { sleepAfter: this.env.ATELIER_VEILLE || '10m' });
+          const debut = Date.now();
+          let sortie = '';
+          const dossier = `/tmp/entretien-verif-${crypto.randomUUID()}`;
+          try {
+            await assurer(sandbox, e, f);
+            await sandbox.mkdir(dossier, { recursive: true });
+            await sandbox.writeFile(`${dossier}/verif.mjs`, scriptVerif(ex, `${RACINE}/${ex.fichier}`));
+            const r = await sandbox.exec(`timeout 20 node ${dossier}/verif.mjs`, { cwd: dossier, timeout: 30_000 });
+            sortie = r.stdout || '';
+          } catch (err) {
+            return erreur(`Erreur : ${err.message}`, 502);
+          } finally {
+            await sandbox.exec(`rm -rf ${dossier}`).catch(() => {});
+          }
+          const secondes = (Date.now() - debut) / 1000;
+          const prix = prixMachineParSeconde(this.env.ATELIER_TAILLE || 'standard-1');
+          e.session.secondesMachine += secondes;
+          e.session.coutMachine += secondes * prix;
+          const lignes = await this.ctx.storage.list({ prefix: `j:${pid}:`, start: `j:${pid}:${String(ent.journalN + 1).padStart(9, '0')}`, limit: 3000 });
+          const exemples = await f.lire(fichierExemples(ex));
+          const bulletin = noter(ex, {
+            resultats: lireResultats(ex, sortie),
+            journal: [...lignes.values()],
+            debut: ent.debut,
+            exemplesIntacts: exemples === ex.exemples,
+            source: (await f.lire(ex.fichier)) || '',
+            coutUsd: ent.sessionId === e.session.id ? coutSession(e.session) - ent.coutDebut : coutSession(e.session),
+          });
+          ent.bulletin = { ...bulletin, candidat: ent.candidat, modele: ent.modele, note_le: new Date().toISOString() };
+          e.entretiens = [ent.bulletin, ...(e.entretiens || [])].slice(0, 10);
+          await this.journaliser(pid, e, { acteur: 'humain', outil: 'entretien', entree_resumee: `entretien ${ex.niveau} noté`, resultat_resume: `${bulletin.passes}/${bulletin.total} tests cachés, ${bulletin.minutes} min, grade proposé : ${bulletin.grade}${bulletin.signes.length ? `, signes : ${bulletin.signes.join(', ')}` : ''}`, decision: 'humain', mode: e.mode, cout_usd: secondes * prix }, trace);
+          await this.sauver(pid, e);
+          return json({ entretien: ent, historique: e.entretiens });
+        }
       }
 
       // Les points de retour (points.js) : poser, lister, revenir, effacer.

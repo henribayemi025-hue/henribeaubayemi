@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus, IconArrowBackUp, IconFlag } from '@tabler/icons-react';
+import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus, IconArrowBackUp, IconFlag, IconCheck } from '@tabler/icons-react';
 import { appel } from './api';
 import { supabase } from '../../../lib/supabase';
 import { dollars } from './arbre';
@@ -210,6 +210,135 @@ export function Recherche({ pid, onOuvrir, onFermer, t }) {
           </section>
         ))}
       </div>
+    </Feuille>
+  );
+}
+
+// L'entretien d'embauche (C13, n° 39 ; conçu par Mentor) : un vrai exercice,
+// noté par des tests cachés que le candidat ne voit jamais, et MESURÉ.
+const SIGNES = ['ecrit_en_dur', 'fini_sans_execution', 'tests_caches_vises', 'exemples_modifies', 'trop_beau'];
+
+function Bulletin({ b, langue, t }) {
+  const ok = b.passes === b.total;
+  return (
+    <div className="rounded-card border border-legion-line bg-legion-card p-3">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className={`text-[28px] font-bold tabular-nums ${ok ? 'text-legion-gold' : 'text-legion-ink'}`}>{b.passes}/{b.total}</span>
+        <span className="text-caption text-legion-muted">{t('legion.atelier.entretien.testsCaches')}</span>
+        <span className={`ml-auto rounded-pill px-3 py-1 text-[12px] font-semibold ${b.grade === 'aucun' ? 'bg-legion-bg text-legion-muted' : 'bg-legion-gold text-legion-bg'}`}>
+          {t(`legion.atelier.entretien.grade_${b.grade}`)}
+        </span>
+      </div>
+      <p className="mt-0.5 text-[11px] text-legion-muted">
+        {t(`legion.atelier.entretien.niveau_${b.niveau}`)} · {b.titre}{b.candidat ? ` · ${b.candidat}` : ''}{b.note_le ? ` · ${new Date(b.note_le).toLocaleString(langue, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+      </p>
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] sm:grid-cols-3">
+        {[
+          [t('legion.atelier.entretien.temps'), `${Number(b.minutes).toLocaleString(langue)} / ${b.plafondMinutes} min`, b.horsDelai],
+          [t('legion.atelier.entretien.appels'), `${b.appels} / ${b.plafondAppels}`, b.appels > b.plafondAppels],
+          [t('legion.atelier.entretien.cout'), dollars(b.coutUsd, langue), false],
+          [t('legion.atelier.entretien.commandes'), String(b.commandes), b.commandes === 0],
+          [t('legion.atelier.entretien.corrige'), t(b.erreursCorrigees ? 'legion.atelier.entretien.oui' : 'legion.atelier.entretien.non'), false],
+        ].map(([k, v, alerte]) => (
+          <div key={k} className="min-w-0">
+            <dt className="text-legion-muted">{k}</dt>
+            <dd className={`font-semibold tabular-nums ${alerte ? 'text-legion-danger' : 'text-legion-ink'}`}>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {b.signes.length > 0 && (
+        <div className="mt-3 rounded-input border border-legion-danger/50 p-2">
+          <p className="text-[12px] font-semibold text-legion-danger">{t('legion.atelier.entretien.signes')}</p>
+          <ul className="mt-1 list-disc pl-5 text-[12px] text-legion-ink">
+            {b.signes.filter((x) => SIGNES.includes(x)).map((x) => <li key={x}>{t(`legion.atelier.entretien.signe_${x}`)}</li>)}
+          </ul>
+        </div>
+      )}
+      {b.erreurImport && <p className="mt-2 font-mono text-[11px] text-legion-danger">{b.erreurImport}</p>}
+      <details className="mt-3">
+        <summary className="cursor-pointer text-[12px] font-semibold text-legion-ink">{t('legion.atelier.entretien.detail')}</summary>
+        <ul className="mt-1 space-y-0.5">
+          {b.tests.map((x) => (
+            <li key={x.nom} className="grid grid-cols-[16px_minmax(0,1fr)] gap-1.5 text-[12px]">
+              {x.ok ? <IconCheck size={14} className="mt-0.5 text-legion-gold" /> : <IconX size={14} className="mt-0.5 text-legion-danger" />}
+              <span className="min-w-0">
+                <span className="text-legion-ink">{x.nom}</span>
+                {x.varie && <span className="ml-1 text-[10px] text-legion-muted">({t('legion.atelier.entretien.auHasard')})</span>}
+                {!x.ok && (
+                  <span className="block break-words font-mono text-[11px] text-legion-muted">
+                    {x.erreur || `${t('legion.atelier.entretien.recu')} ${x.recu} · ${t('legion.atelier.entretien.attendu')} ${x.attendu}`}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
+export function Entretien({ pid, nom, langue, bloque, onLancer, onFermer, t }) {
+  const [etat, setEtat] = useState(null);
+  const [erreur, setErreur] = useState(null);
+  const [occupe, setOccupe] = useState(false);
+  useEffect(() => {
+    appel(`/projets/${pid}/entretien`).then(setEtat).catch((e) => setErreur(e.message));
+  }, [pid]);
+  const noterMaintenant = async () => {
+    setErreur(null); setOccupe(true);
+    try { const r = await appel(`/projets/${pid}/entretien/noter`, { methode: 'POST', corps: {} }); setEtat((x) => ({ ...x, ...r })); } catch (e) { setErreur(e.message); } finally { setOccupe(false); }
+  };
+  const ent = etat?.entretien;
+  return (
+    <Feuille titre={t('legion.atelier.entretien.titre')} onFermer={onFermer} t={t}>
+      <p className="mb-3 text-[12px] text-legion-muted">{t('legion.atelier.entretien.aide', { nom })}</p>
+      {erreur && <p className="mb-3 text-caption text-legion-danger">{erreur}</p>}
+      {!etat && !erreur && <p className="text-caption text-legion-muted">…</p>}
+      {ent && !ent.bulletin && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-card border border-legion-gold/60 bg-legion-card p-3">
+          <span className="min-w-0 flex-1 text-caption text-legion-ink">{t('legion.atelier.entretien.enCours', { niveau: t(`legion.atelier.entretien.niveau_${ent.niveau}`) })}</span>
+          <button type="button" onClick={noterMaintenant} disabled={occupe || bloque}
+            className="shrink-0 rounded-pill bg-legion-gold px-4 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-40">
+            {occupe ? '…' : t('legion.atelier.entretien.noter')}
+          </button>
+        </div>
+      )}
+      {ent?.bulletin && <div className="mb-4"><Bulletin b={ent.bulletin} langue={langue} t={t} /></div>}
+      {bloque && <p className="mb-3 text-[12px] text-legion-gold-soft">{t('legion.atelier.pointBloque')}</p>}
+      {etat?.offre && (
+        <>
+          <h4 className="mb-1.5 text-caption font-semibold text-legion-ink">{t('legion.atelier.entretien.choisir')}</h4>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {etat.offre.map((o) => (
+              <div key={o.niveau} className="flex flex-col rounded-card border border-legion-line bg-legion-card p-3">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-legion-gold">{t(`legion.atelier.entretien.niveau_${o.niveau}`)}</span>
+                <span className="text-caption font-semibold text-legion-ink">{o.titre}</span>
+                <span className="mt-1 flex-1 text-[11px] text-legion-muted">{t('legion.atelier.entretien.plafonds', { minutes: o.plafondMinutes, appels: o.plafondAppels, tests: o.tests })}</span>
+                <button type="button" onClick={() => onLancer(o.niveau)} disabled={bloque}
+                  className="mt-2 rounded-pill border border-legion-gold px-3 py-1 text-[12px] font-semibold text-legion-gold hover:bg-legion-gold hover:text-legion-bg disabled:opacity-40">
+                  {t('legion.atelier.entretien.lancer', { nom })}
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {(etat?.historique || []).length > (ent?.bulletin ? 1 : 0) && (
+        <>
+          <h4 className="mb-1 mt-4 text-caption font-semibold text-legion-ink">{t('legion.atelier.entretien.historique')}</h4>
+          <ul className="space-y-1">
+            {etat.historique.slice(ent?.bulletin ? 1 : 0).map((b) => (
+              <li key={b.note_le} className="flex items-center gap-2 text-[12px] text-legion-ink">
+                <span className="tabular-nums text-legion-muted">{new Date(b.note_le).toLocaleDateString(langue, { day: 'numeric', month: 'short' })}</span>
+                <span className="min-w-0 flex-1 truncate">{t(`legion.atelier.entretien.niveau_${b.niveau}`)}{b.candidat ? ` · ${b.candidat}` : ''}</span>
+                <span className="font-semibold tabular-nums">{b.passes}/{b.total}</span>
+                <span className="text-legion-muted">{t(`legion.atelier.entretien.grade_${b.grade}`)}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </Feuille>
   );
 }

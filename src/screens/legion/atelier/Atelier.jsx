@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag, IconListCheck } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag, IconListCheck, IconUserCheck } from '@tabler/icons-react';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
-import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche, Points } from './Parties';
+import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche, Points, Entretien } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
 import { Visage as VisageAgent } from '../parties/Visage';
@@ -341,6 +341,14 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       const x = await appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(fichier.chemin)}`);
       setFichier({ chemin: x.chemin, contenu: x.contenu, brouillon: x.contenu });
     } catch { setFichier(null); }
+  };
+
+  // L'entretien d'embauche : le candidat est l'agent de l'atelier ; on regarde
+  // son travail dans la conversation, puis on revient noter.
+  const lancerEntretien = (niveau) => {
+    setPanneau(null);
+    setOnglet('conversation');
+    agir(() => appel(`/projets/${pid}/entretien`, { methode: 'POST', corps: { niveau, candidat: nomCodeur } }));
   };
 
   const revoir = () => {
@@ -795,6 +803,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     { type: 'action', label: t('legion.atelier.modifications'), faire: () => setPanneau('modifications') },
     { type: 'action', label: t('legion.atelier.journal'), faire: () => setPanneau('journal') },
     { type: 'action', label: t('legion.atelier.points'), faire: () => setPanneau('points') },
+    { type: 'action', label: t('legion.atelier.entretien.titre'), faire: () => setPanneau('entretien') },
     { type: 'action', label: t('legion.atelier.exporter'), faire: exporter, off: travaille },
     { type: 'action', label: t('legion.atelier.nouvelleSession'), faire: nouvelleSession, off: occupeCarte },
     { type: 'action', label: t('legion.atelier.stop'), faire: stop, off: !travaille && statut !== 'attente' },
@@ -867,6 +876,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             [IconFlag, t('legion.atelier.points'), () => setPanneau('points'), false],
             [IconDownload, t('legion.atelier.exporter'), exporter, travaille],
             [IconBrandGithub, t('legion.atelier.github.titre'), () => setPanneau('github'), travaille || !(vue?.fichiers || []).length],
+            [IconUserCheck, t('legion.atelier.entretien.titre'), () => setPanneau('entretien'), false],
             [IconPlus, t('legion.atelier.nouvelleSession'), nouvelleSession, travaille || statut === 'attente'],
           ].filter(Boolean).map(([Icone, label, fn, off]) => (
             <button key={label} type="button" onClick={fn} disabled={off}
@@ -893,6 +903,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), panneau === 'modifications'],
             [IconFlag, t('legion.atelier.points'), () => setPanneau('points'), panneau === 'points'],
             [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), panneau === 'journal'],
+            [IconUserCheck, t('legion.atelier.entretien.titre'), () => setPanneau('entretien'), panneau === 'entretien'],
             entrepriseId ? [IconListCheck, t('legion.atelier.ongletTaches'), () => { setBasOuvert(true); setPanneauBas('taches'); }, basOuvert && panneauBas === 'taches'] : null,
             [IconBrandGithub, t('legion.atelier.github.titre'), () => setPanneau('github'), panneau === 'github'],
           ].filter(Boolean).map(([Icone, label, fn, actif]) => (
@@ -938,6 +949,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       {panneau === 'nouveau' && <NouveauProjet onCreer={creer} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'modifications' && pid && <Modifications pid={pid} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'github' && pid && <EnvoyerGithub pid={pid} projet={projets.find((p) => p.id === pid)?.nom} fichiers={vue?.fichiers} entrepriseId={entrepriseId} onFermer={() => setPanneau(null)} t={t} />}
+      {panneau === 'entretien' && pid && <Entretien pid={pid} nom={nomCodeur} langue={langue} bloque={travaille || statut === 'attente'} onLancer={lancerEntretien} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'points' && pid && <Points pid={pid} langue={langue} bloque={travaille || statut === 'attente'} onRevenu={apresRetour} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'recherche' && pid && <Recherche pid={pid} onOuvrir={allerA} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'journal' && pid && <Journal pid={pid} regles={vue?.regles} langue={langue} onRetirer={retirerRegle} onFermer={() => setPanneau(null)} t={t} />}

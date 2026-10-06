@@ -24,6 +24,9 @@ const ANGLAIS = [
   [/^Mode inconnu/, 'Unknown mode.'],
   [/^Arrête d'abord le travail en cours\.$/, 'Stop the current work first.'],
   [/^point introuvable$/, 'Restore point not found.'],
+  [/^niveau inconnu$/, 'Unknown level.'],
+  [/^aucun entretien en cours$/, 'No interview in progress.'],
+  [/^Lance l'entretien dans un projet vide/, 'Start the interview in an empty project (+ New project → Empty).'],
   [/^texte à chercher manquant$/, 'Nothing to search for.'],
   [/^Erreur : (.+)$/, (m) => `Error: ${m[1]}`],
 ];
