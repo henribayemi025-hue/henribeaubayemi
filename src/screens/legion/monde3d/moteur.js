@@ -1654,7 +1654,9 @@ export class Monde {
     const volant = Math.max(-1, Math.min(1, (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x));
     // Petits pas de calcul : la voiture va à la bonne vitesse même sur un appareil lent.
     // Obstacles : la circulation et les autres voitures libres (garées ou laissées là).
-    const autres = [...V.circulation(), ...V.voituresLibres.filter((x) => x !== c.lb).flatMap((x) => [-1.3, 1.3].map((k) => ({ x: x.etat.x + Math.sin(x.etat.cap) * k, z: x.etat.z + Math.cos(x.etat.cap) * k, rayon: 0.95 })))];
+    // La voiture de police (lot 3.5) est un obstacle comme les autres : la percuter compte comme un choc.
+    const police = this.poursuite?.police ? [-1.3, 1.3].map((k) => ({ x: this.poursuite.police.x + Math.sin(this.poursuite.police.cap) * k, z: this.poursuite.police.z + Math.cos(this.poursuite.police.cap) * k, rayon: 0.95 })) : [];
+    const autres = [...V.circulation(), ...police, ...V.voituresLibres.filter((x) => x !== c.lb).flatMap((x) => [-1.3, 1.3].map((k) => ({ x: x.etat.x + Math.sin(x.etat.cap) * k, z: x.etat.z + Math.cos(x.etat.cap) * k, rayon: 0.95 })))];
     // Nitro (Maj, N ou le bouton flamme) : la jauge se vide en 3 s et se recharge doucement.
     const veutNitro = t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyN') || pd.nitro;
     c.nitro = veutNitro && gaz > 0 && c.jauge > 0;
