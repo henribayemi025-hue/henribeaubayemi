@@ -26,11 +26,14 @@ import { Image as Dessin } from 'https://deno.land/x/imagescript@1.3.0/mod.ts';
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
-const MODELES_IMAGE = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
+// 05/10 : gemini-2.5-flash-image arrêté le 02/10, les « -preview » le 25/06
+// (ai.google.dev/gemini-api/docs/deprecations) — les deux anciens noms échouaient.
+const MODELES_IMAGE = ['gemini-3.1-flash-image', 'gemini-3-pro-image'];
 const TIMEOUT_MS = 90_000;
 // Ce qu'on compte au minimum par image (euros) : le prix publié arrondi au-dessus,
 // pour que le budget ne soit jamais dépassé par un comptage trop optimiste.
-const MINIMUM_PAR_IMAGE: Record<string, number> = { 'gemini-2.5-flash-image': 0.05, 'gemini-3-pro-image-preview': 0.15 };
+// Prix des deux nouveaux noms non relevé : compté large (au moins l'ancien tarif pro).
+const MINIMUM_PAR_IMAGE: Record<string, number> = { 'gemini-3.1-flash-image': 0.15, 'gemini-3-pro-image': 0.15 };
 // Vidéo de ~8 s : les modèles rapides d'abord (moins chers) ; les autres seulement
 // s'il reste assez de budget. Minimum compté par vidéo, en euros, arrondi au-dessus.
 const MODELES_VIDEO: Array<[string, number]> = [

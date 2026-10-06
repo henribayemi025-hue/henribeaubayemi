@@ -56,7 +56,9 @@ async function miniature(octets: Uint8Array): Promise<Uint8Array | null> {
   }
 }
 
-const MODELES_IMAGE = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'];
+// 05/10 : gemini-2.5-flash-image arrêté le 02/10, les « -preview » le 25/06
+// (ai.google.dev/gemini-api/docs/deprecations) — les deux anciens noms échouaient.
+const MODELES_IMAGE = ['gemini-3.1-flash-image', 'gemini-3-pro-image'];
 const PROD_HOST = 'finjaro.net';
 const LIMITE_MAX = 25;
 const EN_PARALLELE = 3;

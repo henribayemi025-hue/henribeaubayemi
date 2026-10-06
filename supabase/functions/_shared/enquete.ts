@@ -11,6 +11,7 @@ import { fichiersALire } from './code-lignes.ts';
 import { lirePage, voirEcran } from './pageweb.ts';
 import { chercherWeb } from './web.ts';
 import { servicesDe, OUTILS_SERVICES, NOMS_OUTILS_SERVICES, lireService, type Services } from './services.ts';
+import { argsPourOutil, exempleParametres } from './args-relais.ts';
 
 const MODELE_ENQUETE = 'gemini-2.5-flash';
 const TIMEOUT_MS = 25_000;
@@ -258,7 +259,12 @@ S'il n'y a vraiment rien à vérifier, n'appelle rien et réponds seulement « r
     const permis = new Map(declarations.map((d) => [d.name, d]));
     const lus = new Set<string>();
     const trouves: string[] = [];
-    const liste = declarations.map((d) => `- ${d.name} : ${d.description} Paramètres : ${JSON.stringify(d.parameters?.properties ?? {})}`).join('\n');
+    // 03/10 : un exemple avec les VRAIS noms de paramètres, sinon le moteur de
+    // secours en inventait d'autres (« query », « lien ») et l'outil partait vide.
+    const liste = declarations.map((d) => {
+      const p = (d.parameters ?? {}) as { properties?: Record<string, { type?: string }>; required?: string[] };
+      return `- ${d.name} : ${d.description} Paramètres, exemple : ${exempleParametres(p.properties ?? {}, p.required ?? [])}`;
+    }).join('\n');
     const r = await generer(apiKey, `${(contents[0] as { parts: { text: string }[] }).parts[0].text}
 
 Les outils disponibles (et SEULEMENT ceux-là) :
@@ -271,8 +277,9 @@ Réponds par la liste des appels à faire (${maxAppels} au plus), chacun avec le
       for (const a of (Array.isArray(r.obj.appels) ? r.obj.appels : []).slice(0, maxAppels) as { nom: string; parametres: string }[]) {
         const nom = String(a.nom || '').trim();
         if (!permis.has(nom)) continue;
-        let args: Record<string, unknown> = {};
-        try { const x = JSON.parse(String(a.parametres || '{}')); if (x && typeof x === 'object' && !Array.isArray(x)) args = x; } catch { /* paramètres illisibles : l'outil prend ses valeurs par défaut */ }
+        // Autres noms, valeur emballée, JSON entouré de texte : args-relais.ts.
+        const props = Object.keys(((permis.get(nom)?.parameters ?? {}) as { properties?: Record<string, unknown> }).properties ?? {});
+        const args = argsPourOutil(a.parametres, props);
         const resultat = await executer(nom, args);
         resultats.push(`${nom}(${JSON.stringify(args)}) → ${JSON.stringify(resultat).slice(0, LONGUEUR(nom))}`);
         if (nom === 'code_lire') lus.add(String(args.chemin || ''));

@@ -1,6 +1,6 @@
 # En attente de l'accord de Beau
 
-## Les tâches citées (02/10) — `legion-travail`
+## Les tâches citées (02/10) — `legion-travail` — ✅ APPLIQUÉ le 06/10 (autonomie du 05/10 : amélioration vérifiée, ni authentification, ni dépense)
 
 Rigo (Qualité) a renvoyé 15 livrables sans les lire : aucun outil des agents
 ne lit une tâche ni son livrable. Correctif écrit et essayé (tests verts,
@@ -17,7 +17,7 @@ puis copier `cites.ts.txt` → `supabase/functions/_shared/cites.ts` et
 `cites.test.ts.txt` → `supabase/functions/_shared/cites.test.ts`.
 Touche Léo seulement ; Accounting n'est pas concerné.
 
-## L'atelier gratuit / Premium (02/10) — Worker `finjaro-atelier` + `atelier-modele`
+## L'atelier gratuit / Premium (02/10) — Worker `finjaro-atelier` + `atelier-modele` — ⏳ toujours en attente : il ouvre une dépense (jusqu'à 2 $ par jour pour le gratuit), donc le mot de Beau
 
 Beau : « comme VS Code : ça marche même si tu ne payes pas, seulement
 certaines fonctionnalités ne marchent pas ». Écrit et essayé (124 tests de
@@ -45,7 +45,7 @@ Accounting n'est pas concerné (il n'appelle ni le Worker ni ce relais).
 Réglages facultatifs de la fonction : `ATELIER_PLAFOND_GRATUIT_JOUR_USD`,
 `ATELIER_PLAFOND_GRATUIT_TOTAL_USD`.
 
-## Les outils des agents quand Google ne répond pas (03/10) — `_shared/enquete.ts`
+## Les outils des agents quand Google ne répond pas (03/10) — `_shared/enquete.ts` — ✅ APPLIQUÉ le 06/10 (autonomie du 05/10 : amélioration vérifiée, ni authentification, ni dépense)
 
 Cause trouvée dans les journaux (03/10, 02 h 30 UTC) : les crédits prépayés
 Google (Gemini) sont épuisés (`402 prepayment credits are depleted`). La
@@ -67,7 +67,7 @@ production. Pour l'appliquer : `git apply docs/en-attente/agents-outils-secours.
 (ou `git stash pop` de « outils des agents »). Touche Léo seulement.
 
 
-## modeles-image-google.patch (05/10)
+## modeles-image-google.patch (05/10) — ✅ APPLIQUÉ le 06/10 (autonomie du 05/10 : amélioration vérifiée, ni authentification, ni dépense)
 
 Google a arrêté `gemini-2.5-flash-image` le 02/10 et les modèles « -preview » le 25/06. legion-visuel, legion-portrait et miroir-ia passent à `['gemini-3.1-flash-image', 'gemini-3-pro-image']`. Fonctions communes à staging et à la production : déploiement sur la phrase de Beau. Sans effet tant que les crédits Google ne sont pas rechargés.
 

@@ -13,7 +13,8 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // Chaîne de repli: si le modèle principal échoue (indisponible, refus), on
 // tente le suivant avant d'abandonner. Tous vérifiés présents sur la clé.
-const MODELS = ['gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
+// gemini-2.5-flash-image arrêté le 02/10 (ai.google.dev/gemini-api/docs/deprecations).
+const MODELS = ['gemini-3.1-flash-image', 'gemini-3-pro-image'];
 const DAILY_LIMIT = 5;
 const BUDGET_EUR = 20;
 const MIRROR_CALL_COST_EUR = 0.02; // conservative estimate — image generation costs more than a text turn
