@@ -508,6 +508,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   // (un autre passage tourne peut-être encore) : on ne la refait pas.
   const priseRecemment = (t: Tache) => !!t.meta?.travaille_depuis && Date.now() - Date.parse(t.meta.travaille_depuis) < 10 * 60_000;
   const ouvertes = ((tachesOuvertes || []) as Tache[]).filter((t) => !['fait', 'revue'].includes(t.meta?.statut || '') && !priseRecemment(t));
+  const aDejaUneTache = (a: Agent) => ((tachesOuvertes || []) as Tache[]).some((t) => t.assigne_a === a.id && !['fait', 'revue'].includes(t.meta?.statut || ''));
 
   // Les 30 derniers messages de chaque salon public, pour le contexte.
   const { data: recents } = await service.from('legion_messages').select('auteur_id, texte, canal_id, created_at')
@@ -671,6 +672,11 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
           if (prise) { tache = prise as Tache; libre.assigne_a = a.id; journal.push(`${entreprise.nom}: ${a.nom} prend au tableau une tâche libre`); }
         }
       }
+      // Sa tâche est peut-être seulement « prise il y a moins de 10 minutes » (un passage
+      // précédent, souvent un échec) : elle n'est pas dans `ouvertes`, mais il en a une.
+      // Sans ce garde-fou, chaque tranche lui créait une initiative de plus (06/10 : 45
+      // initiatives en double en une soirée sans moteur, jusqu'à 4 par agent).
+      if (!tache && aDejaUneTache(a)) { journal.push(`${entreprise.nom}: ${a.nom}, tâche déjà en cours ailleurs`); dejaLivre.add(a.id); return; }
       if (!tache) {
         const titre = anglais
           ? `Initiative of the day (${a.poste}): without waiting to be asked, pick the ONE most useful thing in your job to move the company forward today, do it, and say why you chose it`
