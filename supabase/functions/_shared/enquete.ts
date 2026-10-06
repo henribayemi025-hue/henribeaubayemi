@@ -147,7 +147,8 @@ export function verifsPour(verifs: string[], peut: (source: string) => boolean):
 // consigne de chaque agent qui répond. Rien à vérifier → liste vide.
 export async function enqueter(apiKey: string, service: ReturnType<typeof createClient>, fil: string, question: string, direction = false, boutique: Boutique | null = null, mesures = true, compta: Compta | null = null, codeDe: string | null = null, servicesPour: string | null = null): Promise<string[]> {
   // `codeDe` : l'entreprise dont on lit le dépôt de code, si elle en a branché un.
-  const depot = codeDe ? await depotDe(service, codeDe).catch(() => null) : null;
+  // Le dépôt que la question nomme (« Learn »), sinon le principal (plusieurs dépôts, 02/10).
+  const depot = codeDe ? await depotDe(service, codeDe, `${question}\n${fil.slice(-1500)}`).catch(() => null) : null;
   // `servicesPour` : l'entreprise dont on lit les services branchés (0208).
   const services: Services = servicesPour ? await servicesDe(service, servicesPour).catch(() => ({})) : {};
   const outilsServices = (Object.keys(services) as (keyof Services)[]).map((k) => OUTILS_SERVICES[k]);

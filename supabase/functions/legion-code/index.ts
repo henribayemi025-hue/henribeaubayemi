@@ -23,6 +23,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { CHARTE } from '../_shared/charte.ts';
 import { compter, pourEntreprise } from '../_shared/cout.ts';
 import { jetonInstallation } from '../_shared/github-app.ts';
+import { choisirDepot } from '../_shared/depots.ts';
 import { generer, moteurs, moteursSimples } from '../_shared/moteur.ts';
 
 const DEPOT_OK = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
@@ -108,7 +109,8 @@ Deno.serve(compter('legion_code', async (req: Request) => {
   // Le dépôt branché par l'application (pas l'ancien jeton en lecture seule).
   const { data: c } = await service.from('legion_connecteurs').select('config').eq('entreprise_id', corps.entreprise_id).eq('type', 'github').eq('actif', true).maybeSingle();
   const installation = c?.config?.installation_id;
-  const depot = String(c?.config?.depot || '');
+  // Le dépôt que la tâche nomme parmi ceux de l'installation (« Learn » → …/Finjaro-learn), sinon le principal.
+  const depot = choisirDepot(c?.config, `${consigne}\n${JSON.stringify(action)}`);
   if (!installation || !DEPOT_OK.test(depot)) return finir('echec', "GitHub n'est pas branché avec l'écriture : Connecteurs → « Se connecter avec GitHub ».", 'Je ne peux pas encore écrire dans le dépôt : il faut brancher GitHub avec l\'écriture (Connecteurs → « Se connecter avec GitHub »). 🔌');
 
   const { data: agent } = await service.from('legion_agents').select('nom, poste, personnalite').eq('id', corps.agent_id).maybeSingle();

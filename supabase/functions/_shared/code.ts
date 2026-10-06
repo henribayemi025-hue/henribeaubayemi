@@ -10,26 +10,28 @@
 
 import { jetonInstallation } from './github-app.ts';
 import { morceauNumerote, motCherche } from './code-lignes.ts';
+import { choisirDepot, DEPOT_OK } from './depots.ts';
 
 // deno-lint-ignore no-explicit-any
 type Service = any;
 
 type Depot = { depot: string; branche: string; jeton: string | null };
-const DEPOT_OK = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-export async function depotDe(service: Service, entrepriseId: string): Promise<Depot | null> {
+export async function depotDe(service: Service, entrepriseId: string, texte = ''): Promise<Depot | null> {
   const { data: c } = await service.from('legion_connecteurs').select('config').eq('entreprise_id', entrepriseId).eq('type', 'github').eq('actif', true).maybeSingle();
-  const depot = String(c?.config?.depot || '');
+  const depot = choisirDepot(c?.config, texte);
   if (!DEPOT_OK.test(depot)) return null;
+  // La branche réglée vaut pour le dépôt principal ; un autre dépôt est lu sur sa branche par défaut.
+  const branche = depot === String(c?.config?.depot || '') ? String(c?.config?.branche || '') : '';
   // Branché par l'application GitHub (28/09) : un jeton d'une heure, limité
   // aux dépôts choisis. Sinon, le jeton collé à la main, rangé au coffre.
   if (c?.config?.installation_id) {
     try {
-      return { depot, branche: String(c?.config?.branche || ''), jeton: await jetonInstallation(c.config.installation_id) };
+      return { depot, branche, jeton: await jetonInstallation(c.config.installation_id) };
     } catch (e) { console.error('jeton installation:', (e as Error).message); }
   }
   const { data: jeton } = await service.rpc('legion_jeton_github', { p_entreprise: entrepriseId });
-  return { depot, branche: String(c?.config?.branche || ''), jeton: jeton || null };
+  return { depot, branche, jeton: jeton || null };
 }
 
 const entetes = (d: Depot) => ({ Accept: 'application/vnd.github+json', 'User-Agent': 'Leo-agents', ...(d.jeton ? { Authorization: `Bearer ${d.jeton}` } : {}) });
