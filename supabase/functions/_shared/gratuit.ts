@@ -37,7 +37,24 @@ async function lireJeton(): Promise<string> {
 // (choices, usage). Lève une erreur qui commence par « HTTP 402 » quand la
 // part du jour est prise : le disjoncteur du moteur range alors toute la
 // famille « cf » pour 15 minutes, comme un solde vide.
-export async function appelGratuit(corps: Json, delaiMs = 60_000): Promise<Json> {
+// Chaque application a sa part du jour (0232, Beau 06/10) : « leo » 6 000,
+// « finia » 2 000, sous le total commun de 8 000. Tant que la migration 0232
+// n'est pas passée, on retombe sur le compteur commun seul (0231).
+export type AppGratuite = 'leo' | 'finia';
+let parts: boolean | null = null;
+async function reserver(sb: ReturnType<typeof service>, n: number, app: AppGratuite): Promise<boolean> {
+  if (parts !== false) {
+    const { data, error } = await sb.rpc('ia_gratuite_reserver_app', { p_neurones: n, p_app: app });
+    if (!error) { parts = true; return !!data; }
+    if (!/ia_gratuite_reserver_app|PGRST202|does not exist|not find/i.test(error.message)) throw new Error(`compteur de l'IA gratuite : ${error.message}`);
+    parts = false;
+  }
+  const { data, error } = await sb.rpc('ia_gratuite_reserver', { p_neurones: n });
+  if (error) throw new Error(`compteur de l'IA gratuite : ${error.message}`);
+  return !!data;
+}
+
+export async function appelGratuit(corps: Json, delaiMs = 60_000, app: AppGratuite = 'leo'): Promise<Json> {
   if (!iaGratuiteActive()) throw new Error('HTTP 402 IA gratuite coupée (LEGION_IA_GRATUITE)');
   const alias = typeof corps.model === 'string' && NEURONES[corps.model] ? corps.model : MODELE_GRATUIT();
   const sortie = Math.max(1, Math.min(SORTIE_MAX, Number(corps.max_tokens ?? 2048) || 2048));
@@ -45,9 +62,8 @@ export async function appelGratuit(corps: Json, delaiMs = 60_000): Promise<Json>
   if (!Number.isFinite(reserve)) throw new Error(`modèle gratuit inconnu : ${alias}`);
 
   const sb = service();
-  const { data: ok, error } = await sb.rpc('ia_gratuite_reserver', { p_neurones: reserve });
-  if (error) throw new Error(`compteur de l'IA gratuite : ${error.message}`);
-  if (!ok) throw new Error('HTTP 402 part gratuite du jour épuisée (plafond Finjaro, remise à zéro à minuit UTC)');
+  const ok = await reserver(sb, reserve, app);
+  if (!ok) throw new Error(`HTTP 402 part gratuite du jour épuisée pour ${app} (plafond Finjaro, remise à zéro à minuit UTC)`);
 
   // Sans réponse lisible, on garde la réservation entière : on ne sait pas
   // ce que Cloudflare a compté.
@@ -74,14 +90,19 @@ export async function appelGratuit(corps: Json, delaiMs = 60_000): Promise<Json>
   } finally {
     const rendre = reserve - consomme;
     if (rendre > 0) {
-      const { error: e } = await sb.rpc('ia_gratuite_rendre', { p_neurones: rendre });
+      const { error: e } = parts
+        ? await sb.rpc('ia_gratuite_rendre_app', { p_neurones: rendre, p_app: app })
+        : await sb.rpc('ia_gratuite_rendre', { p_neurones: rendre });
       if (e) console.error('ia gratuite, rendre :', e.message);
     } else if (rendre < 0) {
-      // L'estimation était trop basse : le surplus est inscrit quand même
-      // (s'il dépasse le plafond, il ne passe pas, et les appels suivants
-      // s'arrêtent d'autant plus tôt grâce à la marge de 2 000).
-      const { error: e } = await sb.rpc('ia_gratuite_reserver', { p_neurones: -rendre });
-      if (e) console.error('ia gratuite, surplus :', e.message);
+      // L'estimation était trop basse : le surplus est inscrit quand même,
+      // au-delà du plafond s'il le faut ; les appels suivants s'arrêtent
+      // d'autant plus tôt grâce à la marge de 2 000. (Avant 0232, il passait
+      // par ia_gratuite_reserver(-n), qui refuse les négatifs : jamais compté.)
+      if (parts) {
+        const { error: e } = await sb.rpc('ia_gratuite_inscrire_app', { p_neurones: -rendre, p_app: app });
+        if (e) console.error('ia gratuite, surplus :', e.message);
+      }
     }
   }
 }

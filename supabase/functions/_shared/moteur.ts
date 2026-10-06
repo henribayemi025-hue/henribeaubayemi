@@ -40,7 +40,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ajouterCout, cleOpenAI, gemini, modeleChoisi, moteurChoisi, signalerCoupure } from './cout.ts';
-import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT } from './gratuit.ts';
+import { appelGratuit, iaGratuiteActive, MODELE_GRATUIT, type AppGratuite } from './gratuit.ts';
 import { reparerJson, adapterAuSchema, champsManquants } from './gratuit-compte.ts';
 
 // LE DISJONCTEUR (28/09). Mesuré ce soir : pour un simple « ça va ? »,
@@ -171,7 +171,8 @@ export function moteursSimples(): string[] {
   return avecModeleChoisi([...releve(false), ...MOTEURS_SIMPLES_PAR_DEFAUT]);
 }
 
-type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean };
+// `app` : à qui l'IA gratuite décompte l'appel (0232) — « leo » par défaut, « finia » pour Accounting.
+type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean; app?: AppGratuite };
 // `essais` : chaque moteur tenté, avec son temps (28/09) — pour voir où partent les secondes.
 export type Essai = { m: string; ms: number; e?: string };
 export type Rendu = ({ obj: Record<string, unknown>; modele: string } | { erreur: string }) & { essais?: Essai[] };
@@ -288,7 +289,7 @@ async function viaGratuit(model: string, texte: string, schema: unknown, o: Opti
       { role: 'system', content: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT), sans texte autour ni balises de code:\n${JSON.stringify(schema)}` },
       { role: 'user', content: texte },
     ],
-  }, o.delaiMs ?? 90_000);
+  }, o.delaiMs ?? 90_000, o.app ?? 'leo');
   const choix = (body.choices as Array<{ message?: { content?: unknown }; finish_reason?: string }> | undefined)?.[0];
   if (choix?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
   const txt = String(choix?.message?.content ?? '').trim();

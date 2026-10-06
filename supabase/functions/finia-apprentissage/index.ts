@@ -194,7 +194,7 @@ Deno.serve(compter('finia_apprentissage', async (req: Request) => {
   const existants = (s0 || []) as Savoir[];
 
   const apiKey = Deno.env.get('GEMINI_API_KEY') || '';
-  const r = await generer(apiKey, consigne(lignes, existants.filter((s) => s.etat !== 'ecarte')), SCHEMA, { modeles: moteursSimples(), temperature: 0.3, maxSortie: 4000, reflexion: 2048, delaiMs: 90_000 });
+  const r = await generer(apiKey, consigne(lignes, existants.filter((s) => s.etat !== 'ecarte')), SCHEMA, { modeles: moteursSimples(), temperature: 0.3, maxSortie: 4000, reflexion: 2048, delaiMs: 90_000, app: 'finia' });
   // Modèle muet : les échanges restent « à traiter », repris la semaine suivante.
   if ('erreur' in r) return json({ ok: false, journal: [`moteur : ${r.erreur}`] });
 
