@@ -83,7 +83,10 @@ async function endormir(f: string, ms: number, raison: string) {
 const SANS_CREDIT = /HTTP 402|insufficient balance|no credits remaining|insufficient_quota|exceeded your current quota|credit balance|spending cap|HTTP 401|invalid.{0,10}api.?key/i;
 const MUET = /timed out|timeout|aborted/i;
 
-export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+// « gemini-3.1-pro » (sans -preview) n'existe pas chez Google : 250 réponses 404 en
+// 24 h relevées le 06/10, autant de secondes perdues avant le moteur suivant.
+export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+const INCONNU = /HTTP 404[\s\S]{0,200}not found/i;
 
 // DeepSeek d'abord quand sa clé existe (le modèle fort pour les plans et
 // livrables, le rapide pour le reste). Les noms suivent leur tarif publié
@@ -376,6 +379,8 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
       if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
+      // Un modèle que le fournisseur ne connaît pas (renommé, retiré) : de côté pour la journée.
+      else if (INCONNU.test(derniere)) await endormir(nom, 24 * 3_600_000, derniere);
       // Muet, ou lent ET en échec : seulement CE modèle (un Pro lent qui
       // réussit ne met pas de côté tout Google).
       else if (MUET.test(derniere) || Date.now() - debut > 8_000) await endormir(nom, 5 * 60_000, derniere);
