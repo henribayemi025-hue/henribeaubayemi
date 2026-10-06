@@ -60,3 +60,4 @@ tu as la décision finale. »
 | 05/10 | Mon argent | Petits textes violets lisibles : contraste 4,1:1 → 6,6:1 (relevé par Nino, calcul refait et ligne corrigée) | Nino (relu) + Claude | f2fe46a ; 17 tests money | staging (finjaro.net demain) |
 | 05/10 | Accounting | Date du jour en heure locale (la caisse du soir ne bascule plus au lendemain en UTC), sans réécrire le passé | Claudinette | 074b79d ; accounting.finjaro.net /api/health 200 | en ligne |
 | 05/10 | Accounting | Vente « à crédit » possible dans le rattrapage | Claudinette | 662838b | en ligne |
+| 06/10 | Léo | Plus d'« Initiative du jour » en double : une tâche déjà prise par un autre passage (souvent un échec) n'en fait plus créer une nouvelle à chaque tranche ; 35 doublons de la soirée du 05/10 clos (marqués `annulee`, `doublon`, rien supprimé) | Claude | 4096ddf ; fonction déployée (action verte) ; tâches ouvertes 127 → 92 | en service |
