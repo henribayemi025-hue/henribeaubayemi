@@ -364,6 +364,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const [posHisto, setPosHisto] = useState(-1);
   const fichierJoint = useRef(null);
   const [etroit, setEtroit] = useState(false);
+  const [coteACote, setCoteACote] = useState(true);
   const apercuVisible = onglet === 'apercu';
   const signature = (vue?.fichiers || []).map((f) => `${f.chemin}:${f.taille}`).join('|');
   const rafraichirApercu = useCallback(async () => {
@@ -372,16 +373,22 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     const page = pageApercu && chemins.includes(pageApercu) ? pageApercu : pageDeDepart(chemins);
     if (!page) { setDocApercu({ vide: true }); return; }
     const prop = vue?.demande?.outil === 'ecrire_fichier' && typeof vue.demande.contenu === 'string' ? vue.demande : null;
-    const lireF = async (c) => {
-      if (prop?.chemin === c) return prop.contenu;
+    const lireF = async (c, avecProp = true) => {
+      if (avecProp && prop?.chemin === c) return prop.contenu;
       if (fichier?.chemin === c) return fichier.brouillon;
       return (await appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(c)}`)).contenu;
     };
-    try {
-      const html = await lireF(page);
+    const construire = async (avecProp) => {
+      const html = await lireF(page, avecProp);
       const contenus = {};
-      await Promise.all(dependances(page, html).map(async (c) => { try { contenus[c] = await lireF(c); } catch { /* fichier absent */ } }));
-      setDocApercu({ page, doc: assembler(page, html, contenus), proposition: !!prop });
+      await Promise.all(dependances(page, html).map(async (c) => { try { contenus[c] = await lireF(c, avecProp); } catch { /* fichier absent */ } }));
+      return assembler(page, html, contenus);
+    };
+    try {
+      // Avec une proposition en attente : la page AVANT aussi, pour les voir
+      // côte à côte (C13). null si la page n'existait pas encore.
+      const [doc, avant] = await Promise.all([construire(true), prop ? construire(false).catch(() => null) : null]);
+      setDocApercu({ page, doc, proposition: !!prop, avant });
     } catch (e) { setDocApercu({ page, erreur: e?.message || String(e) }); }
   }, [pid, vue?.fichiers, vue?.demande, fichier, pageApercu]);
   useEffect(() => {
@@ -649,8 +656,14 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           </select>
         ) : <span className="min-w-0 truncate font-mono text-legion-ink">{docApercu?.page || t('legion.atelier.apercu')}</span>}
         {docApercu?.proposition && <span className="shrink-0 text-legion-gold-soft">· {t('legion.atelier.apercuProposition', { nom: nomCodeur })}</span>}
+        {docApercu?.proposition && (
+          <button type="button" onClick={() => setCoteACote((x) => !x)} aria-pressed={coteACote} title={t('legion.atelier.avantApresAide')}
+            className={`ml-auto shrink-0 rounded-pill border px-2 py-0.5 text-[11px] font-semibold ${coteACote ? 'border-legion-gold text-legion-gold' : 'border-legion-line text-legion-muted'}`}>
+            {t('legion.atelier.avantApres')}
+          </button>
+        )}
         <button type="button" onClick={() => setEtroit((x) => !x)} title={t(etroit ? 'legion.atelier.apercuLarge' : 'legion.atelier.apercuTelephone')}
-          className="ml-auto hidden rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold lg:block">
+          className={`${docApercu?.proposition ? '' : 'ml-auto '}hidden rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold lg:block`}>
           {etroit ? <IconDeviceDesktop size={14} /> : <IconDeviceMobile size={14} />}
         </button>
         <button type="button" onClick={ouvrirAPart} disabled={!docApercu?.doc} title={t('legion.atelier.ouvrirAPart')}
@@ -659,7 +672,19 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           className="rounded-pill border border-legion-line p-1.5 text-legion-muted hover:text-legion-gold"><IconRefresh size={14} /></button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto bg-[#1a2030] p-2">
-        {docApercu?.doc ? (
+        {docApercu?.doc && docApercu.proposition && coteACote ? (
+          <div className="grid h-full min-h-0 grid-rows-2 gap-2 sm:grid-cols-2 sm:grid-rows-1">
+            {[[t('legion.atelier.avant'), docApercu.avant], [t('legion.atelier.apres', { nom: nomCodeur }), docApercu.doc]].map(([titre, doc], i) => (
+              <div key={titre} className="flex min-h-0 min-w-0 flex-col">
+                <span className={`mb-1 text-[11px] font-semibold uppercase tracking-wide ${i ? 'text-legion-gold' : 'text-legion-muted'}`}>{titre}</span>
+                {doc ? (
+                  <iframe title={titre} sandbox="allow-scripts allow-forms allow-modals" srcDoc={doc}
+                    className={`block min-h-0 w-full flex-1 rounded-md bg-white shadow-lg ${i ? 'ring-2 ring-legion-gold' : ''}`} />
+                ) : <p className="flex flex-1 items-center justify-center rounded-md border border-dashed border-legion-line p-3 text-center text-[12px] text-legion-muted">{t('legion.atelier.avantVide')}</p>}
+              </div>
+            ))}
+          </div>
+        ) : docApercu?.doc ? (
           <iframe title={t('legion.atelier.apercu')} sandbox="allow-scripts allow-forms allow-modals" srcDoc={docApercu.doc}
             className="mx-auto block h-full rounded-md bg-white shadow-lg" style={{ width: etroit ? 390 : '100%', maxWidth: '100%' }} />
         ) : (
