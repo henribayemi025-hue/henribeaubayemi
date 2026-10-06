@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconX } from '@tabler/icons-react';
+import { IconHandStop, IconPlayerStopFilled, IconX } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
 import { blobToWavDataUrl } from '../../../lib/audioWav';
+import { centreDuMouvement, estUnSigne } from './gesteMain';
 
 // JARVIS V0 — la télécommande vocale de Léo (Beau, 24/09 : « on réveille
 // Jarvis d'un geste, puis on lui parle : ouvre les dépôts, je veux parler à
@@ -20,6 +21,49 @@ const SILENCE_MS = 1300;
 const MAX_MS = 20_000;
 const SEUIL = 0.02;
 const CLE_ACCORD = 'leo:voix-accord';
+const CLE_GESTE = 'leo:geste';
+
+// Le réveil d'un signe de la main (D1, gesteMain.js) : caméra minuscule,
+// rien n'est gardé ni envoyé, seulement si la personne l'a allumé.
+function useGesteMain(actif, onGeste) {
+  const rappel = useRef(onGeste);
+  rappel.current = onGeste;
+  const [refus, setRefus] = useState(false);
+  useEffect(() => {
+    if (!actif) return undefined;
+    if (!navigator.mediaDevices?.getUserMedia) { setRefus(true); return undefined; }
+    let fini = false;
+    let flux = null;
+    let minuteur = null;
+    let avant = null;
+    let calme = 0;
+    const points = [];
+    const video = document.createElement('video');
+    video.muted = true; video.playsInline = true;
+    const toile = document.createElement('canvas');
+    toile.width = 160; toile.height = 120;
+    const c2d = toile.getContext('2d', { willReadFrequently: true });
+    navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 120, facingMode: 'user', frameRate: 10 }, audio: false })
+      .then((f) => {
+        if (fini) { f.getTracks().forEach((p) => p.stop()); return; }
+        flux = f; video.srcObject = f; video.play().catch(() => {});
+        minuteur = setInterval(() => {
+          if (!c2d || video.readyState < 2) return;
+          c2d.drawImage(video, 0, 0, 160, 120);
+          const img = c2d.getImageData(0, 0, 160, 120).data;
+          const x = centreDuMouvement(avant, img, 160);
+          avant = img;
+          const t = Date.now();
+          if (x !== null) points.push({ x: 1 - x, t }); // l'image de la caméra est en miroir
+          while (points.length && t - points[0].t > 2000) points.shift();
+          if (t > calme && estUnSigne(points)) { calme = t + 3000; points.length = 0; rappel.current?.(); }
+        }, 125);
+      })
+      .catch(() => setRefus(true));
+    return () => { fini = true; clearInterval(minuteur); flux?.getTracks().forEach((p) => p.stop()); };
+  }, [actif]);
+  return refus;
+}
 
 function lire(cle) { try { return localStorage.getItem(cle); } catch { return null; } }
 function ecrire(cle, v) { try { localStorage.setItem(cle, v); } catch { /* sans stockage, on redemandera */ } }
@@ -48,6 +92,9 @@ export function Jarvis({ entrepriseId, langue, t, onAction, enConversation = fal
   const morceaux = useRef([]);
   const minuteur = useRef(null);
   const espace = useRef(false);
+  const [geste, setGeste] = useState(() => lire(CLE_GESTE) === 'oui');
+  const gesteRefuse = useGesteMain(geste && etat !== 'ecoute', () => reveiller());
+  const basculerGeste = () => setGeste((g) => { ecrire(CLE_GESTE, g ? 'non' : 'oui'); return !g; });
 
   useEffect(() => () => couper(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -202,6 +249,16 @@ export function Jarvis({ entrepriseId, langue, t, onAction, enConversation = fal
             </div>
           )}
         </div>
+      )}
+      {!enConversation && (
+        <button type="button" onClick={basculerGeste} aria-pressed={geste}
+          title={gesteRefuse ? t('legion.jarvis.gesteRefuse') : t(geste ? 'legion.jarvis.gesteActif' : 'legion.jarvis.gesteInactif')}
+          aria-label={t(geste ? 'legion.jarvis.gesteActif' : 'legion.jarvis.gesteInactif')}
+          className={`fixed bottom-24 right-4 z-40 hidden items-center gap-1 rounded-full px-2.5 py-1 text-[11px] shadow lg:bottom-[5.5rem] lg:flex ${geste && !gesteRefuse ? 'bg-legion-gold text-legion-bg' : 'bg-legion-panel text-legion-muted ring-1 ring-legion-line hover:text-legion-ink'}`}>
+          <IconHandStop size={13} />
+          {geste && !gesteRefuse && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-legion-danger" aria-hidden />}
+          {t(geste ? (gesteRefuse ? 'legion.jarvis.gesteCourtRefuse' : 'legion.jarvis.gesteCourtActif') : 'legion.jarvis.gesteCourt')}
+        </button>
       )}
       {/* Beau, 25/09 : « je vois deux icônes d'audio, je ne comprends pas » — le micro du message vocal et
           celui de Jarvis se superposaient au-dessus de la zone de saisie. Jarvis n'est plus un micro : c'est

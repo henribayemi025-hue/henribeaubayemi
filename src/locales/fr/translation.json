@@ -1313,6 +1313,12 @@
       }
     },
     "jarvis": {
+      "gesteInactif": "Réveiller Léo d’un signe de la main (caméra de l’ordinateur, rien n’est gardé ni envoyé)",
+      "gesteActif": "Signe de la main allumé : fais coucou à la caméra pour réveiller Léo. Touche pour éteindre la caméra.",
+      "gesteRefuse": "La caméra n’est pas disponible ou a été refusée.",
+      "gesteCourt": "Geste",
+      "gesteCourtActif": "Coucou = Léo",
+      "gesteCourtRefuse": "Caméra refusée",
       "bouton": "Parler à Léo (ou maintenir Espace)",
       "ecoute": "Je t’écoute…",
       "comprend": "Je comprends…",

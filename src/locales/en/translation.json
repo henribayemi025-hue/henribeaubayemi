@@ -1313,6 +1313,12 @@
       }
     },
     "jarvis": {
+      "gesteInactif": "Wake Léo with a wave (computer camera, nothing is kept or sent)",
+      "gesteActif": "Wave is on: wave at the camera to wake Léo. Tap to turn the camera off.",
+      "gesteRefuse": "The camera is unavailable or was refused.",
+      "gesteCourt": "Wave",
+      "gesteCourtActif": "Wave = Léo",
+      "gesteCourtRefuse": "Camera refused",
       "bouton": "Talk to Léo (or hold Space)",
       "ecoute": "Listening…",
       "comprend": "Understanding…",
