@@ -22,6 +22,7 @@ import { fabriquerZip } from './zip.js';
 import { DEPARTS } from './departs.js';
 import { enregistreur } from './supabase.js';
 import { equipe } from './equipe.js';
+import { listePoints, creerPoint, restaurerPoint, supprimerPoint } from './points.js';
 
 const TAILLE_PROJET_MAX = 5_000_000;
 const NB_FICHIERS_MAX = 1000;
@@ -322,6 +323,31 @@ export class Atelier extends DurableObject {
         const texte = String(url.searchParams.get('texte') || '').slice(0, 200);
         if (!texte.trim()) return erreur('texte à chercher manquant');
         return json(await chercherDans(this.fichiers(pid, e), texte, '.', 300));
+      }
+
+      // Les points de retour (points.js) : poser, lister, revenir, effacer.
+      if (action === 'points') {
+        if (!p[3] && methode === 'GET') return json({ points: listePoints(e) });
+        if (['en_cours', 'attente'].includes(e.session.statut) && methode !== 'GET') return erreur('Arrête d\'abord le travail en cours.', 409);
+        if (!p[3] && methode === 'POST') {
+          await creerPoint(this.ctx.storage, pid, e, this.fichiers(pid, e), { nom: corps.nom });
+          await this.journaliser(pid, e, { acteur: 'humain', outil: 'point', entree_resumee: `point de retour posé${corps.nom ? ` : ${String(corps.nom).slice(0, 80)}` : ''}`, resultat_resume: null, decision: 'humain', mode: e.mode, cout_usd: 0 }, trace);
+          await this.sauver(pid, e);
+          return json({ points: listePoints(e) });
+        }
+        if (p[3] && p[4] === 'restaurer' && methode === 'POST') {
+          const point = (e.points || []).find((x) => x.n === Number(p[3]));
+          if (!point) return erreur('point introuvable', 404);
+          const r = await restaurerPoint(this.ctx.storage, pid, e, this.fichiers(pid, e), point.n, { nomAvant: `avant le retour au point du ${point.quand.slice(0, 16).replace('T', ' ')}` });
+          await this.journaliser(pid, e, { acteur: 'humain', outil: 'point', entree_resumee: `retour au point ${point.nom || point.quand}`, resultat_resume: `${r.remis} fichier(s) remis, ${r.retires} retiré(s)`, decision: 'humain', mode: e.mode, cout_usd: 0 }, trace);
+          await this.sauver(pid, e);
+          return json({ ...this.vue(pid, e, this.env), points: listePoints(e), retour: r });
+        }
+        if (p[3] && !p[4] && methode === 'DELETE') {
+          if (!(await supprimerPoint(this.ctx.storage, pid, e, p[3]))) return erreur('point introuvable', 404);
+          await this.sauver(pid, e);
+          return json({ points: listePoints(e) });
+        }
       }
 
       if (action === 'fichier' && methode === 'PUT') {

@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag } from '@tabler/icons-react';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
-import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche } from './Parties';
+import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche, Points } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
 import { Visage as VisageAgent } from '../parties/Visage';
@@ -331,6 +331,16 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     setOnglet('editeur');
     if (fichier?.chemin !== chemin) await ouvrir(chemin, true);
     setAller({ ligne, n: Date.now() });
+  };
+
+  // Après un retour à un point : le fichier ouvert est relu (ou fermé s'il n'existe plus).
+  const apresRetour = async (r) => {
+    if (r?.session) setVue(r);
+    if (!fichier) return;
+    try {
+      const x = await appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(fichier.chemin)}`);
+      setFichier({ chemin: x.chemin, contenu: x.contenu, brouillon: x.contenu });
+    } catch { setFichier(null); }
   };
 
   const revoir = () => {
@@ -781,6 +791,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     ...['demander', 'accepter', 'auto', 'reflechir'].map((m) => ({ type: 'action', label: `${t('legion.atelier.paletteMode')} ${t(`legion.atelier.mode_${m}`)}`, faire: () => changerMode(m) })),
     { type: 'action', label: t('legion.atelier.modifications'), faire: () => setPanneau('modifications') },
     { type: 'action', label: t('legion.atelier.journal'), faire: () => setPanneau('journal') },
+    { type: 'action', label: t('legion.atelier.points'), faire: () => setPanneau('points') },
     { type: 'action', label: t('legion.atelier.exporter'), faire: exporter, off: travaille },
     { type: 'action', label: t('legion.atelier.nouvelleSession'), faire: nouvelleSession, off: occupeCarte },
     { type: 'action', label: t('legion.atelier.stop'), faire: stop, off: !travaille && statut !== 'attente' },
@@ -850,6 +861,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             [IconPresentation, t('legion.atelier.presenteMoi'), presenter, travaille || statut === 'attente'],
             [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), false],
             [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), false],
+            [IconFlag, t('legion.atelier.points'), () => setPanneau('points'), false],
             [IconDownload, t('legion.atelier.exporter'), exporter, travaille],
             [IconBrandGithub, t('legion.atelier.github.titre'), () => setPanneau('github'), travaille || !(vue?.fichiers || []).length],
             [IconPlus, t('legion.atelier.nouvelleSession'), nouvelleSession, travaille || statut === 'attente'],
@@ -905,6 +917,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       {panneau === 'nouveau' && <NouveauProjet onCreer={creer} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'modifications' && pid && <Modifications pid={pid} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'github' && pid && <EnvoyerGithub pid={pid} projet={projets.find((p) => p.id === pid)?.nom} fichiers={vue?.fichiers} entrepriseId={entrepriseId} onFermer={() => setPanneau(null)} t={t} />}
+      {panneau === 'points' && pid && <Points pid={pid} langue={langue} bloque={travaille || statut === 'attente'} onRevenu={apresRetour} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'recherche' && pid && <Recherche pid={pid} onOuvrir={allerA} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'journal' && pid && <Journal pid={pid} regles={vue?.regles} langue={langue} onRetirer={retirerRegle} onFermer={() => setPanneau(null)} t={t} />}
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus } from '@tabler/icons-react';
+import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus, IconArrowBackUp, IconFlag } from '@tabler/icons-react';
 import { appel } from './api';
 import { supabase } from '../../../lib/supabase';
 import { dollars } from './arbre';
@@ -210,6 +210,81 @@ export function Recherche({ pid, onOuvrir, onFermer, t }) {
           </section>
         ))}
       </div>
+    </Feuille>
+  );
+}
+
+// Les points de retour (C13) : une photo de tout le projet, et le retour
+// d'un clic. Revenir pose d'abord un point « auto », pour pouvoir annuler.
+export function Points({ pid, langue, bloque, onRevenu, onFermer, t }) {
+  const [points, setPoints] = useState(null);
+  const [nom, setNom] = useState('');
+  const [erreur, setErreur] = useState(null);
+  const [occupe, setOccupe] = useState(false);
+  const [aConfirmer, setAConfirmer] = useState(null);
+  useEffect(() => {
+    appel(`/projets/${pid}/points`).then((r) => setPoints(r.points)).catch((e) => setErreur(e.message));
+  }, [pid]);
+  const faire = async (fn) => {
+    setErreur(null); setOccupe(true);
+    try { return await fn(); } catch (e) { setErreur(e.message); return null; } finally { setOccupe(false); }
+  };
+  const poser = (e) => {
+    e.preventDefault();
+    faire(async () => { const r = await appel(`/projets/${pid}/points`, { methode: 'POST', corps: { nom } }); setPoints(r.points); setNom(''); });
+  };
+  const revenir = (n) => faire(async () => {
+    const r = await appel(`/projets/${pid}/points/${n}/restaurer`, { methode: 'POST', corps: {} });
+    setPoints(r.points); setAConfirmer(null); onRevenu(r);
+  });
+  const effacer = (n) => faire(async () => { const r = await appel(`/projets/${pid}/points/${n}`, { methode: 'DELETE' }); setPoints(r.points); });
+  const quand = (q) => new Date(q).toLocaleString(langue, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return (
+    <Feuille titre={t('legion.atelier.points')} onFermer={onFermer} t={t}>
+      <p className="mb-3 text-[12px] text-legion-muted">{t('legion.atelier.pointsAide')}</p>
+      <form onSubmit={poser} className="mb-4 flex gap-2">
+        <input value={nom} onChange={(e) => setNom(e.target.value)} maxLength={80} placeholder={t('legion.atelier.pointNom')} aria-label={t('legion.atelier.pointNom')}
+          className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-3 py-1.5 text-caption text-legion-ink focus:border-legion-gold focus:outline-none" />
+        <button type="submit" disabled={occupe || bloque}
+          className="flex shrink-0 items-center gap-1 rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg disabled:opacity-40">
+          <IconFlag size={14} /> {t('legion.atelier.pointPoser')}
+        </button>
+      </form>
+      {bloque && <p className="mb-3 text-[12px] text-legion-gold-soft">{t('legion.atelier.pointBloque')}</p>}
+      {erreur && <p className="mb-3 text-caption text-legion-danger">{erreur}</p>}
+      {!points && !erreur && <p className="text-caption text-legion-muted">…</p>}
+      {points?.length === 0 && <p className="text-caption text-legion-muted">{t('legion.atelier.aucunPoint')}</p>}
+      <ul className="space-y-1.5">
+        {points?.map((x) => (
+          <li key={x.n} className="rounded-input bg-legion-card px-3 py-2">
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-caption font-semibold text-legion-ink">{x.nom || t('legion.atelier.pointSansNom')}</span>
+                <span className="block text-[11px] text-legion-muted">
+                  {quand(x.quand)} · {t('legion.atelier.pointFichiers', { count: x.fichiers })}{x.auto ? ` · ${t('legion.atelier.pointAuto')}` : ''}
+                </span>
+              </span>
+              {aConfirmer === x.n ? (
+                <>
+                  <button type="button" onClick={() => revenir(x.n)} disabled={occupe || bloque}
+                    className="shrink-0 rounded-pill bg-legion-danger px-3 py-1 text-[12px] font-semibold text-white disabled:opacity-40">{t('legion.atelier.pointConfirmer')}</button>
+                  <button type="button" onClick={() => setAConfirmer(null)} className="shrink-0 text-[12px] text-legion-muted">{t('common.cancel', 'Annuler')}</button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={() => setAConfirmer(x.n)} disabled={occupe || bloque}
+                    className="flex shrink-0 items-center gap-1 rounded-pill border border-legion-line px-3 py-1 text-[12px] text-legion-ink hover:border-legion-gold disabled:opacity-40">
+                    <IconArrowBackUp size={14} className="text-legion-gold" /> {t('legion.atelier.pointRevenir')}
+                  </button>
+                  <button type="button" onClick={() => effacer(x.n)} disabled={occupe || bloque} aria-label={t('legion.atelier.pointEffacer')}
+                    className="shrink-0 rounded-full p-1 text-legion-muted hover:text-legion-danger disabled:opacity-40"><IconTrash size={14} /></button>
+                </>
+              )}
+            </div>
+            {aConfirmer === x.n && <p className="mt-1 text-[11px] text-legion-gold-soft">{t('legion.atelier.pointAvertir')}</p>}
+          </li>
+        ))}
+      </ul>
     </Feuille>
   );
 }

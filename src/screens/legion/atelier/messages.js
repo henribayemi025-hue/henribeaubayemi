@@ -22,6 +22,9 @@ const ANGLAIS = [
   [/^Plafond de la session atteint \((.+) \$\)\.$/, (m) => `Session limit reached ($${m[1]}).`],
   [/^L'agent travaille déjà\.$/, 'The agent is already working.'],
   [/^Mode inconnu/, 'Unknown mode.'],
+  [/^Arrête d'abord le travail en cours\.$/, 'Stop the current work first.'],
+  [/^point introuvable$/, 'Restore point not found.'],
+  [/^texte à chercher manquant$/, 'Nothing to search for.'],
   [/^Erreur : (.+)$/, (m) => `Error: ${m[1]}`],
 ];
 
