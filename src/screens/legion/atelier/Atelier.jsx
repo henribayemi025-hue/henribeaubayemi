@@ -8,6 +8,7 @@ import { Texte } from '../parties/Plans';
 import { Visage as VisageAgent } from '../parties/Visage';
 import Palette from './Palette';
 import Onglets, { extension } from './Onglets';
+import TachesFond from './TachesFond';
 import BarreEtat from './BarreEtat';
 
 // L'ATELIER DE CODE de Léo — V0 (Beau, 24/09 : « oui atelier »).
@@ -561,6 +562,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     <div className={`${grandTerminal ? 'h-[42vh]' : 'h-[170px]'} flex shrink-0 flex-col border-t border-legion-line bg-[#070b14]`}>
       <div className="flex items-center gap-1 border-b border-legion-line px-2 py-1 text-[11px]">
         <button type="button" onClick={() => setPanneauBas('agent')} className={`rounded px-2 py-0.5 ${panneauBas === 'agent' ? 'bg-legion-card text-legion-gold' : 'text-legion-muted'}`}>{t('legion.atelier.ongletAgent', { nom: nomCodeur })}</button>
+        {entrepriseId && <button type="button" onClick={() => setPanneauBas('taches')} className={`rounded px-2 py-0.5 ${panneauBas === 'taches' ? 'bg-legion-card text-legion-gold' : 'text-legion-muted'}`}>{t('legion.atelier.ongletTaches')}</button>}
         {terminaux.map((x, n) => (
           <span key={x.id} className={`flex items-center rounded ${panneauBas === x.id ? 'bg-legion-card text-legion-gold' : 'text-legion-muted'}`}>
             <button type="button" onClick={() => setPanneauBas(x.id)} className="px-2 py-0.5">{t('legion.atelier.terminalN', { n: n + 1 })}</button>
@@ -573,7 +575,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
         <button type="button" onClick={() => setBasOuvert(false)} aria-label={t('legion.atelier.fermerPanneau')} className="rounded px-2 py-0.5 text-legion-muted hover:text-legion-danger">×</button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-1.5 font-mono text-[11px] leading-relaxed" ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
-        {!ongletActif ? (
+        {panneauBas === 'taches' ? (
+          <TachesFond entrepriseId={entrepriseId} t={t} />
+        ) : !ongletActif ? (
           <>
             {!lignesConsole.length && <p className="text-legion-muted">{t('legion.atelier.consoleVide')}</p>}
             {lignesConsole.map((a) => (a.terminal ? blocCommande(a) : (
