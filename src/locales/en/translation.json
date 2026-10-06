@@ -1119,6 +1119,7 @@
       "pointConfirmer": "Yes, go back",
       "pointAvertir": "The project becomes exactly as it was then: files created since are removed. A point is saved first so you can undo.",
       "pointEffacer": "Delete this point",
+      "barreActivite": "Activity bar",
       "chercherProjet": "Search the project",
       "chercherTexte": "Text to find",
       "chercherAucun": "Nothing found.",

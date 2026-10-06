@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag, IconListCheck } from '@tabler/icons-react';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche, Points } from './Parties';
@@ -375,6 +375,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const fichierJoint = useRef(null);
   const [etroit, setEtroit] = useState(false);
   const [coteACote, setCoteACote] = useState(true);
+  // La barre d'activité (ordinateur) : l'arbre des fichiers se replie.
+  const [arbreOuvert, setArbreOuvert] = useState(() => lire('atelier:arbre') !== '0');
+  const basculerArbre = () => setArbreOuvert((x) => { ecrire('atelier:arbre', x ? '0' : '1'); return !x; });
   const apercuVisible = onglet === 'apercu';
   const signature = (vue?.fichiers || []).map((f) => `${f.chemin}:${f.taille}`).join('|');
   const rafraichirApercu = useCallback(async () => {
@@ -881,8 +884,26 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       )}
 
       {/* Ordinateur : trois colonnes. Téléphone : un onglet à la fois. */}
-      <div className="min-h-0 flex-1 lg:grid lg:grid-cols-[220px_minmax(0,1fr)_400px]">
-        <div className={`${onglet === 'fichiers' ? 'block' : 'hidden'} h-full min-h-0 border-legion-line bg-legion-panel lg:block lg:border-r`}>{colonneArbre}</div>
+      <div className={`min-h-0 flex-1 lg:grid ${arbreOuvert ? 'lg:grid-cols-[44px_220px_minmax(0,1fr)_400px]' : 'lg:grid-cols-[44px_minmax(0,1fr)_400px]'}`}>
+        {/* La barre d'activité, à gauche (comme dans les éditeurs de code) : ordinateur seulement. */}
+        <nav aria-label={t('legion.atelier.barreActivite')} className="hidden h-full min-h-0 flex-col items-center gap-1 border-r border-legion-line bg-legion-card py-2 lg:flex">
+          {[
+            [IconFiles, t('legion.atelier.fichiers'), basculerArbre, arbreOuvert],
+            [IconFileSearch, `${t('legion.atelier.chercherProjet')} (Ctrl+Maj+F)`, () => setPanneau('recherche'), panneau === 'recherche'],
+            [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), panneau === 'modifications'],
+            [IconFlag, t('legion.atelier.points'), () => setPanneau('points'), panneau === 'points'],
+            [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), panneau === 'journal'],
+            entrepriseId ? [IconListCheck, t('legion.atelier.ongletTaches'), () => { setBasOuvert(true); setPanneauBas('taches'); }, basOuvert && panneauBas === 'taches'] : null,
+            [IconBrandGithub, t('legion.atelier.github.titre'), () => setPanneau('github'), panneau === 'github'],
+          ].filter(Boolean).map(([Icone, label, fn, actif]) => (
+            <button key={label} type="button" onClick={fn} title={label} aria-label={label} aria-pressed={actif} disabled={!vue}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-md disabled:opacity-40 ${actif ? 'text-legion-gold' : 'text-legion-muted hover:text-legion-ink'}`}>
+              {actif && <span className="absolute -left-1 top-1.5 h-6 w-0.5 rounded-full bg-legion-gold" aria-hidden="true" />}
+              <Icone size={20} stroke={1.6} />
+            </button>
+          ))}
+        </nav>
+        <div className={`${onglet === 'fichiers' ? 'block' : 'hidden'} h-full min-h-0 border-legion-line bg-legion-panel ${arbreOuvert ? 'lg:block' : 'lg:hidden'} lg:border-r`}>{colonneArbre}</div>
         <div className={`${onglet === 'editeur' || onglet === 'apercu' ? 'flex' : 'hidden'} h-full min-h-0 flex-col lg:flex`}>
           <div className="hidden shrink-0 gap-1 border-b border-legion-line px-3 py-1 lg:flex" role="tablist">
             {[[false, IconCode, t('legion.atelier.code')], [true, IconEye, t('legion.atelier.apercu')]].map(([v, Icone, label]) => (

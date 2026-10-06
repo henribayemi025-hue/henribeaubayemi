@@ -1119,6 +1119,7 @@
       "pointConfirmer": "Oui, revenir",
       "pointAvertir": "Le projet redevient exactement comme à ce moment-là : les fichiers créés depuis sont retirés. Un point est posé avant, pour pouvoir annuler.",
       "pointEffacer": "Effacer ce point",
+      "barreActivite": "Barre d'activité",
       "chercherProjet": "Chercher dans le projet",
       "chercherTexte": "Texte à chercher",
       "chercherAucun": "Rien trouvé.",
