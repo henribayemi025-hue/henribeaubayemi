@@ -60,8 +60,11 @@ export function Rail({ entreprise, departements, courant, onChoisir, agents, onT
 
       {/* L'immeuble en direct (25/09, Beau : « je ne vois pas où ils travaillent ensemble ») */}
       {onImmeuble && (
-        <button type="button" onClick={onImmeuble} title={t('legion.immeuble.entree')}
-          className="mt-2 flex h-11 w-11 items-center justify-center rounded-2xl border border-legion-gold/50 bg-legion-card text-[20px] transition hover:bg-legion-card-haut">🏢</button>
+        <button type="button" onClick={onImmeuble} title={t('legion.immeuble.entree')} aria-label={t('legion.immeuble.entree')}
+          className="mt-2 h-11 w-11 overflow-hidden rounded-2xl border border-legion-gold/50 bg-legion-card transition hover:brightness-110">
+          {/* La vraie tour de Léo (vue de la scène d'entrée), au lieu de l'emoji 🏢 (Beau, 25/09). */}
+          <img src="/monde3d/immeuble-icone.webp" alt="" width="44" height="44" className="h-full w-full object-cover" />
+        </button>
       )}
 
       {/* L'Atelier de code (V0, 24/09) : seulement là où il est ouvert. */}
@@ -105,7 +108,7 @@ export function RailPastilles({ departements, courant, onChoisir, onTous, agents
       {onImmeuble && (
         <button type="button" onClick={onImmeuble}
           className="flex shrink-0 items-center gap-1 rounded-pill border border-legion-gold/60 bg-legion-gold/15 px-3 py-1.5 text-caption font-semibold text-legion-ink">
-          🏢 {t('legion.immeuble.entreeCourte')}
+          <img src="/monde3d/immeuble-icone.webp" alt="" width="18" height="18" className="h-[18px] w-[18px] rounded-[5px] object-cover" /> {t('legion.immeuble.entreeCourte')}
         </button>
       )}
       {onAtelier && (
