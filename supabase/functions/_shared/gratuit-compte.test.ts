@@ -89,3 +89,13 @@ describe('adapterAuSchema — réponses de Gemma vues le 06/10', () => {
     expect(adapterAuSchema({ texte: 'bonjour', properties: { x: 1 } }, s)).toEqual({ texte: 'bonjour', properties: { x: 1 } });
   });
 });
+
+describe('champsManquants — exigé veut dire présent, pas rempli', () => {
+  const livrable = { properties: { livrable: {}, statut: {}, besoin: {}, suite_titre: {}, suite_agent: {} }, required: ['livrable', 'statut', 'besoin', 'suite_titre', 'suite_agent'] };
+  it('accepte un livrable sans besoin ni suite (champs vides)', () => {
+    expect(champsManquants({ livrable: 'Fait : …', statut: 'fait', besoin: '', suite_titre: '', suite_agent: '' }, livrable)).toEqual([]);
+  });
+  it('signale un champ exigé absent', () => {
+    expect(champsManquants({ livrable: 'Fait : …', statut: 'fait' }, livrable)).toEqual(['besoin', 'suite_titre', 'suite_agent']);
+  });
+});

@@ -96,11 +96,16 @@ export function adapterAuSchema(obj: unknown, schema: unknown): unknown {
   return r;
 }
 
-// Les champs que la réponse DOIT remplir : ceux que le schéma exige, et
-// toujours « texte » quand il en a un (c'est ce que l'agent dit).
+// Les champs qui manquent : ceux que le schéma exige et qui sont ABSENTS, et
+// « texte » quand il est vide (c'est ce que l'agent dit). Un champ exigé mais
+// laissé vide reste juste : « besoin », « suite_titre » ou « suite_agent » d'un
+// livrable sont vides quand l'agent n'a besoin de rien (06/10 : tous les
+// livrables de Gemma étaient rejetés pour « besoin vide »).
 export function champsManquants(obj: unknown, schema: unknown): string[] {
   const s = schema as { properties?: Record<string, unknown>; required?: string[] } | null;
   if (!s?.properties || !obj || typeof obj !== 'object') return [];
-  const exiges = new Set([...(s.required || []), ...('texte' in s.properties ? ['texte'] : [])]);
-  return [...exiges].filter((k) => vide((obj as Record<string, unknown>)[k]));
+  const o = obj as Record<string, unknown>;
+  const absents = (s.required || []).filter((k) => o[k] === undefined || o[k] === null);
+  const texte = 'texte' in s.properties && vide(o.texte) && !absents.includes('texte') ? ['texte'] : [];
+  return [...absents, ...texte];
 }
