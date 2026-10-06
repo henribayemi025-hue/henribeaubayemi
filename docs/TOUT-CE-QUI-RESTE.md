@@ -53,7 +53,7 @@ Signes : ✅ fait · 🔧 en cours · ⬜ à faire · ⏳ attend Beau · ✗ éc
 | 13 | ⬜ Monde 3D — monde de rêve, pays commun à toutes les entreprises (E12, E18) | lot 3.7-3.9 | |
 | 14 | ✅ Salut humain : déjà en place (plusieurs agents répondent à un salut, en une ou deux phrases, par la voie rapide du 28/09) ; vérifié dans legion-repondre | carnet 26/09 | ne marche que quand une IA est disponible |
 | 15 | ⬜ Connecteurs par utilisateur : GitHub (OAuth), puis Gmail, Supabase, Vercel (C11) | relevé 25/09, carnet 26/09 | |
-| 16 | ⬜ Reprendre les 11 éléments restants des 5 prototypes AI Studio (C13) | relevé 25/09 | |
+| 16 | 🔧 Les 15 éléments des 5 prototypes AI Studio (C13) : vérifié le 06/10, 10 sont faits (onglets, barre d'état, Ctrl+K, erreurs soulignées, demander sur une sélection, terminaux, tâches en arrière-plan, plusieurs agents, renfort, équipe). Restent 5 : barre d'activité à gauche, recherche dans tout le projet, avant / après côte à côte, entretien d'embauche mesuré, points de retour | relevé 25/09 | |
 | 17 | ✅ Lettre de l'IA affichée dans Learn : déjà en place (numéros publiés dans Learn, importés sur staging) | carnet 02/10 | |
 | 18 | ⬜ Les quatre grandes listes d'idées : les trier puis faire ce qui est retenu (section 4) | | avec les agents |
 
