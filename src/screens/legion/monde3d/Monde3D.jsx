@@ -158,6 +158,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [choc, setChoc] = useState(0);
   const [bulle, setBulle] = useState(null); // ce que dit un piéton bousculé ou la passagère (25/09)
   const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
+  const [etoiles, setEtoiles] = useState(0); // la police (lot 3.5)
   const [nage, setNage] = useState(null); // { sous, air } quand on nage
   const [suivant, setSuivant] = useState(null); // l'agent qui t'attend, vers lequel « Aller au suivant » t'a mené
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
@@ -270,6 +271,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               }
               return avant?.finie ? avant : { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
             });
+            if (e.type === 'etoiles') setEtoiles(e.etoiles || 0);
+            if (e.type === 'police' && (e.arrive || e.semee || e.arrete)) {
+              const quand = Date.now();
+              setBulle({ nom: t('legion.monde.police.nom'), texte: t(e.arrete ? 'legion.monde.police.arrete' : e.semee ? 'legion.monde.police.semee' : 'legion.monde.police.arrive'), fache: !!(e.arrive || e.arrete), quand });
+              setTimeout(() => setBulle((b) => (b && b.quand === quand ? null : b)), e.arrete ? 6000 : 4000);
+              if (e.semee || e.arrete) setEtoiles(0);
+            }
             if (e.type === 'choc') { setChoc(Date.now()); try { navigator.vibrate?.(Math.min(120, e.force * 4)); } catch { /* pas de vibreur */ } }
             // « C'est la vraie vie » (Beau, 25/09) : le piéton bousculé et la passagère parlent.
             if (e.type === 'pieton' || (e.type === 'passager' && (e.texte || e.descend))) {
@@ -702,6 +710,15 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </>
       )}
 
+      {/* La police (lot 3.5) : les étoiles, en haut, tant qu'on est recherché. */}
+      {etoiles > 0 && (
+        <div role="status" aria-label={t('legion.monde.police.etoiles', { count: etoiles })}
+          className={`pointer-events-none absolute left-1/2 z-[7] flex -translate-x-1/2 gap-0.5 rounded-pill border border-legion-danger/50 bg-[#0b1120]/85 px-3 py-1 backdrop-blur ${mobile ? 'top-[2.6rem]' : 'top-3'}`}>
+          {[1, 2, 3, 4, 5].map((k) => (
+            <span key={k} className={`${mobile ? 'text-[16px]' : 'text-[20px]'} leading-none ${k <= etoiles ? 'text-[#ffd23f] drop-shadow-[0_0_6px_rgba(255,210,63,0.8)]' : 'text-white/20'}`}>★</span>
+          ))}
+        </div>
+      )}
       {/* Au volant : compteur, descendre, pédales au téléphone */}
       {bulle && (
         <div className={`pointer-events-none absolute left-1/2 z-[7] -translate-x-1/2 rounded-2xl border px-3.5 py-2 text-center backdrop-blur ${bulle.fache ? 'border-legion-danger/60 bg-[#2a0f12]/90' : 'border-legion-line bg-[#0b1120]/90'} ${mobile ? 'top-[4.5rem] max-w-[86vw]' : 'top-24 max-w-[420px]'}`}>

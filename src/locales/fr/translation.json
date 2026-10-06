@@ -1574,6 +1574,14 @@
         "veille": "Éteint (en veille)",
         "dispo": "Disponible · {{n}} tâche(s) ouverte(s)"
       },
+      "police": {
+        "nom": "Police",
+        "arrive": "Une voiture de police te prend en chasse ! Sème-la, ou arrête-toi.",
+        "semee": "Semée : la police a perdu ta trace.",
+        "arrete": "Arrêté (pour de faux). On te ramène devant l'immeuble — doucement, cette fois.",
+        "etoiles_one": "Recherché : {{count}} étoile",
+        "etoiles_other": "Recherché : {{count}} étoiles"
+      },
       "passager": {
         "descend": "{{nom}} descend. « Merci ! »",
         "descendFache": "{{nom}} descend, fâchée."

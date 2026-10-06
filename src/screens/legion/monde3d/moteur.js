@@ -20,7 +20,8 @@ import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe, gesteDe } from './monde';
-import { construireVille, matieresFacades, cotesFacade } from './ville3d';
+import { construireVille, matieresFacades, cotesFacade, voiture3d } from './ville3d';
+import { nouvellePoursuite, avancerPoursuite, infraction, etoiles } from './poursuite';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
 import { construireQuartiers } from './quartiers3d';
@@ -1418,8 +1419,64 @@ export class Monde {
       o.userData.fache = { t: 3.5, texte };
       p.jouer('parle', { fondu: 0.1 });
       this.emettre({ type: 'pieton', nom: p.nom || '', texte });
+      this.signaler('pieton');
       if (this.passager && Math.abs(e.vitesse) > 6) this.passagerSeFache(20);
     }
+  }
+  // LA POLICE (lot 3.5, poursuite.js) : une infraction fait monter les étoiles.
+  signaler(quoi) {
+    if (this.lieu?.nom !== 'hall' || !this.conduite || this.conduite.genre) return;
+    const avant = etoiles(this.poursuite ||= nouvellePoursuite());
+    this.poursuite = infraction(this.poursuite, quoi);
+    const apres = etoiles(this.poursuite);
+    if (apres !== avant) this.emettre({ type: 'etoiles', etoiles: apres });
+  }
+  majPolice(dt) {
+    this.poursuite ||= nouvellePoursuite();
+    const enVille = this.lieu?.nom === 'hall' && this.villeVivante;
+    // Hors de la ville (immeuble, maisons, hélico, bateau) : la poursuite s'arrête là.
+    if (!enVille || ['helico', 'bateau'].includes(this.conduite?.genre)) {
+      if (this.poursuite.chaleur || this.poursuite.police) { this.poursuite = nouvellePoursuite(); this.retirerPolice(); this.emettre({ type: 'etoiles', etoiles: 0 }); }
+      return;
+    }
+    if (!this.poursuite.chaleur && !this.poursuite.police) return;
+    const auVolant = !!this.conduite;
+    const pos = auVolant ? this.conduite.lb.etat : this.joueur.objet.position;
+    const pied = this.joueur.objet.position;
+    const vPied = this.dernierPied ? Math.hypot(pied.x - this.dernierPied.x, pied.z - this.dernierPied.z) / Math.max(dt, 1e-3) : 0;
+    this.dernierPied = { x: pied.x, z: pied.z };
+    const { p, evenements } = avancerPoursuite(this.poursuite, { x: pos.x, z: pos.z, vitesse: auVolant ? pos.vitesse : vPied, auVolant }, dt);
+    this.poursuite = p;
+    if (p.police) {
+      if (!this.voiturePolice) {
+        this.voiturePolice = voiture3d(this, '#f4f5f7', 'police', this.mobile);
+        this.villeVivante.racine.add(this.voiturePolice);
+      }
+      const o = this.voiturePolice;
+      o.position.set(p.police.x, 0, p.police.z);
+      o.rotation.y = p.police.cap - Math.PI / 2;
+      const phase = Math.floor(performance.now() / 160) % 4;
+      const gy = o.userData.gyro;
+      if (gy) { gy[0].emissiveIntensity = phase % 2 === 0 ? 3.5 : 0.15; gy[1].emissiveIntensity = phase % 2 === 1 ? 3.5 : 0.15; }
+      this.tempsSirene = (this.tempsSirene || 0) - dt;
+      if (this.tempsSirene <= 0 && Math.hypot(p.police.x - pos.x, p.police.z - pos.z) < 70) { this.son?.effet('sirene'); this.tempsSirene = 0.75; }
+    } else this.retirerPolice();
+    for (const ev of evenements) {
+      this.emettre(ev);
+      if (ev.arrete) this.arrestation();
+    }
+  }
+  retirerPolice() {
+    if (!this.voiturePolice) return;
+    this.voiturePolice.parent?.remove(this.voiturePolice);
+    this.voiturePolice = null;
+  }
+  // Arrêté (pour de faux) : on descend, et l'on revient dans la rue, devant l'immeuble.
+  arrestation() {
+    this.retirerPolice();
+    if (this.conduite) this.descendreVoiture();
+    this.placerJoueur(0, 22.6, Math.PI);
+    this.emettre({ type: 'etoiles', etoiles: 0 });
   }
   // Une course autour du pâté de maisons (course.js), seulement au volant d'une voiture.
   lancerCourse() {
@@ -1468,9 +1525,9 @@ export class Monde {
     const surTrottoir = V.blocs.some((b) => e.x > b.x0 && e.x < b.x1 && e.z > b.z0 && e.z < b.z1);
     if (surTrottoir !== c.surTrottoir) {
       c.surTrottoir = surTrottoir;
-      if (Math.abs(e.vitesse) > 1.5) { c.secousse = Math.max(c.secousse, 0.22); e.vitesse *= 0.82; this.emettre({ type: 'trottoir', monte: surTrottoir }); }
+      if (Math.abs(e.vitesse) > 1.5) { c.secousse = Math.max(c.secousse, 0.22); e.vitesse *= 0.82; this.emettre({ type: 'trottoir', monte: surTrottoir }); if (surTrottoir && Math.abs(e.vitesse) > 8) this.signaler('trottoir'); }
     }
-    if (choc > 4) { c.secousse = Math.min(0.6, choc / 30); this.emettre({ type: 'choc', force: choc }); if (choc > 8) this.passagerSeFache(choc); }
+    if (choc > 4) { c.secousse = Math.min(0.6, choc / 30); this.emettre({ type: 'choc', force: choc }); if (choc > 8) { this.passagerSeFache(choc); this.signaler('choc'); } }
     this.bousculerPietons(e, dt);
     c.lb.etat = { x: e.x, z: e.z, cap: e.cap, vitesse: e.vitesse };
     const o = c.lb.objet;
@@ -1581,6 +1638,7 @@ export class Monde {
   avancer(dt) {
     const j = this.joueur;
     if (!j || !this.lieu) return;
+    this.majPolice(dt);
     this.brouillardSousLEau();
     const t = this.touches;
     let ax = (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x;

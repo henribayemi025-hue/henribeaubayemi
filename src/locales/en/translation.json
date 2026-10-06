@@ -1574,6 +1574,14 @@
         "veille": "Switched off (on standby)",
         "dispo": "Available · {{n}} open task(s)"
       },
+      "police": {
+        "nom": "Police",
+        "arrive": "A police car is after you! Lose it, or pull over.",
+        "semee": "Lost them: the police can't find you.",
+        "arrete": "Busted (just a game). Back to the building — slowly this time.",
+        "etoiles_one": "Wanted: {{count}} star",
+        "etoiles_other": "Wanted: {{count}} stars"
+      },
       "passager": {
         "descend": "{{nom}} gets out. “Thanks!”",
         "descendFache": "{{nom}} gets out, angry."

@@ -269,7 +269,7 @@ function simplifier(mat) {
   const m = new THREE.MeshStandardMaterial({ name: mat.name, color: mat.color, metalness: 0.4, roughness: 0.4, map: mat.map, emissive: mat.emissive, emissiveMap: mat.emissiveMap, envMapIntensity: 0.9 });
   return m;
 }
-function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = false) {
+export function voiture3d(monde, peinture, genre = 'berline', leger = false, jouable = false) {
   const M = matVehicules();
   const g = new THREE.Group();
   const couleur = genre === 'taxi' ? '#f2b705' : genre === 'police' ? '#f4f5f7' : genre === 'luxe' ? '#0d0f13' : peinture;
