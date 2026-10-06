@@ -27,6 +27,9 @@ import { visee as viseeFoot, puissance as puissanceFoot, tirerAuBut, compterTirs
 import { construireReve, construireDauphins } from './reve3d';
 import { construireCarte } from './carte3d';
 import { borner, BORNES } from './carte';
+
+// Au-delà, une étiquette (nom d'un agent, de la réceptionniste) n'est plus lisible : on la cache.
+const ETIQUETTE_MAX = 45;
 import { jauge as jaugeBasket, zone as zoneBasket, tirer as tirerBasket, compter as compterBasket, scoreVide, ballon as ballonBasket, DUREE_VOL } from './basket';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
@@ -212,7 +215,19 @@ export class Monde {
     d.querySelector('i').textContent = sous || '';
     const o = new CSS2DObject(d);
     o.position.set(0, 2.05, 0);
+    (this.toutesEtiquettes ||= new Set()).add(o);
     return o;
+  }
+  // Une étiquette ne s'affiche que de près (06/10 : « Réceptionniste » flottait
+  // au-dessus de l'aéroport, à 400 m, à travers les immeubles).
+  cacherEtiquettesLointaines() {
+    if (!this.toutesEtiquettes) return;
+    const cam = this.camera.position, p = new THREE.Vector3();
+    for (const o of this.toutesEtiquettes) {
+      if (!o.parent) { this.toutesEtiquettes.delete(o); continue; }
+      o.getWorldPosition(p);
+      o.visible = p.distanceTo(cam) < ETIQUETTE_MAX;
+    }
   }
 
   // ——— Le ciel réel (ciel.js) ———
@@ -1749,6 +1764,7 @@ export class Monde {
         return;
       }
       if (this.composer) this.composer.render(); else this.rendu.render(this.scene, this.camera);
+      this.cacherEtiquettesLointaines();
       this.etiquettes.render(this.scene, this.camera);
     };
     pas();

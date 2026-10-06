@@ -3,6 +3,7 @@
 // volant tactile et vraies pédales au téléphone. Dessiné pour Léo (SVG), rien de copié.
 import { useRef, useState } from 'react';
 import { RUES } from './conduite';
+import { PISTE } from './carte';
 
 const OR = '#e3a857';
 
@@ -49,6 +50,12 @@ export function MiniCarte({ x = 0, z = 0, cap = 0, porte = null, heliport = [52,
   const rues = [];
   for (const rx of RUES.x) { const [a, b] = [ecran(rx, -200), ecran(rx, 200)]; rues.push(<line key={`x${rx}`} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#5a6478" strokeWidth={RUES.largeur * echelle} strokeLinecap="butt" />); }
   for (const rz of RUES.z) { const [a, b] = [ecran(-200, rz), ecran(200, rz)]; rues.push(<line key={`z${rz}`} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#5a6478" strokeWidth={RUES.largeur * echelle} strokeLinecap="butt" />); }
+  // La grande carte (lot 3.3) : la piste et les routes de l'aéroport (est), la route de campagne (ouest).
+  const trait = (k, a, b, l, c) => { const [p, q] = [ecran(...a), ecran(...b)]; rues.push(<line key={k} x1={p[0]} y1={p[1]} x2={q[0]} y2={q[1]} stroke={c} strokeWidth={l * echelle} strokeLinecap="butt" />); };
+  trait('piste', [PISTE.x, PISTE.z0], [PISTE.x, PISTE.z1], 45, '#6b7080');
+  trait('tarmac', [320, -150], [320, 150], 110, '#4d5260');
+  for (const rz of [-22, 30]) trait(`acces${rz}`, [200, rz], [266, rz], 12, '#5a6478');
+  trait('campagne', [-200, 30], [-560, 30], 9, '#5a6478');
   const [imx, imz] = ecran(0, 0);
   const [hx, hz] = ecran(...heliport);
   let cible = null;
