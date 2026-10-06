@@ -1576,6 +1576,10 @@
         "veille": "Éteint (en veille)",
         "dispo": "Disponible · {{n}} tâche(s) ouverte(s)"
       },
+      "quartier": {
+        "aeroport": "L'aéroport — un avion décolle toutes les 45 secondes.",
+        "campagne": "La campagne : champs, ferme et éoliennes."
+      },
       "reve": {
         "allumer": "Monde de rêve",
         "eteindre": "Revenir au monde réel"

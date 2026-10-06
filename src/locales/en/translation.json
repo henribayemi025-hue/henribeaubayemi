@@ -1576,6 +1576,10 @@
         "veille": "Switched off (on standby)",
         "dispo": "Available · {{n}} open task(s)"
       },
+      "quartier": {
+        "aeroport": "The airport — a plane takes off every 45 seconds.",
+        "campagne": "The countryside: fields, a farm and wind turbines."
+      },
       "reve": {
         "allumer": "Dream world",
         "eteindre": "Back to the real world"

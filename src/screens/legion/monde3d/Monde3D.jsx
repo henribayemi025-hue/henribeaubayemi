@@ -339,6 +339,11 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             });
             if (e.type === 'etoiles') setEtoiles(e.etoiles || 0);
             if (e.type === 'reve') setReve(!!e.actif);
+            if (e.type === 'quartier' && e.id) { // la grande carte (lot 3.3) : on dit où l'on arrive
+              const quand = Date.now();
+              setBulle({ nom: null, texte: t(`legion.monde.quartier.${e.id}`), fache: false, quand });
+              setTimeout(() => setBulle((b) => (b && b.quand === quand ? null : b)), 3500);
+            }
             if (e.type === 'foot') setFoot((f) => (e.actif ? { ...e, tir: e.tir ? { ...e.tir, quand: Date.now() } : f?.tir } : null));
             if (e.type === 'basket') {
               if (!e.actif) setBasket(null);

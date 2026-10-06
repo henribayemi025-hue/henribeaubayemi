@@ -25,6 +25,8 @@ import { nouvellePoursuite, avancerPoursuite, infraction, etoiles } from './pour
 import { construireSport, construireFoot } from './sport3d';
 import { visee as viseeFoot, puissance as puissanceFoot, tirerAuBut, compterTirs, tirsVide } from './foot';
 import { construireReve, construireDauphins } from './reve3d';
+import { construireCarte } from './carte3d';
+import { borner, BORNES } from './carte';
 import { jauge as jaugeBasket, zone as zoneBasket, tirer as tirerBasket, compter as compterBasket, scoreVide, ballon as ballonBasket, DUREE_VOL } from './basket';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
@@ -498,7 +500,7 @@ export class Monde {
       { type: 'escalier', x: -8.6, z: -3.2, rayon: 1.6 },
     ];
     await Promise.all(ajouts);
-    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: -196, x1: 196, z0: -196, z1: 196 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
+    return { groupe: g, murs, bar: placesBar, depart: { x: 0, z: 6.5, yaw: 0 }, poi, limites: { x0: BORNES.x0 - 2, x1: BORNES.x1 + 2, z0: -196, z1: 196 }, interieur: { x0: -12, x1: 12, z0: -9, z1: 9 }, sortieAscenseur: { x: 10.2, z: -1, yaw: Math.PI / 2 } };
   }
   async construireReunion() {
     const g = new THREE.Group();
@@ -763,6 +765,9 @@ export class Monde {
     }
     if (!this.villeVivante) {
       this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
+      // La grande carte (lot 3.3) : l'aéroport à l'est, la campagne à l'ouest.
+      this.carte = construireCarte(this, this.villeVivante);
+      this.villeVivante.racine.add(this.carte.groupe);
       this.portes = construirePortes();
       this.villeVivante.racine.add(this.portes.groupe);
       // Le quartier du sport (lot 3.6) : le terrain de basket, sur l'îlot réservé.
@@ -1647,7 +1652,7 @@ export class Monde {
       e = heurterVehicules(e, autres);
       choc = Math.max(choc, e.choc);
     }
-    e.x = Math.max(-194, Math.min(194, e.x)); e.z = Math.max(-194, Math.min(194, e.z));
+    ({ x: e.x, z: e.z } = borner(e.x, e.z));
     // Le rebord du trottoir : on y monte (Beau, 25/09 : « il peut monter sur un pavé »), ça secoue et ça freine.
     const surTrottoir = V.blocs.some((b) => e.x > b.x0 && e.x < b.x1 && e.z > b.z0 && e.z < b.z1);
     if (surTrottoir !== c.surTrottoir) {
@@ -1700,7 +1705,7 @@ export class Monde {
       e = heurterTours(voler(e, { avance, lacet, monte }, pas), this.toursHelico);
       choc = Math.max(choc, e.choc);
     }
-    e.x = Math.max(-194, Math.min(194, e.x)); e.z = Math.max(-194, Math.min(194, e.z));
+    ({ x: e.x, z: e.z } = borner(e.x, e.z));
     if (choc > 5) { c.secousse = Math.min(0.8, choc / 25); this.emettre({ type: 'choc', force: choc }); }
     h.etat = { x: e.x, y: e.y, z: e.z, cap: e.cap, vx: e.vx, vy: e.vy, vz: e.vz };
     const o = h.objet;
@@ -1770,6 +1775,7 @@ export class Monde {
     this.majPolice(dt);
     this.majBasket(dt);
     this.majFoot(dt);
+    if (this.carte && this.lieu.nom === 'hall') { const q = this.conduite ? this.conduite.lb.etat : j.objet.position; this.carte.maj(dt, q.x, q.z); }
     if (this.reveVille?.groupe.visible && this.lieu.nom === 'hall') this.reveVille.animer(dt, this.niveauNuit || 0);
     if (this.lieu.dauphins) this.lieu.dauphins.animer(dt, !!this.reve);
     this.brouillardSousLEau();
