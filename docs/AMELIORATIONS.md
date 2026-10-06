@@ -78,3 +78,4 @@ tu as la décision finale. »
 | 06/10 | Léo (monde 3D) | Terrain de basket jouable : jauge à arrêter dans le vert, 2 ou 3 points, série, record | Claude | e544998 ; 6 tests ; rendu vérifié | staging |
 | 06/10 | Léo (monde 3D) | Monde de rêve (menu) : couloirs aériens et voitures volantes, parc suspendu entre deux tours, aurores la nuit, dauphins qui s'envolent | Claude | 35b110d ; 3 tests ; rendu de jour, de nuit, à la mer | staging |
 | 06/10 | Léo (monde 3D) | Foot à 5 : tirs au but contre un gardien (visée puis puissance) | Claude | 03112fd ; 6 tests ; essayé dans le vrai moteur ; panneaux vérifiés à 390 et 1280 px | staging |
+| 06/10 | Léo (monde 3D) | Grande carte : l'aéroport à l'est (avions, un décollage toutes les 45 s) et la campagne à l'ouest (ferme, champs, éoliennes) ; détails construits à l'approche, défaits en partant | Claude | 3558069 ; 5 tests ; rendu vérifié de près et depuis la ville | staging |

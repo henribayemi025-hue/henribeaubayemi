@@ -48,7 +48,7 @@ Signes : ✅ fait · 🔧 en cours · ⬜ à faire · ⏳ attend Beau · ✗ éc
 | 8 | ✅ L'import d'un agent garde ses compétences (F6) | relevé 25/09 | 008f664 |
 | 9 | ✅ « Mon ordinateur » : réglage « Tout autoriser » (propriétaire, éteint par défaut ; payer, supprimer, mot de passe toujours demandés) | carnet 25/09 | 88b9faa |
 | 10 | ⬜ Monde 3D — la vie des agents (se lever, marché, travail, sport, dormir) (E9) | relevé 25/09, lot 3.2 | |
-| 11 | 🔧 Monde 3D — conducteur visible, trottoir, passagère : déjà faits (vérifié le 06/10). Reste la grande carte en quartiers chargés à l'approche (E10) | lot 3.3-3.4 | |
+| 11 | ✅ Monde 3D — conducteur visible, trottoir, passagère : déjà faits (vérifié le 06/10). ✅ grande carte : aéroport à l'est, campagne à l'ouest, version légère toujours là et détails chargés à l'approche (3558069) | lot 3.3-3.4 | |
 | 12 | 🔧 Monde 3D — ✅ police : étoiles, poursuite, sirène, arrestation pour de faux (3b99c37) ; ✅ basket jouable (e544998) ; ✅ foot à 5, tirs au but contre un gardien (03112fd). Reste l'arcade : logique du casse-briques confiée à Forge (tâche difficile), à relire puis brancher | lot 3.5-3.6 | |
 | 13 | 🔧 Monde 3D — ✅ monde de rêve : couloirs aériens et voitures volantes, parc suspendu, aurores, dauphins (35b110d). ⏳ pays commun (E18) : touche la base partagée et ce que chaque entreprise montre aux autres → décision de Beau (section 3) | lot 3.7-3.9 | |
 | 14 | ✅ Salut humain : déjà en place (plusieurs agents répondent à un salut, en une ou deux phrases, par la voie rapide du 28/09) ; vérifié dans legion-repondre | carnet 26/09 | ne marche que quand une IA est disponible |
