@@ -1443,6 +1443,7 @@
         "plan": "Plan"
       },
       "action": {
+        "foot": "Tirer des penalties",
         "basket": "Jouer au basket",
         "receptionniste": "Parler à la réceptionniste",
         "ascenseur": "Prendre l'ascenseur",
@@ -1578,6 +1579,18 @@
       "reve": {
         "allumer": "Monde de rêve",
         "eteindre": "Revenir au monde réel"
+      },
+      "foot": {
+        "titre": "Tirs au but",
+        "serie": "série {{serie}}",
+        "but": "BUT !",
+        "arret": "Arrêté par le gardien",
+        "cote": "À côté",
+        "dessus": "Au-dessus",
+        "appui_debut": "Se placer",
+        "appui_visee": "Viser (gauche ↔ droite)",
+        "appui_puissance": "Frapper",
+        "appui_vol": "…"
       },
       "basket": {
         "titre": "Basket",

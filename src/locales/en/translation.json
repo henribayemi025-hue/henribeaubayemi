@@ -1443,6 +1443,7 @@
         "plan": "Map"
       },
       "action": {
+        "foot": "Take penalties",
         "basket": "Play basketball",
         "receptionniste": "Talk to the receptionist",
         "ascenseur": "Take the lift",
@@ -1578,6 +1579,18 @@
       "reve": {
         "allumer": "Dream world",
         "eteindre": "Back to the real world"
+      },
+      "foot": {
+        "titre": "Penalties",
+        "serie": "streak {{serie}}",
+        "but": "GOAL!",
+        "arret": "Saved by the keeper",
+        "cote": "Wide",
+        "dessus": "Over the bar",
+        "appui_debut": "Take position",
+        "appui_visee": "Aim (left ↔ right)",
+        "appui_puissance": "Shoot",
+        "appui_vol": "…"
       },
       "basket": {
         "titre": "Basketball",

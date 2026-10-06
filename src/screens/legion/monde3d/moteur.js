@@ -22,7 +22,8 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe, gesteDe } from './monde';
 import { construireVille, matieresFacades, cotesFacade, voiture3d } from './ville3d';
 import { nouvellePoursuite, avancerPoursuite, infraction, etoiles } from './poursuite';
-import { construireSport } from './sport3d';
+import { construireSport, construireFoot } from './sport3d';
+import { visee as viseeFoot, puissance as puissanceFoot, tirerAuBut, compterTirs, tirsVide } from './foot';
 import { construireReve, construireDauphins } from './reve3d';
 import { jauge as jaugeBasket, zone as zoneBasket, tirer as tirerBasket, compter as compterBasket, scoreVide, ballon as ballonBasket, DUREE_VOL } from './basket';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
@@ -766,6 +767,7 @@ export class Monde {
       this.villeVivante.racine.add(this.portes.groupe);
       // Le quartier du sport (lot 3.6) : le terrain de basket, sur l'îlot réservé.
       if (this.reve) this.reglerReve(true);
+      if (this.villeVivante.ilotsReserves.foot) { this.foot = construireFoot(this.villeVivante.ilotsReserves.foot); this.villeVivante.racine.add(this.foot.groupe); }
       if (this.villeVivante.ilotsReserves.sport) { this.sport = construireSport(this.villeVivante.ilotsReserves.sport); this.villeVivante.racine.add(this.sport.groupe); }
       if (this.donneesQuartiers || this.habitat) this.majQuartiers(this.donneesQuartiers, this.habitat);
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
@@ -1442,6 +1444,56 @@ export class Monde {
     if (this.reveVille) this.reveVille.groupe.visible = this.reve;
     this.emettre({ type: 'reve', actif: this.reve });
   }
+  // LES TIRS AU BUT (lot 3.6, foot.js) : E se place, E fixe la visée, E frappe.
+  footAction() {
+    if (!this.foot) return;
+    const F = this.tirs ||= { score: tirsVide(), n: 0, etape: null, t0: 0, v: 0, vol: null };
+    if (F.etape === 'vol') return;
+    const s = (Date.now() - F.t0) / 1000;
+    if (!F.etape) {
+      // Derrière le ballon, face au but.
+      const { point, but } = this.foot;
+      this.placerJoueur(point.x + 1.6, point.z, Math.atan2(but.x - point.x, but.z - point.z) - Math.PI); // placerJoueur ajoute un demi-tour
+      F.etape = 'visee'; F.t0 = Date.now();
+    } else if (F.etape === 'visee') { F.v = viseeFoot(s); F.etape = 'puissance'; F.t0 = Date.now(); }
+    else if (F.etape === 'puissance') {
+      const r = tirerAuBut(F.v, puissanceFoot(s), F.n);
+      F.n += 1;
+      F.score = compterTirs(F.score, r);
+      F.etape = 'vol'; F.vol = { t: 0, r };
+      this.emettreFoot({ tir: r });
+      return;
+    }
+    this.emettreFoot();
+  }
+  emettreFoot(extra = {}) {
+    const F = this.tirs;
+    this.emettre({ type: 'foot', actif: true, etape: F.etape, t0: F.t0, v: F.v, score: F.score, ...extra });
+  }
+  majFoot(dt) {
+    const F = this.tirs;
+    if (!F || !this.foot) return;
+    const { ballon, gardien, point, but } = this.foot, p = this.joueur.objet.position;
+    if (this.lieu?.nom !== 'hall' || this.conduite || !this.foot.surTerrain(p.x, p.z)) {
+      if (F.etape !== 'vol') { this.tirs = null; ballon.position.set(point.x, but.sol + 0.11, point.z); gardien.position.set(but.x + 0.6, but.sol, but.z); gardien.rotation.x = 0; this.emettre({ type: 'foot', actif: false, score: F.score }); return; }
+    }
+    if (F.etape !== 'vol') return;
+    F.vol.t += dt;
+    const { r } = F.vol, k = Math.min(1, F.vol.t / 0.6);
+    // Le gardien plonge de son côté ; le ballon file vers la ligne (ou s'arrête dans ses gants).
+    const cote = r.gardien * Math.min(1, F.vol.t / 0.4);
+    gardien.position.set(but.x + 0.6, but.sol + Math.abs(cote) * 0.3, but.z + cote * 1.1);
+    gardien.rotation.x = -cote * 1.1;
+    const cible = { x: but.x - (r.issue === 'but' ? 0.8 : r.issue === 'arret' ? -0.6 : 0.2), y: but.sol + 0.11 + r.y * but.haut, z: but.z + r.x * but.demiLarge };
+    if (r.issue === 'arret') { cible.z = gardien.position.z; cible.y = but.sol + 1; }
+    ballon.position.set(point.x + (cible.x - point.x) * k, but.sol + 0.11 + (cible.y - but.sol - 0.11) * k + Math.sin(k * Math.PI) * 0.4, point.z + (cible.z - point.z) * k);
+    if (F.vol.t > 1.6) {
+      ballon.position.set(point.x, but.sol + 0.11, point.z);
+      gardien.position.set(but.x + 0.6, but.sol, but.z); gardien.rotation.x = 0;
+      F.vol = null; F.etape = 'visee'; F.t0 = Date.now();
+      this.emettreFoot();
+    }
+  }
   // LE BASKET (lot 3.6, basket.js) : E prend le ballon, puis E tire au bon moment.
   cercleProche() {
     const p = this.joueur.objet.position;
@@ -1667,6 +1719,7 @@ export class Monde {
     if (this.proche.type === 'helico') { this.monterHelico(); return; }
     if (this.proche.type === 'bateau') { this.monterBateau(); return; }
     if (this.proche.type === 'basket') { this.basketAction(); return; }
+    if (this.proche.type === 'foot') { this.footAction(); return; }
     if (this.proche.type === 'passant') { const ps = (this.villeVivante?.passants || []).find((x) => (x.nom || '') === this.proche.nom && !x.objet.userData.assis); this.monterPassager(ps); return; }
     if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
     this.emettre({ type: 'interagir', cible: this.proche });
@@ -1716,6 +1769,7 @@ export class Monde {
     if (!j || !this.lieu) return;
     this.majPolice(dt);
     this.majBasket(dt);
+    this.majFoot(dt);
     if (this.reveVille?.groupe.visible && this.lieu.nom === 'hall') this.reveVille.animer(dt, this.niveauNuit || 0);
     if (this.lieu.dauphins) this.lieu.dauphins.animer(dt, !!this.reve);
     this.brouillardSousLEau();
@@ -1811,6 +1865,7 @@ export class Monde {
       }
       for (const v of this.villeVivante.voituresLibres) if (!this.conduite && Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
       if (this.sport && !this.conduite && this.sport.surTerrain(p.x, p.z)) proche = { type: 'basket', tient: !!this.basket?.tient };
+      if (this.foot && !this.conduite && this.foot.surTerrain(p.x, p.z)) proche = { type: 'foot', etape: this.tirs?.etape || null };
       const hh = this.villeVivante.helico;
       if (hh && hh.etat.y < 0.1 && Math.hypot(p.x - hh.etat.x, p.z - hh.etat.z) < 6) proche = { type: 'helico', id: 'helico' };
       if (hh && !this.conduite) hh.animer(dt, 0); // rotor à l'arrêt, feux éteints
