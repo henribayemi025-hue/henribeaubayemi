@@ -1575,6 +1575,10 @@
         "veille": "Switched off (on standby)",
         "dispo": "Available · {{n}} open task(s)"
       },
+      "reve": {
+        "allumer": "Dream world",
+        "eteindre": "Back to the real world"
+      },
       "basket": {
         "titre": "Basketball",
         "detail": "{{reussis}}/{{tirs}} baskets · streak {{serie}} · {{distance}} m away",

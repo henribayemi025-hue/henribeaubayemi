@@ -192,6 +192,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
   const [etoiles, setEtoiles] = useState(0); // la police (lot 3.5)
   const [basket, setBasket] = useState(null); // { tient, t0, zone, distance, score, tir }
+  const [reve, setReve] = useState(() => lire('leo:reve', '0') === '1'); // le monde de rêve (lot 3.7)
   const [nage, setNage] = useState(null); // { sous, air } quand on nage
   const [suivant, setSuivant] = useState(null); // l'agent qui t'attend, vers lequel « Aller au suivant » t'a mené
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
@@ -305,6 +306,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               return avant?.finie ? avant : { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
             });
             if (e.type === 'etoiles') setEtoiles(e.etoiles || 0);
+            if (e.type === 'reve') setReve(!!e.actif);
             if (e.type === 'basket') {
               if (!e.actif) setBasket(null);
               else setBasket((b) => {
@@ -337,6 +339,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           },
         });
         monde.current = m;
+        if (lire('leo:reve', '0') === '1') m.reglerReve(true);
         sonRef.current = creerSon();
         m.son = sonRef.current;
         m.reglerCiel({ phase: phaseDuJour(Date.now()), genre: 'clair' });
@@ -592,6 +595,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
                 className={`flex-1 rounded-pill px-1 py-1.5 text-[12px] font-semibold ${camera === k ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
             ))}
           </div>
+          <button type="button" onClick={() => { const v = !reve; ecrire('leo:reve', v ? '1' : '0'); monde.current?.reglerReve(v); setMenu(false); }} aria-pressed={reve}
+            className={`w-full rounded-card px-2 py-2 text-left text-[13.5px] hover:bg-white/5 ${reve ? 'text-legion-gold' : 'text-legion-ink'}`}>✨ {t(reve ? 'legion.monde.reve.eteindre' : 'legion.monde.reve.allumer')}</button>
           <button type="button" onClick={() => { setChoixAvatar(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🧍 {t('legion.monde.monAvatar')}</button>
           <button type="button" onClick={() => { setChoixHabitat(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🏠 {t('legion.monde.ville.ouHabiter')}</button>
           <button type="button" onClick={() => { setIntro(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🎬 {t('legion.monde.revoirIntro')}</button>

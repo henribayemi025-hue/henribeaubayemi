@@ -23,6 +23,7 @@ import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe, gesteDe } 
 import { construireVille, matieresFacades, cotesFacade, voiture3d } from './ville3d';
 import { nouvellePoursuite, avancerPoursuite, infraction, etoiles } from './poursuite';
 import { construireSport } from './sport3d';
+import { construireReve, construireDauphins } from './reve3d';
 import { jauge as jaugeBasket, zone as zoneBasket, tirer as tirerBasket, compter as compterBasket, scoreVide, ballon as ballonBasket, DUREE_VOL } from './basket';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
@@ -764,6 +765,7 @@ export class Monde {
       this.portes = construirePortes();
       this.villeVivante.racine.add(this.portes.groupe);
       // Le quartier du sport (lot 3.6) : le terrain de basket, sur l'îlot réservé.
+      if (this.reve) this.reglerReve(true);
       if (this.villeVivante.ilotsReserves.sport) { this.sport = construireSport(this.villeVivante.ilotsReserves.sport); this.villeVivante.racine.add(this.sport.groupe); }
       if (this.donneesQuartiers || this.habitat) this.majQuartiers(this.donneesQuartiers, this.habitat);
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
@@ -785,6 +787,8 @@ export class Monde {
     const l = this.lieux[lieu] || (lieu === 'maisons' ? construireMaisons(this, this.donnees?.agents || [], { moi: this.habitat?.genre === 'maison' ? this.habitat : null }) : etage ? await this.construireEtage(etage, numero) : String(lieu).startsWith('reunion') ? await this.construireReunion() : lieu === 'atelier' ? (this.salleMarche ? await construireSalleMarche(this) : await this.construireAtelier()) : await this.construireHall(nomEntreprise));
     this.lieux[lieu] = l;
     if (lieu === 'maisons') l.lampes.emissiveIntensity = (this.niveauNuit || 0) * 1.4;
+    // Les dauphins de la mer (lot 3.7) : ils sautent toujours ; en rêve, certains s'envolent.
+    if (lieu === 'maisons' && !l.dauphins && l.rivage != null) { l.dauphins = construireDauphins(l.rivage); l.groupe.add(l.dauphins.groupe); }
     if (l.tableau) this.tableauAtelier = l.tableau;
     if (lieu === 'hall' && !l.poiBase) { l.poiBase = l.poi; l.poi = [...l.poi, ...(this.poiChantiers || []), ...(this.quartiers?.pois || [])]; }
     if (l.majMarche && this.donneesMarche) l.majMarche(this.donneesMarche);
@@ -1427,6 +1431,17 @@ export class Monde {
       if (this.passager && Math.abs(e.vitesse) > 6) this.passagerSeFache(20);
     }
   }
+  // LE MONDE DE RÊVE (lot 3.7, reve3d.js) : allumé ou éteint, il est construit une fois.
+  reglerReve(on) {
+    this.reve = !!on;
+    if (this.reve && this.villeVivante && !this.reveVille) {
+      const tours = (this.villeVivante.tours || []).map((t) => ({ bx: (t.x0 + t.x1) / 2, bz: (t.z0 + t.z1) / 2, h: t.h }));
+      this.reveVille = construireReve({ tours, mobile: this.mobile });
+      this.villeVivante.racine.add(this.reveVille.groupe);
+    }
+    if (this.reveVille) this.reveVille.groupe.visible = this.reve;
+    this.emettre({ type: 'reve', actif: this.reve });
+  }
   // LE BASKET (lot 3.6, basket.js) : E prend le ballon, puis E tire au bon moment.
   cercleProche() {
     const p = this.joueur.objet.position;
@@ -1701,6 +1716,8 @@ export class Monde {
     if (!j || !this.lieu) return;
     this.majPolice(dt);
     this.majBasket(dt);
+    if (this.reveVille?.groupe.visible && this.lieu.nom === 'hall') this.reveVille.animer(dt, this.niveauNuit || 0);
+    if (this.lieu.dauphins) this.lieu.dauphins.animer(dt, !!this.reve);
     this.brouillardSousLEau();
     const t = this.touches;
     let ax = (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x;

@@ -1575,6 +1575,10 @@
         "veille": "Éteint (en veille)",
         "dispo": "Disponible · {{n}} tâche(s) ouverte(s)"
       },
+      "reve": {
+        "allumer": "Monde de rêve",
+        "eteindre": "Revenir au monde réel"
+      },
       "basket": {
         "titre": "Basket",
         "detail": "{{reussis}}/{{tirs}} paniers · série {{serie}} · à {{distance}} m",
