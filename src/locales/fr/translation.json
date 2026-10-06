@@ -1267,6 +1267,9 @@
       "envoye": "Envoyé en formation"
     },
     "ordinateur": {
+      "toutAutoriser": "Tout autoriser",
+      "toutAutoriserAide": "il fait la tâche jusqu’au bout, envois et publications compris, sans te redemander. Payer, supprimer pour de bon et changer un mot de passe restent toujours demandés. Chaque tâche finit par un compte rendu, et tu l’arrêtes quand tu veux.",
+      "reserveProprio": "Seul le propriétaire de l’entreprise peut changer ce réglage.",
       "option": "Mon ordinateur (mon assistant)",
       "pris": "Pris par mon ordinateur",
       "attend": "Attend mon ordinateur",

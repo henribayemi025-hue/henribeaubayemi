@@ -1267,6 +1267,9 @@
       "envoye": "Sent to training"
     },
     "ordinateur": {
+      "toutAutoriser": "Allow everything",
+      "toutAutoriserAide": "it finishes the task, sending and posting included, without asking you again. Paying, permanent deletion and password changes are always asked first. Every task ends with a report, and you can stop it at any time.",
+      "reserveProprio": "Only the company owner can change this setting.",
       "option": "My computer (my assistant)",
       "pris": "Taken by my computer",
       "attend": "Waiting for my computer",

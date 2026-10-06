@@ -155,8 +155,16 @@ async function executer(service: SupabaseClient, userId: string, nom: string, ar
       const { data } = await service.from('legion_messages').select('id, texte, created_at, meta, canal_id').eq('entreprise_id', s('entreprise_id')).eq('genre', 'tache').contains('meta', { ordinateur: true }).is('termine_le', null).order('created_at').limit(50);
       const rang = (m: Json) => ({ urgente: 0, haute: 1 } as Record<string, number>)[String((m.meta as Json | null)?.priorite || '')] ?? 2;
       const ouvertes = (data ?? []).filter((m: Json) => ['a_faire', 'en_cours', 'renvoye', undefined].includes((m.meta as Json | null)?.statut as string | undefined)).sort((a: Json, b: Json) => rang(a) - rang(b));
+      // « Tout autoriser » (0236), choisi par l'entreprise : plus de « demander »
+      // à chaque envoi ; payer, supprimer pour de bon et changer un mot de passe
+      // restent demandés.
+      const { data: ent } = await service.from('legion_entreprises').select('ordinateur_libre').eq('id', s('entreprise_id')).maybeSingle();
+      const libre = !!(ent as Json | null)?.ordinateur_libre;
       return texte({
-        regles: "Fais seulement ce que la tâche décrit, à l'écran de la personne. Avant tout envoi à quelqu'un, paiement, achat, suppression, publication ou changement de mot de passe : demande-lui d'abord. Rends toujours un compte rendu (rendre_tache_ordinateur), même si tu es bloqué.",
+        regles: libre
+          ? "La personne a choisi « Tout autoriser » : fais chaque tâche jusqu'au bout à son écran, envois, messages et publications compris, sans lui redemander. Restent à lui demander d'abord : payer ou acheter, supprimer pour de bon, changer un mot de passe. Rends toujours un compte rendu (rendre_tache_ordinateur) qui dit tout ce que tu as envoyé ou publié, même si tu es bloqué."
+          : "Fais seulement ce que la tâche décrit, à l'écran de la personne. Avant tout envoi à quelqu'un, paiement, achat, suppression, publication ou changement de mot de passe : demande-lui d'abord. Rends toujours un compte rendu (rendre_tache_ordinateur), même si tu es bloqué.",
+        tout_autoriser: libre,
         taches: ouvertes.map((m: Json) => ({ id: m.id, titre: m.texte, priorite: (m.meta as Json | null)?.priorite ?? 'normale', statut: (m.meta as Json | null)?.statut ?? 'a_faire', remarque: (m.meta as Json | null)?.remarque, depuis: m.created_at })),
       });
     }

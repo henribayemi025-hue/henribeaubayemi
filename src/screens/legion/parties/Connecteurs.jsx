@@ -209,6 +209,30 @@ function ConnecteursFlux({ entreprise, connecteurs, github, busy, setBusy, onCha
   );
 }
 
+// « Mon ordinateur » : Tout autoriser (0236, Beau, 25/09) — un choix de
+// l'entreprise, éteint par défaut. Payer, supprimer pour de bon et changer un
+// mot de passe restent toujours demandés.
+function ToutAutoriser({ entreprise, t }) {
+  const [libre, setLibre] = useState(!!entreprise?.ordinateur_libre);
+  const [erreur, setErreur] = useState('');
+  async function basculer(v) {
+    setLibre(v); setErreur('');
+    // Seul le propriétaire règle l'entreprise (RLS) : une mise à jour qui ne
+    // touche aucune ligne est un refus, pas un succès.
+    const { data, error } = await supabase.from('legion_entreprises').update({ ordinateur_libre: v }).eq('id', entreprise.id).select('id');
+    if (error || !data?.length) { setLibre(!v); setErreur(error?.message || t('legion.ordinateur.reserveProprio')); }
+  }
+  return (
+    <label className="mt-1.5 flex items-start gap-2 text-[12px] text-legion-ink">
+      <input type="checkbox" className="mt-0.5 accent-[var(--legion-gold,#C9A227)]" checked={libre} onChange={(e) => basculer(e.target.checked)} />
+      <span>
+        <b>{t('legion.ordinateur.toutAutoriser')}</b> — {t('legion.ordinateur.toutAutoriserAide')}
+        {erreur && <span className="block text-legion-danger">{erreur}</span>}
+      </span>
+    </label>
+  );
+}
+
 export function Connecteurs({ entreprise, t }) {
   const [connecteurs, setConnecteurs] = useState(null);
   const [boutiques, setBoutiques] = useState([]);
@@ -483,6 +507,7 @@ export function Connecteurs({ entreprise, t }) {
                 ordinateur (Claude dans Chrome, Claude pour ordinateur) prend
                 les tâches marquées « Mon ordinateur » au tableau. */}
             <p className="mt-1 text-legion-muted">🖥 {t('legion.ordinateur.aide')}</p>
+            <ToutAutoriser entreprise={entreprise} t={t} />
             {jetonClair && (
               <div className="mt-2 rounded-xl border border-legion-gold/40 bg-legion-bg p-2">
                 <p className="text-[11px] font-semibold text-legion-gold">{t('legion.jetonUneFois', 'Copie cette adresse maintenant : elle ne s’affichera plus.')}</p>
