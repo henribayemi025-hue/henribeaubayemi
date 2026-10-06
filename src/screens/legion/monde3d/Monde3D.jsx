@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE, etatDe } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
 import { styleVille } from './region';
+import { jauge as jaugeBasket } from './basket';
 import { chrono } from './conduite';
 import { Compteur, MiniCarte, Volant, Pedales } from './TableauBord';
 import { estSalleDeMarche, pairesDuJour, activite14j } from './salle-marche3d';
@@ -28,6 +29,37 @@ const JOUR = 86_400_000;
 
 function lire(cle, defaut) { try { return localStorage.getItem(cle) || defaut; } catch { return defaut; } }
 function ecrire(cle, v) { try { localStorage.setItem(cle, v); } catch { /* navigation privée */ } }
+
+// La jauge du basket : elle va et vient (basket.js) ; on tire quand elle est dans le vert.
+function JaugeBasket({ b, mobile, t, onTirer }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!b.tient) return undefined;
+    let id;
+    const f = () => { setV(jaugeBasket((Date.now() - b.t0) / 1000)); id = requestAnimationFrame(f); };
+    f();
+    return () => cancelAnimationFrame(id);
+  }, [b.tient, b.t0]);
+  const tirRecent = b.tir && Date.now() - b.tir.quand < 2500 ? b.tir : null;
+  return (
+    <div className={`absolute z-[6] flex items-end gap-2 ${mobile ? 'bottom-[5.5rem] left-3' : 'bottom-24 left-6'}`}>
+      <div className="relative h-40 w-5 overflow-hidden rounded-full border border-white/30 bg-[#0b1120]/80" aria-hidden="true">
+        <div className="absolute inset-x-0 bg-legion-success/70" style={{ bottom: `${b.zone.de * 100}%`, height: `${(b.zone.a - b.zone.de) * 100}%` }} />
+        {b.tient && <div className="absolute inset-x-0 h-1 bg-white shadow-[0_0_8px_white]" style={{ bottom: `calc(${v * 100}% - 2px)` }} />}
+      </div>
+      <div className="rounded-2xl border border-legion-gold/50 bg-[#0b1120]/90 px-3 py-2 backdrop-blur">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-legion-gold">{t('legion.monde.basket.titre')}</p>
+        <p className="font-mono text-[24px] font-bold leading-tight text-legion-ink">{b.score.points} <span className="text-[12px] font-normal text-legion-muted">pts</span></p>
+        <p className="text-[11.5px] text-legion-muted">{t('legion.monde.basket.detail', { reussis: b.score.reussis, tirs: b.score.tirs, serie: b.score.serie, distance: String(b.distance).replace('.', ',') })}</p>
+        {b.record > 0 && <p className="text-[11px] text-legion-muted">{t('legion.monde.basket.record', { points: b.record })}</p>}
+        {tirRecent && <p className={`mt-0.5 text-[13px] font-semibold ${tirRecent.reussi ? 'text-legion-success' : 'text-legion-danger'}`}>{tirRecent.reussi ? t('legion.monde.basket.panier', { points: tirRecent.points }) : t(tirRecent.ecart < 0 ? 'legion.monde.basket.court' : 'legion.monde.basket.long')}</p>}
+        <button type="button" onClick={onTirer} className="mt-1.5 w-full rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg">
+          {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">E</kbd>}{b.tient ? t('legion.monde.basket.tirer') : t('legion.monde.basket.prendre')}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Monde3D({ entreprise, agents, departements = [], messages, taches, onFiche, onParler, onAppeler, onConvoquer, vueVille = false, onChantier, t }) {
   const boite = useRef(null);
@@ -159,6 +191,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [bulle, setBulle] = useState(null); // ce que dit un piéton bousculé ou la passagère (25/09)
   const [course, setCourse] = useState(null); // { prochaine, total, temps, finie, record, nouveau }
   const [etoiles, setEtoiles] = useState(0); // la police (lot 3.5)
+  const [basket, setBasket] = useState(null); // { tient, t0, zone, distance, score, tir }
   const [nage, setNage] = useState(null); // { sous, air } quand on nage
   const [suivant, setSuivant] = useState(null); // l'agent qui t'attend, vers lequel « Aller au suivant » t'a mené
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
@@ -272,6 +305,14 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               return avant?.finie ? avant : { ...e, record: Number(lire('leo:course-record', '0')) || 0 };
             });
             if (e.type === 'etoiles') setEtoiles(e.etoiles || 0);
+            if (e.type === 'basket') {
+              if (!e.actif) setBasket(null);
+              else setBasket((b) => {
+                const record = Number(lire('leo:basket-record', '0')) || 0;
+                if (e.score?.points > record) ecrire('leo:basket-record', String(e.score.points));
+                return { ...e, record: Math.max(record, e.score?.points || 0), tir: e.tir ? { ...e.tir, quand: Date.now() } : b?.tir };
+              });
+            }
             if (e.type === 'police' && (e.arrive || e.semee || e.arrete)) {
               const quand = Date.now();
               setBulle({ nom: t('legion.monde.police.nom'), texte: t(e.arrete ? 'legion.monde.police.arrete' : e.semee ? 'legion.monde.police.semee' : 'legion.monde.police.arrive'), fache: !!(e.arrive || e.arrete), quand });
@@ -338,6 +379,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   function interagir(cible) {
     if (!cible) return;
     if (cible.type === 'voiture') { monde.current?.monterVoiture(cible.id); return; }
+    if (cible.type === 'basket') { monde.current?.basketAction(); return; }
     if (cible.type === 'helico') { monde.current?.monterHelico(); return; }
     if (cible.type === 'bateau') { monde.current?.monterBateau(); return; }
     if (cible.type === 'boutique') { setDialogue({ lignes: [{ qui: 'elle', texte: t('legion.monde.ville.boutiqueResume', { nom: cible.nom, articles: cible.articles, commandes: cible.commandes, livrees: cible.livrees }) }], lien: cible.slug ? `/boutique/${cible.slug}` : null }); return; }
@@ -710,6 +752,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </>
       )}
 
+      {/* Le basket (lot 3.6) : la jauge à remplir au bon moment, et le score. */}
+      {basket && <JaugeBasket b={basket} mobile={mobile} t={t} onTirer={() => monde.current?.basketAction()} />}
       {/* La police (lot 3.5) : les étoiles, en haut, tant qu'on est recherché. */}
       {etoiles > 0 && (
         <div role="status" aria-label={t('legion.monde.police.etoiles', { count: etoiles })}

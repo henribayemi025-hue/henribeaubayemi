@@ -1443,6 +1443,7 @@
         "plan": "Map"
       },
       "action": {
+        "basket": "Play basketball",
         "receptionniste": "Talk to the receptionist",
         "ascenseur": "Take the lift",
         "agent": "See their profile",
@@ -1573,6 +1574,16 @@
         "rendu": "Just delivered",
         "veille": "Switched off (on standby)",
         "dispo": "Available · {{n}} open task(s)"
+      },
+      "basket": {
+        "titre": "Basketball",
+        "detail": "{{reussis}}/{{tirs}} baskets · streak {{serie}} · {{distance}} m away",
+        "record": "Best here: {{points}} pts",
+        "panier": "Score! +{{points}}",
+        "court": "Too short",
+        "long": "Too long",
+        "tirer": "Shoot (in the green)",
+        "prendre": "Pick up the ball"
       },
       "police": {
         "nom": "Police",

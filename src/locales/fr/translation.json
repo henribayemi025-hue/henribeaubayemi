@@ -1443,6 +1443,7 @@
         "plan": "Plan"
       },
       "action": {
+        "basket": "Jouer au basket",
         "receptionniste": "Parler à la réceptionniste",
         "ascenseur": "Prendre l'ascenseur",
         "agent": "Voir sa fiche",
@@ -1573,6 +1574,16 @@
         "rendu": "Vient de rendre",
         "veille": "Éteint (en veille)",
         "dispo": "Disponible · {{n}} tâche(s) ouverte(s)"
+      },
+      "basket": {
+        "titre": "Basket",
+        "detail": "{{reussis}}/{{tirs}} paniers · série {{serie}} · à {{distance}} m",
+        "record": "Record ici : {{points}} pts",
+        "panier": "Panier ! +{{points}}",
+        "court": "Trop court",
+        "long": "Trop long",
+        "tirer": "Tirer (dans le vert)",
+        "prendre": "Prendre le ballon"
       },
       "police": {
         "nom": "Police",

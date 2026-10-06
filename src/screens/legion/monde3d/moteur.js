@@ -22,6 +22,8 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe, gesteDe } from './monde';
 import { construireVille, matieresFacades, cotesFacade, voiture3d } from './ville3d';
 import { nouvellePoursuite, avancerPoursuite, infraction, etoiles } from './poursuite';
+import { construireSport } from './sport3d';
+import { jauge as jaugeBasket, zone as zoneBasket, tirer as tirerBasket, compter as compterBasket, scoreVide, ballon as ballonBasket, DUREE_VOL } from './basket';
 import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
 import { construireQuartiers } from './quartiers3d';
@@ -761,6 +763,8 @@ export class Monde {
       this.villeVivante = construireVille(this, this.scene, { sol: 0, envCiel: this.envCiel });
       this.portes = construirePortes();
       this.villeVivante.racine.add(this.portes.groupe);
+      // Le quartier du sport (lot 3.6) : le terrain de basket, sur l'îlot réservé.
+      if (this.villeVivante.ilotsReserves.sport) { this.sport = construireSport(this.villeVivante.ilotsReserves.sport); this.villeVivante.racine.add(this.sport.groupe); }
       if (this.donneesQuartiers || this.habitat) this.majQuartiers(this.donneesQuartiers, this.habitat);
       this.villeVivante.reglerNuit(this.niveauNuit || 0);
       if (this.affichesBoutiques) this.villeVivante.afficher(this.affichesBoutiques);
@@ -1423,6 +1427,62 @@ export class Monde {
       if (this.passager && Math.abs(e.vitesse) > 6) this.passagerSeFache(20);
     }
   }
+  // LE BASKET (lot 3.6, basket.js) : E prend le ballon, puis E tire au bon moment.
+  cercleProche() {
+    const p = this.joueur.objet.position;
+    return this.sport.cercles.reduce((m, c) => (!m || Math.hypot(c.x - p.x, c.z - p.z) < Math.hypot(m.x - p.x, m.z - p.z) ? c : m), null);
+  }
+  basketAction() {
+    if (!this.sport) return;
+    const B = this.basket ||= { score: scoreVide(), tient: false, t0: 0, vol: null };
+    if (B.vol) return; // le ballon est en l'air
+    if (!B.tient) { B.tient = true; B.t0 = Date.now(); this.emettreBasket(); return; }
+    const c = this.cercleProche(), p = this.joueur.objet.position;
+    const distance = Math.hypot(c.x - p.x, c.z - p.z);
+    const valeur = jaugeBasket((Date.now() - B.t0) / 1000);
+    const tir = tirerBasket(valeur, distance);
+    B.score = compterBasket(B.score, tir);
+    B.tient = false;
+    B.vol = { depart: { x: p.x, y: p.y + 2.1, z: p.z }, cercle: c, t: 0, tir };
+    // Il se tourne vers le panier et lance (le geste du salut, bras levé).
+    this.joueur.objet.rotation.y = Math.atan2(c.x - p.x, c.z - p.z);
+    this.joueur.jouer?.('salut', { unefois: true });
+    this.emettreBasket({ tir: { ...tir, distance: Math.round(distance * 10) / 10 } });
+  }
+  emettreBasket(extra = {}) {
+    const B = this.basket;
+    const c = this.cercleProche(), p = this.joueur.objet.position;
+    const distance = Math.hypot(c.x - p.x, c.z - p.z);
+    this.emettre({ type: 'basket', actif: true, tient: B.tient, t0: B.t0, zone: zoneBasket(distance), distance: Math.round(distance * 10) / 10, score: B.score, ...extra });
+  }
+  majBasket(dt) {
+    const B = this.basket;
+    if (!B || !this.sport) return;
+    const b = this.sport.ballon, p = this.joueur.objet.position;
+    // On quitte le terrain (ou on monte en voiture) : le ballon revient au centre, la partie s'arrête.
+    if (this.lieu?.nom !== 'hall' || this.conduite || !this.sport.surTerrain(p.x, p.z)) {
+      if (!B.vol) { b.position.set(this.sport.centre.x, 0.31, this.sport.centre.z); this.basket = null; this.emettre({ type: 'basket', actif: false, score: B.score }); }
+    }
+    if (B.vol) {
+      B.vol.t += dt;
+      const { depart, cercle, tir } = B.vol;
+      if (B.vol.t <= DUREE_VOL) { const q = ballonBasket(depart, cercle, B.vol.t, tir.ecart); b.position.set(q.x, q.y, q.z); }
+      else {
+        // Après le cercle : il tombe (dans le filet, ou à côté), puis revient dans nos mains.
+        const chute = B.vol.t - DUREE_VOL;
+        b.position.y = Math.max(0.31, cercle.y - 4.9 * chute * chute);
+        if (chute > 0.7) { B.vol = null; if (this.basket) { B.tient = true; B.t0 = Date.now(); this.emettreBasket(); } }
+      }
+      return;
+    }
+    if (B.tient) {
+      const r = this.joueur.objet.rotation.y;
+      b.position.set(p.x + Math.sin(r) * 0.45, p.y + 1.15 + Math.abs(Math.sin(Date.now() / 220)) * 0.05, p.z + Math.cos(r) * 0.45);
+      // La distance change quand on bouge : la zone verte suit (5 fois par seconde).
+      B.dt = (B.dt || 0) + dt;
+      if (B.dt > 0.2) { B.dt = 0; this.emettreBasket(); }
+    }
+  }
   // LA POLICE (lot 3.5, poursuite.js) : une infraction fait monter les étoiles.
   signaler(quoi) {
     if (this.lieu?.nom !== 'hall' || !this.conduite || this.conduite.genre) return;
@@ -1591,6 +1651,7 @@ export class Monde {
     if (this.proche.type === 'voiture') { this.monterVoiture(this.proche.id); return; }
     if (this.proche.type === 'helico') { this.monterHelico(); return; }
     if (this.proche.type === 'bateau') { this.monterBateau(); return; }
+    if (this.proche.type === 'basket') { this.basketAction(); return; }
     if (this.proche.type === 'passant') { const ps = (this.villeVivante?.passants || []).find((x) => (x.nom || '') === this.proche.nom && !x.objet.userData.assis); this.monterPassager(ps); return; }
     if (this.proche.type === 'receptionniste') this.receptionniste?.jouer('parle');
     this.emettre({ type: 'interagir', cible: this.proche });
@@ -1639,6 +1700,7 @@ export class Monde {
     const j = this.joueur;
     if (!j || !this.lieu) return;
     this.majPolice(dt);
+    this.majBasket(dt);
     this.brouillardSousLEau();
     const t = this.touches;
     let ax = (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x;
@@ -1731,6 +1793,7 @@ export class Monde {
         for (const ps of this.villeVivante.passants || []) { const o = ps.objet; if (!o.userData.assis && !o.userData.fache && Math.hypot(p.x - o.position.x, p.z - o.position.z) < 2.8) { proche = { type: 'passant', nom: ps.nom || '' }; break; } }
       }
       for (const v of this.villeVivante.voituresLibres) if (!this.conduite && Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
+      if (this.sport && !this.conduite && this.sport.surTerrain(p.x, p.z)) proche = { type: 'basket', tient: !!this.basket?.tient };
       const hh = this.villeVivante.helico;
       if (hh && hh.etat.y < 0.1 && Math.hypot(p.x - hh.etat.x, p.z - hh.etat.z) < 6) proche = { type: 'helico', id: 'helico' };
       if (hh && !this.conduite) hh.animer(dt, 0); // rotor à l'arrêt, feux éteints
