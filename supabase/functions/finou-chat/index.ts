@@ -27,6 +27,7 @@ import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { relaisConversation, transcrire } from '../_shared/relais.ts';
 import { blocSavoirs, savoirsPour } from '../_shared/savoirs.ts';
 import { estCorrection, estSansReponse } from '../_shared/apprentissage.ts';
+import { depuisFcfa, monnaieDeBoutique, tauxFixe, versFcfa } from '../_shared/monnaie-boutique.ts';
 
 // 2.5-flash en tête: c'est le seul des deux à répondre de façon fiable en ce
 // moment (3.5-flash renvoie régulièrement 503 "high demand"), et il gère
@@ -374,7 +375,10 @@ TES OUTILS — utilise-les, ne devine jamais:
 - "Abonne-moi à cette boutique", "suis-la pour moi" -> follow_shop.
 - Vendeuse qui décrit un article à mettre en vente ("ajoute une robe wax à
   25000, j'en ai 3") -> create_product. Récapitule d'abord nom, prix,
-  catégorie et stock, attends le OK, puis appelle l'outil. Précise ensuite
+  catégorie et stock, attends le OK, puis appelle l'outil. Le prix se dit
+  dans la monnaie de SA boutique (celle que donnent list_my_products et
+  create_product dans « monnaie ») : passe le montant tel qu'elle l'a dit,
+  sans jamais le convertir. Précise ensuite
   que l'article est en BROUILLON: il faut y ajouter des photos et le publier
   depuis « Mes articles » pour qu'il apparaisse dans le catalogue.
 - Vendeuse qui veut CHANGER un article ("baisse le prix de la robe wax à 20000",
@@ -696,12 +700,12 @@ function toolDeclarations() {
       type: 'OBJECT',
       properties: {
         name: { type: 'STRING', description: "Nom de l'article" },
-        price_fcfa: { type: 'NUMBER', description: 'Prix en FCFA' },
+        prix: { type: 'NUMBER', description: "Prix dans la monnaie de SA boutique, tel que la vendeuse l'a dit (25 pour « 25 livres » dans une boutique en livres). Ne convertis jamais : le serveur s'en charge." },
         category: { type: 'STRING', description: `Une de: ${PRODUCT_CATEGORIES.join(', ')}` },
         description: { type: 'STRING' },
         stock: { type: 'NUMBER', description: 'Quantité disponible, 1 par défaut' },
       },
-      required: ['name', 'price_fcfa', 'category'],
+      required: ['name', 'prix', 'category'],
     },
   },
   {
@@ -724,7 +728,7 @@ function toolDeclarations() {
       type: 'OBJECT',
       properties: {
         product_id: { type: 'STRING', description: "L'id exact renvoyé par list_my_products" },
-        price_fcfa: { type: 'NUMBER', description: 'Nouveau prix en FCFA' },
+        prix: { type: 'NUMBER', description: 'Nouveau prix, dans la monnaie de SA boutique (sans conversion).' },
         stock: { type: 'NUMBER', description: 'Nouveau stock disponible' },
         is_active: { type: 'BOOLEAN', description: 'true pour publier au catalogue, false pour repasser en brouillon' },
       },
@@ -924,6 +928,27 @@ async function prixPour(db: SupabaseClient, fcfa: unknown, contexte: Json | null
   return { prix: texte };
 }
 
+// La monnaie de la boutique de la vendeuse et son taux (unités pour 1 €).
+// Ses prix se disent et se relisent dans CETTE monnaie (CLAUDE.md §2) ; le
+// FCFA n'est que l'unité de stockage.
+async function monnaieVendeuse(db: SupabaseClient, pays: unknown): Promise<{ devise: string; parEuro: number | null }> {
+  const devise = monnaieDeBoutique(typeof pays === 'string' ? pays : null);
+  const fixe = tauxFixe(devise);
+  if (fixe) return { devise, parEuro: fixe };
+  const { data } = await db.from('taux_du_jour').select('par_euro').eq('code', devise).maybeSingle();
+  const n = Number(data?.par_euro);
+  return { devise, parEuro: Number.isFinite(n) && n > 0 ? n : null };
+}
+
+// Le prix d'un article relu par sa vendeuse : le montant tapé s'il l'a été
+// dans la monnaie de la boutique, sinon le stockage converti.
+function prixVendeuse(r: { price_fcfa?: unknown; prix_saisi?: unknown; devise_saisie?: unknown }, m: { devise: string; parEuro: number | null }): number | null {
+  if (r.devise_saisie === m.devise && r.prix_saisi != null) return Number(r.prix_saisi);
+  const f = Number(r.price_fcfa);
+  if (!Number.isFinite(f) || !m.parEuro) return null;
+  return depuisFcfa(f, m.parEuro);
+}
+
 async function runTool(
   name: string,
   args: Json,
@@ -1105,26 +1130,31 @@ async function runTool(
         .order('created_at', { ascending: false })
         .limit(5);
       if (error) return { error: error.message };
-      return {
-        count: data?.length ?? 0,
-        commandes: (data ?? []).map((o: Json) => ({
+      const commandes = [];
+      for (const o of (data ?? []) as Json[]) {
+        commandes.push({
           numero: o.order_no,
           statut: o.status,
-          total_fcfa: o.total_fcfa,
+          // Le total dans la monnaie de la personne (prixPour), jamais le
+          // FCFA brut à quelqu'un qui compte en livres.
+          total: (await prixPour(db, o.total_fcfa, contexte)).prix ?? null,
           mode: o.delivery_method,
           boutique: (o.shops as Json | null)?.name ?? null,
           date: o.created_at,
-        })),
-      };
+        });
+      }
+      return { count: commandes.length, commandes };
     }
 
     case 'get_my_shop_stats': {
       const { data: shop } = await db
         .from('shops')
-        .select('id,name')
+        .select('id,name,country')
         .eq('owner_id', userId)
         .maybeSingle();
       if (!shop) return { is_vendor: false, message: "Cet utilisateur n'a pas de boutique." };
+      const m = await monnaieVendeuse(db, shop.country);
+      const enMonnaie = (fcfa: number) => (m.parEuro ? depuisFcfa(fcfa, m.parEuro) : null);
 
       const now = Date.now();
       const d7 = new Date(now - 7 * 864e5).toISOString();
@@ -1142,10 +1172,11 @@ async function runTool(
       return {
         is_vendor: true,
         boutique: shop.name,
+        monnaie: m.devise,
         commandes_7j: last7.length,
-        revenu_7j_fcfa: sum(last7 as Array<{ total_fcfa: number }>),
+        revenu_7j: enMonnaie(sum(last7 as Array<{ total_fcfa: number }>)),
         commandes_30j: orders?.length ?? 0,
-        revenu_30j_fcfa: sum((orders ?? []) as Array<{ total_fcfa: number }>),
+        revenu_30j: enMonnaie(sum((orders ?? []) as Array<{ total_fcfa: number }>)),
       };
     }
 
@@ -1352,12 +1383,18 @@ async function runTool(
     }
 
     case 'create_product': {
-      const { data: shop } = await db.from('shops').select('id,name').eq('owner_id', userId).maybeSingle();
+      const { data: shop } = await db.from('shops').select('id,name,country').eq('owner_id', userId).maybeSingle();
       if (!shop) {
         return { created: false, message: "Cet utilisateur n'a pas de boutique — invite-le à en ouvrir une." };
       }
       const nom = typeof args.name === 'string' ? args.name.trim() : '';
-      const prix = typeof args.price_fcfa === 'number' ? Math.round(args.price_fcfa) : NaN;
+      // `price_fcfa` : l'ancien nom du paramètre. C'était déjà le montant dit
+      // par la vendeuse, donc dans la monnaie de sa boutique.
+      const brut = typeof args.prix === 'number' ? args.prix : typeof args.price_fcfa === 'number' ? args.price_fcfa : NaN;
+      const m = await monnaieVendeuse(db, shop.country);
+      if (!m.parEuro) return { created: false, message: `taux du jour introuvable pour ${m.devise} — réessaie plus tard` };
+      const prixSaisi = Math.round(brut * 100) / 100;
+      const prix = Number.isFinite(brut) ? versFcfa(prixSaisi, m.parEuro) : NaN;
       const cat = typeof args.category === 'string' ? args.category : '';
       if (!nom) return { created: false, message: 'nom manquant' };
       if (!Number.isFinite(prix) || prix < 0) return { created: false, message: 'prix invalide' };
@@ -1376,11 +1413,13 @@ async function runTool(
           name: nom,
           description: typeof args.description === 'string' ? args.description.trim() : null,
           price_fcfa: prix,
+          prix_saisi: prixSaisi,
+          devise_saisie: m.devise,
           category: cat,
           stock,
           is_active: false,
         })
-        .select('id,name,price_fcfa,category,stock')
+        .select('id,name,price_fcfa,prix_saisi,devise_saisie,category,stock')
         .single();
       if (error) return { created: false, message: error.message };
 
@@ -1389,7 +1428,8 @@ async function runTool(
         brouillon: true,
         id: created.id,
         nom: created.name,
-        prix_fcfa: created.price_fcfa,
+        prix: prixVendeuse(created, m),
+        monnaie: m.devise,
         categorie: created.category,
         stock: created.stock,
         message: "Créé en brouillon — il faut ajouter des photos puis le publier depuis « Mes articles ».",
@@ -1403,11 +1443,12 @@ async function runTool(
     // n'importe quel vendeur modifier l'article ou la commande d'une autre
     // boutique en devinant un identifiant.
     case 'list_my_products': {
-      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      const { data: shop } = await db.from('shops').select('id,country').eq('owner_id', userId).maybeSingle();
       if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+      const m = await monnaieVendeuse(db, shop.country);
       let q = db
         .from('products')
-        .select('id,name,price_fcfa,stock,is_active,category')
+        .select('id,name,price_fcfa,prix_saisi,devise_saisie,stock,is_active,category')
         .eq('shop_id', shop.id)
         .order('created_at', { ascending: false })
         .limit(40);
@@ -1418,24 +1459,30 @@ async function runTool(
       return {
         ok: true,
         nombre: rows?.length ?? 0,
+        monnaie: m.devise,
         articles: (rows ?? []).map((r) => ({
-          id: r.id, nom: r.name, prix_fcfa: r.price_fcfa, stock: r.stock,
+          id: r.id, nom: r.name, prix: prixVendeuse(r, m), stock: r.stock,
           publie: r.is_active, categorie: r.category,
         })),
       };
     }
 
     case 'update_product': {
-      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      const { data: shop } = await db.from('shops').select('id,country').eq('owner_id', userId).maybeSingle();
       if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
       const id = typeof args.product_id === 'string' ? args.product_id : '';
       if (!id) return { ok: false, message: 'product_id manquant' };
+      const m = await monnaieVendeuse(db, shop.country);
 
       const patch: Json = {};
-      if (typeof args.price_fcfa === 'number') {
-        const prix = Math.round(args.price_fcfa);
-        if (prix < 0) return { ok: false, message: 'prix invalide' };
-        patch.price_fcfa = prix;
+      const brut = typeof args.prix === 'number' ? args.prix : typeof args.price_fcfa === 'number' ? args.price_fcfa : null;
+      if (brut !== null) {
+        if (!(brut >= 0)) return { ok: false, message: 'prix invalide' };
+        if (!m.parEuro) return { ok: false, message: `taux du jour introuvable pour ${m.devise} — réessaie plus tard` };
+        const saisi = Math.round(brut * 100) / 100;
+        patch.prix_saisi = saisi;
+        patch.devise_saisie = m.devise;
+        patch.price_fcfa = versFcfa(saisi, m.parEuro);
       }
       if (typeof args.stock === 'number') {
         const s = Math.floor(args.stock);
@@ -1466,20 +1513,21 @@ async function runTool(
         .update(patch)
         .eq('id', id)
         .eq('shop_id', shop.id)
-        .select('id,name,price_fcfa,stock,is_active')
+        .select('id,name,price_fcfa,prix_saisi,devise_saisie,stock,is_active')
         .maybeSingle();
       if (error) return { ok: false, message: error.message };
       if (!updated) return { ok: false, message: "Cet article n'existe pas dans cette boutique." };
       return {
         ok: true,
-        id: updated.id, nom: updated.name, prix_fcfa: updated.price_fcfa,
+        id: updated.id, nom: updated.name, prix: prixVendeuse(updated, m), monnaie: m.devise,
         stock: updated.stock, publie: updated.is_active,
       };
     }
 
     case 'list_shop_orders': {
-      const { data: shop } = await db.from('shops').select('id').eq('owner_id', userId).maybeSingle();
+      const { data: shop } = await db.from('shops').select('id,country').eq('owner_id', userId).maybeSingle();
       if (!shop) return { ok: false, message: "Cet utilisateur n'a pas de boutique." };
+      const m = await monnaieVendeuse(db, shop.country);
       let q = db
         .from('orders')
         .select('id,order_no,status,total_fcfa,created_at,delivery_method,buyer_name,order_items(name,qty)')
@@ -1492,11 +1540,12 @@ async function runTool(
       return {
         ok: true,
         nombre: rows?.length ?? 0,
+        monnaie: m.devise,
         commandes: (rows ?? []).map((o: Json) => ({
           id: o.id,
           numero: o.order_no,
           statut: o.status,
-          total_fcfa: o.total_fcfa,
+          total: m.parEuro ? depuisFcfa(Number(o.total_fcfa) || 0, m.parEuro) : null,
           mode: o.delivery_method,
           acheteuse: o.buyer_name,
           date: o.created_at,
