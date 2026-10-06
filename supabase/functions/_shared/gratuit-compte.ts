@@ -67,13 +67,24 @@ const vide = (v: unknown) => v === undefined || v === null || (typeof v === 'str
 
 export function adapterAuSchema(obj: unknown, schema: unknown): unknown {
   const props = (schema as { properties?: Record<string, unknown> } | null)?.properties;
-  if (!props || !obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-  let o = obj as Record<string, unknown>;
+  if (!props || !obj || typeof obj !== 'object') return obj;
   const attendus = Object.keys(props);
-  // { "reponse": { "texte": … } } : on retire l'emballage.
+  // Une liste nue là où le schéma attend { appels: [...] } (06/10, Gemma) : on
+  // la range sous le seul champ « liste » du schéma, s'il n'y en a qu'un.
+  if (Array.isArray(obj)) {
+    const listes = attendus.filter((k) => /^array$/i.test(String((props[k] as { type?: string } | null)?.type || '')));
+    return listes.length === 1 ? { [listes[0]]: obj } : obj;
+  }
+  let o = obj as Record<string, unknown>;
+  // { "reponse": { "texte": … } }, ou le schéma recopié autour de la réponse
+  // ({ "type": "OBJECT", "properties": { "livrable": … } }, 06/10, Gemma) : on
+  // retire l'emballage — l'enfant qui porte les champs attendus, « properties » d'abord.
   const cles = Object.keys(o);
-  if (!cles.some((k) => attendus.includes(k)) && cles.length === 1 && o[cles[0]] && typeof o[cles[0]] === 'object' && !Array.isArray(o[cles[0]])) {
-    o = o[cles[0]] as Record<string, unknown>;
+  if (!cles.some((k) => attendus.includes(k))) {
+    const objet = (k: string) => !!o[k] && typeof o[k] === 'object' && !Array.isArray(o[k]);
+    const porteur = ['properties', ...cles].find((k) => objet(k) && Object.keys(o[k] as object).some((x) => attendus.includes(x)));
+    if (porteur) o = o[porteur] as Record<string, unknown>;
+    else if (cles.length === 1 && objet(cles[0])) o = o[cles[0]] as Record<string, unknown>;
   }
   const r: Record<string, unknown> = { ...o };
   for (const k of attendus) {

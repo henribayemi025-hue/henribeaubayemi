@@ -65,3 +65,27 @@ describe('adapterAuSchema / champsManquants', () => {
     expect(champsManquants({ texte: 'ok', genre: 'info' }, schema)).toEqual([]);
   });
 });
+
+describe('adapterAuSchema — réponses de Gemma vues le 06/10', () => {
+  const livrable = { type: 'OBJECT', properties: { livrable: { type: 'STRING' }, statut: { type: 'STRING' }, besoin: { type: 'STRING' } }, required: ['livrable', 'statut'] };
+  it('retire le schéma recopié autour de la réponse', () => {
+    const rendu = { type: 'OBJECT', properties: { livrable: "Fait : j'ai analysé les fiches sans prix.", statut: 'fait', besoin: '' } };
+    const o = adapterAuSchema(rendu, livrable) as Record<string, unknown>;
+    expect(o.livrable).toBe("Fait : j'ai analysé les fiches sans prix.");
+    expect(champsManquants(o, livrable)).toEqual([]);
+  });
+  it('range une liste nue sous le seul champ liste du schéma', () => {
+    const appels = { type: 'OBJECT', properties: { appels: { type: 'ARRAY', items: { type: 'OBJECT' } } }, required: ['appels'] };
+    const o = adapterAuSchema([{ nom: 'fiches', parametres: { tri: 'sans_prix' } }], appels) as Record<string, unknown>;
+    expect(Array.isArray(o.appels)).toBe(true);
+    expect(champsManquants(o, appels)).toEqual([]);
+  });
+  it('laisse une liste nue telle quelle quand deux champs pourraient la recevoir', () => {
+    const deux = { properties: { a: { type: 'ARRAY' }, b: { type: 'ARRAY' } } };
+    expect(adapterAuSchema([1], deux)).toEqual([1]);
+  });
+  it('ne touche pas une réponse déjà juste qui a aussi un champ « properties »', () => {
+    const s = { properties: { texte: { type: 'STRING' } } };
+    expect(adapterAuSchema({ texte: 'bonjour', properties: { x: 1 } }, s)).toEqual({ texte: 'bonjour', properties: { x: 1 } });
+  });
+});
