@@ -40,10 +40,10 @@ Signes : ✅ fait · 🔧 en cours · ⬜ à faire · ⏳ attend Beau · ✗ éc
 | --- | --- | --- | --- |
 | 1 | ⬜ Atelier : panneau « Tâches en arrière-plan » (C8) | relevé 25/09, lot 4 | |
 | 2 | ⬜ Atelier : une tâche de code donnée à un agent se déroule visiblement dans l'atelier (C10) | relevé 25/09, lot 4 | |
-| 3 | ⬜ Atelier : messages du Worker dans la langue du compte (C4) | relevé 25/09 | |
+| 3 | ✅ Atelier : messages du Worker dans la langue du compte (C4) | relevé 25/09 | 330f05b |
 | 4 | ⬜ Appeler un agent : ça sonne, il décroche, mains libres, voix par agent (D3) | relevé 25/09, lot 4 | voix gratuites du navigateur |
 | 5 | ⬜ Jarvis : réveil d'un geste (D1) | relevé 25/09 | caméra du navigateur, rien d'envoyé |
-| 6 | ⬜ Immeuble : raccourcis Réception / Salle de réunion / Atelier + vraie icône au lieu de 🏢 (A13) | relevé 25/09 | |
+| 6 | ✅ Immeuble : vraie icône au lieu de 🏢 (A13) ; les raccourcis Hall / Réunion / Atelier existaient déjà dans le monde 3D | relevé 25/09 | 1847bfa |
 | 7 | ⬜ Une image créée dans un salon ne sort qu'en petit (A16) | relevé 25/09 | |
 | 8 | ⬜ Studio de contenu : l'import d'un agent perd ses compétences (F6) | relevé 25/09 | |
 | 9 | ⬜ « Mon ordinateur » : réglage « Tout autoriser » choisi par l'utilisateur | carnet 25/09 | |
