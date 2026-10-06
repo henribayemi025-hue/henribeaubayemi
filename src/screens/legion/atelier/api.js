@@ -1,4 +1,6 @@
 import { supabase } from '../../../lib/supabase';
+import i18n from '../../../lib/i18n';
+import { messageAtelier } from './messages';
 
 // L'adresse du Worker de l'atelier (finjaro-atelier), séparé du site.
 // VITE_ATELIER_URL la remplace au moment de la construction si besoin.
@@ -11,7 +13,8 @@ export const ATELIER_ENTREPRISE = '44bb201b-6787-4de0-8f7f-f9145d5c03e7';
 
 export class ErreurAtelier extends Error {
   constructor(message, statut) {
-    super(message);
+    // Le Worker écrit en français : rendu dans la langue du compte (C4).
+    super(messageAtelier(message, i18n.language));
     this.statut = statut;
   }
 }
