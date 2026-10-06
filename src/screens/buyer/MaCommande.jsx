@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { IconPackage, IconBrandWhatsapp, IconBuildingStore, IconSearch } from '@tabler/icons-react';
+import { IconPackage, IconBrandWhatsapp, IconBuildingStore, IconSearch, IconMessageCircle } from '@tabler/icons-react';
 import { supabase, storageUrl, storageThumbUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
 import { AppHeader } from '../../components/AppHeader';
@@ -66,12 +66,32 @@ function UneDemande({ id }) {
 
   const shop = o.shop || {};
   const items = o.items || [];
+  const messages = o.messages || [];
   const devis = o.status === 'awaiting_price' || o.status === 'priced';
 
   return (
     <div>
       <AppHeader title={t('suivi.title', 'Ma commande')} back />
       <div className="space-y-3 p-4">
+        {/* Les messages de l'équipe Finjaro (0233, Beau 06/10 : « si on
+            envoie un message à un acheteur, c'est via Finjaro »). Sans compte,
+            cette page est le seul endroit où Finjaro peut lui parler. */}
+        {messages.length > 0 && (
+          <div className="card border-l-4 border-teal !rounded-l-none" aria-live="polite">
+            <p className="flex items-center gap-1.5 text-caption font-semibold text-teal">
+              <IconMessageCircle size={15} className="shrink-0" />
+              {t('suivi.messageFinjaro', 'Message de Finjaro')}
+            </p>
+            <div className="mt-2 space-y-2">
+              {messages.map((m, i) => (
+                <div key={i}>
+                  <p className="whitespace-pre-line text-body text-ink">{m.texte}</p>
+                  <p className="text-[11px] text-muted">{timeAgo(m.created_at, i18n.language)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="card">
           {o.prenom && (
             <p className="text-caption text-muted">{t('suivi.hello', { name: o.prenom, defaultValue: 'Bonjour {{name}},' })}</p>
