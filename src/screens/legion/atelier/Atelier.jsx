@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub } from '@tabler/icons-react';
+import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch } from '@tabler/icons-react';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
-import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub } from './Parties';
+import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche } from './Parties';
 import { pageDeDepart, dependances, assembler } from './apercu';
 import { Texte } from '../parties/Plans';
 import { Visage as VisageAgent } from '../parties/Visage';
@@ -135,6 +135,16 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   }, [fichier]);
   const [onglet, setOnglet] = useState('conversation');
   const [panneau, setPanneau] = useState(null);
+  // Ctrl+Maj+F : chercher dans tout le projet (comme dans les éditeurs de code).
+  useEffect(() => {
+    const clavier = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f') { e.preventDefault(); setPanneau((p) => (p === 'recherche' ? null : 'recherche')); }
+    };
+    window.addEventListener('keydown', clavier, true);
+    return () => window.removeEventListener('keydown', clavier, true);
+  }, []);
+  // La ligne où l'éditeur doit aller (résultat de recherche) ; n change à chaque clic.
+  const [aller, setAller] = useState(null);
   const [texte, setTexte] = useState('');
   const [occupe, setOccupe] = useState(false);
   const [erreur, setErreur] = useState(null);
@@ -316,6 +326,13 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     const m = setTimeout(() => setRejeu((r) => (r ? { ...r, i: r.i + 1 } : r)), rejeu.vite ? Math.round(base / 3) : base);
     return () => clearTimeout(m);
   }, [rejeu]);
+  const allerA = async (chemin, ligne) => {
+    setPanneau(null);
+    setOnglet('editeur');
+    if (fichier?.chemin !== chemin) await ouvrir(chemin, true);
+    setAller({ ligne, n: Date.now() });
+  };
+
   const revoir = () => {
     const liste = vueBrute?.affichage || [];
     let debut = -1;
@@ -517,7 +534,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           <div className="min-h-0 flex-1">
             <Suspense fallback={<div className="p-4 text-caption text-legion-muted">…</div>}>
               <Editeur chemin={fichier.chemin} valeur={enProposition ? proposition.contenu : fichier.brouillon} lectureSeule={travaille || enProposition}
-                auteur={nomCodeur}
+                auteur={nomCodeur} aller={aller}
                 onChange={(v) => setFichier((f) => (f ? { ...f, brouillon: v } : f))}
                 onCurseur={(l, c) => setCurseur({ l, c })} />
             </Suspense>
@@ -732,6 +749,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const entreesPalette = [
     ...(vue?.fichiers || []).map((f) => ({ type: 'fichier', label: f.chemin, faire: () => { setOnglet('editeur'); ouvrir(f.chemin, true); } })),
     { type: 'action', label: t('legion.atelier.revoir', { nom: nomCodeur }), faire: revoir, off: occupeCarte || !(vueBrute?.affichage || []).length },
+    { type: 'action', label: `${t('legion.atelier.chercherProjet')} (Ctrl+Maj+F)`, faire: () => setPanneau('recherche') },
     { type: 'action', label: t('legion.atelier.presenteMoi'), faire: presenter, off: occupeCarte },
     { type: 'action', label: t('legion.atelier.apercu'), faire: () => setOnglet('apercu') },
     { type: 'action', label: t('legion.atelier.nouveauTerminal'), faire: () => { const id = `t${Date.now()}`; setBasOuvert(true); setTerminaux((ts) => [...ts, { id, ids: [] }]); setPanneauBas(id); } },
@@ -803,6 +821,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
               : [IconPlayerPlayFilled, t('legion.atelier.revoir', { nom: nomCodeur }), revoir, travaille || statut === 'attente' || !(vueBrute?.affichage || []).length],
             rejeu ? [IconPlayerTrackNextFilled, t(rejeu.vite ? 'legion.atelier.rejeuNormal' : 'legion.atelier.rejeuVite'), () => setRejeu((r) => (r ? { ...r, vite: !r.vite } : r)), false] : null,
             [IconSearch, `${t('legion.atelier.palette')} (Ctrl+K)`, () => setPaletteOuverte(true), false],
+            [IconFileSearch, t('legion.atelier.chercherProjet'), () => setPanneau('recherche'), !(vue?.fichiers || []).length],
             [IconPresentation, t('legion.atelier.presenteMoi'), presenter, travaille || statut === 'attente'],
             [IconGitCompare, t('legion.atelier.modifications'), () => setPanneau('modifications'), false],
             [IconHistory, t('legion.atelier.journal'), () => setPanneau('journal'), false],
@@ -861,6 +880,7 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
       {panneau === 'nouveau' && <NouveauProjet onCreer={creer} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'modifications' && pid && <Modifications pid={pid} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'github' && pid && <EnvoyerGithub pid={pid} projet={projets.find((p) => p.id === pid)?.nom} fichiers={vue?.fichiers} entrepriseId={entrepriseId} onFermer={() => setPanneau(null)} t={t} />}
+      {panneau === 'recherche' && pid && <Recherche pid={pid} onOuvrir={allerA} onFermer={() => setPanneau(null)} t={t} />}
       {panneau === 'journal' && pid && <Journal pid={pid} regles={vue?.regles} langue={langue} onRetirer={retirerRegle} onFermer={() => setPanneau(null)} t={t} />}
     </div>
   );

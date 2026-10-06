@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IconFolder, IconFolderOpen, IconFile, IconTerminal2, IconPencil, IconTrash, IconWorld, IconX, IconUserPlus } from '@tabler/icons-react';
 import { appel } from './api';
 import { supabase } from '../../../lib/supabase';
 import { dollars } from './arbre';
+import { grouper, surligner } from './recherche';
 
 // Les morceaux de l'écran Atelier : l'arbre, la carte d'autorisation, les
 // modifications en vert et rouge, le journal, le nouveau projet.
@@ -153,6 +154,63 @@ function Feuille({ titre, onFermer, children, t }) {
         <div className="min-h-0 flex-1 overflow-auto p-4">{children}</div>
       </div>
     </div>
+  );
+}
+
+// Chercher un texte dans tout le projet (C13) : chaque ligne trouvée, rangée
+// par fichier ; un clic ouvre le fichier à cette ligne.
+export function Recherche({ pid, onOuvrir, onFermer, t }) {
+  const [q, setQ] = useState('');
+  const [res, setRes] = useState(null);
+  const [erreur, setErreur] = useState(null);
+  const champ = useRef(null);
+  useEffect(() => { champ.current?.focus(); }, []);
+  useEffect(() => {
+    const texte = q.trim();
+    if (texte.length < 2) { setRes(null); setErreur(null); return undefined; }
+    const arret = new AbortController();
+    const m = setTimeout(() => {
+      appel(`/projets/${pid}/chercher?texte=${encodeURIComponent(q)}`, { signal: arret.signal })
+        .then((r) => { setRes({ q, ...r }); setErreur(null); })
+        .catch((e) => { if (e.name !== 'AbortError') setErreur(e.message); });
+    }, 300);
+    return () => { clearTimeout(m); arret.abort(); };
+  }, [q, pid]);
+  const groupes = grouper(res?.trouves);
+  return (
+    <Feuille titre={t('legion.atelier.chercherProjet')} onFermer={onFermer} t={t}>
+      <input ref={champ} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('legion.atelier.chercherTexte')}
+        aria-label={t('legion.atelier.chercherTexte')}
+        className="mb-3 w-full rounded-input border border-legion-line bg-legion-bg px-3 py-2 font-mono text-caption text-legion-ink focus:border-legion-gold focus:outline-none" />
+      {erreur && <p className="text-caption text-legion-danger">{erreur}</p>}
+      {res && !res.trouves.length && <p className="text-caption text-legion-muted">{t('legion.atelier.chercherAucun')}</p>}
+      {res?.trouves.length > 0 && (
+        <p className="mb-2 text-[12px] text-legion-muted">
+          {t('legion.atelier.chercherNombre', { count: res.trouves.length, fichiers: groupes.length })}
+          {!res.complet && <span className="block text-legion-gold-soft">{t('legion.atelier.chercherCoupe', { count: res.trouves.length })}</span>}
+        </p>
+      )}
+      <div className="space-y-3">
+        {groupes.map((g) => (
+          <section key={g.chemin}>
+            <h4 className="mb-1 flex items-center gap-1.5 font-mono text-[12px] font-semibold text-legion-gold"><IconFile size={13} /> {g.chemin}</h4>
+            <ul>
+              {g.lignes.map((l) => (
+                <li key={l.ligne}>
+                  <button type="button" onClick={() => onOuvrir(g.chemin, l.ligne)}
+                    className="grid w-full grid-cols-[44px_minmax(0,1fr)] gap-2 rounded px-1 py-0.5 text-left font-mono text-[12px] hover:bg-legion-card">
+                    <span className="text-right tabular-nums text-legion-muted">{l.ligne}</span>
+                    <span className="truncate text-legion-ink">
+                      {surligner(l.extrait.trimStart(), res.q).map((m, i) => (m.trouve ? <mark key={i} className="rounded-sm bg-legion-gold/30 text-legion-ink">{m.texte}</mark> : <span key={i}>{m.texte}</span>))}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </Feuille>
   );
 }
 

@@ -87,7 +87,7 @@ const themeAgent = EditorView.theme({
   '@keyframes cm-clignote': { '50%': { opacity: 0.55 } },
 });
 
-export default function Editeur({ chemin, valeur, lectureSeule, onChange, onCurseur, auteur = null }) {
+export default function Editeur({ chemin, valeur, lectureSeule, onChange, onCurseur, auteur = null, aller = null }) {
   const hote = useRef(null);
   const vue = useRef(null);
   const langage = useRef(new Compartment());
@@ -180,6 +180,18 @@ export default function Editeur({ chemin, valeur, lectureSeule, onChange, onCurs
   useEffect(() => {
     vue.current?.dispatch({ effects: lecture.current.reconfigure(EditorState.readOnly.of(!!lectureSeule)) });
   }, [lectureSeule]);
+
+  // Aller à une ligne (un résultat de la recherche dans le projet) : la ligne
+  // est sélectionnée et mise au milieu de l'écran. `aller.n` change à chaque
+  // clic, pour pouvoir revenir deux fois à la même ligne.
+  useEffect(() => {
+    const v = vue.current;
+    if (!v || !aller?.ligne) return;
+    const doc = v.state.doc;
+    const l = doc.line(Math.min(Math.max(1, aller.ligne), doc.lines));
+    v.dispatch({ selection: { anchor: l.from, head: l.to }, effects: EditorView.scrollIntoView(l.from, { y: 'center' }) });
+    v.focus();
+  }, [aller?.n]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={hote} className="h-full min-h-0 overflow-hidden" />;
 }

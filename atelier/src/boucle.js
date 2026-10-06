@@ -235,6 +235,30 @@ function annoncer(etat, deps, texte, genre = 'systeme') {
   etat.affichage.push({ id: crypto.randomUUID(), qui: genre, texte, quand: deps.maintenant().toISOString() });
 }
 
+// Chercher un texte dans tout le projet (ou un dossier), sans tenir compte
+// des majuscules : l'outil « chercher » de l'agent ET la recherche de
+// l'humain dans l'atelier (C13, 06/10). Au plus `max` lignes ; `complet`
+// dit si toutes les lignes trouvées sont là.
+export async function chercherDans(f, texte, dossier = '.', max = 100) {
+  const q = String(texte ?? '').toLowerCase();
+  const trouves = [];
+  if (!q.trim()) return { trouves, complet: true };
+  const { chemin } = cheminSur(dossier ?? '.');
+  const prefixe = chemin ? `${chemin}/` : '';
+  for (const x of await f.liste()) {
+    if (prefixe && !x.chemin.startsWith(prefixe)) continue;
+    const contenu = await f.lire(x.chemin);
+    if (contenu == null) continue;
+    const lignes = contenu.split('\n');
+    for (let i = 0; i < lignes.length; i += 1) {
+      if (!lignes[i].toLowerCase().includes(q)) continue;
+      if (trouves.length >= max) return { trouves, complet: false };
+      trouves.push({ chemin: x.chemin, ligne: i + 1, extrait: lignes[i].slice(0, 200) });
+    }
+  }
+  return { trouves, complet: true };
+}
+
 // ——— Les outils eux-mêmes ———
 async function executer(outil, args, etat, deps) {
   const f = deps.fichiers;
@@ -261,19 +285,9 @@ async function executer(outil, args, etat, deps) {
     return { ok: true, texte: DONNEES + couper(contenu, MAX_LECTURE) };
   }
   if (outil === 'chercher') {
-    const texte = String(args.texte ?? '').toLowerCase();
-    if (!texte) return { ok: false, texte: 'Texte à chercher manquant.' };
-    const { chemin } = cheminSur(args.chemin ?? '.');
-    const prefixe = chemin ? `${chemin}/` : '';
-    const trouves = [];
-    for (const x of await f.liste()) {
-      if (prefixe && !x.chemin.startsWith(prefixe)) continue;
-      const contenu = await f.lire(x.chemin);
-      if (contenu == null) continue;
-      contenu.split('\n').forEach((l, i) => { if (trouves.length < 100 && l.toLowerCase().includes(texte)) trouves.push(`${x.chemin}:${i + 1}: ${l.slice(0, 200)}`); });
-      if (trouves.length >= 100) break;
-    }
-    return { ok: true, texte: trouves.length ? DONNEES + trouves.join('\n') : 'Rien trouvé.' };
+    if (!String(args.texte ?? '').trim()) return { ok: false, texte: 'Texte à chercher manquant.' };
+    const { trouves } = await chercherDans(f, args.texte, args.chemin);
+    return { ok: true, texte: trouves.length ? DONNEES + trouves.map((x) => `${x.chemin}:${x.ligne}: ${x.extrait}`).join('\n') : 'Rien trouvé.' };
   }
   if (outil === 'ecrire_fichier') {
     const { chemin } = cheminSur(args.chemin);

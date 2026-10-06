@@ -11,7 +11,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { getSandbox } from '@cloudflare/sandbox';
-import { nouvelEtat, nouvelleSession, envoyer, decider, arreter, coutSession, compacter } from './boucle.js';
+import { nouvelEtat, nouvelleSession, envoyer, decider, arreter, coutSession, compacter, chercherDans } from './boucle.js';
 import { executant } from './bac.js';
 import { disponibles, modelesRelais, MODELES } from './moteur.js';
 import { prixMachineParSeconde, arrondi } from './cout.js';
@@ -315,6 +315,13 @@ export class Atelier extends DurableObject {
         if (err) return erreur(err);
         const contenu = await this.fichiers(pid, e).lire(chemin);
         return contenu == null ? erreur('fichier introuvable', 404) : json({ chemin, contenu });
+      }
+
+      // La recherche dans tout le projet, pour l'humain (lecture seule).
+      if (action === 'chercher' && methode === 'GET') {
+        const texte = String(url.searchParams.get('texte') || '').slice(0, 200);
+        if (!texte.trim()) return erreur('texte à chercher manquant');
+        return json(await chercherDans(this.fichiers(pid, e), texte, '.', 300));
       }
 
       if (action === 'fichier' && methode === 'PUT') {
