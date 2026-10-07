@@ -188,3 +188,20 @@ contactée ne reçoit jamais un deuxième message de prospection.
    invitations et repère les envois en rafale.
 6. Noter dans `prospects` (privé) : métier, ville, pays, canal, date de
    contact. Jamais dans ce dépôt.
+
+## Exclusions (07/10, 19h) — à vérifier AVANT chaque envoi
+
+Un cabinet de conseil spécialisé en IA a reçu le message Léo de la 3e série
+France et a répondu que c'était « inapproprié » : il vend lui-même ce genre
+de solution. Beau l'avait dit (« jamais de vendeurs d'IA ») ; la vérification
+n'a pas été faite ligne par ligne.
+
+Sont exclus, quelle que soit la source :
+- cabinets et agences de conseil en IA, en data, en transformation numérique ;
+- éditeurs de logiciels, SaaS, start-up IA, intégrateurs, ESN ;
+- agences de marketing digital qui vendent de l'automatisation ;
+- pour Accounting : éditeurs de logiciels de gestion, cabinets comptables.
+
+Contrôle : pour chaque ligne, lire le site (page d'accueil et « à propos ») ;
+si l'entreprise VEND de l'IA ou du logiciel, elle sort de la liste, même si
+son métier déclaré semble anodin (« accompagnement stratégique »).
