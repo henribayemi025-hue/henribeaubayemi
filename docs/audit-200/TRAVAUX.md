@@ -10,7 +10,7 @@ qu'après vérification sur staging.
 | 3 | Learn | Fenêtre de connexion : la page d'abord, le compte quand il sert, une croix | gênant | ecrans L4 | à faire |
 | 4 | Learn | Libellés 10,56 px → 12 px ; badges 10 px → 11 px | gênant | ecrans L3 | à faire |
 | 5 | Place de marché | Une seule bulle flottante sur l'accueil, qui s'efface au défilement | gênant | ecrans M1 | à faire |
-| 6 | Place de marché | Services : puce pays non tronquée, bannière « Installer » sous les cartes, boutons 44 px, descriptions coupées à 3 lignes | gênant | ecrans M2 | à faire |
+| 6 | Place de marché | Services : puce pays non tronquée, boutons Détails / Contacter / Réserver à 44 px (les descriptions étaient déjà coupées : erreur du rapport, corrigée) | gênant | ecrans M2 | en cours (07/10 soir) |
 | 7 | Léo | Porte des liens profonds : « Connecte-toi pour continuer vers … » | détail | ecrans Λ1 | à faire |
 | 8 | Learn | Carrousel : une seule « Leçon 1 », celle du niveau | détail | ecrans L5 | à faire |
 | 9 | Place de marché | Pas de mise en avant sans photo (règle + carte « Articles sans photo ») | détail | ecrans M3 | à proposer à Alpha |

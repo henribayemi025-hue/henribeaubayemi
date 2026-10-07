@@ -101,14 +101,16 @@ export function ProviderCard({ shop, portfolio = [], reviewCount = 0, fromPriceF
           <div className="flex shrink-0 gap-1.5">
             <Link
               to={`/boutique/${shop.slug}`}
-              className="rounded-input border border-hairline px-3 py-1.5 text-caption font-semibold text-ink"
+              className="inline-flex min-h-11 items-center rounded-input border border-hairline px-3 text-caption font-semibold text-ink"
             >
               {t('provider.details')}
             </Link>
             <button
               type="button"
               onClick={() => onBook?.(shop)}
-              className="rounded-input bg-teal px-3 py-1.5 text-caption font-semibold text-white transition active:scale-95"
+              // 44 px de haut au moins : à 34 px (audit du 07/10, M2), le pouce
+              // manquait « Contacter » et touchait la carte d'à côté.
+              className="inline-flex min-h-11 items-center rounded-input bg-teal px-3 text-caption font-semibold text-white transition active:scale-95"
             >
               {/* « Réserver » n'a de sens que pour un vrai prestataire — cette
                   carte affiche maintenant aussi de simples boutiques

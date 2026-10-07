@@ -385,7 +385,7 @@ export default function NearYou() {
               <select
                 value={country || ''}
                 onChange={(e) => setCountry(e.target.value)}
-                className="input h-11 w-[6rem] shrink-0 bg-white text-[14px] lg:w-48 lg:text-[16px]"
+                className="input h-11 w-[7.5rem] shrink-0 bg-white text-[14px] lg:w-48 lg:text-[16px]"
                 aria-label={t('nearYou.overrideLocation')}
               >
                 {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{countryLabel(c.code, i18n.language)}</option>)}

@@ -124,9 +124,12 @@ dès qu'on défile ou qu'on la ferme une fois.
 
 « Cameroun » devient « Camero » dans la puce du pays ; la bannière « Finjaro
 est plus rapide… Installer » recouvre le bouton Contacter de la deuxième
-carte ; Contacter / Réserver font 34 px de haut (44 px attendus). Deux
-descriptions de boutique de 56 et 92 mots sont affichées en entier dans la
-liste : les couper à 3 lignes avec « … ».
+carte (elle se ferme d'une croix : gênant, pas bloquant) ; Contacter /
+Réserver font 34 px de haut (44 px attendus).
+
+Correction du 07/10 au soir : j'avais écrit que deux descriptions de 56 et
+92 mots s'affichaient en entier. C'est faux : la carte les coupe déjà à
+deux lignes (`line-clamp-2`) ; ma mesure comptait le texte caché. Retiré.
 
 ### M3 · détail — Un « TOP ARTICLE » sans photo
 Première diapositive de l'accueil : « Chaussure — 7 500 FCFA » sur un gris
