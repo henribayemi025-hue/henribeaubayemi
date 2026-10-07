@@ -271,7 +271,7 @@ son métier déclaré semble anodin (« accompagnement stratégique »).
 
 ## Ce que la série du 07/10 au soir a appris
 
-- 71 envois (50 Léo Europe, 21 Accounting Cameroun), 9 rebonds (12,7 %).
+- 71 envois (50 Léo Europe, 21 Accounting Cameroun), 10 rebonds (14,1 %) : juste sous le seuil ; si demain dépasse 15 %, on s’arrête et on le dit à Beau.
 - Deux serveurs allemands (hébergeur Strato, `rzone.de`) refusent le message
   avec « Refused by local policy. No SPAM please! (B-SCORE) » : c'est le
   contenu ou l'expéditeur qui est noté, pas l'adresse qui manque. Si cela se
