@@ -268,3 +268,17 @@ Sont exclus, quelle que soit la source :
 Contrôle : pour chaque ligne, lire le site (page d'accueil et « à propos ») ;
 si l'entreprise VEND de l'IA ou du logiciel, elle sort de la liste, même si
 son métier déclaré semble anodin (« accompagnement stratégique »).
+
+## Ce que la série du 07/10 au soir a appris
+
+- 71 envois (50 Léo Europe, 21 Accounting Cameroun), 9 rebonds (12,7 %).
+- Deux serveurs allemands (hébergeur Strato, `rzone.de`) refusent le message
+  avec « Refused by local policy. No SPAM please! (B-SCORE) » : c'est le
+  contenu ou l'expéditeur qui est noté, pas l'adresse qui manque. Si cela se
+  répète, raccourcir le message, enlever le lien LinkedIn, ou écrire depuis
+  une adresse du domaine finjaro.net plutôt que Gmail.
+- Les boîtes « pleines » au Cameroun (2 sur 21) sont des adresses réelles mais
+  non lues : marquées `rebond`, on ne réessaie pas.
+- Les faux positifs du filtre d'exclusion sont nombreux (« j'AI », « ERP »
+  établissement recevant du public, mention d'un logiciel dans les mentions
+  légales) : le filtre signale, un humain tranche en lisant le contexte.
