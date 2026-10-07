@@ -128,7 +128,13 @@ pas assez professionnel par Beau.
 ### 5. Petites entreprises — Finjaro Accounting (même style que le 4, 07/10)
 
 Cible : commerces, PME et jeunes entreprises au Cameroun (Douala et Yaoundé
-d'abord, puis les autres villes). Pas les éditeurs de logiciels de gestion
+d'abord, puis les autres villes).
+
+Vérifié par Claudinette le 07/10 sur la version en ligne : tout est vrai,
+mais le hors-ligne ne marche qu'après une première ouverture avec réseau
+(inscription, connexion, Finia et photos demandent le réseau). Ne pas
+parler de Finia ni de la lecture des photos tant que les crédits Google ne
+sont pas rechargés. Pas les éditeurs de logiciels de gestion
 ni les cabinets comptables (concurrents).
 
 > **Objet :** Finjaro Accounting, la gestion simplifiée pour {entreprise}
@@ -139,7 +145,8 @@ ni les cabinets comptables (concurrents).
 > fait}, et nous avons été intrigués.
 >
 > C'est pourquoi nous voulions vous présenter Finjaro Accounting. Depuis
-> votre téléphone, même sans connexion, vous suivez :
+> votre téléphone, et même sans connexion une fois l'application ouverte
+> une première fois, vous suivez :
 > - votre stock et vos ventes ;
 > - votre caisse, jour après jour ;
 > - les sommes que vos clients vous doivent, avec une relance WhatsApp en
