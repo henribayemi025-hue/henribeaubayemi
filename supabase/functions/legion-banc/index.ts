@@ -54,7 +54,7 @@ Deno.serve(compter('legion_banc', async (req: Request) => {
     return json({ ok: !('erreur' in t), phrase, octets: octets.length, ...t });
   }
   const consigne = String(corps.consigne || '').slice(0, 12_000);
-  const liste = (corps.moteurs || []).filter((m) => /^(ds|km|an|oa|cf|gg):|^gemini/.test(m)).slice(0, 4);
+  const liste = (corps.moteurs || []).filter((m) => /^(ds|km|an|oa|cf|gg|gq):|^gemini/.test(m)).slice(0, 4);
   if (!consigne || !liste.length) return json({ erreur: 'consigne et moteurs requis' }, 400);
 
   const resultats = [];

@@ -102,6 +102,14 @@ const gratuit = () => Deno.env.get('GEMINI_API_KEY_GRATUIT');
 // nouveaux utilisateurs » (404) sur un projet neuf — d'où 3.8-flash.
 const GRATUITS = () => (Deno.env.get('LEGION_MODELES_GRATUITS') || 'gemini-3.8-flash,gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `gg:${m}`);
 const KIMI = () => `km:${Deno.env.get('LEGION_MODELE_KIMI') || 'kimi-k2.6'}`;
+// « gq: » (07/10, Beau : « ajoute ça, partout, dans toutes nos applis ») :
+// l'offre gratuite de Groq, clé GROQ_API_KEY créée par Beau. Llama n'y est
+// plus gratuit depuis le 16/08/2026 ; restent gpt-oss-120b, Qwen et
+// gpt-oss-20b, 1 000 réponses et 200 000 jetons par jour CHACUN (page
+// officielle lue le 07/10). Gratuit : rien n'est compté, rien n'est facturé
+// (l'offre gratuite refuse au-delà, elle ne facture pas).
+const groq = () => !!Deno.env.get('GROQ_API_KEY');
+const GROQ = () => (Deno.env.get('LEGION_MODELES_GROQ') || 'openai/gpt-oss-120b,qwen/qwen3.8-27b,openai/gpt-oss-20b').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `gq:${m}`);
 // « cf: » (05/10, Beau : « oui branche cloudflare gratuit ») : l'IA gratuite
 // de Cloudflare, par le Worker de finjaro.net (gratuit.ts). Rien ne la paie :
 // elle passe juste après Gemini gratuit, avant tout moteur payant, et
@@ -114,6 +122,7 @@ const CF = () => `cf:${MODELE_GRATUIT()}`;
 // réponse était la meilleure des deux à l'essai.
 const releve = (fort: boolean) => [
   ...(gratuit() ? GRATUITS() : []),
+  ...(groq() ? GROQ() : []),
   ...(iaGratuiteActive() ? [CF()] : []),
   ...(deepseek() ? [DS_RAPIDE()] : []),
   ...(deepseek() && fort ? [DS_FORT()] : []),
@@ -132,6 +141,7 @@ function disponible(m: string): boolean {
   if (m.startsWith('cf:')) return iaGratuiteActive();
   if (m.startsWith('km:')) return kimi();
   if (m.startsWith('gg:')) return !!gratuit();
+  if (m.startsWith('gq:')) return groq();
   if (m.startsWith('an:')) return !!Deno.env.get('ANTHROPIC_API_KEY');
   if (m.startsWith('oa:')) return !!(Deno.env.get('MOTEUR_OA_URL') || cleOpenAI());
   return true;
@@ -309,6 +319,42 @@ async function viaGratuit(model: string, texte: string, schema: unknown, o: Opti
   return JSON.stringify(obj);
 }
 
+// Groq gratuit. Sa limite par minute (8 000 jetons pour gpt-oss) compte
+// la sortie demandée : on la borne, sinon une consigne moyenne serait
+// refusée d'emblée. Réflexion au plus bas : un salon attend une réponse.
+const GROQ_SORTIE_MAX = 4096;
+async function viaGroq(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
+  const cle = Deno.env.get('GROQ_API_KEY');
+  if (!cle) throw new Error('GROQ_API_KEY absent');
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cle}` },
+    body: JSON.stringify({
+      model,
+      temperature: o.temperature ?? 0.6,
+      max_tokens: Math.min(GROQ_SORTIE_MAX, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048)),
+      ...(/gpt-oss/.test(model) ? { reasoning_effort: 'low' } : {}),
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT), sans texte autour ni balises de code:\n${JSON.stringify(schema)}` },
+        { role: 'user', content: texte },
+      ],
+    }),
+    signal: AbortSignal.timeout(o.delaiMs ?? 90_000),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
+  const body = await resp.json();
+  const choix = body?.choices?.[0];
+  if (choix?.finish_reason === 'length') throw new Error('réponse coupée (trop longue)');
+  const txt = String(choix?.message?.content ?? '').trim();
+  if (!txt) throw new Error('réponse vide');
+  const obj = adapterAuSchema(reparerJson(txt), schema);
+  if (obj === null || typeof obj !== 'object') throw new Error('JSON illisible');
+  const manque = champsManquants(obj, schema);
+  if (manque.length) throw new Error(`réponse hors schéma (${manque.join(', ')} vide)`);
+  return JSON.stringify(obj);
+}
+
 async function viaAnthropic(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const cle = Deno.env.get('ANTHROPIC_API_KEY');
   if (!cle) throw new Error('ANTHROPIC_API_KEY absent');
@@ -341,7 +387,8 @@ function secours(): string[] {
   if (Deno.env.get('MOTEUR_OA_URL') && Deno.env.get('LEGION_MODELE_OA')) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA')}`);
   // OpenAI (clé de Beau), GPT-5.4 mini par défaut (réglable : LEGION_MODELE_OA).
   else if (cleOpenAI()) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA') || 'gpt-5.4-mini'}`);
-  // L'IA gratuite reste un recours même quand LEGION_MOTEURS fixe la file.
+  // Les gratuites restent un recours même quand LEGION_MOTEURS fixe la file.
+  if (groq()) s.push(...GROQ());
   if (iaGratuiteActive()) s.push(CF());
   return s;
 }
@@ -375,6 +422,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : nom.startsWith('oa:') ? await viaOpenAI(nom.slice(3), texte, schema, o)
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
         : nom.startsWith('cf:') ? await viaGratuit(nom.slice(3), texte, schema, o)
+        : nom.startsWith('gq:') ? await viaGroq(nom.slice(3), texte, schema, o)
         : nom.startsWith('gg:') ? await viaGemini(gratuit() || '', nom.slice(3), texte, schema, o, true)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {
@@ -387,6 +435,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       if (SANS_CREDIT.test(derniere)) aSec++;
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
       if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
+      // Groq gratuit : la part du jour (ou de la minute) de CE modèle est prise ;
+      // les deux autres modèles Groq ont la leur.
+      else if (nom.startsWith('gq:') && /HTTP 429/.test(derniere)) await endormir(nom, /per day|TPD|RPD/i.test(derniere) ? 60 * 60_000 : 60_000, derniere);
       // Un modèle que le fournisseur ne connaît pas (renommé, retiré) : de côté pour la journée.
       else if (INCONNU.test(derniere)) await endormir(nom, 24 * 3_600_000, derniere);
       // Muet, ou lent ET en échec : seulement CE modèle (un Pro lent qui

@@ -48,7 +48,7 @@ export type Image = { mime: string; data: string }; // base64 SANS le préfixe d
 export type Morceau = { texte: string } | { image: Image };
 export type OutilGemini = { name: string; description?: string; parameters?: unknown };
 
-type Fournisseur = { nom: string; url: string; cle: string; modele: string; images: boolean; kimi: boolean; openai?: boolean };
+type Fournisseur = { nom: string; url: string; cle: string; modele: string; images: boolean; kimi: boolean; openai?: boolean; groq?: boolean };
 
 // L'IA gratuite de Cloudflare (05/10, gratuit.ts) : texte et outils, pas de
 // photo (une image coûte cher en neurones). Ni adresse ni clé ici : c'est
@@ -56,6 +56,14 @@ type Fournisseur = { nom: string; url: string; cle: string; modele: string; imag
 const cloudflare = (): Fournisseur | null => iaGratuiteActive()
   ? { nom: 'cf', url: '', cle: '', modele: MODELE_GRATUIT(), images: false, kimi: false }
   : null;
+
+// Groq gratuit (07/10, clé créée par Beau ; voir moteur.ts) : format OpenAI,
+// outils compris. gpt-oss-120b par défaut ; sans photo (texte seul ici).
+const groq = (): Fournisseur | null => {
+  const cle = Deno.env.get('GROQ_API_KEY');
+  const modele = (Deno.env.get('LEGION_MODELES_GROQ') || 'openai/gpt-oss-120b').split(',')[0].trim();
+  return cle ? { nom: 'gq', url: 'https://api.groq.com/openai/v1', cle, modele, images: false, kimi: false, groq: true } : null;
+};
 
 const kimi = (): Fournisseur | null => {
   const cle = Deno.env.get('KIMI_API_KEY');
@@ -199,7 +207,11 @@ async function appelOpenAI(f: Fournisseur, corps: Json, delaiMs: number): Promis
     // Réflexion coupée : plus rapide, et plus besoin de renvoyer le
     // raisonnement (reasoning_content) à chaque tour d'outils. OpenAI ne
     // connaît pas « thinking » et veut max_completion_tokens.
-    body: JSON.stringify(f.openai
+    // Groq : pas de « thinking » (champ inconnu chez lui), réflexion au plus
+    // bas, et une sortie bornée — sa limite par minute compte la sortie demandée.
+    body: JSON.stringify(f.groq
+      ? { model: f.modele, ...corps, max_tokens: Math.min(4096, Number(corps.max_tokens ?? 4096)), ...(/gpt-oss/.test(f.modele) ? { reasoning_effort: 'low' } : {}) }
+      : f.openai
       ? (({ max_tokens, ...reste }) => ({ model: f.modele, ...reste, ...(max_tokens ? { max_completion_tokens: max_tokens } : {}) }))(corps)
       : { model: f.modele, thinking: { type: 'disabled' }, ...corps }),
     signal: AbortSignal.timeout(delaiMs),
@@ -249,7 +261,8 @@ export type Genere = { texte: string; obj?: unknown; modele: string } | { erreur
 export async function relaisGenerer(o: OptionsGenerer): Promise<Genere> {
   const avecImages = o.contenu.some((m) => 'image' in m);
   const liste: Array<Fournisseur | 'an'> = [];
-  // Gratuit d'abord (05/10) : Cloudflare, puis les moteurs payants.
+  // Gratuit d'abord (05/10) : Groq (07/10), Cloudflare, puis les moteurs payants.
+  if (!avecImages) { const q = groq(); if (q) liste.push(q); }
   if (!avecImages) { const c = cloudflare(); if (c) liste.push(c); }
   if (!avecImages) { const d = deepseek(); if (d) liste.push(d); }
   const k = kimi(); if (k) liste.push(k);
@@ -449,12 +462,12 @@ export type OptionsConversation = {
 // DeepSeek reprend la MÊME conversation, résultats d'outils compris — un
 // message envoyé à une boutique ne part pas en double.
 export async function relaisConversation(o: OptionsConversation): Promise<{ texte: string; modele: string } | { erreur: string }> {
-  // Cloudflare en tête (05/10) : gratuit, et les trois autres étaient à sec.
+  // Les gratuits en tête : Groq (07/10), puis Cloudflare (05/10) ; les trois autres étaient à sec.
   // Sauf avec une photo jointe : il ne la voit pas, Kimi et OpenAI si — il
   // passe alors en dernier.
   const photo = /"(inlineData|inline_data)"/.test(JSON.stringify(o.contents));
   const cf = cloudflare();
-  const liste = (photo ? [kimi(), openai(), deepseek(), cf] : [cf, kimi(), openai(), deepseek()]).filter(Boolean) as Fournisseur[];
+  const liste = (photo ? [kimi(), openai(), deepseek(), cf] : [groq(), cf, kimi(), openai(), deepseek()]).filter(Boolean) as Fournisseur[];
   if (!liste.length) return { erreur: 'aucun relais configuré' };
   const tools = outilsOpenAI(o.declarations);
   const maxTours = o.maxTours ?? 4;

@@ -284,10 +284,10 @@ export const cleTavily = () => cleSelonForme('TAVILY_API_KEY', 'tvly-');
 // famille reconnue à sa forme (pour le diagnostic du banc d'essai).
 export function clesPresentes(): Record<string, string> {
   const r: Record<string, string> = {};
-  for (const nom of ['GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'KIMI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'TAVILY_API_KEY', 'BRAVE_API_KEY', 'FISH_AUDIO_API_KEY', 'ELEVENLABS_API_KEY', ...NOMS_LIBRES]) {
+  for (const nom of ['GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'KIMI_API_KEY', 'GROQ_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'TAVILY_API_KEY', 'BRAVE_API_KEY', 'FISH_AUDIO_API_KEY', 'ELEVENLABS_API_KEY', ...NOMS_LIBRES]) {
     const v = (Deno.env.get(nom) || '').trim();
     if (!v) continue;
-    r[nom] = v.startsWith('sk-ant-') ? 'forme Anthropic' : v.startsWith('sk-') ? 'forme OpenAI' : v.startsWith('tvly-') ? 'forme Tavily' : v.startsWith('AIza') ? 'forme Google' : 'présente';
+    r[nom] = v.startsWith('sk-ant-') ? 'forme Anthropic' : v.startsWith('gsk_') ? 'forme Groq' : v.startsWith('sk-') ? 'forme OpenAI' : v.startsWith('tvly-') ? 'forme Tavily' : v.startsWith('AIza') ? 'forme Google' : 'présente';
   }
   return r;
 }
