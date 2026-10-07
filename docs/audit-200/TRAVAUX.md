@@ -19,7 +19,7 @@ qu'après vérification sur staging.
 | 12 | Accounting | Journal / Ventes / Stock : mois en cours par défaut + « Voir plus » (615 écritures sur une page) | moyen | ACCOUNTING A5 | proposé (Claudinette) |
 | 13 | Accounting | Démonstration en mode simple, bouton vers l'expert | moyen | ACCOUNTING A6 | proposé (Claudinette) |
 | 14 | Accounting | Champs 40 px sur ordinateur seulement | petit | ACCOUNTING A7 | à trancher par Beau (style) |
-| 15 | Accounting | Cadre « À quoi ça sert » replié de lui-même après trois visites | petit | ACCOUNTING A8 | à proposer à Claudinette |
+| 15 | Accounting | Cadre « À quoi ça sert » replié de lui-même après trois visites | petit | ACCOUNTING A8 | fait (Claudinette, 536f885, en ligne le 07/10) |
 | 16 | Accounting | « En cours » sur deux lignes ; aide de recherche coupée sur Vendre | détail | ACCOUNTING A9 | à faire (Claudinette) |
 
 ## À venir (passage 2, avec comptes de test)
