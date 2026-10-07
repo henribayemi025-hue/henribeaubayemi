@@ -89,6 +89,8 @@ const semblable = (a: string, b: string) => {
 
 // Le moteur (_shared/moteur.ts): Gemini aujourd'hui, un autre demain, par
 // le réglage LEGION_MOTEURS — sans toucher à ce fichier.
+// Le constat de moteur.ts quand plus aucun moteur ne répond faute de crédit ou de part gratuite.
+const SANS_IA = /^aucune IA disponible/;
 async function ecrire(apiKey: string, texte: string, schema: unknown, gratuite = false): Promise<Rendu> {
   // Formule gratuite (0170): Flash seulement.
   return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000, ...(gratuite ? { modeles: moteursSimples() } : {}) });
@@ -569,6 +571,10 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     const verifie = peutEnqueter ? verifsPour(await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', peut(d, 'boutique') ? boutique : null, peut(d, 'mesures') && !!mesures, peut(d, 'comptabilite') ? compta : null), (source) => peut(d, source)) : [];
     const consignePlan = invitePlan(d, projetPour(d), dept, equipeDept, tachesDept, memoire, fil, peut(d, 'mesures') ? mesures : null, verifie, precedents, besoinMois, autresPlans) + enLangue;
     const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN, gratuite);
+    // Tous les moteurs à sec (crédit ou part gratuite) : inutile d'essayer les
+    // autres départements puis quinze agents puis huit tranches (07/10 au soir,
+    // 15 × tous les moteurs pour rien). On s'arrête ; le prochain passage reprend.
+    if ('erreur' in r && SANS_IA.test(r.erreur)) { journal.push(`${entreprise.nom}: ${r.erreur} — passage arrêté, reprise au prochain`); return false; }
     if ('erreur' in r) { journal.push(`${entreprise.nom}/${dept}: plan impossible — ${r.erreur}`); continue; }
     const semaine = aerer(String(r.obj.plan_semaine || '').trim()).slice(0, 4000);
     const mois = aerer(String(r.obj.plan_mois || '').trim()).slice(0, 4000);
@@ -651,11 +657,14 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
   const servi = derniersPassages((livresRecents || []) as Array<{ auteur_id: string; created_at: string }>, (tachesOuvertes || []) as Tache[]);
   const tranche = ordreDePassage(restants, servi).slice(0, MAX_AGENTS_PAR_PASSAGE);
   if (urgences) for (const a of tranche) journal.push(`${entreprise.nom}: ${a.nom} — ${presse(a) ? 'tâche pressante' : decisionDe(a).raison}`);
+  let plusDIA = '';
   for (let i = 0; i < tranche.length; i += lot) {
     if (tempsEcoule()) return true;
+    if (plusDIA) { journal.push(`${entreprise.nom}: passage arrêté (${plusDIA.split(' — ')[0]}), reprise au prochain`); return false; }
     // Trois agents à la fois: chacun son compteur (aPart), pour noter ce que
     // coûte SON livrable.
     await Promise.all(tranche.slice(i, i + lot).map((a) => aPart(async () => {
+      if (plusDIA) return;
       // Une tâche urgente ou haute passe avant les plus anciennes (file de
       // priorités, point 7 des « agents autonomes »).
       // Puis une tâche jamais rendue avant une tâche rendue qui attend une réponse, et une
@@ -754,6 +763,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte), 3, () => String(tache.texte || ''));
       const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + cites + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
       const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
+      if ('erreur' in r && SANS_IA.test(r.erreur)) { plusDIA = r.erreur; journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); passage(a, false, r.erreur); return; }
       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
       // tentatives de Rigo, grille de Mentor) s'arrêtaient en pleine phrase.
@@ -828,6 +838,7 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       dejaLivre.add(a.id);
     })));
   }
+  if (plusDIA) { journal.push(`${entreprise.nom}: passage arrêté (${plusDIA.split(' — ')[0]}), reprise au prochain`); return false; }
   if (restants.length > tranche.length) { journal.push(`${entreprise.nom}: ${restants.length - tranche.length} agent(s) pour la tranche suivante`); return true; }
   return false;
 }

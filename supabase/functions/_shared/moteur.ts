@@ -81,6 +81,12 @@ async function endormir(f: string, ms: number, raison: string) {
   } catch (e) { console.error('disjoncteur (écrire):', (e as Error).message); }
 }
 const SANS_CREDIT = /HTTP 402|insufficient balance|no credits remaining|insufficient_quota|exceeded your current quota|credit balance|spending cap|HTTP 401|invalid.{0,10}api.?key/i;
+// Une part gratuite prise (Groq par minute ou par jour, Cloudflare du jour,
+// Gemini gratuit 429/503, consigne trop longue pour Groq) : ce n'est pas une
+// panne, c'est une limite. Comptée comme « à sec » dans le constat final
+// (07/10 au soir : tous les moteurs refusaient et le journal ne disait que le
+// dernier essai, « oa: … no credits », quinze fois de suite).
+const SANS_PART = /part gratuite|rate limit reached|HTTP 429|HTTP 503[\s\S]{0,120}high demand/i;
 const MUET = /timed out|timeout|aborted/i;
 
 // « gemini-3.1-pro » (sans -preview) n'existe pas chez Google : 250 réponses 404 en
@@ -323,16 +329,27 @@ async function viaGratuit(model: string, texte: string, schema: unknown, o: Opti
 // la sortie demandée : on la borne, sinon une consigne moyenne serait
 // refusée d'emblée. Réflexion au plus bas : un salon attend une réponse.
 const GROQ_SORTIE_MAX = 4096;
+// La part par minute de l'offre gratuite (entrée + sortie demandée) : 8 000
+// jetons pour gpt-oss, 6 000 pour Qwen (page des limites, lue le 07/10).
+// Vu le 07/10 au soir : les consignes de legion-travail (plan d'un
+// département, livrable avec le fil du salon) dépassent cette part à elles
+// seules ; Groq répondait 429 trois fois de suite, à chaque agent, pour
+// rien. Trop long pour la part → on ne l'appelle pas, on passe au suivant.
+const GROQ_JETONS_MINUTE = (model: string) => Number(Deno.env.get('LEGION_GROQ_JETONS_MINUTE') || (/qwen/i.test(model) ? 6000 : 8000));
+const jetonsEstimes = (texte: string) => Math.ceil(texte.length / 3.2);
 async function viaGroq(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const cle = Deno.env.get('GROQ_API_KEY');
   if (!cle) throw new Error('GROQ_API_KEY absent');
+  const sortie = Math.min(GROQ_SORTIE_MAX, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048));
+  const entree = jetonsEstimes(texte) + jetonsEstimes(JSON.stringify(schema)) + 120;
+  if (entree + sortie > GROQ_JETONS_MINUTE(model)) throw new Error(`part gratuite de Groq : consigne trop longue (${entree + sortie} jetons estimés pour ${GROQ_JETONS_MINUTE(model)} par minute)`);
   const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cle}` },
     body: JSON.stringify({
       model,
       temperature: o.temperature ?? 0.6,
-      max_tokens: Math.min(GROQ_SORTIE_MAX, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048)),
+      max_tokens: sortie,
       ...(/gpt-oss/.test(model) ? { reasoning_effort: 'low' } : {}),
       response_format: { type: 'json_object' },
       messages: [
@@ -432,7 +449,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
       echecs++;
-      if (SANS_CREDIT.test(derniere)) aSec++;
+      if (SANS_CREDIT.test(derniere) || SANS_PART.test(derniere)) aSec++;
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
       if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
       // Groq gratuit : la part du jour (ou de la minute) de CE modèle est prise ;
