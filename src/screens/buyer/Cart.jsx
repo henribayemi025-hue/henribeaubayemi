@@ -102,9 +102,9 @@ export default function Cart() {
                     )}
                     <div className="mt-1 flex items-center gap-3">
                       <div className="flex items-center rounded-input border border-hairline">
-                        <button onClick={() => setQty(it.key, it.qty - 1)} disabled={it.qty <= 1} className="p-1.5 text-ink disabled:opacity-30" aria-label="-"><IconMinus size={16} /></button>
+                        <button onClick={() => setQty(it.key, it.qty - 1)} disabled={it.qty <= 1} className="p-1.5 text-ink disabled:opacity-30" aria-label={t('common.decrease')}><IconMinus size={16} /></button>
                         <span className="min-w-6 text-center text-body">{it.qty}</span>
-                        <button onClick={() => setQty(it.key, it.qty + 1)} className="p-1.5 text-ink" aria-label="+"><IconPlus size={16} /></button>
+                        <button onClick={() => setQty(it.key, it.qty + 1)} className="p-1.5 text-ink" aria-label={t('common.increase')}><IconPlus size={16} /></button>
                       </div>
                       <button onClick={() => remove(it.key)} className="text-muted" aria-label={t('cart.remove')}>
                         <IconTrash size={18} />

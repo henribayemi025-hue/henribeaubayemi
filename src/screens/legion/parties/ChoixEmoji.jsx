@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import { CATEGORIES, PAR_CATEGORIE, chercher, lireRecents, noterRecent } from '../emojis';
 
@@ -6,6 +7,7 @@ import { CATEGORIES, PAR_CATEGORIE, chercher, lireRecents, noterRecent } from '.
 // recherche en français, les récents en premier. Beau: « ce n'est pas comme
 // dans WhatsApp, avec le clavier, ou avec les stickers ».
 export function ChoixEmoji({ onChoisir, onFermer, titre = 'Emoji' }) {
+  const { t } = useTranslation();
   const [cat, setCat] = useState('recents');
   const [q, setQ] = useState('');
   const [recents, setRecents] = useState(lireRecents);
@@ -33,7 +35,7 @@ export function ChoixEmoji({ onChoisir, onFermer, titre = 'Emoji' }) {
           className="min-w-0 flex-1 bg-transparent text-caption text-legion-ink outline-none placeholder:text-legion-muted"
         />
         {onFermer && (
-          <button type="button" onClick={onFermer} aria-label="Fermer" className="rounded-full p-1 text-legion-muted hover:bg-legion-bg">
+          <button type="button" onClick={onFermer} aria-label={t('common.close')} className="rounded-full p-1 text-legion-muted hover:bg-legion-bg">
             <IconX size={14} />
           </button>
         )}

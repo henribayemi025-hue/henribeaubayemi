@@ -544,10 +544,10 @@ export function Conversation({
       </div>
 
       {/* Un appui ailleurs referme le menu d'un message */}
-      {ouvert && <button type="button" aria-label="✕" className="fixed inset-0 z-20 cursor-default bg-black/30 lg:bg-transparent" onClick={() => { setOuvert(null); setPicker(null); }} />}
+      {ouvert && <button type="button" aria-label={t('common.close')} className="fixed inset-0 z-20 cursor-default bg-black/30 lg:bg-transparent" onClick={() => { setOuvert(null); setPicker(null); }} />}
 
       {enHaut && (
-        <button type="button" onClick={() => enBas(true)} aria-label="↓"
+        <button type="button" onClick={() => enBas(true)} aria-label={t('legion.allerEnBas', 'Aller aux derniers messages')}
           className="absolute bottom-24 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-legion-line bg-legion-card text-legion-ink shadow-lg">
           <IconChevronDown size={20} />
         </button>
@@ -1161,7 +1161,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
       {reponseA && (
         <div className="mx-1 mb-1.5 flex items-center justify-between rounded-[10px] border-l-4 border-legion-gold bg-legion-bg px-2.5 py-1.5">
           <div className="min-w-0"><span className="text-[13px] font-semibold text-legion-gold">{agents.find((a) => a.id === reponseA.auteur_id)?.nom}</span><p className="line-clamp-1 text-[13px] text-legion-muted">{reponseA.texte}</p></div>
-          <button type="button" onClick={onAnnulerReponse} aria-label="✕" className="p-1.5 text-legion-muted"><IconX size={16} /></button>
+          <button type="button" onClick={onAnnulerReponse} aria-label={t('legion.annulerReponse', 'Ne plus répondre à ce message')} className="p-1.5 text-legion-muted"><IconX size={16} /></button>
         </div>
       )}
 
@@ -1185,7 +1185,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
 
       {plus && (
         <>
-          <button type="button" aria-label="✕" className="fixed inset-0 z-20 cursor-default" onClick={() => setPlus(false)} />
+          <button type="button" aria-label={t('common.close')} className="fixed inset-0 z-20 cursor-default" onClick={() => setPlus(false)} />
           <div className="absolute bottom-full left-2 z-30 mb-2 w-60 overflow-hidden rounded-card border border-legion-line bg-legion-card shadow-2xl">
             <Action icone={IconPhoto} label={t('legion.photo', 'Photo')} onClick={() => { setPlus(false); fichier.current?.click(); }} />
             <Action icone={IconPaperclip} label={t('legion.fichier', 'Fichier (Excel, CSV, PDF)')} onClick={() => { setPlus(false); document_.current?.click(); }} />
@@ -1241,7 +1241,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
         </div>
       )}
       <form onSubmit={envoyer} className="flex items-end gap-1">
-        <button type="button" onClick={() => setPlus((v) => !v)} aria-label="+" className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${plus ? 'rotate-45 text-legion-gold' : 'text-legion-ink'}`}>
+        <button type="button" onClick={() => setPlus((v) => !v)} aria-label={t('legion.plusOptions', 'Joindre ou plus d’options')} aria-expanded={plus} className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${plus ? 'rotate-45 text-legion-gold' : 'text-legion-ink'}`}>
           <IconPlus size={26} />
         </button>
         <div className="flex min-w-0 flex-1 items-end rounded-[22px] border border-legion-line bg-legion-bg pl-3.5 pr-1 transition focus-within:border-legion-gold/60">

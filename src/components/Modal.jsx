@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { IconX } from '@tabler/icons-react';
 
 // Bottom-sheet modal on mobile, centered on desktop.
@@ -8,6 +9,7 @@ import { IconX } from '@tabler/icons-react';
 // sombre: la fenêtre est rendue sur <body>, donc elle sort de `.legion-app`
 // et ne peut pas hériter de ses couleurs. Sans valeur, rien ne change.
 export function Modal({ open, onClose, title, children, className = '' }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -34,14 +36,14 @@ export function Modal({ open, onClose, title, children, className = '' }) {
       aria-modal="true"
       aria-label={title}
     >
-      <button className="animate-fade-in absolute inset-0 bg-black/40" aria-label="Close" onClick={onClose} />
+      <button className="animate-fade-in absolute inset-0 bg-black/40" aria-label={t('common.close')} onClick={onClose} />
       <div
         className={`animate-slide-up relative z-10 flex w-full max-w-app flex-col overflow-y-auto rounded-t-2xl bg-white p-4 sm:rounded-2xl sm:animate-fade-in ${className}`}
         style={{ maxHeight: 'var(--app-height, 100dvh)' }}
       >
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-section text-ink">{title}</h2>
-          <button onClick={onClose} className="rounded-full p-1 text-muted hover:bg-hairline" aria-label="Close">
+          <button onClick={onClose} className="rounded-full p-1 text-muted hover:bg-hairline" aria-label={t('common.close')}>
             <IconX size={22} />
           </button>
         </div>

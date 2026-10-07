@@ -115,11 +115,11 @@ export function FeuilleDeRoute({ entreprise, agents, langue, t }) {
 
       {(onglet === 'jour' || onglet === 'semaine') && (
         <div className="flex items-center justify-between text-[12px] text-legion-muted">
-          <button type="button" onClick={() => setJour((d) => plusJours(d, onglet === 'jour' ? -1 : -7))} aria-label="‹" className="rounded-full p-1 hover:text-legion-ink"><IconChevronLeft size={16} /></button>
+          <button type="button" onClick={() => setJour((d) => plusJours(d, onglet === 'jour' ? -1 : -7))} aria-label={onglet === 'jour' ? t('legion.feuilleJourAvant', 'Jour précédent') : t('legion.feuilleSemaineAvant', 'Semaine précédente')} className="rounded-full p-1 hover:text-legion-ink"><IconChevronLeft size={16} /></button>
           <span className="font-semibold capitalize text-legion-ink">
             {onglet === 'jour' ? fmt(iso(jour), { weekday: 'long', day: 'numeric', month: 'long' }) : `${fmt(iso(lundiDe(jour)), { day: 'numeric', month: 'short' })} → ${fmt(iso(plusJours(lundiDe(jour), 6)), { day: 'numeric', month: 'short' })}`}
           </span>
-          <button type="button" onClick={() => setJour((d) => plusJours(d, onglet === 'jour' ? 1 : 7))} aria-label="›" className="rounded-full p-1 hover:text-legion-ink"><IconChevronRight size={16} /></button>
+          <button type="button" onClick={() => setJour((d) => plusJours(d, onglet === 'jour' ? 1 : 7))} aria-label={onglet === 'jour' ? t('legion.feuilleJourApres', 'Jour suivant') : t('legion.feuilleSemaineApres', 'Semaine suivante')} className="rounded-full p-1 hover:text-legion-ink"><IconChevronRight size={16} /></button>
         </div>
       )}
 

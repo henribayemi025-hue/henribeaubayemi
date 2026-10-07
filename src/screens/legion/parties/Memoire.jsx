@@ -82,7 +82,7 @@ export function Memoire({ entrepriseId, t }) {
         <input value={nouvelle} onChange={(e) => setNouvelle(e.target.value)} maxLength={400}
           placeholder={t('legion.memoireAjouter', 'Une règle à retenir…')}
           className="min-w-0 flex-1 rounded-input border border-legion-line bg-legion-bg px-3 py-2 text-[16px] text-legion-ink outline-none placeholder:text-legion-muted focus:border-legion-gold/60 sm:text-[14px]" />
-        <button type="submit" disabled={envoi || nouvelle.trim().length < 3} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-legion-gold text-legion-bg disabled:opacity-40" aria-label="+">
+        <button type="submit" disabled={envoi || nouvelle.trim().length < 3} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-legion-gold text-legion-bg disabled:opacity-40" aria-label={t('common.add')}>
           <IconPlus size={18} />
         </button>
       </form>

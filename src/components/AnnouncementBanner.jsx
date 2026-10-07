@@ -16,7 +16,7 @@ const DISMISS_KEY = 'finjaro_announcement_dismissed';
 // Refermable: le choix est mémorisé par ID d'annonce, donc fermer celle du
 // jour ne masque pas la suivante.
 export function AnnouncementBanner() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [ann, setAnn] = useState(null);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export function AnnouncementBanner() {
       )}
       <button
         onClick={dismiss}
-        aria-label="Fermer"
+        aria-label={t('common.close')}
         className="-mr-1 shrink-0 rounded-full p-1 text-white/80 transition-colors hover:bg-white/15 hover:text-white"
       >
         <IconX size={15} />

@@ -161,8 +161,8 @@ export function Kanban({ taches, agents, departements, onStatut, onCreer, onConv
                         {a && <IconMessageCircle size={12} className="shrink-0 text-legion-muted" />}
                       </button>
                       <div className="flex shrink-0 items-center gap-0.5">
-                        <button type="button" onClick={() => reculer(x)} disabled={s === 'a_faire'} aria-label="←" className="rounded p-1 text-legion-muted hover:bg-legion-bg disabled:opacity-30"><IconArrowLeft size={13} /></button>
-                        <button type="button" onClick={() => avancer(x)} disabled={s === 'fait'} aria-label="→" className="rounded p-1 text-legion-muted hover:bg-legion-bg disabled:opacity-30"><IconArrowRight size={13} /></button>
+                        <button type="button" onClick={() => reculer(x)} disabled={s === 'a_faire'} aria-label={t('legion.tacheReculer', 'Remettre à l’étape d’avant')} className="rounded p-1 text-legion-muted hover:bg-legion-bg disabled:opacity-30"><IconArrowLeft size={13} /></button>
+                        <button type="button" onClick={() => avancer(x)} disabled={s === 'fait'} aria-label={t('legion.tacheAvancer', 'Passer à l’étape suivante')} className="rounded p-1 text-legion-muted hover:bg-legion-bg disabled:opacity-30"><IconArrowRight size={13} /></button>
                       </div>
                     </div>
                   </div>

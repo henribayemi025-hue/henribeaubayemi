@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aPrixManquant, lirePrix } from './ArticlesSansPrix';
+import { aPrixManquant, lirePrix, ordreSansPrix } from './ArticlesSansPrix';
 
 describe('carte « Articles sans prix »', () => {
   const base = { is_active: true, price_on_request: true, category: 'mode' };
@@ -14,5 +14,13 @@ describe('carte « Articles sans prix »', () => {
     expect(lirePrix('7 500')).toBe(7500);
     expect(lirePrix('12,5')).toBe(12.5);
     for (const x of ['', 'abc', '-3', '0', 'NaN', null]) expect(lirePrix(x)).toBeNull();
+  });
+});
+
+describe('ordre de la carte « Articles sans prix »', () => {
+  it('met les fiches les plus vues en premier, sans toucher à la liste reçue', () => {
+    const liste = [{ id: 'a', views: 2 }, { id: 'b', views: 14 }, { id: 'c' }, { id: 'd', views: 12 }];
+    expect(ordreSansPrix(liste).map((p) => p.id)).toEqual(['b', 'd', 'a', 'c']);
+    expect(liste.map((p) => p.id)).toEqual(['a', 'b', 'c', 'd']);
   });
 });

@@ -1805,7 +1805,16 @@
       "envoyer": "Envoyer",
       "ok": "Envoyé ✅ L’équipe Finjaro te répond par e-mail.",
       "erreur": "L’envoi n’a pas marché. Réessaie dans un instant."
-    }
+    },
+    "feuilleJourAvant": "Jour précédent",
+    "feuilleSemaineAvant": "Semaine précédente",
+    "feuilleJourApres": "Jour suivant",
+    "feuilleSemaineApres": "Semaine suivante",
+    "allerEnBas": "Aller aux derniers messages",
+    "annulerReponse": "Ne plus répondre à ce message",
+    "plusOptions": "Joindre ou plus d’options",
+    "tacheReculer": "Remettre à l’étape d’avant",
+    "tacheAvancer": "Passer à l’étape suivante"
   },
   "equipe": {
     "titre": "L'équipe",
@@ -3176,7 +3185,9 @@
       "raison2": "Le soir, seule, elle décide sans écrire ni attendre une réponse.",
       "raison3": "Un prix affiché lui évite la gêne de demander : elle avance, en confiance.",
       "legitime": "« Sur demande » reste juste pour le sur-mesure, ou un prix qui change souvent.",
-      "champCourt": "Ton prix"
+      "champCourt": "Ton prix",
+      "vues_one": "Vu 1 fois",
+      "vues_other": "Vu {{count}} fois"
     },
     "guestWhatsapp": "Bonjour {{name}}, c’est {{shop}} sur Finjaro. J’ai bien reçu ta demande #{{no}}. Tu peux la suivre ici : {{link}}"
   },

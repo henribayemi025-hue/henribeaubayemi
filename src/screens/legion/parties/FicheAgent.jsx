@@ -472,7 +472,7 @@ export function FicheAgent({ agent, dept, departements = [], onFermer, onAllumer
   return (
     <Modal open={!!agent} onClose={onFermer} title={t('legion.ficheAgent', 'Fiche agent')} className="legion-modale">
       {enGrand && (
-        <button type="button" onClick={() => setEnGrand(false)} aria-label="✕"
+        <button type="button" onClick={() => setEnGrand(false)} aria-label={t('common.close')}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6">
           <img src={agent.apparence?.url || agent.avatar_url} alt={agent.nom} className="h-auto max-h-[80vh] w-[min(85vw,480px)] rounded-2xl object-contain shadow-2xl" />
         </button>

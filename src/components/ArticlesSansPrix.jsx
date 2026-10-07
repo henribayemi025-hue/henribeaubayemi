@@ -22,6 +22,13 @@ export function aPrixManquant(p) {
   return !!p.is_active && !!p.price_on_request && !isQuoteOnly(p.category) && !p.moderation_hidden_at && !p.sur_demande_voulu_le;
 }
 
+// Les plus vus d'abord (07/10) : les deux fiches les plus vues de la semaine
+// étaient sans prix. La vendeuse commence par celles qui comptent le plus.
+// `views` est le compteur de la fiche depuis sa création.
+export function ordreSansPrix(liste) {
+  return [...liste].sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0));
+}
+
 export function lirePrix(brut) {
   const v = Number(String(brut ?? '').replace(/\s/g, '').replace(',', '.'));
   return Number.isFinite(v) && v > 0 && v < 1e10 ? v : null;
@@ -35,7 +42,7 @@ export function ArticlesSansPrix({ shop, rows, onChange }) {
   const [tout, setTout] = useState(false);
   const [pourquoi, setPourquoi] = useState(false);
   const [finiIci, setFiniIci] = useState(false);
-  const liste = rows.filter(aPrixManquant);
+  const liste = ordreSansPrix(rows.filter(aPrixManquant));
   const devise = shop?.country ? currencyForCountry(shop.country) : null;
 
   if (!liste.length) {
@@ -91,7 +98,10 @@ export function ArticlesSansPrix({ shop, rows, onChange }) {
               <li key={p.id} className="rounded-card bg-white p-2.5 shadow-sm">
                 <div className="flex items-center gap-2.5">
                   {img ? <img src={img} alt="" className="h-11 w-11 shrink-0 rounded-md object-cover" /> : <span className="h-11 w-11 shrink-0 rounded-md bg-hairline" />}
-                  <p className="min-w-0 flex-1 truncate text-caption font-semibold text-ink">{p.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-caption font-semibold text-ink">{p.name}</p>
+                    {Number(p.views) > 0 && <p className="text-caption text-muted">{t('vendor.sansPrix.vues', { count: Number(p.views) })}</p>}
+                  </div>
                 </div>
                 <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); enregistrer(p); }}>
                   <label className="sr-only" htmlFor={`prix-${p.id}`}>{t('vendor.sansPrix.champ')}</label>

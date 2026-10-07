@@ -1805,7 +1805,16 @@
       "envoyer": "Send",
       "ok": "Sent ✅ The Finjaro team will reply by email.",
       "erreur": "Sending failed. Try again in a moment."
-    }
+    },
+    "feuilleJourAvant": "Previous day",
+    "feuilleSemaineAvant": "Previous week",
+    "feuilleJourApres": "Next day",
+    "feuilleSemaineApres": "Next week",
+    "allerEnBas": "Jump to latest messages",
+    "annulerReponse": "Stop replying to this message",
+    "plusOptions": "Attach or more options",
+    "tacheReculer": "Move back a step",
+    "tacheAvancer": "Move to the next step"
   },
   "equipe": {
     "titre": "The team",
@@ -3176,7 +3185,9 @@
       "raison2": "In the evening, alone, she decides without writing or waiting for a reply.",
       "raison3": "A visible price spares her the awkwardness of asking; she moves forward with confidence.",
       "legitime": "“On request” stays fair for made-to-measure work, or a price that changes often.",
-      "champCourt": "Your price"
+      "champCourt": "Your price",
+      "vues_one": "Viewed once",
+      "vues_other": "Viewed {{count}} times"
     },
     "guestWhatsapp": "Hello {{name}}, this is {{shop}} on Finjaro. I received your request #{{no}}. You can track it here: {{link}}"
   },
