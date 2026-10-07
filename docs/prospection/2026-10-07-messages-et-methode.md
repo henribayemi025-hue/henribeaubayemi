@@ -117,6 +117,40 @@ Avant chaque envoi : vérifier que le domaine reçoit du courrier (MX).
 > Si ce n'est pas le bon moment, dites-le-nous simplement et nous ne vous
 > écrirons plus.
 
+### 4-EN. Même message, en anglais (Beau, 07/10 soir : « toute l'Europe, en français ou anglais selon le pays »)
+
+Français pour la France, la Belgique francophone, le Luxembourg, la Suisse
+romande et Monaco ; anglais partout ailleurs en Europe. Même cible, mêmes
+exclusions, même vérification du site avant l'envoi.
+
+> **Subject:** Léo, a team of AI agents for {company}
+>
+> Hello,
+>
+> We came across {company} and {one true sentence about what it does}, and it
+> caught our attention.
+>
+> That's why we wanted to introduce Léo, our latest intelligence. You describe
+> your business, and Léo brings together a team of specialised AI agents who
+> work alongside you:
+> - automating the tasks that come back every day: sorting requests,
+>   answering customers, following up;
+> - keeping watch on your competitors and your market;
+> - drafting your documents and reading your Excel and PDF files;
+> - meeting to inform your decisions;
+> - reporting on their work to you every evening.
+>
+> You stay in control: nothing goes out without your approval. And you can
+> start for free at finjaro.net/legion.
+>
+> To find out more, just reply to this email or write to us on Finjaro's
+> LinkedIn page: https://www.linkedin.com/company/146635360/
+>
+> The Finjaro team
+>
+> If now isn't the right time, just let us know and we won't write to you
+> again.
+
 Page LinkedIn (donnée par Beau le 07/10) : l'adresse publique est
 https://www.linkedin.com/company/146635360/ — jamais le lien `/admin/`, qui
 ne s'ouvre que pour Beau.
@@ -164,11 +198,40 @@ ni les cabinets comptables (concurrents).
 
 ## Rythme (Beau, 07/10)
 
-Du lundi au vendredi à 9h, 14h et 19h (heure de Paris) : une série de 30
-pour Léo (France) et une série de 30 pour Accounting (Cameroun). Rien le
-week-end. Entreprises trouvées sur des sources publiques, rangées dans
-`prospects` (privé), domaine vérifié avant l'envoi. Une adresse déjà
-contactée ne reçoit jamais un deuxième message de prospection.
+Décision finale de Beau (07/10, 13h) : **une série par jour pour chaque**,
+du lundi au vendredi, à 18h52 (heure de Paris), par la routine de cette
+session. Rien le week-end.
+
+Puis le soir même (07/10, 20h) : « ne te limite pas à la France : Allemagne,
+Luxembourg, Belgique… toute l'Europe, même 50 par jour, en français ou en
+anglais selon le pays. » Donc :
+
+| Série | Combien | Où | Langue |
+| --- | --- | --- | --- |
+| Léo (modèles 4 / 4-EN) | 50 par jour | toute l'Europe, en variant les pays | français ou anglais selon le pays |
+| Accounting (modèle 5) | jusqu'à 30 par jour | Cameroun (Douala, Yaoundé, puis les autres villes) | français |
+
+Entreprises trouvées sur des sources publiques, rangées dans `prospects`
+(privé, colonne `langue` = 'fr' ou 'en'), site lu et domaine vérifié avant
+l'envoi. Les 80 envois par jour partent d'une boîte Gmail : au premier signal
+de limite ou de blocage, on s'arrête et on le dit à Beau.
+
+## On ne réécrit jamais (ordre de Beau, 07/10 soir)
+
+« N'oublie pas de noter : ne pas renvoyer les e-mails aux personnes non
+désireuses, et à ceux qui ont dit stop. »
+
+- Une entreprise déjà présente dans `prospects` ne reçoit **jamais** un
+  deuxième message de prospection, même avec un autre modèle, même des mois
+  plus tard, même sans réponse.
+- `reponse = 'stop'` : refus explicite (« stop », « pas intéressé », « ne
+  plus écrire », « supprimez notre adresse », message jugé inapproprié).
+  Définitif.
+- `reponse = 'rebond'` : adresse qui n'existe pas ou ne reçoit pas. On ne
+  réessaie pas.
+- La routine de la boîte (toutes les 2 h) pose ces marques ; la routine de la
+  série les lit avant chaque envoi. Aucun envoi à la main ne contourne la
+  table.
 
 ## Méthode pour Claude dans Chrome (ordinateur personnel de Beau)
 
