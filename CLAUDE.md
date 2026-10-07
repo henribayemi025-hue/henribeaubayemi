@@ -221,3 +221,15 @@ tu vérifies ; s'ils ont mal fait, tu corriges. »
   (24/09, minuit) : on la NOTE tout de suite dans le carnet, et on termine
   ce qu'on faisait avant de passer à la suite du plan. « Sinon tu vas
   embrouiller encore tellement de choses. »
+
+## 11. Le lien de causalité — ordre de Beau (07/10)
+
+« Est-ce que tu réfléchis avant de faire ? » — j'avais affiché la conversation
+du prof de Learn sous la zone d'écriture : pour lire la réponse il fallait
+descendre, puis remonter pour écrire.
+
+Avant de livrer, dérouler les conséquences : « si je fais ça, ça entraîne ça ;
+donc il faut telle et telle option ». Pour un écran : où l'œil va, où le pouce
+va, ce qui se passe au 2e, au 10e, au 50e message, sur téléphone et sur grand
+écran, quand c'est vide, quand ça échoue, quand c'est lent. Un changement qui
+ne passe pas ce déroulé n'est pas fini.
