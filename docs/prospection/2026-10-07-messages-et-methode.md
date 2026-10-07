@@ -82,6 +82,45 @@ Version courte (WhatsApp, Instagram, Facebook) :
 > L'équipe Finjaro
 > *Pour ne plus recevoir nos messages, répondez « stop ».*
 
+### 4. Entreprises qui ont des processus à automatiser — Léo (version de Beau, 07/10 midi)
+
+Cible : des entreprises **clientes**, petites ou grandes, qui ont des tâches
+répétitives (transport, industrie, cabinets, magasins, vente en ligne,
+immobilier). Pas les cabinets ni les formateurs en IA : ils en vendent.
+Avant chaque envoi : vérifier que le domaine reçoit du courrier (MX).
+
+> **Objet :** Léo, une équipe d'agents IA pour {entreprise}
+>
+> Bonjour,
+>
+> Nous avons découvert {entreprise} et {une phrase vraie sur ce qu'elle
+> fait}, et nous avons été intrigués.
+>
+> C'est pourquoi nous voulions vous présenter Léo, notre toute dernière
+> intelligence. Vous décrivez votre entreprise, et Léo réunit pour vous une
+> équipe d'agents IA spécialisés qui travaillent avec vous :
+> - automatiser les tâches qui reviennent chaque jour : tri des demandes,
+>   réponses aux clients, relances ;
+> - veiller sur vos concurrents et votre marché ;
+> - rédiger vos documents et lire vos fichiers Excel et PDF ;
+> - se réunir pour éclairer vos décisions ;
+> - vous rendre compte de leur travail chaque soir.
+>
+> Vous gardez la main : rien ne part sans votre accord. Et vous pouvez
+> commencer sans payer, sur finjaro.net/legion.
+>
+> Pour en savoir plus, il suffit de répondre à cet e-mail ou de nous écrire
+> sur notre page LinkedIn Finjaro.
+>
+> L'équipe Finjaro
+>
+> Si ce n'est pas le bon moment, dites-le-nous simplement et nous ne vous
+> écrirons plus.
+
+La dernière phrase reste : en France, chaque e-mail de prospection doit
+offrir un moyen simple de refuser. Elle remplace le « répondez stop », jugé
+pas assez professionnel par Beau.
+
 ## Méthode pour Claude dans Chrome (ordinateur personnel de Beau)
 
 1. Ouvrir une recherche par cible :
