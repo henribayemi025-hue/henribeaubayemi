@@ -125,6 +125,44 @@ La dernière phrase reste : en France, chaque e-mail de prospection doit
 offrir un moyen simple de refuser. Elle remplace le « répondez stop », jugé
 pas assez professionnel par Beau.
 
+### 5. Petites entreprises — Finjaro Accounting (même style que le 4, 07/10)
+
+Cible : commerces, PME et jeunes entreprises au Cameroun (Douala et Yaoundé
+d'abord, puis les autres villes). Pas les éditeurs de logiciels de gestion
+ni les cabinets comptables (concurrents).
+
+> **Objet :** Finjaro Accounting, la gestion simplifiée pour {entreprise}
+>
+> Bonjour,
+>
+> Nous avons découvert {entreprise} et {une phrase vraie sur ce qu'elle
+> fait}, et nous avons été intrigués.
+>
+> C'est pourquoi nous voulions vous présenter Finjaro Accounting. Depuis
+> votre téléphone, même sans connexion, vous suivez :
+> - votre stock et vos ventes ;
+> - votre caisse, jour après jour ;
+> - les sommes que vos clients vous doivent, avec une relance WhatsApp en
+>   un geste.
+>
+> Vous pouvez commencer dès aujourd'hui : accounting.finjaro.net
+>
+> Pour en savoir plus, il suffit de répondre à cet e-mail ou de nous écrire
+> sur notre page LinkedIn Finjaro : https://www.linkedin.com/company/146635360/
+>
+> L'équipe Finjaro
+>
+> Si ce n'est pas le bon moment, dites-le-nous simplement et nous ne vous
+> écrirons plus.
+
+## Rythme (Beau, 07/10)
+
+Du lundi au vendredi à 9h, 14h et 19h (heure de Paris) : une série de 30
+pour Léo (France) et une série de 30 pour Accounting (Cameroun). Rien le
+week-end. Entreprises trouvées sur des sources publiques, rangées dans
+`prospects` (privé), domaine vérifié avant l'envoi. Une adresse déjà
+contactée ne reçoit jamais un deuxième message de prospection.
+
 ## Méthode pour Claude dans Chrome (ordinateur personnel de Beau)
 
 1. Ouvrir une recherche par cible :
