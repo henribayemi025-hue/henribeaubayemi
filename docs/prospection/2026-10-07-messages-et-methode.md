@@ -110,12 +110,16 @@ Avant chaque envoi : vérifier que le domaine reçoit du courrier (MX).
 > commencer sans payer, sur finjaro.net/legion.
 >
 > Pour en savoir plus, il suffit de répondre à cet e-mail ou de nous écrire
-> sur notre page LinkedIn Finjaro.
+> sur notre page LinkedIn Finjaro : https://www.linkedin.com/company/146635360/
 >
 > L'équipe Finjaro
 >
 > Si ce n'est pas le bon moment, dites-le-nous simplement et nous ne vous
 > écrirons plus.
+
+Page LinkedIn (donnée par Beau le 07/10) : l'adresse publique est
+https://www.linkedin.com/company/146635360/ — jamais le lien `/admin/`, qui
+ne s'ouvre que pour Beau.
 
 La dernière phrase reste : en France, chaque e-mail de prospection doit
 offrir un moyen simple de refuser. Elle remplace le « répondez stop », jugé
