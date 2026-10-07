@@ -15,6 +15,12 @@ qu'après vérification sur staging.
 | 8 | Learn | Carrousel : une seule « Leçon 1 », celle du niveau | détail | ecrans L5 | fait (07/10 soir : 3 diapositives à 0 leçon) |
 | 9 | Place de marché | Pas de mise en avant sans photo (règle + carte « Articles sans photo ») | détail | ecrans M3 | à proposer à Alpha |
 | 10 | Place de marché | « EN » 20 px, « Passer » 28 px, noms du carrousel 14 px → 44 px | détail | ecrans M4 | à faire |
+| 11 | Accounting | Régime fiscal par défaut au Cameroun : « sans TVA, à confirmer avec votre comptable » au lieu du réel + TVA 19,25 % | grave | ACCOUNTING A1 | à trancher par Beau |
+| 12 | Accounting | Journal / Ventes / Stock : mois en cours par défaut + « Voir plus » (615 écritures sur une page) | moyen | ACCOUNTING A5 | proposé (Claudinette) |
+| 13 | Accounting | Démonstration en mode simple, bouton vers l'expert | moyen | ACCOUNTING A6 | proposé (Claudinette) |
+| 14 | Accounting | Champs 40 px sur ordinateur seulement | petit | ACCOUNTING A7 | à trancher par Beau (style) |
+| 15 | Accounting | Cadre « À quoi ça sert » replié de lui-même après trois visites | petit | ACCOUNTING A8 | à proposer à Claudinette |
+| 16 | Accounting | « En cours » sur deux lignes ; aide de recherche coupée sur Vendre | détail | ACCOUNTING A9 | à faire (Claudinette) |
 
 ## À venir (passage 2, avec comptes de test)
 - Léo connecté : la page d'accueil et le texte (Beau : « on ne comprend
@@ -23,5 +29,5 @@ qu'après vérification sur staging.
 - Learn connecté : les profs face aux 40 questions de Mentor, le bouton
   « J'y vais », la boîte de code dans la réponse du prof (demande de Beau).
 - Place de marché connectée : acheter, vendre, messagerie (livrable de Lien).
-- Accounting : rapport de Claudinette.
+- Accounting : rapport de Claudinette reçu le 07/10 (ACCOUNTING.md) ; reste le pont Léo → Accounting, côté Léo.
 - Les ponts : même compte, Learn ↔ Léo, Léo ↔ Accounting.
