@@ -402,8 +402,12 @@ function groqReserver(model: string, jetons: number): boolean {
 // donc la queue ici ; au-delà de 45 s d'attente, l'agent cède sa place pour cette
 // tranche (sans compter Z.ai « à sec »). Un 1302 ou 1305 malgré la queue (un autre
 // service Finjaro l'utilise au même moment) est réessayé deux fois.
+// 11h10 : 45 s de queue + 90 s d'appel, ajoutés aux autres moteurs, ont dépassé les
+// ~150 s qu'une fonction a pour répondre (arrêt « WORKER_RESOURCE_LIMIT »). Queue
+// ramenée à 20 s et appel à 50 s au plus : sans réflexion, la réponse tient dedans.
 let zaiFile: Promise<void> = Promise.resolve();
-const ZAI_ATTENTE_MAX = 45_000;
+const ZAI_ATTENTE_MAX = 20_000;
+const ZAI_DELAI_MAX = 50_000;
 const ZAI_OCCUPE = /HTTP 429[\s\S]{0,40}"(1302|1305)"/;
 async function viaZai(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const precedent = zaiFile;
@@ -426,7 +430,7 @@ async function viaZai(model: string, texte: string, schema: unknown, o: Options)
   try {
     for (let essai = 0; ; essai++) {
       try {
-        return await viaOpenAI(model, court, schema, o, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true, reglages);
+        return await viaOpenAI(model, court, schema, { ...o, delaiMs: Math.min(o.delaiMs ?? 90_000, ZAI_DELAI_MAX) }, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true, reglages);
       } catch (e) {
         if (essai < 2 && ZAI_OCCUPE.test((e as Error).message)) { await new Promise((r) => setTimeout(r, 4_000 * (essai + 1))); continue; }
         throw e;
