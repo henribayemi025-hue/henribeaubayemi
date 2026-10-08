@@ -62,6 +62,27 @@ Ordre de passage : Gemini gratuit → **Mistral** → Groq → Z.ai → Cloudfla
 | SambaNova | ~20 requêtes par jour et par modèle, 200 000 jetons par jour (guides tiers) : trop peu |
 | Cohere | clé d'essai réservée au développement, pas à un usage réel |
 
+## Les listes de GitHub (08/10, demandé par Beau : « j'en ai vu beaucoup sur Insta »)
+
+Trois listes tenues à jour ont été lues : mnfst/awesome-free-llm-apis,
+nejib1/Free-LLM (données du 08/10) et les copies de awesome-freellm-apis.
+Elles recoupent ce qui est au-dessus ; ce qu'elles ajoutent :
+
+| Fournisseur | Verdict | Pourquoi |
+| --- | --- | --- |
+| Ollama Cloud | possible, clé à créer | compte par e-mail, sans carte ; gpt-oss:120b avec 131 000 jetons de fenêtre ; limites « par session » non publiées, un seul modèle à la fois. Branchable en quelques minutes si Mistral ne suffit pas |
+| OVHcloud AI Endpoints (sans clé) | écarté | essayé le 08/10 : réponse 429 « API rate limit exceeded » dès le premier appel. L'accès sans clé est limité à 2 requêtes par minute **par adresse IP**, et nos serveurs partagent leurs adresses ; avec une clé, c'est payant au jeton |
+| Hetzner Inference | écarté | expérimental, « ne pas utiliser en production » (page de Hetzner du 24/07), carte peut-être exigée |
+| Kilo Code (passerelle sans clé) | écarté | passe par l'essai gratuit de NVIDIA : « ne pas envoyer de données personnelles ou confidentielles » |
+| ModelScope, SiliconFlow | écartés | vérification d'identité chinoise (compte Alibaba Cloud, pièce d'identité) |
+| LLM7.io, Pollinations, Api.Airforce | écartés | intermédiaires dont on ne sait pas d'où vient l'accès aux modèles |
+
+**Les « API IA gratuites » d'Instagram** : beaucoup sont des projets comme
+gpt4free, qui passent par des sites ou des comptes détournés (ChatGPT, Claude…
+utilisés sans l'accord de leurs éditeurs). C'est contraire à leurs conditions,
+ça casse sans prévenir, et les données des entreprises de Léo passeraient par
+des inconnus. On n'en branche aucune.
+
 ## Sources
 
 - Mistral, aide : « Can I opt out of my input or output data being used for training? » — https://help.mistral.ai/en/articles/455207-can-i-opt-out-of-my-input-or-output-data-being-used-for-training
@@ -72,3 +93,7 @@ Ordre de passage : Gemini gratuit → **Mistral** → Groq → Z.ai → Cloudfla
 - GitHub Models retiré — https://github.blog/changelog/2026-07-30-github-models-is-now-retired/
 - NVIDIA NIM, FAQ (usage de production) — https://forums.developer.nvidia.com/t/nvidia-nim-faq/300317
 - Z.ai, offre Flash gratuite (relevé tiers du 25/08/2026) — https://blogs.novita.ai/glm-free-api/
+- mnfst/awesome-free-llm-apis — https://github.com/mnfst/awesome-free-llm-apis
+- nejib1/Free-LLM (données du 08/10/2026) — https://github.com/nejib1/Free-LLM
+- OVHcloud, limites d'AI Endpoints (2 requêtes par minute par IP sans clé) — https://docs.ovhcloud.com/en/guides/public-cloud/ai-machine-learning/ai-endpoints-capabilities
+- Hetzner, Inference API (expérimental) — https://docs.hetzner.com/general/company-and-policy/experiments/inference/
