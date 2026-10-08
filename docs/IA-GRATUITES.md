@@ -30,7 +30,7 @@ Groq soit compté « à sec ».
 | Fournisseur | Préfixe | Clé (secret Supabase) | Pourquoi |
 | --- | --- | --- | --- |
 | Mistral, offre « Gratuit » | `mi:` | `MISTRAL_API_KEY` **posée le 08/10, mais limitée à 0 requête par minute** (voir plus bas) | gratuite, sans carte ; grande fenêtre, donc la consigne ENTIÈRE passe ; ~1 milliard de jetons par mois et ~500 000 par minute selon des guides tiers (non publié par Mistral) ; entreprise française |
-| Z.ai, modèles « Flash » | `za:` | `ZAI_API_KEY` **posée par Beau le 08/10 à 11 h** | GLM-4.7-Flash « Free » sur la page de prix officielle ; **une requête à la fois** : au premier essai (11 h 01), trois agents l'ont appelé ensemble et ont reçu « 1302 Rate limit reached for requests » et « 1305 service temporarily overloaded ». Depuis le 08/10, les agents d'un passage font la queue (au plus 45 s), un 1302 ou 1305 est réessayé deux fois, et Z.ai n'est mis de côté que 20 s |
+| Z.ai, modèles « Flash » | `za:` | `ZAI_API_KEY` **posée par Beau le 08/10 à 11 h** | GLM-4.7-Flash « Free » sur la page de prix officielle ; **une requête à la fois** : au premier essai (11 h 01), trois agents l'ont appelé ensemble et ont reçu « 1302 Rate limit reached for requests » et « 1305 service temporarily overloaded ». Depuis le 08/10, les agents d'un passage font la queue (au plus 20 s), un 1302 ou 1305 est réessayé deux fois, Z.ai n'est mis de côté que 20 s, la réflexion est coupée et l'appel borné à 50 s. **Constat de 11h15–11h17 : le service gratuit était surchargé (1305) ou trop lent ; aucun livrable par Z.ai pour l'instant** |
 
 Ordre de passage : Gemini gratuit → Mistral → Groq → Z.ai → Cloudflare →
 (payants, à sec). Réglages possibles : `LEGION_MODELES_MISTRAL`
