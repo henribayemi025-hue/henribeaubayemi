@@ -129,7 +129,7 @@ Coût des 14 dernières heures : 0 €. Les agents travaillent environ une heure
 | --- | --- |
 | Améliorations vérifiées au registre (08/10) | 8 |
 | Commits poussés sur staging depuis hier 20 h | 21 |
-| Commits de ma main sur le dépôt Accounting aujourd'hui | 15 |
+| Commits de ma main sur le dépôt Accounting aujourd'hui | 7 |
 | Exécutions CI fonctions edge | 3 (266, 267, 268), toutes vertes |
 | Messages échangés avec Claudinette par le canal direct | 9 reçus, 8 envoyés |
 | E-mails envoyés hier soir | 71 (10 non-remises) |
