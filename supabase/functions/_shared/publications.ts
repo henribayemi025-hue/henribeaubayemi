@@ -154,6 +154,40 @@ export function normaliserPublications(brut: unknown, ctx: { entrepriseId: strin
   return lignes.sort((a, b) => a.jour - b.jour);
 }
 
+// Filet de sécurité (08/10) : un modèle léger (gpt-oss-20b sur Groq) a écrit ses publications
+// dans le TEXTE du livrable — « 1. **jour**:1 **plateforme**:Instagram **format**:… » — au lieu du
+// champ « publications ». Résultat : rien dans la rubrique « Réseaux sociaux ». On les relit ici.
+const CHAMPS_TEXTE: Record<string, string> = { jour: 'jour', plateforme: 'plateforme', format: 'format', accroche: 'accroche', legende: 'legende', 'légende': 'legende', visuel: 'visuel', appel_action: 'appel_action', "appel à l'action": 'appel_action', pourquoi: 'pourquoi', video: 'video', 'vidéo': 'video' };
+const nettoyer = (v: string) => v.trim().replace(/^[«"“'\s]+|[»"”'\s]+$/g, '').replace(/\*\*$/, '').trim();
+function jsonEquilibre(v: string): unknown {
+  const debut = v.indexOf('{');
+  if (debut < 0) return null;
+  let prof = 0;
+  for (let i = debut; i < v.length; i += 1) {
+    if (v[i] === '{') prof += 1;
+    else if (v[i] === '}') { prof -= 1; if (prof === 0) { try { return JSON.parse(v.slice(debut, i + 1)); } catch { return null; } } }
+  }
+  return null;
+}
+export function extrairePublicationsDuTexte(texte: unknown): Record<string, unknown>[] {
+  const t = String(texte || '');
+  const motif = /\*\*\s*(jour|plateforme|format|accroche|l[ée]gende|visuel|appel_action|appel à l'action|pourquoi|vid[ée]o)\s*\*\*\s*:?\s*/gi;
+  const reperes: { cle: string; debut: number; fin: number }[] = [];
+  for (const m of t.matchAll(motif)) reperes.push({ cle: CHAMPS_TEXTE[m[1].toLowerCase()] || m[1].toLowerCase(), debut: m.index ?? 0, fin: (m.index ?? 0) + m[0].length });
+  const pubs: Record<string, unknown>[] = [];
+  let cur: Record<string, unknown> | null = null;
+  reperes.forEach((r, i) => {
+    let valeur = t.slice(r.fin, i + 1 < reperes.length ? reperes[i + 1].debut : t.length);
+    // La valeur s'arrête avant la publication suivante (« 2. ») ou un titre (« ## »).
+    valeur = valeur.split(/\n\s*(?:\d+\.\s|#{1,3}\s)/)[0];
+    if (r.cle === 'jour' || !cur) { cur = {}; pubs.push(cur); }
+    if (r.cle === 'video') cur.video = jsonEquilibre(valeur);
+    else if (r.cle === 'jour') cur.jour = Number(nettoyer(valeur).match(/\d+/)?.[0]);
+    else cur[r.cle] = nettoyer(valeur);
+  });
+  return pubs.filter((p) => String(p.accroche || '').length >= 3 && String(p.legende || '').length >= 3);
+}
+
 // La ligne ajoutée au livrable : ce qui attend une décision humaine.
 export function resumePublications(lignes: LignePublication[], anglais = false): string {
   if (!lignes.length) return '';

@@ -43,7 +43,7 @@ import { enqueter, verifsPour, borneVerifs, rechercheGuidee, type Boutique, type
 import { identifiantsCites, blocCites, type Cite } from '../_shared/cites.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { decideReveil, heureLocale } from '../_shared/reveil.ts';
-import { CLE_MISSION_RESEAUX, SCHEMA_PUBLICATION, normaliserPublications, resumePublications } from '../_shared/publications.ts';
+import { CLE_MISSION_RESEAUX, SCHEMA_PUBLICATION, normaliserPublications, resumePublications, extrairePublicationsDuTexte } from '../_shared/publications.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -818,7 +818,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide (champs rendus : ${Object.keys(r.obj || {}).join(', ')} ; livrable de ${String(brut ?? '').length} caractères)`); passage(a, false, 'le modèle a rendu un livrable vide'); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
-      const publications = reseaux && !bloque ? normaliserPublications((r.obj as { publications?: unknown }).publications, { entrepriseId, tacheId: tache.id, auteurId: a.id }) : [];
+      // Les publications : le champ prévu, sinon celles que le modèle a écrites dans le texte (08/10).
+      const pubsBrutes = (r.obj as { publications?: unknown }).publications;
+      const publications = reseaux && !bloque ? normaliserPublications(Array.isArray(pubsBrutes) && pubsBrutes.length ? pubsBrutes : extrairePublicationsDuTexte(corpsLivrable), { entrepriseId, tacheId: tache.id, auteurId: a.id }) : [];
       const resume = resumePublications(publications, anglais);
       const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : resume ? `${livrable}\n\n${resume}` : livrable;
       const { data: livrablePublie } = await service.from('legion_messages').insert({

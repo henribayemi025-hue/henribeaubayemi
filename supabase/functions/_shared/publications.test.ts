@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lundiDe, normaliserPublications, resumePublications, PRODUCTION_CLAUDE } from './publications';
+import { lundiDe, normaliserPublications, resumePublications, extrairePublicationsDuTexte, PRODUCTION_CLAUDE } from './publications';
 
 const FINJARO = [...PRODUCTION_CLAUDE][0];
 const AUTRE = '00000000-0000-4000-8000-000000000001';
@@ -71,5 +71,27 @@ describe('resumePublications', () => {
     const lignes = normaliserPublications([pub(), pub({ format: 'video_courte', video: { plans: [{ secondes: '0-3', image: 'Gros plan' }] } })], ctx(FINJARO));
     expect(resumePublications(lignes)).toMatch(/2 publications attendent votre accord.*Réseaux sociaux.*1 brief vidéo, transmis à Claude/);
     expect(resumePublications([], false)).toBe('');
+  });
+});
+
+describe('extrairePublicationsDuTexte', () => {
+  // Le vrai livrable de Plume (08/10), écrit dans le texte au lieu du champ « publications ».
+  const texte = `Fait : six publications. ---\n## Veille\n- Sujet tendance : …\n\n## Publications\n1. **jour**:1 **plateforme**:Instagram **format**:video_courte **accroche**:« Nouvel arrivage chez nos boutiques » **legende**:« Trois robes en wax, à voir sur la boutique. » **visuel**:brief : "Les robes sur cintre" **appel_action**:« Commandez sur Finjaro » **pourquoi**:« Question fréquente en commentaire » **video**:{"duree_s":15,"voix_off":"Chaleureuse","plans":[{"secondes":"0-5","image":"Les robes","texte_ecran":"Nouveau"}]}\n2. **jour**:2 **plateforme**:Facebook **format**:image **accroche**:« Payer à la livraison » **legende**:« Vous payez quand vous recevez. » **appel_action**:« Voir comment commander »\n\n## Fin`;
+  it('retrouve chaque publication et ses champs', () => {
+    const p = extrairePublicationsDuTexte(texte);
+    expect(p).toHaveLength(2);
+    expect(p[0]).toMatchObject({ jour: 1, plateforme: 'Instagram', format: 'video_courte', accroche: 'Nouvel arrivage chez nos boutiques', legende: 'Trois robes en wax, à voir sur la boutique.', appel_action: 'Commandez sur Finjaro' });
+    expect((p[0].video as { plans: unknown[] }).plans).toHaveLength(1);
+    expect(p[1]).toMatchObject({ jour: 2, plateforme: 'Facebook', accroche: 'Payer à la livraison' });
+    expect(String(p[1].appel_action)).not.toMatch(/##/);
+  });
+  it('donne des lignes valides une fois normalisées (la vidéo part à Claude chez Finjaro)', () => {
+    const l = normaliserPublications(extrairePublicationsDuTexte(texte), ctx(FINJARO));
+    expect(l.map((x) => x.jour)).toEqual([1, 2]);
+    expect(l[0].video_statut).toBe('a_produire');
+  });
+  it('ne fabrique rien à partir d\'un texte sans publication', () => {
+    expect(extrairePublicationsDuTexte('Fait : rien à signaler.')).toEqual([]);
+    expect(extrairePublicationsDuTexte(null)).toEqual([]);
   });
 });
