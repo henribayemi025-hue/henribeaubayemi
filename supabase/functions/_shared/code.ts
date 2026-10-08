@@ -48,6 +48,10 @@ async function gh(d: Depot, chemin: string) {
   if (!r.ok && d.jeton && [401, 403, 404].includes(r.status)) {
     r = await fetch(url, { headers: entetes({ ...d, jeton: null }), signal: AbortSignal.timeout(12_000) });
   }
+  // 08/10, 20h40 : Alpha lisait « GitHub 404 » et concluait que son accès était coupé, alors que
+  // le chemin demandé n'existait pas (CheckoutCOD.jsx est dans src/screens/buyer/). Après le
+  // nouvel essai sans jeton, un 404 sur un fichier veut dire « mauvais chemin » : on le dit.
+  if (!r.ok && r.status === 404 && chemin.startsWith('contents/')) throw new Error('chemin introuvable dans le dépôt (l\'accès au dépôt marche) : retrouve le bon chemin avec code_chercher');
   if (!r.ok) throw new Error(r.status === 403 ? 'GitHub limite les lectures pour l\'instant (réessaie dans une heure, ou branche un jeton dans les connecteurs)' : `GitHub ${r.status}`);
   return r.json();
 }
