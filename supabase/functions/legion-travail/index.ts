@@ -799,7 +799,15 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const courteLivrable = consigneCourte(({ coupe, garde }) => inviteLivrable(a, coupe(projetPour(a), 600), tache, garde(equipe, 8).map((e) => coupe(e, 160)), garde(memoire.slice(-6), 6).map((m) => coupe(m, 200)), garde(competences, 1).map((c) => ({ nom: c.nom, texte: coupe(c.texte, 600) })), garde(fil.slice(-4), 4).map((l) => coupe(l, 240)), peut(a, 'mesures') && mesures ? coupe(mesures, 700) : null, garde(verifie, 3).map((v) => coupe(v, 280)), garde(plans, 1).map((p) => coupe(p, 600))) + (recu ? coupe(recu, 1400) : '') + enLangue);
       const reseaux = tache.meta?.mission?.cle === CLE_MISSION_RESEAUX;
       const r = await ecrire(apiKey, consigneLivrable, reseaux ? SCHEMA_LIVRABLE_RESEAUX : SCHEMA_LIVRABLE, gratuite, courteLivrable);
-      if ('erreur' in r && SANS_IA.test(r.erreur)) { plusDIA = r.erreur; journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
+      // 08/10, 22h35 : aucune IA n'a répondu, l'agent n'a rien tenté. L'essai compté à la prise
+      // est rendu ; sinon trois soirées « moteurs à sec » suffisaient à abandonner une tâche
+      // (66 tâches sur 71 de Finjaro étaient arrêtées à 3 essais et plus).
+      if ('erreur' in r && SANS_IA.test(r.erreur)) {
+        const { travaille_depuis: _pris, ...reste } = tache.meta || {};
+        tache.meta = { ...reste, essais: Math.max(0, (tache.meta?.essais || 1) - 1) };
+        await service.from('legion_messages').update({ meta: tache.meta }).eq('id', tache.id);
+        plusDIA = r.erreur; journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return;
+      }
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); passage(a, false, r.erreur); return; }
       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
       // tentatives de Rigo, grille de Mentor) s'arrêtaient en pleine phrase.
