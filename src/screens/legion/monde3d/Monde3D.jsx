@@ -18,8 +18,17 @@ import { creerSon } from './son3d';
 // de ce qui est à portée, la réceptionniste, le joystick au téléphone.
 // Tout ce qui s'y passe vient des vraies données (monde.js).
 
-const STYLE = `.monde-leger .monde-etiquette{padding:2px 7px 2px 2px;font-size:11px}.monde-leger .monde-etiquette img{width:18px;height:18px}.monde-leger .monde-etiquette i{display:none}.monde-etiquette{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;background:rgba(11,17,32,.8);color:#edf1f8;font:12px system-ui;white-space:nowrap;transform:translateY(-6px)}
-.monde-etiquette img{width:24px;height:24px;border-radius:50%;object-fit:cover}.monde-etiquette b{display:block;font-weight:700;line-height:1.1}.monde-etiquette i{display:block;font-style:normal;color:#e3a857;font-size:10.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis}.monde-etiquette em{display:none;font-style:normal;font-weight:700;font-size:10.5px;margin-top:1px}.monde-etiquette.travaille em{display:block;color:#7ee787}.monde-etiquette.attend{background:rgba(58,36,6,.92);box-shadow:0 0 0 2px #ffb020,0 0 14px rgba(255,176,32,.55)}.monde-etiquette.attend em{display:block;color:#ffcf6b}.monde-leger .monde-etiquette.attend em{display:block}`;
+const STYLE = `.monde-etiquette{display:flex;align-items:center;gap:5px;padding:2px 8px 2px 2px;border-radius:999px;background:rgba(11,17,32,.72);color:#edf1f8;font:600 11.5px system-ui;white-space:nowrap}
+.monde-etiquette img{width:20px;height:20px;border-radius:50%;object-fit:cover}.monde-etiquette b{display:block;font-weight:650;line-height:1.15}.monde-etiquette i,.monde-etiquette em{display:none;font-style:normal}
+.monde-etiquette.travaille b::after{content:'';display:inline-block;width:6px;height:6px;margin-left:5px;border-radius:50%;background:#3fb950;vertical-align:middle}
+.monde-etiquette.attend{box-shadow:0 0 0 1.5px #ffb020}.monde-etiquette.attend b::after{content:'✋';margin-left:4px;font-size:10px}
+.monde-etiquette.focus{padding:3px 10px 3px 3px;gap:6px;background:rgba(11,17,32,.9)}.monde-etiquette.focus img{width:26px;height:26px}
+.monde-etiquette.focus i{display:block;color:#e3a857;font-size:10.5px;font-weight:500;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+.monde-etiquette.focus em{display:block;font-size:10.5px;font-weight:700;margin-top:1px}.monde-etiquette.focus.travaille em{color:#7ee787}.monde-etiquette.focus.attend em{color:#ffcf6b}
+.monde-leger .monde-etiquette{font-size:11px}.monde-leger .monde-etiquette img{width:18px;height:18px}
+.monde-leger .monde-etiquette:not(.focus){padding:2px;gap:0}.monde-leger .monde-etiquette:not(.focus) span{display:none}.monde-leger .monde-etiquette:not(.focus):not(:has(img)){display:none}
+.monde-leger .monde-etiquette.travaille:not(.focus) img{box-shadow:0 0 0 2px #3fb950}.monde-leger .monde-etiquette.attend:not(.focus){box-shadow:0 0 0 2px #ffb020}
+@keyframes leoFondu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes leoDisparait{0%,80%{opacity:1}100%{opacity:0}}`;
 const LIEUX = ['hall', 'reunion', 'atelier'];
 const nomsDepts = (departements, agents) => {
   const n = (departements || []).map((d) => d.nom).filter(Boolean);
@@ -229,6 +238,27 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [suivant, setSuivant] = useState(null); // l'agent qui t'attend, vers lequel « Aller au suivant » t'a mené
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
   const [menu, setMenu] = useState(false);
+  const [friseOuverte, setFriseOuverte] = useState(false); // Beau, 08/10 : « trop de texte partout » — la frise se replie
+  const [aideVisible, setAideVisible] = useState(false);
+  const [aideConduite, setAideConduite] = useState(false);
+  // Les aides de commandes ne restent pas à l'écran : quelques secondes aux trois premières
+  // visites, puis plus rien (la touche « ? » du menu les rappelle).
+  useEffect(() => {
+    if (etat !== 'pret') return undefined;
+    const vues = Number(lire('leo:aide-vues', '0')) || 0;
+    if (vues >= 3) return undefined;
+    ecrire('leo:aide-vues', String(vues + 1));
+    setAideVisible(true);
+    const t0 = setTimeout(() => setAideVisible(false), 9000);
+    return () => clearTimeout(t0);
+  }, [etat]);
+  const enVehicule = !!volant;
+  useEffect(() => {
+    if (!enVehicule) { setAideConduite(false); return undefined; }
+    setAideConduite(true);
+    const t0 = setTimeout(() => setAideConduite(false), 8000);
+    return () => clearTimeout(t0);
+  }, [enVehicule]);
   const [ciel3d, setCiel3d] = useState(false); // la planète est affichée
   const [jeu, setJeu] = useState(false); // plein écran, téléphone à l'horizontale
   const [portrait, setPortrait] = useState(() => typeof window !== 'undefined' && window.innerHeight > window.innerWidth);
@@ -236,7 +266,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   async function modeJeu(oui) {
     setJeu(oui);
     try {
-      if (oui) { await document.documentElement.requestFullscreen?.(); await screen.orientation?.lock?.('landscape'); }
+      if (oui) { if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.(); await screen.orientation?.lock?.('landscape'); }
       else { screen.orientation?.unlock?.(); if (document.fullscreenElement) await document.exitFullscreen(); }
     } catch { /* iPhone : pas de verrouillage, on demande de tourner le téléphone */ }
     setTimeout(() => monde.current?.redimensionner(), 200);
@@ -252,12 +282,11 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     sonRef.current?.demarrer(); // le téléphone n'accepte le son qu'après un toucher
     if (premierToucher.current) return;
     premierToucher.current = true;
-    if (mobile && plein && !document.fullscreenElement) document.documentElement.requestFullscreen?.().then(() => setTimeout(() => monde.current?.redimensionner(), 200)).catch(() => {});
+    if (mobile && plein) modeJeu(true); // Beau, 08/10 : « dès qu'on active le mode jeu, ça tourne tout seul »
   }
   function quitterPlein() {
     setPlein(false); setMenu(false);
-    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-    setTimeout(() => monde.current?.redimensionner(), 200);
+    modeJeu(false);
   }
   function entrerPlein() {
     setPlein(true); premierToucher.current = false;
@@ -566,55 +595,65 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </div>
       )}
 
-      {/* Au téléphone, en haut à gauche : quitter et le son (maquette d'Ada, 26/09 : quatre commandes toujours visibles). */}
+      {/* Au téléphone, UNE barre fine en haut (Beau, 08/10 : « encore plus léger, comme WhatsApp ;
+          les trucs en haut, tout grouper ») : quitter, le lieu, qui t'attend, le menu. Le son, la
+          caméra, la frise et les actions du lieu sont dans le menu ☰. */}
       {mobile && (
-        <div className="absolute left-2 top-2 z-[6] flex items-center gap-1.5" style={{ marginTop: 'env(safe-area-inset-top)' }}>
+        <div className="absolute inset-x-2 top-2 z-[6] flex items-center gap-1.5" style={{ marginTop: 'env(safe-area-inset-top)' }}>
           {plein
-            ? <button type="button" onClick={quitterPlein} aria-label={t('legion.monde.quitter')} className="grid h-10 w-10 place-items-center rounded-full bg-[#0b1120]/75 text-[15px] text-legion-ink backdrop-blur">✕</button>
-            : <button type="button" onClick={entrerPlein} aria-label={t('legion.monde.pleinEcran')} className="grid h-10 w-10 place-items-center rounded-full bg-[#0b1120]/75 text-[15px] text-legion-ink backdrop-blur">⛶</button>}
-          <button type="button" onClick={basculerSon} aria-label={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} className="grid h-10 w-10 place-items-center rounded-full bg-[#0b1120]/75 text-[15px] text-legion-ink backdrop-blur">{sonCoupe ? '🔇' : '🔊'}</button>
-          <span className="pointer-events-none max-w-[42vw] truncate rounded-pill bg-[#0b1120]/75 px-2.5 py-1.5 text-[11.5px] font-semibold text-legion-gold backdrop-blur">{nomLieu}</span>
+            ? <button type="button" onClick={quitterPlein} aria-label={t('legion.monde.quitter')} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#0b1120]/70 text-[14px] text-legion-ink backdrop-blur">✕</button>
+            : <button type="button" onClick={entrerPlein} aria-label={t('legion.monde.pleinEcran')} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#0b1120]/70 text-[14px] text-legion-ink backdrop-blur">⛶</button>}
+          <span className="pointer-events-none min-w-0 truncate text-[12px] font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.8)]">{nomLieu}</span>
+          <span className="flex-1" />
+          {etat === 'pret' && !ciel3d && !volant && attendent.length > 0 && (
+            <button type="button" onClick={() => monde.current?.allerAuSuivant()} aria-label={`${t('legion.monde.attente.bouton', { count: attendent.length })} · ${t('legion.monde.attente.aller')}`}
+              className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-[#ffb020] px-3 text-[12.5px] font-bold text-[#2a1a02] shadow">✋ {attendent.length}</button>
+          )}
+          <button type="button" onClick={() => setMenu((v) => !v)} aria-label={t('legion.monde.menu')} aria-expanded={menu} className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[17px] backdrop-blur ${menu ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/70 text-legion-ink'}`}>☰</button>
         </div>
       )}
       {/* Où je suis */}
-      {!mobile && <div className="pointer-events-none absolute left-3 top-3 z-[5] rounded-card bg-[#0b1120]/80 px-3 py-2 text-[12.5px] text-legion-ink backdrop-blur">
-        <b className="text-legion-gold">{nomLieu}</b><span className="hidden sm:inline"> · {t(`legion.monde.phrase.${estEtage ? 'etage' : estSalle ? 'reunion' : lieu === 'atelier' && salleMarche ? 'salleMarche' : enVille ? 'ville' : lieu}`)}</span>
-      </div>}
+      {!mobile && (
+        <div className="absolute left-3 top-3 z-[5] flex items-center gap-1.5">
+          <b className="pointer-events-none rounded-pill bg-[#0b1120]/80 px-3 py-1.5 text-[12.5px] text-legion-gold backdrop-blur">{nomLieu}</b>
+          {vueVille && etat === 'pret' && !ciel3d && !volant && frise.jours > 0 && !friseOuverte && (
+            <button type="button" onClick={() => setFriseOuverte(true)} title={t('legion.monde.frise.revoir')} className="rounded-pill bg-[#0b1120]/80 px-3 py-1.5 text-[12px] font-semibold text-legion-ink backdrop-blur hover:text-legion-gold">⏱ {t('legion.monde.frise.titre')}</button>
+          )}
+        </div>
+      )}
 
       {/* Les agents qui t'attendent (idée d'Agent Office) : un bouton qui mène au suivant (touche N). */}
-      {etat === 'pret' && !ciel3d && !volant && attendent.length > 0 && (
+      {!mobile && etat === 'pret' && !ciel3d && !volant && attendent.length > 0 && (
         <button type="button" onClick={() => monde.current?.allerAuSuivant()} title={t('legion.monde.attente.aller')}
-          className={`absolute z-[5] flex items-center gap-2 rounded-pill bg-[#ffb020] px-3 py-1.5 text-[12.5px] font-bold text-[#2a1a02] shadow-lg ring-2 ring-[#ffb020]/40 ${mobile ? 'left-2 top-14' : `left-3 ${vueVille && frise.jours > 0 ? 'top-[7.4rem]' : 'top-14'}`}`}
+          className={`absolute z-[5] flex items-center gap-2 rounded-pill bg-[#ffb020] px-3 py-1.5 text-[12.5px] font-bold text-[#2a1a02] shadow-lg ring-2 ring-[#ffb020]/40 ${mobile ? 'left-2 top-14' : `left-3 ${vueVille && frise.jours > 0 && friseOuverte ? 'top-[7.4rem]' : 'top-14'}`}`}
           style={mobile ? { marginTop: 'env(safe-area-inset-top)' } : undefined}>
           <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2a1a02]/50" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2a1a02]" /></span>
-          {t('legion.monde.attente.bouton', { count: attendent.length })}
-          <span className="font-semibold opacity-80">· {t('legion.monde.attente.aller')}</span>
+          <span aria-hidden="true">✋ {attendent.length}</span>
+          <span className="sr-only">{t('legion.monde.attente.bouton', { count: attendent.length })}</span>
+          <span className="font-semibold opacity-80">· {t('legion.monde.attente.suivant')}</span>
           {!mobile && <kbd className="rounded bg-black/15 px-1.5 text-[11px]">N</kbd>}
         </button>
       )}
 
       {/* En haut à droite : une seule ligne (Beau, 25/09 : « l'arrangement des boutons est horrible »).
           L'action du lieu, le plein écran au téléphone, et un menu pour le reste. */}
-      <div className={`absolute z-[6] flex items-center gap-1.5 ${mobile ? 'right-2 top-2' : 'right-3 top-3'}`} style={mobile ? { marginTop: 'env(safe-area-inset-top)' } : undefined}>
+      {!mobile && <div className="absolute right-3 top-3 z-[6] flex items-center gap-1.5">
         {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => setConvoc({ sujet: '', ids: [] })} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg shadow">{t('legion.monde.convoquer')}</button>}
         {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => setRenfort(true)} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg shadow">{t('legion.monde.fairevenir')}</button>}
-        {!mobile && (
-          <div className="flex rounded-pill bg-[#0b1120]/80 p-0.5 backdrop-blur">
-            {['tps', 'fps', 'plan'].map((k) => (
-              <button key={k} type="button" onClick={() => monde.current?.reglerCamera(k)}
-                className={`rounded-pill px-2.5 py-1 text-[12px] font-semibold ${camera === k ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{t(`legion.monde.camera.${k}`)}</button>
-            ))}
-          </div>
-        )}
-        {!mobile && <button type="button" onClick={basculerSon} aria-label={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} title={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} className="grid h-9 w-9 place-items-center rounded-full bg-[#0b1120]/80 text-[15px] text-legion-ink backdrop-blur">{sonCoupe ? '🔇' : '🔊'}</button>}
-        <button type="button" onClick={() => setMenu((v) => !v)} aria-label={t('legion.monde.menu')} aria-expanded={menu} className={`grid ${mobile ? 'h-10 w-10' : 'h-9 w-9'} place-items-center rounded-full text-[18px] backdrop-blur ${menu ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>☰</button>
-      </div>
+        {<button type="button" onClick={basculerSon} aria-label={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} title={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} className="grid h-9 w-9 place-items-center rounded-full bg-[#0b1120]/80 text-[15px] text-legion-ink backdrop-blur">{sonCoupe ? '🔇' : '🔊'}</button>}
+        <button type="button" onClick={() => setMenu((v) => !v)} aria-label={t('legion.monde.menu')} aria-expanded={menu} className={`grid h-9 w-9 place-items-center rounded-full text-[18px] backdrop-blur ${menu ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>☰</button>
+      </div>}
       {menu && mobile && <div className="absolute inset-0 z-[7]" onClick={() => setMenu(false)} />}
       {menu && (
         <div className={`absolute z-[8] border border-legion-line bg-[#0b1120]/95 p-2 shadow-xl backdrop-blur ${mobile ? 'bottom-0 right-0 top-0 w-[min(80vw,300px)] overflow-y-auto rounded-l-2xl pt-14' : 'right-3 top-14 w-56 rounded-2xl'}`}>
           {/* Au téléphone, les lieux passent dans le menu (la barre du bas prenait la place du jeu). */}
           {mobile && (
             <>
+              <div className="mb-2 grid grid-cols-2 gap-1">
+                <button type="button" onClick={basculerSon} className="rounded-card px-2 py-2 text-left text-[12.5px] font-semibold text-legion-ink hover:bg-white/5">{sonCoupe ? '🔇' : '🔊'} {sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')}</button>
+                {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => { setConvoc({ sujet: '', ids: [] }); setMenu(false); }} className="rounded-card bg-legion-gold/15 px-2 py-2 text-left text-[12.5px] font-semibold text-legion-gold">{t('legion.monde.convoquer')}</button>}
+                {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => { setRenfort(true); setMenu(false); }} className="rounded-card bg-legion-gold/15 px-2 py-2 text-left text-[12.5px] font-semibold text-legion-gold">{t('legion.monde.fairevenir')}</button>}
+              </div>
               <p className="px-2 pb-1 text-[11px] uppercase tracking-wide text-legion-muted">{t('legion.monde.allerA')}</p>
               <div className="mb-2 grid grid-cols-2 gap-1">
                 {LIEUX.map((l) => (
@@ -623,6 +662,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
                 <button type="button" onClick={() => { aller('maisons'); setMenu(false); }} className={`rounded-card px-2 py-2 text-left text-[12.5px] font-semibold ${lieu === 'maisons' ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink hover:bg-white/5'}`}>🏡 {t('legion.monde.lieu.maisons')}</button>
                 <button type="button" onClick={() => { (habitat ? monde.current?.rentrer() : setChoixHabitat(true)); setMenu(false); }} className="rounded-card px-2 py-2 text-left text-[12.5px] font-semibold text-legion-ink hover:bg-white/5">🔑 {t('legion.monde.ville.chezMoi')}</button>
                 <button type="button" onClick={() => { monde.current?.vueCiel(true); setMenu(false); }} className="rounded-card px-2 py-2 text-left text-[12.5px] font-semibold text-legion-ink hover:bg-white/5">🌍 {t('legion.monde.planete')}</button>
+                {vueVille && frise.jours > 0 && <button type="button" onClick={() => { setFriseOuverte(true); setMenu(false); }} className="rounded-card px-2 py-2 text-left text-[12.5px] font-semibold text-legion-ink hover:bg-white/5">⏱ {t('legion.monde.frise.titre')}</button>}
                 {depts.length > 0 && <button type="button" onClick={() => { setEtage(true); setMenu(false); }} className="rounded-card px-2 py-2 text-left text-[12.5px] font-semibold text-legion-ink hover:bg-white/5">🛗 {t('legion.monde.etages', { n: depts.length })}</button>}
               </div>
             </>
@@ -639,10 +679,11 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <button type="button" onClick={() => { setChoixAvatar(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🧍 {t('legion.monde.monAvatar')}</button>
           <button type="button" onClick={() => { setChoixHabitat(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🏠 {t('legion.monde.ville.ouHabiter')}</button>
           <button type="button" onClick={() => { setIntro(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🎬 {t('legion.monde.revoirIntro')}</button>
+          {!mobile && <button type="button" onClick={() => { setAideVisible(true); setMenu(false); setTimeout(() => setAideVisible(false), 9000); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">⌨️ {t('legion.monde.commandes')}</button>}
         </div>
       )}
 
-      {vueVille && etat === 'pret' && !ciel3d && !volant && frise.jours > 0 && (
+      {vueVille && etat === 'pret' && !ciel3d && !volant && frise.jours > 0 && friseOuverte && (
         <div className="absolute left-3 right-3 top-14 z-[4] mx-auto max-w-xl rounded-2xl border border-legion-line bg-[#0b1120]/85 px-3 py-2 backdrop-blur">
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => { if (lecture) setLecture(false); else { if (jour == null) setJour(0); setLecture(true); } }}
@@ -658,6 +699,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
                 aria-label={t('legion.monde.frise.titre')} className="mt-1 w-full accent-[#e3a857]" />
             </div>
             {jour != null && <button type="button" onClick={() => { setLecture(false); setJour(null); }} className="shrink-0 rounded-pill border border-legion-line px-2 py-1 text-[11.5px] text-legion-ink">{t('legion.monde.frise.retour')}</button>}
+            <button type="button" onClick={() => { setLecture(false); setJour(null); setFriseOuverte(false); }} aria-label={t('common.close')} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[13px] text-legion-muted hover:bg-white/10">✕</button>
           </div>
         </div>
       )}
@@ -855,7 +897,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           <button type="button" onClick={() => monde.current?.descendreVoiture()} className={`absolute z-[6] rounded-pill bg-legion-gold px-4 py-2 text-[13px] font-semibold text-legion-bg shadow ${mobile ? 'right-3 top-14' : 'bottom-4 left-1/2 -translate-x-1/2'}`}>
             {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">F</kbd>}{t('legion.monde.conduite.descendre')}
           </button>
-          {!mobile && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t(volant.genre === 'helico' ? 'legion.monde.conduite.aideHelico' : volant.genre === 'bateau' ? 'legion.monde.conduite.aideBateau' : 'legion.monde.conduite.aide')}</p>}
+          {!mobile && aideConduite && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t(volant.genre === 'helico' ? 'legion.monde.conduite.aideHelico' : volant.genre === 'bateau' ? 'legion.monde.conduite.aideBateau' : 'legion.monde.conduite.aide')}</p>}
           {mobile && volant.genre === 'voiture' && (
             <>
               <div className="absolute bottom-5 left-3 z-[6]"><Volant taille={124} surTourner={(v) => { if (monde.current) monde.current.joy = { x: v, y: 0 }; }} /></div>
@@ -902,7 +944,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
       {/* Commandes */}
       {!mobile && !dialogue && !volant && (
-        <p className="pointer-events-none absolute bottom-16 left-3 z-[5] hidden rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted lg:block">{t('legion.monde.aide')}</p>
+        aideVisible && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] hidden rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted lg:block" style={{ animation: 'leoFondu .4s ease-out' }}>{t('legion.monde.aide')}</p>
       )}
       {mobile && !dialogue && !(volant && volant.genre === 'voiture') && (
         <>
@@ -914,7 +956,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       )}
 
       {jeu && portrait && (
-        <div className="pointer-events-none absolute inset-x-0 top-1/3 z-[9] mx-auto w-fit rounded-card bg-black/75 px-4 py-3 text-center text-[14px] text-white">↻ {t('legion.monde.tourne')}</div>
+        <div className="pointer-events-none absolute inset-x-0 top-1/3 z-[9] mx-auto w-fit rounded-card bg-black/75 px-4 py-3 text-center text-[14px] text-white" style={{ animation: 'leoDisparait 5s forwards' }}>↻ {t('legion.monde.tourne')}</div>
       )}
       {convoc && (
         <div className="absolute inset-0 z-[8] flex items-center justify-center bg-black/60" onClick={() => setConvoc(null)}>

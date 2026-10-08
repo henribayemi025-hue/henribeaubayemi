@@ -1648,7 +1648,8 @@
         "voirTravail": "Voir son travail",
         "suivant": "Suivant",
         "rang": "{{rang}} sur {{total}}"
-      }
+      },
+      "commandes": "Rappeler les commandes"
     },
     "agentModifie": "Enregistré",
     "agentCree": "{{nom}} rejoint l’équipe",

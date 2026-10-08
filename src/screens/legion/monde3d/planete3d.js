@@ -56,7 +56,7 @@ export function construirePlanete({ mobile = false, lat = null, lon = null, titr
     repere.position.copy(cible);
     repere.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), cible.clone().normalize());
     const d = document.createElement('div');
-    d.className = 'monde-etiquette';
+    d.className = 'monde-etiquette focus';
     d.innerHTML = '<span><b></b><i></i></span>';
     d.querySelector('b').textContent = titre;
     d.querySelector('i').textContent = sous;

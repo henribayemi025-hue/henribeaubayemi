@@ -207,7 +207,7 @@ export class Monde {
     await p.jouer('repos', { fondu: 0 });
     return p;
   }
-  etiquette(texte, sous, photo) {
+  etiquette(texte, sous, photo, cle = null) {
     const d = document.createElement('div');
     d.className = 'monde-etiquette';
     d.innerHTML = `${photo ? `<img src="${photo}" alt="">` : ''}<span><b></b><i></i><em></em></span>`;
@@ -215,18 +215,45 @@ export class Monde {
     d.querySelector('i').textContent = sous || '';
     const o = new CSS2DObject(d);
     o.position.set(0, 2.05, 0);
+    o.userData.cle = cle;
     (this.toutesEtiquettes ||= new Set()).add(o);
     return o;
   }
   // Une étiquette ne s'affiche que de près (06/10 : « Réceptionniste » flottait
-  // au-dessus de l'aéroport, à 400 m, à travers les immeubles).
+  // au-dessus de l'aéroport, à 400 m, à travers les immeubles). Et plus jamais
+  // l'une sur l'autre (Beau, 08/10 : « c'est bondé, du texte partout ») :
+  // d'abord celle de l'agent devant toi, puis ceux qui t'attendent, puis les
+  // plus proches ; une étiquette qui en recouvre une déjà placée est cachée.
+  // Seule celle de l'agent devant toi dit ce qu'il fait (classe « focus ») ;
+  // les autres ne montrent que la photo et le prénom.
   cacherEtiquettesLointaines() {
     if (!this.toutesEtiquettes) return;
     const cam = this.camera.position, p = new THREE.Vector3();
+    const l = this.rendu.domElement.clientWidth || 1, h = this.rendu.domElement.clientHeight || 1;
+    const cleFocus = this.proche ? (this.proche.type === 'agent' ? `agent:${this.proche.id}` : this.proche.type) : null;
+    const vues = [];
     for (const o of this.toutesEtiquettes) {
       if (!o.parent) { this.toutesEtiquettes.delete(o); continue; }
       o.getWorldPosition(p);
-      o.visible = p.distanceTo(cam) < ETIQUETTE_MAX;
+      const d = p.distanceTo(cam);
+      p.project(this.camera);
+      if (d >= ETIQUETTE_MAX || p.z > 1 || Math.abs(p.x) > 1.2 || Math.abs(p.y) > 1.2) { o.visible = false; continue; }
+      const focus = !!cleFocus && o.userData.cle === cleFocus;
+      const el = o.element;
+      if (el.classList.contains('focus') !== focus) { el.classList.toggle('focus', focus); o.userData.l = 0; }
+      vues.push({ o, d, focus, attend: el.classList.contains('attend'), x: ((p.x + 1) / 2) * l, y: ((1 - p.y) / 2) * h });
+    }
+    vues.sort((a, b) => (b.focus - a.focus) || (b.attend - a.attend) || (a.d - b.d));
+    const prises = [];
+    for (const v of vues) {
+      const el = v.o.element;
+      // La taille mesurée une fois affichée (mesurer à chaque image forcerait la mise en page).
+      if (!v.o.userData.l && el.offsetWidth) v.o.userData.l = [el.offsetWidth, el.offsetHeight];
+      const [lw, lh] = v.o.userData.l || [34 + (el.textContent || '').length * 2.2, v.focus ? 44 : 26];
+      const r = { x0: v.x - lw / 2 - 3, x1: v.x + lw / 2 + 3, y0: v.y - lh / 2 - 2, y1: v.y + lh / 2 + 2 };
+      const libre = !prises.some((q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
+      v.o.visible = libre;
+      if (libre) prises.push(r);
     }
   }
 
@@ -774,7 +801,7 @@ export class Monde {
     if (!this.joueur || !this.receptionniste) {
       const [j, r] = await Promise.all([this.joueur || this.personnage(avatar || 'Male_Adult_07'), this.receptionniste || this.personnage(RECEPTIONNISTE)]);
       if (!this.joueur) { this.joueur = j; this.scene.add(j.objet); }
-      if (!this.receptionniste) { this.receptionniste = r; r.objet.add(this.etiquette(this.langue === 'en' ? 'Receptionist' : 'Réceptionniste', nomEntreprise || '')); }
+      if (!this.receptionniste) { this.receptionniste = r; r.objet.add(this.etiquette(this.langue === 'en' ? 'Receptionist' : 'Réceptionniste', nomEntreprise || '', null, 'receptionniste')); }
       // Les animations de marche : chargées d'avance pour ne pas figer au premier pas.
       ['marche', 'course', 'salut', 'parle'].forEach((a) => this.clip(j.genre, a).catch(() => {}));
     }
@@ -1107,12 +1134,12 @@ export class Monde {
       let x = this.agents.get(id);
       if (!x) {
         const perso = await this.personnage(corpsDe(a).id);
-        const etiquette = this.etiquette(a.nom, v.sous, a.apparence?.mini || a.avatar_url);
+        const etiquette = this.etiquette(a.nom, v.sous, a.apparence?.mini || a.avatar_url, `agent:${a.id}`);
         perso.objet.add(etiquette);
         x = { perso, etiquette, agent: a };
         this.agents.set(id, x);
       }
-      x.etiquette.element.querySelector('i').textContent = v.sous || '';
+      if (x.etiquette.element.querySelector('i').textContent !== (v.sous || '')) { x.etiquette.element.querySelector('i').textContent = v.sous || ''; x.etiquette.userData.l = 0; }
       if (v.chemin) {
         // Garde sa position s'il marchait déjà sur ce chemin (pas de saut à chaque mise à jour).
         if (!x.chemin || x.chemin.cle !== String(v.chemin)) {
@@ -1146,6 +1173,7 @@ export class Monde {
       const travaille = v.anim === 'travail' && !x.attend;
       const geste = travaille ? gesteDe(v.texte || v.sous) : null;
       const el = x.etiquette.element;
+      if (el.classList.contains('attend') !== !!x.attend || el.classList.contains('travaille') !== travaille) x.etiquette.userData.l = 0;
       el.classList.toggle('attend', !!x.attend);
       el.classList.toggle('travaille', travaille);
       el.querySelector('em').textContent = x.attend ? this.motifAttente(x.attend.raison) : geste === 'lit' ? (en ? '📖 reading' : '📖 lit') : travaille ? (en ? '⌨️ writing' : '⌨️ écrit') : '';

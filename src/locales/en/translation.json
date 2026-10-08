@@ -1648,7 +1648,8 @@
         "voirTravail": "See the work",
         "suivant": "Next",
         "rang": "{{rang}} of {{total}}"
-      }
+      },
+      "commandes": "Show the controls"
     },
     "agentModifie": "Saved",
     "agentCree": "{{nom}} joins the team",
