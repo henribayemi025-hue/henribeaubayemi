@@ -54,3 +54,4 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [50 — « Bundle » et « Arcade » de Create with Mark (jeux et villes faits par IA ; inspiration, code non repris)](50-createwithmark-bundle.md)
 - [51 — « GOING DOWN », la pub beauté de l'ascenseur (déroulé de prompts vidéo)](51-going-down-ascenseur-beaute.md)
 - [52 — « Scroll the World » : les coulisses d'une pub IA de 20 s (méthode et leçons de prompts vidéo)](52-scroll-the-world-pub-souris.md)
+- [53 — Grok Bot Galaxy : trois personnes montent une entreprise en direct avec des agents (SpaceXAI)](53-grok-bot-galaxy.md)
