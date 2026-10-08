@@ -88,6 +88,9 @@ Cible : des entreprises **clientes**, petites ou grandes, qui ont des tâches
 répétitives (transport, industrie, cabinets, magasins, vente en ligne,
 immobilier). Pas les cabinets ni les formateurs en IA : ils en vendent.
 Avant chaque envoi : vérifier que le domaine reçoit du courrier (MX).
+Un MX « 0 . » (MX nul) veut dire le contraire : le domaine déclare ne
+recevoir AUCUN e-mail. Il compte comme « pas de MX » (leçon du 08/10 : une
+adresse est revenue pour cette raison).
 
 > **Objet :** Léo, une équipe d'agents IA pour {entreprise}
 >
