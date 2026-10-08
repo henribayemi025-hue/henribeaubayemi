@@ -21,18 +21,19 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { corpsDe, RECEPTIONNISTE, CORPS, etatDe, momentDu, journeeDe, gesteDe } from './monde';
 import { construireVille, matieresFacades, cotesFacade, voiture3d } from './ville3d';
-import { nouvellePoursuite, avancerPoursuite, infraction, etoiles } from './poursuite';
+import { nouvellePoursuite, avancerPoursuite, infraction, etoiles, pointRoute, cheminRoutes, departPolice, pasAgent } from './poursuite';
+import { TIR, choisirCible, pointImpact, chute } from './tir';
 import { construireSport, construireFoot } from './sport3d';
 import { visee as viseeFoot, puissance as puissanceFoot, tirerAuBut, compterTirs, tirsVide } from './foot';
 import { construireReve, construireDauphins } from './reve3d';
 import { construireCarte } from './carte3d';
 import { borner, BORNES } from './carte';
-import { nouveauHeros, avancerHeros, viserLarge } from './heros';
+import { nouveauHeros, avancerHeros, viserLarge, viser, repousser } from './heros';
 
 // Au-delà, une étiquette (nom d'un agent, de la réceptionniste) n'est plus lisible : on la cache.
 const ETIQUETTE_MAX = 45;
 import { jauge as jaugeBasket, zone as zoneBasket, tirer as tirerBasket, compter as compterBasket, scoreVide, ballon as ballonBasket, DUREE_VOL } from './basket';
-import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE } from './conduite';
+import { piloter, heurterBlocs, heurterVehicules, portiere, kmh, voler, heurterTours, BATEAU, NAGE, VOITURE, MOTO, inclinaison } from './conduite';
 import { nouvelleCourse, avancerCourse, construirePortes } from './course';
 import { construireQuartiers } from './quartiers3d';
 import { construireMaisons } from './maisons3d';
@@ -1234,7 +1235,7 @@ export class Monde {
       const code = e.code;
       if (e.type === 'keydown') {
         this.touches.add(code);
-        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); else if (this.proche?.type === 'helico') this.monterHelico(); else if (this.proche?.type === 'bateau') this.monterBateau(); }
+        if (code === 'KeyF' || (code === 'KeyE' && this.conduite)) { if (this.conduite) this.descendreVoiture(); else if (this.proche?.type === 'voiture') this.monterVoiture(this.proche.id); else if (this.proche?.type === 'volVoiture' || this.proche?.type === 'volMoto') this.volerVehicule(this.proche.id); else if (this.proche?.type === 'helico') this.monterHelico(); else if (this.proche?.type === 'bateau') this.monterBateau(); }
         else if (code === 'KeyE') this.interagir();
         if (code === 'KeyV') this.cycleCamera();
         if (code === 'KeyN') this.allerAuSuivant();
@@ -1250,16 +1251,18 @@ export class Monde {
     // Écran tourné de 90° par la page (iPhone, voir Monde3D.jsx) : un glissé vers le haut de l'écran
     // physique est un glissé vers la droite dans le jeu.
     const pt = (e) => (this.ecranTourne ? { clientX: e.clientY, clientY: window.innerWidth - e.clientX } : e);
-    el.addEventListener('pointerdown', (ev) => { const e = pt(ev); tire = { x: e.clientX, y: e.clientY, id: ev.pointerId }; el.setPointerCapture(ev.pointerId); });
+    el.addEventListener('pointerdown', (ev) => { const e = pt(ev); tire = { x: e.clientX, y: e.clientY, id: ev.pointerId, t0: performance.now(), bouge: 0 }; el.setPointerCapture(ev.pointerId); });
     el.addEventListener('pointermove', (ev) => {
       if (!tire || tire.id !== ev.pointerId) return;
       const e = pt(ev);
       if (this.ciel3d?.globe) { this.planete.tourner(-(e.clientX - tire.x) * 0.006); tire.x = e.clientX; tire.y = e.clientY; return; }
+      tire.bouge += Math.abs(e.clientX - tire.x) + Math.abs(e.clientY - tire.y);
       this.cam.yaw -= (e.clientX - tire.x) * 0.006;
       this.cam.pitch = THREE.MathUtils.clamp(this.cam.pitch + (e.clientY - tire.y) * 0.004, -0.35, 1.1);
       tire.x = e.clientX; tire.y = e.clientY;
     });
-    el.addEventListener('pointerup', () => { tire = null; });
+    // Un clic sec, arme sortie (après un premier X), tire aussi — comme dans les jeux (A8).
+    el.addEventListener('pointerup', (ev) => { if (tire && ev.pointerType === 'mouse' && this.arme && tire.bouge < 6 && performance.now() - tire.t0 < 260) this.tirer(); tire = null; });
     el.addEventListener('wheel', (e) => { this.cam.dist = THREE.MathUtils.clamp(this.cam.dist + e.deltaY * 0.003, 1.8, 7); }, { passive: true });
   }
   // ——— Le mode héros (heros.js ; touche H) ———
@@ -1353,6 +1356,7 @@ export class Monde {
     this.conduite = { lb, kmh: -1, t: 0, secousse: 0, jauge: 100, nitro: false, surTrottoir: false };
     lb.objet.userData.detailler?.();
     this.asseoir(this.joueur, lb, 'conducteur');
+    if (lb.moto) this.joueur.objet.position.set(-0.3, 0.36, 0); // en selle, au milieu
     this.cleProche = null; this.proche = null; this.emettre({ type: 'proximite', cible: null });
     this.emettre({ type: 'conduite', active: true, kmh: 0 });
   }
@@ -1476,6 +1480,7 @@ export class Monde {
     }
     const e = c.lb.etat;
     e.vitesse = 0;
+    if (c.lb.moto) c.lb.objet.rotation.x = 0;
     this.arreterCourse();
     if (this.passager) this.descendrePassager();
     const pied = portiere(e);
@@ -1688,7 +1693,8 @@ export class Monde {
   }
   // LA POLICE (lot 3.5, poursuite.js) : une infraction fait monter les étoiles.
   signaler(quoi) {
-    if (this.lieu?.nom !== 'hall' || !this.conduite || this.conduite.genre) return;
+    // En ville, au volant d'une voiture ou à pied (A8) ; pas en hélicoptère ni en bateau.
+    if (this.lieu?.nom !== 'hall' || this.conduite?.genre) return;
     const avant = etoiles(this.poursuite ||= nouvellePoursuite());
     this.poursuite = infraction(this.poursuite, quoi);
     const apres = etoiles(this.poursuite);
@@ -1708,7 +1714,36 @@ export class Monde {
     const pied = this.joueur.objet.position;
     const vPied = this.dernierPied ? Math.hypot(pied.x - this.dernierPied.x, pied.z - this.dernierPied.z) / Math.max(dt, 1e-3) : 0;
     this.dernierPied = { x: pied.x, z: pied.z };
-    const { p, evenements } = avancerPoursuite(this.poursuite, { x: pos.x, z: pos.z, vitesse: auVolant ? pos.vitesse : vPied, auVolant }, dt);
+    // À pied (A8) : la police vient par les rues jusqu'au point de rue le plus proche de nous, et
+    // refait son chemin quand on bouge. Au fond d'un îlot, sur un toit, en vol ou dans l'immeuble,
+    // elle ne nous voit pas : on ne peut pas être arrêté, et elle finit par abandonner.
+    let cache = false;
+    if (!auVolant) {
+      const R = this.villeVivante.routes;
+      const rp = pointRoute(pied, R);
+      // Caché : un immeuble entre la rue et nous, trop loin de la rue, sur un toit, en vol, ou dedans.
+      cache = !this.dehors || pied.y > 2.5 || rp.d > 40;
+      if (!cache && rp.d > 1) {
+        const o = { x: rp.x, y: 1.5, z: rp.z }, hx = pied.x - o.x, hy = pied.y + 1.2 - o.y, hz = pied.z - o.z, hd = Math.hypot(hx, hy, hz);
+        const mur = viser(o, { x: hx / hd, y: hy / hd, z: hz / hd }, this.boitesTir(), hd);
+        if (mur && mur.t < hd - 0.6) cache = true;
+      }
+      this.planPolice = (this.planPolice || 0) - dt;
+      const P = this.poursuite;
+      if (!cache && this.planPolice <= 0 && etoiles(P) >= 1) {
+        this.planPolice = 0.6;
+        if (P.police) this.poursuite = { ...P, trace: cheminRoutes(P.police, pied, R), police: { ...P.police, i: 0 } };
+        else this.poursuite = { ...P, trace: cheminRoutes(departPolice(pied, R), pied, R) };
+      }
+    }
+    // Au volant, une infraction soudaine (un véhicule pris, un passant renversé) avant d'avoir roulé : la
+    // police arrive par les rues, à distance — pas collée au pare-chocs, ce qui arrêtait tout de suite.
+    if (auVolant && !this.poursuite.police && etoiles(this.poursuite) >= 1 && this.poursuite.trace.length < 26) {
+      const R = this.villeVivante.routes;
+      this.poursuite = { ...this.poursuite, trace: [...cheminRoutes(departPolice(pos, R), pos, R), ...this.poursuite.trace] };
+    }
+    const vu = !!(this.agentPolice && !cache && Math.hypot(this.agentPolice.x - pied.x, this.agentPolice.z - pied.z) < 30);
+    const { p, evenements } = avancerPoursuite(this.poursuite, { x: pos.x, z: pos.z, vitesse: auVolant ? pos.vitesse : vPied, auVolant, cache, vu }, dt);
     this.poursuite = p;
     if (p.police) {
       if (!this.voiturePolice) {
@@ -1724,12 +1759,68 @@ export class Monde {
       this.tempsSirene = (this.tempsSirene || 0) - dt;
       if (this.tempsSirene <= 0 && Math.hypot(p.police.x - pos.x, p.police.z - pos.z) < 70) { this.son?.effet('sirene'); this.tempsSirene = 0.75; }
     } else this.retirerPolice();
+    this.majAgentPolice(dt, { auVolant, cache, pied, vPied });
     for (const ev of evenements) {
-      this.emettre(ev);
+      this.emettre(ev.arrive && !auVolant ? { ...ev, aPied: true } : ev);
       if (ev.arrete) this.arrestation();
     }
   }
+  // L'agent à pied (A8, pasAgent) : il descend quand la voiture ne peut pas aller plus près de nous.
+  majAgentPolice(dt, { auVolant, cache, pied, vPied }) {
+    const P = this.poursuite, V = this.villeVivante;
+    const arrivee = P.police && P.police.i >= P.trace.length;
+    if (!this.agentPolice && !this.agentPoliceVient && arrivee && !auVolant && !cache && Math.hypot(P.police.x - pied.x, P.police.z - pied.z) > 5.5) {
+      this.agentPoliceVient = true;
+      this.personnage('Male_Adult_07').then((pp) => {
+        this.agentPoliceVient = false;
+        const Q = this.poursuite;
+        if (!Q?.police || this.agentPolice || this.villeVivante !== V) return;
+        // La casquette bleu nuit à visière : on le reconnaît de loin.
+        const casquette = new THREE.Group();
+        const bleu = new THREE.MeshStandardMaterial({ color: '#16213e', roughness: 0.6 });
+        const calotte = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.125, 0.09, 14), bleu); casquette.add(calotte);
+        const visiere = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.015, 0.1), new THREE.MeshStandardMaterial({ color: '#0b0f1c', roughness: 0.4 })); visiere.position.set(0, -0.035, 0.11); casquette.add(visiere);
+        const insigne = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.01), new THREE.MeshStandardMaterial({ color: '#e3c25a', metalness: 0.8, roughness: 0.3 })); insigne.position.set(0, 0.0, 0.127); casquette.add(insigne);
+        this.scene.add(casquette);
+        let tete = null; pp.objet.traverse((b) => { if (!tete && b.isBone && /Head$/i.test(b.name)) tete = b; });
+        const x = Q.police.x + Math.cos(Q.police.cap) * 1.8, z = Q.police.z - Math.sin(Q.police.cap) * 1.8;
+        pp.objet.position.set(x, 0, z);
+        V.racine.add(pp.objet);
+        pp.jouer('course', { fondu: 0.1 });
+        this.agentPolice = { perso: pp, x, z, casquette, tete };
+        this.emettre({ type: 'pieton', nom: this.langue === 'en' ? 'Police' : 'Police', texte: this.langue === 'en' ? 'Police! Stop right there!' : 'Police ! Pas un geste !' });
+      }).catch(() => { this.agentPoliceVient = false; });
+    }
+    const A = this.agentPolice;
+    if (!A) return;
+    if (!P.police || auVolant) { this.retirerAgentPolice(); return; }
+    const o = A.perso.objet;
+    if (cache || Math.hypot(A.x - pied.x, A.z - pied.z) > 45) { A.perso.jouer('repos', { fondu: 0.3 }); }
+    else {
+      const r = pasAgent(A, { x: pied.x, z: pied.z, vitesse: vPied }, dt);
+      const q = { x: r.x, y: 0, z: r.z };
+      repousser(q, this.boitesTir());
+      A.x = q.x; A.z = q.z;
+      o.rotation.y = r.cap;
+      A.perso.jouer(r.d > 1.6 ? 'course' : 'repos', { fondu: 0.15 });
+      if (r.attrape) { this.retirerAgentPolice(); this.poursuite = nouvellePoursuite(); this.emettre({ type: 'police', arrete: true }); this.arrestation(); return; }
+    }
+    const surNotreIlot = A.x > -20 && A.x < 20 && A.z > -16 && A.z < 24;
+    const trottoir = !surNotreIlot && (V.blocs || []).some((b) => A.x > b.x0 && A.x < b.x1 && A.z > b.z0 && A.z < b.z1);
+    o.position.set(A.x, trottoir ? 0.18 : 0, A.z);
+    A.perso.mixer.update(dt);
+    if (A.tete) { A.tete.getWorldPosition(A.casquette.position); A.casquette.position.y += 0.2; A.casquette.rotation.y = o.rotation.y; }
+    A.casquette.visible = o.visible;
+  }
+  retirerAgentPolice() {
+    const A = this.agentPolice;
+    if (!A) return;
+    A.perso.objet.parent?.remove(A.perso.objet);
+    A.casquette.parent?.remove(A.casquette);
+    this.agentPolice = null;
+  }
   retirerPolice() {
+    this.retirerAgentPolice();
     if (!this.voiturePolice) return;
     this.voiturePolice.parent?.remove(this.voiturePolice);
     this.voiturePolice = null;
@@ -1738,8 +1829,211 @@ export class Monde {
   arrestation() {
     this.retirerPolice();
     if (this.conduite) this.descendreVoiture();
+    if (this.heros) { this.heros = null; this.emettre({ type: 'heros', actif: false }); }
+    this.rangerArme();
     this.placerJoueur(0, 22.6, Math.PI);
     this.emettre({ type: 'etoiles', etoiles: 0 });
+  }
+  // ——— Tirer (A8, tir.js ; Beau, 08/10 : « tirer sur les gens en route, la police vient ») ———
+  // Un pistolet paralysant : X (ou un clic sec, arme sortie) à l'ordinateur, 🎯 au téléphone. On vise
+  // au centre de l'écran, avec une aide. Les cibles : les passants, la circulation, la police — jamais
+  // un agent, jamais la passagère.
+  boitesTir() {
+    const V = this.villeVivante;
+    if (!this.boitesDuTir) this.boitesDuTir = [...(V?.emprises || []).map(({ x, z, w, d, h }) => ({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2, h })), { x0: -12.4, x1: 12.4, z0: -9.4, z1: 9.4, h: 82 }];
+    return this.boitesDuTir;
+  }
+  tirer() {
+    const V = this.villeVivante;
+    if (!V || !this.joueur || this.lieu?.nom !== 'hall' || this.ciel3d || this.conduite?.genre) return false;
+    if (!this.conduite && !this.dehors) return false;
+    const maintenant = performance.now() / 1000;
+    if (this.arme && maintenant - this.arme.dernier < TIR.cadence) return false;
+    if (!this.arme) { this.arme = { dernier: 0, repos: 0 }; this.emettre({ type: 'arme', actif: true }); }
+    this.arme.dernier = maintenant; this.arme.repos = 0;
+    const j = this.joueur.objet;
+    const dir = new THREE.Vector3(); this.camera.getWorldDirection(dir);
+    const cam = this.camera.position;
+    let main;
+    if (this.conduite) { const e = this.conduite.lb.etat; main = { x: e.x, y: 1.35, z: e.z }; }
+    else {
+      // On se tourne vers le tir (sauf en plein vol : le corps suit la trajectoire).
+      if (!(this.heros && (this.heros.vol || this.heros.grappin))) j.rotation.y = Math.atan2(dir.x, dir.z);
+      const fy = j.rotation.y;
+      main = { x: j.position.x + Math.sin(fy) * 0.45 - Math.cos(fy) * 0.22, y: j.position.y + 1.35, z: j.position.z + Math.cos(fy) * 0.45 + Math.sin(fy) * 0.22 };
+    }
+    const cibles = [];
+    for (const ps of V.passants) {
+      const o = ps.objet;
+      if (o.userData.assis || o.userData.ko || !o.parent || !o.visible) continue;
+      cibles.push({ x: o.position.x, y: o.position.y + 1.1, z: o.position.z, rayon: 0.45, genre: 'passant', ref: ps });
+    }
+    for (const o of V.vehicules || []) {
+      const dm = o.userData.demi || 1.2;
+      cibles.push({ x: o.position.x, y: 0.9, z: o.position.z, rayon: dm > 3 ? 1.8 : dm > 1.5 ? 1.2 : 0.7, genre: 'vehicule', ref: o });
+    }
+    if (this.voiturePolice) cibles.push({ x: this.voiturePolice.position.x, y: 0.9, z: this.voiturePolice.position.z, rayon: 1.2, genre: 'police', ref: this.voiturePolice });
+    // Devant la main seulement (pas dans le dos, entre la caméra et soi).
+    const devant = cibles.filter((c) => (c.x - main.x) * dir.x + (c.z - main.z) * dir.z > 0.3);
+    const boites = this.boitesTir();
+    const choix = choisirCible({ x: cam.x, y: cam.y, z: cam.z }, { x: dir.x, y: dir.y, z: dir.z }, devant, { angle: this.mobile ? TIR.angleTel : TIR.angle, boites, depuis: main });
+    const fin = choix ? { x: choix.cible.x, y: choix.cible.y, z: choix.cible.z } : pointImpact(main, { x: dir.x, y: dir.y, z: dir.z }, boites);
+    this.trait(main, fin, !!choix);
+    this.son?.effet('tir');
+    this.signaler('tir');
+    if (choix) {
+      const c = choix.cible;
+      if (c.genre === 'passant') this.assommer(c.ref);
+      else if (c.genre === 'vehicule') { c.ref.userData.stoppe = Math.max(c.ref.userData.stoppe || 0, TIR.stop); this.son?.effet('klaxon'); this.signaler('vehicule'); }
+      else if (c.genre === 'police') this.signaler('police');
+    }
+    this.emettre({ type: 'tir', touche: choix ? choix.cible.genre : null });
+    return true;
+  }
+  // Le trait du tir et l'éclat à l'arrivée : bleu électrique, un dixième de seconde.
+  trait(a, b, touche) {
+    if (!this.traits) {
+      const geo = new THREE.CylinderGeometry(0.022, 0.022, 1, 6, 1, true); geo.rotateX(Math.PI / 2); geo.translate(0, 0, 0.5);
+      const boule = new THREE.SphereGeometry(0.2, 12, 8);
+      const mat = () => new THREE.MeshBasicMaterial({ color: '#a8eeff', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+      this.traits = [0, 1, 2].map(() => { const m = new THREE.Mesh(geo, mat()); m.visible = false; m.frustumCulled = false; this.scene.add(m); return m; });
+      this.eclats = [0, 1, 2].map(() => { const m = new THREE.Mesh(boule, mat()); m.visible = false; this.scene.add(m); return m; });
+      this.iTrait = 0;
+    }
+    const k = this.iTrait % 3; this.iTrait += 1;
+    const m = this.traits[k], ec = this.eclats[k];
+    m.position.set(a.x, a.y, a.z); m.lookAt(b.x, b.y, b.z); m.scale.set(1, 1, Math.max(0.1, Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z)));
+    m.visible = true; m.userData.vie = 0.12; m.material.opacity = 0.9;
+    ec.position.set(b.x, b.y, b.z); ec.visible = true; ec.userData.vie = 0.25; ec.userData.taille = touche ? 1.7 : 1; ec.material.opacity = 0.9;
+  }
+  // Touché : la personne tombe, reste au sol quelques secondes, se relève fâchée et s'enfuit.
+  assommer(ps) {
+    const o = ps.objet;
+    o.userData.ko = { t: 0, y0: o.position.y };
+    o.userData.fache = null;
+    o.rotation.order = 'YXZ';
+    ps.jouer('repos', { fondu: 0.15 });
+    this.son?.effet('chute');
+    this.signaler('touche');
+  }
+  rangerArme() {
+    if (!this.arme) return;
+    this.arme = null;
+    if (this.pistolet) this.pistolet.visible = false;
+    this.emettre({ type: 'arme', actif: false });
+  }
+  // Le pistolet dans la main du personnage (placé chaque image : la main bouge avec la marche).
+  majPistolet() {
+    const j = this.joueur;
+    if (!this.arme || this.conduite || !j) { if (this.pistolet) this.pistolet.visible = false; return; }
+    if (!this.pistolet) {
+      const g = new THREE.Group();
+      const noir = new THREE.MeshStandardMaterial({ color: '#23262d', metalness: 0.6, roughness: 0.35 });
+      const corps = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.075, 0.22), noir); corps.position.z = 0.06; g.add(corps);
+      const crosse = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.12, 0.06), noir); crosse.position.set(0, -0.07, -0.02); crosse.rotation.x = 0.25; g.add(crosse);
+      const bande = new THREE.Mesh(new THREE.BoxGeometry(0.053, 0.016, 0.15), new THREE.MeshStandardMaterial({ color: '#7fe3ff', emissive: '#7fe3ff', emissiveIntensity: 1.8 })); bande.position.set(0, 0.025, 0.07); g.add(bande);
+      this.pistolet = g; this.scene.add(g);
+    }
+    if (j.os === undefined) { j.os = null; j.objet.traverse((b) => { if (!j.os && b.isBone && /R_?Hand$/i.test(b.name)) j.os = b; }); }
+    const v = new THREE.Vector3();
+    if (j.os) j.os.getWorldPosition(v); else { const p = j.objet.position, fy = j.objet.rotation.y; v.set(p.x + Math.sin(fy) * 0.35 - Math.cos(fy) * 0.25, p.y + 1.05, p.z + Math.cos(fy) * 0.35 + Math.sin(fy) * 0.25); }
+    this.pistolet.position.copy(v);
+    this.pistolet.rotation.set(0, j.objet.rotation.y, 0);
+    this.pistolet.visible = j.objet.visible;
+  }
+  majTirs(dt) {
+    for (const m of this.traits || []) if (m.visible) { m.userData.vie -= dt; m.material.opacity = Math.max(0, m.userData.vie / 0.12) * 0.9; if (m.userData.vie <= 0) m.visible = false; }
+    for (const m of this.eclats || []) if (m.visible) { m.userData.vie -= dt; const k = Math.max(0, m.userData.vie / 0.25); m.material.opacity = k * 0.9; m.scale.setScalar(m.userData.taille * (1.6 - k * 0.6)); if (m.userData.vie <= 0) m.visible = false; }
+    const V = this.villeVivante;
+    if (this.arme) {
+      this.arme.repos += dt;
+      if (this.arme.repos > 8 || this.lieu?.nom !== 'hall' || this.conduite?.genre) this.rangerArme();
+    }
+    if (V && this.lieu?.nom === 'hall' && (this.touches.has('KeyX') || this.pedale?.tir)) this.tirer(); // X tenu ou 🎯 tenu : un coup toutes les 0,3 s
+    this.majPistolet();
+    if (!V) return;
+    const en = this.langue === 'en';
+    for (let i = V.passants.length - 1; i >= 0; i -= 1) {
+      const ps = V.passants[i], o = ps.objet, ko = o.userData.ko, ej = o.userData.ejecte;
+      if (ko) {
+        ko.t += dt;
+        const k = chute(ko.t);
+        o.rotation.x = -k * 1.45;
+        o.position.y = ko.y0 + k * 0.12;
+        if (ko.t >= TIR.ko + 0.6) {
+          o.rotation.x = 0; o.position.y = ko.y0; o.userData.ko = null;
+          const fr = ['Tu es malade ?!', 'Au secours ! La police !', 'Mais qu\'est-ce qui te prend ?!'];
+          const enL = ['Are you insane?!', 'Help! Police!', 'What is wrong with you?!'];
+          const texte = (en ? enL : fr)[Math.floor(Math.random() * 3)];
+          o.userData.fache = { t: 2.2, texte };
+          ps.jouer('parle', { fondu: 0.2 });
+          // Puis on s'enfuit, à l'opposé de qui a tiré.
+          const m = o.userData.marche, jp = this.joueur.objet.position;
+          if (m) {
+            m.sens = (m.t.axe === 'z' ? o.position.z - jp.z : o.position.x - jp.x) >= 0 ? 1 : -1;
+            m.fuite = 7;
+            o.rotation.y = m.t.axe === 'z' ? (m.sens > 0 ? 0 : Math.PI) : (m.sens > 0 ? Math.PI / 2 : -Math.PI / 2);
+          }
+          this.emettre({ type: 'pieton', nom: ps.nom || '', texte });
+        }
+        continue;
+      }
+      // Le conducteur à qui l'on a pris son véhicule : il crie, puis s'en va par le trottoir.
+      if (ej) {
+        ej.t += dt;
+        if (!o.userData.fache) {
+          ps.jouer('marche', { fondu: 0.3 });
+          o.position.x += ej.dx * 1.4 * dt; o.position.z += ej.dz * 1.4 * dt;
+          o.rotation.y = Math.atan2(ej.dx, ej.dz);
+        }
+        if (ej.t > 24) { o.parent?.remove(o); V.passants.splice(i, 1); }
+      }
+    }
+  }
+  // ——— Prendre un véhicule dans la circulation (A8 : « voler la moto de quelqu'un ») ———
+  volerVehicule(nid) {
+    const V = this.villeVivante;
+    if (!V || this.conduite || this.lieu?.nom !== 'hall') return false;
+    const pris = V.prendreVehicule(nid);
+    if (!pris) return false;
+    const moto = pris.genre === 'moto';
+    let objet;
+    if (moto) { objet = pris.objet; if (objet.userData.pilote) objet.userData.pilote.visible = false; }
+    else { pris.objet.parent?.remove(pris.objet); objet = voiture3d(this, pris.peinture, pris.genre, this.mobile, true); V.racine.add(objet); }
+    objet.userData.libre = true;
+    objet.position.set(pris.x, 0, pris.z); objet.rotation.set(0, pris.cap - Math.PI / 2, 0);
+    this.vols = (this.vols || 0) + 1;
+    const id = `vol${this.vols}`;
+    V.voituresLibres.push({ id, objet, etat: { x: pris.x, z: pris.z, cap: pris.cap, vitesse: 0 }, moto, vole: true });
+    // Pas plus de quatre véhicules pris laissés dans les rues : le plus ancien disparaît.
+    const voles = V.voituresLibres.filter((x) => x.vole);
+    if (voles.length > 4) { const vieux = voles[0]; vieux.objet.parent?.remove(vieux.objet); V.voituresLibres.splice(V.voituresLibres.indexOf(vieux), 1); }
+    this.ejecterConducteur(pris, moto);
+    this.signaler('vol');
+    this.monterVoiture(id);
+    return true;
+  }
+  async ejecterConducteur(pris, moto) {
+    const V = this.villeVivante;
+    const en = this.langue === 'en';
+    const texte = moto ? (en ? 'Hey! My bike! Thief!' : 'Hé ! Ma moto ! Au voleur !') : (en ? 'Hey! My car! Thief!' : 'Hé ! Ma voiture ! Au voleur !');
+    this.emettre({ type: 'pieton', nom: '', texte });
+    const p = await this.personnage(['Male_Adult_04', 'Female_Adult_09', 'Male_Adult_07'][this.vols % 3]).catch(() => null);
+    if (!p || this.villeVivante !== V) return;
+    // Il se retrouve sur le trottoir à côté, et repartira à pied dans le sens d'où il venait.
+    const R = V.routes, axeZ = pris.voie.axe === 'z';
+    const centre = (axeZ ? R.x : R.z).reduce((m, c) => (Math.abs(c - pris.voie.fixe) < Math.abs(m - pris.voie.fixe) ? c : m));
+    const bord = centre + Math.sign(pris.voie.fixe - centre || 1) * (R.largeur / 2 + 1.4);
+    const x = axeZ ? bord : pris.x, z = axeZ ? pris.z : bord;
+    p.objet.position.set(x, 0.18, z);
+    p.objet.rotation.y = Math.atan2(pris.x - x, pris.z - z);
+    p.nom = '';
+    p.objet.userData.fache = { t: 4, texte };
+    p.objet.userData.ejecte = { t: 0, dx: axeZ ? 0 : -pris.voie.sens, dz: axeZ ? -pris.voie.sens : 0 };
+    p.jouer('parle', { fondu: 0 });
+    V.racine.add(p.objet); V.passants.push(p);
+    const ej = V.passants.filter((q) => q.objet.userData.ejecte);
+    if (ej.length > 3) { const q = ej[0]; q.objet.parent?.remove(q.objet); V.passants.splice(V.passants.indexOf(q), 1); }
   }
   // Une course autour du pâté de maisons (course.js), seulement au volant d'une voiture.
   lancerCourse() {
@@ -1772,7 +2066,8 @@ export class Monde {
     // Obstacles : la circulation et les autres voitures libres (garées ou laissées là).
     // La voiture de police (lot 3.5) est un obstacle comme les autres : la percuter compte comme un choc.
     const police = this.poursuite?.police ? [-1.3, 1.3].map((k) => ({ x: this.poursuite.police.x + Math.sin(this.poursuite.police.cap) * k, z: this.poursuite.police.z + Math.cos(this.poursuite.police.cap) * k, rayon: 0.95 })) : [];
-    const autres = [...V.circulation(), ...police, ...V.voituresLibres.filter((x) => x !== c.lb).flatMap((x) => [-1.3, 1.3].map((k) => ({ x: x.etat.x + Math.sin(x.etat.cap) * k, z: x.etat.z + Math.cos(x.etat.cap) * k, rayon: 0.95 })))];
+    const autres = [...V.circulation(), ...police, ...V.voituresLibres.filter((x) => x !== c.lb).flatMap((x) => (x.moto ? [{ x: x.etat.x, z: x.etat.z, rayon: 0.6 }] : [-1.3, 1.3].map((k) => ({ x: x.etat.x + Math.sin(x.etat.cap) * k, z: x.etat.z + Math.cos(x.etat.cap) * k, rayon: 0.95 }))))];
+    const V0 = c.lb.moto ? MOTO : VOITURE; // la moto prise dans la circulation (A8) : vive, étroite
     // Nitro (Maj, N ou le bouton flamme) : la jauge se vide en 3 s et se recharge doucement.
     const veutNitro = t.has('ShiftLeft') || t.has('ShiftRight') || t.has('KeyN') || pd.nitro;
     c.nitro = veutNitro && gaz > 0 && c.jauge > 0;
@@ -1780,9 +2075,9 @@ export class Monde {
     let e = c.lb.etat, choc = 0, reste = Math.min(dt, 0.25);
     while (reste > 1e-4) {
       const h = Math.min(reste, 1 / 60); reste -= h;
-      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space'), nitro: c.nitro }, h), V.solides || V.blocs);
+      e = heurterBlocs(piloter(e, { gaz, volant, frein: t.has('Space'), nitro: c.nitro }, h, V0), V.solides || V.blocs, V0);
       choc = Math.max(choc, e.choc);
-      e = heurterVehicules(e, autres);
+      e = heurterVehicules(e, autres, V0);
       choc = Math.max(choc, e.choc);
     }
     ({ x: e.x, z: e.z } = borner(e.x, e.z));
@@ -1799,6 +2094,11 @@ export class Monde {
     o.position.set(e.x, 0, e.z);
     o.rotation.y = e.cap - Math.PI / 2;
     o.rotation.z = Math.max(-0.03, Math.min(0.03, -gaz * 0.02 * Math.sign(e.vitesse || 1))); // la caisse plonge au freinage
+    if (c.lb.moto) { // la moto se penche dans les virages
+      o.rotation.order = 'YXZ';
+      c.penche = (c.penche || 0) + (inclinaison(e.vitesse, e.angle) - (c.penche || 0)) * Math.min(1, dt * 6);
+      o.rotation.x = c.penche;
+    }
     for (const r of o.userData.roues || []) {
       r.axe.rotation[r.axeRot || 'z'] += ((r.sens || -1) * e.vitesse * dt) / (r.rayon || 0.35);
       if (r.avant) r.pivot.rotation.y = -(e.angle || 0);
@@ -1854,6 +2154,7 @@ export class Monde {
   interagir() {
     if (!this.proche) return;
     if (this.proche.type === 'voiture') { this.monterVoiture(this.proche.id); return; }
+    if (this.proche.type === 'volVoiture' || this.proche.type === 'volMoto') { this.volerVehicule(this.proche.id); return; }
     if (this.proche.type === 'helico') { this.monterHelico(); return; }
     if (this.proche.type === 'bateau') { this.monterBateau(); return; }
     if (this.proche.type === 'basket') { this.basketAction(); return; }
@@ -1907,6 +2208,7 @@ export class Monde {
     const j = this.joueur;
     if (!j || !this.lieu) return;
     this.majPolice(dt);
+    this.majTirs(dt);
     this.majBasket(dt);
     this.majFoot(dt);
     if (this.carte && this.lieu.nom === 'hall') { const q = this.conduite ? this.conduite.lb.etat : j.objet.position; this.carte.maj(dt, q.x, q.z); }
@@ -2005,6 +2307,14 @@ export class Monde {
         for (const ps of this.villeVivante.passants || []) { const o = ps.objet; if (!o.userData.assis && !o.userData.fache && Math.hypot(p.x - o.position.x, p.z - o.position.z) < 2.8) { proche = { type: 'passant', nom: ps.nom || '' }; break; } }
       }
       for (const v of this.villeVivante.voituresLibres) if (!this.conduite && Math.hypot(p.x - v.etat.x, p.z - v.etat.z) < 3.8) proche = { type: 'voiture', id: v.id };
+      // Un véhicule de la circulation arrêté, à portée de main (A8) : on peut le prendre (pas le bus).
+      if (!this.conduite && this.dehors && p.y < 1) {
+        for (const o of this.villeVivante.vehicules || []) {
+          const u = o.userData;
+          if (u.genre === 'bus' || !(u.arret || u.stoppe > 0)) continue;
+          if (Math.hypot(p.x - o.position.x, p.z - o.position.z) < (u.demi || 1.2) + 1.6) { proche = { type: u.genre === 'moto' ? 'volMoto' : 'volVoiture', id: u.nid }; break; }
+        }
+      }
       if (this.sport && !this.conduite && this.sport.surTerrain(p.x, p.z)) proche = { type: 'basket', tient: !!this.basket?.tient };
       if (this.foot && !this.conduite && this.foot.surTerrain(p.x, p.z)) proche = { type: 'foot', etape: this.tirs?.etape || null };
       const hh = this.villeVivante.helico;
@@ -2077,8 +2387,14 @@ export class Monde {
       this.camera.lookAt(p.x, 0, p.z);
     } else {
       const enLAir = !!(this.heros && (this.heros.vol || this.heros.enAir || this.heros.grappin));
-      const d = this.cam.dist * (enLAir ? 2.3 : 1);
+      // Arme sortie (A8) : la caméra passe au-dessus de l'épaule droite et regarde loin devant. Le
+      // centre de l'écran (le viseur) montre alors la rue, pas le dos du personnage.
+      this.viseeK = (this.viseeK || 0) + ((this.arme && !enLAir ? 1 : 0) - (this.viseeK || 0)) * Math.min(1, dt * 6);
+      const kv = this.viseeK;
+      const d = this.cam.dist * (enLAir ? 2.3 : 1) * (1 - 0.3 * kv);
       const voulu = new THREE.Vector3(p.x + Math.sin(this.cam.yaw) * d * Math.cos(this.cam.pitch), p.y + 1.4 + Math.sin(this.cam.pitch) * d + 0.3, p.z + Math.cos(this.cam.yaw) * d * Math.cos(this.cam.pitch));
+      const rx = Math.cos(this.cam.yaw), rz = -Math.sin(this.cam.yaw);
+      if (kv > 0.001) { voulu.x += rx * 0.7 * kv; voulu.z += rz * 0.7 * kv; }
       const I = this.lieu.interieur;
       const dedans = I && p.x > I.x0 && p.x < I.x1 && p.z > I.z0 && p.z < I.z1;
       const L = dedans ? { x0: I.x0 + 0.3, x1: I.x1 - 0.3, z0: I.z0 + 0.3, z1: I.z1 - 0.3 } : this.lieu.limites;
@@ -2088,7 +2404,15 @@ export class Monde {
       voulu.y = p.y + 1.55 + (voulu.y - p.y - 1.55) * Math.min(1, reel / ideal);
       voulu.y = Math.min(voulu.y, p.y + (this.lieu.nom === 'hall' ? (dedans ? 5.2 : enLAir ? 40 : 12) : 3.2));
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 8));
-      this.camera.lookAt(tete);
+      if (kv > 0.001) {
+        // Le regard : 14 m devant, à hauteur de poitrine (là où l'on touche quelqu'un) ; glisser vers le
+        // haut ou le bas vise plus haut (un toit) ou plus bas.
+        const fx = -Math.sin(this.cam.yaw), fz = -Math.cos(this.cam.yaw);
+        const regard = tete.clone();
+        regard.x += (rx * 0.7 + fx * 14) * kv; regard.z += (rz * 0.7 + fz * 14) * kv;
+        regard.y += (p.y + 1.15 + (0.18 - this.cam.pitch) * 14 - tete.y) * kv;
+        this.camera.lookAt(regard);
+      } else this.camera.lookAt(tete);
     }
     this.soleil.target.position.set(p.x, 0, p.z);
     // Dedans ou dehors (Beau, 25/09 : « Réception » s'affichait alors qu'il était devant chez lui).

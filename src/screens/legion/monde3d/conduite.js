@@ -33,6 +33,15 @@ export function piloter(e, { gaz = 0, volant = 0, frein = false, nitro = false }
   return { ...e, vitesse: v, cap, angle, x: e.x + Math.sin(cap) * v * dt, z: e.z + Math.cos(cap) * v * dt };
 }
 
+// La moto (A8 : celle qu'on prend dans la circulation) : vive, tourne court, plus étroite.
+export const MOTO = { accel: 9, frein: 15, arriere: 3, max: 28, empattement: 1.45, braquage: 0.5, demiLong: 1.1, rayon: 0.5 };
+
+// L'inclinaison d'une moto dans un virage (rad, positive = penchée à droite), bornée à 0,5 (≈ 29°).
+export function inclinaison(vitesse, angle, V = MOTO) {
+  const lat = (vitesse * vitesse * Math.tan(angle || 0)) / (V.empattement * 9.81);
+  return Math.max(-0.5, Math.min(0.5, Math.atan(lat)));
+}
+
 // Le bateau : plus lent à répondre, tourne large, pas de frein à main. Même pilotage que la voiture.
 export const BATEAU = { accel: 3.5, frein: 5, arriere: 3, max: 14, empattement: 4.5, braquage: 0.6, demiLong: 2.8, rayon: 1.2 };
 // Nager : lent, plus lent encore sous l'eau ; l'air dure 25 s.

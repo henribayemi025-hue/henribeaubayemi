@@ -243,6 +243,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   // La carte de la ville (touche M) et l'heure du jour au choix (touche T) — Beau, 08/10.
   const [carte, setCarte] = useState(false);
   const [heros, setHeros] = useState(null); // le mode héros (heros.js) : { actif, vol, grappin, enAir }
+  const [arme, setArme] = useState(false); // le pistolet paralysant est sorti (A8, tir.js)
+  const [touche, setTouche] = useState(null); // le dernier tir qui a touché : { quand, genre }
   const [avisHeros, setAvisHeros] = useState(null);
   const [heure, setHeure] = useState('reel'); // reel | couchant | nuit | jour
   const [avisHeure, setAvisHeure] = useState(null);
@@ -385,6 +387,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               if (msg) { const quand = Date.now(); setAvisHeros({ msg, quand }); setTimeout(() => setAvisHeros((a) => (a && a.quand === quand ? null : a)), msg === 'aide' ? 6500 : 2500); }
             }
             if (e.type === 'touche' && e.cle === 'heure') changerHeureRef.current?.();
+            if (e.type === 'arme') setArme(!!e.actif);
+            if (e.type === 'tir' && e.touche) {
+              const quand = Date.now();
+              setTouche({ quand, genre: e.touche });
+              setTimeout(() => setTouche((x) => (x && x.quand === quand ? null : x)), 280);
+              try { navigator.vibrate?.(18); } catch { /* pas de vibreur */ }
+            }
             if (e.type === 'proximite') setProche(e.cible);
             if (e.type === 'suivant') { setDialogue(null); setSuivant(e); }
             if (e.type === 'ciel') setCiel3d(e.actif);
@@ -421,7 +430,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             }
             if (e.type === 'police' && (e.arrive || e.semee || e.arrete)) {
               const quand = Date.now();
-              setBulle({ nom: t('legion.monde.police.nom'), texte: t(e.arrete ? 'legion.monde.police.arrete' : e.semee ? 'legion.monde.police.semee' : 'legion.monde.police.arrive'), fache: !!(e.arrive || e.arrete), quand });
+              setBulle({ nom: t('legion.monde.police.nom'), texte: t(e.arrete ? 'legion.monde.police.arrete' : e.semee ? 'legion.monde.police.semee' : e.aPied ? 'legion.monde.police.arriveAPied' : 'legion.monde.police.arrive'), fache: !!(e.arrive || e.arrete), quand });
               setTimeout(() => setBulle((b) => (b && b.quand === quand ? null : b)), e.arrete ? 6000 : 4000);
               if (e.semee || e.arrete) setEtoiles(0);
             }
@@ -488,6 +497,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   function interagir(cible) {
     if (!cible) return;
     if (cible.type === 'voiture') { monde.current?.monterVoiture(cible.id); return; }
+    if (cible.type === 'volVoiture' || cible.type === 'volMoto') { monde.current?.volerVehicule(cible.id); return; }
     if (cible.type === 'basket') { monde.current?.basketAction(); return; }
     if (cible.type === 'foot') { monde.current?.footAction(); return; }
     if (cible.type === 'helico') { monde.current?.monterHelico(); return; }
@@ -803,7 +813,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             </div>
           ) : (
           <button type="button" onClick={() => interagir(proche)} className="w-full rounded-pill bg-legion-gold px-4 py-2 text-[13.5px] font-semibold text-legion-bg">
-            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{['voiture', 'helico', 'bateau'].includes(proche.type) ? 'F' : 'E'}</kbd>}
+            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">{['voiture', 'volVoiture', 'volMoto', 'helico', 'bateau'].includes(proche.type) ? 'F' : 'E'}</kbd>}
             {t(`legion.monde.action.${proche.type}`, { defaultValue: t('legion.monde.action.defaut'), nom: proche.nom || '' })}{proche.type === 'chantier' && proche.nom ? ` · ${proche.nom}` : ''}
           </button>
           )}
@@ -1019,6 +1029,23 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         <div className="pointer-events-none absolute left-1/2 top-16 z-[9] max-w-[90%] -translate-x-1/2 rounded-card bg-black/75 px-4 py-2 text-center text-[13px] font-semibold text-white" style={{ animation: 'leoFondu .3s ease-out' }}>
           {t(`legion.monde.heros.${avisHeros.msg}${avisHeros.msg === 'aide' && mobile ? 'Tel' : ''}`)}
         </div>
+      )}
+
+      {/* Le viseur (A8) : seulement l'arme sortie ; il s'éclaire quand un tir touche. */}
+      {arme && enVille && !carte && !dialogue && (
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 z-[5] h-9 w-9 -translate-x-1/2 -translate-y-1/2">
+          {[['left-1/2 top-0 h-3 w-[2.5px] -translate-x-1/2'], ['left-1/2 bottom-0 h-3 w-[2.5px] -translate-x-1/2'], ['top-1/2 left-0 h-[2.5px] w-3 -translate-y-1/2'], ['top-1/2 right-0 h-[2.5px] w-3 -translate-y-1/2']].map(([c]) => (
+            <span key={c} className={`absolute ${c} rounded-full ${touche ? 'bg-[#7fe3ff]' : 'bg-white'} shadow-[0_0_0_1px_rgba(0,0,0,0.55)]`} />
+          ))}
+          <span className="absolute left-1/2 top-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90" />
+        </div>
+      )}
+      {/* Tirer au pouce : à droite, à mi-hauteur (loin des boutons du bas). Garder appuyé = tir continu. */}
+      {mobile && enVille && !volant && !dialogue && !carte && (
+        <button type="button" aria-label={t('legion.monde.tir.tirer')}
+          onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.tirer(); monde.current?.pedales({ tir: true }); }}
+          onPointerUp={() => monde.current?.pedales({ tir: false })} onPointerCancel={() => monde.current?.pedales({ tir: false })}
+          className={`absolute right-4 top-1/2 z-[5] grid h-16 w-16 -translate-y-1/2 touch-none select-none place-items-center rounded-full border text-[26px] backdrop-blur ${arme ? 'border-[#7fe3ff]/70 bg-[#7fe3ff]/20' : 'border-white/25 bg-[#0b1120]/55'}`}>🎯</button>
       )}
 
       {carte && etat === 'pret' && <CarteVille monde={monde.current} t={t} mobile={mobile} onFermer={() => setCarte(false)} />}

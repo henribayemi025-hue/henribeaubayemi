@@ -164,6 +164,9 @@ export function creerSon() {
       else if (type === 'klaxon') bip([392, 494], 0.45, 0.2);
       // La sirène de la police (lot 3.5) : deux tons, joués à chaque pas de la poursuite.
       else if (type === 'sirene') { bip([740], 0.32, 0.045, 'sawtooth'); setTimeout(() => bip([587], 0.32, 0.045, 'sawtooth'), 340); }
+      // Le pistolet paralysant (A8) : un « tchiou » électrique bref ; une chute, sourde.
+      else if (type === 'tir') { bip([1480, 740], 0.07, 0.05, 'sawtooth'); coup(0.12, 900, 0.08); }
+      else if (type === 'chute') coup(0.3, 140, 0.22);
       // Un agent t'attend : deux notes claires, douces (idée d'Agent Office).
       else if (type === 'ding') { bip([1046.5], 0.22, 0.1, 'sine'); setTimeout(() => bip([1568], 0.4, 0.09, 'sine'), 160); }
     },

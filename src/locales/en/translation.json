@@ -1459,7 +1459,9 @@
         "client": "See the customer",
         "chezmoi": "Go home",
         "bateau": "Take the boat",
-        "passant": "Let {{nom}} in"
+        "passant": "Let {{nom}} in",
+        "volVoiture": "Take the car",
+        "volMoto": "Take the bike"
       },
       "monAvatar": "My avatar",
       "choisirAvatar": "Choose your avatar",
@@ -1474,7 +1476,7 @@
       },
       "chargement": "Loading the 3D world…",
       "erreur": "The 3D world couldn't open or stopped on this device (memory or connection). Try again; if it stays stuck inside WhatsApp, open the link in Safari or Chrome.",
-      "aide": "W A S D or arrows: walk · Shift: run · E: interact · V: camera · drag: look",
+      "aide": "W A S D or arrows: walk · Shift: run · E: interact · V: camera · X: shoot · drag: look",
       "faitsTitre": "Today at {{nom}}",
       "faitsRendues": "{{n}} task(s) delivered today",
       "faitsReunion": "Meeting on: {{sujet}}",
@@ -1612,7 +1614,8 @@
         "semee": "Lost them: the police can't find you.",
         "arrete": "Busted (just a game). Back to the building — slowly this time.",
         "etoiles_one": "Wanted: {{count}} star",
-        "etoiles_other": "Wanted: {{count}} stars"
+        "etoiles_other": "Wanted: {{count}} stars",
+        "arriveAPied": "Police incoming! Hide in an alley or on a roof — or give yourself up."
       },
       "passager": {
         "descend": "{{nom}} gets out. “Thanks!”",
@@ -1684,6 +1687,9 @@
         "rate": "Nothing to grab: aim at a closer building",
         "aide": "Hero mode: Space to jump, Space again to fly, Q to grapple, Shift to go faster, H to leave",
         "aideTel": "Hero mode: ⤒ to jump, ⤒ again to fly, hold 🪝 to grapple"
+      },
+      "tir": {
+        "tirer": "Shoot"
       }
     },
     "agentModifie": "Saved",

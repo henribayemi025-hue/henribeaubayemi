@@ -440,13 +440,18 @@ function moto(peinture) {
   const phareMat = new THREE.MeshStandardMaterial({ color: '#fff', emissive: '#fff4d6', emissiveIntensity: 0 });
   const p2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), phareMat); p2.position.set(0.74, 1.0, 0); g.add(p2);
   g.userData.lumieres = [phareMat];
-  // Le pilote : casque, torse penché, bras vers le guidon, jambes repliées
+  // Le pilote : casque, torse penché, bras vers le guidon, jambes repliées. Dans son propre groupe :
+  // quand on lui prend sa moto (A8), il descend, et c'est nous qui sommes en selle.
+  const pilote = new THREE.Group(); g.add(pilote);
   const cuir = new THREE.MeshStandardMaterial({ color: '#1c1d20', roughness: 0.7 });
-  const torse = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.4, 6, 10), cuir); torse.rotation.z = -0.5; torse.position.set(-0.1, 1.27, 0); g.add(torse);
-  for (const z of [-0.2, 0.2]) { const bras = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.42, 4, 8), cuir); bras.rotation.z = 0.9; bras.position.set(0.22, 1.29, z); g.add(bras); } // de l'épaule au guidon
-  const casque = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), carrosserie); casque.position.set(0.08, 1.66, 0); g.add(casque);
-  const visiere = new THREE.Mesh(new THREE.SphereGeometry(0.165, 12, 8, -0.6, 1.2, 0.9, 1.0), noir); visiere.position.set(0.08, 1.66, 0); g.add(visiere);
-  for (const z of [-0.15, 0.15]) { const jambe = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.48, 4, 8), cuir); jambe.rotation.z = 1.1; jambe.position.set(-0.15, 0.85, z); g.add(jambe); const tibia = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.4, 4, 8), cuir); tibia.rotation.z = 0.15; tibia.position.set(0.02, 0.55, z * 1.2); g.add(tibia); }
+  const torse = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.4, 6, 10), cuir); torse.rotation.z = -0.5; torse.position.set(-0.1, 1.27, 0); pilote.add(torse);
+  for (const z of [-0.2, 0.2]) { const bras = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.42, 4, 8), cuir); bras.rotation.z = 0.9; bras.position.set(0.22, 1.29, z); pilote.add(bras); } // de l'épaule au guidon
+  const casque = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), carrosserie); casque.position.set(0.08, 1.66, 0); pilote.add(casque);
+  const visiere = new THREE.Mesh(new THREE.SphereGeometry(0.165, 12, 8, -0.6, 1.2, 0.9, 1.0), noir); visiere.position.set(0.08, 1.66, 0); pilote.add(visiere);
+  for (const z of [-0.15, 0.15]) { const jambe = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.48, 4, 8), cuir); jambe.rotation.z = 1.1; jambe.position.set(-0.15, 0.85, z); pilote.add(jambe); const tibia = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.4, 4, 8), cuir); tibia.rotation.z = 0.15; tibia.position.set(0.02, 0.55, z * 1.2); pilote.add(tibia); }
+  fusionner(pilote);
+  pilote.traverse((m) => { if (m.isMesh) m.userData.garder = true; });
+  g.userData.pilote = pilote;
   g.userData.roues = [];
   fusionner(g);
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
@@ -762,29 +767,35 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   for (const x of [-26]) { voies.push({ axe: 'z', fixe: x - 3, sens: 1 }); voies.push({ axe: 'z', fixe: x + 3, sens: -1 }); }
   for (const z of [30]) { voies.push({ axe: 'x', fixe: z + 3, sens: 1 }); voies.push({ axe: 'x', fixe: z - 3, sens: -1 }); }
   const vehicules = [];
+  let numero = 0;
+  const creerVehicule = (v, iv, k, placer, sansPolice = false) => {
+    const t = r();
+    const peinture = PEINTURES[Math.floor(r() * PEINTURES.length)];
+    const leger = monde.mobile;
+    const s1 = style.motos, s2 = s1 + style.bus, s3 = s2 + style.taxis;
+    // Au-delà des taxis : SUV, coupés, berlines, voitures de luxe, et une voiture de police de temps en temps.
+    // La silhouette vient d'un hachage de la position (pas de r() en plus : le plan de la ville ne bouge pas).
+    const h = Math.abs(Math.sin((iv + 1) * 12.9898 + (k + 1) * 78.233) * 43758.5453) % 1;
+    const civile = h < 0.1 && !sansPolice ? 'police' : h < 0.35 ? 'suv' : h < 0.55 ? 'coupe' : h < 0.68 ? 'luxe' : 'berline';
+    const genre = t < s1 ? 'moto' : t < s2 ? 'bus' : t < s3 ? 'taxi' : civile;
+    const o = genre === 'moto' ? moto(peinture) : genre === 'bus' ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : voiture3d(monde, peinture, genre, leger);
+    const pos = placer(); // après les tirages du véhicule : la même ville qu'avant, à l'identique
+    numero += 1;
+    // L'allure de la voie : les véhicules d'une même voie ne se traversent plus.
+    o.userData = { ...o.userData, voie: v, vitesse: v.allure, pos, genre, peinture, nid: `c${numero}` };
+    if (v.axe === 'z') o.rotation.y = v.sens > 0 ? -Math.PI / 2 : Math.PI / 2;
+    else o.rotation.y = v.sens > 0 ? 0 : Math.PI;
+    if (v.axe === 'z') o.position.set(v.fixe, 0, pos); else o.position.set(pos, 0, v.fixe);
+    racine.add(o);
+    vehicules.push(o);
+    nuit.lumieres.push(...o.userData.lumieres);
+    return o;
+  };
   voies.forEach((v, iv) => {
     const combien = monde.mobile ? 1 : 3; // au téléphone : une voiture par voie (Beau, 25/09 : « ça rame »)
-    // Une allure par voie : les véhicules d'une même voie ne se traversent plus.
-    const allure = (8 + r() * 3) * v.sens;
-    for (let k = 0; k < combien; k += 1) {
-      const t = r();
-      const peinture = PEINTURES[Math.floor(r() * PEINTURES.length)];
-      const leger = monde.mobile;
-      const s1 = style.motos, s2 = s1 + style.bus, s3 = s2 + style.taxis;
-      // Au-delà des taxis : SUV, coupés, berlines, voitures de luxe, et une voiture de police de temps en temps.
-      // La silhouette vient d'un hachage de la position (pas de r() en plus : le plan de la ville ne bouge pas).
-      const h = Math.abs(Math.sin((iv + 1) * 12.9898 + (k + 1) * 78.233) * 43758.5453) % 1;
-      const civile = h < 0.1 ? 'police' : h < 0.35 ? 'suv' : h < 0.55 ? 'coupe' : h < 0.68 ? 'luxe' : 'berline';
-      const o = t < s1 ? moto(peinture) : t < s2 ? bus(['#c8201f', '#1d5fa8', '#f2f0ea', '#2f7a4a'][Math.floor(r() * 4)], leger) : t < s3 ? voiture3d(monde, peinture, 'taxi', leger) : voiture3d(monde, peinture, civile, leger);
-      const vitesse = allure;
-      const pos = -120 + ((k * 240) / combien) + r() * 30 + iv * 13;
-      o.userData = { ...o.userData, voie: v, vitesse, pos };
-      if (v.axe === 'z') o.rotation.y = v.sens > 0 ? -Math.PI / 2 : Math.PI / 2;
-      else o.rotation.y = v.sens > 0 ? 0 : Math.PI;
-      racine.add(o);
-      vehicules.push(o);
-      nuit.lumieres.push(...o.userData.lumieres);
-    }
+    v.allure = (8 + r() * 3) * v.sens;
+    v.iv = iv;
+    for (let k = 0; k < combien; k += 1) creerVehicule(v, iv, k, () => -120 + ((k * 240) / combien) + r() * 30 + iv * 13);
   });
   // Des voitures garées le long de notre trottoir : on peut monter dedans et conduire
   // (Beau, 25/09 : « comme GTA San Andreas »). Elles restent là où on les laisse.
@@ -830,6 +841,15 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
         const d = ecart(u.pos, u.voie.axe === 'z' ? q.z : q.x) * sens - demi - 2.4;
         if (d > -1.5 && d < 3) { arret = true; break; }
       }
+      // Quelqu'un à pied devant, sur la voie (A8) : on s'arrête — c'est là qu'on peut lui prendre sa moto.
+      const pj = !monde.conduite && monde.lieu?.nom === 'hall' ? monde.joueur?.objet?.position : null;
+      if (!arret && pj && pj.y < 1.2) {
+        const surVoie = u.voie.axe === 'z' ? Math.abs(pj.x - u.voie.fixe) < 1.7 : Math.abs(pj.z - u.voie.fixe) < 1.7;
+        const d = ecart(u.pos, u.voie.axe === 'z' ? pj.z : pj.x) * sens - demi;
+        if (surVoie && d > -0.5 && d < 6) u.stoppe = Math.max(u.stoppe || 0, 1.5); // et attend un peu qu'on dégage
+      }
+      // Touchée par un tir (A8) : elle reste arrêtée un moment.
+      if (u.stoppe > 0) { u.stoppe -= dt; arret = true; }
       if (!arret) for (const b of vehicules) {
         if (b === o || b.userData.voie !== u.voie) continue;
         const d = ecart(u.pos, b.userData.pos) * sens - demi - (b.userData.demi || 1.2);
@@ -905,8 +925,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   bouger.push((dt) => {
     for (const p of passants) {
       p.mixer.update(dt);
+      if (p.objet.userData.ko) continue; // touché (A8) : le moteur le fait tomber et se relever
       const f = p.objet.userData.fache;
-      if (f) { f.t -= dt; if (f.t <= 0) { p.objet.userData.fache = null; p.jouer(p.objet.userData.marche ? 'marche' : 'repos', { fondu: 0.3 }); } else continue; }
+      if (f) { f.t -= dt; if (f.t <= 0) { p.objet.userData.fache = null; p.jouer(p.objet.userData.marche ? (p.objet.userData.marche.fuite > 0 ? 'course' : 'marche') : 'repos', { fondu: 0.3 }); } else continue; }
       if (p.objet.userData.assis) continue; // dans la voiture
       const tv = p.objet.userData.traverse;
       if (tv) {
@@ -928,7 +949,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       }
       const m = p.objet.userData.marche;
       if (!m) continue;
-      m.pos += m.sens * m.vitesse * dt;
+      // Après un tir (A8) : on s'enfuit en courant, puis on reprend son pas.
+      if (m.fuite > 0) { m.fuite -= dt; if (m.fuite <= 0) p.jouer('marche', { fondu: 0.4 }); }
+      m.pos += m.sens * (m.fuite > 0 ? 4.2 : m.vitesse) * dt;
       if (m.pos > 60) m.pos = -60; if (m.pos < -60) m.pos = 60;
       const x = m.t.axe === 'z' ? m.t.fixe : m.pos, z = m.t.axe === 'z' ? m.pos : m.t.fixe;
       p.objet.position.set(x, x > -20 && x < 20 && z > -16 && z < 24 ? 0 : 0.18, z);
@@ -997,6 +1020,20 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     // Pour conduire (conduite.js) : les voitures libres, les trottoirs, la circulation.
     voituresLibres: libres,
     passants,
+    vehicules,
+    // Prendre un véhicule de la circulation (A8) : il quitte sa voie, et un autre arrive plus loin
+    // sur la même voie (la rue ne se vide pas). Rend ce qu'il faut pour en faire une voiture libre.
+    prendreVehicule: (nid) => {
+      const i = vehicules.findIndex((o) => o.userData.nid === nid);
+      if (i < 0) return null;
+      const o = vehicules[i];
+      const u = o.userData;
+      vehicules.splice(i, 1);
+      creerVehicule(u.voie, u.voie.iv, Math.floor(r() * 7), () => { let p = u.pos + 130; if (p > 130) p -= TOUR; return p; }, true);
+      const axeZ = u.voie.axe === 'z';
+      const cap = axeZ ? (u.voie.sens > 0 ? 0 : Math.PI) : (u.voie.sens > 0 ? Math.PI / 2 : -Math.PI / 2);
+      return { objet: o, genre: u.genre, peinture: u.peinture, x: o.position.x, z: o.position.z, cap, voie: u.voie };
+    },
     passages,
     // Le marché d'en face, s'il y en a un (région) : les agents y déjeunent (lot 3.2).
     marche: style.marche ? { z: 38.2, x0: -19, x1: 17.3 } : null,

@@ -1459,7 +1459,9 @@
         "client": "Voir le client",
         "chezmoi": "Entrer chez moi",
         "bateau": "Prendre le bateau",
-        "passant": "Faire monter {{nom}}"
+        "passant": "Faire monter {{nom}}",
+        "volVoiture": "Prendre la voiture",
+        "volMoto": "Prendre la moto"
       },
       "monAvatar": "Mon avatar",
       "choisirAvatar": "Choisis ton avatar",
@@ -1474,7 +1476,7 @@
       },
       "chargement": "Chargement du monde 3D…",
       "erreur": "Le monde 3D n'a pas pu s'ouvrir ou s'est interrompu sur cet appareil (mémoire ou connexion). Réessaie ; s'il reste bloqué dans WhatsApp, ouvre le lien dans Safari ou Chrome.",
-      "aide": "Z Q S D ou flèches : marcher · Maj : courir · E : interagir · V : caméra · glisser : regarder",
+      "aide": "Z Q S D ou flèches : marcher · Maj : courir · E : interagir · V : caméra · X : tirer · glisser : regarder",
       "faitsTitre": "Aujourd'hui chez {{nom}}",
       "faitsRendues": "{{n}} tâche(s) rendue(s) aujourd’hui",
       "faitsReunion": "Réunion en cours : {{sujet}}",
@@ -1612,7 +1614,8 @@
         "semee": "Semée : la police a perdu ta trace.",
         "arrete": "Arrêté (pour de faux). On te ramène devant l'immeuble — doucement, cette fois.",
         "etoiles_one": "Recherché : {{count}} étoile",
-        "etoiles_other": "Recherché : {{count}} étoiles"
+        "etoiles_other": "Recherché : {{count}} étoiles",
+        "arriveAPied": "La police arrive ! Cache-toi dans une ruelle ou sur un toit — ou rends-toi."
       },
       "passager": {
         "descend": "{{nom}} descend. « Merci ! »",
@@ -1684,6 +1687,9 @@
         "rate": "Rien à accrocher : vise un immeuble plus proche",
         "aide": "Mode héros : Espace pour sauter, encore Espace pour voler, Q pour le grappin, Maj pour aller plus vite, H pour quitter",
         "aideTel": "Mode héros : ⤒ pour sauter, encore ⤒ pour voler, garde 🪝 pour le grappin"
+      },
+      "tir": {
+        "tirer": "Tirer"
       }
     },
     "agentModifie": "Enregistré",
