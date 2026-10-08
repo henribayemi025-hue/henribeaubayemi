@@ -27,7 +27,7 @@ Finia et la lecture des photos non testées (Google à sec ; Groq attend l'essai
 | N° | Gravité | Quoi | État |
 | --- | --- | --- | --- |
 | A1 | grave | Au Cameroun, le régime proposé par défaut est « le réel » avec TVA 19,25 % : chaque vente est coupée (ex. 24 400 → 20 461 + 3 939 de TVA) et une dette de TVA apparaît, que la plupart des petites boutiques ne doivent pas (IGS). Proposition : « Je ne sais pas encore — sans TVA » par défaut, « à confirmer avec votre comptable », le réel à un geste | **à trancher par Beau** |
-| A2 | grave | La page de connexion des vendeuses promettait que les ventes livrées sur Finjaro arrivent dans la caisse ; aucun code ne le fait. Texte remplacé par ce qui marche (reprise des articles) | corrigé (3de7a5a) |
+| A2 | — | ~~La page de connexion des vendeuses promettait que les ventes livrées sur Finjaro arrivent dans la caisse ; aucun code ne le fait.~~ **Faux, annulé le 08/10** : la liaison existe côté place de marché (migration 0127, déclencheur `trg_finia_order_to_sale` sur `orders`, en production depuis le 17/09) ; Claudinette ne l'avait cherchée que dans son dépôt. Phrase d'origine remise (778c2ca) | annulé (778c2ca) |
 | A3 | moyen | Carte Projets : les trois montants se chevauchaient sur téléphone et tablette | corrigé, mesuré à 390/768/1 440 |
 | A4 | moyen | Tableaux TVA (98 px de débordement sur grand écran) et Ventes (33 px sur téléphone) | corrigé, 0 px |
 | A5 | moyen | Listes sans fin : journal 615 écritures / 21 014 mots sur une page, ventes 276 lignes. Proposition : mois en cours par défaut + « Voir plus » | proposé |
