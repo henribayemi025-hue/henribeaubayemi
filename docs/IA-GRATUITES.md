@@ -13,7 +13,7 @@ tiers sont donnés comme tels quand le fournisseur ne les publie pas.
 | Moteur | Préfixe | Ce que ça donne | Limite qui bloque |
 | --- | --- | --- | --- |
 | Gemini, offre gratuite | `gg:` | modèles Flash | quota du jour dépassé (429) le 08/10 au matin |
-| Groq, offre gratuite | `gq:` | gpt-oss-120b, qwen, gpt-oss-20b | **8 000 jetons par minute** par modèle (6 000 pour qwen), pour toute l'organisation (Accounting compris) ; ~200 000 jetons par jour par modèle |
+| Groq, offre gratuite | `gq:` | gpt-oss-120b, qwen, gpt-oss-20b | **8 000 jetons par minute** par modèle (6 000 pour qwen), pour toute l'organisation (Accounting compris) ; ~200 000 jetons par jour par modèle, sur une **fenêtre glissante de 24 h** (vu le 08/10 : « Used » baisse minute après minute, pas de remise à zéro à minuit). Répartition convenue avec Claudinette : Accounting d'abord sur gpt-oss-120b, Léo d'abord sur gpt-oss-20b |
 | Cloudflare Workers AI | `cf:` | gemma-4 | la part du jour (repart à minuit UTC) ; épuisée le 08/10 à 05 h 45 UTC |
 
 **Groq, depuis le 08/10** : une consigne d'agent fait 17 000 à 24 000 jetons,
