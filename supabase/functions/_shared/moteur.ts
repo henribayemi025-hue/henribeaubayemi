@@ -298,7 +298,12 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
     }),
     signal: AbortSignal.timeout(o.delaiMs ?? 90_000),
   });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
+  if (!resp.ok) {
+    // 08/10 : Mistral (offre gratuite) refusait tout en 429 dès le premier appel ; ses
+    // en-têtes « ratelimit » disent quelle limite bloque (minute, mois, jetons) — on les garde.
+    const limites = [...resp.headers.entries()].filter(([k]) => /ratelimit/i.test(k)).map(([k, v]) => `${k}=${v}`).join(' ');
+    throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}${limites ? ` [${limites.slice(0, 400)}]` : ''}`);
+  }
   const body = await resp.json();
   const prix = PRIX_DS[model] ?? PRIX_OPENAI[model];
   if (!prix && !offreGratuite) console.error(`coût inconnu pour ${model} : rien n'est compté dans ai_usage`);
@@ -530,6 +535,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       // Groq gratuit : la part du jour (ou de la minute) de CE modèle est prise ;
       // les deux autres modèles Groq ont la leur.
       else if (nom.startsWith('gq:') && /HTTP 429/.test(derniere)) await endormir(nom, /per day|TPD|RPD/i.test(derniere) ? 60 * 60_000 : 60_000, derniere);
+      // Mistral et Z.ai gratuits : la limite vaut pour le compte entier, pas pour un modèle —
+      // tous ses modèles attendent une minute (08/10 : 46 appels refusés en 100 s sinon).
+      else if ((nom.startsWith('mi:') || nom.startsWith('za:')) && /HTTP 429/.test(derniere)) await endormir(famille(nom), 60_000, derniere);
       // Un modèle que le fournisseur ne connaît pas (renommé, retiré) : de côté pour la journée.
       else if (INCONNU.test(derniere)) await endormir(nom, 24 * 3_600_000, derniere);
       // Muet, ou lent ET en échec : seulement CE modèle (un Pro lent qui
