@@ -39,6 +39,14 @@ Ordre de passage : Gemini gratuit → **Mistral** → Groq → Z.ai → Cloudfla
 
 ### Mistral : ce que Beau fait (10 minutes, gratuit)
 
+**Vu le 08/10** : une clé créée sans activer l'offre « Experiment » est acceptée
+mais limitée à **0 requête par minute** (en-tête `x-ratelimit-limit-req-minute=0`,
+erreur 429 code 1300 dès le premier appel). L'activation se fait dans la console :
+Admin → Subscription (section La Plateforme) → Compare plans → « Experiment for
+free » → accepter les conditions → Subscribe ; un numéro de téléphone vérifié est
+exigé (un numéro par offre). Les limites réelles du compte se lisent ensuite sur
+admin.mistral.ai/plateforme/limits.
+
 1. Créer un compte sur console.mistral.ai (« Mistral Studio »), plan gratuit
    « Experiment » ; aucune carte demandée (sources ci-dessous).
 2. Créer une clé API.
