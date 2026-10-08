@@ -92,7 +92,10 @@ const MUET = /timed out|timeout|aborted/i;
 // « gemini-3.1-pro » (sans -preview) n'existe pas chez Google : 250 réponses 404 en
 // 24 h relevées le 06/10, autant de secondes perdues avant le moteur suivant.
 export const MOTEURS_PAR_DEFAUT = ['gemini-3.1-pro-preview', 'gemini-3.5-flash', 'gemini-2.5-flash'];
-const INCONNU = /HTTP 404[\s\S]{0,200}not found/i;
+// Groq dit « does not exist or you do not have access », d'autres « decommissioned » ou
+// « deprecated » (Claudinette, veille du 08/10 : qwen3.8-27b est encore « Preview », donc
+// retirable sans préavis). Toutes ces formes mettent le modèle de côté pour la journée.
+const INCONNU = /HTTP 404[\s\S]{0,200}(not found|does not exist|decommissioned|deprecated|no longer)/i;
 
 // DeepSeek d'abord quand sa clé existe (le modèle fort pour les plans et
 // livrables, le rapide pour le reste). Les noms suivent leur tarif publié
