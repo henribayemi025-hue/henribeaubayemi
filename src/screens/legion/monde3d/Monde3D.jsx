@@ -242,6 +242,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [friseOuverte, setFriseOuverte] = useState(false);
   // La carte de la ville (touche M) et l'heure du jour au choix (touche T) — Beau, 08/10.
   const [carte, setCarte] = useState(false);
+  const [heros, setHeros] = useState(null); // le mode héros (heros.js) : { actif, vol, grappin, enAir }
+  const [avisHeros, setAvisHeros] = useState(null);
   const [heure, setHeure] = useState('reel'); // reel | couchant | nuit | jour
   const [avisHeure, setAvisHeure] = useState(null);
   const cielReel = useRef({ phase: 'jour', genre: 'clair' }); // Beau, 08/10 : « trop de texte partout » — la frise se replie
@@ -377,6 +379,11 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'perdu') setEtat('erreur');
             if (e.type === 'camera') setCamera(e.mode);
             if (e.type === 'touche' && e.cle === 'carte') setCarte((v) => !v);
+            if (e.type === 'heros') {
+              setHeros(e.actif ? { actif: true, vol: !!e.vol, grappin: !!e.grappin, enAir: !!e.enAir } : null);
+              const msg = e.refus === 'dehors' ? 'dehors' : e.rate ? 'rate' : (e.actif && !e.vol && !e.grappin && !e.enAir && e.rate === undefined && e.enAir === undefined) ? 'aide' : null;
+              if (msg) { const quand = Date.now(); setAvisHeros({ msg, quand }); setTimeout(() => setAvisHeros((a) => (a && a.quand === quand ? null : a)), msg === 'aide' ? 6500 : 2500); }
+            }
             if (e.type === 'touche' && e.cle === 'heure') changerHeureRef.current?.();
             if (e.type === 'proximite') setProche(e.cible);
             if (e.type === 'suivant') { setDialogue(null); setSuivant(e); }
@@ -717,6 +724,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           </div>
           <button type="button" onClick={() => { const v = !reve; ecrire('leo:reve', v ? '1' : '0'); monde.current?.reglerReve(v); setMenu(false); }} aria-pressed={reve}
             className={`w-full rounded-card px-2 py-2 text-left text-[13.5px] hover:bg-white/5 ${reve ? 'text-legion-gold' : 'text-legion-ink'}`}>✨ {t(reve ? 'legion.monde.reve.eteindre' : 'legion.monde.reve.allumer')}</button>
+          {lieu === 'hall' && <button type="button" onClick={() => { monde.current?.basculerHeros(); setMenu(false); }} aria-pressed={!!heros} className={`w-full rounded-card px-2 py-2 text-left text-[13.5px] hover:bg-white/5 ${heros ? 'text-legion-gold' : 'text-legion-ink'}`}>🦸 {t(heros ? 'legion.monde.heros.quitter' : 'legion.monde.heros.activer')}{!mobile && ' (H)'}</button>}
           <button type="button" onClick={() => { setChoixAvatar(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🧍 {t('legion.monde.monAvatar')}</button>
           <button type="button" onClick={() => { setChoixHabitat(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🏠 {t('legion.monde.ville.ouHabiter')}</button>
           <button type="button" onClick={() => { setIntro(true); setMenu(false); }} className="w-full rounded-card px-2 py-2 text-left text-[13.5px] text-legion-ink hover:bg-white/5">🎬 {t('legion.monde.revoirIntro')}</button>
@@ -993,7 +1001,24 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); joyBouge(e); }} onPointerMove={(e) => bouton && joyBouge(e)} onPointerUp={joyFin} onPointerCancel={joyFin}>
             <span className="absolute left-1/2 top-1/2 h-12 w-12 rounded-full bg-white/40" style={{ transform: `translate(calc(-50% + ${bouton?.x || 0}px), calc(-50% + ${bouton?.y || 0}px))` }} />
           </div>
+          {/* Le mode héros au pouce droit : sauter / voler (toucher = sauter, encore = voler, garder = monter), grappin (garder). */}
+          {heros && !volant && (
+            <div className="absolute bottom-6 right-4 z-[5] flex items-end gap-3" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+              <button type="button" aria-label={t('legion.monde.heros.grappin')} className={`grid h-16 w-16 touch-none select-none place-items-center rounded-full border text-[24px] backdrop-blur ${heros.grappin ? 'border-legion-gold bg-legion-gold/40' : 'border-white/30 bg-white/10'}`}
+                onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ grappin: true }); }} onPointerUp={() => monde.current?.pedales({ grappin: false })} onPointerCancel={() => monde.current?.pedales({ grappin: false })}>🪝</button>
+              <button type="button" aria-label={t('legion.monde.heros.voler')} className={`grid h-20 w-20 touch-none select-none place-items-center rounded-full border text-[26px] font-bold backdrop-blur ${heros.vol ? 'border-legion-gold bg-legion-gold/40 text-legion-gold' : 'border-white/30 bg-white/10 text-white'}`}
+                onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); monde.current?.pedales({ sauteFront: true, saute: true }); }} onPointerUp={() => monde.current?.pedales({ saute: false })} onPointerCancel={() => monde.current?.pedales({ saute: false })}>⤒</button>
+            </div>
+          )}
+          {!heros && !volant && enVille && !proche && (
+            <button type="button" onClick={() => monde.current?.basculerHeros(true)} aria-label={t('legion.monde.heros.activer')} className="absolute bottom-8 right-5 z-[5] grid h-14 w-14 place-items-center rounded-full border border-white/25 bg-[#0b1120]/60 text-[24px] backdrop-blur" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>🦸</button>
+          )}
         </>
+      )}
+      {avisHeros && (
+        <div className="pointer-events-none absolute left-1/2 top-16 z-[9] max-w-[90%] -translate-x-1/2 rounded-card bg-black/75 px-4 py-2 text-center text-[13px] font-semibold text-white" style={{ animation: 'leoFondu .3s ease-out' }}>
+          {t(`legion.monde.heros.${avisHeros.msg}${avisHeros.msg === 'aide' && mobile ? 'Tel' : ''}`)}
+        </div>
       )}
 
       {carte && etat === 'pret' && <CarteVille monde={monde.current} t={t} mobile={mobile} onFermer={() => setCarte(false)} />}

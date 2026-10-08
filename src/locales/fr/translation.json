@@ -1674,6 +1674,16 @@
         "couchant": "Coucher de soleil",
         "nuit": "Nuit",
         "jour": "Plein jour"
+      },
+      "heros": {
+        "activer": "Mode héros",
+        "quitter": "Quitter le mode héros",
+        "voler": "Sauter, voler",
+        "grappin": "Grappin",
+        "dehors": "Sors dans la rue pour passer en mode héros",
+        "rate": "Rien à accrocher : vise un immeuble plus proche",
+        "aide": "Mode héros : Espace pour sauter, encore Espace pour voler, Q pour le grappin, Maj pour aller plus vite, H pour quitter",
+        "aideTel": "Mode héros : ⤒ pour sauter, encore ⤒ pour voler, garde 🪝 pour le grappin"
       }
     },
     "agentModifie": "Enregistré",

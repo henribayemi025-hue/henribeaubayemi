@@ -27,6 +27,7 @@ import { visee as viseeFoot, puissance as puissanceFoot, tirerAuBut, compterTirs
 import { construireReve, construireDauphins } from './reve3d';
 import { construireCarte } from './carte3d';
 import { borner, BORNES } from './carte';
+import { nouveauHeros, avancerHeros, viserLarge } from './heros';
 
 // Au-delà, une étiquette (nom d'un agent, de la réceptionniste) n'est plus lisible : on la cache.
 const ETIQUETTE_MAX = 45;
@@ -1238,6 +1239,8 @@ export class Monde {
         if (code === 'KeyV') this.cycleCamera();
         if (code === 'KeyN') this.allerAuSuivant();
         if (code === 'KeyM') this.emettre({ type: 'touche', cle: 'carte' });
+        if (code === 'KeyH') this.basculerHeros();
+        if (code === 'Space' && !e.repeat) this.espaceFront = true;
         if (code === 'KeyT') this.emettre({ type: 'touche', cle: 'heure' });
       } else this.touches.delete(code);
     };
@@ -1259,6 +1262,61 @@ export class Monde {
     el.addEventListener('pointerup', () => { tire = null; });
     el.addEventListener('wheel', (e) => { this.cam.dist = THREE.MathUtils.clamp(this.cam.dist + e.deltaY * 0.003, 1.8, 7); }, { passive: true });
   }
+  // ——— Le mode héros (heros.js ; touche H) ———
+  // Dehors seulement (la réception a un plafond). Quitter en l'air : on redescend d'abord.
+  basculerHeros(oui = !this.heros || this.heros.arreter) {
+    if (oui) {
+      if (this.lieu?.nom !== 'hall' || this.conduite || this.ciel3d) return false;
+      if (!this.dehors) { this.emettre({ type: 'heros', actif: false, refus: 'dehors' }); return false; }
+      this.heros = nouveauHeros();
+    } else if (this.heros) {
+      this.heros.arreter = true; this.heros.vol = false; this.heros.grappin = null;
+    }
+    this.emettre({ type: 'heros', actif: !!oui });
+    return true;
+  }
+  boitesHeros() {
+    const V = this.villeVivante;
+    if (!this.toursHelico) this.toursHelico = [...(V?.tours || []), ...(this.quartiers?.murs || []), { x0: -12.4, x1: 12.4, z0: -9.4, z1: 9.4, h: 82 }];
+    return this.toursHelico;
+  }
+  avancerHerosMoteur(dt, ax, az) {
+    const h = this.heros, j = this.joueur, p = j.objet.position, t = this.touches, ph = this.pedale || {};
+    const sauteFront = !!(this.espaceFront || ph.sauteFront);
+    this.espaceFront = false; if (ph.sauteFront) this.pedale = { ...ph, sauteFront: false };
+    const grappin = t.has('KeyQ') || t.has('KeyG') || !!ph.grappin;
+    const boites = this.boitesHeros();
+    let vise = null;
+    if (grappin && !h.grappin) {
+      // On vise au centre de l'écran, un peu vers le haut : là où la corde va s'accrocher.
+      const o = this.camera.position, dir = new THREE.Vector3();
+      this.camera.getWorldDirection(dir); dir.y += 0.3; dir.normalize();
+      vise = viserLarge({ x: o.x, y: o.y, z: o.z }, { x: dir.x, y: dir.y, z: dir.z }, boites);
+    }
+    const r = avancerHeros(h, p, { avant: -az, cote: ax, yaw: this.cam.yaw, pitch: this.cam.pitch, saute: t.has('Space') || !!ph.saute, sauteFront, rapide: t.has('ShiftLeft') || t.has('ShiftRight') || !!ph.rapide || Math.hypot(this.joy.x, this.joy.y) > 1.35, grappin, vise }, dt, boites, BORNES);
+    if (r.cap != null) { let d = r.cap - j.objet.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); j.objet.rotation.y += d * Math.min(1, dt * 8); }
+    j.objet.rotation.x = h.vol ? -Math.min(1.25, r.vitesse / 22) : 0; // en vol rapide, on s'allonge
+    j.jouer(r.anim, { fondu: 0.2 });
+    this.son?.allure(r.vitesse > 6 ? 2 : r.vitesse > 0.5 ? 1 : 0);
+    // La corde du grappin, de la main jusqu'au mur.
+    // Un vrai cordage (un fin cylindre) : une ligne de 1 pixel ne se voyait pas.
+    if (!this.corde) {
+      this.corde = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1, 6).translate(0, 0.5, 0).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#f4f1ea', roughness: 0.6 }));
+      this.corde.frustumCulled = false; this.scene.add(this.corde);
+    }
+    this.corde.visible = !!h.grappin;
+    if (h.grappin) {
+      const de = new THREE.Vector3(p.x, p.y + 1.35, p.z), vers = new THREE.Vector3(h.grappin.x, h.grappin.y, h.grappin.z);
+      this.corde.position.copy(de); this.corde.lookAt(vers); this.corde.scale.set(1, 1, de.distanceTo(vers));
+    }
+    const etat = `${h.vol ? 'v' : ''}${h.grappin ? 'g' : ''}${h.enAir ? 'a' : ''}`;
+    if (etat !== this.etatHeros) { this.etatHeros = etat; this.emettre({ type: 'heros', actif: true, vol: h.vol, grappin: !!h.grappin, enAir: h.enAir }); }
+    if (grappin && !h.grappin && !vise && !this.grappinRateDit) { this.grappinRateDit = true; this.emettre({ type: 'heros', actif: true, rate: true }); }
+    if (!grappin) this.grappinRateDit = false;
+    // Mode quitté : une fois posé, on redevient piéton.
+    if (h.arreter && !h.enAir && !h.vol) { this.heros = null; j.objet.rotation.x = 0; if (this.corde) this.corde.visible = false; this.emettre({ type: 'heros', actif: false }); }
+  }
+
   // ——— La carte de la ville (plan.js, CarteVille.jsx ; touche M) ———
   // Ce qu'il faut pour dessiner le plan, et où est la personne (ou son véhicule).
   donneesCarte() {
@@ -1867,6 +1925,7 @@ export class Monde {
     else if (this.conduite?.genre === 'bateau') this.avancerBateau(dt);
     else if (this.conduite) this.avancerVoiture(dt);
     else if (dansLEau) this.nager(dt, ax, az, n, court);
+    else if (this.heros && this.lieu.nom === 'hall' && (this.dehors || this.heros.enAir || this.heros.vol || this.heros.grappin)) this.avancerHerosMoteur(dt, ax, az);
     else if (n > 0.08) {
       ax /= Math.max(n, 1); az /= Math.max(n, 1);
       const yaw = this.cam.mode === 'plan' ? Math.PI : this.cam.yaw;
@@ -1961,7 +2020,7 @@ export class Monde {
     if (cle !== this.cleProche) { this.cleProche = cle; this.proche = proche; this.emettre({ type: 'proximite', cible: proche }); }
 
     // Caméra
-    const tete = new THREE.Vector3(p.x, 1.55, p.z);
+    const tete = new THREE.Vector3(p.x, p.y + 1.55, p.z);
     j.objet.visible = this.cam.mode !== 'fps';
     // La caméra ne traverse pas les immeubles (parcours du 25/09 : contre une
     // tour, on voyait la façade de l'intérieur) : si le point voulu est dans
@@ -2011,22 +2070,23 @@ export class Monde {
       this.camera.position.lerp(voulu, Math.min(1, dt * 2));
       this.camera.lookAt(0, 8, 52.5);
     } else if (this.cam.mode === 'fps') {
-      this.camera.position.set(p.x, 1.62, p.z);
-      this.camera.lookAt(p.x - Math.sin(this.cam.yaw) * 5, 1.62 - this.cam.pitch * 3, p.z - Math.cos(this.cam.yaw) * 5);
+      this.camera.position.set(p.x, p.y + 1.62, p.z);
+      this.camera.lookAt(p.x - Math.sin(this.cam.yaw) * 5, p.y + 1.62 - this.cam.pitch * 3, p.z - Math.cos(this.cam.yaw) * 5);
     } else if (this.cam.mode === 'plan') {
       this.camera.position.lerp(new THREE.Vector3(p.x, 16, p.z + 7), Math.min(1, dt * 4));
       this.camera.lookAt(p.x, 0, p.z);
     } else {
-      const d = this.cam.dist;
-      const voulu = new THREE.Vector3(p.x + Math.sin(this.cam.yaw) * d * Math.cos(this.cam.pitch), 1.4 + Math.sin(this.cam.pitch) * d + 0.3, p.z + Math.cos(this.cam.yaw) * d * Math.cos(this.cam.pitch));
+      const enLAir = !!(this.heros && (this.heros.vol || this.heros.enAir || this.heros.grappin));
+      const d = this.cam.dist * (enLAir ? 2.3 : 1);
+      const voulu = new THREE.Vector3(p.x + Math.sin(this.cam.yaw) * d * Math.cos(this.cam.pitch), p.y + 1.4 + Math.sin(this.cam.pitch) * d + 0.3, p.z + Math.cos(this.cam.yaw) * d * Math.cos(this.cam.pitch));
       const I = this.lieu.interieur;
       const dedans = I && p.x > I.x0 && p.x < I.x1 && p.z > I.z0 && p.z < I.z1;
       const L = dedans ? { x0: I.x0 + 0.3, x1: I.x1 - 0.3, z0: I.z0 + 0.3, z1: I.z1 - 0.3 } : this.lieu.limites;
       voulu.x = THREE.MathUtils.clamp(voulu.x, L.x0 + 0.25, L.x1 - 0.25);
       voulu.z = THREE.MathUtils.clamp(voulu.z, L.z0 + 0.25, L.z1 - 0.25);
       const reel = Math.hypot(voulu.x - p.x, voulu.z - p.z), ideal = Math.max(0.01, d * Math.cos(this.cam.pitch));
-      voulu.y = 1.55 + (voulu.y - 1.55) * Math.min(1, reel / ideal);
-      voulu.y = Math.min(voulu.y, this.lieu.nom === 'hall' ? (dedans ? 5.2 : 12) : 3.2);
+      voulu.y = p.y + 1.55 + (voulu.y - p.y - 1.55) * Math.min(1, reel / ideal);
+      voulu.y = Math.min(voulu.y, p.y + (this.lieu.nom === 'hall' ? (dedans ? 5.2 : enLAir ? 40 : 12) : 3.2));
       if (this.camSnap) { this.camera.position.copy(voulu); this.camSnap = false; } else this.camera.position.lerp(voulu, Math.min(1, dt * 8));
       this.camera.lookAt(tete);
     }

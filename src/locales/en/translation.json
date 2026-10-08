@@ -1674,6 +1674,16 @@
         "couchant": "Sunset",
         "nuit": "Night",
         "jour": "Midday"
+      },
+      "heros": {
+        "activer": "Hero mode",
+        "quitter": "Leave hero mode",
+        "voler": "Jump, fly",
+        "grappin": "Grapple",
+        "dehors": "Go out into the street to switch to hero mode",
+        "rate": "Nothing to grab: aim at a closer building",
+        "aide": "Hero mode: Space to jump, Space again to fly, Q to grapple, Shift to go faster, H to leave",
+        "aideTel": "Hero mode: ⤒ to jump, ⤒ again to fly, hold 🪝 to grapple"
       }
     },
     "agentModifie": "Saved",
