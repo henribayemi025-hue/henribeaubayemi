@@ -17,11 +17,11 @@ import { currencyForCountry, formatPrice } from './currency';
 export const LARGEUR = 1080;
 export const HAUTEUR = 1920;
 
-const CREME = '#FAF6F0';
-const ENCRE = '#171B26';
-const TERRACOTTA = '#C25E38';
-const LAITON = '#E09F3E';
-const GRIS = '#6B6F7A';
+export const CREME = '#FAF6F0';
+export const ENCRE = '#171B26';
+export const TERRACOTTA = '#C25E38';
+export const LAITON = '#E09F3E';
+export const GRIS = '#6B6F7A';
 
 // Trois articles qui changent chaque jour : on tourne dans les douze plus
 // récents qui ont une photo, en commençant à un rang qui dépend de la date.
@@ -47,7 +47,7 @@ export function lienBoutique(slug) {
   return `finjaro.net/boutique/${slug}`;
 }
 
-function chargerImage(src) {
+export function chargerImage(src) {
   return new Promise((resolve) => {
     if (!src) return resolve(null);
     const img = new Image();
@@ -62,14 +62,14 @@ function chargerImage(src) {
 }
 
 // Recadre l'image pour remplir le cadre, centrée — comme object-fit: cover.
-function dessinerCouvrant(ctx, img, x, y, l, h) {
+export function dessinerCouvrant(ctx, img, x, y, l, h) {
   const r = Math.max(l / img.width, h / img.height);
   const sl = l / r;
   const sh = h / r;
   ctx.drawImage(img, (img.width - sl) / 2, (img.height - sh) / 2, sl, sh, x, y, l, h);
 }
 
-function arrondi(ctx, x, y, l, h, r) {
+export function arrondi(ctx, x, y, l, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + l, y, x + l, y + h, r);
@@ -80,15 +80,15 @@ function arrondi(ctx, x, y, l, h, r) {
 }
 
 // Coupe un texte trop long avec « … » pour qu'il tienne dans `max` pixels.
-function tronquer(ctx, texte, max) {
+export function tronquer(ctx, texte, max) {
   if (ctx.measureText(texte).width <= max) return texte;
   let t = texte;
   while (t.length > 1 && ctx.measureText(`${t}…`).width > max) t = t.slice(0, -1);
   return `${t.trimEnd()}…`;
 }
 
-const SERIF = 'Georgia, "Times New Roman", serif';
-const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+export const SERIF = 'Georgia, "Times New Roman", serif';
+export const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
 
 /**
  * Dessine le statut et renvoie un Blob PNG.

@@ -4346,5 +4346,43 @@
     "services": "Services",
     "voirBoutique": "Voir la boutique {{nom}}",
     "duMoment": "Articles du moment"
+  },
+  "semaine": {
+    "cardTitle": "Ta semaine de publications",
+    "cardHint": "7 publications prêtes avec tes articles, une par jour",
+    "aide": "Chaque jour, touche « Partager » : l’image et le texte partent ensemble sur Instagram, Facebook ou WhatsApp. La semaine prochaine, d’autres articles.",
+    "aucun": "Ajoute au moins un article avec une photo pour préparer ta semaine.",
+    "partager": "Partager",
+    "copier": "Copier le texte",
+    "copie": "Texte copié : colle-le sous ta publication.",
+    "copieImpossible": "Copie impossible : sélectionne le texte à la main.",
+    "enregistree": "Image enregistrée et texte copié : publie-les ensemble.",
+    "enregistreeSansCopie": "Image enregistrée : ajoute le texte en dessous.",
+    "themes": {
+      "nouveaute": "Nouveauté",
+      "coupDeCoeur": "Coup de cœur",
+      "question": "Question du jour",
+      "detail": "Zoom sur un article",
+      "weekend": "Pour le week-end",
+      "commander": "Comment commander",
+      "rappel": "Toute ma boutique"
+    },
+    "textes": {
+      "nouveaute": "Nouveau chez {{boutique}} : {{article}}{{prix}}.\nCommandez sur ma boutique 👉 {{lien}}",
+      "coupDeCoeur": "Mon coup de cœur de la semaine : {{article}}{{prix}}.\nIl vous plaît aussi ? 👉 {{lien}}",
+      "question": "Question du jour : pour quelle occasion vous choisiriez {{article}} ? Dites-le-moi en commentaire 👇\n{{lien}}",
+      "detail": "Regardez les détails : {{article}}{{prix}}.\nToutes les photos sur ma boutique 👉 {{lien}}",
+      "weekend": "Pour ce week-end : {{article}}{{prix}}.\nÀ voir sur ma boutique 👉 {{lien}}",
+      "commander": "Commander, c’est simple : choisissez {{article}} ou un autre article sur ma boutique, et je vous recontacte.\n👉 {{lien}}",
+      "rappel": "Toute ma boutique est en ligne, dont {{article}}{{prix}}.\nPrenez le temps de regarder 👉 {{lien}}"
+    },
+    "video": {
+      "titre": "Ton idée de vidéo de la semaine",
+      "aide": "15 secondes au téléphone, sans montage",
+      "plan1": "Montre {{article}} de près, dans ta main ou porté.",
+      "plan2": "Tourne-le lentement pour qu’on voie la matière et les finitions.",
+      "plan3": "Dis son prix et pour qui il est fait, face caméra.",
+      "plan4": "Termine sur le nom de ta boutique : « commandez sur ma boutique Finjaro »."
+    }
   }
 }

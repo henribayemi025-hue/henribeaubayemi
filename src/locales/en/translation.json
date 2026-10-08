@@ -4346,5 +4346,43 @@
     "services": "Services",
     "voirBoutique": "See the {{nom}} shop",
     "duMoment": "Trending items"
+  },
+  "semaine": {
+    "cardTitle": "Your week of posts",
+    "cardHint": "7 posts ready with your items, one a day",
+    "aide": "Each day, tap \"Share\": the image and the text go together to Instagram, Facebook or WhatsApp. Next week, other items.",
+    "aucun": "Add at least one item with a photo to prepare your week.",
+    "partager": "Share",
+    "copier": "Copy text",
+    "copie": "Text copied: paste it under your post.",
+    "copieImpossible": "Can't copy: select the text by hand.",
+    "enregistree": "Image saved and text copied: post them together.",
+    "enregistreeSansCopie": "Image saved: add the text below it.",
+    "themes": {
+      "nouveaute": "New in",
+      "coupDeCoeur": "Favourite",
+      "question": "Question of the day",
+      "detail": "Close-up",
+      "weekend": "For the weekend",
+      "commander": "How to order",
+      "rappel": "My whole shop"
+    },
+    "textes": {
+      "nouveaute": "New at {{boutique}}: {{article}}{{prix}}.\nOrder from my shop 👉 {{lien}}",
+      "coupDeCoeur": "My favourite this week: {{article}}{{prix}}.\nDo you like it too? 👉 {{lien}}",
+      "question": "Question of the day: what occasion would you pick {{article}} for? Tell me in the comments 👇\n{{lien}}",
+      "detail": "Look at the details: {{article}}{{prix}}.\nAll the photos on my shop 👉 {{lien}}",
+      "weekend": "For this weekend: {{article}}{{prix}}.\nSee it on my shop 👉 {{lien}}",
+      "commander": "Ordering is easy: pick {{article}} or any other item on my shop, and I get back to you.\n👉 {{lien}}",
+      "rappel": "My whole shop is online, including {{article}}{{prix}}.\nTake your time to browse 👉 {{lien}}"
+    },
+    "video": {
+      "titre": "Your video idea for the week",
+      "aide": "15 seconds on your phone, no editing",
+      "plan1": "Show {{article}} up close, in your hand or worn.",
+      "plan2": "Turn it slowly so people see the material and the finish.",
+      "plan3": "Say its price and who it is for, facing the camera.",
+      "plan4": "End on your shop name: \"order from my Finjaro shop\"."
+    }
   }
 }
