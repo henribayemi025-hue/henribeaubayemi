@@ -35,5 +35,16 @@ Léo utilise le même moteur 3D (three.js), donc les idées et les morceaux de c
 - Le README prévient que tout change vite et que rien n'est garanti d'une version à l'autre.
 - Si on reprend du code : garder la mention MIT d'AgentSystemLabs dans le fichier concerné.
 
+## Mise à jour du 08/10 (reçu une deuxième fois)
+Page du dépôt relue le 08/10 : 206 commits, 670 étoiles, toujours MIT, toujours « en chantier, tout peut casser ». Nouveau depuis le 29/09 :
+- **Parler au lieu de taper** : on maintient Ctrl+Espace pour dicter à un agent. Le navigateur fait la reconnaissance vocale, il n'y a rien à installer. Léo a déjà Jarvis, la télécommande vocale ; reste à proposer la dictation dans la boîte d'écriture d'un salon.
+- **Alerte plus forte** : l'agent qui attend une réponse a une balise rouge, un bandeau à l'écran et une alarme. Celui qui a fini saute et sonne. Léo a déjà le saut, le « ding » et la touche N, mais pas encore la différence entre « il attend » et « il a fini ».
+- **Version 2D pour téléphone (`/lite`)**, pour les téléphones et les ordinateurs lents. Léo a déjà sa vue 2D de la ville, mais le monde 3D au téléphone reste lourd : c'est la même réponse.
+- **Des agents qui gèrent des agents** : un agent peut lister, engager, prévenir ou renvoyer un autre agent, par un serveur MCP. Léo a un serveur MCP pour les outils extérieurs, mais ses agents ne s'engagent pas encore entre eux (c'est aussi l'idée de Grok Bot Galaxy, fiche 53).
+- **Ensemble** : voix, discussion, partage d'écran sur la télé du salon, tableau blanc commun.
+- **D'autres cartes** : château, station spatiale, et cartes sur mesure décrites dans un fichier JSON. Pour Léo : un immeuble ou une ville décrits par l'entreprise elle-même.
+- Pour le décor : des voitures de sport à conduire, des pins, des montagnes, une plage.
+
 ## Verdict
 **Très utile comme modèle pour le monde 3D de Léo.** En premier, à reprendre (idée et code MIT) : l'agent qui saute et sonne quand il a besoin de toi, la touche « aller au suivant », la carte au-dessus de la tête et le mime du travail. Ensuite, les tickets GitHub au mur, qui liront le connecteur GitHub déjà branché dans Léo (« Se connecter avec GitHub »). Rien n'est intégré avant l'accord de Beau.
+**Déjà repris le 29/09 (accord de Beau)** : saut et sonnerie, touche N, étiquette au-dessus de la tête, mime du travail (staging 8818a37, en ligne depuis le 01/10). **À proposer après le 08/10** : distinguer « attend une réponse » (rouge, alarme) de « a fini » (saut, ding), la dictée dans les salons, et des agents qui engagent ou préviennent d'autres agents. La ville passe en premier (chantier du 08/10).
