@@ -2222,6 +2222,8 @@
   },
   "porte": {
     "entrer": "Entrer",
+    "continuerVers": "Connecte-toi pour continuer vers {{ou}}.",
+    "vers": { "fonder": "la création de ton entreprise", "atelier": "l’Atelier", "rejoindre": "l’invitation que tu as reçue", "entreprise": "ton entreprise" },
     "memeCompte": "Le même compte que sur Finjaro.",
     "google": "Continuer avec Google",
     "ou": "ou",

@@ -67,8 +67,21 @@ function veutLaVideo() {
   return window.matchMedia('(min-width: 1024px)').matches;
 }
 
+// Le lien profond qu'on suivait, en clair (audit du 07/10, Λ1) : « Connecte-toi
+// pour continuer vers l'Atelier ». La destination est bien gardée (on y revient
+// après connexion) ; il manquait la phrase qui rassure.
+function destinationDe(app, from, t) {
+  if (!from || app !== 'legion') return null;
+  if (from.startsWith('/legion/fonder')) return t('porte.vers.fonder', 'la création de ton entreprise');
+  if (from.startsWith('/legion/atelier')) return t('porte.vers.atelier', 'l’Atelier');
+  if (from.startsWith('/legion/rejoindre/')) return t('porte.vers.rejoindre', 'l’invitation que tu as reçue');
+  if (/^\/legion\/[0-9a-f-]{20,}/i.test(from)) return t('porte.vers.entreprise', 'ton entreprise');
+  return null;
+}
+
 export function PorteApplication({ app, from }) {
   const { t } = useTranslation();
+  const vers = destinationDe(app, from, t);
   const navigate = useNavigate();
   const { signInWithGoogle } = useAuth();
   const a = APPLIS[app];
@@ -126,7 +139,9 @@ export function PorteApplication({ app, from }) {
 
           <section className={`h-fit rounded-2xl border p-5 ${panneau}`}>
             <p className="text-body font-semibold">{t('porte.entrer', 'Entrer')}</p>
-            <p className={`mt-0.5 text-caption ${a.sourd}`}>{t('porte.memeCompte', 'Le même compte que sur Finjaro.')}</p>
+            <p className={`mt-0.5 text-caption ${a.sourd}`}>
+              {vers ? t('porte.continuerVers', 'Connecte-toi pour continuer vers {{ou}}.', { ou: vers }) : t('porte.memeCompte', 'Le même compte que sur Finjaro.')}
+            </p>
             <div className="mt-4 space-y-2.5">
               {/* Beau, 25/09 : « il doit aussi y avoir Continuer avec Finjaro, comme il y a Continuer
                   avec Google ». C'est le compte Finjaro (e-mail ou téléphone), le même partout. */}

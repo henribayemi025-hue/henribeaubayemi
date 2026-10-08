@@ -2222,6 +2222,8 @@
   },
   "porte": {
     "entrer": "Sign in",
+    "continuerVers": "Sign in to continue to {{ou}}.",
+    "vers": { "fonder": "founding your company", "atelier": "the Workshop", "rejoindre": "the invitation you received", "entreprise": "your company" },
     "memeCompte": "The same account as on Finjaro.",
     "google": "Continue with Google",
     "ou": "or",

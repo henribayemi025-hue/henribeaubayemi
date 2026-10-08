@@ -18,10 +18,12 @@ export default function Landing() {
       <header className="flex h-14 items-center px-4">
         <span className="flex items-center gap-1 text-title font-semibold text-teal">Finjaro<span className="h-1.5 w-1.5 rounded-full bg-brass" /></span>
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')} className="text-caption font-semibold text-teal">
+          {/* 44 px de haut : à 20 px (audit du 07/10, M4) le pouce manquait la
+              bascule de langue et touchait « Se connecter » à côté. */}
+          <button onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')} className="inline-flex min-h-11 items-center px-2 text-caption font-semibold text-teal">
             {language === 'fr' ? 'EN' : 'FR'}
           </button>
-          <Link to="/auth" className="text-caption font-semibold text-teal">{t('auth.login')}</Link>
+          <Link to="/auth" className="inline-flex min-h-11 items-center px-2 text-caption font-semibold text-teal">{t('auth.login')}</Link>
         </div>
       </header>
 

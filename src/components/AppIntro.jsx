@@ -146,7 +146,9 @@ export function AppIntro() {
           a sa place, sinon on explique un service sans jamais le nommer. */}
       <div className="mx-auto flex w-full max-w-app items-center justify-between px-6 py-4">
         <span className="text-title font-semibold text-teal">Finjaro</span>
-        <button onClick={() => close('passer')} className="px-2 py-1 text-caption font-semibold text-muted">
+        {/* 44 px de haut (audit du 07/10, M4 : 28 px). « Passer » est la porte de
+            sortie de quelqu'un de pressé : elle doit se toucher du premier coup. */}
+        <button onClick={() => close('passer')} className="-mr-3 inline-flex min-h-11 items-center px-3 text-caption font-semibold text-muted">
           {t('intro.skip')}
         </button>
       </div>

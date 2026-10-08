@@ -181,13 +181,17 @@ export function HomeHeroCarousel({ products }) {
           );
         })}
       </div>
-      <div className="absolute bottom-2 right-3 flex gap-1.5">
+      {/* Les points : la cible tactile fait 44 px de haut et 24 px de large
+          (audit du 07/10, M4 : des boutons de 14 px nommés d'après les
+          articles, impossibles à viser au pouce). Le point visible reste
+          petit ; seule la zone qui réagit a grandi. */}
+      <div className="absolute bottom-0 right-1.5 flex">
         {slides.map((s, i) => (
           <button
             key={isProducts ? s.id : s.cat}
             onClick={() => goTo(i)}
             aria-label={isProducts ? s.name : t(`categories.${s.cat}`)}
-            className="p-1"
+            className="flex h-11 w-6 items-center justify-center"
           >
             <span className={`block h-1.5 rounded-full transition-all ${i === index ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
           </button>

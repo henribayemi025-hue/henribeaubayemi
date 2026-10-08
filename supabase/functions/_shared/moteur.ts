@@ -337,12 +337,30 @@ const GROQ_SORTIE_MAX = 4096;
 // rien. Trop long pour la part → on ne l'appelle pas, on passe au suivant.
 const GROQ_JETONS_MINUTE = (model: string) => Number(Deno.env.get('LEGION_GROQ_JETONS_MINUTE') || (/qwen/i.test(model) ? 6000 : 8000));
 const jetonsEstimes = (texte: string) => Math.ceil(texte.length / 3.2);
+// La part par minute vaut pour toute l'organisation, pas par appel. Vu le
+// 08/10 à 02h42 : trois agents de legion-travail travaillent en parallèle,
+// chacun avec une consigne qui passe seule, et à trois ils dépassent la
+// minute — trois 429 d'un coup, puis Cloudflare. On tient donc le compte des
+// jetons engagés par modèle dans la minute courante (dans cet isolat : les
+// agents d'un même passage partagent ce compteur) ; quand la minute est
+// prise, les suivants passent au moteur d'après sans appel réseau.
+const groqMinute = new Map<string, { debut: number; jetons: number }>();
+function groqReserver(model: string, jetons: number): boolean {
+  const limite = GROQ_JETONS_MINUTE(model);
+  const m = groqMinute.get(model);
+  const neuf = !m || Date.now() - m.debut >= 60_000;
+  const engages = neuf ? 0 : m!.jetons;
+  if (engages + jetons > limite) return false;
+  groqMinute.set(model, { debut: neuf ? Date.now() : m!.debut, jetons: engages + jetons });
+  return true;
+}
 async function viaGroq(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const cle = Deno.env.get('GROQ_API_KEY');
   if (!cle) throw new Error('GROQ_API_KEY absent');
   const sortie = Math.min(GROQ_SORTIE_MAX, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048));
   const entree = jetonsEstimes(texte) + jetonsEstimes(JSON.stringify(schema)) + 120;
   if (entree + sortie > GROQ_JETONS_MINUTE(model)) throw new Error(`part gratuite de Groq : consigne trop longue (${entree + sortie} jetons estimés pour ${GROQ_JETONS_MINUTE(model)} par minute)`);
+  if (!groqReserver(model, entree + sortie)) throw new Error(`part gratuite de Groq : minute déjà prise par un autre appel (${GROQ_JETONS_MINUTE(model)} jetons par minute)`);
   const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cle}` },
@@ -444,7 +462,10 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {
         derniere = `${nom}: JSON illisible`; essais.push({ m: nom, ms: Date.now() - debut, e: 'JSON illisible' });
-        if (Date.now() - debut > 8_000) await endormir(nom, 5 * 60_000, derniere);
+        // Une réponse mal formée n'est pas une panne du moteur : 60 s de côté,
+        // pas 5 min (08/10 : Cloudflare, dernier moteur gratuit debout, écarté
+        // 5 min pour un seul JSON illisible — plus rien ne tournait).
+        if (Date.now() - debut > 8_000) await endormir(nom, 60_000, derniere);
       }
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
@@ -459,6 +480,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       else if (INCONNU.test(derniere)) await endormir(nom, 24 * 3_600_000, derniere);
       // Muet, ou lent ET en échec : seulement CE modèle (un Pro lent qui
       // réussit ne met pas de côté tout Google).
+      else if (/JSON illisible|hors schéma|réponse vide|réponse coupée/i.test(derniere)) await endormir(nom, 60_000, derniere);
       else if (MUET.test(derniere) || Date.now() - debut > 8_000) await endormir(nom, 5 * 60_000, derniere);
       if (/spending cap/i.test(derniere)) plafondGoogle = true;
       // Un solde épuisé chez DeepSeek ou Kimi : Beau est prévenu (une fois par jour).

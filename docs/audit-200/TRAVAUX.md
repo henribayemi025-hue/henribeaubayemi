@@ -11,10 +11,10 @@ qu'après vérification sur staging.
 | 4 | Learn | Libellés 10,56 px → 12 px ; badges 10 px → 11 px | gênant | ecrans L3 | fait (07/10 soir, vérifié) |
 | 5 | Place de marché | Une seule bulle flottante sur l'accueil, qui s'efface au défilement | gênant | ecrans M1 | à faire |
 | 6 | Place de marché | Services : puce pays non tronquée, boutons Détails / Contacter / Réserver à 44 px (les descriptions étaient déjà coupées : erreur du rapport, corrigée) | gênant | ecrans M2 | fait (07/10 soir, vérifié : 24 boutons à 44 px, puce entière) |
-| 7 | Léo | Porte des liens profonds : « Connecte-toi pour continuer vers … » | détail | ecrans Λ1 | à faire |
+| 7 | Léo | Porte des liens profonds : « Connecte-toi pour continuer vers … » | détail | ecrans Λ1 | fait (08/10 nuit, vérifié à 390 et 1 440 px) |
 | 8 | Learn | Carrousel : une seule « Leçon 1 », celle du niveau | détail | ecrans L5 | fait (07/10 soir : 3 diapositives à 0 leçon) |
-| 9 | Place de marché | Pas de mise en avant sans photo (règle + carte « Articles sans photo ») | détail | ecrans M3 | à proposer à Alpha |
-| 10 | Place de marché | « EN » 20 px, « Passer » 28 px, noms du carrousel 14 px → 44 px | détail | ecrans M4 | à faire |
+| 9 | Place de marché | Pas de mise en avant sans photo (règle + carte « Articles sans photo ») | détail | ecrans M3 | confié à Alpha le 08/10 (tâche difficile : règle, endroit du code, texte de la carte, chiffre mesuré) |
+| 10 | Place de marché | « EN » 20 px, « Passer » 28 px, noms du carrousel 14 px → 44 px | détail | ecrans M4 | fait (08/10 nuit, mesuré : 44 / 44 / 44×24) |
 | 11 | Accounting | Régime fiscal par défaut au Cameroun : « sans TVA, à confirmer avec votre comptable » au lieu du réel + TVA 19,25 % | grave | ACCOUNTING A1 | à trancher par Beau |
 | 12 | Accounting | Journal / Ventes / Stock : mois en cours par défaut + « Voir plus » (615 écritures sur une page) | moyen | ACCOUNTING A5 | proposé (Claudinette) |
 | 13 | Accounting | Démonstration en mode simple, bouton vers l'expert | moyen | ACCOUNTING A6 | proposé (Claudinette) |
