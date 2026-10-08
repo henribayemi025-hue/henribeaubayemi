@@ -11,6 +11,7 @@ import { STYLES } from './region';
 import { construireChantier, jeterChantier, lumieresChantiers } from './chantiers3d';
 import { construireHelico, construireHeliport } from './helico3d';
 import { reliefTour, nouveauRelief, construireRelief } from './relief3d';
+import { parcelles, construireImmeubles } from './immeubles3d';
 
 const ROUTES_X = [-78, -26, 26, 78];
 const ROUTES_Z = [-74, -22, 30, 82];
@@ -561,7 +562,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   for (let i = 0; i < xs.length - 1; i += 1) for (let j = 0; j < zs.length - 1; j += 1) {
     const x0 = xs[i] + (i === 0 ? 0 : LARGEUR_ROUTE / 2), x1 = xs[i + 1] - (i + 1 === xs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
     const z0 = zs[j] + (j === 0 ? 0 : LARGEUR_ROUTE / 2), z1 = zs[j + 1] - (j + 1 === zs.length - 1 ? 0 : LARGEUR_ROUTE / 2);
-    ilots.push({ x0, x1, z0, z1, centre: i === 2 && j === 2, projets: i === 2 && j === 3, heliport: i === 3 && j === 2, boutiques: i === 1 && j === 2, clients: i === 2 && j === 1, chezMoi: i === 3 && j === 3, sport: i === 1 && j === 3, foot: i === 3 && j === 1 }); /* et en bas à gauche : le sport, sport3d.js */ // en face : les projets (chantiers3d.js) ; à droite : l'héliport ; à gauche : les boutiques, derrière : les clients (quartiers3d.js) ; en diagonale : chez moi
+    ilots.push({ x0, x1, z0, z1, dense: i === 0 || j === 0 || i === xs.length - 2 || j === zs.length - 2, centre: i === 2 && j === 2, projets: i === 2 && j === 3, heliport: i === 3 && j === 2, boutiques: i === 1 && j === 2, clients: i === 2 && j === 1, chezMoi: i === 3 && j === 3, sport: i === 1 && j === 3, foot: i === 3 && j === 1 }); /* et en bas à gauche : le sport, sport3d.js */ // en face : les projets (chantiers3d.js) ; à droite : l'héliport ; à gauche : les boutiques, derrière : les clients (quartiers3d.js) ; en diagonale : chez moi
   }
   const tours = [];
   const relief = nouveauRelief();
@@ -577,6 +578,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     dalle.position.set((il.x0 + il.x1) / 2, il.centre ? -0.11 : 0.09, (il.z0 + il.z1) / 2); dalle.receiveShadow = true;
     racine.add(dalle);
     if (il.centre || il.projets || il.heliport || il.boutiques || il.clients || il.chezMoi || il.sport || il.foot) continue; // notre immeuble, les projets, l'héliport, la ville de chacun
+    if (il.dense) continue; // le bord de la ville : les quartiers denses (immeubles3d.js), ci-dessous
     if (monde.mobile && Math.hypot((il.x0 + il.x1) / 2, (il.z0 + il.z1) / 2) > 110) continue; // téléphone : seulement les îlots proches
     // 1 à 4 tours par îlot, rez-de-chaussée en boutiques
     const n = l > 60 || p > 60 ? 2 : 1 + Math.floor(r() * 3);
@@ -636,6 +638,12 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       }
     }
   }
+
+  // Le bord de la ville : des centaines d'immeubles, chacun sa façade, une pièce derrière chaque
+  // fenêtre (immeubles3d.js ; Beau, 08/10). Ils comptent comme des murs pour marcher et conduire.
+  const denses = construireImmeubles(parcelles(ilots.filter((il) => il.dense), { graine: graine * 13, mobile: monde.mobile, hauteur: style.hauteur }), { mobile: monde.mobile, envCiel });
+  racine.add(denses.groupe);
+  for (const b of denses.immeubles) tours.push({ bx: b.x, bz: b.z, w: b.w, d: b.d, h: b.h, dense: true });
 
   // Arbres d'alignement le long de notre îlot (photos de boulevards de Beau) :
   // tronc, feuillage en plans croisés dessinés ici (aucune image du web), fusionnés.
@@ -932,7 +940,7 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
   const panneaux = [];
   const cadreMat = new THREE.MeshStandardMaterial({ color: '#1b1d21', metalness: 0.6, roughness: 0.4 });
   const ecranVide = () => { const m = new THREE.MeshBasicMaterial({ color: '#0d0f12' }); return m; };
-  const voisines = tours.map((t) => ({ ...t, dist: Math.hypot(t.bx, t.bz) })).sort((a, b) => a.dist - b.dist).slice(0, monde.mobile ? 3 : 6);
+  const voisines = tours.filter((t) => !t.dense).map((t) => ({ ...t, dist: Math.hypot(t.bx, t.bz) })).sort((a, b) => a.dist - b.dist).slice(0, monde.mobile ? 3 : 6);
   for (const t of voisines) {
     // La face tournée vers notre immeuble
     const faces = [[0, 1], [1, 0], [0, -1], [-1, 0]];
@@ -1045,7 +1053,9 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
       if (!tex.large.length) affiches = [];
       montrer();
     },
+    denses,
     reglerNuit: (niveau) => { // 0 = plein jour, 1 = nuit
+      denses.reglerNuit(niveau);
       for (const m of nuit.fenetres) m.emissiveIntensity = niveau * 1.1;
       for (const m of nuit.enseignes) m.emissiveIntensity = 0.35 + niveau * 1.4;
       for (const m of nuit.lumieres) m.emissiveIntensity = niveau * 2.5;
