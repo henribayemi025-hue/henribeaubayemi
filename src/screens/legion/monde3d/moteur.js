@@ -44,7 +44,9 @@ const ANIMS = {
   parle: 'gestic_talk_neutral_01', ecoute: 'gestic_listen_accept_01', assis: 'sit_table_idle_neutral_01',
   travail: 'work_table', telephone: 'cell_phone_talk_01',
 };
-const VITESSE = { marche: 1.45, course: 3.6 };
+// Beau, 08/10 : « il perd trop de temps, ce n'est pas gamer friendly (Call of Duty) » : on court vite,
+// et au téléphone il suffit de pousser le joystick un peu plus qu'à moitié.
+const VITESSE = { marche: 1.6, course: 5.4 };
 const RAYON = 0.32;
 
 const genreDe = (id) => CORPS.find((c) => c.id === id)?.g || 'm';
@@ -1235,14 +1237,20 @@ export class Monde {
         else if (code === 'KeyE') this.interagir();
         if (code === 'KeyV') this.cycleCamera();
         if (code === 'KeyN') this.allerAuSuivant();
+        if (code === 'KeyM') this.emettre({ type: 'touche', cle: 'carte' });
+        if (code === 'KeyT') this.emettre({ type: 'touche', cle: 'heure' });
       } else this.touches.delete(code);
     };
     window.addEventListener('keydown', this.surTouche);
     window.addEventListener('keyup', this.surTouche);
     let tire = null;
-    el.addEventListener('pointerdown', (e) => { tire = { x: e.clientX, y: e.clientY, id: e.pointerId }; el.setPointerCapture(e.pointerId); });
-    el.addEventListener('pointermove', (e) => {
-      if (!tire || tire.id !== e.pointerId) return;
+    // Écran tourné de 90° par la page (iPhone, voir Monde3D.jsx) : un glissé vers le haut de l'écran
+    // physique est un glissé vers la droite dans le jeu.
+    const pt = (e) => (this.ecranTourne ? { clientX: e.clientY, clientY: window.innerWidth - e.clientX } : e);
+    el.addEventListener('pointerdown', (ev) => { const e = pt(ev); tire = { x: e.clientX, y: e.clientY, id: ev.pointerId }; el.setPointerCapture(ev.pointerId); });
+    el.addEventListener('pointermove', (ev) => {
+      if (!tire || tire.id !== ev.pointerId) return;
+      const e = pt(ev);
       if (this.ciel3d?.globe) { this.planete.tourner(-(e.clientX - tire.x) * 0.006); tire.x = e.clientX; tire.y = e.clientY; return; }
       this.cam.yaw -= (e.clientX - tire.x) * 0.006;
       this.cam.pitch = THREE.MathUtils.clamp(this.cam.pitch + (e.clientY - tire.y) * 0.004, -0.35, 1.1);
@@ -1250,6 +1258,28 @@ export class Monde {
     });
     el.addEventListener('pointerup', () => { tire = null; });
     el.addEventListener('wheel', (e) => { this.cam.dist = THREE.MathUtils.clamp(this.cam.dist + e.deltaY * 0.003, 1.8, 7); }, { passive: true });
+  }
+  // ——— La carte de la ville (plan.js, CarteVille.jsx ; touche M) ———
+  // Ce qu'il faut pour dessiner le plan, et où est la personne (ou son véhicule).
+  donneesCarte() {
+    const V = this.villeVivante;
+    if (!V) return null;
+    const o = this.conduite?.lb?.objet || this.joueur?.objet;
+    const cap = this.conduite ? (this.conduite.lb.etat?.cap ?? o?.rotation.y ?? 0) : (o?.rotation.y ?? 0);
+    return {
+      dehors: this.lieu?.nom === 'hall',
+      enVehicule: !!this.conduite,
+      joueur: o ? { x: o.position.x, z: o.position.z, cap } : null,
+      routes: V.routes, emprises: V.emprises, reserves: V.ilotsReserves,
+      chantiers: (this.poiChantiers || []).map((c) => ({ id: c.id, nom: c.nom, x: c.x, z: c.z })),
+    };
+  }
+  // Toucher un lieu sur la carte : on y va (depuis l'immeuble, on sort d'abord). Pas en conduisant.
+  async allerSurCarte(point) {
+    if (!point || this.conduite || this.ciel3d) return false;
+    if (this.lieu?.nom !== 'hall') await this.allerA('hall');
+    this.placerJoueur(point.x, point.z, point.yaw ?? 0);
+    return true;
   }
   cycleCamera() {
     this.cam.mode = { tps: 'fps', fps: 'plan', plan: 'tps' }[this.cam.mode];
@@ -1829,7 +1859,7 @@ export class Monde {
     let ax = (t.has('KeyD') || t.has('ArrowRight') ? 1 : 0) - (t.has('KeyA') || t.has('ArrowLeft') ? 1 : 0) + this.joy.x;
     let az = (t.has('KeyS') || t.has('ArrowDown') ? 1 : 0) - (t.has('KeyW') || t.has('ArrowUp') ? 1 : 0) + this.joy.y;
     const n = Math.hypot(ax, az);
-    const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 1.4;
+    const court = t.has('ShiftLeft') || t.has('ShiftRight') || n > 0.95;
     if (this.conduite && this.conduite.genre !== 'bateau' && this.lieu.nom !== 'hall') this.quitterVehicule(); // voiture et hélico ne vivent qu'en ville
     const dansLEau = this.lieu.nom === 'maisons' && this.lieu.rivage != null && !this.conduite && j.objet.position.z > this.lieu.rivage + 0.5;
     if (!dansLEau && this.nage) this.sortirDeLEau();

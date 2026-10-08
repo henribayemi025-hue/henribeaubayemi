@@ -106,7 +106,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const monde = useRef(null);
   const sonRef = useRef(null); // le son du monde (son3d.js), créé avec lui
   const [etat, setEtat] = useState('chargement'); // chargement | pret | erreur
-  const [progres, setProgres] = useState(null);
+  const [, setProgres] = useState(null);
   const [conseil, setConseil] = useState(() => Math.floor(Math.random() * 6));
   const [essai, setEssai] = useState(0);
   const [lieu, setLieu] = useState('hall');
@@ -292,6 +292,18 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     setPlein(true); premierToucher.current = false;
     setTimeout(() => monde.current?.redimensionner(), 200);
   }
+  // Beau, 08/10 : « dès que quelqu'un ouvre le jeu, le téléphone se tourne automatiquement ».
+  // Android : plein écran + verrouillage à l'horizontale, dès l'ouverture (le toucher qui a ouvert
+  // l'onglet compte encore). iPhone : une page web n'a pas le droit de verrouiller l'écran ; on tourne
+  // donc le jeu lui-même de 90° tant que le téléphone est tenu droit — il suffit de le tenir de côté.
+  const tactile = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+  const tourne = tactile && mobile && plein && portrait;
+  useEffect(() => { if (mobile && plein) modeJeu(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (monde.current) monde.current.ecranTourne = tourne;
+    const t0 = setTimeout(() => monde.current?.redimensionner(), 80);
+    return () => clearTimeout(t0);
+  }, [tourne, etat]);
   function basculerSon() { setSonCoupe(sonRef.current ? sonRef.current.basculer() : !sonCoupe); }
 
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
@@ -529,7 +541,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [bouton, setBouton] = useState(null);
   function joyBouge(e) {
     const r = joy.current.getBoundingClientRect();
-    const x = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), y = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+    const sx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2), sy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+    const x = tourne ? sy : sx, y = tourne ? -sx : sy; // jeu tourné de 90° : le haut de l'écran physique est la droite du jeu
     const n = Math.max(1, Math.hypot(x, y));
     setBouton({ x: (x / n) * 28, y: (y / n) * 28 });
     if (monde.current) monde.current.joy = { x: (x / n) * 1.6, y: (y / n) * 1.6 };
@@ -548,7 +561,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
 
   return (
     <div onPointerDownCapture={toucher} onKeyDownCapture={toucher}
-      className={`${mobile && plein ? 'fixed inset-0 z-[70] h-[100dvh] w-screen' : `relative ${vueVille ? 'h-[calc(100dvh-12.25rem)] sm:h-[calc(100dvh-10.5rem)]' : 'h-[calc(100dvh-8rem)] sm:h-[calc(100dvh-9.5rem)]'} min-h-[420px]`} overflow-hidden bg-black ${mobile ? 'monde-leger' : ''}`}>{/* l'onglet « La ville » a deux lignes de plus au-dessus : tout doit tenir dans l'écran */}
+      style={tourne ? { position: 'fixed', top: 0, left: 0, width: '100dvh', height: '100vw', transform: 'translateX(100vw) rotate(90deg)', transformOrigin: 'top left' } : undefined}
+      className={`${mobile && plein ? (tourne ? 'z-[70]' : 'fixed inset-0 z-[70] h-[100dvh] w-screen') : `relative ${vueVille ? 'h-[calc(100dvh-12.25rem)] sm:h-[calc(100dvh-10.5rem)]' : 'h-[calc(100dvh-8rem)] sm:h-[calc(100dvh-9.5rem)]'} min-h-[420px]`} overflow-hidden bg-black ${mobile ? 'monde-leger' : ''}`}>{/* l'onglet « La ville » a deux lignes de plus au-dessus : tout doit tenir dans l'écran */}
       <div ref={boite} className="absolute inset-0" />
 
       {intro && (
@@ -581,15 +595,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               <div className="relative mt-auto w-full max-w-md px-6 pb-10 text-left">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-legion-gold">Léo</p>
                 <p className="font-serif text-[30px] font-semibold leading-tight text-white drop-shadow sm:text-[36px]">{entreprise?.nom}</p>
-                <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#c8893d] to-legion-gold transition-[width] duration-500" style={{ width: `${progres ?? 6}%` }} />
-                </div>
-                <div className="mt-2 flex items-center justify-between text-[12px] text-white/75">
-                  <span>{t('legion.monde.chargement')}</span><span className="font-mono">{progres != null ? `${progres} %` : ''}</span>
-                </div>
+                {/* Plus de barre ni de pourcentage (Beau, 08/10 : « la barre de progression, enlève-la ») : le nom, et trois points qui respirent. */}
+                <p className="mt-3 flex items-center gap-1.5 text-[12.5px] text-white/75" role="status" aria-label={t('legion.monde.chargement')}>
+                  {[0, 1, 2].map((i) => <span key={i} className="h-1.5 w-1.5 rounded-full bg-legion-gold" style={{ animation: `leoRespire 1.2s ${i * 0.2}s ease-in-out infinite` }} />)}
+                </p>
                 <p key={conseil} className="mt-4 min-h-[2.6rem] text-[13.5px] leading-snug text-white/90" style={{ animation: 'leoFondu .6s ease-out' }}>💡 {t(`legion.monde.conseil${(conseil % 6) + 1}`)}</p>
               </div>
-              <style>{'@keyframes leoZoom{from{transform:scale(1.12)}to{transform:scale(1.02)}}@keyframes leoFondu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}'}</style>
+              <style>{'@keyframes leoZoom{from{transform:scale(1.12)}to{transform:scale(1.02)}}@keyframes leoFondu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}@keyframes leoRespire{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}'}</style>
             </>
           )}
         </div>
@@ -894,8 +906,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
           {volant.genre === 'helico' && Date.now() - volant.sePoser < 3000 && (
             <p className="pointer-events-none absolute left-1/2 top-24 z-[6] -translate-x-1/2 rounded-pill bg-black/70 px-3 py-1.5 text-[12.5px] text-white">{t('legion.monde.conduite.sePoser')}</p>
           )}
-          <button type="button" onClick={() => monde.current?.descendreVoiture()} className={`absolute z-[6] rounded-pill bg-legion-gold px-4 py-2 text-[13px] font-semibold text-legion-bg shadow ${mobile ? 'right-3 top-14' : 'bottom-4 left-1/2 -translate-x-1/2'}`}>
-            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">F</kbd>}{t('legion.monde.conduite.descendre')}
+          <button type="button" onClick={() => monde.current?.descendreVoiture()} className={`absolute z-[6] rounded-pill bg-legion-gold font-semibold text-legion-bg shadow-lg ${mobile ? 'left-1/2 top-14 -translate-x-1/2 px-5 py-2.5 text-[14px]' : 'bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 text-[13px]'}`}>
+            {!mobile && <kbd className="mr-1.5 rounded bg-black/20 px-1.5 text-[11px]">F</kbd>}🚪 {t('legion.monde.conduite.descendre')}
           </button>
           {!mobile && aideConduite && <p className="pointer-events-none absolute bottom-16 left-3 z-[5] rounded-card bg-[#0b1120]/70 px-2.5 py-1.5 text-[11.5px] text-legion-muted">{t(volant.genre === 'helico' ? 'legion.monde.conduite.aideHelico' : volant.genre === 'bateau' ? 'legion.monde.conduite.aideBateau' : 'legion.monde.conduite.aide')}</p>}
           {mobile && volant.genre === 'voiture' && (
@@ -955,7 +967,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </>
       )}
 
-      {jeu && portrait && (
+      {(tourne || (jeu && portrait)) && (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 z-[9] mx-auto w-fit rounded-card bg-black/75 px-4 py-3 text-center text-[14px] text-white" style={{ animation: 'leoDisparait 5s forwards' }}>↻ {t('legion.monde.tourne')}</div>
       )}
       {convoc && (

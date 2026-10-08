@@ -997,8 +997,11 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     solides: [...tours.map(({ bx, bz, w, d }) => ({ x0: bx - w / 2 - 0.4, x1: bx + w / 2 + 0.4, z0: bz - d / 2 - 0.4, z1: bz + d / 2 + 0.4 })), { x0: -12.8, x1: 12.8, z0: -9.8, z1: 9.8 }],
     tours: tours.map(({ bx, bz, w, d, h }) => ({ x0: bx - w / 2 - 1.5, x1: bx + w / 2 + 1.5, z0: bz - d / 2 - 1.5, z1: bz + d / 2 + 1.5, h: h * 1.18 + 1 })),
     helico,
+    // Pour la carte de la ville (plan.js, touche M) : les rues et l'emprise de chaque immeuble.
+    routes: { x: ROUTES_X, z: ROUTES_Z, largeur: LARGEUR_ROUTE },
+    emprises: tours.map(({ bx, bz, w, d, h }) => ({ x: bx, z: bz, w, d, h })),
     // Les îlots de la ville de chacun (quartiers3d.js)
-    ilotsReserves: Object.fromEntries(['boutiques', 'clients', 'chezMoi', 'sport', 'foot'].map((k) => { const il = ilots.find((x) => x[k]); return [k, il && { x0: il.x0, x1: il.x1, z0: il.z0, z1: il.z1 }]; })),
+    ilotsReserves: Object.fromEntries(['boutiques', 'clients', 'chezMoi', 'sport', 'foot', 'projets', 'heliport'].map((k) => { const il = ilots.find((x) => x[k]); return [k, il && { x0: il.x0, x1: il.x1, z0: il.z0, z1: il.z1 }]; })),
     // Chaque véhicule de la circulation, en cercles le long de son axe (un bus en fait quatre).
     circulation: () => vehicules.flatMap((o) => {
       const demi = o.userData.demi || 1.2, axeZ = o.userData.voie.axe === 'z';
