@@ -321,7 +321,18 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   const net = txt.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   // Un mot avant ou après l'objet : on garde l'objet.
   const a = net.indexOf('{'), b = net.lastIndexOf('}');
-  return a > 0 || (b >= 0 && b < net.length - 1) ? net.slice(a, b + 1) : net;
+  const brut = a > 0 || (b >= 0 && b < net.length - 1) ? net.slice(a, b + 1) : net;
+  // Le même contrôle que pour Groq et Cloudflare (08/10) : Z.ai rendait le schéma recopié
+  // ({ type, properties }) et l'agent perdait sa tâche (« livrable vide ») au lieu de passer
+  // au moteur suivant. Réparé si possible, refusé s'il manque ce que l'agent doit dire.
+  const obj = adapterAuSchema(reparerJson(brut), schema);
+  if (obj === null || typeof obj !== 'object') throw new Error('JSON illisible');
+  const manque = champsManquants(obj, schema);
+  if (manque.length) {
+    console.error(`${model}, hors schéma (${manque.join(', ')}) :`, brut.slice(0, 300));
+    throw new Error(`réponse hors schéma (${manque.join(', ')} vide)`);
+  }
+  return JSON.stringify(obj);
 }
 
 // L'IA gratuite de Cloudflare : même consigne JSON que viaOpenAI, coût nul
@@ -539,6 +550,10 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
   // message accusait Google alors que TOUS les moteurs étaient à sec).
   let echecs = 0;
   let aSec = 0;
+  // La dernière erreur d'un moteur GRATUIT : à la fin de la file, le dernier essayé est souvent
+  // un moteur payant sans crédit (08/10 : « OpenAI : no credits remaining » sur la fiche de
+  // chaque agent, alors que la vraie cause était la limite des moteurs gratuits).
+  let derniereGratuite = '';
   const liste = o.modeles ?? moteurs();
   const candidats = o.sansSecours ? liste : [...liste, ...secours().filter((x) => !liste.includes(x))];
   await lireEndormis();
@@ -571,6 +586,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       }
     } catch (e) {
       derniere = `${nom}: ${(e as Error).message}`; console.error(derniere);
+      if (/^(gq|za|mi|cf|gg):/.test(nom)) derniereGratuite = derniere;
       echecs++;
       if (SANS_CREDIT.test(derniere) || SANS_PART.test(derniere)) aSec++;
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
@@ -600,9 +616,11 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
     }
   }
   if (echecs > 0 && aSec === echecs) {
-    return { erreur: `aucune IA disponible : les moteurs payants n'ont plus de crédit et la part gratuite du jour est épuisée (elle repart à minuit UTC) — ${derniere}`, essais };
+    return { erreur: `aucune IA disponible : les moteurs payants n'ont plus de crédit et les moteurs gratuits sont à leur limite (de la minute ou du jour, selon le moteur) — ${derniereGratuite || derniere}`, essais };
   }
-  return { erreur: plafondGoogle && !derniere.includes('spending cap') ? `plafond Google (spending cap) — ${derniere}` : derniere, essais };
+  // Un échec ordinaire : la cause du côté gratuit quand le dernier essayé n'est qu'un payant à sec.
+  const cause = derniereGratuite && SANS_CREDIT.test(derniere) ? `${derniereGratuite} (moteurs payants : plus de crédit)` : derniere;
+  return { erreur: plafondGoogle && !cause.includes('spending cap') ? `plafond Google (spending cap) — ${cause}` : cause, essais };
 }
 
 // La trace pour nos exemples d'entraînement (0167). Ne casse jamais rien:

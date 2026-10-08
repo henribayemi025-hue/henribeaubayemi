@@ -101,11 +101,19 @@ export function adapterAuSchema(obj: unknown, schema: unknown): unknown {
 // laissé vide reste juste : « besoin », « suite_titre » ou « suite_agent » d'un
 // livrable sont vides quand l'agent n'a besoin de rien (06/10 : tous les
 // livrables de Gemma étaient rejetés pour « besoin vide »).
+// Un champ « rempli » par le schéma recopié ({ type: 'STRING' } au lieu d'un texte) : 08/10, Z.ai
+// rendait { type, properties } avec la définition de chaque champ, et l'agent un livrable vide.
+const TYPES_SCHEMA = /^(string|array|object|number|integer|boolean)$/i;
+const CLES_SCHEMA = ['type', 'enum', 'items', 'properties', 'description', 'required'];
+const definition = (v: unknown) => !!v && typeof v === 'object' && !Array.isArray(v)
+  && TYPES_SCHEMA.test(String((v as { type?: unknown }).type ?? '')) && Object.keys(v).every((k) => CLES_SCHEMA.includes(k));
+
 export function champsManquants(obj: unknown, schema: unknown): string[] {
   const s = schema as { properties?: Record<string, unknown>; required?: string[] } | null;
   if (!s?.properties || !obj || typeof obj !== 'object') return [];
   const o = obj as Record<string, unknown>;
-  const absents = (s.required || []).filter((k) => o[k] === undefined || o[k] === null);
-  const texte = 'texte' in s.properties && vide(o.texte) && !absents.includes('texte') ? ['texte'] : [];
-  return [...absents, ...texte];
+  const absents = (s.required || []).filter((k) => o[k] === undefined || o[k] === null || definition(o[k]));
+  // « texte » (ce que l'agent dit) et « livrable » (ce qu'il rend) ne peuvent pas être vides.
+  const parle = ['texte', 'livrable'].filter((k) => k in s.properties! && vide(o[k]) && !absents.includes(k));
+  return [...absents, ...parle];
 }

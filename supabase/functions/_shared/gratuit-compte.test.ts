@@ -99,3 +99,18 @@ describe('champsManquants — exigé veut dire présent, pas rempli', () => {
     expect(champsManquants({ livrable: 'Fait : …', statut: 'fait' }, livrable)).toEqual(['besoin', 'suite_titre', 'suite_agent']);
   });
 });
+
+describe('champsManquants — schéma recopié et livrable vide (08/10, Z.ai)', () => {
+  const livrable = { type: 'OBJECT', properties: { livrable: { type: 'STRING' }, statut: { type: 'STRING' }, besoin: { type: 'STRING' } }, required: ['livrable', 'statut', 'besoin'] };
+  it('refuse le schéma recopié à la place de la réponse', () => {
+    const rendu = { type: 'OBJECT', properties: { livrable: { type: 'STRING' }, statut: { type: 'STRING', enum: ['termine', 'bloque'] }, besoin: { type: 'STRING' } } };
+    expect(champsManquants(adapterAuSchema(rendu, livrable), livrable)).toEqual(['livrable', 'statut', 'besoin']);
+  });
+  it('refuse un livrable vide, accepte un besoin vide', () => {
+    expect(champsManquants({ livrable: '  ', statut: 'termine', besoin: '' }, livrable)).toEqual(['livrable']);
+    expect(champsManquants({ livrable: 'Fait : la grille est prête.', statut: 'termine', besoin: '' }, livrable)).toEqual([]);
+  });
+  it('un livrable rendu en objet (du code rangé autrement) reste accepté', () => {
+    expect(champsManquants({ livrable: { fichier: 'a.js', code: 'x' }, statut: 'termine', besoin: '' }, livrable)).toEqual([]);
+  });
+});
