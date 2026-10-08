@@ -282,3 +282,41 @@ son métier déclaré semble anodin (« accompagnement stratégique »).
 - Les faux positifs du filtre d'exclusion sont nombreux (« j'AI », « ERP »
   établissement recevant du public, mention d'un logiciel dans les mentions
   légales) : le filtre signale, un humain tranche en lisant le contexte.
+
+## Les liens dans les e-mails (08/10, matin) — plus aucune adresse web
+
+Le connecteur Gmail qui sert aux envois réécrit **chaque adresse web** du
+message, dans le texte brut comme dans le HTML, qu'elle soit nue
+(`finjaro.net`), complète (`https://…`) ou dans une balise `<a>`, en brouillon
+comme en envoi direct (deux essais vers nous-mêmes le 08/10, neuf formes,
+toutes réécrites). Le lien envoyé devient
+`https://www.google.com/url?q=<adresse>&source=gmail&ust=…&sa=E` et, ouvert,
+affiche d'abord une page Google « Redirect Notice » (vérifié : HTTP 200) avant
+d'arriver chez nous. Pour un premier contact, c'est une page d'avertissement
+Google à la place de notre site. Toutes les séries envoyées depuis la boîte
+Finjaro sont concernées — on ne réécrit à personne pour autant.
+
+Règle, à partir de la série du 08/10 au soir :
+
+- **aucune adresse web dans le message** : le produit est nommé en toutes
+  lettres (« Finjaro Accounting », « Léo, de Finjaro ») et l'appel à l'action
+  est « répondez à cet e-mail et nous vous envoyons l'accès » ; le lien part
+  dans la réponse, écrite à la main ;
+- le lien LinkedIn disparaît aussi (déjà soupçonné dans la note B-SCORE de
+  Strato) ;
+- lignes de remplacement :
+  - modèle 4 : « On peut commencer sans payer : répondez à cet e-mail et nous
+    vous envoyons l'accès. » (à la place de la ligne finjaro.net/legion) ;
+    « Pour en savoir plus, il suffit de répondre à cet e-mail. » (à la place
+    de la phrase LinkedIn) ;
+  - modèle 4-EN : "You can start for free: reply to this e-mail and we'll send
+    you the access." ; "To learn more, just reply to this e-mail." ;
+  - modèle 5 : « Vous pouvez commencer dès aujourd'hui : répondez à cet e-mail
+    et nous vous envoyons l'accès à Finjaro Accounting. » ; « Pour en savoir
+    plus, il suffit de répondre à cet e-mail. »
+- si Beau veut des liens cliquables, il faut envoyer depuis une adresse
+  @finjaro.net (Resend est déjà configuré pour leo-contact : 100 e-mails par
+  jour gratuits ; à vérifier : ses conditions sur la prospection non
+  sollicitée, et le fait que c'est le même compte que les e-mails de Léo).
+  C'est sa décision, pas la mienne.
+
