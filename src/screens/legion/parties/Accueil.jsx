@@ -20,6 +20,7 @@ import { Documents } from './Documents';
 import { Inviter } from './Inviter';
 import { TableauDeBord } from './TableauDeBord';
 import { Missions } from './Missions';
+import { Publications } from './Publications';
 import { Membres, Journal, Marche } from './Securite';
 
 // LEGION — la page d'accueil, la tour de contrôle.
@@ -382,7 +383,10 @@ export function Accueil({
       {/* 5 bis. Le tableau de bord : chaque agent, compté (24/09) */}
       <TableauDeBord entreprise={entreprise} agents={agents} onFiche={onFiche} onVoteRemplacement={onVoteRemplacement} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
 
-      {/* 5 ter. La bibliothèque de missions (24/09) */}
+      {/* 5 ter. L'équipe réseaux sociaux : les publications à valider (08/10) */}
+      <Publications entreprise={entreprise} agents={agents} moi={moi} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
+
+      {/* 5 quater. La bibliothèque de missions (24/09) */}
       <Missions entreprise={entreprise} agents={agents} departements={departements} moi={moi} onLancee={onMissionLancee} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
 
       {/* 6. Les plans par département, et « Au travail maintenant » */}

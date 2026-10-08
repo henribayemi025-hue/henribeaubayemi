@@ -1814,7 +1814,49 @@
     "annulerReponse": "Ne plus répondre à ce message",
     "plusOptions": "Joindre ou plus d’options",
     "tacheReculer": "Remettre à l’étape d’avant",
-    "tacheAvancer": "Passer à l’étape suivante"
+    "tacheAvancer": "Passer à l’étape suivante",
+    "publications": {
+      "titre": "Réseaux sociaux",
+      "aide": "Les publications proposées par vos agents avec la mission « Semaine de publications ». Rien n'est publié sans vous : validez, copiez la légende, publiez-la vous-même, puis marquez-la publiée.",
+      "aValider_one": "{{count}} à valider",
+      "aValider_other": "{{count}} à valider",
+      "vide": "Aucune publication pour l'instant. Lancez la mission « Semaine de publications » dans la bibliothèque de missions : l'agent choisi propose 5 à 7 publications à sa prochaine journée de travail, avec un brief pour chaque vidéo.",
+      "versMissions": "Aller à la bibliothèque de missions",
+      "semaineDu": "Semaine du {{date}}",
+      "choisirSemaine": "Choisir la semaine",
+      "par": "par {{nom}}",
+      "plus": "Tout voir",
+      "moins": "Réduire",
+      "visuel": "Visuel :",
+      "pourquoi": "Pourquoi :",
+      "valider": "Valider",
+      "refuser": "Refuser",
+      "remettre": "Remettre à valider",
+      "copier": "Copier la légende",
+      "copiee": "Copiée",
+      "marquerPubliee": "Marquer publiée",
+      "statut": {
+        "validee": "Validée",
+        "publiee": "Publiée",
+        "refusee": "Refusée"
+      },
+      "format": {
+        "video_courte": "Vidéo courte",
+        "carrousel": "Carrousel",
+        "image": "Image",
+        "statut": "Statut / story",
+        "texte": "Texte"
+      },
+      "video": {
+        "titre": "Brief vidéo",
+        "aProduire": "Claude prépare la vidéo à partir de ce brief",
+        "brief": "À filmer : les plans et la voix sont prêts",
+        "proposee": "Vidéo prête, à regarder",
+        "faite": "Vidéo faite",
+        "voir": "Voir la vidéo",
+        "voix": "Voix off :"
+      }
+    }
   },
   "equipe": {
     "titre": "L'équipe",
@@ -2223,7 +2265,12 @@
   "porte": {
     "entrer": "Entrer",
     "continuerVers": "Connecte-toi pour continuer vers {{ou}}.",
-    "vers": { "fonder": "la création de ton entreprise", "atelier": "l’Atelier", "rejoindre": "l’invitation que tu as reçue", "entreprise": "ton entreprise" },
+    "vers": {
+      "fonder": "la création de ton entreprise",
+      "atelier": "l’Atelier",
+      "rejoindre": "l’invitation que tu as reçue",
+      "entreprise": "ton entreprise"
+    },
     "memeCompte": "Le même compte que sur Finjaro.",
     "google": "Continuer avec Google",
     "ou": "ou",

@@ -43,6 +43,7 @@ import { enqueter, verifsPour, borneVerifs, rechercheGuidee, type Boutique, type
 import { identifiantsCites, blocCites, type Cite } from '../_shared/cites.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { decideReveil, heureLocale } from '../_shared/reveil.ts';
+import { CLE_MISSION_RESEAUX, SCHEMA_PUBLICATION, normaliserPublications, resumePublications } from '../_shared/publications.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -74,7 +75,7 @@ function contrat(a: Agent): string {
   return `${m?.objectif ? `Ta mission: ${m.objectif}${m.prend?.length ? ` — tu prends: ${m.prend.join(' ; ')}` : ''}${m.relais_humain ? `. Tu passes la main à un humain quand: ${m.relais_humain}` : ''}.\n` : ''}${a.fin_mission ? `Tu es en intérim jusqu'au ${a.fin_mission}.\n` : ''}${a.jamais ? `CE QUE TU NE FAIS JAMAIS (ton contrat): ${a.jamais}\n` : ''}`;
 }
 type Tache = { id: string; texte: string; assigne_a: string | null; canal_id: string; meta: { statut?: string; priorite?: string; suite_de?: { tache_id: string; tache: string; par: string };
-  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string; travaille_depuis?: string; essais?: number; ordinateur?: boolean } | null; created_at: string };
+  bloque?: string; livre_le?: string; renvoye_le?: string; remarque?: string; travaille_depuis?: string; essais?: number; ordinateur?: boolean; mission?: { cle?: string; id?: string } } | null; created_at: string };
 type Canal = { id: string; cle: string; nom: string; prive_entre: string[] | null; resume: string | null; resume_jusqua: string | null };
 type Service = ReturnType<typeof createClient>;
 
@@ -267,6 +268,15 @@ const SCHEMA_LIVRABLE = {
     suite_agent: { type: 'STRING' },
   },
   required: ['livrable', 'statut', 'besoin', 'suite_titre', 'suite_agent'],
+};
+
+// La mission « Semaine de publications » (équipe réseaux sociaux, 08/10) : le
+// même livrable, plus 5 à 7 publications structurées qui arrivent dans
+// legion_publications, à valider par un humain. Le champ reste facultatif :
+// un modèle qui l'oublie rend quand même son livrable.
+const SCHEMA_LIVRABLE_RESEAUX = {
+  ...SCHEMA_LIVRABLE,
+  properties: { ...SCHEMA_LIVRABLE.properties, publications: { type: 'ARRAY', items: SCHEMA_PUBLICATION } },
 };
 
 const REGLES_COMMUNES = `RÈGLES ABSOLUES:
@@ -787,7 +797,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + cites + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
       // Sans la recherche web ni les souvenirs : la tâche, l'équipe, le plan et le fil, resserrés.
       const courteLivrable = consigneCourte(({ coupe, garde }) => inviteLivrable(a, coupe(projetPour(a), 600), tache, garde(equipe, 8).map((e) => coupe(e, 160)), garde(memoire.slice(-6), 6).map((m) => coupe(m, 200)), garde(competences, 1).map((c) => ({ nom: c.nom, texte: coupe(c.texte, 600) })), garde(fil.slice(-4), 4).map((l) => coupe(l, 240)), peut(a, 'mesures') && mesures ? coupe(mesures, 700) : null, garde(verifie, 3).map((v) => coupe(v, 280)), garde(plans, 1).map((p) => coupe(p, 600))) + (recu ? coupe(recu, 1400) : '') + enLangue);
-      const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite, courteLivrable);
+      const reseaux = tache.meta?.mission?.cle === CLE_MISSION_RESEAUX;
+      const r = await ecrire(apiKey, consigneLivrable, reseaux ? SCHEMA_LIVRABLE_RESEAUX : SCHEMA_LIVRABLE, gratuite, courteLivrable);
       if ('erreur' in r && SANS_IA.test(r.erreur)) { plusDIA = r.erreur; journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); passage(a, false, r.erreur); return; }
       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30
@@ -807,12 +818,19 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       if (livrable.length < 80) { journal.push(`${entreprise.nom}: ${a.nom} — livrable vide (champs rendus : ${Object.keys(r.obj || {}).join(', ')} ; livrable de ${String(brut ?? '').length} caractères)`); passage(a, false, 'le modèle a rendu un livrable vide'); return; }
       const bloque = r.obj.statut === 'bloque';
       const besoin = String(r.obj.besoin || '').trim().slice(0, 400);
-      const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : livrable;
+      const publications = reseaux && !bloque ? normaliserPublications((r.obj as { publications?: unknown }).publications, { entrepriseId, tacheId: tache.id, auteurId: a.id }) : [];
+      const resume = resumePublications(publications, anglais);
+      const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : resume ? `${livrable}\n\n${resume}` : livrable;
       const { data: livrablePublie } = await service.from('legion_messages').insert({
         entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: a.id, user_id: null, texte, genre: bloque ? 'question' : 'info',
         meta: { par_ia: true, modele: r.modele, cout_eur: Number(coutEnCours().toFixed(6)), livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(web?.sources.length ? { sources: web.sources } : {}), ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
       }).select('id').single();
       await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
+      // Les publications de la semaine, à valider dans Léo (rien n'est publié par Léo).
+      if (publications.length) {
+        const { error: ePub } = await service.from('legion_publications').insert(publications.map((p) => ({ ...p, livrable_id: livrablePublie?.id ?? null })));
+        journal.push(ePub ? `${entreprise.nom}: ${a.nom} — publications non enregistrées (${ePub.message})` : `${entreprise.nom}: ${a.nom} propose ${publications.length} publication(s) à valider`);
+      }
       // La tâche passe « à revoir » (le fondateur la ferme, ou la renvoie).
       await service.from('legion_messages').update({ meta: { ...(tache.meta || {}), statut: bloque ? 'en_cours' : 'revue', livre_le: new Date().toISOString(), ...(bloque ? { bloque: besoin } : {}) } }).eq('id', tache.id);
       let contesteMaintenant = false;

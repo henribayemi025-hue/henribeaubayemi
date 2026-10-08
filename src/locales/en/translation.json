@@ -1814,7 +1814,49 @@
     "annulerReponse": "Stop replying to this message",
     "plusOptions": "Attach or more options",
     "tacheReculer": "Move back a step",
-    "tacheAvancer": "Move to the next step"
+    "tacheAvancer": "Move to the next step",
+    "publications": {
+      "titre": "Social media",
+      "aide": "Posts your agents propose with the \"Social media week\" mission. Nothing is published without you: approve, copy the caption, post it yourself, then mark it as published.",
+      "aValider_one": "{{count}} to approve",
+      "aValider_other": "{{count}} to approve",
+      "vide": "No posts yet. Start the \"Social media week\" mission in the missions library: the chosen agent proposes 5 to 7 posts on their next working day, with a brief for each video.",
+      "versMissions": "Go to the missions library",
+      "semaineDu": "Week of {{date}}",
+      "choisirSemaine": "Choose the week",
+      "par": "by {{nom}}",
+      "plus": "Show all",
+      "moins": "Show less",
+      "visuel": "Visual:",
+      "pourquoi": "Why:",
+      "valider": "Approve",
+      "refuser": "Reject",
+      "remettre": "Back to review",
+      "copier": "Copy caption",
+      "copiee": "Copied",
+      "marquerPubliee": "Mark as posted",
+      "statut": {
+        "validee": "Approved",
+        "publiee": "Posted",
+        "refusee": "Rejected"
+      },
+      "format": {
+        "video_courte": "Short video",
+        "carrousel": "Carousel",
+        "image": "Image",
+        "statut": "Status / story",
+        "texte": "Text"
+      },
+      "video": {
+        "titre": "Video brief",
+        "aProduire": "Claude is producing the video from this brief",
+        "brief": "Ready to film: shots and voice-over are written",
+        "proposee": "Video ready to review",
+        "faite": "Video done",
+        "voir": "Watch the video",
+        "voix": "Voice-over:"
+      }
+    }
   },
   "equipe": {
     "titre": "The team",
@@ -2223,7 +2265,12 @@
   "porte": {
     "entrer": "Sign in",
     "continuerVers": "Sign in to continue to {{ou}}.",
-    "vers": { "fonder": "founding your company", "atelier": "the Workshop", "rejoindre": "the invitation you received", "entreprise": "your company" },
+    "vers": {
+      "fonder": "founding your company",
+      "atelier": "the Workshop",
+      "rejoindre": "the invitation you received",
+      "entreprise": "your company"
+    },
     "memeCompte": "The same account as on Finjaro.",
     "google": "Continue with Google",
     "ou": "or",

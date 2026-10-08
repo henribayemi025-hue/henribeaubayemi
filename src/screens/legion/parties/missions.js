@@ -10,6 +10,19 @@
 
 export const MISSIONS = [
   {
+    // L'équipe réseaux sociaux (Beau, 08/10 : « oui, rajoute ; c'est pour toute
+    // personne »). legion-travail lit cette clé : en plus du livrable, l'agent
+    // rend 5 à 7 publications structurées, rangées dans legion_publications et
+    // validées par un humain dans « Réseaux sociaux » (rien n'est publié par Léo).
+    cle: 'reseaux-sociaux', emoji: '📱', rythme: 'semaine',
+    roles: ['reseaux', 'social', 'community', 'contenu', 'communication', 'redact', 'marketing', 'plume'],
+    titre: { fr: 'Semaine de publications (réseaux sociaux)', en: 'Social media week (posts)' },
+    texte: {
+      fr: "Semaine de publications pour les réseaux sociaux. 1) Veille : à partir de ce que tu sais de l'entreprise, de ses clients et des comptes du même métier, dis en quelques lignes ce qui marche en ce moment (sujets, accroches des trois premières secondes, questions que les clients posent). 2) Dans le champ « publications », propose 5 à 7 publications, une par jour (jour 1 = lundi … 7 = dimanche) : plateforme, format (video_courte, carrousel, image, texte ou statut), accroche, légende complète prête à copier, visuel (un brief précis pour qui fera la photo, jamais une image prise sur Internet), appel à l'action, et pourquoi (ce que ta veille en dit). Pour au moins une vidéo courte, remplis aussi « video » : durée en secondes, plans (secondes, ce qu'on voit, texte à l'écran) et voix off. 3) Dans le livrable, résume la semaine et ta veille. Règles : aucun chiffre inventé, aucun faux avis ni faux témoignage, aucune promesse de prix, de stock ou de date que l'entreprise n'a pas donnée. Rien n'est publié sans l'accord d'un humain.",
+      en: "Social media week. 1) Research: from what you know of the company, its customers and accounts in the same trade, say in a few lines what works right now (topics, hooks in the first three seconds, questions customers ask). 2) In the \"publications\" field, propose 5 to 7 posts, one per day (day 1 = Monday … 7 = Sunday): platform, format (video_courte, carrousel, image, texte or statut), hook, full caption ready to copy, visual (a precise brief for whoever takes the photo, never an image taken from the internet), call to action, and why (what your research says). For at least one short video, also fill \"video\": length in seconds, shots (seconds, what we see, on-screen text) and voice-over. 3) In the deliverable, sum up the week and your research. Rules: no made-up figures, no fake reviews or testimonials, no promise of price, stock or date the company has not given. Nothing is published without a human's approval.",
+    },
+  },
+  {
     cle: 'dette-technique', emoji: '🧹', rythme: 'semaine', source: 'github',
     roles: ['technique', 'developp', 'cto', 'ingenieur', 'engineer', 'code'],
     titre: { fr: 'Audit de la dette technique', en: 'Technical debt audit' },

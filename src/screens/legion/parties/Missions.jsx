@@ -82,7 +82,7 @@ export function Missions({ entreprise, agents, departements, moi, onLancee, t, l
   const dateCourte = (iso) => new Date(iso).toLocaleDateString(L === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' });
 
   return (
-    <section className="space-y-4 rounded-2xl border border-legion-line bg-legion-panel p-5">
+    <section id="leo-missions" className="space-y-4 rounded-2xl border border-legion-line bg-legion-panel p-5">
       <div className="border-b border-legion-line pb-3">
         <h3 className="flex items-center gap-2 text-caption font-bold text-legion-ink">
           <IconBooks size={15} className="text-legion-gold" /> {t('legion.missions.titre')}
