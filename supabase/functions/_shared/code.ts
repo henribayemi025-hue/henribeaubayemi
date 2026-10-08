@@ -38,7 +38,16 @@ const entetes = (d: Depot) => ({ Accept: 'application/vnd.github+json', 'User-Ag
 const cheminPropre = (c: unknown) => String(c ?? '').replace(/^\/+/, '').replace(/\.\.+/g, '').slice(0, 300);
 
 async function gh(d: Depot, chemin: string) {
-  const r = await fetch(`https://api.github.com/repos/${d.depot}/${chemin}`, { headers: entetes(d), signal: AbortSignal.timeout(12_000) });
+  const url = `https://api.github.com/repos/${d.depot}/${chemin}`;
+  let r = await fetch(url, { headers: entetes(d), signal: AbortSignal.timeout(12_000) });
+  // 08/10, 02h40 : Socle et Forge recevaient « GitHub 404 » sur des fichiers qui existent
+  // (docs/plans/…, src/screens/legion/atelier/). Le jeton de l'application GitHub ne
+  // couvrait pas ce dépôt (installation sans ce dépôt, ou sans le droit « Contenus ») :
+  // GitHub répond alors 404, pas 403. Un dépôt public se lit sans jeton : on réessaie nu
+  // avant de dire « introuvable ».
+  if (!r.ok && d.jeton && [401, 403, 404].includes(r.status)) {
+    r = await fetch(url, { headers: entetes({ ...d, jeton: null }), signal: AbortSignal.timeout(12_000) });
+  }
   if (!r.ok) throw new Error(r.status === 403 ? 'GitHub limite les lectures pour l\'instant (réessaie dans une heure, ou branche un jeton dans les connecteurs)' : `GitHub ${r.status}`);
   return r.json();
 }
