@@ -269,7 +269,7 @@ export const PRIX_OPENAI: Record<string, [number, number, number]> = {
 
 // Sans adresse réglée, « oa: » va chez OpenAI avec la clé de Beau, reconnue
 // à sa forme (24/09 : il l'a rangée sous le nom « Leo »).
-async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL') || (cleOpenAI() ? 'https://api.openai.com/v1' : undefined), cle = Deno.env.get('MOTEUR_OA_CLE') || cleOpenAI(), offreGratuite = false): Promise<string> {
+async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL') || (cleOpenAI() ? 'https://api.openai.com/v1' : undefined), cle = Deno.env.get('MOTEUR_OA_CLE') || cleOpenAI(), offreGratuite = false, extra: Record<string, unknown> = {}): Promise<string> {
   if (!url) throw new Error('MOTEUR_OA_URL absent');
   const resp = await fetch(`${url.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
@@ -295,6 +295,8 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
         { role: 'system', content: `Réponds UNIQUEMENT par un objet JSON conforme à ce schéma (types en majuscules à la manière de Google: STRING, ARRAY, OBJECT):\n${JSON.stringify(schema)}` },
         { role: 'user', content: texte },
       ],
+      // Réglages propres à un fournisseur (Z.ai : réflexion coupée, sortie bornée).
+      ...extra,
     }),
     signal: AbortSignal.timeout(o.delaiMs ?? 90_000),
   });
@@ -415,10 +417,16 @@ async function viaZai(model: string, texte: string, schema: unknown, o: Options)
   ]);
   clearTimeout(minuteur);
   if (!aTemps) { liberer(); throw new Error(`Z.ai occupé : un collègue l'utilise depuis plus de ${ZAI_ATTENTE_MAX / 1000} s (une requête à la fois)`); }
+  // Deuxième essai réel (11h07) : la file marchait, mais l'appel a dépassé les 90 s
+  // sans rien rendre. La série GLM-4.7 « réfléchit » par défaut avant d'écrire
+  // (docs.z.ai, thinking mode) : réflexion coupée, sortie bornée à 4 096 jetons,
+  // et consigne courte quand l'appelant en donne une et que l'entière est longue.
+  const court = o.compacte && jetonsEstimes(texte) > 9_000 ? o.compacte : texte;
+  const reglages = { thinking: { type: 'disabled' }, max_tokens: Math.min(4096, o.maxSortie ?? 4096) };
   try {
     for (let essai = 0; ; essai++) {
       try {
-        return await viaOpenAI(model, texte, schema, o, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true);
+        return await viaOpenAI(model, court, schema, o, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true, reglages);
       } catch (e) {
         if (essai < 2 && ZAI_OCCUPE.test((e as Error).message)) { await new Promise((r) => setTimeout(r, 4_000 * (essai + 1))); continue; }
         throw e;
