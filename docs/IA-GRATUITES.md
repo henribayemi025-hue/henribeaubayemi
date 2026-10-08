@@ -25,39 +25,57 @@ ne tient pas. Quand la minute de Groq est prise par un collègue, l'agent
 attend jusqu'à 30 s ; au-delà, il cède sa place pour cette tranche sans que
 Groq soit compté « à sec ».
 
-## Prêts, inactifs tant que la clé n'est pas posée
+## Prêts, inactifs tant que la clé n'est pas posée (ou qu'elle n'est pas ouverte)
 
 | Fournisseur | Préfixe | Clé (secret Supabase) | Pourquoi |
 | --- | --- | --- | --- |
-| Mistral, offre « Experiment » | `mi:` | `MISTRAL_API_KEY` | gratuite, sans carte ; grande fenêtre, donc la consigne ENTIÈRE passe ; ~1 milliard de jetons par mois et ~500 000 par minute selon des guides tiers (non publié par Mistral) ; entreprise française |
+| Mistral, offre « Gratuit » | `mi:` | `MISTRAL_API_KEY` **posée le 08/10, mais limitée à 0 requête par minute** (voir plus bas) | gratuite, sans carte ; grande fenêtre, donc la consigne ENTIÈRE passe ; ~1 milliard de jetons par mois et ~500 000 par minute selon des guides tiers (non publié par Mistral) ; entreprise française |
 | Z.ai, modèles « Flash » | `za:` | `ZAI_API_KEY` | GLM-4.7-Flash à 0 $ selon la page de prix relevée par un tiers (25/08) ; une requête à la fois |
 
-Ordre de passage : Gemini gratuit → **Mistral** → Groq → Z.ai → Cloudflare →
+Ordre de passage : Gemini gratuit → Mistral → Groq → Z.ai → Cloudflare →
 (payants, à sec). Réglages possibles : `LEGION_MODELES_MISTRAL`
 (par défaut `mistral-medium-latest,mistral-small-latest`) et
 `LEGION_MODELES_ZAI` (par défaut `glm-4.7-flash`).
 
-### Mistral : ce que Beau fait (10 minutes, gratuit)
+### Mistral : où on en est (08/10, 10 h 52)
 
-**Vu le 08/10** : une clé créée sans activer l'offre « Experiment » est acceptée
-mais limitée à **0 requête par minute** (en-tête `x-ratelimit-limit-req-minute=0`,
-erreur 429 code 1300 dès le premier appel). L'activation se fait dans la console :
-Admin → Subscription (section La Plateforme) → Compare plans → « Experiment for
-free » → accepter les conditions → Subscribe ; un numéro de téléphone vérifié est
-exigé (un numéro par offre). Les limites réelles du compte se lisent ensuite sur
-admin.mistral.ai/plateforme/limits.
+**Ce que Beau a vu** : la page des offres de Mistral marque « Gratuit » comme
+« Plan actuel », avec « Testez les API de modèles dans Studio » et « 10 $/mois
+en crédits API ». L'offre gratuite est donc bien active : il n'y a plus de bouton
+« Experiment » à chercher. Les pages d'aide de Mistral qui décrivaient l'ancienne
+offre « Experiment » renvoient maintenant 404 : Mistral a refondu ses offres
+autour de « Mistral Studio » et « Vibe ».
 
-1. Créer un compte sur console.mistral.ai (« Mistral Studio »), plan gratuit
-   « Experiment » ; aucune carte demandée (sources ci-dessous).
-2. Créer une clé API.
-3. **Données** : en offre gratuite, Mistral peut utiliser les échanges pour
-   entraîner ses modèles. Pour l'empêcher : Admin → Privacy → désactiver
-   « Anonymous improvement data » (aide officielle de Mistral). À faire,
-   puisque les agents lisent les données des entreprises qui utilisent Léo.
-4. Poser la clé dans Supabase → Edge Functions → Secrets, nom
-   `MISTRAL_API_KEY`. Ne jamais la coller dans une conversation.
-5. Prévenir Claude : un passage d'agents est lancé et le journal dit si
-   Mistral a répondu (et quel modèle).
+**Ce que la clé répond pourtant** : à 10 h 34, 10 h 48 et 10 h 52, chaque appel
+est refusé (429, code 1300) avec `x-ratelimit-limit-req-minute=0`. Le compte a
+droit à 0 requête par minute. Un rapport public décrit exactement la même erreur
+depuis la refonte « Vibe », sans solution publiée (karthink/gptel, issue 1533).
+
+**Ce qui reste à regarder, sans rien payer** :
+
+1. Dans Studio, ouvrir « Playground » et envoyer « bonjour » avec
+   mistral-small. S'il répond, le compte a accès aux modèles et c'est la clé
+   ou son espace de travail qui coince. S'il demande un numéro de téléphone,
+   le vérifier. S'il refuse, faire une capture.
+2. Menu du compte → « Paramètres d'administration » → page des limites
+   (« Limits ») : faire une capture des chiffres.
+3. **Ne pas** cliquer « Passer au Pro » ni « Pay-as-you-go » : ce sont des offres
+   payantes, et Beau ne recharge plus aucun crédit.
+
+Rappel sur les données : en offre gratuite, Mistral peut utiliser les échanges
+pour entraîner ses modèles. Le réglage se trouve dans les paramètres
+d'administration, rubrique confidentialité.
+
+## Les modèles chinois gratuits (08/10, question de Beau)
+
+| Moteur | Gratuit ? | Où on en est |
+| --- | --- | --- |
+| **Qwen** (Alibaba), servi par Groq | oui | **déjà branché** (`gq:qwen/…`), mais sa part est petite : 6 000 jetons par minute, trop peu pour la consigne d'un agent, même courte |
+| Qwen, servi par Cloudflare | oui, dans la part du jour | déjà branché (`cf:`), part commune à tous les modèles Cloudflare, épuisée tôt le matin |
+| **Z.ai (Zhipu)** : GLM-4.7-Flash, GLM-4.5-Flash, GLM-4.6V-Flash | **oui** : « Free » en entrée et en sortie sur la page de prix officielle (docs.z.ai/guides/overview/pricing, lue le 08/10) | **déjà branché** (`za:`), inactif faute de clé. C'est le moteur gratuit le plus simple à ajouter : créer un compte sur z.ai, créer une clé API, la poser dans les secrets Supabase sous `ZAI_API_KEY`. Une requête à la fois selon un relevé tiers |
+| Qwen officiel (Alibaba Cloud Model Studio) | essai seulement | environ 1 million de jetons par modèle pendant 90 jours (région Singapour), puis payant. Une carte peut être demandée, ce qui ouvre une dépense possible : décision de Beau |
+| DeepSeek, Kimi (Moonshot) | non | payants ; déjà branchés (`ds:`, `km:`), à sec, et on ne recharge pas |
+| ModelScope, SiliconFlow | écartés | vérification d'identité chinoise |
 
 ## Écartés, et pourquoi
 
@@ -100,7 +118,10 @@ des inconnus. On n'en branche aucune.
 - Cerebras, fin de l'offre gratuite — https://github.com/robhunter/agentdeals/issues/1910
 - GitHub Models retiré — https://github.blog/changelog/2026-07-30-github-models-is-now-retired/
 - NVIDIA NIM, FAQ (usage de production) — https://forums.developer.nvidia.com/t/nvidia-nim-faq/300317
+- Z.ai, page de prix officielle (GLM-4.7-Flash, GLM-4.5-Flash, GLM-4.6V-Flash « Free », lue le 08/10) — https://docs.z.ai/guides/overview/pricing
 - Z.ai, offre Flash gratuite (relevé tiers du 25/08/2026) — https://blogs.novita.ai/glm-free-api/
+- Alibaba Cloud Model Studio, quota gratuit des nouveaux comptes — https://help.aliyun.com/en/model-studio/new-free-quota
+- Même erreur Mistral « req-minute 0 », code 1300, sans solution publiée — https://github.com/karthink/gptel/issues/1533
 - mnfst/awesome-free-llm-apis — https://github.com/mnfst/awesome-free-llm-apis
 - nejib1/Free-LLM (données du 08/10/2026) — https://github.com/nejib1/Free-LLM
 - OVHcloud, limites d'AI Endpoints (2 requêtes par minute par IP sans clé) — https://docs.ovhcloud.com/en/guides/public-cloud/ai-machine-learning/ai-endpoints-capabilities
