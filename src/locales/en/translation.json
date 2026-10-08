@@ -1649,7 +1649,32 @@
         "suivant": "Next",
         "rang": "{{rang}} of {{total}}"
       },
-      "commandes": "Show the controls"
+      "commandes": "Show the controls",
+      "carte": {
+        "titre": "Map",
+        "ville": "City",
+        "tout": "All",
+        "auVolant": "While driving the map guides you: get out to jump there.",
+        "lieux": {
+          "siege": "Headquarters",
+          "boutiques": "Shops",
+          "clients": "Customers",
+          "projets": "Projects",
+          "chezMoi": "Home",
+          "heliport": "Helipad",
+          "sport": "Sports",
+          "foot": "Football",
+          "aeroport": "Airport",
+          "campagne": "Countryside"
+        }
+      },
+      "heure": {
+        "titre": "Time of day",
+        "reel": "Real time",
+        "couchant": "Sunset",
+        "nuit": "Night",
+        "jour": "Midday"
+      }
     },
     "agentModifie": "Saved",
     "agentCree": "{{nom}} joins the team",

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { quiOuEst, repondre, CORPS, RECEPTIONNISTE, etatDe } from './monde';
 import { chargerCiel, phaseDuJour, villeChoisie } from '../parties/ciel';
+import CarteVille from './CarteVille';
 import { styleVille } from './region';
 import { jauge as jaugeBasket } from './basket';
 import { visee as viseeFoot, puissance as puissanceFoot } from './foot';
@@ -238,7 +239,12 @@ export default function Monde3D({ entreprise, agents, departements = [], message
   const [suivant, setSuivant] = useState(null); // l'agent qui t'attend, vers lequel « Aller au suivant » t'a mené
   useEffect(() => { if (etat !== 'chargement') return undefined; const i = setInterval(() => setConseil((c) => c + 1), 4500); return () => clearInterval(i); }, [etat]);
   const [menu, setMenu] = useState(false);
-  const [friseOuverte, setFriseOuverte] = useState(false); // Beau, 08/10 : « trop de texte partout » — la frise se replie
+  const [friseOuverte, setFriseOuverte] = useState(false);
+  // La carte de la ville (touche M) et l'heure du jour au choix (touche T) — Beau, 08/10.
+  const [carte, setCarte] = useState(false);
+  const [heure, setHeure] = useState('reel'); // reel | couchant | nuit | jour
+  const [avisHeure, setAvisHeure] = useState(null);
+  const cielReel = useRef({ phase: 'jour', genre: 'clair' }); // Beau, 08/10 : « trop de texte partout » — la frise se replie
   const [aideVisible, setAideVisible] = useState(false);
   const [aideConduite, setAideConduite] = useState(false);
   // Les aides de commandes ne restent pas à l'écran : quelques secondes aux trois premières
@@ -304,6 +310,16 @@ export default function Monde3D({ entreprise, agents, departements = [], message
     const t0 = setTimeout(() => monde.current?.redimensionner(), 80);
     return () => clearTimeout(t0);
   }, [tourne, etat]);
+  const HEURES = ['reel', 'couchant', 'nuit', 'jour'];
+  const heureRef = useRef('reel');
+  function choisirHeure(h) {
+    heureRef.current = h; setHeure(h);
+    monde.current?.reglerCiel(h === 'reel' ? cielReel.current : { phase: h, genre: 'clair' });
+    const quand = Date.now(); setAvisHeure({ h, quand });
+    setTimeout(() => setAvisHeure((a) => (a && a.quand === quand ? null : a)), 1800);
+  }
+  const changerHeureRef = useRef(null);
+  changerHeureRef.current = () => choisirHeure(HEURES[(HEURES.indexOf(heureRef.current) + 1) % HEURES.length]);
   function basculerSon() { setSonCoupe(sonRef.current ? sonRef.current.basculer() : !sonCoupe); }
 
   useEffect(() => { const i = setInterval(() => setMaintenant(Date.now()), 30_000); return () => clearInterval(i); }, []);
@@ -360,6 +376,8 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             if (e.type === 'progression') setProgres(e.total ? Math.round((e.faits / e.total) * 100) : null);
             if (e.type === 'perdu') setEtat('erreur');
             if (e.type === 'camera') setCamera(e.mode);
+            if (e.type === 'touche' && e.cle === 'carte') setCarte((v) => !v);
+            if (e.type === 'touche' && e.cle === 'heure') changerHeureRef.current?.();
             if (e.type === 'proximite') setProche(e.cible);
             if (e.type === 'suivant') { setDialogue(null); setSuivant(e); }
             if (e.type === 'ciel') setCiel3d(e.actif);
@@ -421,11 +439,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         if (lire('leo:reve', '0') === '1') m.reglerReve(true);
         sonRef.current = creerSon();
         m.son = sonRef.current;
-        m.reglerCiel({ phase: phaseDuJour(Date.now()), genre: 'clair' });
+        cielReel.current = { phase: phaseDuJour(Date.now()), genre: 'clair' };
+        m.reglerCiel(cielReel.current);
         // La météo arrive quand elle arrive : on n'attend pas le réseau pour ouvrir le monde.
         chargerCiel({ langue }).then((c) => {
           if (!c || fini) return;
-          m.reglerCiel({ phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' });
+          cielReel.current = { phase: phaseDuJour(Date.now(), c.lever, c.coucher), genre: c.genre || 'clair' };
+          if (heureRef.current === 'reel') m.reglerCiel(cielReel.current);
           m.majPlanete({ lat: c.lat, lon: c.lon, titre: entreprise.nom, sous: `${t('legion.monde.vousEtesIci')} · ${c.ville}` });
         }).catch(() => {});
         m.majDonnees({ agents, ou, faits, departements: nomsDepts(departements, agents) });
@@ -617,6 +637,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
             : <button type="button" onClick={entrerPlein} aria-label={t('legion.monde.pleinEcran')} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#0b1120]/70 text-[14px] text-legion-ink backdrop-blur">⛶</button>}
           <span className="pointer-events-none min-w-0 truncate text-[12px] font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.8)]">{nomLieu}</span>
           <span className="flex-1" />
+          {etat === 'pret' && !ciel3d && (enVille || lieu === 'hall') && <button type="button" onClick={() => setCarte(true)} aria-label={t('legion.monde.carte.titre')} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#0b1120]/70 text-[15px] backdrop-blur">🗺️</button>}
           {etat === 'pret' && !ciel3d && !volant && attendent.length > 0 && (
             <button type="button" onClick={() => monde.current?.allerAuSuivant()} aria-label={`${t('legion.monde.attente.bouton', { count: attendent.length })} · ${t('legion.monde.attente.aller')}`}
               className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-[#ffb020] px-3 text-[12.5px] font-bold text-[#2a1a02] shadow">✋ {attendent.length}</button>
@@ -652,6 +673,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       {!mobile && <div className="absolute right-3 top-3 z-[6] flex items-center gap-1.5">
         {String(lieu).startsWith('reunion') && onConvoquer && <button type="button" onClick={() => setConvoc({ sujet: '', ids: [] })} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg shadow">{t('legion.monde.convoquer')}</button>}
         {lieu === 'atelier' && onAppeler && <button type="button" onClick={() => setRenfort(true)} className="rounded-pill bg-legion-gold px-3 py-1.5 text-[12px] font-semibold text-legion-bg shadow">{t('legion.monde.fairevenir')}</button>}
+        {(enVille || lieu === 'hall') && <button type="button" onClick={() => setCarte(true)} aria-label={t('legion.monde.carte.titre')} title={`${t('legion.monde.carte.titre')} (M)`} className="grid h-9 w-9 place-items-center rounded-full bg-[#0b1120]/80 text-[15px] backdrop-blur">🗺️</button>}
         {<button type="button" onClick={basculerSon} aria-label={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} title={sonCoupe ? t('legion.monde.sonAllumer') : t('legion.monde.sonCouper')} className="grid h-9 w-9 place-items-center rounded-full bg-[#0b1120]/80 text-[15px] text-legion-ink backdrop-blur">{sonCoupe ? '🔇' : '🔊'}</button>}
         <button type="button" onClick={() => setMenu((v) => !v)} aria-label={t('legion.monde.menu')} aria-expanded={menu} className={`grid h-9 w-9 place-items-center rounded-full text-[18px] backdrop-blur ${menu ? 'bg-legion-gold text-legion-bg' : 'bg-[#0b1120]/80 text-legion-ink'}`}>☰</button>
       </div>}
@@ -679,6 +701,13 @@ export default function Monde3D({ entreprise, agents, departements = [], message
               </div>
             </>
           )}
+          <p className="px-2 pb-1 text-[11px] uppercase tracking-wide text-legion-muted">{t('legion.monde.heure.titre')}{!mobile && ' (T)'}</p>
+          <div className="mb-2 grid grid-cols-4 gap-1">
+            {HEURES.map((h) => (
+              <button key={h} type="button" onClick={() => choisirHeure(h)} title={t(`legion.monde.heure.${h}`)} aria-pressed={heure === h}
+                className={`rounded-card py-1.5 text-[16px] ${heure === h ? 'bg-legion-gold/25 ring-1 ring-legion-gold' : 'bg-white/5 hover:bg-white/10'}`}>{{ reel: '🕒', couchant: '🌇', nuit: '🌙', jour: '☀️' }[h]}</button>
+            ))}
+          </div>
           <p className="px-2 pb-1 text-[11px] uppercase tracking-wide text-legion-muted">{t('legion.monde.vue')}</p>
           <div className="mb-2 flex rounded-pill bg-black/30 p-0.5">
             {['tps', 'fps', 'plan'].map((k) => (
@@ -930,7 +959,7 @@ export default function Monde3D({ entreprise, agents, departements = [], message
       )}
 
       {/* L'ascenseur (et les raccourcis) — au téléphone, ils sont dans le menu ☰. */}
-      {!mobile && !dialogue && !volant && (
+      {!mobile && !dialogue && !volant && !carte && (
         <div className="absolute bottom-3 left-1/2 z-[5] flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-pill bg-[#0b1120]/85 p-1 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {LIEUX.map((l) => (
             <button key={l} type="button" onClick={() => aller(l)} className={`whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] font-semibold sm:px-3 sm:text-[12.5px] ${lieu === l ? 'bg-legion-gold text-legion-bg' : 'text-legion-ink'}`}>{libelle(l)}</button>
@@ -967,6 +996,12 @@ export default function Monde3D({ entreprise, agents, departements = [], message
         </>
       )}
 
+      {carte && etat === 'pret' && <CarteVille monde={monde.current} t={t} mobile={mobile} onFermer={() => setCarte(false)} />}
+      {avisHeure && (
+        <div className="pointer-events-none absolute left-1/2 top-16 z-[9] -translate-x-1/2 rounded-pill bg-black/70 px-4 py-2 text-[13px] font-semibold text-white" style={{ animation: 'leoFondu .3s ease-out' }}>
+          {{ reel: '🕒', couchant: '🌇', nuit: '🌙', jour: '☀️' }[avisHeure.h]} {t(`legion.monde.heure.${avisHeure.h}`)}
+        </div>
+      )}
       {(tourne || (jeu && portrait)) && (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 z-[9] mx-auto w-fit rounded-card bg-black/75 px-4 py-3 text-center text-[14px] text-white" style={{ animation: 'leoDisparait 5s forwards' }}>↻ {t('legion.monde.tourne')}</div>
       )}

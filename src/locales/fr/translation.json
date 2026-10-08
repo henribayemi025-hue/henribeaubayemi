@@ -1649,7 +1649,32 @@
         "suivant": "Suivant",
         "rang": "{{rang}} sur {{total}}"
       },
-      "commandes": "Rappeler les commandes"
+      "commandes": "Rappeler les commandes",
+      "carte": {
+        "titre": "Carte",
+        "ville": "Ville",
+        "tout": "Tout",
+        "auVolant": "Au volant, la carte te guide : descends pour y aller d'un coup.",
+        "lieux": {
+          "siege": "Siège",
+          "boutiques": "Boutiques",
+          "clients": "Clients",
+          "projets": "Chantiers",
+          "chezMoi": "Chez moi",
+          "heliport": "Héliport",
+          "sport": "Sport",
+          "foot": "Foot",
+          "aeroport": "Aéroport",
+          "campagne": "Campagne"
+        }
+      },
+      "heure": {
+        "titre": "Heure du jour",
+        "reel": "Heure réelle",
+        "couchant": "Coucher de soleil",
+        "nuit": "Nuit",
+        "jour": "Plein jour"
+      }
     },
     "agentModifie": "Enregistré",
     "agentCree": "{{nom}} rejoint l’équipe",
