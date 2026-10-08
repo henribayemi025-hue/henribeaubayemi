@@ -55,3 +55,5 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [51 — « GOING DOWN », la pub beauté de l'ascenseur (déroulé de prompts vidéo)](51-going-down-ascenseur-beaute.md)
 - [52 — « Scroll the World » : les coulisses d'une pub IA de 20 s (méthode et leçons de prompts vidéo)](52-scroll-the-world-pub-souris.md)
 - [53 — Grok Bot Galaxy : trois personnes montent une entreprise en direct avec des agents (SpaceXAI)](53-grok-bot-galaxy.md)
+- [54 — « Claude + 35 Add-Ons = A Whole Company » : 35 modules pour dix postes (dont social-media-skills, MIT)](54-claude-35-modules-une-entreprise.md)
+- [55 — « CLONE » : une plateforme vidéo de niche sur l'API Higgsfield, payée à l'usage](55-higgsfield-api-plateforme-video.md)
