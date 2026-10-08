@@ -1,13 +1,14 @@
 -- Liaison commande → vente : la devise d'un espace Accounting se lit même
 -- quand son instantané porte une chaîne vide.
 --
--- ⚠️ PAS ENCORE POSÉE EN PRODUCTION. Essayée et vérifiée sur le projet de test
+-- ✅ POSÉE EN PRODUCTION le 08/10 (09 h 55 Paris) avec l'accord de Beau
+-- (« oui », 08/10). Essayée et vérifiée avant sur le projet de test
 -- `qiyvoaljqmbfldephobp` le 08/10 (espace de la gérante, instantané à '' :
--- avant → '', après → 'USD' ; commande FJ-4D2F9E livrée → vente écrite, seq 1027). Elle touche
--- les DEUX applications : la fonction lit `finia_workspaces` et `finia_events`,
--- qui appartiennent à Accounting, pour le compte du déclencheur sur `orders`,
--- qui appartient à la place de marché. Beau doit dire oui avant qu'elle parte
--- en production. Demandée par Claudinette (Accounting) le 08/10, choix (b).
+-- avant → '', après → 'USD' ; commande FJ-4D2F9E livrée → vente écrite,
+-- seq 1027). Elle touche les DEUX applications : la fonction lit
+-- `finia_workspaces` et `finia_events`, qui appartiennent à Accounting, pour
+-- le compte du déclencheur sur `orders`, qui appartient à la place de marché.
+-- Demandée par Claudinette (Accounting) le 08/10, choix (b).
 --
 -- Le défaut, mesuré en production le 08/10 (lecture seule) : les trois espaces
 -- réels ont bien une devise, posée à l'installation par un événement
