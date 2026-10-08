@@ -91,9 +91,31 @@ const semblable = (a: string, b: string) => {
 // le réglage LEGION_MOTEURS — sans toucher à ce fichier.
 // Le constat de moteur.ts quand plus aucun moteur ne répond faute de crédit ou de part gratuite.
 const SANS_IA = /^aucune IA disponible/;
-async function ecrire(apiKey: string, texte: string, schema: unknown, gratuite = false): Promise<Rendu> {
+async function ecrire(apiKey: string, texte: string, schema: unknown, gratuite = false, compacte?: string): Promise<Rendu> {
   // Formule gratuite (0170): Flash seulement.
-  return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000, ...(gratuite ? { modeles: moteursSimples() } : {}) });
+  return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000, ...(gratuite ? { modeles: moteursSimples() } : {}), ...(compacte ? { compacte } : {}) });
+}
+
+// La consigne COURTE (08/10, Beau : « ok pour Groq, on fait comme ça ») : la même tâche,
+// les mêmes règles et le même format de réponse, mais le contexte resserré — pour les
+// moteurs gratuits à petite part par minute (Groq : 8 000 jetons, réponse comprise).
+// Trois niveaux de resserrage ; on garde le premier qui tient sous `max` signes.
+// Ce qui ne bouge jamais : la charte, l'identité, la tâche, les règles absolues, « ÉCRIS ».
+const COMPACTE_MAX = 14_500;
+type Resserrage = { n: number; coupe: (t: string, max: number) => string; garde: <T>(l: T[], max: number) => T[] };
+function consigneCourte(construire: (r: Resserrage) => string): string {
+  const niveaux = [1, 0.6, 0.3];
+  let derniere = '';
+  for (const k of niveaux) {
+    const r: Resserrage = {
+      n: k,
+      coupe: (t, max) => { const m = Math.max(80, Math.round(max * k)); return t.length > m ? `${t.slice(0, m)}…` : t; },
+      garde: (l, max) => l.slice(0, Math.max(1, Math.round(max * k))),
+    };
+    derniere = construire(r);
+    if (derniere.length <= COMPACTE_MAX) return derniere;
+  }
+  return derniere; // trop longue même resserrée : moteur.ts le dira (« consigne trop longue »)
 }
 
 // La mémoire d'un salon (0161): ce qui précède les 20 derniers messages,
@@ -570,7 +592,8 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
     // Le responsable ne lit que ce à quoi il a droit (0177), plan compris.
     const verifie = peutEnqueter ? verifsPour(await enqueter(apiKey, service, fil.slice(-10).join('\n'), `Écrire le plan de la semaine du département ${dept} (${d.mandat || d.poste}): quels chiffres vérifier ?`, sansAccent(dept) === 'direction', peut(d, 'boutique') ? boutique : null, peut(d, 'mesures') && !!mesures, peut(d, 'comptabilite') ? compta : null), (source) => peut(d, source)) : [];
     const consignePlan = invitePlan(d, projetPour(d), dept, equipeDept, tachesDept, memoire, fil, peut(d, 'mesures') ? mesures : null, verifie, precedents, besoinMois, autresPlans) + enLangue;
-    const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN, gratuite);
+    const courtePlan = consigneCourte(({ coupe, garde }) => invitePlan(d, coupe(projetPour(d), 600), dept, garde(equipeDept, 8).map((e) => coupe(e, 160)), garde(tachesDept, 8).map((t) => coupe(t, 160)), garde(memoire.slice(-6), 6).map((m) => coupe(m, 200)), garde(fil.slice(-4), 4).map((l) => coupe(l, 240)), peut(d, 'mesures') && mesures ? coupe(mesures, 700) : null, garde(verifie, 3).map((v) => coupe(v, 280)), garde(precedents, 1).map((p) => coupe(p, 600)), besoinMois, garde(autresPlans, 4).map((p) => coupe(p, 450))) + enLangue);
+    const r = await ecrire(apiKey, consignePlan, SCHEMA_PLAN, gratuite, courtePlan);
     // Tous les moteurs à sec (crédit ou part gratuite) : inutile d'essayer les
     // autres départements puis quinze agents puis huit tranches (07/10 au soir,
     // 15 × tous les moteurs pour rien). On s'arrête ; le prochain passage reprend.
@@ -762,7 +785,9 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       await rattraper(service, apiKey, entrepriseId, a.id);
       const sesSouvenirs = await souvenirsDe(service, apiKey, a.id, vecteurDe(apiKey, tache.texte), 3, () => String(tache.texte || ''));
       const consigneLivrable = inviteLivrable(a, projetPour(a), tache, equipe, memoire, competences, fil, peut(a, 'mesures') ? mesures : null, verifie, plans) + recu + cites + (web ? blocWeb(web) : '') + blocSouvenirs(sesSouvenirs) + enLangue;
-      const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite);
+      // Sans la recherche web ni les souvenirs : la tâche, l'équipe, le plan et le fil, resserrés.
+      const courteLivrable = consigneCourte(({ coupe, garde }) => inviteLivrable(a, coupe(projetPour(a), 600), tache, garde(equipe, 8).map((e) => coupe(e, 160)), garde(memoire.slice(-6), 6).map((m) => coupe(m, 200)), garde(competences, 1).map((c) => ({ nom: c.nom, texte: coupe(c.texte, 600) })), garde(fil.slice(-4), 4).map((l) => coupe(l, 240)), peut(a, 'mesures') && mesures ? coupe(mesures, 700) : null, garde(verifie, 3).map((v) => coupe(v, 280)), garde(plans, 1).map((p) => coupe(p, 600))) + (recu ? coupe(recu, 1400) : '') + enLangue);
+      const r = await ecrire(apiKey, consigneLivrable, SCHEMA_LIVRABLE, gratuite, courteLivrable);
       if ('erreur' in r && SANS_IA.test(r.erreur)) { plusDIA = r.erreur; journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); return; }
       if ('erreur' in r) { journal.push(`${entreprise.nom}: ${a.nom} — ${r.erreur}`); passage(a, false, r.erreur); return; }
       // 25/09 : coupé à 4 000 caractères, les livrables difficiles (30

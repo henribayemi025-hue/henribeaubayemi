@@ -124,6 +124,18 @@ const GROQ = () => (Deno.env.get('LEGION_MODELES_GROQ') || 'openai/gpt-oss-120b,
 // elle passe juste après Gemini gratuit, avant tout moteur payant, et
 // s'arrête d'elle-même au plafond du jour.
 const CF = () => `cf:${MODELE_GRATUIT()}`;
+// « mi: » et « za: » (08/10, Beau : « je ne recharge pas les crédits ; il n'y a pas une autre
+// IA dont on peut utiliser l'API gratuitement ? »). Deux offres gratuites sans carte, qui
+// prennent la consigne ENTIÈRE (grande fenêtre), contrairement à Groq :
+// - Mistral, offre « Experiment » de La Plateforme (clé MISTRAL_API_KEY) : gratuite, pour
+//   essayer et prototyper ; les données peuvent servir à l'entraînement sauf si on le
+//   désactive (Admin → Privacy → « Anonymous improvement data »). Modèles réglables.
+// - Z.ai, modèles « Flash » gratuits (clé ZAI_API_KEY), point d'accès international.
+// Rien ne tourne tant que la clé n'est pas posée dans les secrets Supabase.
+const mistral = () => !!Deno.env.get('MISTRAL_API_KEY');
+const MISTRAL = () => (Deno.env.get('LEGION_MODELES_MISTRAL') || 'mistral-medium-latest,mistral-small-latest').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `mi:${m}`);
+const zai = () => !!Deno.env.get('ZAI_API_KEY');
+const ZAI = () => (Deno.env.get('LEGION_MODELES_ZAI') || 'glm-4.7-flash').split(',').map((m) => m.trim()).filter(Boolean).map((m) => `za:${m}`);
 // La relève, dans l'ordre : DeepSeek rapide, puis le fort, puis Kimi, puis
 // Google. Le rapide d'abord partout (24/09, premier essai réel) : v4-pro
 // réfléchit longtemps et a dépassé les 45 s d'une réponse de salon, puis
@@ -131,7 +143,10 @@ const CF = () => `cf:${MODELE_GRATUIT()}`;
 // réponse était la meilleure des deux à l'essai.
 const releve = (fort: boolean) => [
   ...(gratuit() ? GRATUITS() : []),
+  // Mistral avant Groq : il prend la consigne entière, Groq seulement la courte.
+  ...(mistral() ? MISTRAL() : []),
   ...(groq() ? GROQ() : []),
+  ...(zai() ? ZAI() : []),
   ...(iaGratuiteActive() ? [CF()] : []),
   ...(deepseek() ? [DS_RAPIDE()] : []),
   ...(deepseek() && fort ? [DS_FORT()] : []),
@@ -151,6 +166,8 @@ function disponible(m: string): boolean {
   if (m.startsWith('km:')) return kimi();
   if (m.startsWith('gg:')) return !!gratuit();
   if (m.startsWith('gq:')) return groq();
+  if (m.startsWith('mi:')) return mistral();
+  if (m.startsWith('za:')) return zai();
   if (m.startsWith('an:')) return !!Deno.env.get('ANTHROPIC_API_KEY');
   if (m.startsWith('oa:')) return !!(Deno.env.get('MOTEUR_OA_URL') || cleOpenAI());
   return true;
@@ -191,7 +208,10 @@ export function moteursSimples(): string[] {
 }
 
 // `app` : à qui l'IA gratuite décompte l'appel (0232) — « leo » par défaut, « finia » pour Accounting.
-type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean; app?: AppGratuite };
+// `compacte` (08/10, Beau : « ok pour Groq, on fait comme ça ») : la même consigne en
+// version courte, pour les moteurs gratuits à petite part par minute (Groq : 8 000
+// jetons). Sans elle, une consigne d'agent (17 000 à 24 000 jetons) n'y passait jamais.
+type Options = { temperature?: number; reflexion?: number; delaiMs?: number; maxSortie?: number; modeles?: string[]; sansSecours?: boolean; app?: AppGratuite; compacte?: string };
 // `essais` : chaque moteur tenté, avec son temps (28/09) — pour voir où partent les secondes.
 export type Essai = { m: string; ms: number; e?: string };
 export type Rendu = ({ obj: Record<string, unknown>; modele: string } | { erreur: string }) & { essais?: Essai[] };
@@ -249,7 +269,7 @@ export const PRIX_OPENAI: Record<string, [number, number, number]> = {
 
 // Sans adresse réglée, « oa: » va chez OpenAI avec la clé de Beau, reconnue
 // à sa forme (24/09 : il l'a rangée sous le nom « Leo »).
-async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL') || (cleOpenAI() ? 'https://api.openai.com/v1' : undefined), cle = Deno.env.get('MOTEUR_OA_CLE') || cleOpenAI()): Promise<string> {
+async function viaOpenAI(model: string, texte: string, schema: unknown, o: Options, url = Deno.env.get('MOTEUR_OA_URL') || (cleOpenAI() ? 'https://api.openai.com/v1' : undefined), cle = Deno.env.get('MOTEUR_OA_CLE') || cleOpenAI(), offreGratuite = false): Promise<string> {
   if (!url) throw new Error('MOTEUR_OA_URL absent');
   const resp = await fetch(`${url.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
@@ -281,7 +301,7 @@ async function viaOpenAI(model: string, texte: string, schema: unknown, o: Optio
   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${(await resp.text()).slice(0, 200)}`);
   const body = await resp.json();
   const prix = PRIX_DS[model] ?? PRIX_OPENAI[model];
-  if (!prix) console.error(`coût inconnu pour ${model} : rien n'est compté dans ai_usage`);
+  if (!prix && !offreGratuite) console.error(`coût inconnu pour ${model} : rien n'est compté dans ai_usage`);
   if (prix) {
     const u = body?.usage ?? {};
     const cache = u.prompt_cache_hit_tokens ?? u.cached_tokens ?? u.prompt_tokens_details?.cached_tokens ?? 0;
@@ -332,6 +352,9 @@ async function viaGratuit(model: string, texte: string, schema: unknown, o: Opti
 // la sortie demandée : on la borne, sinon une consigne moyenne serait
 // refusée d'emblée. Réflexion au plus bas : un salon attend une réponse.
 const GROQ_SORTIE_MAX = 4096;
+// La consigne courte vise un livrable de 800 à 2 500 signes : 3 072 jetons de sortie
+// suffisent (gpt-oss réfléchit « low »), et laissent ~4 700 jetons à la consigne.
+const GROQ_SORTIE_COMPACTE = 3072;
 // La part par minute de l'offre gratuite (entrée + sortie demandée) : 8 000
 // jetons pour gpt-oss, 6 000 pour Qwen (page des limites, lue le 07/10).
 // Vu le 07/10 au soir : les consignes de legion-travail (plan d'un
@@ -348,6 +371,14 @@ const jetonsEstimes = (texte: string) => Math.ceil(texte.length / 3.2);
 // agents d'un même passage partagent ce compteur) ; quand la minute est
 // prise, les suivants passent au moteur d'après sans appel réseau.
 const groqMinute = new Map<string, { debut: number; jetons: number }>();
+// Combien attendre avant que la minute de ce modèle se libère.
+function groqAttente(model: string): number {
+  const m = groqMinute.get(model);
+  return m ? Math.max(0, 60_000 - (Date.now() - m.debut) + 250) : 0;
+}
+// Au plus 30 s d'attente : au-delà, l'agent cède sa place pour cette tranche (une
+// tranche dure ~100 s) et la tâche reste ouverte pour la suivante.
+const GROQ_ATTENTE_MAX = 30_000;
 function groqReserver(model: string, jetons: number): boolean {
   const limite = GROQ_JETONS_MINUTE(model);
   const m = groqMinute.get(model);
@@ -360,10 +391,24 @@ function groqReserver(model: string, jetons: number): boolean {
 async function viaGroq(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const cle = Deno.env.get('GROQ_API_KEY');
   if (!cle) throw new Error('GROQ_API_KEY absent');
-  const sortie = Math.min(GROQ_SORTIE_MAX, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048));
-  const entree = jetonsEstimes(texte) + jetonsEstimes(JSON.stringify(schema)) + 120;
-  if (entree + sortie > GROQ_JETONS_MINUTE(model)) throw new Error(`part gratuite de Groq : consigne trop longue (${entree + sortie} jetons estimés pour ${GROQ_JETONS_MINUTE(model)} par minute)`);
-  if (!groqReserver(model, entree + sortie)) throw new Error(`part gratuite de Groq : minute déjà prise par un autre appel (${GROQ_JETONS_MINUTE(model)} jetons par minute)`);
+  let sortie = Math.min(GROQ_SORTIE_MAX, (o.maxSortie ?? 4096) + (o.reflexion ?? 2048));
+  const limite = GROQ_JETONS_MINUTE(model);
+  const besoin = (t: string, s: number) => jetonsEstimes(t) + jetonsEstimes(JSON.stringify(schema)) + 120 + s;
+  // La consigne entière ne tient pas dans la part : la courte, si l'appelant en a donné une.
+  if (besoin(texte, sortie) > limite && o.compacte) {
+    sortie = Math.min(sortie, GROQ_SORTIE_COMPACTE);
+    texte = o.compacte;
+  }
+  const total = besoin(texte, sortie);
+  if (total > limite) throw new Error(`part gratuite de Groq : consigne trop longue (${total} jetons estimés pour ${limite} par minute)`);
+  if (!groqReserver(model, total)) {
+    // La minute est prise par un collègue : on attend qu'elle se libère si c'est court ;
+    // sinon on cède la place SANS compter Groq comme « à sec » (le passage continue).
+    const attente = groqAttente(model);
+    if (attente > GROQ_ATTENTE_MAX) throw new Error(`Groq occupé : minute déjà prise, ${Math.round(attente / 1000)} s d'attente (${limite} jetons par minute)`);
+    await new Promise((r) => setTimeout(r, attente));
+    if (!groqReserver(model, total)) throw new Error(`Groq occupé : minute reprise par un collègue (${limite} jetons par minute)`);
+  }
   const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cle}` },
@@ -426,7 +471,9 @@ function secours(): string[] {
   // OpenAI (clé de Beau), GPT-5.4 mini par défaut (réglable : LEGION_MODELE_OA).
   else if (cleOpenAI()) s.push(`oa:${Deno.env.get('LEGION_MODELE_OA') || 'gpt-5.4-mini'}`);
   // Les gratuites restent un recours même quand LEGION_MOTEURS fixe la file.
+  if (mistral()) s.push(...MISTRAL());
   if (groq()) s.push(...GROQ());
+  if (zai()) s.push(...ZAI());
   if (iaGratuiteActive()) s.push(CF());
   return s;
 }
@@ -461,6 +508,8 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : nom.startsWith('an:') ? await viaAnthropic(nom.slice(3), texte, schema, o)
         : nom.startsWith('cf:') ? await viaGratuit(nom.slice(3), texte, schema, o)
         : nom.startsWith('gq:') ? await viaGroq(nom.slice(3), texte, schema, o)
+        : nom.startsWith('mi:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.mistral.ai/v1', Deno.env.get('MISTRAL_API_KEY'), true)
+        : nom.startsWith('za:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true)
         : nom.startsWith('gg:') ? await viaGemini(gratuit() || '', nom.slice(3), texte, schema, o, true)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {
@@ -475,7 +524,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       echecs++;
       if (SANS_CREDIT.test(derniere) || SANS_PART.test(derniere)) aSec++;
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
-      if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
+      // Groq occupé par un collègue (08/10) : ni panne ni part épuisée — rien de côté.
+      if (/Groq occupé/.test(derniere)) { /* la place se libère à la minute suivante */ }
+      else if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
       // Groq gratuit : la part du jour (ou de la minute) de CE modèle est prise ;
       // les deux autres modèles Groq ont la leur.
       else if (nom.startsWith('gq:') && /HTTP 429/.test(derniere)) await endormir(nom, /per day|TPD|RPD/i.test(derniere) ? 60 * 60_000 : 60_000, derniere);
