@@ -393,6 +393,39 @@ function groqReserver(model: string, jetons: number): boolean {
   groqMinute.set(model, { debut: neuf ? Date.now() : m!.debut, jetons: engages + jetons });
   return true;
 }
+// Z.ai gratuit (08/10, premier essai) : une requête à la fois par compte. Trois
+// agents qui l'appelaient ensemble recevaient « 1302 Rate limit reached for
+// requests » ou « 1305 service temporarily overloaded », et le premier refus
+// mettait Z.ai de côté une minute pour tous. Les agents d'un même passage font
+// donc la queue ici ; au-delà de 45 s d'attente, l'agent cède sa place pour cette
+// tranche (sans compter Z.ai « à sec »). Un 1302 ou 1305 malgré la queue (un autre
+// service Finjaro l'utilise au même moment) est réessayé deux fois.
+let zaiFile: Promise<void> = Promise.resolve();
+const ZAI_ATTENTE_MAX = 45_000;
+const ZAI_OCCUPE = /HTTP 429[\s\S]{0,40}"(1302|1305)"/;
+async function viaZai(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
+  const precedent = zaiFile;
+  let liberer: () => void = () => {};
+  const mien = new Promise<void>((r) => { liberer = r; });
+  zaiFile = precedent.then(() => mien);
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  const aTemps = await Promise.race([
+    precedent.then(() => true),
+    new Promise<boolean>((r) => { minuteur = setTimeout(() => r(false), ZAI_ATTENTE_MAX); }),
+  ]);
+  clearTimeout(minuteur);
+  if (!aTemps) { liberer(); throw new Error(`Z.ai occupé : un collègue l'utilise depuis plus de ${ZAI_ATTENTE_MAX / 1000} s (une requête à la fois)`); }
+  try {
+    for (let essai = 0; ; essai++) {
+      try {
+        return await viaOpenAI(model, texte, schema, o, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true);
+      } catch (e) {
+        if (essai < 2 && ZAI_OCCUPE.test((e as Error).message)) { await new Promise((r) => setTimeout(r, 4_000 * (essai + 1))); continue; }
+        throw e;
+      }
+    }
+  } finally { liberer(); }
+}
 async function viaGroq(model: string, texte: string, schema: unknown, o: Options): Promise<string> {
   const cle = Deno.env.get('GROQ_API_KEY');
   if (!cle) throw new Error('GROQ_API_KEY absent');
@@ -514,7 +547,7 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
         : nom.startsWith('cf:') ? await viaGratuit(nom.slice(3), texte, schema, o)
         : nom.startsWith('gq:') ? await viaGroq(nom.slice(3), texte, schema, o)
         : nom.startsWith('mi:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.mistral.ai/v1', Deno.env.get('MISTRAL_API_KEY'), true)
-        : nom.startsWith('za:') ? await viaOpenAI(nom.slice(3), texte, schema, o, 'https://api.z.ai/api/paas/v4', Deno.env.get('ZAI_API_KEY'), true)
+        : nom.startsWith('za:') ? await viaZai(nom.slice(3), texte, schema, o)
         : nom.startsWith('gg:') ? await viaGemini(gratuit() || '', nom.slice(3), texte, schema, o, true)
         : await viaGemini(apiKey, nom, texte, schema, o);
       try { const obj = nettoyer(JSON.parse(txt)); essais.push({ m: nom, ms: Date.now() - debut }); return { obj, modele: nom, essais }; } catch {
@@ -530,7 +563,9 @@ export async function generer(apiKey: string, texte: string, schema: unknown, o:
       if (SANS_CREDIT.test(derniere) || SANS_PART.test(derniere)) aSec++;
       essais.push({ m: nom, ms: Date.now() - debut, e: (e as Error).message.slice(0, 80) });
       // Groq occupé par un collègue (08/10) : ni panne ni part épuisée — rien de côté.
-      if (/Groq occupé/.test(derniere)) { /* la place se libère à la minute suivante */ }
+      if (/Groq occupé|Z\.ai occupé/.test(derniere)) { /* la place se libère vite : rien de côté */ }
+      // Z.ai encore « une requête à la fois » ou surchargé après deux reprises : 20 s de côté, pas une minute.
+      else if (nom.startsWith('za:') && ZAI_OCCUPE.test(derniere)) await endormir(famille(nom), 20_000, derniere);
       else if (SANS_CREDIT.test(derniere)) await endormir(famille(nom), 15 * 60_000, derniere);
       // Groq gratuit : la part du jour (ou de la minute) de CE modèle est prise ;
       // les deux autres modèles Groq ont la leur.

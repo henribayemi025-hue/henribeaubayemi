@@ -30,7 +30,7 @@ Groq soit compté « à sec ».
 | Fournisseur | Préfixe | Clé (secret Supabase) | Pourquoi |
 | --- | --- | --- | --- |
 | Mistral, offre « Gratuit » | `mi:` | `MISTRAL_API_KEY` **posée le 08/10, mais limitée à 0 requête par minute** (voir plus bas) | gratuite, sans carte ; grande fenêtre, donc la consigne ENTIÈRE passe ; ~1 milliard de jetons par mois et ~500 000 par minute selon des guides tiers (non publié par Mistral) ; entreprise française |
-| Z.ai, modèles « Flash » | `za:` | `ZAI_API_KEY` | GLM-4.7-Flash à 0 $ selon la page de prix relevée par un tiers (25/08) ; une requête à la fois |
+| Z.ai, modèles « Flash » | `za:` | `ZAI_API_KEY` **posée par Beau le 08/10 à 11 h** | GLM-4.7-Flash « Free » sur la page de prix officielle ; **une requête à la fois** : au premier essai (11 h 01), trois agents l'ont appelé ensemble et ont reçu « 1302 Rate limit reached for requests » et « 1305 service temporarily overloaded ». Depuis le 08/10, les agents d'un passage font la queue (au plus 45 s), un 1302 ou 1305 est réessayé deux fois, et Z.ai n'est mis de côté que 20 s |
 
 Ordre de passage : Gemini gratuit → Mistral → Groq → Z.ai → Cloudflare →
 (payants, à sec). Réglages possibles : `LEGION_MODELES_MISTRAL`
@@ -72,7 +72,7 @@ d'administration, rubrique confidentialité.
 | --- | --- | --- |
 | **Qwen** (Alibaba), servi par Groq | oui | **déjà branché** (`gq:qwen/…`), mais sa part est petite : 6 000 jetons par minute, trop peu pour la consigne d'un agent, même courte |
 | Qwen, servi par Cloudflare | oui, dans la part du jour | déjà branché (`cf:`), part commune à tous les modèles Cloudflare, épuisée tôt le matin |
-| **Z.ai (Zhipu)** : GLM-4.7-Flash, GLM-4.5-Flash, GLM-4.6V-Flash | **oui** : « Free » en entrée et en sortie sur la page de prix officielle (docs.z.ai/guides/overview/pricing, lue le 08/10) | **déjà branché** (`za:`), inactif faute de clé. C'est le moteur gratuit le plus simple à ajouter : créer un compte sur z.ai, créer une clé API, la poser dans les secrets Supabase sous `ZAI_API_KEY`. Une requête à la fois selon un relevé tiers |
+| **Z.ai (Zhipu)** : GLM-4.7-Flash, GLM-4.5-Flash, GLM-4.6V-Flash | **oui** : « Free » en entrée et en sortie sur la page de prix officielle (docs.z.ai/guides/overview/pricing, lue le 08/10) | **branché, clé posée le 08/10** (`za:`). Une requête à la fois : les agents font la queue |
 | Qwen officiel (Alibaba Cloud Model Studio) | essai seulement | environ 1 million de jetons par modèle pendant 90 jours (région Singapour), puis payant. Une carte peut être demandée, ce qui ouvre une dépense possible : décision de Beau |
 | DeepSeek, Kimi (Moonshot) | non | payants ; déjà branchés (`ds:`, `km:`), à sec, et on ne recharge pas |
 | ModelScope, SiliconFlow | écartés | vérification d'identité chinoise |
