@@ -201,6 +201,12 @@ ni les cabinets comptables (concurrents).
 
 ### 6. Léo se présente — entreprises (Beau, 09/10)
 
+Beau, 09/10 15 h : « si tu vises l'Europe, tu dis que tu es Léo, l'agent IA de
+Finjaro, et tu viens présenter Accounting aussi : comme ça on présente les
+deux à la fois ». Chaque modèle (6, 6-EN, 7, 7-EN) parle donc de l'autre
+produit en une phrase. Accounting vise surtout les pays en développement ;
+l'Europe n'en reçoit qu'une petite part.
+
 Beau, 09/10 : « bonjour, je suis Léo, agent IA de la compagnie Finjaro » ;
 puis : « n'enlève pas le commencer sans payer, ne parle pas juste du prix,
 dis ce que fait Finjaro, une entreprise d'agents IA qui travaillent pour vous,
@@ -234,6 +240,9 @@ l'entreprise.
 > Chaque soir, ils vous rendent compte de leur travail. Vous gardez la main :
 > rien ne part sans votre accord.
 >
+> Finjaro fait aussi Finjaro Accounting : votre caisse, votre stock et ce que
+> vos clients vous doivent, suivis depuis votre téléphone.
+>
 > On peut commencer sans payer : répondez à cet e-mail et l'équipe vous envoie
 > l'accès.
 >
@@ -262,6 +271,9 @@ l'entreprise.
 >
 > Every evening, they report back on their work. You stay in control: nothing
 > goes out without your approval.
+>
+> Finjaro also makes Finjaro Accounting: your cash, your stock and what your
+> customers owe you, tracked from your phone.
 >
 > You can start for free: reply to this e-mail and the team will send you the
 > access.
@@ -319,6 +331,10 @@ aujourd'hui : Accounting n'affiche aucun prix).
 >   geste ;
 > - {selon le cas : vos devis, vos rendez-vous}.
 >
+> Et si vous voulez aller plus loin, Léo vous donne une équipe d'agents IA comme
+> moi : un agent qui prépare les réponses à vos clients, un qui suit vos
+> concurrents, un qui rédige vos documents. Vous gardez toujours la main.
+>
 > On peut commencer sans payer : répondez à cet e-mail et l'équipe vous envoie
 > l'accès.
 >
@@ -360,6 +376,10 @@ normalisée FNE).
 > - your cash, day after day;
 > - what your customers owe you, with a WhatsApp reminder in one tap;
 > - {where relevant: your quotes, your appointments}.
+>
+> And if you want to go further, Léo gives you a team of AI agents like me: one
+> who prepares replies to your customers, one who keeps watch on your
+> competitors, one who drafts your documents. You always stay in control.
 >
 > You can start for free: reply to this e-mail and the team will send you the
 > access.
