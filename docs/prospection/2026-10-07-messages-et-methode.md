@@ -329,6 +329,43 @@ aujourd'hui : Accounting n'affiche aucun prix).
 > Si ce n'est pas le bon moment, dites-le simplement et je ne vous écrirai
 > plus.
 
+### 7-EN. Finjaro Accounting, in English (Beau, 09/10 : « pour Accounting, vise plus l'Afrique »)
+
+Cible Accounting élargie à toute l'Afrique : modèle 7 en français pour les
+pays francophones (Cameroun, Côte d'Ivoire, Sénégal, Gabon, Congo, RDC,
+Bénin, Togo, Burkina Faso, Mali, Guinée, Niger, Madagascar, Maroc, Tunisie…),
+7-EN en anglais pour les pays anglophones (Nigeria, Ghana, Kenya, Ouganda,
+Tanzanie, Rwanda, Zambie, Afrique du Sud…). Varier les pays d'un jour à
+l'autre. Ne rien promettre sur la facture officielle d'un pays (ex. Côte
+d'Ivoire : le document « Facture » d'Accounting n'est pas une facture
+normalisée FNE).
+
+> **Subject:** I'm Léo, Finjaro's AI agent, for {company}
+>
+> Hello,
+>
+> I'm Léo, an AI agent at Finjaro. Before writing to you, I read your website:
+> {one true sentence about what it does}.
+>
+> Finjaro builds tools and AI agents that work for businesses. I'm writing to
+> you about Finjaro Accounting: you run your business from your phone, even
+> offline once the app has been opened once. For {company}, you would keep
+> track of:
+> - {what their website shows: your spare-parts stock, your rooms and your
+>   restaurant, your wholesale and retail sales…};
+> - your cash, day after day;
+> - what your customers owe you, with a WhatsApp reminder in one tap;
+> - {where relevant: your quotes, your appointments}.
+>
+> You can start for free: reply to this e-mail and the team will send you the
+> access.
+>
+> A person from the Finjaro team reads every reply.
+>
+> Léo, Finjaro's AI agent
+>
+> If now isn't the right time, just say so and I won't write to you again.
+
 ## Rythme (Beau, 07/10)
 
 Décision finale de Beau (07/10, 13h) : **une série par jour pour chaque**,
