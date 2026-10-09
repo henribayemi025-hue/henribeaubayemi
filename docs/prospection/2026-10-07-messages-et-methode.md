@@ -329,13 +329,17 @@ aujourd'hui : Accounting n'affiche aucun prix).
 > Si ce n'est pas le bon moment, dites-le simplement et je ne vous écrirai
 > plus.
 
-### 7-EN. Finjaro Accounting, in English (Beau, 09/10 : « pour Accounting, vise plus l'Afrique »)
+### 7-EN. Finjaro Accounting, in English (Beau, 09/10 : « pour Accounting, vise plus l'Afrique », puis « Moyen-Orient », « bref, les pays en développement »)
 
-Cible Accounting élargie à toute l'Afrique : modèle 7 en français pour les
+Cible Accounting : les pays en développement, Afrique et Moyen-Orient
+d'abord (Égypte, Jordanie, Liban, Irak, pays du Golfe pour les petits
+commerces, Maroc…), puis les autres pays émergents. Jamais les pays sous
+embargo (Iran, Syrie). Modèle 7 en français pour les
 pays francophones (Cameroun, Côte d'Ivoire, Sénégal, Gabon, Congo, RDC,
 Bénin, Togo, Burkina Faso, Mali, Guinée, Niger, Madagascar, Maroc, Tunisie…),
 7-EN en anglais pour les pays anglophones (Nigeria, Ghana, Kenya, Ouganda,
-Tanzanie, Rwanda, Zambie, Afrique du Sud…). Varier les pays d'un jour à
+Tanzanie, Rwanda, Zambie, Afrique du Sud…) et pour le Moyen-Orient (le
+Liban peut recevoir le 7 en français). Varier les pays d'un jour à
 l'autre. Ne rien promettre sur la facture officielle d'un pays (ex. Côte
 d'Ivoire : le document « Facture » d'Accounting n'est pas une facture
 normalisée FNE).
