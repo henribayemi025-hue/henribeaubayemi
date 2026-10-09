@@ -2182,6 +2182,9 @@ export class Monde {
         this.etiquettes.render(this.planete.scene, this.planete.camera);
         return;
       }
+      // Le ciel est une boîte de 800 m centrée sur la ville : au fond de la campagne ou de l'aéroport
+      // (au-delà de 400 m), on en sortait et le ciel devenait noir. Il suit la caméra.
+      this.sky.position.copy(this.camera.position);
       if (this.composer) this.composer.render(); else this.rendu.render(this.scene, this.camera);
       this.cacherEtiquettesLointaines();
       this.etiquettes.render(this.scene, this.camera);

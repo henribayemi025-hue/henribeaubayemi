@@ -18,6 +18,11 @@ describe('plan de la ville', () => {
     // l'aéroport s'atteint par l'est, au-delà de la ville
     const a = m.lieux.find((l) => l.cle === 'aeroport');
     expect(a.aller.x).toBeGreaterThan(200);
+    // On arrive tourné vers le quartier, pas vers la ville (regard = yaw + π, vers +x quand yaw = π/2 - π).
+    const regardX = (yaw) => Math.sin(yaw + Math.PI);
+    expect(regardX(a.aller.yaw)).toBeGreaterThan(0.99); // l'aéroport est à l'est
+    const c = m.lieux.find((l) => l.cle === 'campagne');
+    expect(regardX(c.aller.yaw)).toBeLessThan(-0.99); // la campagne (et le ruisseau) à l'ouest
   });
   it('flèche : rotation 0 regarde vers le bas du plan (+z)', () => {
     expect(angleFleche(0)).toBe(-0);

@@ -2,6 +2,8 @@
 // l'ouest. Logique (chargement à l'approche, avion qui décolle) : carte.js.
 import * as THREE from 'three';
 import { aCharger, quartierDe, avionAuDecollage, PISTE } from './carte';
+import { construireNature, ruisseauLeger, arbresFeuillus } from './nature3d';
+import { BANDE } from './nature';
 
 const box = (l, h, p, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(l, h, p), mat); m.position.set(x, y, z); return m; };
 
@@ -85,7 +87,10 @@ function legerCampagne(groupe, solides) {
   // Les éoliennes (les mâts se voient de loin ; les pales tournent quand on approche).
   const eols = [];
   for (const z of [-120, -20, 80]) { const e = eolienne(); e.position.set(-490, 0, z); groupe.add(e); eols.push(e); }
-  return eols;
+  // Le ruisseau vu de loin (le coin nature, Beau 09/10) ; ses détails viennent à l'approche.
+  const ruisseau = ruisseauLeger();
+  groupe.add(ruisseau);
+  return { eols, ruisseau };
 }
 
 // Les détails, construits à l'approche.
@@ -104,29 +109,30 @@ function detailsAeroport() {
   return { groupe: g, decolle, solides: parques.map((a) => ({ x0: a.position.x - 15, x1: a.position.x + 15, z0: a.position.z - 3, z1: a.position.z + 3 })) };
 }
 
-function detailsCampagne(mobile) {
+function detailsCampagne(mobile, env) {
   const g = new THREE.Group();
-  const n = mobile ? 60 : 160;
-  const troncs = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.35, 3, 6), new THREE.MeshStandardMaterial({ color: '#6b4a2b' }), n);
-  const cimes = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.4, 0), new THREE.MeshStandardMaterial({ color: '#3f7f3f', roughness: 0.9, flatShading: true }), n);
-  const m = new THREE.Matrix4();
+  const n = mobile ? 50 : 140;
   let r = 12345; const alea = () => { r = (r * 16807) % 2147483647; return r / 2147483647; };
+  const arbres = [];
   for (let i = 0; i < n; i += 1) {
-    // Des haies d'arbres le long des champs, jamais sur la route ni sur la ferme.
+    // Des haies d'arbres le long des champs, jamais sur la route, la ferme ni le coin nature.
     let x, z;
-    do { x = -215 - alea() * 340; z = -195 + alea() * 390; } while (Math.abs(z - 30) < 9 || (x > -320 && x < -260 && z > -55 && z < 0));
-    const s = 0.8 + alea() * 0.6;
-    m.compose(new THREE.Vector3(x, 1.5 * s, z), new THREE.Quaternion(), new THREE.Vector3(s, s, s)); troncs.setMatrixAt(i, m);
-    m.compose(new THREE.Vector3(x, 4.2 * s, z), new THREE.Quaternion(), new THREE.Vector3(s, s * 1.2, s)); cimes.setMatrixAt(i, m);
+    do { x = -215 - alea() * 340; z = -195 + alea() * 390; } while (Math.abs(z - 30) < 9 || (x > -320 && x < -260 && z > -55 && z < 0) || (x > BANDE.x0 - 2 && z > BANDE.z0 - 1 && z < BANDE.z1 + 1));
+    arbres.push({ x, z, h: 5 + alea() * 4, rot: alea() * Math.PI * 2 });
   }
-  g.add(troncs, cimes);
+  // Les mêmes arbres feuillus que le coin nature (Beau, 09/10 : plus de boules vertes).
+  const feuillus = arbresFeuillus(arbres, { mobile, graine: 4242 });
+  g.add(feuillus.groupe);
   // Des bottes de foin et une clôture le long de la route.
   const foin = new THREE.MeshStandardMaterial({ color: '#d6b85a', roughness: 1 });
   for (let k = 0; k < 8; k += 1) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 1.4, 12), foin); b.rotation.z = Math.PI / 2; b.position.set(-340 - k * 9, 0.9, 120 + (k % 2) * 6); g.add(b); }
   const bois = new THREE.MeshStandardMaterial({ color: '#8a6a45' });
   for (let x = -215; x > -555; x -= 6) for (const s of [-1, 1]) g.add(box(0.15, 1.1, 0.15, bois, x, 0.55, 30 + s * 6));
   for (const s of [-1, 1]) g.add(box(340, 0.1, 0.08, bois, -385, 0.9, 30 + s * 6));
-  return { groupe: g, solides: [] };
+  // Le coin nature : le ruisseau, ses galets, l'herbe au vent, les arbres, le tunnel, le pont.
+  const nature = construireNature({ mobile, env });
+  g.add(nature.groupe);
+  return { groupe: g, solides: nature.solides, animer: nature.animer };
 }
 
 export function construireCarte(monde, ville) {
@@ -134,7 +140,7 @@ export function construireCarte(monde, ville) {
   groupe.name = 'grande-carte';
   const solides = ville.solides;
   legerAeroport(groupe, solides);
-  const eols = legerCampagne(groupe, solides);
+  const { eols, ruisseau } = legerCampagne(groupe, solides);
   const charges = new Map();
   let quartier = null;
   return {
@@ -143,7 +149,8 @@ export function construireCarte(monde, ville) {
     maj(dt, x, z) {
       const { charger, defaire } = aCharger(new Set(charges.keys()), x, z);
       for (const id of charger) {
-        const d = id === 'aeroport' ? detailsAeroport() : detailsCampagne(monde.mobile);
+        const d = id === 'aeroport' ? detailsAeroport() : detailsCampagne(monde.mobile, monde.envCiel || null);
+        if (id === 'campagne') ruisseau.visible = false;
         groupe.add(d.groupe);
         solides.push(...d.solides);
         charges.set(id, d);
@@ -151,9 +158,10 @@ export function construireCarte(monde, ville) {
       for (const id of defaire) {
         const d = charges.get(id);
         groupe.remove(d.groupe);
-        d.groupe.traverse((o) => { o.geometry?.dispose(); if (o.material && !Array.isArray(o.material)) o.material.dispose(); });
+        d.groupe.traverse((o) => { o.geometry?.dispose(); if (o.material && !Array.isArray(o.material)) { for (const k of ['map', 'normalMap', 'clearcoatNormalMap', 'alphaMap']) o.material[k]?.dispose(); o.material.dispose(); } });
         for (const s of d.solides) { const i = solides.indexOf(s); if (i >= 0) solides.splice(i, 1); }
         charges.delete(id);
+        if (id === 'campagne') ruisseau.visible = true;
       }
       const a = charges.get('aeroport');
       if (a) {
@@ -162,7 +170,8 @@ export function construireCarte(monde, ville) {
         a.decolle.position.set(PISTE.x, p.y, p.z);
         a.decolle.rotation.x = -p.tangage;
       }
-      if (charges.has('campagne')) for (const e of eols) e.userData.rotor.rotation.z += dt * 0.9;
+      const c = charges.get('campagne');
+      if (c) { for (const e of eols) e.userData.rotor.rotation.z += dt * 0.9; c.animer?.(performance.now() / 1000); }
       const q = quartierDe(x, z);
       if (q !== quartier) { quartier = q; monde.emettre?.({ type: 'quartier', id: q }); }
     },
