@@ -199,13 +199,23 @@ ni les cabinets comptables (concurrents).
 > Si ce n'est pas le bon moment, dites-le-nous simplement et nous ne vous
 > écrirons plus.
 
-### 6. Léo se présente — entreprises (Beau, 09/10 : « bonjour, je suis Léo, agent IA de la compagnie Finjaro »)
+### 6. Léo se présente — entreprises (Beau, 09/10)
 
-Remplace le modèle 4 à partir du 09/10. Le message dit franchement qu'il est
-écrit par un agent IA : c'est honnête, et c'est déjà la démonstration du
-produit. Mêmes cibles, exclusions, vérifications (site lu, MX), et toujours
-aucune adresse web (section « Les liens dans les e-mails »). Raisonnement et
-brouillons : docs/prospection/2026-10-09-leo-se-presente.md.
+Beau, 09/10 : « bonjour, je suis Léo, agent IA de la compagnie Finjaro » ;
+puis : « n'enlève pas le commencer sans payer, ne parle pas juste du prix,
+dis ce que fait Finjaro, une entreprise d'agents IA qui travaillent pour vous,
+et selon l'entreprise — si c'est une entreprise de stratégie, tu listes les
+agents IA qui y seront et ce qu'ils feront ; tu regardes ce dont ils ont
+besoin ».
+
+Remplace le modèle 4. Mêmes cibles, exclusions, vérifications (site lu, MX),
+et toujours aucune adresse web. L'équipe proposée vient de la section
+« Équipes d'agents par métier » ci-dessous, **adaptée à ce que montre le
+site** (un hôtel avec restaurant et salle de séminaire n'a pas la même équipe
+qu'une maison d'hôtes de trois chambres). Trois ou quatre agents, chacun avec
+une tâche concrète. Les agents **préparent, rédigent, proposent** : on
+n'écrit jamais qu'ils envoient, publient ou se branchent seuls à un outil de
+l'entreprise.
 
 > **Objet :** Je suis Léo, l'agent IA de Finjaro, pour {entreprise}
 >
@@ -214,16 +224,18 @@ brouillons : docs/prospection/2026-10-09-leo-se-presente.md.
 > Je suis Léo, un agent IA de l'entreprise Finjaro. Avant de vous écrire, j'ai
 > lu votre site : {une phrase vraie sur ce qu'elle fait}.
 >
-> Avec Léo, vous décrivez votre activité et une équipe d'agents IA comme moi
-> se met au travail avec vous :
-> - les tâches qui reviennent chaque jour : tri des demandes, réponses aux
->   clients, relances ;
-> - la veille sur vos concurrents et votre marché ;
-> - vos documents, vos fichiers Excel et PDF ;
-> - un compte rendu de leur travail chaque soir.
+> Finjaro crée des équipes d'agents IA qui travaillent pour les entreprises.
+> Pour {entreprise}, voici l'équipe que je vous proposerais :
+> - un agent {rôle}, qui {tâche concrète liée à ce que montre leur site} ;
+> - un agent {rôle}, qui {tâche} ;
+> - un agent {rôle}, qui {tâche} ;
+> - un agent {rôle}, qui {tâche}.
 >
-> Vous gardez la main : rien ne part sans votre accord. On peut commencer sans
-> payer : répondez à cet e-mail et l'équipe vous envoie l'accès.
+> Chaque soir, ils vous rendent compte de leur travail. Vous gardez la main :
+> rien ne part sans votre accord.
+>
+> On peut commencer sans payer : répondez à cet e-mail et l'équipe vous envoie
+> l'accès.
 >
 > Une personne de l'équipe Finjaro lit toutes les réponses.
 >
@@ -241,16 +253,18 @@ brouillons : docs/prospection/2026-10-09-leo-se-presente.md.
 > I'm Léo, an AI agent at Finjaro. Before writing to you, I read your website:
 > {one true sentence about what it does}.
 >
-> With Léo, you describe your business and a team of AI agents like me gets to
-> work with you:
-> - the tasks that come back every day: sorting requests, answering
->   customers, following up;
-> - keeping watch on your competitors and your market;
-> - your documents, your Excel and PDF files;
-> - a report on their work every evening.
+> Finjaro builds teams of AI agents that work for businesses. For {company},
+> here is the team I would suggest:
+> - a {role} agent, who {concrete task linked to their website};
+> - a {role} agent, who {task};
+> - a {role} agent, who {task};
+> - a {role} agent, who {task}.
 >
-> You stay in control: nothing goes out without your approval. You can start
-> for free: reply to this e-mail and the team will send you the access.
+> Every evening, they report back on their work. You stay in control: nothing
+> goes out without your approval.
+>
+> You can start for free: reply to this e-mail and the team will send you the
+> access.
 >
 > A person from the Finjaro team reads every reply.
 >
@@ -258,9 +272,34 @@ brouillons : docs/prospection/2026-10-09-leo-se-presente.md.
 >
 > If now isn't the right time, just say so and I won't write to you again.
 
+### Équipes d'agents par métier (pour les modèles 6 et 6-EN)
+
+À adapter au site lu : on garde les trois ou quatre agents qui répondent à ce
+que l'entreprise montre (ses services, ses clients, ce qui revient chaque
+jour). Tout ce qui est écrit ici, les agents de Léo le font vraiment
+aujourd'hui : rédiger, préparer, chercher sur le web, lire des fichiers Excel
+et PDF, se réunir, rendre compte.
+
+| Métier | Agents proposés (rôle — ce qu'il fait) |
+| --- | --- |
+| Hôtel, maison d'hôtes, camping | Réservations — prépare les réponses aux demandes et aux questions des clients ; Avis — rédige des réponses aux avis laissés en ligne ; Marketing — prépare la semaine de publications pour vos réseaux ; Veille — suit les offres et les prix des établissements voisins |
+| Restaurant, traiteur | Commandes et réservations — prépare les réponses ; Menus — rédige les descriptions des plats et des menus de saison ; Réseaux sociaux — semaine de publications ; Achats — compare les prix de vos fournisseurs à partir de vos fichiers |
+| Transport, logistique | Devis — prépare les devis à partir des demandes reçues ; Suivi clients — rédige les messages de suivi et les relances ; Appels d'offres — repère les marchés publics de votre secteur ; Rapports — synthèse de l'activité chaque soir à partir de vos fichiers Excel |
+| Intérim, recrutement | Annonces — rédige les offres d'emploi ; Tri des candidatures — lit les CV en PDF et propose une première sélection selon vos critères ; Relances — prépare les relances aux candidats et aux entreprises ; Prospection — repère les entreprises qui recrutent dans votre zone |
+| Immobilier | Annonces — rédige les descriptions des biens ; Demandes — prépare les réponses aux acheteurs et aux locataires ; Documents — prépare les courriers et lit les dossiers en PDF ; Veille — suit les prix du marché dans votre secteur |
+| Commerce, vente en ligne | Service client — prépare les réponses aux questions et aux réclamations ; Fiches produits — rédige les descriptions ; Réseaux sociaux — semaine de publications ; Stock — suit vos ventes à partir de vos fichiers et signale ce qui manque |
+| BTP, artisanat | Devis — prépare les devis à partir des demandes ; Chantiers — tient le planning et le compte rendu à partir de vos notes ; Appels d'offres — repère les marchés de votre zone ; Relances — prépare les relances des factures en retard |
+| Cabinet de conseil (non technologique), stratégie | Veille — suit l'actualité des secteurs de vos clients ; Recherche — rédige des notes de synthèse avec leurs sources ; Propositions — prépare les premières versions de vos propositions et rapports ; Réunion — des agents débattent d'une décision, dont un qui joue l'avocat du diable |
+| Cabinet d'avocats, notaire | Veille juridique — suit les textes et décisions de votre domaine ; Documents — prépare les premières versions de courriers et d'actes types ; Dossiers — lit les pièces en PDF et en fait la synthèse ; Agenda — prépare les rappels d'échéances |
+| Industrie, production | Achats — compare les offres de vos fournisseurs ; Qualité — lit les rapports et repère les écarts ; Veille — suit les normes et vos concurrents ; Rapports — synthèse chaque soir à partir de vos fichiers |
+| Voyage, événementiel | Devis — prépare les propositions de séjour ou d'événement ; Clients — prépare les réponses aux demandes ; Marketing — semaine de publications ; Fournisseurs — compare les offres des prestataires |
+
 ### 7. Léo se présente — Finjaro Accounting (09/10)
 
-Remplace le modèle 5 à partir du 09/10. Mêmes cibles et exclusions que le 5.
+Remplace le modèle 5. Mêmes cibles et exclusions que le 5. Comme le 6 : on
+dit ce que fait Finjaro, on adapte à l'entreprise (ce qu'elle suivrait,
+d'après ce que montre son site), et on garde « commencer sans payer » (vrai
+aujourd'hui : Accounting n'affiche aucun prix).
 
 > **Objet :** Je suis Léo, l'agent IA de Finjaro, pour {entreprise}
 >
@@ -269,16 +308,19 @@ Remplace le modèle 5 à partir du 09/10. Mêmes cibles et exclusions que le 5.
 > Je suis Léo, un agent IA de l'entreprise Finjaro. Avant de vous écrire, j'ai
 > lu votre site : {une phrase vraie sur ce qu'elle fait}.
 >
-> Je vous écris pour vous présenter Finjaro Accounting. Depuis votre
-> téléphone, et même sans connexion une fois l'application ouverte une
-> première fois, vous suivez :
-> - votre stock et vos ventes ;
+> Finjaro crée des outils et des agents IA qui travaillent pour les
+> entreprises. Je vous écris pour Finjaro Accounting, la gestion de votre
+> commerce sur votre téléphone, même sans connexion une fois l'application
+> ouverte une première fois. Pour {entreprise}, vous suivriez :
+> - {ce que leur site montre : le stock de vos pièces, les nuitées et le
+>   restaurant, vos ventes en gros et au détail…} ;
 > - votre caisse, jour après jour ;
 > - les sommes que vos clients vous doivent, avec une relance WhatsApp en un
->   geste.
+>   geste ;
+> - {selon le cas : vos devis, vos rendez-vous}.
 >
-> Vous pouvez commencer dès aujourd'hui : répondez à cet e-mail et l'équipe
-> vous envoie l'accès.
+> On peut commencer sans payer : répondez à cet e-mail et l'équipe vous envoie
+> l'accès.
 >
 > Une personne de l'équipe Finjaro lit toutes les réponses.
 >
