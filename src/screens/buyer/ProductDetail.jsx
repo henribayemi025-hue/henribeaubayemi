@@ -304,7 +304,7 @@ export default function ProductDetail() {
                 type="button"
                 onClick={() => toggleAlerte(p.price_fcfa)}
                 disabled={alerteBusy}
-                className={`mt-1 flex items-center gap-1 text-caption font-semibold ${alerte ? 'text-brass' : 'text-teal'}`}
+                className={`-my-1 flex min-h-[44px] items-center gap-1 text-caption font-semibold ${alerte ? 'text-brass' : 'text-teal'}`} /* 44 px de haut pour le doigt (mesuré à 20 px le 09/10) */
               >
                 {alerte ? <IconBellRinging size={14} /> : <IconBell size={14} />}
                 {alerte ? t('product.priceAlertOn') : t('product.priceAlert')}
