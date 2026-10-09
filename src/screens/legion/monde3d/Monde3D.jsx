@@ -26,6 +26,9 @@ const STYLE = `.monde-etiquette{display:flex;align-items:center;gap:5px;padding:
 .monde-etiquette.focus{padding:3px 10px 3px 3px;gap:6px;background:rgba(11,17,32,.9)}.monde-etiquette.focus img{width:26px;height:26px}
 .monde-etiquette.focus i{display:block;color:#e3a857;font-size:10.5px;font-weight:500;max-width:210px;overflow:hidden;text-overflow:ellipsis}
 .monde-etiquette.focus em{display:block;font-size:10.5px;font-weight:700;margin-top:1px}.monde-etiquette.focus.travaille em{color:#7ee787}.monde-etiquette.focus.attend em{color:#ffcf6b}
+.monde-bulle{position:relative;translate:var(--decale,0px) 0;max-width:220px;padding:6px 11px;border-radius:14px;background:#fbf6ec;color:#1d1a16;font:600 12.5px/1.3 system-ui;text-align:center;white-space:normal;box-shadow:0 4px 14px rgba(0,0,0,.35);animation:monde-bulle .25s ease-out}.monde-bulle::after{content:'';position:absolute;left:clamp(14px,calc(50% - var(--decale,0px)),calc(100% - 14px));bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf6ec}.monde-bulle b{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a4552f}
+@keyframes monde-bulle{from{opacity:0;transform:translateY(6px) scale(.92)}to{opacity:1;transform:none}}
+.monde-leger .monde-bulle{max-width:180px;font-size:12px}
 .monde-leger .monde-etiquette{font-size:11px}.monde-leger .monde-etiquette img{width:18px;height:18px}
 .monde-leger .monde-etiquette:not(.focus){padding:2px;gap:0}.monde-leger .monde-etiquette:not(.focus) span{display:none}.monde-leger .monde-etiquette:not(.focus):not(:has(img)){display:none}
 .monde-leger .monde-etiquette.travaille:not(.focus) img{box-shadow:0 0 0 2px #3fb950}.monde-leger .monde-etiquette.attend:not(.focus){box-shadow:0 0 0 2px #ffb020}

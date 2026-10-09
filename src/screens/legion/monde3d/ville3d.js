@@ -926,8 +926,17 @@ export function construireVille(monde, groupe, { sol = 0, envCiel = null, graine
     for (const p of passants) {
       p.mixer.update(dt);
       if (p.objet.userData.ko) continue; // touché (A8) : le moteur le fait tomber et se relever
-      const f = p.objet.userData.fache;
-      if (f) { f.t -= dt; if (f.t <= 0) { p.objet.userData.fache = null; p.jouer(p.objet.userData.marche ? (p.objet.userData.marche.fuite > 0 ? 'course' : 'marche') : 'repos', { fondu: 0.3 }); } else continue; }
+      // Fâché (bousculé) ou en train de te parler (A5, paroles.js) : il reste sur place, puis
+      // reprend son chemin dans le bon sens (avant, il repartait de côté, tourné vers toi).
+      const f = p.objet.userData.fache || p.objet.userData.cause;
+      if (f) {
+        f.t -= dt;
+        if (f.t > 0) continue;
+        p.objet.userData.fache = null; p.objet.userData.cause = null;
+        const m = p.objet.userData.marche;
+        p.jouer(m ? (m.fuite > 0 ? 'course' : 'marche') : 'repos', { fondu: 0.3 });
+        if (m) p.objet.rotation.y = m.t.axe === 'z' ? (m.sens > 0 ? 0 : Math.PI) : (m.sens > 0 ? Math.PI / 2 : -Math.PI / 2);
+      }
       if (p.objet.userData.assis) continue; // dans la voiture
       const tv = p.objet.userData.traverse;
       if (tv) {

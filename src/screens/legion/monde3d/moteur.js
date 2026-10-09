@@ -39,6 +39,7 @@ import { construireQuartiers } from './quartiers3d';
 import { construireMaisons } from './maisons3d';
 import { construireSalleMarche } from './salle-marche3d';
 import { construirePlanete } from './planete3d';
+import { phraseAgent, phrasePassant, creerBavardage, dureeBulle } from './paroles';
 
 const BASE = '/monde3d/';
 const ANIMS = {
@@ -245,16 +246,25 @@ export class Monde {
       const focus = !!cleFocus && o.userData.cle === cleFocus;
       const el = o.element;
       if (el.classList.contains('focus') !== focus) { el.classList.toggle('focus', focus); o.userData.l = 0; }
-      vues.push({ o, d, focus, attend: el.classList.contains('attend'), x: ((p.x + 1) / 2) * l, y: ((1 - p.y) / 2) * h });
+      vues.push({ o, d, focus, bulle: !!o.userData.bulle, attend: el.classList.contains('attend'), x: ((p.x + 1) / 2) * l, y: ((1 - p.y) / 2) * h });
     }
-    vues.sort((a, b) => (b.focus - a.focus) || (b.attend - a.attend) || (a.d - b.d));
+    // La bulle de celui qui parle passe avant tout (A5) : les étiquettes qu'elle recouvre s'effacent.
+    vues.sort((a, b) => (b.bulle - a.bulle) || (b.focus - a.focus) || (b.attend - a.attend) || (a.d - b.d));
     const prises = [];
     for (const v of vues) {
       const el = v.o.element;
       // La taille mesurée une fois affichée (mesurer à chaque image forcerait la mise en page).
       if (!v.o.userData.l && el.offsetWidth) v.o.userData.l = [el.offsetWidth, el.offsetHeight];
       const [lw, lh] = v.o.userData.l || [34 + (el.textContent || '').length * 2.2, v.focus ? 44 : 26];
-      const r = { x0: v.x - lw / 2 - 3, x1: v.x + lw / 2 + 3, y0: v.y - lh / 2 - 2, y1: v.y + lh / 2 + 2 };
+      // Une bulle (A5) reste dans l'écran : au bord, elle glisse vers l'intérieur et sa pointe
+      // reste tournée vers celui qui parle (au téléphone, un passant tout près est au bord).
+      let dx = 0;
+      if (v.bulle) {
+        if (v.x - lw / 2 < 8) dx = 8 - (v.x - lw / 2);
+        else if (v.x + lw / 2 > l - 8) dx = l - 8 - (v.x + lw / 2);
+        el.firstChild?.style.setProperty('--decale', `${Math.round(dx)}px`);
+      }
+      const r = { x0: v.x + dx - lw / 2 - 3, x1: v.x + dx + lw / 2 + 3, y0: v.y - lh / 2 - 2, y1: v.y + lh / 2 + 2 };
       const libre = !prises.some((q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
       v.o.visible = libre;
       if (libre) prises.push(r);
@@ -801,6 +811,7 @@ export class Monde {
   }
   async allerA(lieu, { nomEntreprise, avatar } = {}) {
     if (this.conduite && (lieu !== 'hall' || this.conduite.genre !== 'bateau')) this.quitterVehicule();
+    this.fermerBulle();
     this.emettre({ type: 'chargement', lieu });
     if (!this.joueur || !this.receptionniste) {
       const [j, r] = await Promise.all([this.joueur || this.personnage(avatar || 'Male_Adult_07'), this.receptionniste || this.personnage(RECEPTIONNISTE)]);
@@ -1006,7 +1017,7 @@ export class Monde {
     }
     if (this.lieu.nom === 'hall') {
       // Au bar : ceux qui viennent de rendre un travail (dernière demi-heure).
-      (ou?.aupause || []).slice(0, this.lieu.bar?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.bar[i], anim: i % 2 ? 'ecoute' : 'parle', sous: `${this.langue === 'en' ? 'break · delivered' : 'pause · a rendu'} : ${String(b.tache || '').slice(0, 36)}` }));
+      (ou?.aupause || []).slice(0, this.lieu.bar?.length || 0).forEach((b, i) => voulus.set(b.id, { dit: { cas: 'rendu', tache: b.tache }, place: this.lieu.bar[i], anim: i % 2 ? 'ecoute' : 'parle', sous: `${this.langue === 'en' ? 'break · delivered' : 'pause · a rendu'} : ${String(b.tache || '').slice(0, 36)}` }));
       // Les disponibles (allumés, libres) : au salon, en discussion, ou qui marchent dans le hall.
       const dispo = this.langue === 'en' ? 'available · talk to me' : 'disponible · parle-moi';
       // Dans l'ordre : d'abord ce qu'on voit en entrant (quelqu'un qui marche, un groupe qui discute).
@@ -1028,8 +1039,8 @@ export class Monde {
       ];
       // … et ceux qui attendent leur tâche, pendant leur pause (voir enPause dans monde.js).
       const enHallTous = [
-        ...(ou?.disponibles || []).map((d) => ({ id: d.id, sous: dispo })),
-        ...(ou?.aLeurPoste || []).filter((x) => x.pause).map((x) => ({ id: x.id, sous: `${this.langue === 'en' ? 'break · to do' : 'pause · à faire'} : ${String(x.tache || '').slice(0, 34)}` })),
+        ...(ou?.disponibles || []).map((d) => ({ id: d.id, sous: dispo, dit: { cas: 'dispo' } })),
+        ...(ou?.aLeurPoste || []).filter((x) => x.pause).map((x) => ({ id: x.id, dit: { cas: 'pause', tache: x.tache }, sous: `${this.langue === 'en' ? 'break · to do' : 'pause · à faire'} : ${String(x.tache || '').slice(0, 34)}` })),
       ];
       // La journée (lot 3.2) : le matin, une partie arrive par la rue (trottoir d'en face,
       // traversée, notre parvis, la porte) ; à midi, une partie déjeune au marché d'en face
@@ -1053,8 +1064,8 @@ export class Monde {
       let iRue = 0, iDej = 0, absents = 0;
       for (const d of enHallTous) {
         const j = journeeDe(parId.get(d.id), etatDe(parId.get(d.id), ou), moment);
-        if (j.lieu === 'chemin' && iRue < rue.length) { const pl = rue[iRue++]; voulus.set(d.id, { place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous: en ? 'arriving at work' : 'arrive au travail', chemin: pl.chemin, decale: pl.decale || 0, sansBoucle: true, traversees: pl.traversees }); continue; }
-        if (j.lieu === 'marche' && iDej < dejeuner.length) { const pl = dejeuner[iDej++]; voulus.set(d.id, { place: pl, anim: pl.anim, sous: M ? (en ? 'lunch at the market' : 'déjeune au marché') : (en ? 'lunch outside' : 'déjeune dehors') }); continue; }
+        if (j.lieu === 'chemin' && iRue < rue.length) { const pl = rue[iRue++]; voulus.set(d.id, { dit: { cas: 'arrive' }, place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous: en ? 'arriving at work' : 'arrive au travail', chemin: pl.chemin, decale: pl.decale || 0, sansBoucle: true, traversees: pl.traversees }); continue; }
+        if (j.lieu === 'marche' && iDej < dejeuner.length) { const pl = dejeuner[iDej++]; voulus.set(d.id, { dit: { cas: 'dejeune' }, place: pl, anim: pl.anim, sous: M ? (en ? 'lunch at the market' : 'déjeune au marché') : (en ? 'lunch outside' : 'déjeune dehors') }); continue; }
         if (j.lieu === 'maison' || j.lieu === 'plage' || j.lieu === 'terrasse') { absents += 1; continue; } // chez lui, sur la plage : pas au hall
         enHall.push(d);
       }
@@ -1066,12 +1077,12 @@ export class Monde {
         const pl = choix[i];
         const gestes = { telephone: this.langue === 'en' ? 'on the phone · ' : 'au téléphone · ', casque: this.langue === 'en' ? '🎧 headphones on · ' : '🎧 casque sur les oreilles · ', centPas: this.langue === 'en' ? 'pacing, thinking · ' : 'fait les cent pas · ' };
         const sous = pl.geste ? `${gestes[pl.geste]}${d.sous}` : d.sous;
-        if (pl.chemin) voulus.set(d.id, { place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous, chemin: pl.chemin, decale: pl.decale || 0 });
-        else voulus.set(d.id, { place: pl, anim: pl.anim, sous, casque: pl.geste === 'casque' });
+        if (pl.chemin) voulus.set(d.id, { dit: d.dit, place: { x: pl.chemin[0][0], z: pl.chemin[0][1], rot: 0 }, anim: 'marche', sous, chemin: pl.chemin, decale: pl.decale || 0 });
+        else voulus.set(d.id, { dit: d.dit, place: pl, anim: pl.anim, sous, casque: pl.geste === 'casque' });
       });
     }
     if (this.lieu.nom === 'atelier') {
-      (ou?.auBureau || []).slice(0, this.lieu.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { place: this.lieu.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
+      (ou?.auBureau || []).slice(0, this.lieu.postes?.length || 0).forEach((b, i) => voulus.set(b.id, { dit: { cas: 'travaille', tache: b.tache || b.texte }, place: this.lieu.postes[i], anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte }));
       this.tableauAtelier?.userData.redessiner({ lignes: [...(ou?.auBureau || []), ...(ou?.aLeurPoste || [])].map((b) => `${parId.get(b.id)?.nom || ''} — ${b.tache || b.texte || ''}`) });
       (this.lieu.postes || []).forEach((p, i) => {
         const b = ou?.auBureau?.[i];
@@ -1091,14 +1102,14 @@ export class Monde {
         if (!a) continue;
         const j = journeeDe(a, etatDe(a, ou), moment);
         if (a.actif === false) { voulus.set(a.id, { place: v.place, anim: 'assis', sous: en ? 'at home · switched off' : 'chez lui · en veille' }); continue; }
-        if (j.lieu === 'maison') voulus.set(a.id, { place: { x: v.place.x - 3.8, z: v.place.z - 10.5, rot: 0 }, anim: 'assis', sous: en ? 'at home · asleep' : 'chez lui · dort' });
-        else if (j.lieu === 'terrasse') voulus.set(a.id, { place: v.place, anim: 'assis', sous: en ? 'on the terrace · having a drink' : 'sur sa terrasse · prend un verre' });
-        else if (j.lieu === 'chemin') voulus.set(a.id, { place: { x: v.porte.x, z: v.porte.z, rot: 0 }, anim: 'marche', sous: en ? 'leaving for work' : 'part au travail', chemin: [[v.porte.x, v.porte.z], [v.porte.x, v.porte.z + 2.5], [v.porte.x + 42, v.porte.z + 2.5]], decale: 0.2, sansBoucle: true });
+        if (j.lieu === 'maison') voulus.set(a.id, { dit: { cas: 'dort' }, place: { x: v.place.x - 3.8, z: v.place.z - 10.5, rot: 0 }, anim: 'assis', sous: en ? 'at home · asleep' : 'chez lui · dort' });
+        else if (j.lieu === 'terrasse') voulus.set(a.id, { dit: { cas: 'boit' }, place: v.place, anim: 'assis', sous: en ? 'on the terrace · having a drink' : 'sur sa terrasse · prend un verre' });
+        else if (j.lieu === 'chemin') voulus.set(a.id, { dit: { cas: 'part' }, place: { x: v.porte.x, z: v.porte.z, rot: 0 }, anim: 'marche', sous: en ? 'leaving for work' : 'part au travail', chemin: [[v.porte.x, v.porte.z], [v.porte.x, v.porte.z + 2.5], [v.porte.x + 42, v.porte.z + 2.5]], decale: 0.2, sansBoucle: true });
         else if (j.lieu === 'plage') {
           const k = iPlage++;
           const x0 = -46 + (k % 6) * 15;
-          if (j.fait === 'court') voulus.set(a.id, { place: { x: x0, z: R - 4, rot: Math.PI / 2 }, anim: 'course', sous: en ? 'jogging on the beach' : 'fait sa course au bord de la mer', chemin: [[x0, R - 4], [x0 + 40, R - 4.5], [x0 + 40, R - 7], [x0, R - 6.5]], decale: k * 0.17, course: true });
-          else voulus.set(a.id, { place: { x: x0 + 6, z: R - 10, rot: 0.4 + k }, anim: 'parle', sous: en ? 'ball game on the beach' : 'joue au ballon sur la plage' });
+          if (j.fait === 'court') voulus.set(a.id, { dit: { cas: 'court' }, place: { x: x0, z: R - 4, rot: Math.PI / 2 }, anim: 'course', sous: en ? 'jogging on the beach' : 'fait sa course au bord de la mer', chemin: [[x0, R - 4], [x0 + 40, R - 4.5], [x0 + 40, R - 7], [x0, R - 6.5]], decale: k * 0.17, course: true });
+          else voulus.set(a.id, { dit: { cas: 'joue' }, place: { x: x0 + 6, z: R - 10, rot: 0.4 + k }, anim: 'parle', sous: en ? 'ball game on the beach' : 'joue au ballon sur la plage' });
         }
       }
     }
@@ -1119,13 +1130,13 @@ export class Monde {
         if (b) {
           const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#0d1117'; x.fillRect(0, 0, w, h); x.fillStyle = '#e3a857'; x.font = `bold ${h * 0.11}px ui-monospace, monospace`; x.fillText(a.nom, w * 0.05, h * 0.16); x.font = `${h * 0.08}px ui-monospace, monospace`; const t = String(b.tache || b.texte || '').replace(/\s+/g, ' '); ['#7ee787', '#79c0ff', '#d2a8ff', '#edf1f8'].forEach((c, l) => { x.fillStyle = c; x.fillText(t.slice(l * 32, l * 32 + 32), w * 0.05, h * (0.34 + l * 0.14)); }); });
           e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
-          voulus.set(a.id, { place: p, anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte });
+          voulus.set(a.id, { dit: { cas: 'travaille', tache: b.tache || b.texte }, place: p, anim: 'travail', sous: String(b.tache || b.texte || '').slice(0, 48), texte: b.tache || b.texte });
         } else if (attente) {
           // Il a une tâche ouverte : à son poste, sans taper.
           const e = this.ecran(0.56, 0.32, (x, w, h) => { x.fillStyle = '#10151d'; x.fillRect(0, 0, w, h); x.fillStyle = '#93a1b8'; x.font = `bold ${h * 0.1}px system-ui`; x.fillText(this.langue === 'en' ? 'To do' : 'À faire', w * 0.05, h * 0.18); x.fillStyle = '#edf1f8'; x.font = `${h * 0.085}px system-ui`; const t = String(attente.tache || ''); for (let l = 0; l < 4; l += 1) x.fillText(t.slice(l * 30, l * 30 + 30), w * 0.05, h * (0.38 + l * 0.14)); });
           e.position.set(...p.ecranPos); e.rotation.y = p.ecranRot; this.lieu.groupe.add(e); p.ecranMesh = e;
           // En pause au hall : l'écran reste allumé sur sa tâche, la chaise est vide.
-          if (!attente.pause) voulus.set(a.id, { place: p, anim: 'assis', sous: `${this.langue === 'en' ? 'to do' : 'à faire'} : ${String(attente.tache || '').slice(0, 40)}` });
+          if (!attente.pause) voulus.set(a.id, { dit: { cas: 'aFaire', tache: attente.tache }, place: p, anim: 'assis', sous: `${this.langue === 'en' ? 'to do' : 'à faire'} : ${String(attente.tache || '').slice(0, 40)}` });
         }
       });
     }
@@ -1143,6 +1154,7 @@ export class Monde {
         x = { perso, etiquette, agent: a };
         this.agents.set(id, x);
       }
+      x.dit = v.dit || null; // ce qu'il dira si on passe près de lui (A5, paroles.js)
       if (x.etiquette.element.querySelector('i').textContent !== (v.sous || '')) { x.etiquette.element.querySelector('i').textContent = v.sous || ''; x.etiquette.userData.l = 0; }
       if (v.chemin) {
         // Garde sa position s'il marchait déjà sur ce chemin (pas de saut à chaque mise à jour).
@@ -1207,6 +1219,79 @@ export class Monde {
   motifAttente(raison) {
     const en = this.langue === 'en';
     return { question: en ? '✋ has a question for you' : '✋ a une question pour toi', decision: en ? '✋ needs your decision' : '✋ attend ta décision', bloque: en ? '✋ blocked · needs you' : '✋ bloqué · a besoin de toi', revue: en ? '✋ done · check the work' : '✋ a rendu · à relire' }[raison] || (en ? '✋ waiting for you' : '✋ t\'attend');
+  }
+
+  // ——— Les habitants qui parlent (A5, paroles.js) ———
+  // Quand on passe près d'un agent (4,5 m) ou d'un passant (2,6 m), une bulle courte au-dessus
+  // de sa tête, quelques secondes. Le passant s'arrête et se tourne vers toi le temps de sa
+  // phrase. Une seule bulle à la fois, une pause entre deux ; rien au volant, en vol ni dans
+  // le ciel. La bulle s'efface si on s'éloigne.
+  bavarder(p) {
+    const t = performance.now() / 1000;
+    const b = (this.bavardage ||= creerBavardage());
+    const B = this.bulle;
+    if (B) {
+      const o = B.perso.objet;
+      const loin = !o.parent || Math.hypot(p.x - o.position.x, p.z - o.position.z) > 9;
+      if (t > B.fin || loin || this.conduite || this.heros || this.ciel3d) this.fermerBulle(t);
+      return;
+    }
+    if (this.conduite || this.heros || this.ciel3d || !this.joueur) return;
+    let choix = null;
+    for (const [id, x] of this.agents) {
+      const o = x.perso.objet;
+      if (!o.parent) continue;
+      const d = Math.hypot(p.x - o.position.x, p.z - o.position.z);
+      const dit = x.attend ? { cas: 'attend', raison: x.attend.raison } : x.dit;
+      if (d > 4.5 || !dit || (choix && d >= choix.d) || !b.peut(`agent:${id}`, t)) continue;
+      choix = { d, cle: `agent:${id}`, perso: x.perso, dit, haut: 2.5 };
+    }
+    const V = this.villeVivante;
+    if (!choix && this.lieu.nom === 'hall' && this.dehors && V?.passants) {
+      V.passants.forEach((ps, k) => {
+        const o = ps.objet, u = o.userData;
+        if (!o.parent || u.assis || u.fache || u.ko || u.ejecte || u.traverse?.etat === 'traverse') return;
+        const d = Math.hypot(p.x - o.position.x, p.z - o.position.z);
+        const cle = `passant:${ps.nom || ''}:${k}`;
+        if (d > 2.6 || (choix && d >= choix.d) || !b.peut(cle, t)) return;
+        choix = { d, cle, perso: ps, graine: k, nom: ps.nom || '', haut: 1.98 };
+      });
+    }
+    if (!choix) return;
+    const n = b.combien(choix.cle);
+    const texte = choix.dit ? phraseAgent(choix.dit, this.langue, n) : phrasePassant({ langue: this.langue, phase: this.ciel?.phase, genre: this.ciel?.genre, graine: choix.graine, n });
+    if (!texte) return;
+    const duree = dureeBulle(texte);
+    b.parle(choix.cle, t, duree);
+    // Deux boîtes : CSS2DRenderer place l'extérieure (son transform), l'intérieure peut s'animer.
+    const boite = document.createElement('div'), d = document.createElement('div');
+    d.className = 'monde-bulle';
+    if (choix.nom) { const nom = document.createElement('b'); nom.textContent = choix.nom; d.appendChild(nom); }
+    d.appendChild(document.createTextNode(texte));
+    boite.appendChild(d);
+    const o = new CSS2DObject(boite);
+    o.position.set(0, choix.haut, 0);
+    o.userData.bulle = true;
+    choix.perso.objet.add(o);
+    (this.toutesEtiquettes ||= new Set()).add(o);
+    // Le passant s'arrête, se tourne vers toi et parle (ville3d.js le laisse sur place tant que dure « cause »).
+    if (!choix.dit) {
+      const po = choix.perso.objet;
+      po.userData.cause = { t: duree };
+      po.rotation.y = Math.atan2(p.x - po.position.x, p.z - po.position.z);
+      choix.perso.jouer('parle', { fondu: 0.25 });
+    }
+    this.bulle = { objet: o, perso: choix.perso, fin: t + duree };
+  }
+  fermerBulle(t = performance.now() / 1000) {
+    const B = this.bulle;
+    if (!B) return;
+    B.objet.parent?.remove(B.objet);
+    B.objet.element.remove();
+    this.toutesEtiquettes?.delete(B.objet);
+    if (B.perso.objet.userData.cause) B.perso.objet.userData.cause.t = 0;
+    this.bavardage?.fini(t);
+    this.bulle = null;
   }
 
   // « Aller au suivant » (touche N, idée d'Agent Office) : on se place derrière l'agent qui
@@ -2331,6 +2416,7 @@ export class Monde {
     }
     const cle = proche ? `${proche.type}:${proche.id || proche.x}` : null;
     if (cle !== this.cleProche) { this.cleProche = cle; this.proche = proche; this.emettre({ type: 'proximite', cible: proche }); }
+    this.bavarder(p);
 
     // Caméra
     const tete = new THREE.Vector3(p.x, p.y + 1.55, p.z);
