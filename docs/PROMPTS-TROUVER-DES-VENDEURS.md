@@ -294,6 +294,9 @@ Le message doit :
   « gratuit » tout court : un service gratuit sans limite est lu comme un
   service sans valeur. La date fait comprendre que ça vaut quelque chose et
   qu'il y a une raison de s'y mettre maintenant. Décision de Beau.
+- à une boutique DÉJÀ ouverte sur Finjaro, ne jamais laisser croire qu'elle
+  paiera après novembre : la phrase validée par Beau (18/09) est « Les
+  boutiques ouvertes avant novembre gardent la gratuité. »
 - finir par une question simple, à laquelle on répond par oui ou non
 
 Interdits absolus :
