@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 
 const HINT_SEEN_KEY = 'finjaro_finou_hint_seen';
 const HINT_ROTATE_MS = 3200;
+const HINT_SCROLL_PX = 60;
 
 // Icônes choisies pour DIRE ce que fait l'onglet: une caméra vidéo pour les
 // reels (le triangle « lecture » d'avant disait juste « bouton play »), des
@@ -72,6 +73,20 @@ export function BuyerNav() {
     setHintSeen(true);
     try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch { /* noop */ }
   };
+
+  // Audit des 200 profils (M1) : au téléphone, la bulle se posait sur la rangée
+  // « Prêts à commander » et cachait le prix du deuxième article. Elle s'efface dès
+  // que l'acheteuse fait défiler la page (le seuil évite la remise en place du
+  // défilement au chargement), et ne revient plus.
+  useEffect(() => {
+    if (!showHint) return undefined;
+    const surDefilement = (e) => {
+      const el = e.target === document || e.target === window ? document.scrollingElement : e.target;
+      if ((el?.scrollTop || 0) > HINT_SCROLL_PX) dismissHint();
+    };
+    document.addEventListener('scroll', surDefilement, { capture: true, passive: true });
+    return () => document.removeEventListener('scroll', surDefilement, { capture: true });
+  }, [showHint]);
 
   return (
     <>

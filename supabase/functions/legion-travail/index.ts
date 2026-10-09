@@ -44,6 +44,8 @@ import { identifiantsCites, blocCites, type Cite } from '../_shared/cites.ts';
 import { blocSouvenirs, rattraper, retenir, souvenirsDe, vecteurDe } from '../_shared/souvenirs.ts';
 import { decideReveil, heureLocale } from '../_shared/reveil.ts';
 import { CLE_MISSION_RESEAUX, SCHEMA_PUBLICATION, normaliserPublications, resumePublications, extrairePublicationsDuTexte } from '../_shared/publications.ts';
+import { consigneCourte } from '../_shared/consigne-courte.ts';
+import { liensNonOuverts } from '../_shared/liens.ts';
 
 const PROD_HOST = 'finjaro.net';
 function isAllowedOrigin(origin: string | null): boolean {
@@ -97,27 +99,7 @@ async function ecrire(apiKey: string, texte: string, schema: unknown, gratuite =
   return await generer(apiKey, texte, schema, { temperature: 0.6, reflexion: 4096, delaiMs: 90_000, ...(gratuite ? { modeles: moteursSimples() } : {}), ...(compacte ? { compacte } : {}) });
 }
 
-// La consigne COURTE (08/10, Beau : « ok pour Groq, on fait comme ça ») : la même tâche,
-// les mêmes règles et le même format de réponse, mais le contexte resserré — pour les
-// moteurs gratuits à petite part par minute (Groq : 8 000 jetons, réponse comprise).
-// Trois niveaux de resserrage ; on garde le premier qui tient sous `max` signes.
-// Ce qui ne bouge jamais : la charte, l'identité, la tâche, les règles absolues, « ÉCRIS ».
-const COMPACTE_MAX = 14_500;
-type Resserrage = { n: number; coupe: (t: string, max: number) => string; garde: <T>(l: T[], max: number) => T[] };
-function consigneCourte(construire: (r: Resserrage) => string): string {
-  const niveaux = [1, 0.6, 0.3];
-  let derniere = '';
-  for (const k of niveaux) {
-    const r: Resserrage = {
-      n: k,
-      coupe: (t, max) => { const m = Math.max(80, Math.round(max * k)); return t.length > m ? `${t.slice(0, m)}…` : t; },
-      garde: (l, max) => l.slice(0, Math.max(1, Math.round(max * k))),
-    };
-    derniere = construire(r);
-    if (derniere.length <= COMPACTE_MAX) return derniere;
-  }
-  return derniere; // trop longue même resserrée : moteur.ts le dira (« consigne trop longue »)
-}
+// La consigne courte vit dans _shared/consigne-courte.ts (partagée avec legion-repondre, 09/10).
 
 // La mémoire d'un salon (0161): ce qui précède les 20 derniers messages,
 // résumé par Flash — décisions, chiffres, qui fait quoi, questions
@@ -830,10 +812,13 @@ async function travailler(service: Service, apiKey: string, entrepriseId: string
       const pubsBrutes = (r.obj as { publications?: unknown }).publications;
       const publications = reseaux && !bloque ? normaliserPublications(Array.isArray(pubsBrutes) && pubsBrutes.length ? pubsBrutes : extrairePublicationsDuTexte(corpsLivrable), { entrepriseId, tacheId: tache.id, auteurId: a.id }) : [];
       const resume = resumePublications(publications, anglais);
-      const texte = bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : resume ? `${livrable}\n\n${resume}` : livrable;
+      // Les liens cités sans avoir été ouverts pendant le travail (09/10, lien fabriqué de Radar) : signalés sous le texte.
+      const nonOuverts = liensNonOuverts(livrable, [...(web?.sources || []).map((x) => x.url), ...verifie]);
+      const avertLiens = nonOuverts.length ? `\n\n⚠️ ${anglais ? `Links to check: ${a.nom} did not open them during this task` : `Liens à vérifier : ${a.nom} ne les a pas ouverts pendant ce travail`} — ${nonOuverts.slice(0, 6).join(' ; ')}` : '';
+      const texte = (bloque && besoin ? `${livrable}\n\n**Bloqué :** ${besoin}` : resume ? `${livrable}\n\n${resume}` : livrable) + avertLiens;
       const { data: livrablePublie } = await service.from('legion_messages').insert({
         entreprise_id: entrepriseId, canal_id: canal.id, auteur_id: a.id, user_id: null, texte, genre: bloque ? 'question' : 'info',
-        meta: { par_ia: true, modele: r.modele, cout_eur: Number(coutEnCours().toFixed(6)), livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(web?.sources.length ? { sources: web.sources } : {}), ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}) },
+        meta: { par_ia: true, modele: r.modele, cout_eur: Number(coutEnCours().toFixed(6)), livrable: { tache_id: tache.id, tache: tache.texte, statut: bloque ? 'bloque' : 'termine' }, sans_reponse: true, ...(web?.sources.length ? { sources: web.sources } : {}), ...(verifie.length ? { verifie: verifie.map((v) => v.split(' → ')[0]) } : {}), ...(nonOuverts.length ? { liens_non_ouverts: nonOuverts } : {}) },
       }).select('id').single();
       await garder(service, { entreprise_id: entrepriseId, message_id: livrablePublie?.id, fonction: 'legion_travail:livrable', modele: r.modele, consigne: consigneLivrable, sortie: JSON.stringify(r.obj) });
       // Les publications de la semaine, à valider dans Léo (rien n'est publié par Léo).
