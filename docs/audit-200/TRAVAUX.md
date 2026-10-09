@@ -9,7 +9,7 @@ qu'après vérification sur staging.
 | 2 | Learn | « Ma progression » à 0 : message + bouton au lieu de l'arbre vide ; points ≥ 44 px, une rangée par parcours dépliable | grave | ecrans L2 | à faire |
 | 3 | Learn | Fenêtre de connexion : la page d'abord, le compte quand il sert, une croix | gênant | ecrans L4 | à faire |
 | 4 | Learn | Libellés 10,56 px → 12 px ; badges 10 px → 11 px | gênant | ecrans L3 | fait (07/10 soir, vérifié) |
-| 5 | Place de marché | Une seule bulle flottante sur l'accueil, qui s'efface au défilement | gênant | ecrans M1 | à faire |
+| 5 | Place de marché | Une seule bulle flottante sur l'accueil, qui s'efface au défilement | gênant | ecrans M1 | ✅ 09/10 (d02bf9d) : la bulle s'efface au défilement et ne revient plus |
 | 6 | Place de marché | Services : puce pays non tronquée, boutons Détails / Contacter / Réserver à 44 px (les descriptions étaient déjà coupées : erreur du rapport, corrigée) | gênant | ecrans M2 | fait (07/10 soir, vérifié : 24 boutons à 44 px, puce entière) |
 | 7 | Léo | Porte des liens profonds : « Connecte-toi pour continuer vers … » | détail | ecrans Λ1 | fait (08/10 nuit, vérifié à 390 et 1 440 px) |
 | 8 | Learn | Carrousel : une seule « Leçon 1 », celle du niveau | détail | ecrans L5 | fait (07/10 soir : 3 diapositives à 0 leçon) |
