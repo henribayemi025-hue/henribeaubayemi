@@ -52,7 +52,8 @@ d'aller plus loin.
 > travail avec vous (veille, marketing, documents, suivi des clients). Rien ne
 > part sans votre accord.
 >
-> Vous pouvez essayer sans payer : finjaro.net/legion
+> Vous pouvez essayer sans payer : répondez à cet e-mail et l'équipe vous
+> envoie l'accès.
 >
 > Une personne de l'équipe Finjaro lit toutes les réponses. Si ça ne vous
 > intéresse pas, répondez « stop » et je ne vous écrirai plus.
@@ -72,7 +73,8 @@ d'aller plus loin.
 > leur caisse et ce que leurs clients leur doivent, depuis le téléphone, même
 > sans connexion. On relance un client sur WhatsApp en un geste.
 >
-> Si ça peut vous servir : accounting.finjaro.net
+> Si ça peut vous servir, répondez à cet e-mail et l'équipe vous envoie
+> l'accès.
 >
 > Une personne de l'équipe Finjaro lit toutes les réponses. Pour ne plus
 > recevoir mes messages, répondez « stop ».
@@ -87,7 +89,13 @@ d'aller plus loin.
 > Une personne de l'équipe lit les réponses ; répondez « stop » si ça ne vous
 > intéresse pas.
 
-## Pour reprendre (quand Beau le dit)
+## Reprise
+
+Beau, 09/10 vers 14 h 45 : « recommence avec les mails Accounting et Léo ».
+Versions définitives, sans aucun lien (le connecteur Gmail les réécrit) :
+modèles 6, 6-EN et 7 de docs/prospection/2026-10-07-messages-et-methode.md.
+
+## Pour reprendre (méthode)
 
 1. Traque rédige dans Léo 20 messages avec cette structure, une phrase vraie
    chacun, à partir des listes déjà vérifiées (table privée `prospects`,

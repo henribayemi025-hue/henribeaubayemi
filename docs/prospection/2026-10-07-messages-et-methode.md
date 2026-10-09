@@ -199,6 +199,94 @@ ni les cabinets comptables (concurrents).
 > Si ce n'est pas le bon moment, dites-le-nous simplement et nous ne vous
 > écrirons plus.
 
+### 6. Léo se présente — entreprises (Beau, 09/10 : « bonjour, je suis Léo, agent IA de la compagnie Finjaro »)
+
+Remplace le modèle 4 à partir du 09/10. Le message dit franchement qu'il est
+écrit par un agent IA : c'est honnête, et c'est déjà la démonstration du
+produit. Mêmes cibles, exclusions, vérifications (site lu, MX), et toujours
+aucune adresse web (section « Les liens dans les e-mails »). Raisonnement et
+brouillons : docs/prospection/2026-10-09-leo-se-presente.md.
+
+> **Objet :** Je suis Léo, l'agent IA de Finjaro, pour {entreprise}
+>
+> Bonjour,
+>
+> Je suis Léo, un agent IA de l'entreprise Finjaro. Avant de vous écrire, j'ai
+> lu votre site : {une phrase vraie sur ce qu'elle fait}.
+>
+> Avec Léo, vous décrivez votre activité et une équipe d'agents IA comme moi
+> se met au travail avec vous :
+> - les tâches qui reviennent chaque jour : tri des demandes, réponses aux
+>   clients, relances ;
+> - la veille sur vos concurrents et votre marché ;
+> - vos documents, vos fichiers Excel et PDF ;
+> - un compte rendu de leur travail chaque soir.
+>
+> Vous gardez la main : rien ne part sans votre accord. On peut commencer sans
+> payer : répondez à cet e-mail et l'équipe vous envoie l'accès.
+>
+> Une personne de l'équipe Finjaro lit toutes les réponses.
+>
+> Léo, agent IA de Finjaro
+>
+> Si ce n'est pas le bon moment, dites-le simplement et je ne vous écrirai
+> plus.
+
+### 6-EN. Same, in English
+
+> **Subject:** I'm Léo, Finjaro's AI agent, for {company}
+>
+> Hello,
+>
+> I'm Léo, an AI agent at Finjaro. Before writing to you, I read your website:
+> {one true sentence about what it does}.
+>
+> With Léo, you describe your business and a team of AI agents like me gets to
+> work with you:
+> - the tasks that come back every day: sorting requests, answering
+>   customers, following up;
+> - keeping watch on your competitors and your market;
+> - your documents, your Excel and PDF files;
+> - a report on their work every evening.
+>
+> You stay in control: nothing goes out without your approval. You can start
+> for free: reply to this e-mail and the team will send you the access.
+>
+> A person from the Finjaro team reads every reply.
+>
+> Léo, Finjaro's AI agent
+>
+> If now isn't the right time, just say so and I won't write to you again.
+
+### 7. Léo se présente — Finjaro Accounting (09/10)
+
+Remplace le modèle 5 à partir du 09/10. Mêmes cibles et exclusions que le 5.
+
+> **Objet :** Je suis Léo, l'agent IA de Finjaro, pour {entreprise}
+>
+> Bonjour,
+>
+> Je suis Léo, un agent IA de l'entreprise Finjaro. Avant de vous écrire, j'ai
+> lu votre site : {une phrase vraie sur ce qu'elle fait}.
+>
+> Je vous écris pour vous présenter Finjaro Accounting. Depuis votre
+> téléphone, et même sans connexion une fois l'application ouverte une
+> première fois, vous suivez :
+> - votre stock et vos ventes ;
+> - votre caisse, jour après jour ;
+> - les sommes que vos clients vous doivent, avec une relance WhatsApp en un
+>   geste.
+>
+> Vous pouvez commencer dès aujourd'hui : répondez à cet e-mail et l'équipe
+> vous envoie l'accès.
+>
+> Une personne de l'équipe Finjaro lit toutes les réponses.
+>
+> Léo, agent IA de Finjaro
+>
+> Si ce n'est pas le bon moment, dites-le simplement et je ne vous écrirai
+> plus.
+
 ## Rythme (Beau, 07/10)
 
 Décision finale de Beau (07/10, 13h) : **une série par jour pour chaque**,
