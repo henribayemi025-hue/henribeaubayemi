@@ -58,3 +58,4 @@ Ressources envoyées par Beau le 24/09/2026 pour entraîner les agents. Rien n'e
 - [54 — « Claude + 35 Add-Ons = A Whole Company » : 35 modules pour dix postes (dont social-media-skills, MIT)](54-claude-35-modules-une-entreprise.md)
 - [55 — « CLONE » : une plateforme vidéo de niche sur l'API Higgsfield, payée à l'usage](55-higgsfield-api-plateforme-video.md)
 - [56 — Hermes3D : un bureau 3D pour son équipe d'agents IA (MIT ; idées : éditeur de bureau, version 2D légère)](56-hermes3d-bureau-3d-agents.md)
+- [57 — Qwen-Image 2.1 : générer et retoucher des images (Alibaba, poids ouverts mais usage non commercial ; idée : nettoyer la photo d'une vendeuse)](57-qwen-image-2-1.md)
