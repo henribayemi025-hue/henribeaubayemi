@@ -1,4 +1,4 @@
--- PROPOSITION — NON APPLIQUÉE, NON TESTÉE. Écrite le 12/10/2026.
+-- PROPOSITION — NON APPLIQUÉE EN PRODUCTION. Essai sur le projet de test : voir la fin du fichier. Écrite le 12/10/2026.
 -- Réunion du 10/10 (Beau et son collaborateur) : « la synchronisation marche du stock Finjaro vers
 -- Accounting, pas l'inverse ; il faut pouvoir envoyer un article du stock comptable vers la
 -- place de marché ». Reprend le commentaire n° 6 du document de cadrage (« il faut le faire »).

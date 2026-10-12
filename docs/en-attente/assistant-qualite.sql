@@ -1,4 +1,4 @@
--- PROPOSITION — NON APPLIQUÉE, NON TESTÉE. Écrite le 12/10/2026.
+-- PROPOSITION — NON APPLIQUÉE EN PRODUCTION. Essai sur le projet de test : voir la fin du fichier. Écrite le 12/10/2026.
 -- Réunion du 10/10 : « créer une table de suivi de la performance de l'assistante pour mesurer le
 -- taux de résolution sans personne et la satisfaction, et corriger les baisses de qualité ».
 -- Reprend les commentaires n° 12 et 13 du document de cadrage.
