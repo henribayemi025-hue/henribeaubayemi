@@ -115,7 +115,7 @@ const fr = {
         'Les modalités et délais de livraison ou de retrait sont définis par le Vendeur dans l’Annonce ou lors des échanges avec l’Acheteur. Ils n’engagent que le Vendeur.',
         'Finjaro n’assure aucun transport et n’est pas commissionnaire de transport. Lorsque des partenaires logistiques ou des points relais sont mentionnés sur la Plateforme, ils interviennent sous leur propre responsabilité et selon leurs propres conditions.',
         'Les risques de perte ou d’avarie sont transférés selon la loi applicable au contrat conclu entre l’Acheteur et le Vendeur.',
-        'Les opérations transfrontalières, notamment entre le Cameroun et l’Europe, peuvent donner lieu à des formalités douanières, droits et taxes à la charge de l’Acheteur, sauf accord contraire avec le Vendeur.',
+        'Les opérations transfrontalières, notamment entre deux pays différents, peuvent donner lieu à des formalités douanières, droits et taxes à la charge de l’Acheteur, sauf accord contraire avec le Vendeur.',
       ],
     },
     {
@@ -349,7 +349,7 @@ const en = {
         'Delivery or collection terms and timeframes are set by the Seller in the Listing or in discussions with the Buyer. They bind the Seller only.',
         'Finjaro does not carry out transport and is not a freight forwarder. Where logistics partners or pickup points are mentioned on the Platform, they act under their own responsibility and their own terms.',
         'Risk of loss or damage passes in accordance with the law applicable to the contract between Buyer and Seller.',
-        'Cross-border transactions, in particular between Cameroon and Europe, may give rise to customs formalities, duties and taxes payable by the Buyer, unless agreed otherwise with the Seller.',
+        'Cross-border transactions, in particular between two different countries, may give rise to customs formalities, duties and taxes payable by the Buyer, unless agreed otherwise with the Seller.',
       ],
     },
     {
