@@ -119,3 +119,15 @@ $function$;
 --     service_role ou réglage interne) : seul le rappel de l'agrégateur peut donc déclencher (B).
 -- NON essayé : la partie (A) (remplacement des lignes 'paid' et 'method' dans finia_order_to_sale),
 -- le rejeu par le reducer d'Accounting (demandé à Claudinette), et le nom réel du fournisseur mobile money.
+
+-- DEUX DEMANDES DE CLAUDINETTE (12/10, après la correction de son moteur) :
+--  (a) dériver payment.id de la commande, pas au hasard : c'est déjà fait dans la partie (B) ci-dessus
+--      (payment.id = md5('debt.pay.payment:' || id de la commande)::uuid, comme l'identifiant de
+--      l'événement et celui de l'écriture). Son moteur ignore un règlement dont payment.id est déjà inscrit,
+--      un rejeu du même paiement ne compte donc jamais deux fois.
+--  (b) retirer l'exécution de finia_order_to_sale() à anon et authenticated. Lu en base le 12/10 : ces deux
+--      rôles peuvent l'exécuter (fonction SECURITY DEFINER). Sans risque aujourd'hui (une fonction de
+--      déclencheur ne s'appelle pas seule) mais c'est du ménage. PostgreSQL ne vérifie le droit d'exécuter
+--      qu'à la CRÉATION du déclencheur : le retirer ne change donc pas son fonctionnement. NON essayé en base
+--      de test. À ranger dans la même migration, avec le mot de Beau :
+-- revoke execute on function public.finia_order_to_sale() from anon, authenticated;
