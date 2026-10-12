@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { ASSISTANT_NAME } from '../../lib/assistant';
 import { useTranslation } from 'react-i18next';
 import {
   IconSearch, IconBuildingStore, IconBan, IconCheck, IconRosetteDiscountCheck,
@@ -218,7 +219,7 @@ function ShopSheet({ shop, onClose, onChanged, lang }) {
       <div className={`mt-2 flex items-center justify-between gap-2 rounded-card border p-3 ${premiumActive ? 'border-brass/40 bg-brass/10' : 'border-hairline'}`}>
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-body font-semibold text-ink">
-            <IconCrown size={17} className={premiumActive ? 'text-brass' : 'text-muted'} /> Finia Premium
+            <IconCrown size={17} className={premiumActive ? 'text-brass' : 'text-muted'} /> {ASSISTANT_NAME} Premium
           </p>
           <p className="text-caption text-muted">
             {premiumActive

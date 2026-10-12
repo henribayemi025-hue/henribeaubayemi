@@ -7,7 +7,7 @@ import {
   IconShare2, IconStarFilled, IconDots, IconMessage, IconArrowBackUp, IconRefresh,
   IconBrandWhatsapp, IconPhone, IconBrandInstagram, IconSearch, IconMovie,
   IconShieldCheck, IconRosetteDiscountCheck, IconTruckDelivery, IconHeadset,
-  IconClock, IconMapPin, IconUsers, IconShoppingBag, IconChevronDown, IconBuildingStore, IconBolt, IconBroadcast,
+  IconClock, IconMapPin, IconChevronDown, IconBuildingStore, IconBroadcast,
 } from '@tabler/icons-react';
 import { supabase, storageUrl } from '../../lib/supabase';
 import { useAsync } from '../../hooks/useAsync';
@@ -205,9 +205,10 @@ export default function ShopProfile() {
     shop.is_verified && { icon: IconRosetteDiscountCheck, label: t('shop.trustCertified') },
     (shop.offers_delivery || zones.length > 0) && { icon: IconTruckDelivery, label: t('shop.trustDelivery') },
     (shop.whatsapp || shop.phone) && { icon: IconHeadset, label: t('shop.trustContact') },
-    // Calculé à partir des vrais délais de réponse (chat_messages), recalculé
-    // par lot toutes les 30 min — jamais un chiffre affiché de mémoire.
-    shop.responds_fast && { icon: IconBolt, label: t('shop.trustFastReply') },
+    // « Répond vite » (calculé à partir des vrais délais de réponse) n'est plus
+    // affiché au public : réunion du 10/10, les statistiques détaillées des
+    // vendeuses restent à l'équipe, seules les étoiles figurent sur le profil
+    // public. La donnée (`shops.responds_fast`) continue d'être calculée.
   ].filter(Boolean);
 
   const tabs = [
@@ -313,11 +314,12 @@ export default function ShopProfile() {
           )}
         </div>
 
-        {/* Bandeau de stats façon Nevo: la crédibilité d'un coup d'œil. */}
-        <div className="mt-3 grid grid-cols-4 gap-2 rounded-card border border-hairline bg-white p-3">
+        {/* Le bandeau public ne garde que les ÉTOILES et la certification
+            (réunion du 10/10 : pas de nombre d'abonnés ni d'articles, qui
+            décourageraient les vendeuses qui démarrent). Le détail reste à
+            l'équipe. Deux cases seulement, donc deux colonnes. */}
+        <div className="mt-3 grid grid-cols-2 gap-2 rounded-card border border-hairline bg-white p-3 sm:max-w-md">
           <ShopStat icon={IconStarFilled} iconClass="text-brass" value={shop.rating ? Number(shop.rating).toFixed(1) : '—'} label={t('shop.statNote')} />
-          <ShopStat icon={IconUsers} iconClass="text-teal" value={shop.followers_count || 0} label={t('shop.statFollowers')} />
-          <ShopStat icon={IconShoppingBag} iconClass="text-success" value={data.products.length} label={t('shop.statProducts')} />
           <ShopStat
             icon={IconShieldCheck}
             iconClass={shop.is_verified ? 'text-success' : 'text-hairline'}

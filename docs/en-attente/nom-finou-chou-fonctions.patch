@@ -1,0 +1,92 @@
+--- a/supabase/functions/finou-chat/index.ts
++++ b/supabase/functions/finou-chat/index.ts
+@@ -227,7 +227,7 @@
+   // Finjaro dans une région et employait publiquement le mot « diaspora » —
+   // les deux sont interdits (CLAUDE.md §1). Finjaro est mondiale; le point de
+   // départ est une stratégie, pas une identité.
+-  return `Tu es Finia, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
++  return `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
+ et MONDIALE (produits ET services): mode, high-tech, alimentaire, véhicules,
+ immobilier, et des prestataires à domicile (ménage, BTP, coiffure, traiteur…).
+ Slogan: "Au-delà des rêves". Tu es chaleureuse, concise et utile.
+@@ -482,7 +482,7 @@
+   propose immédiatement.
+ 
+ NE JAMAIS PROMETTRE SANS AGIR — règle absolue, capture à l'appui: une personne
+-a dû écrire « j'attends » à répétition parce que Finia disait « je regarde ce
++a dû écrire « j'attends » à répétition parce que Finou Chou disait « je regarde ce
+ que je peux te trouver », « je vais chercher », « un instant »... puis
+ n'appelait AUCUN outil — la recherche n'arrivait qu'au message SUIVANT, une
+ fois relancée. C'est le pire défaut possible: ça donne l'impression d'un bug,
+@@ -540,7 +540,7 @@
+ et termine par "ACTION: vendor_space". Ne le laisse JAMAIS penser que sa
+ boutique a disparu: elle est dans l'autre mode, dis-le.
+ 
+-LE PARRAINAGE existe et Finia doit le savoir — la version precedente
++LE PARRAINAGE existe et Finou Chou doit le savoir — la version precedente
+ repondait « je n'ai pas d'outil pour ca » a une vendeuse qui demandait
+ justement ce mot: « Parrainage ». Ne JAMAIS dire que la fonction n'existe
+ pas ou proposer de « transmettre la question a l'equipe Finjaro » — c'est
+@@ -1746,7 +1746,7 @@
+       body: JSON.stringify({
+         user_id: ADMIN_USER_ID,
+         title: 'Finjaro — budget IA atteint',
+-        body: `Finia et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
++        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+       }),
+     }).catch(() => {});
+   }
+
+--- a/supabase/functions/chat-autoreply/index.ts
++++ b/supabase/functions/chat-autoreply/index.ts
+@@ -224,7 +224,7 @@
+         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+         body: JSON.stringify({
+           user_id: ownerId,
+-          title: `Finia a répondu à ta place`,
++          title: `Finou Chou a répondu à ta place`,
+           body: reponse.slice(0, 140),
+           url: `/vendor/messages/${conversationId}`,
+           tag: `autoreply-${conversationId}`,
+
+--- a/supabase/functions/miroir-ia/index.ts
++++ b/supabase/functions/miroir-ia/index.ts
+@@ -131,7 +131,7 @@
+       body: JSON.stringify({
+         user_id: ADMIN_USER_ID,
+         title: 'Finjaro — budget IA atteint',
+-        body: `Finia et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
++        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+       }),
+     }).catch(() => {});
+   }
+
+--- a/supabase/functions/legion-action/index.ts
++++ b/supabase/functions/legion-action/index.ts
+@@ -77,7 +77,7 @@
+ // éteint, marqué « ecarte », avec la raison (rien n'est supprimé).
+ const PLATEFORME = '44bb201b-6787-4de0-8f7f-f9145d5c03e7'; // l'entreprise Finjaro dans Léo
+ async function deciderSavoir(service: Service, entrepriseId: string, savoirId: string, decision: 'confirmer' | 'refuser', userId: string, raison?: string): Promise<{ statut: string; resultat: string }> {
+-  if (entrepriseId !== PLATEFORME) return { statut: 'echec', resultat: 'Seule l’équipe Finjaro valide le savoir de Finia.' };
++  if (entrepriseId !== PLATEFORME) return { statut: 'echec', resultat: 'Seule l’équipe Finjaro valide le savoir de Finou Chou.' };
+   if (!savoirId) return { statut: 'echec', resultat: 'Savoir non précisé.' };
+   const { data: s } = await service.from('ia_savoirs_communs').select('id, titre, etat, actif, remplace').eq('id', savoirId).maybeSingle();
+   if (!s) return { statut: 'echec', resultat: 'Savoir introuvable.' };
+@@ -87,7 +87,7 @@
+     if (s.etat === 'ecarte') return { statut: 'refusee', resultat: `« ${s.titre} » était déjà écarté.` };
+     const pourquoi = String(raison || '').trim().slice(0, 400);
+     const { error } = await service.from('ia_savoirs_communs').update({ etat: 'ecarte', raison: pourquoi || 'Écarté par l’équipe.', valide_par: userId, valide_le: maintenant }).eq('id', s.id).eq('actif', false);
+-    return error ? { statut: 'echec', resultat: error.message } : { statut: 'refusee', resultat: `Écarté${pourquoi ? ` : ${pourquoi}` : ''}. Finia ne s’en servira pas.` };
++    return error ? { statut: 'echec', resultat: error.message } : { statut: 'refusee', resultat: `Écarté${pourquoi ? ` : ${pourquoi}` : ''}. Finou Chou ne s’en servira pas.` };
+   }
+   if (s.actif) return { statut: 'faite', resultat: `« ${s.titre} » est déjà actif.` };
+   if (s.etat !== 'propose') return { statut: 'echec', resultat: `« ${s.titre} » a été ${s.etat === 'ecarte' ? 'écarté' : 'retiré'}.` };
+@@ -97,7 +97,7 @@
+   if (s.remplace) {
+     await service.from('ia_savoirs_communs').update({ actif: false, etat: 'retire', raison: `Remplacé par « ${s.titre} ».` }).eq('id', s.remplace).neq('id', s.id);
+   }
+-  return { statut: 'faite', resultat: `Finia sait maintenant « ${s.titre} » (dans 5 minutes au plus)${s.remplace ? ', à la place de l’ancien savoir' : ''}.` };
++  return { statut: 'faite', resultat: `Finou Chou sait maintenant « ${s.titre} » (dans 5 minutes au plus)${s.remplace ? ', à la place de l’ancien savoir' : ''}.` };
+ }
+ 
+ Deno.serve(async (req: Request) => {

@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { FinouChouCat } from './FinouChouCat';
 import { useTranslation } from 'react-i18next';
 import {
   IconHome2, IconHome2Filled,
@@ -126,7 +127,7 @@ export function BuyerNav() {
             aria-label={t('finou.title')}
             className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#C25E38] text-white shadow-lg transition-transform duration-150 hover:bg-[#A84E2D] active:scale-95"
           >
-            <IconSparkles size={26} />
+            <FinouChouCat size={42} />
           </button>
         </div>
       )}

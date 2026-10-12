@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import fr from '../locales/fr/translation.json';
+import { ASSISTANT_NAME } from './assistant';
 
 // L'anglais n'est téléchargé que pour qui l'a choisi (audit M-13 : les deux
 // langues pesaient ≈ 125 ko compressés à chaque première visite, alors que le
@@ -36,7 +37,9 @@ i18n
     // française — exactement le "j'ai choisi français, j'ai des champs en
     // anglais" signalé par Beau.
     load: 'languageOnly',
-    interpolation: { escapeValue: false },
+    // {{assistant}} = le nom de l'assistante (src/lib/assistant.js), valable dans
+    // tous les textes sans le repasser à chaque appel de t().
+    interpolation: { escapeValue: false, defaultVariables: { assistant: ASSISTANT_NAME } },
     detection: {
       // Le français est la langue du produit (marché francophone). On ne
       // suit PLUS la langue du navigateur: un téléphone réglé en anglais

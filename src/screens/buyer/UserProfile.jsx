@@ -84,6 +84,7 @@ export default function UserProfile() {
     // données » depuis le Profil ne la trouvait pas. Les deux documents se
     // lisent ensemble, ils sont donc proposés ensemble.
     { icon: IconFileText, label: t('legal.privacyTitle'), to: '/legal/confidentialite' },
+    { icon: IconFileText, label: t('legal.disputeTitle'), to: '/legal/litiges' },
     // Plus de raccourci "Administration" ici: la console est une application
     // séparée, sur son propre domaine. L'app cliente ne laisse même pas
     // deviner qu'elle existe.

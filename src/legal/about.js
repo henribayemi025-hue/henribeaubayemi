@@ -9,7 +9,12 @@
 
 export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
 
-const fr = {
+// Le nom de l'assistante vient de src/lib/assistant.js : un seul endroit à changer
+// (réunion du 10/10 : « Finou Chou » un an, puis « Finou »).
+import { ASSISTANT_NAME } from '../lib/assistant';
+const nomme = (doc) => JSON.parse(JSON.stringify(doc).replaceAll('{{assistant}}', ASSISTANT_NAME));
+
+const fr = nomme({
   title: 'À propos de Finjaro',
   tagline: 'La place de marché des boutiques indépendantes — mode, beauté, maison, high-tech, alimentation, services, et bien plus.',
   intro: [
@@ -24,9 +29,9 @@ const fr = {
       ],
     },
     {
-      title: 'Finia, l’assistante shopping IA',
+      title: '{{assistant}}, l’assistante shopping IA',
       body: [
-        'Finia comprend une recherche écrite, une photo ou même une phrase dictée à la voix, et propose de vrais articles disponibles sur la plateforme — pas des résultats génériques.',
+        '{{assistant}} comprend une recherche écrite, une photo ou même une phrase dictée à la voix, et propose de vrais articles disponibles sur la plateforme — pas des résultats génériques.',
         'Elle répond aussi aux questions sur une commande, une boutique, ou comment vendre sur Finjaro.',
       ],
     },
@@ -39,7 +44,7 @@ const fr = {
     {
       title: 'Vendre sur Finjaro',
       body: [
-        'Ouvrir une boutique prend quelques minutes. L’ajout en masse assisté par IA permet de publier un lot entier de photos d’un coup — Finia rédige les titres et descriptions, la vendeuse valide ou corrige.',
+        'Ouvrir une boutique prend quelques minutes. L’ajout en masse assisté par IA permet de publier un lot entier de photos d’un coup — {{assistant}} rédige les titres et descriptions, la vendeuse valide ou corrige.',
         'Chaque boutique dispose d’un tableau de bord avec ses commandes, ses statistiques et ses finances.',
       ],
     },
@@ -52,9 +57,9 @@ const fr = {
   ],
   contactLabel: 'Une question, un partenariat ?',
   contactCta: 'Écrire à l’équipe Finjaro',
-};
+});
 
-const en = {
+const en = nomme({
   title: 'About Finjaro',
   tagline: 'The marketplace of independent shops — fashion, beauty, home, tech, food, services, and more.',
   intro: [
@@ -69,9 +74,9 @@ const en = {
       ],
     },
     {
-      title: 'Finia, the AI shopping assistant',
+      title: '{{assistant}}, the AI shopping assistant',
       body: [
-        'Finia understands a written search, a photo, or even a spoken sentence, and surfaces real items actually available on the platform — not generic results.',
+        '{{assistant}} understands a written search, a photo, or even a spoken sentence, and surfaces real items actually available on the platform — not generic results.',
         'It also answers questions about an order, a shop, or how to start selling on Finjaro.',
       ],
     },
@@ -84,7 +89,7 @@ const en = {
     {
       title: 'Selling on Finjaro',
       body: [
-        'Opening a shop takes minutes. AI-assisted bulk publishing lets a seller upload a whole batch of photos at once — Finia drafts the titles and descriptions, the seller reviews and confirms.',
+        'Opening a shop takes minutes. AI-assisted bulk publishing lets a seller upload a whole batch of photos at once — {{assistant}} drafts the titles and descriptions, the seller reviews and confirms.',
         'Every shop gets a dashboard with orders, stats and finances.',
       ],
     },
@@ -97,7 +102,7 @@ const en = {
   ],
   contactLabel: 'Questions or partnerships?',
   contactCta: 'Write to the Finjaro team',
-};
+});
 
 export function aboutFor(language) {
   return language?.startsWith('en') ? en : fr;

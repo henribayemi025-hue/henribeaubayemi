@@ -137,6 +137,7 @@ const Relance = lazyWithReload(() => import('./screens/buyer/Relance'));
 const SwitchMode = lazyWithReload(() => import('./screens/buyer/SwitchMode'));
 const Auth = lazyWithReload(() => import('./screens/Auth'));
 const Terms = lazyWithReload(() => import('./screens/Terms'));
+const Dispute = lazyWithReload(() => import('./screens/Dispute'));
 const About = lazyWithReload(() => import('./screens/About'));
 const Apps = lazyWithReload(() => import('./screens/Apps'));
 const Kit = lazyWithReload(() => import('./screens/Kit'));
@@ -258,6 +259,7 @@ export default function App() {
                     {/* Page légale hors layout: accessible depuis l'écran de
                         connexion, l'espace acheteur et l'espace vendeur. */}
                     <Route path="/legal/terms" element={<Terms />} />
+                    <Route path="/legal/litiges" element={<Dispute />} />
                     <Route path="/a-propos" element={<About />} />
                     {/* L'environnement Finjaro: la liste des applications, publique
                         et partageable par un lien. */}
