@@ -9,7 +9,7 @@
 //   adresse, comptes de test exclus.
 
 import { jetonInstallation } from './github-app.ts';
-import { morceauNumerote, motCherche } from './code-lignes.ts';
+import { morceauNumerote, motCherche, motsDeSecours } from './code-lignes.ts';
 import { choisirDepot, DEPOT_OK } from './depots.ts';
 
 // deno-lint-ignore no-explicit-any
@@ -96,9 +96,17 @@ export async function codeChercher(d: Depot, args: Record<string, unknown>) {
   if (mot.length < 3) return { erreur: 'au moins 3 lettres' };
   const branche = d.branche || (await gh(d, '')).default_branch;
   const arbre = await gh(d, `git/trees/${encodeURIComponent(branche)}?recursive=1`);
-  const trouves = (arbre.tree || []).filter((x: { type: string; path: string }) => x.type === 'blob' && x.path.toLowerCase().includes(mot) && !x.path.includes('node_modules/'))
-    .map((x: { path: string }) => x.path);
-  return { mot, branche, nombre: trouves.length, fichiers: trouves.slice(0, 40) };
+  const blobs = (arbre.tree || []).filter((x: { type: string; path: string }) => x.type === 'blob' && !x.path.includes('node_modules/')).map((x: { path: string }) => x.path);
+  const trouves = blobs.filter((p: string) => p.toLowerCase().includes(mot));
+  if (trouves.length) return { mot, branche, nombre: trouves.length, fichiers: trouves.slice(0, 40) };
+  // Aucun nom ne contient le mot tel quel : on essaie ses morceaux et leurs
+  // équivalents anglais (« inscription » → signup, register) avant de dire rien.
+  const secours = motsDeSecours(mot);
+  const rang = (p: string) => secours.filter((m) => p.toLowerCase().includes(m)).length;
+  const prio = (p: string) => (/^src\//.test(p) ? 0 : /^(supabase|app|lib)\//.test(p) ? 1 : 2); // le code avant les docs et les vidéos
+  const approchants = secours.length ? blobs.filter((p: string) => rang(p) > 0).sort((a: string, b: string) => rang(b) - rang(a) || prio(a) - prio(b)) : [];
+  if (approchants.length) return { mot, branche, nombre: approchants.length, essaye_aussi: secours, note: `aucun nom de fichier ne contient « ${mot} » : voici ceux qui contiennent ${secours.map((m) => `« ${m} »`).join(', ')}`, fichiers: approchants.slice(0, 40) };
+  return { mot, branche, nombre: 0, fichiers: [], note: `aucun nom de fichier ne contient « ${mot} ». Les noms de fichiers sont le plus souvent en anglais : essaie un autre mot, ou liste un dossier avec code_fichiers (par exemple src ou src/screens)` };
 }
 
 // Les paiements de la période, un par un (commande, boutique, montant,

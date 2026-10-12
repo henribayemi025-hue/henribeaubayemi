@@ -36,3 +36,36 @@ export function fichiersALire(fichiers: string[], deja: Set<string>, max = 2): s
   const rang = (f: string) => (/\.(test|spec)\./.test(f) ? 3 : /^(docs|video-work|public)\//.test(f) ? 2 : /\.(jsx?|tsx?|sql)$/.test(f) ? 0 : 1);
   return fichiers.filter((f) => !deja.has(f)).sort((a, b) => rang(a) - rang(b)).slice(0, max);
 }
+
+// Mots de la vie courante → mots qu'on trouve dans les NOMS de fichiers d'un
+// code écrit en anglais. code_chercher ne regarde que les noms de fichiers :
+// Nino (12/10) cherchait « inscription », « creation-boutique » et
+// « validation-commande », n'obtenait rien, et se déclarait « bloqué »
+// alors que les fichiers s'appellent SignUp, CreateShop ou Checkout.
+// Valable pour tout dépôt branché, pas seulement celui de Finjaro.
+const EQUIVALENTS_EN: Record<string, string[]> = {
+  inscription: ['signup', 'register'], connexion: ['login', 'auth', 'signin'], compte: ['account', 'profile'],
+  profil: ['profile'], boutique: ['shop', 'store'], magasin: ['shop', 'store'], vendeur: ['seller', 'vendor'],
+  vendeuse: ['seller', 'vendor'], acheteur: ['buyer'], acheteuse: ['buyer'], article: ['product', 'item'],
+  produit: ['product', 'item'], prix: ['price'], panier: ['cart', 'basket'], commande: ['order', 'checkout'],
+  validation: ['checkout', 'confirm'], paiement: ['payment', 'pay'], livraison: ['delivery', 'shipping'],
+  message: ['chat', 'message', 'inbox'], messagerie: ['chat', 'inbox'], recherche: ['search'], avis: ['review', 'rating'],
+  accueil: ['home'], parametres: ['settings'], notification: ['notification', 'push'], litige: ['dispute'],
+  conditions: ['terms', 'legal'], confidentialite: ['privacy'], abonnement: ['subscription', 'plan'],
+  facture: ['invoice', 'receipt'], stock: ['stock', 'inventory'], creation: ['create'], formulaire: ['form'],
+  erreur: ['error'], image: ['image', 'photo'], photo: ['photo', 'image'], video: ['video', 'reel'],
+};
+
+// Les mots à essayer quand le mot demandé n'est dans aucun nom de fichier :
+// chaque morceau (« creation-boutique » → creation, boutique), sans accents ni
+// pluriel, puis ses équivalents anglais.
+export function motsDeSecours(mot: string): string[] {
+  const sansAccents = String(mot || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const jetons = sansAccents.split(/[^a-z0-9]+/).filter((j) => j.length >= 3);
+  const sortie = new Set<string>();
+  for (const j of jetons) {
+    sortie.add(j);
+    for (const e of EQUIVALENTS_EN[j] || EQUIVALENTS_EN[j.replace(/s$/, '')] || []) sortie.add(e);
+  }
+  return [...sortie];
+}
