@@ -29,6 +29,11 @@ export const TAB_COLORS = {
   shop: '#8C6A3D',
 };
 
+// Onglets de 44 px de haut (mesurés à 42 px le 12/10): py-[11px] au lieu de
+// py-2.5, et la marge basse passe de 10 à 8 px pour que la barre occupe la
+// même hauteur qu'avant — plusieurs écrans calent des éléments collants dessus
+// (ex. bottom-[73px] sur la fiche article).
+//
 // Hauteur réservée sous le contenu pour que rien ne finisse caché derrière la
 // barre flottante. Exportée pour rester synchronisée avec les layouts.
 export const TAB_BAR_SPACE = 'pb-[96px] lg:pb-0';
@@ -36,7 +41,7 @@ export const TAB_BAR_SPACE = 'pb-[96px] lg:pb-0';
 export function TabBar({ items, badges = {} }) {
   const { t } = useTranslation();
   return (
-    <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] lg:hidden">
+    <nav className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+8px)] lg:hidden">
       <div className="pointer-events-auto flex items-center gap-1 rounded-pill bg-white/75 p-1.5 shadow-[0_10px_30px_rgba(23,27,38,0.18)] ring-1 ring-black/5 backdrop-blur-xl">
         {items.map((it) => (
           <NavLink
@@ -47,7 +52,7 @@ export function TabBar({ items, badges = {} }) {
             // gardent leur nom pour les lecteurs d'écran (audit m-2).
             aria-label={t(`nav.${it.key}`)}
             className={({ isActive }) =>
-              `relative flex min-w-0 items-center justify-center gap-1.5 rounded-pill py-2.5 transition-all duration-200 ${
+              `relative flex min-w-0 items-center justify-center gap-1.5 rounded-pill py-[11px] transition-all duration-200 ${
                 isActive ? 'flex-[1.7] bg-white shadow-sm' : 'flex-1 active:scale-90'
               }`
             }

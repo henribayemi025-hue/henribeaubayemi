@@ -168,7 +168,15 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div>
-        <div className="flex h-14 items-center px-4"><button onClick={() => navigate(-1)}><IconChevronLeft /></button></div>
+        <div className="flex h-14 items-center px-4">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label={t('common.back')}
+            className="-ml-2.5 flex h-11 w-11 items-center justify-center"
+          >
+            <IconChevronLeft />
+          </button>
+        </div>
         <Skeleton className="aspect-square w-full rounded-none" />
         <div className="space-y-3 p-4">
           <Skeleton className="h-5 w-2/3" />
@@ -235,12 +243,14 @@ export default function ProductDetail() {
 
   return (
     <div className="relative lg:mx-auto lg:max-w-3xl">
+      {/* Zone tactile de 44 px (mesurée à 34 px le 12/10), pastille blanche
+          inchangée: le bouton est transparent, c'est le <span> qui se voit. */}
       <button
         onClick={() => navigate(-1)}
         aria-label={t('common.back')}
-        className="absolute left-3 top-3 z-20 rounded-full bg-white/90 p-1.5 text-ink shadow"
+        className="absolute left-[7px] top-[7px] z-20 flex h-11 w-11 items-center justify-center text-ink"
       >
-        <IconChevronLeft size={22} />
+        <span className="rounded-full bg-white/90 p-1.5 shadow"><IconChevronLeft size={22} /></span>
       </button>
 
       <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto lg:rounded-card">
@@ -327,14 +337,16 @@ export default function ProductDetail() {
         )}
 
         <div className="mt-3 flex items-center justify-between gap-3">
-          <Link to={`/boutique/${shop.slug}`} className="flex min-w-0 items-center gap-2 text-body text-muted">
+          {/* 44 px de haut pour le doigt (mesuré à 23 px le 12/10); les marges
+              négatives rendent les 21 px en trop pour que la rangée ne bouge pas. */}
+          <Link to={`/boutique/${shop.slug}`} className="-my-2.5 flex min-h-[44px] min-w-0 items-center gap-2 text-body text-muted">
             <span>{t('product.soldBy')} <span className="font-semibold text-ink">{shop.name}</span></span>
             {shop.is_verified && <VerifiedBadge size={15} />}
           </Link>
           {/* Signaler CET article, pas la boutique entière: exigé par la règle
               1.2 de l'App Store, et la seule action proportionnée quand c'est
               une photo ou une description qui pose problème. */}
-          <ReportButton targetType="product" targetId={p.id} className="shrink-0" />
+          <ReportButton targetType="product" targetId={p.id} className="-my-3 min-h-[44px] shrink-0" />
         </div>
 
         {outOfStock && (
@@ -439,11 +451,15 @@ export default function ProductDetail() {
           n'existent pas dans le thème (base, teal) — Tailwind les ignore
           sans rien dire, le bouton blanc sur blanc ne se voyait pas. */}
       {lienWhatsApp && (
-        <div className="sticky bottom-[73px] z-30 border-t border-hairline bg-base px-3 pt-3">
+        <div className="sticky bottom-[73px] z-30 border-t border-hairline bg-base px-3 pt-[7px]">
           {/* Questions toutes prêtes (idée 4 du 01/10) : un appui ouvre
               WhatsApp avec l'article, la variante choisie et le lien déjà
-              écrits — la cliente n'a plus à rédiger son premier message. */}
-          <div className="no-scrollbar -mx-3 mb-2 flex gap-2 overflow-x-auto px-3">
+              écrits — la cliente n'a plus à rédiger son premier message.
+              Zone tactile de 44 px (mesurée à 34 px le 12/10) autour d'une
+              pastille qui garde sa taille: 5 px de plus de chaque côté,
+              repris en haut (pt-[7px]) et en bas (mb-[3px]) pour que la
+              barre garde exactement la même hauteur. */}
+          <div className="no-scrollbar -mx-3 mb-[3px] flex gap-2 overflow-x-auto px-3">
             {questionsPour(p).map((q) => {
               const href = whatsappLink(shop?.whatsapp, shop?.country, messageQuestion(t, {
                 question: q, product: p, size, color, url: `${window.location.origin}/product/${p.id}`,
@@ -463,9 +479,11 @@ export default function ProductDetail() {
                       connectee: !!user,
                     })
                   }
-                  className="shrink-0 rounded-pill border border-teal/40 bg-white px-3 py-1.5 text-caption font-semibold text-teal transition active:scale-95"
+                  className="group flex h-11 shrink-0 items-center"
                 >
-                  {t(`product.quickQ.${q.cle}.label`, q.defaut)}
+                  <span className="rounded-pill border border-teal/40 bg-white px-3 py-1.5 text-caption font-semibold text-teal transition group-active:scale-95">
+                    {t(`product.quickQ.${q.cle}.label`, q.defaut)}
+                  </span>
                 </a>
               );
             })}
