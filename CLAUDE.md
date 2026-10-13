@@ -301,4 +301,10 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   agents offensifs contre des tiers, chimie ou biologie autonomes, santé,
   paiement sans validation humaine.
 - **Moteur payant, si un jour il en faut un : DeepSeek**, jamais sans son mot.
+- **Principes de construction (Beau, 13/10)** : jamais un « assistant IA
+  pour les entreprises » générique ; des workflows **verticaux** branchés sur
+  les données et processus existants ; des produits full-stack où l'IA fait le
+  travail ingrat de bout en bout ; la **donnée propriétaire** est le rempart ;
+  pas de prompt manuel : le système agit en arrière-plan et montre une
+  conclusion ou une décision **à valider**.
 
