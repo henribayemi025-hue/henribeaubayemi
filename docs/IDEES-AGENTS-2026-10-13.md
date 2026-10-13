@@ -76,3 +76,27 @@ boîtier « Muse Charm ».
 | Audit des abonnements via les comptes bancaires | Pas de connexion bancaire (agrément, responsabilité) | **Version sûre** : la personne dépose son relevé (Accounting) et l'agent repère les abonnements oubliés ; résilier au nom de la personne = « Confirmer » |
 | Secrétariat avec sa propre adresse, agenda | Gmail et Agenda de Léo (demande de Beau) | Même connexion Google, après son geste dans Google Cloud ; l'adresse propre à l'agent : plus tard |
 | Boîtier physique | Hors cible | Non |
+
+### Ce que montrent les sources sur l'interface (recherche du 13/10, Muse et Dot pas disponibles en France)
+
+- **Muse** : une **conversation**, dans l'application ou dans WhatsApp, comme un
+  fil de messages. Le centre de l'expérience est l'**approbation** : l'agent
+  remplit, prépare, puis demande « j'ai fait ceci, je valide ? » (exemple décrit :
+  un formulaire d'autorisation de sortie scolaire rempli, avec la demande
+  d'approuver l'inscription comme accompagnateur). Test fermé sur liste d'attente
+  et codes d'invitation, États-Unis seulement. Un testeur note que l'offre
+  gratuite est généreuse mais que 81 % de la limite hebdomadaire est partie vite
+  (leçon pour nous : un agent qui travaille en arrière-plan consomme beaucoup).
+- **Dot** (New Computer) : un compagnon sur iPhone, texte ou voix, avec une
+  **mémoire** de ce que la personne a dit et des relances de lui-même. Une seule
+  source indique qu'il a fermé le 05/10/2025 (une autre fiche, périmée, dit
+  l'inverse) : **non confirmé, à ne pas citer comme certain**.
+- **Aucune des deux n'est un tableau de bord.** Un fil, une action, une carte à
+  valider.
+
+**Proposition pour Léo (après le mode économie)** : l'écran d'une entreprise
+devient un **fil unique** avec la personne qui dirige, les agents qui avancent
+en arrière-plan, et des **cartes « À valider »** (Valider, Refuser, Modifier). Les
+salons, le tableau de bord et les organigrammes restent, mais derrière un
+bouton. Léo a déjà les pièces (conversations, « t'attendent », cartes de
+confirmation) ; c'est un travail de réorganisation, pas de nouvelle fonction.
