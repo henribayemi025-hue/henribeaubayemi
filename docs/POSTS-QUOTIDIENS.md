@@ -29,8 +29,13 @@ de la place de marché avant le prochain.
 ## Publication
 - Hébergement du fichier : `public/social/` (adresse publique du site), puis
   Metricool le récupère. Le fichier peut être retiré du dépôt ensuite.
-- Programmation par Metricool : page Facebook, Instagram (Reel ou image) et
-  TikTok de Finjaro, à 18 h (Paris) par défaut. Beau peut annuler dans Metricool.
+- Programmation par Metricool (offre **gratuite**, aucun upgrade sans le mot de
+  Beau) : page Facebook, Instagram (Reel ou image), TikTok et YouTube (Short)
+  de Finjaro, à 18 h (Paris) par défaut. Beau peut annuler dans Metricool.
+  LinkedIn n'est pas dans l'offre gratuite : Beau le publie à la main, je
+  prépare le texte.
+- Limite à vérifier : 20 posts programmés par mois dans l'offre gratuite (source
+  non officielle). Si elle bloque, qualité d'abord, rythme réduit.
 - Chaque post est noté au carnet (date, format, réseaux) ; les statistiques
   mesurées le lendemain (vues, partages) vont dans le compte rendu du soir.
 
