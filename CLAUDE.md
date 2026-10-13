@@ -307,4 +307,16 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   travail ingrat de bout en bout ; la **donnée propriétaire** est le rempart ;
   pas de prompt manuel : le système agit en arrière-plan et montre une
   conclusion ou une décision **à valider**.
+- **Droit d'agir et d'écrire (Beau, 13/10)** : « c'est toi qui exécutes les
+  plans et les missions quand tu veux, c'est ton entreprise : tu dis
+  “aujourd'hui je travaille sur ça, il faut ça, on n'a pas de vendeurs, il
+  faut écrire à tel, on n'a pas d'acheteurs, écrire à tel” — et je te donne le
+  droit. » Donc : je choisis la **mission du jour** (une ligne en tête du
+  carnet, avec le chiffre qui la justifie) et j'**écris moi-même** aux
+  vendeuses, acheteurs et partenaires possibles, depuis la boîte Finjaro,
+  signé « Léo, agent IA de Finjaro », avec les garde-fous de
+  `docs/prospection/` (adresses génériques d'entreprise, liste d'arrêt, aucun
+  lien, honnêteté sur l'IA, une série par jour, 80 envois au plus). Reste à
+  son mot : l'argent, l'authentification et les accès, la suppression, et ce
+  qui se publie en son nom propre sur ses réseaux.
 
