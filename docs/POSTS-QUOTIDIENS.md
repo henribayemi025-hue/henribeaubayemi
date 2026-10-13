@@ -32,8 +32,9 @@ de la place de marché avant le prochain.
 - Programmation par Metricool (offre **gratuite**, aucun upgrade sans le mot de
   Beau) : page Facebook, Instagram (Reel ou image), TikTok et YouTube (Short)
   de Finjaro, à 18 h (Paris) par défaut. Beau peut annuler dans Metricool.
-  LinkedIn n'est pas dans l'offre gratuite : Beau le publie à la main, je
-  prépare le texte.
+  LinkedIn passe par **Typefully** (offre gratuite, page entreprise de Finjaro,
+  quota mesuré le 13/10 : 10 publications par mois). Réservé à Accounting :
+  au plus 2 posts par semaine.
 - Limite à vérifier : 20 posts programmés par mois dans l'offre gratuite (source
   non officielle). Si elle bloque, qualité d'abord, rythme réduit.
 - Chaque post est noté au carnet (date, format, réseaux) ; les statistiques
