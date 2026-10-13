@@ -106,7 +106,7 @@ export function BuyerNav() {
             <div className="pointer-events-auto flex max-w-[75vw] items-center gap-1.5 rounded-card bg-white py-2 pl-3 pr-1.5 shadow-lg ring-1 ring-hairline">
               <button
                 onClick={() => { dismissHint(); openFinou(); }}
-                className="flex min-w-0 items-center gap-2 text-left"
+                className="-my-3 flex min-h-[44px] min-w-0 items-center gap-2 text-left" /* zone tactile de 44 px, bulle inchangée (20 px mesurés le 13/10) */
               >
                 <IconSparkles size={15} className="shrink-0 text-teal" />
                 <span key={idx} className="animate-hint-in truncate text-caption font-medium text-ink">
@@ -116,7 +116,7 @@ export function BuyerNav() {
               <button
                 onClick={dismissHint}
                 aria-label={t('common.close')}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted"
+                className="-m-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted" /* idem : la croix reste à sa place */
               >
                 <IconX size={13} />
               </button>
