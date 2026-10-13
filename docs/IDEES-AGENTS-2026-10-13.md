@@ -53,3 +53,26 @@ chiffré n'est repris : les listes ne donnent que des généralités.
   crypto, paiement sans validation humaine.
 - Pas de « restrictions dures » inutiles (Beau, 13/10) : on **confirme
   seulement** ce qui est irréversible, externe, financier ou dangereux.
+
+## Muse (Meta), décrit par Beau le 13/10 : ce qu'on prend, ce qu'on laisse
+
+**Vérifié par recherche (articles de presse, à relire à la source)** : Muse a été
+lancé par Meta le 08/09/2026, d'abord aux États-Unis ; chaque personne a une
+machine virtuelle dans le nuage qui garde l'agent, ses données connectées et
+ses accès ; un système séparé, « Sentinel », relit les actions prévues et peut
+exiger la permission avant de les lancer ; l'agent continue quand l'appli est
+fermée ; les achats passent par des numéros de carte à usage unique (Stripe
+Link) ; offre gratuite, puis 20 et 100 dollars par mois ; Reuters a rapporté des
+problèmes de sécurité et de fiabilité en test. **Non retrouvé** (donné par Beau,
+pas confirmé) : une adresse e-mail propre à l'agent, le blocage par Amazon, le
+boîtier « Muse Charm ».
+
+| Ce que fait Muse | Pour Léo | Décision |
+| --- | --- | --- |
+| On donne un objectif, il s'en occupe de A à Z, même appli fermée | Les missions de Léo tournent déjà côté serveur | **Une seule zone « Que veux-tu que Léo fasse ? » en haut de l'écran** : un objectif, un résultat. C'est aussi la réponse à « trop de texte » |
+| Une machine virtuelle par personne | Léo : un espace par entreprise | À retenir pour l'agent pilote (bac à sable par entreprise) |
+| Un relecteur séparé valide les actions avant exécution | Notre « Confirmer » et le contrôle des chiffres | **Même principe, déjà retenu** : un second contrôle, séparé, avant tout geste irréversible |
+| Achats autonomes | Léo n'achète rien | **Non** : au plus un panier préparé, la personne clique |
+| Audit des abonnements via les comptes bancaires | Pas de connexion bancaire (agrément, responsabilité) | **Version sûre** : la personne dépose son relevé (Accounting) et l'agent repère les abonnements oubliés ; résilier au nom de la personne = « Confirmer » |
+| Secrétariat avec sa propre adresse, agenda | Gmail et Agenda de Léo (demande de Beau) | Même connexion Google, après son geste dans Google Cloud ; l'adresse propre à l'agent : plus tard |
+| Boîtier physique | Hors cible | Non |
