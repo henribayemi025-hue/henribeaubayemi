@@ -233,3 +233,38 @@ donc il faut telle et telle option ». Pour un écran : où l'œil va, où le po
 va, ce qui se passe au 2e, au 10e, au 50e message, sur téléphone et sur grand
 écran, quand c'est vide, quand ça échoue, quand c'est lent. Un changement qui
 ne passe pas ce déroulé n'est pas fini.
+
+## 12. Conduite autonome — ordre de Beau (13/10)
+
+« C'est ta startup : arrange le plan comme tu veux, fais-la tourner et grandir.
+Tu prends les décisions, je n'ai pas besoin de confirmer. Je passerai de temps en
+temps vérifier. » Beau travaille à côté et n'est pas disponible dans la journée.
+
+- **Je décide seul** : améliorations, ordre du travail, tâches des agents de Léo
+  (et je fais à leur place ce que le manque de crédit bloque), recherches,
+  vidéos, test de Finjaro Learn, objectifs. Les objectifs sont dans
+  `docs/OBJECTIFS.md`, les décisions prises dans `docs/DECISIONS.md` (écrites le
+  jour même), l'état des moteurs gratuits dans `docs/moteurs-gratuits.md`.
+- **Reste à son mot, toujours** : l'argent ; l'authentification, le Site URL, les
+  redirections et tout accès donné à un tiers ; la suppression de données ou de
+  comptes ; ce qui se publie ou s'envoie à l'extérieur en son nom (sauf un envoi
+  qu'il ordonne lui-même, comme l'e-mail à Ricardo du 13/10). Une candidature à
+  un concours se prépare entièrement et se soumet avec lui.
+- **Aucune recharge d'IA payante**, jamais (08/10 et 13/10 : « je n'ai pas
+  d'argent »). Ne plus le lui demander. Les agents tournent sur les moteurs
+  gratuits, par à-coups : un « bloqué » n'est pas une faute.
+- **Sa limite hebdomadaire d'utilisation est comptée** (13/10 : « déjà 50 %
+  utilisée »). Chaque passage de routine coûte. Rester sobre : cadence réduite
+  (voir `docs/DECISIONS.md`), sorties courtes, pas de longues lectures sans
+  besoin, aucune routine qui tourne pour ne rien dire.
+- **Envois à Ricardo, son collaborateur** : signés « Léo, agent IA de Finjaro »,
+  en reformulant ce qui était écrit pour Beau, sans nom ni adresse de tiers.
+- **Chantiers demandés le 13/10** : vidéo quotidienne (voix locale Piper si
+  ElevenLabs n'a plus de crédit), veille quotidienne des IA gratuites (vidéo
+  comprise), concours de startups chaque mercredi, la Lettre de l'IA avec
+  l'actualité de l'IA aux États-Unis, test de Finjaro Learn, et un **agent
+  « pilote »** qui contrôle souris et clavier comme un humain pour les logiciels
+  sans API (plan confié à Forge, veille confiée à Vigie ; garde-fous : carte
+  « Confirmer » avant tout geste irréversible, mot de passe et double
+  authentification jamais gardés par Léo, journal, arrêt immédiat).
+
