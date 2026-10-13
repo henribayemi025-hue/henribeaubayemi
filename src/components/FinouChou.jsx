@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { FinouChouCat } from './FinouChouCat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconX, IconSend2, IconSparkles, IconRefresh, IconPhoto, IconChevronRight, IconMicrophone, IconVolume, IconVolumeOff, IconTrash, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
@@ -359,7 +360,7 @@ export function FinouChou() {
       >
         <div className="flex items-center gap-2 border-b border-hairline p-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-teal text-white">
-            <IconSparkles size={20} />
+            <FinouChouCat size={32} />
           </span>
           <div className="flex-1">
             <p className="text-body font-semibold text-ink">{t('finou.title')}</p>

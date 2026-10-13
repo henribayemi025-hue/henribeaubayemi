@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ASSISTANT_NAME } from '../../lib/assistant';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconSend2, IconPhoto, IconCheck, IconChecks, IconAlertCircle, IconSparkles, IconChevronLeft, IconBrandWhatsapp, IconPhone, IconFlag, IconX as IconClose, IconArrowForward, IconArrowBackUp, IconCopy, IconMoodSmile, IconMicrophone, IconTrash } from '@tabler/icons-react';
@@ -643,7 +644,7 @@ export default function VendorChat({ vendor = false }) {
                   <div key={m.id} className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl border border-teal/30 bg-teal/5 px-3 py-2">
                       <p className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-teal">
-                        <IconSparkles size={12} /> Finia
+                        <IconSparkles size={12} /> {ASSISTANT_NAME}
                       </p>
                       <p className="whitespace-pre-wrap break-words text-body text-ink">{m.body}</p>
                       {m.category && (

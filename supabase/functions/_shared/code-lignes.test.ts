@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { morceauNumerote, motCherche, fichiersALire } from './code-lignes.ts';
+import { morceauNumerote, motCherche, fichiersALire, motsDeSecours } from './code-lignes.ts';
 
 describe('morceauNumerote', () => {
   const texte = ['un', 'deux', 'trois', 'quatre', 'cinq'].join('\n') + '\n';
@@ -30,5 +30,20 @@ describe('fichiersALire', () => {
   it('lit le code avant les tests et la documentation, sans relire', () => {
     const f = ['src/a.test.jsx', 'docs/x.md', 'src/a.jsx', 'src/b.jsx'];
     expect(fichiersALire(f, new Set(['src/b.jsx']))).toEqual(['src/a.jsx', 'docs/x.md']);
+  });
+});
+
+describe('motsDeSecours', () => {
+  it('coupe un mot composé et ajoute les équivalents anglais', () => {
+    const m = motsDeSecours('creation-boutique');
+    expect(m).toEqual(expect.arrayContaining(['creation', 'create', 'boutique', 'shop', 'store']));
+  });
+  it('ignore les accents et le pluriel', () => {
+    expect(motsDeSecours('Paramètres')).toContain('settings');
+    expect(motsDeSecours('commandes')).toEqual(expect.arrayContaining(['order', 'checkout']));
+  });
+  it('garde un mot inconnu tel quel, et ne rend rien pour un mot trop court', () => {
+    expect(motsDeSecours('Monde3D')).toEqual(['monde3d']);
+    expect(motsDeSecours('ab')).toEqual([]);
   });
 });

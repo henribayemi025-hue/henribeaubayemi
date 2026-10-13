@@ -363,7 +363,7 @@ export default function NearYou() {
                 onClick={demanderAFinia}
                 aria-label={t('nearYou.askFinia')}
                 title={t('nearYou.finiaTitle')}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-brass transition hover:bg-base active:scale-95"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-brass transition before:absolute before:-inset-1 before:content-[''] hover:bg-base active:scale-95" /* zone tactile de 44 px autour du rond de 36 (mesuré le 13/10) */
               >
                 <IconSparkles size={20} />
               </button>
@@ -443,7 +443,7 @@ export default function NearYou() {
               en entier (Beau: « les mots ne sont pas tous écrits »). */}
           <div className="flex items-stretch border-b border-hairline">
             {['shops', 'listings'].map((tb) => (
-              <button key={tb} onClick={() => setTab(tb)} className={`flex-1 border-b-2 py-2 text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}>
+              <button key={tb} onClick={() => setTab(tb)} className={`flex-1 border-b-2 py-[9.5px] text-body ${tab === tb ? 'border-teal font-semibold text-teal' : 'border-transparent text-muted'}`}>
                 {t(`nearYou.${tb}`)}
                 {tb === 'shops' && shownShops.length > 0 && <span className="ml-1 text-caption">({shownShops.length})</span>}
               </button>
@@ -454,7 +454,7 @@ export default function NearYou() {
                 aria-pressed={view === 'map'}
                 aria-label={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
                 title={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
-                className={`flex h-9 items-center justify-center gap-1.5 rounded-input border px-2.5 text-caption font-medium transition ${
+                className={`relative z-[1] flex h-9 items-center justify-center gap-1.5 rounded-input border px-2.5 text-caption font-medium transition before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-[''] ${
                   view === 'map' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink hover:bg-base'
                 }`}
               >

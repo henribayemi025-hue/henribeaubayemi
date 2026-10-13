@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { prixLigne } from '../../lib/prixLigne';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconCircleCheck, IconBuildingStore, IconTruckDelivery, IconCreditCard } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
@@ -372,6 +372,17 @@ export default function CheckoutCOD() {
           <p className="font-semibold">{devis ? t('checkout.quoteTitle') : t('checkout.cod')}</p>
           <p>{devis ? t('checkout.quoteNote') : t('checkout.codNote')}</p>
         </section>
+
+        {/* Réunion du 10/10 : à la validation de la commande, dire simplement que
+            Finjaro met en relation et ne garantit pas l'article (« pas de garantie
+            acheteur »), et où lire la procédure de litige. Une ligne, pas une
+            alerte : on ne veut pas faire peur, on veut ne rien cacher. */}
+        <p className="px-1 text-caption text-muted">
+          {t('checkout.litigeNote')}{' '}
+          <Link to="/legal/litiges" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
+            {t('checkout.litigeLink')}
+          </Link>
+        </p>
       </div>
 
       <div className="sticky bottom-0 z-30 space-y-2 border-t border-hairline bg-white p-3">

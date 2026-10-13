@@ -296,6 +296,13 @@ export default function Settings() {
             <IconChevronRight size={18} className="text-muted" />
           </Link>
           <Link
+            to="/legal/litiges"
+            className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
+          >
+            <span className="flex items-center gap-2"><IconFileText size={18} /> {t('legal.disputeTitle')}</span>
+            <IconChevronRight size={18} className="text-muted" />
+          </Link>
+          <Link
             to="/suppression-compte"
             className="flex items-center justify-between rounded-card border border-hairline p-3 text-body text-ink"
           >

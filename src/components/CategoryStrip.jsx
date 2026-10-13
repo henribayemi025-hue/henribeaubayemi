@@ -121,7 +121,7 @@ export function CategoryStrip() {
         <h2 className="text-section text-ink">{t('categories.title')}</h2>
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="flex items-center gap-0.5 text-caption font-semibold text-teal"
+          className="-my-3 flex min-h-[44px] items-center gap-0.5 text-caption font-semibold text-teal" /* 44 px de haut pour le doigt (mesuré à 20 px le 13/10) */
           aria-expanded={expanded}
         >
           {expanded ? t('common.seeLess') : t('common.seeAll')}

@@ -11,13 +11,13 @@
 // Les paragraphes commençant par "• " sont rendus comme des puces.
 
 export const CONTACT_EMAIL = 'fin.finjaro@gmail.com';
-export const TERMS_VERSION = '1.0';
-export const TERMS_UPDATED_AT = '2026-08-04';
+export const TERMS_VERSION = '1.1';
+export const TERMS_UPDATED_AT = '2026-10-12';
 
 const fr = {
   title: 'Conditions Générales d’Utilisation et de Vente',
   updatedLabel: 'Dernière mise à jour',
-  updatedAt: '4 août 2026',
+  updatedAt: '12 octobre 2026',
   versionLabel: 'Version',
   draftNotice:
     'Document en cours de finalisation juridique. Il s’applique dès à présent aux utilisateurs de Finjaro et pourra être précisé après relecture par un conseil juridique.',
@@ -115,7 +115,7 @@ const fr = {
         'Les modalités et délais de livraison ou de retrait sont définis par le Vendeur dans l’Annonce ou lors des échanges avec l’Acheteur. Ils n’engagent que le Vendeur.',
         'Finjaro n’assure aucun transport et n’est pas commissionnaire de transport. Lorsque des partenaires logistiques ou des points relais sont mentionnés sur la Plateforme, ils interviennent sous leur propre responsabilité et selon leurs propres conditions.',
         'Les risques de perte ou d’avarie sont transférés selon la loi applicable au contrat conclu entre l’Acheteur et le Vendeur.',
-        'Les opérations transfrontalières, notamment entre le Cameroun et l’Europe, peuvent donner lieu à des formalités douanières, droits et taxes à la charge de l’Acheteur, sauf accord contraire avec le Vendeur.',
+        'Les opérations transfrontalières, notamment entre deux pays différents, peuvent donner lieu à des formalités douanières, droits et taxes à la charge de l’Acheteur, sauf accord contraire avec le Vendeur.',
       ],
     },
     {
@@ -149,6 +149,7 @@ const fr = {
       body: [
         'La Plateforme met à disposition des assistants basés sur l’intelligence artificielle, destinés notamment à aider les Acheteurs dans leur recherche et les Vendeurs dans la rédaction de leurs Annonces.',
         'Les contenus produits par ces assistants sont générés automatiquement et fournis à titre indicatif. Ils peuvent comporter des inexactitudes. Il appartient au Vendeur de vérifier et de corriger toute suggestion avant publication ; il demeure seul responsable du contenu final de son Annonce. Aucune suggestion d’un assistant ne constitue un conseil juridique, fiscal, médical ou financier.',
+        'Les réponses d’un assistant sur la comptabilité, les impôts ou les taxes (notamment dans Finjaro Accounting) aident à calculer et à comprendre ; elles ne sont pas un conseil fiscal ou comptable. Faites-les relire et confirmer par un expert-comptable ou un conseil fiscal avant toute décision, déclaration ou démarche.',
         'Certaines requêtes peuvent être transmises à des prestataires techniques tiers pour traitement. L’Utilisateur s’abstient d’y saisir des données sensibles.',
       ],
     },
@@ -239,7 +240,7 @@ const fr = {
       title: '20. Droit applicable, litiges et contact',
       body: [
         'Les présentes Conditions sont régies par le droit camerounais, sans préjudice des dispositions impératives plus favorables dont bénéficierait un Utilisateur consommateur en vertu de la loi de son pays de résidence habituelle.',
-        'En cas de différend, les parties s’efforceront de trouver une solution amiable. L’Utilisateur peut adresser sa réclamation à Finjaro, qui s’engage à y répondre dans un délai raisonnable.',
+        'En cas de différend, les parties s’efforceront de trouver une solution amiable. L’Utilisateur peut adresser sa réclamation à Finjaro, qui s’engage à y répondre dans un délai raisonnable. La procédure à suivre est décrite sur la page « Procédure en cas de litige » (/legal/litiges).',
         'À défaut d’accord amiable, le litige sera porté devant les juridictions compétentes de Douala, Cameroun, sous réserve, pour l’Utilisateur consommateur résidant dans l’Union européenne, de la faculté de saisir la juridiction de son lieu de domicile.',
         `Contact : ${CONTACT_EMAIL}`,
       ],
@@ -250,7 +251,7 @@ const fr = {
 const en = {
   title: 'Terms of Use and Sale',
   updatedLabel: 'Last updated',
-  updatedAt: '4 August 2026',
+  updatedAt: 'October 12, 2026',
   versionLabel: 'Version',
   draftNotice:
     'This document is being finalised with legal counsel. It applies to Finjaro users as of today and may be refined after legal review.',
@@ -348,7 +349,7 @@ const en = {
         'Delivery or collection terms and timeframes are set by the Seller in the Listing or in discussions with the Buyer. They bind the Seller only.',
         'Finjaro does not carry out transport and is not a freight forwarder. Where logistics partners or pickup points are mentioned on the Platform, they act under their own responsibility and their own terms.',
         'Risk of loss or damage passes in accordance with the law applicable to the contract between Buyer and Seller.',
-        'Cross-border transactions, in particular between Cameroon and Europe, may give rise to customs formalities, duties and taxes payable by the Buyer, unless agreed otherwise with the Seller.',
+        'Cross-border transactions, in particular between two different countries, may give rise to customs formalities, duties and taxes payable by the Buyer, unless agreed otherwise with the Seller.',
       ],
     },
     {
@@ -382,6 +383,7 @@ const en = {
       body: [
         'The Platform provides AI-based assistants, intended in particular to help Buyers search and Sellers write their Listings.',
         'Content produced by these assistants is generated automatically and provided for guidance only. It may contain inaccuracies. It is the Seller’s responsibility to check and correct any suggestion before publishing; the Seller remains solely responsible for the final content of their Listing. No assistant suggestion constitutes legal, tax, medical or financial advice.',
+        'An assistant’s answers on accounting, taxes or duties (notably in Finjaro Accounting) help you calculate and understand; they are not tax or accounting advice. Have them reviewed and confirmed by a certified accountant or a tax adviser before any decision, filing or step.',
         'Some queries may be sent to third-party technical providers for processing. Users must not enter sensitive data.',
       ],
     },
@@ -472,7 +474,7 @@ const en = {
       title: '20. Governing law, disputes and contact',
       body: [
         'These Terms are governed by Cameroonian law, without prejudice to any more favourable mandatory provisions available to a consumer User under the law of their country of habitual residence.',
-        'In the event of a dispute, the parties will endeavour to reach an amicable solution. Users may send their complaint to Finjaro, which undertakes to reply within a reasonable time.',
+        'In the event of a dispute, the parties will endeavour to reach an amicable solution. Users may send their complaint to Finjaro, which undertakes to reply within a reasonable time. The procedure to follow is described on the “Dispute procedure” page (/legal/litiges).',
         'Failing an amicable agreement, the dispute will be brought before the competent courts of Douala, Cameroon, subject, for consumer Users resident in the European Union, to their right to bring proceedings in the courts of their domicile.',
         `Contact: ${CONTACT_EMAIL}`,
       ],

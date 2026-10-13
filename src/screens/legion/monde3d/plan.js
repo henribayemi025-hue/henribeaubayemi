@@ -45,8 +45,8 @@ export function modelePlan({ routes, emprises = [], reserves = {}, chantiers = [
   }
   // Les deux quartiers de la grande carte : on arrive par le trottoir de la rue qui y mène.
   const qa = QUARTIERS.find((q) => q.id === 'aeroport'), qc = QUARTIERS.find((q) => q.id === 'campagne');
-  if (qa) lieux.push({ cle: 'aeroport', x: (qa.x0 + qa.x1) / 2, z: 0, aller: { x: qa.x0 + 2, z: 38, yaw: -Math.PI / 2 - Math.PI }, zone: qa });
-  if (qc) lieux.push({ cle: 'campagne', x: (qc.x0 + qc.x1) / 2, z: 0, aller: { x: qc.x1 - 2, z: 38, yaw: Math.PI / 2 - Math.PI }, zone: qc });
+  if (qa) lieux.push({ cle: 'aeroport', x: (qa.x0 + qa.x1) / 2, z: 0, aller: { x: qa.x0 + 2, z: 38, yaw: Math.PI / 2 - Math.PI }, zone: qa });
+  if (qc) lieux.push({ cle: 'campagne', x: (qc.x0 + qc.x1) / 2, z: 0, aller: { x: qc.x1 - 20, z: 47, yaw: -Math.PI / 2 - Math.PI } /* au bord du ruisseau (coin nature), face à l'aval */, zone: qc });
   return {
     routes: routes || { x: [], z: [], largeur: 12 },
     immeubles: emprises.map((e) => ({ x0: e.x - e.w / 2, z0: e.z - e.d / 2, w: e.w, d: e.d, h: e.h })),

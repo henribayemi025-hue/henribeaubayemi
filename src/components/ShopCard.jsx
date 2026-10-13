@@ -30,7 +30,8 @@ export function ShopCard({ shop, distanceKm }) {
         <IconStarFilled size={12} className="text-brass" />
         {Number(shop.rating || 0).toFixed(1)}
         {distanceKm != null && <span>· {distanceKm} km</span>}
-        {distanceKm == null && shop.followers_count > 0 && <span>· {shop.followers_count}</span>}
+        {/* Réunion du 10/10 : sur le profil public, seules les étoiles. Le nombre
+            d'abonnés reste connu de l'équipe, il ne s'affiche plus ici. */}
       </span>
     </Link>
   );

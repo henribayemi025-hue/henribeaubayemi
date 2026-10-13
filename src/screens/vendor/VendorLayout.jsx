@@ -1,4 +1,5 @@
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { FinouChouCat } from '../../components/FinouChouCat';
 import { VendorNav } from '../../components/VendorNav';
 import { VendorSidebarNav } from '../../components/VendorSidebarNav';
 import { TAB_BAR_SPACE } from '../../components/TabBar';
@@ -11,7 +12,6 @@ import { useVendorStatus } from '../../hooks/useVendorStatus';
 import { useUI } from '../../hooks/useUI';
 import { Spinner } from '../../components/Spinner';
 import { useViewportHeight } from '../../hooks/useViewportHeight';
-import { IconSparkles } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 // Vendor space is only reachable by approved vendors (owns a shop).
@@ -78,7 +78,7 @@ export function VendorLayout() {
               aria-label={t('finou.title')}
               className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-teal text-white shadow-lg transition-transform duration-150 hover:bg-teal-hover active:scale-95"
             >
-              <IconSparkles size={26} />
+              <FinouChouCat size={42} />
             </button>
           </div>
         )}

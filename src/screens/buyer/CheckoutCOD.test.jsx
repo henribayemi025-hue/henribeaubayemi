@@ -66,6 +66,8 @@ vi.mock('react-i18next', () => ({
 vi.mock('react-router-dom', () => ({
   useParams: () => ({ shopId: 'shop-1' }),
   useNavigate: () => vi.fn(),
+  // Le rappel « procédure de litige » (réunion du 10/10) est un lien.
+  Link: ({ to, children, ...rest }) => <a href={to} {...rest}>{children}</a>,
 }));
 
 import CheckoutCOD from './CheckoutCOD';
@@ -98,6 +100,13 @@ describe('CheckoutCOD — passation de commande', () => {
     expect(JSON.stringify(args)).not.toContain('15000');
 
     await waitFor(() => expect(clearShop).toHaveBeenCalledWith('shop-1'));
+  });
+
+  it('rappelle, avant de valider, que Finjaro ne garantit pas l’article, avec le lien vers la procédure de litige', async () => {
+    // Réunion du 10/10 : « pas de garantie acheteur » se dit à la validation de la commande.
+    render(<CheckoutCOD />);
+    expect(await screen.findByText(/checkout\.litigeNote/)).toBeTruthy();
+    expect(screen.getByText('checkout.litigeLink').getAttribute('href')).toBe('/legal/litiges');
   });
 
   it('ne vide PAS le panier quand le serveur refuse la commande', async () => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { prixLigne } from '../../lib/prixLigne';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { IconCircleCheck, IconBuildingStore, IconTruckDelivery, IconAlertTriangle } from '@tabler/icons-react';
 import { supabase } from '../../lib/supabase';
@@ -374,6 +374,12 @@ export default function CheckoutAll() {
         {anyDevis && (
           <p className="mt-1 text-caption font-semibold text-brass">{t('checkout.quoteAllNote')}</p>
         )}
+        <p className="mt-3 px-1 text-caption text-muted">
+          {t('checkout.litigeNote')}{' '}
+          <Link to="/legal/litiges" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
+            {t('checkout.litigeLink')}
+          </Link>
+        </p>
         <Button className="mt-3" onClick={submit} loading={submitting} disabled={!valid}>
           {t('checkout.allCta', { count: shopIds.length })}
         </Button>

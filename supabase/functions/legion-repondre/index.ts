@@ -39,6 +39,7 @@ import { comprendrePieces, texteAvecPieces } from '../_shared/pieces.ts';
 import { classeurAvecAdresses, classeurEnTexte, creerClasseur, MIME_XLSX, modifierClasseur, type Feuille, type Operation } from '../_shared/tableur.ts';
 import { blocDocuments, chercherPassages, type Passage } from '../_shared/documents.ts';
 import { deposerPrive, ouvrirFichier } from '../_shared/fichiers.ts';
+import { consigneCourte } from '../_shared/consigne-courte.ts';
 
 const PROD_HOST = 'finjaro.net';
 const TIMEOUT_MS = 25_000;
@@ -328,7 +329,7 @@ async function reponseApprise(service: any, entrepriseId: string, agentId: strin
   return { id: choisie.id, reponse: choisie.reponse };
 }
 
-async function demander(apiKey: string, texte: string, complexe = true, tableur = false, appel = false): Promise<Rendu> {
+async function demander(apiKey: string, texte: string, complexe = true, tableur = false, appel = false, compacte?: string): Promise<Rendu> {
   let derniere = 'aucun modèle joignable';
   const essais: Essai[] = [];
   // Tableau: les trois moteurs simples (Flash, Flash, puis Pro en dernier
@@ -355,8 +356,8 @@ async function demander(apiKey: string, texte: string, complexe = true, tableur 
     // près d'une minute » ; 28/09 : « 5 secondes, c'est normal »).
     const debut = Date.now();
     const r = await generer(apiKey, texte, tableur ? SCHEMA_TABLEUR : SCHEMA, appel
-      ? { temperature: 0.7, reflexion: 256, delaiMs: 12_000, maxSortie: 2048, modeles: [nom], sansSecours: true }
-      : { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom], sansSecours: true });
+      ? { temperature: 0.7, reflexion: 256, delaiMs: 12_000, maxSortie: 2048, modeles: [nom], sansSecours: true, compacte }
+      : { temperature: tableur ? 0.3 : 0.7, reflexion: tableur ? 1024 : 4096, delaiMs: 45_000, maxSortie: tableur ? 16_384 : 8192, modeles: [nom], sansSecours: true, compacte });
     essais.push(...(r.essais || []));
     if ('erreur' in r) { derniere = r.erreur; continue; }
     if (typeof r.obj.texte === 'string' && r.obj.texte.trim()) return { ...r, essais };
@@ -826,9 +827,17 @@ Deno.serve(compter('legion_repondre', async (req: Request) => {
     const sesDocs = peut(cible, 'documents') ? passages : [];
     const sesSouvenirs = vecteurMessage && String(msg.texte || '').trim().length >= 8 ? await souvenirsDe(service, apiKey, cible.id, vecteurMessage, 3, () => String(msg.texte || '')) : [];
     // La voie rapide prend les réglages du téléphone : peu de réflexion, 20 s au plus.
+    // La même consigne resserrée (09/10) : sans elle, une réponse de 23 450 jetons sautait
+    // les trois modèles Groq (« consigne trop longue ») et attendait le moteur suivant.
+    const courte = appris ? undefined : consigneCourte(({ n, coupe, garde }) => consigne(cible, { ...vue, projet: coupe(String(vue.projet || ''), 600) }, salon.nom,
+      lignes.slice(-Math.max(2, Math.round(8 * n))).map((l) => coupe(l, 300)).join('\n'), auteur.nom, ont_repondu,
+      peut(cible, 'mesures') && mesuresPour ? coupe(mesuresPour, 700) : null, garde(sesVerifs, 3).map((v) => coupe(v, 280)),
+      garde(memoire.slice(-6), 6).map((m) => coupe(m, 200)), garde(competences, 1).map((c) => ({ nom: c.nom, texte: coupe(c.texte, 600) })),
+      garde(ailleursPour(cible), 3).map((x) => coupe(x, 200)), garde(equipe, 8).map((e) => coupe(e, 160)), garde(tachesDe(cible.id), 5).map((t) => coupe(t, 160)),
+      garde(plansDe(cible.departement), 1).map((x) => coupe(x, 600)), null, coupe(String((salon as { resume?: string | null }).resume || ''), 400) || null, null));
     const r: Rendu = appris
       ? { obj: { texte: appris.reponse, genre: 'info' }, modele: 'appris', essais: [] }
-      : await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal || leger);
+      : await demander(apiKey, laConsigne + blocDocuments(sesDocs) + blocSouvenirs(sesSouvenirs), complexe, tableur, appelVocal || leger, courte);
     if ('erreur' in r) { pourquoi = pourquoi || r.erreur; continue; }
     noter(`modele_${ont_repondu.length + 1}`);
     // 4000 et non 1200: un plan de la semaine ne tient pas en 1200 signes,

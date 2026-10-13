@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { FinouChouCat } from './FinouChouCat';
 import { useTranslation } from 'react-i18next';
 import {
   IconHome2, IconHome2Filled,
@@ -16,6 +17,7 @@ import { useEffect, useState } from 'react';
 
 const HINT_SEEN_KEY = 'finjaro_finou_hint_seen';
 const HINT_ROTATE_MS = 3200;
+const HINT_SCROLL_PX = 60;
 
 // Icônes choisies pour DIRE ce que fait l'onglet: une caméra vidéo pour les
 // reels (le triangle « lecture » d'avant disait juste « bouton play »), des
@@ -73,6 +75,20 @@ export function BuyerNav() {
     try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch { /* noop */ }
   };
 
+  // Audit des 200 profils (M1) : au téléphone, la bulle se posait sur la rangée
+  // « Prêts à commander » et cachait le prix du deuxième article. Elle s'efface dès
+  // que l'acheteuse fait défiler la page (le seuil évite la remise en place du
+  // défilement au chargement), et ne revient plus.
+  useEffect(() => {
+    if (!showHint) return undefined;
+    const surDefilement = (e) => {
+      const el = e.target === document || e.target === window ? document.scrollingElement : e.target;
+      if ((el?.scrollTop || 0) > HINT_SCROLL_PX) dismissHint();
+    };
+    document.addEventListener('scroll', surDefilement, { capture: true, passive: true });
+    return () => document.removeEventListener('scroll', surDefilement, { capture: true });
+  }, [showHint]);
+
   return (
     <>
       {/* La barre d'onglets flotte désormais au-dessus du contenu et occupe
@@ -90,7 +106,7 @@ export function BuyerNav() {
             <div className="pointer-events-auto flex max-w-[75vw] items-center gap-1.5 rounded-card bg-white py-2 pl-3 pr-1.5 shadow-lg ring-1 ring-hairline">
               <button
                 onClick={() => { dismissHint(); openFinou(); }}
-                className="flex min-w-0 items-center gap-2 text-left"
+                className="-my-3 flex min-h-[44px] min-w-0 items-center gap-2 text-left" /* zone tactile de 44 px, bulle inchangée (20 px mesurés le 13/10) */
               >
                 <IconSparkles size={15} className="shrink-0 text-teal" />
                 <span key={idx} className="animate-hint-in truncate text-caption font-medium text-ink">
@@ -100,7 +116,7 @@ export function BuyerNav() {
               <button
                 onClick={dismissHint}
                 aria-label={t('common.close')}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted"
+                className="-m-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted" /* idem : la croix reste à sa place */
               >
                 <IconX size={13} />
               </button>
@@ -111,7 +127,7 @@ export function BuyerNav() {
             aria-label={t('finou.title')}
             className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#C25E38] text-white shadow-lg transition-transform duration-150 hover:bg-[#A84E2D] active:scale-95"
           >
-            <IconSparkles size={26} />
+            <FinouChouCat size={42} />
           </button>
         </div>
       )}

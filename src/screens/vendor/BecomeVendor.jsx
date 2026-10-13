@@ -318,6 +318,12 @@ export default function BecomeVendor() {
                 <Link to="/legal/confidentialite" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
                   {t('legal.privacyTitle')}
                 </Link>
+                {/* Réunion du 10/10 : la procédure de litige se rappelle à la
+                    création de la boutique, comme les conditions. */}
+                {' '}{t('legal.and')}{' '}
+                <Link to="/legal/litiges" target="_blank" rel="noopener noreferrer" className="font-semibold text-teal underline">
+                  {t('legal.disputeTitle')}
+                </Link>
               </span>
             </label>
             {termsErr && <p className="text-caption text-danger">{t('becomeVendor.termsRequired')}</p>}

@@ -1,5 +1,36 @@
 # En attente de l'accord de Beau
 
+## ✅ APPLIQUÉS en production le 13/10 (décision déléguée de Beau ; Claudinette a dit oui) — migrations 0241 et 0242
+
+- `assistant-qualite.sql` → `supabase/migrations/0241_assistant_qualite.sql` : la table `assistant_qualite` (jamais le texte des échanges), lecture réservée à l'équipe, **plus une politique d'insertion** ajoutée le 13/10 : une personne connectée n'écrit que SA ligne, pour le produit « accounting » (essayé sur la base de test : sa ligne passe, la ligne d'un autre, le produit « finjaro » et toute modification sont refusés, un non-admin ne lit rien).
+- `flux-inverse-stock-catalogue.sql` → `0242_finia_publier_article.sql` : colonne `products.accounting_ref` + fonction `finia_publier_article(p_workspace, p_article, p_shop)` (photo obligatoire, boutique choisie). Droit d'exécution : connectées seulement, pas anon. Ne fait rien tant qu'Accounting ne l'appelle pas.
+- Toujours en attente : la liaison mobile money (pas d'agrégateur), le `revoke execute` sur `finia_order_to_sale()` (à essayer d'abord sur la base de test), les statistiques vendeuses, le patch des 9 phrases serveur et celui du message honnête de Finou Chou.
+
+## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ⏳ avec le lot « nom Finou Chou »
+
+Constat (lu dans le code, `finou-chat/index.ts`, après le relais) : quand Google
+**et** tout le relais (Kimi, OpenAI, DeepSeek) échouent, la réponse est vide et
+le serveur renvoie « Je n'ai pas bien compris, peux-tu reformuler ? » — comme si
+la personne s'était mal exprimée. Avec les crédits payants qui ne seront pas
+rechargés (décision de Beau, 08/10 puis 13/10), c'est ce qu'elle verra dès que
+les moteurs gratuits seront à leur limite. Aujourd'hui personne ne l'a vu :
+0 appel à Finou Chou en 24 h.
+
+Correctif (14 lignes, vérifié à la compilation, `git apply --check` passe) :
+un drapeau `aucunMoteur`, posé seulement quand le relais échoue aussi ; il
+remplace la phrase par « Je ne peux pas te répondre pour le moment : mon moteur
+d'IA est indisponible. Ça vient de notre côté, pas de ta question. » (français
+si l'appareil est en français, sinon anglais — les deux langues de
+l'interface, aucune supposée par pays). Rien d'autre ne change : même réponse
+vide-donc-« reformule » pour un vrai silence du modèle, pas d'apprentissage sur
+une panne.
+
+Pas mis en ligne : `supabase/functions/**` poussé sur `staging` se déploie en
+production (fonction commune, utilisée aussi par Accounting). Pour
+l'appliquer : `git apply docs/en-attente/finou-indisponible-honnete.patch`.
+À joindre au lot de `nom-finou-chou-fonctions.patch` (même fichier, mêmes
+lignes proches : appliquer l'un puis l'autre).
+
 ## Les tâches citées (02/10) — `legion-travail` — ✅ APPLIQUÉ le 06/10 (autonomie du 05/10 : amélioration vérifiée, ni authentification, ni dépense)
 
 Rigo (Qualité) a renvoyé 15 livrables sans les lire : aucun outil des agents
