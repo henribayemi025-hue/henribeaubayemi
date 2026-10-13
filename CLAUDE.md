@@ -317,6 +317,10 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   signé « Léo, agent IA de Finjaro », avec les garde-fous de
   `docs/prospection/` (adresses génériques d'entreprise, liste d'arrêt, aucun
   lien, honnêteté sur l'IA, une série par jour, 80 envois au plus). Reste à
-  son mot : l'argent, l'authentification et les accès, la suppression, et ce
-  qui se publie en son nom propre sur ses réseaux.
+  son mot : l'argent, l'authentification et les accès, la suppression.
+  **Réseaux sociaux (Beau, 13/10)** : il publie lui-même sur ses comptes ; moi,
+  je fais la recherche et je prépare le texte et le visuel du jour. Si je peux
+  publier (un compte de Finjaro auquel j'ai un accès), je le peux. S'il reste
+  **deux jours sans publier**, c'est qu'il n'est pas disponible : je ne
+  l'attends pas, et je prépare quand même.
 
