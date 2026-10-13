@@ -1,0 +1,8 @@
+[
+ {"id":"s1","type":"boutique","voix":"Sur Finjaro, ta boutique s’ouvre en quelques écrans.","legende":"Ta boutique s’ouvre en quelques écrans."},
+ {"id":"s2","type":"photo","voix":"Tu ajoutes un article, avec ta propre photo.","legende":"Un article, ta propre photo."},
+ {"id":"s3","type":"sansprix","voix":"Sans prix, l’acheteur doit poser la question. Beaucoup n’osent pas.","legende":"Sans prix, l’acheteur doit poser la question."},
+ {"id":"s4","type":"monnaie","voix":"Toi, tu saisis ton prix dans ta monnaie. L’acheteur le voit dans la sienne.","legende":"Ton prix dans ta monnaie. Celui de l’acheteur dans la sienne."},
+ {"id":"s5","type":"carte","voix":"Et sur ton tableau de bord, une carte te montre les articles qui n’ont pas encore de prix.","legende":"Une carte te montre les articles sans prix."},
+ {"id":"s6","type":"fin","voix":"Finjaro. Au-delà des rêves.","legende":"Au-delà des rêves."}
+]

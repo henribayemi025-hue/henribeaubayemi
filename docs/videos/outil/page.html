@@ -1,0 +1,74 @@
+<!doctype html><meta charset="utf-8">
+<style>
+:root{--cream:#FBF3E4;--card:#FFFBF2;--terra:#B5532F;--brass:#B8860B;--ink:#2B1D14;--muted:#7A6A5A;--line:#E6D5B8}
+*{box-sizing:border-box;margin:0}
+html,body{width:720px;height:1280px;overflow:hidden;background:var(--cream);font-family:Georgia,'DejaVu Serif',serif;color:var(--ink)}
+#brand{position:absolute;top:56px;left:0;right:0;text-align:center;font-size:34px;letter-spacing:6px;color:var(--terra);font-weight:700}
+#brand:after{content:"";display:block;width:70px;height:3px;background:var(--brass);margin:14px auto 0}
+#stage{position:absolute;left:0;right:0;top:150px;height:760px}
+#cap{position:absolute;left:44px;right:44px;bottom:150px;text-align:center;font-size:54px;line-height:1.18;font-weight:700}
+#cap em{color:var(--terra);font-style:normal}
+#bar{position:absolute;left:0;bottom:0;height:10px;background:var(--brass)}
+.abs{position:absolute}
+.card{position:absolute;background:var(--card);border:3px solid var(--line);border-radius:28px;box-shadow:0 14px 0 rgba(181,83,47,.10)}
+.t{position:absolute;font-family:'DejaVu Sans',Arial,sans-serif}
+</style>
+<div id="brand">FINJARO</div><div id="stage"></div><div id="cap"></div><div id="bar"></div>
+<script>
+const ease=x=>x<0?0:x>1?1:1-Math.pow(1-x,3), clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)), seg=(p,a,b)=>ease(clamp((p-a)/(b-a)));
+const S=document.getElementById('stage'),C=document.getElementById('cap'),B=document.getElementById('bar');
+let SC=[],TOTAL=0;
+window.init=(sc)=>{SC=sc;TOTAL=sc.reduce((a,s)=>a+s.d,0)};
+function el(html){S.innerHTML=html}
+const px=(n)=>n+'px';
+const draw={
+ boutique(p){
+  const a=seg(p,0,.45), b=seg(p,.35,.8), dots=[seg(p,.45,.6),seg(p,.6,.75),seg(p,.75,.9)];
+  el(`<div class="card" style="left:110px;top:${120-80*(1-a)}px;width:500px;height:420px;opacity:${a}">
+   <div class="abs" style="left:0;right:0;top:0;height:120px;border-radius:25px 25px 0 0;overflow:hidden;background:repeating-linear-gradient(90deg,var(--terra) 0 62px,var(--cream) 62px 124px)"></div>
+   <div class="abs" style="left:60px;top:170px;width:380px;height:190px;border:4px solid var(--brass);border-radius:14px;background:#fff"></div>
+   <div class="abs" style="left:200px;top:230px;width:100px;height:130px;background:var(--terra);border-radius:10px 10px 0 0;transform:scaleY(${b});transform-origin:bottom"></div></div>
+   <div class="abs" style="left:0;right:0;top:600px;text-align:center">${dots.map((d,i)=>`<span style="display:inline-block;width:34px;height:34px;border-radius:50%;margin:0 14px;border:4px solid var(--brass);background:rgba(184,134,11,${d})"></span>`).join('')}</div>`);
+  C.innerHTML='Ta boutique s’ouvre en <em>quelques écrans</em>.';},
+ photo(p){
+  const a=seg(p,0,.4), b=seg(p,.3,.7), f=seg(p,.55,.9);
+  el(`<div class="card" style="left:120px;top:90px;width:480px;height:560px;opacity:${a}">
+   <div class="abs" style="left:34px;top:34px;width:412px;height:330px;border:4px dashed var(--brass);border-radius:18px;background:rgba(184,134,11,${.06+.1*f})"></div>
+   <svg class="abs" style="left:170px;top:130px" width="140" height="120" viewBox="0 0 140 120"><rect x="6" y="26" width="128" height="86" rx="14" fill="none" stroke="#B5532F" stroke-width="8"/><circle cx="70" cy="68" r="${12+22*b}" fill="none" stroke="#B5532F" stroke-width="8"/><rect x="44" y="8" width="52" height="22" rx="6" fill="#B5532F"/></svg>
+   <div class="t" style="left:34px;top:392px;width:412px;text-align:center;font-size:34px;color:var(--muted)">Ta propre photo</div>
+   <div class="abs" style="left:34px;top:456px;width:${300*f+40}px;height:26px;border-radius:13px;background:var(--line)"></div></div>`);
+  C.innerHTML='Un article, <em>ta propre photo</em>.';},
+ sansprix(p){
+  const a=seg(p,0,.35), q=1+.08*Math.sin(p*18), sh=seg(p,.5,.8);
+  el(`<div class="card" style="left:120px;top:90px;width:480px;height:560px;opacity:${a}">
+   <div class="abs" style="left:34px;top:34px;width:412px;height:300px;border-radius:18px;background:var(--line)"></div>
+   <div class="t" style="left:34px;top:370px;font-size:40px;font-weight:700">Mon article</div>
+   <div class="t" style="left:34px;top:440px;font-size:64px;font-weight:700;color:var(--terra);transform:scale(${q});transform-origin:left">Prix ?</div></div>
+   <div class="t" style="left:380px;top:${140-30*sh}px;width:300px;padding:22px 26px;background:#fff;border:3px solid var(--terra);border-radius:22px 22px 22px 4px;font-size:34px;opacity:${sh}">« C’est combien ? »</div>`);
+  C.innerHTML='Sans prix, l’acheteur doit <em>poser la question</em>.';},
+ monnaie(p){
+  const a=seg(p,0,.3), b=seg(p,.35,.65), c=seg(p,.55,.85);
+  el(`<div class="card" style="left:40px;top:120px;width:300px;height:380px;opacity:${a}">
+    <div class="t" style="left:24px;top:30px;font-size:28px;color:var(--muted)">Ta boutique</div>
+    <div class="t" style="left:24px;top:150px;font-size:50px;font-weight:700;color:var(--terra)">5 000<br>FCFA</div></div>
+   <svg class="abs" style="left:318px;top:268px" width="84" height="60" viewBox="0 0 84 60"><path d="M4 30 H64 M44 8 L68 30 L44 52" fill="none" stroke="#B8860B" stroke-width="8" stroke-linecap="round" stroke-dasharray="130" stroke-dashoffset="${130*(1-b)}"/></svg>
+   <div class="card" style="left:380px;top:120px;width:300px;height:380px;opacity:${c}">
+    <div class="t" style="left:24px;top:30px;font-size:28px;color:var(--muted)">Ton acheteur</div>
+    <div class="t" style="left:24px;top:150px;font-size:56px;font-weight:700;color:var(--terra)">7,62 €</div></div>
+   <div class="t" style="left:0;right:0;top:560px;text-align:center;font-size:28px;color:var(--muted);opacity:${c}">exemple</div>`);
+  C.innerHTML='Ton prix dans <em>ta monnaie</em>.<br>Celui de l’acheteur dans <em>la sienne</em>.';},
+ carte(p){
+  const a=seg(p,0,.35), r=[seg(p,.3,.5),seg(p,.45,.65),seg(p,.6,.8)], btn=seg(p,.8,1);
+  const row=(i)=>`<div class="abs" style="left:30px;right:30px;top:${150+i*110}px;height:88px;opacity:${r[i]};transform:translateX(${40*(1-r[i])}px)"><div class="abs" style="left:0;top:8px;width:72px;height:72px;border-radius:14px;background:var(--line)"></div><div class="abs" style="left:92px;top:26px;width:${180+i*30}px;height:18px;border-radius:9px;background:var(--line)"></div><div class="t" style="right:0;top:18px;padding:8px 18px;border:3px solid var(--terra);border-radius:999px;font-size:26px;color:var(--terra);background:rgba(181,83,47,${.12*btn})">Ajouter un prix</div></div>`;
+  el(`<div class="card" style="left:70px;top:90px;width:580px;height:520px;opacity:${a}">
+   <div class="t" style="left:30px;top:34px;font-size:30px;letter-spacing:3px;color:var(--brass);font-weight:700">ARTICLES SANS PRIX</div>${[0,1,2].map(row).join('')}</div>`);
+  C.innerHTML='Une carte te montre les articles <em>sans prix</em>.';},
+ fin(p){
+  const a=seg(p,0,.5), b=seg(p,.4,.9);
+  el(`<div class="t" style="left:0;right:0;top:230px;text-align:center;font-family:Georgia,serif;font-size:120px;font-weight:700;color:var(--terra);opacity:${a};transform:scale(${.9+.1*a})">Finjaro</div>
+   <div class="abs" style="left:${360-150*b}px;width:${300*b}px;top:400px;height:5px;background:var(--brass)"></div>`);
+  C.innerHTML=`<span style="opacity:${b}">Au-delà des <em>rêves</em>.</span>`;}
+};
+window.render=(t)=>{let acc=0,cur=SC[SC.length-1],p=1;for(const s of SC){if(t<acc+s.d){cur=s;p=(t-acc)/s.d;break}acc+=s.d}
+ draw[cur.type](p);B.style.width=px(720*Math.min(1,t/TOTAL))};
+</script>
