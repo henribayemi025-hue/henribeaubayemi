@@ -48,10 +48,11 @@ export function ProviderCard({ shop, portfolio = [], reviewCount = 0, fromPriceF
       </Link>
 
       <div className="flex flex-1 flex-col p-3 pt-8">
-        <Link to={`/boutique/${shop.slug}`} className="flex items-start gap-1">
+        {/* 44 px de haut pour le doigt (mesuré à 23 px le 13/10), la carte ne bouge pas. */}
+        <Link to={`/boutique/${shop.slug}`} className="-my-2.5 flex min-h-[44px] items-center gap-1">
           <h3 className="line-clamp-1 text-body font-semibold text-ink">{shop.name}</h3>
           {shop.is_verified && (
-            <IconRosetteDiscountCheckFilled size={16} className="mt-0.5 shrink-0 text-teal" aria-label={t('common.verified')} />
+            <IconRosetteDiscountCheckFilled size={16} className="shrink-0 text-teal" aria-label={t('common.verified')} />
           )}
         </Link>
         {(shop.city || shop.neighborhood) && (
