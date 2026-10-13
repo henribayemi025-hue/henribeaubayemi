@@ -8,6 +8,11 @@ la qualité doit être extraordinaire ; Facebook, Instagram, TikTok ».
 - Les autres jours : un **flyer** (image 1080×1350, une seule idée).
 - Un post = un message = un seul appel à l'action (« Ouvre ta boutique sur Finjaro »).
 
+## Sujets (priorité Accounting, Beau 13/10)
+Au moins deux posts sur trois parlent de Finjaro Accounting, avec de vrais
+écrans d'un compte de test. Le post du 14/10 (afficher son prix) est le dernier
+de la place de marché avant le prochain.
+
 ## Fabrication
 - Vidéo : `docs/videos/outil/` (page HTML + Playwright + ffmpeg, voix ElevenLabs
   ou Piper), vraies photos de vendeuses et vrais écrans seulement.

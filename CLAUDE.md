@@ -329,4 +329,10 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   avant programmation : `docs/POSTS-QUOTIDIENS.md`. Je ne peux pas regarder une
   vidéo comme un humain : j'étudie des analyses et les statistiques de nos
   propres posts.
+- **Priorité : Accounting avant la place de marché (Beau, 13/10 : « fais plus
+  de choses sur Accounting que sur la place de marché »)**. Ma mission du jour,
+  mes séries d'e-mails et la majorité des posts vont d'abord à Finjaro
+  Accounting (objectif O3 de `docs/OBJECTIFS.md`). La place de marché continue
+  d'être entretenue (correctifs, mises en ligne déjà prêtes), sans nouveau
+  chantier tant qu'Accounting n'a pas ses cinq usages hebdomadaires.
 

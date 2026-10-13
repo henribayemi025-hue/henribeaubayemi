@@ -30,6 +30,8 @@ avec lui).
 
 ## Les sept objectifs
 
+_Priorité du 13/10 (Beau) : **O3 (Accounting) passe avant O1 et O2** dans le temps que je donne chaque jour._
+
 **O1 — La première commande réelle, livrée, d'une inconnue. (étoile polaire)**
 Rien d'autre ne prouve que la place de marché marche. Leviers : prix visibles
 (243 fiches sans prix sont les plus vues), photos, rapidité de réponse des
