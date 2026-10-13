@@ -103,23 +103,25 @@ export default function Home() {
           24 px dans un coin. */}
       <header className="sticky top-0 z-30 border-b border-hairline bg-white">
         <div className="flex h-12 items-center gap-3 px-4">
-          <Link to="/" className="flex items-center gap-1">
+          <Link to="/" className="flex h-11 items-center gap-1">
             <span className="text-title font-semibold text-teal">Finjaro</span>
           </Link>
+          {/* Chaque icône a une zone tactile de 44 px (mesurées à 23-26 px le
+              13/10) ; les marges négatives gardent l'icône à sa place. */}
           <div className="ml-auto flex items-center gap-4">
             {/* La grille des applications Finjaro, comme celle de Google:
                 visible sans compte, elle fait exister l'environnement au
                 lieu de le cacher dans un menu. */}
-            <AppLauncher currentKey="marketplace" />
+            <AppLauncher currentKey="marketplace" grand />
             {/* Le SEUL canal de notification qui atteint tous les comptes:
                 un push exige une permission, un e-mail suppose d'en avoir un
                 — faux pour un compte créé par téléphone. Invisible pour les
                 invités, qui n'ont rien à y voir. */}
-            {user && <NotificationBell />}
-            <Link to="/cart" aria-label={t('cart.title')} className="relative text-ink">
+            {user && <NotificationBell grand />}
+            <Link to="/cart" aria-label={t('cart.title')} className="relative -mx-[10.5px] flex h-11 w-11 items-center justify-center text-ink">
               <IconShoppingCart size={23} />
               {count > 0 && (
-                <span key={count} className="animate-like-pop absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
+                <span key={count} className="animate-like-pop absolute right-[2.5px] top-[2.5px] flex h-5 min-w-5 items-center justify-center rounded-full bg-teal px-1 text-[11px] font-semibold text-white">
                   {count}
                 </span>
               )}
@@ -133,10 +135,10 @@ export default function Home() {
             domicile") ne parle QUE des services et se perd après le carrousel.
             Celle-ci reste sous les yeux en permanence (en-tête collant), à
             l'endroit où l'œil va déjà se poser pour chercher. */}
-        <div className="mx-4 mb-3 flex items-center gap-2">
+        <div className="mx-4 mb-[10px] flex items-center gap-2">
           <Link
             to="/search"
-            className="flex h-10 flex-1 items-center gap-2 rounded-pill border border-hairline bg-base px-3.5 text-muted transition-colors active:bg-hairline/40"
+            className="flex h-11 flex-1 items-center gap-2 rounded-pill border border-hairline bg-base px-3.5 text-muted transition-colors active:bg-hairline/40"
           >
             <IconSearch size={17} className="shrink-0" />
             <span className="truncate text-body">{t('common.searchPlaceholder')}</span>
@@ -145,7 +147,7 @@ export default function Home() {
             to="/services"
             aria-label={t('nearYou.aroundMe')}
             title={t('nearYou.aroundMe')}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-teal/30 bg-teal-light text-teal transition-transform active:scale-90"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-teal/30 bg-teal-light text-teal transition-transform active:scale-90"
           >
             <IconMapPin size={19} />
           </Link>
@@ -248,7 +250,7 @@ export default function Home() {
                   <h2 className="flex items-center gap-1.5 text-section text-ink">
                     <IconBuildingStore size={18} className="text-teal" /> {t('home.shopsNearYou')}
                   </h2>
-                  <Link to="/boutiques" className="text-caption font-semibold text-teal">
+                  <Link to="/boutiques" className="-my-3 inline-flex min-h-[44px] items-center text-caption font-semibold text-teal">
                     {t('shops.seeAll')}
                   </Link>
                 </div>

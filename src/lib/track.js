@@ -29,6 +29,12 @@ export function getAnonId() {
 // insert (e.g. table not yet migrated) is silently ignored.
 export function track(type, targetId = null, meta = {}) {
   try {
+    // Un navigateur piloté par un programme (Playwright, Selenium : nos propres
+    // contrôles d'écran, ceux des agents) n'est pas une visiteuse. Le 12/10, un
+    // simple essai d'appui sur « Quel prix ? » est devenu « la seule action
+    // mesurable de la semaine » dans l'analyse de deux agents de Léo. Les
+    // vraies personnes ont `navigator.webdriver` à faux.
+    if (typeof navigator !== 'undefined' && navigator.webdriver === true) return;
     const anonId = getAnonId();
     // Le canal qui a amené la personne (?src= du lien partagé, 02/10).
     const o = origine();

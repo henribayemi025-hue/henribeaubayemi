@@ -30,7 +30,7 @@ function monogramme(nom) {
 // `currentKey` est passé à la main plutôt que deviné depuis l'adresse: en
 // préproduction l'hôte n'est pas celui de la production, et l'application
 // ouverte ne serait alors jamais reconnue.
-export function AppLauncher({ currentKey = 'marketplace' }) {
+export function AppLauncher({ currentKey = 'marketplace', grand = false }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -39,7 +39,8 @@ export function AppLauncher({ currentKey = 'marketplace' }) {
       <button
         onClick={() => setOpen(true)}
         aria-label={t('apps.title')}
-        className="rounded-full p-0.5 text-ink transition active:scale-90"
+        // `grand` : zone tactile de 44 px, l'icône garde sa place (marges négatives).
+        className={`rounded-full text-ink transition active:scale-90 ${grand ? '-mx-[9px] flex h-11 w-11 items-center justify-center' : 'p-0.5'}`}
       >
         <IconGridDots size={22} />
       </button>

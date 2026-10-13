@@ -237,15 +237,17 @@ export default function ShopProfile() {
     <div className="pb-6">
       <div className="relative">
         <ShopBanner src={banner} name={shop.name} seed={shop.id} className="h-44 w-full lg:h-64" />
-        <button onClick={() => navigate(-1)} className="absolute left-3 top-3 rounded-full bg-white/90 p-1.5 text-ink shadow" aria-label={t('common.back')}>
-          <IconArrowBackUp size={20} />
+        {/* Trois boutons de 44 px de zone tactile (mesurés à 32 px le 13/10) ;
+            le rond blanc qu'on voit garde sa taille et sa place. */}
+        <button onClick={() => navigate(-1)} className="absolute left-1.5 top-1.5 flex h-11 w-11 items-center justify-center text-ink" aria-label={t('common.back')}>
+          <span className="rounded-full bg-white/90 p-1.5 shadow"><IconArrowBackUp size={20} /></span>
         </button>
-        <div className="absolute right-3 top-3 flex gap-2">
-          <button onClick={share} className="rounded-full bg-white/90 p-1.5 text-ink shadow" aria-label={t('common.shareShop')}>
-            <IconShare2 size={20} />
+        <div className="absolute right-1.5 top-1.5 flex -space-x-1">
+          <button onClick={share} className="flex h-11 w-11 items-center justify-center text-ink" aria-label={t('common.shareShop')}>
+            <span className="rounded-full bg-white/90 p-1.5 shadow"><IconShare2 size={20} /></span>
           </button>
-          <button onClick={() => setReportOpen(true)} className="rounded-full bg-white/90 p-1.5 text-ink shadow" aria-label={t('report.report')}>
-            <IconDots size={20} />
+          <button onClick={() => setReportOpen(true)} className="flex h-11 w-11 items-center justify-center text-ink" aria-label={t('report.report')}>
+            <span className="rounded-full bg-white/90 p-1.5 shadow"><IconDots size={20} /></span>
           </button>
         </div>
       </div>

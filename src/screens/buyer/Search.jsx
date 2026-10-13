@@ -191,8 +191,8 @@ export default function Search() {
   return (
     <div>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-white px-3">
-        <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="rounded-full p-1 text-ink hover:bg-hairline">
-          <IconChevronLeft size={24} />
+        <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="group -ml-1.5 -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center text-ink">
+          <span className="rounded-full p-1 group-hover:bg-hairline"><IconChevronLeft size={24} /></span>
         </button>
         <div className="flex flex-1 items-center gap-2 rounded-input border border-hairline px-3">
           <IconSearch size={18} className="text-muted" />

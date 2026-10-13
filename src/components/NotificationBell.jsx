@@ -35,7 +35,7 @@ const TYPE_ICON = {
 // (accueil acheteuse, tableau de bord vendeur). C'est le seul canal qui
 // atteint TOUT compte, y compris ceux créés par téléphone sans e-mail et
 // sans permission de notification accordée.
-export function NotificationBell() {
+export function NotificationBell({ grand = false }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { items, unreadCount, loading, markRead, markAllRead } = useNotifications();
@@ -53,11 +53,12 @@ export function NotificationBell() {
       <button
         onClick={() => setOpen(true)}
         aria-label={t('notifications.title')}
-        className="relative text-ink"
+        // `grand` : zone tactile de 44 px, l'icône garde sa place (marges négatives).
+        className={`relative text-ink ${grand ? '-mx-[10.5px] flex h-11 w-11 items-center justify-center' : ''}`}
       >
         <IconBell size={23} />
         {unreadCount > 0 && (
-          <span key={unreadCount} className="animate-like-pop absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+          <span key={unreadCount} className={`animate-like-pop absolute flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white ${grand ? 'right-[4.5px] top-[4.5px]' : '-right-1.5 -top-1.5'}`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
