@@ -1,5 +1,11 @@
 # En attente de l'accord de Beau
 
+## ✅ APPLIQUÉS en production le 13/10 (décision déléguée de Beau ; Claudinette a dit oui) — migrations 0241 et 0242
+
+- `assistant-qualite.sql` → `supabase/migrations/0241_assistant_qualite.sql` : la table `assistant_qualite` (jamais le texte des échanges), lecture réservée à l'équipe, **plus une politique d'insertion** ajoutée le 13/10 : une personne connectée n'écrit que SA ligne, pour le produit « accounting » (essayé sur la base de test : sa ligne passe, la ligne d'un autre, le produit « finjaro » et toute modification sont refusés, un non-admin ne lit rien).
+- `flux-inverse-stock-catalogue.sql` → `0242_finia_publier_article.sql` : colonne `products.accounting_ref` + fonction `finia_publier_article(p_workspace, p_article, p_shop)` (photo obligatoire, boutique choisie). Droit d'exécution : connectées seulement, pas anon. Ne fait rien tant qu'Accounting ne l'appelle pas.
+- Toujours en attente : la liaison mobile money (pas d'agrégateur), le `revoke execute` sur `finia_order_to_sale()` (à essayer d'abord sur la base de test), les statistiques vendeuses, le patch des 9 phrases serveur et celui du message honnête de Finou Chou.
+
 ## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ⏳ avec le lot « nom Finou Chou »
 
 Constat (lu dans le code, `finou-chat/index.ts`, après le relais) : quand Google
