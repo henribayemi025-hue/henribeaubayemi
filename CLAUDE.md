@@ -290,4 +290,15 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   signes, période). Les mesures sont définies une fois et nommées. On ne promet
   pas « zéro erreur » : on garantit qu'aucun chiffre n'est calculé par le modèle,
   et un humain valide le choix de la mesure.
+- **Moins de texte dans Léo (Beau, 13/10 : « réduis le texte de 80 %, c'est
+  incompréhensible »)** : un écran de Léo dit une chose, avec un titre, une
+  action et des chiffres ; le reste est replié (« comment ça marche ») ou
+  retiré. Pas de paragraphe d'explication sous un titre. Mes réponses à Beau
+  suivent la même règle : courtes, une idée par ligne.
+- **Garde-fous ciblés** (Beau, 13/10 : « ne donne pas de restrictions dures
+  dures à Léo ») : un « Confirmer » seulement pour ce qui est irréversible,
+  externe, financier ou dangereux. Les lignes qu'on ne franchit pas restent :
+  agents offensifs contre des tiers, chimie ou biologie autonomes, santé,
+  paiement sans validation humaine.
+- **Moteur payant, si un jour il en faut un : DeepSeek**, jamais sans son mot.
 
