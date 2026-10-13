@@ -1,0 +1,39 @@
+diff --git a/supabase/functions/finou-chat/index.ts b/supabase/functions/finou-chat/index.ts
+index 6c8fad7..ee2cf02 100644
+--- a/supabase/functions/finou-chat/index.ts
++++ b/supabase/functions/finou-chat/index.ts
+@@ -1929,6 +1929,8 @@ Deno.serve(async (req: Request) => {
+     // Google n'a pas répondu (plafond de dépenses, 5xx, délai dépassé…) :
+     // le relais prend la même conversation (voir plus bas).
+     let googleEnPanne = false;
++    // Google ET tout le relais ont échoué: plus aucun moteur ne répond.
++    let aucunMoteur = false;
+     // Finia a transmis une question à l'équipe faute de réponse
+     // (contacter_finjaro, gravité « question ») : c'est un savoir qui manque.
+     let transmiseSansReponse = false;
+@@ -2029,6 +2031,7 @@ Deno.serve(async (req: Request) => {
+         data = { candidates: [{ content: { parts: [{ text: relais.texte }] } }] };
+       } else {
+         console.error('finou-chat: relais en échec', relais.erreur);
++        aucunMoteur = true;
+       }
+     }
+ 
+@@ -2054,7 +2057,16 @@ Deno.serve(async (req: Request) => {
+           usage: data?.usageMetadata ?? null,
+         })
+       );
+-      reply = "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
++      // Quand AUCUN moteur n'a répondu, ce n'est pas la question de la
++      // personne qui est en cause: lui demander de « reformuler » la fait
++      // réécrire pour rien et lui laisse croire qu'elle s'est mal exprimée.
++      // L'interface existe en français et en anglais: ce sont les deux
++      // langues, sans en supposer une autre (accept-language de l'appareil).
++      reply = aucunMoteur
++        ? (langueAppareil0.toLowerCase().startsWith('fr')
++          ? "Je ne peux pas te répondre pour le moment : mon moteur d'IA est indisponible. Ça vient de notre côté, pas de ta question. Tu peux réessayer plus tard. 💫"
++          : "I can't answer right now: my AI engine is unavailable. It's on our side, not because of your question. You can try again later. 💫")
++        : "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+       repliTechnique = true;
+     }
+ 

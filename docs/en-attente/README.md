@@ -1,5 +1,30 @@
 # En attente de l'accord de Beau
 
+## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ⏳ avec le lot « nom Finou Chou »
+
+Constat (lu dans le code, `finou-chat/index.ts`, après le relais) : quand Google
+**et** tout le relais (Kimi, OpenAI, DeepSeek) échouent, la réponse est vide et
+le serveur renvoie « Je n'ai pas bien compris, peux-tu reformuler ? » — comme si
+la personne s'était mal exprimée. Avec les crédits payants qui ne seront pas
+rechargés (décision de Beau, 08/10 puis 13/10), c'est ce qu'elle verra dès que
+les moteurs gratuits seront à leur limite. Aujourd'hui personne ne l'a vu :
+0 appel à Finou Chou en 24 h.
+
+Correctif (14 lignes, vérifié à la compilation, `git apply --check` passe) :
+un drapeau `aucunMoteur`, posé seulement quand le relais échoue aussi ; il
+remplace la phrase par « Je ne peux pas te répondre pour le moment : mon moteur
+d'IA est indisponible. Ça vient de notre côté, pas de ta question. » (français
+si l'appareil est en français, sinon anglais — les deux langues de
+l'interface, aucune supposée par pays). Rien d'autre ne change : même réponse
+vide-donc-« reformule » pour un vrai silence du modèle, pas d'apprentissage sur
+une panne.
+
+Pas mis en ligne : `supabase/functions/**` poussé sur `staging` se déploie en
+production (fonction commune, utilisée aussi par Accounting). Pour
+l'appliquer : `git apply docs/en-attente/finou-indisponible-honnete.patch`.
+À joindre au lot de `nom-finou-chou-fonctions.patch` (même fichier, mêmes
+lignes proches : appliquer l'un puis l'autre).
+
 ## Les tâches citées (02/10) — `legion-travail` — ✅ APPLIQUÉ le 06/10 (autonomie du 05/10 : amélioration vérifiée, ni authentification, ni dépense)
 
 Rigo (Qualité) a renvoyé 15 livrables sans les lire : aucun outil des agents
