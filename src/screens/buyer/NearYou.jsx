@@ -454,7 +454,7 @@ export default function NearYou() {
                 aria-pressed={view === 'map'}
                 aria-label={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
                 title={view === 'map' ? t('nearYou.directoryTab') : t('nearYou.mapTab')}
-                className={`relative flex h-9 items-center justify-center gap-1.5 rounded-input border px-2.5 text-caption font-medium transition before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] ${
+                className={`relative z-[1] flex h-9 items-center justify-center gap-1.5 rounded-input border px-2.5 text-caption font-medium transition before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] ${
                   view === 'map' ? 'border-ink bg-ink text-white' : 'border-hairline bg-white text-ink hover:bg-base'
                 }`}
               >
