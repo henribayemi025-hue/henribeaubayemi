@@ -30,7 +30,12 @@ not_found_handling = "single-page-application"
 # fichiers passent donc d'abord par le Worker, qui les refuse sur finjaro.net
 # (voir learnFerme dans src/worker.js). /csp-rapport reçoit les rapports de la
 # CSP en mode rapport (M-1).
-run_worker_first = ["/learn", "/learn/*", "/csp-rapport", "/geo", "/ia/*"]
+# 13/10 : /img/* et /sitemap.xml ajoutés. Sans eux, Cloudflare répond la page
+# d'accueil (HTML, code 200) à la place du Worker : toutes les photos d'articles
+# (servies par /img/{bucket}/{chemin}) s'affichaient comme une icône grise, et
+# le plan du site renvoyait du HTML. Constaté le 13/10 sur finjaro.net ET sur
+# staging ; la même requête sur /geo (déjà listé ci-dessus) répondait bien.
+run_worker_first = ["/learn", "/learn/*", "/csp-rapport", "/geo", "/ia/*", "/img/*", "/sitemap.xml"]
 
 # --- Test/staging -----------------------------------------------------------
 # PAS un environnement wrangler séparé — testé et abandonné (`--env staging`
