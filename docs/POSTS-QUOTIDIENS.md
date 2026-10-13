@@ -9,7 +9,7 @@ la qualité doit être extraordinaire ; Facebook, Instagram, TikTok ».
 - Un post = un message = un seul appel à l'action (« Ouvre ta boutique sur Finjaro »).
 
 ## Sujets (priorité Accounting, Beau 13/10)
-Au moins deux posts sur trois parlent de Finjaro Accounting, avec de vrais
+Sur Facebook, Instagram, TikTok et YouTube, au moins deux posts sur trois parlent de Finjaro Accounting, avec de vrais
 écrans d'un compte de test. Le post du 14/10 (afficher son prix) est le dernier
 de la place de marché avant le prochain.
 
@@ -33,8 +33,10 @@ de la place de marché avant le prochain.
   Beau) : page Facebook, Instagram (Reel ou image), TikTok et YouTube (Short)
   de Finjaro, à 18 h (Paris) par défaut. Beau peut annuler dans Metricool.
   LinkedIn passe par **Typefully** (offre gratuite, page entreprise de Finjaro,
-  quota mesuré le 13/10 : 10 publications par mois). Réservé à Accounting :
-  au plus 2 posts par semaine.
+  quota mesuré le 13/10 : 10 publications par mois). Réservé à **Léo**
+  (Beau, 13/10 : « sur LinkedIn, ça doit être les posts reliés à Léo »),
+  au plus 2 posts par semaine, après relecture de Beau par e-mail pour les deux
+  premiers.
 - Limite à vérifier : 20 posts programmés par mois dans l'offre gratuite (source
   non officielle). Si elle bloque, qualité d'abord, rythme réduit.
 - Chaque post est noté au carnet (date, format, réseaux) ; les statistiques

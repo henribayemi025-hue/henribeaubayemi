@@ -329,6 +329,8 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   avant programmation : `docs/POSTS-QUOTIDIENS.md`. Je ne peux pas regarder une
   vidéo comme un humain : j'étudie des analyses et les statistiques de nos
   propres posts.
+  **LinkedIn (Typefully, page entreprise de Finjaro) : uniquement des posts
+  reliés à Léo** (Beau, 13/10), au plus 2 par semaine.
 - **Priorité : Accounting avant la place de marché (Beau, 13/10 : « fais plus
   de choses sur Accounting que sur la place de marché »)**. Ma mission du jour,
   mes séries d'e-mails et la majorité des posts vont d'abord à Finjaro
