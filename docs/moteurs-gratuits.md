@@ -18,6 +18,34 @@ une identité : c'est Beau qui le fait, je prépare les étapes.
 | Google Gemini | Crédits prépayés épuisés (erreur 402) | Pas de recharge |
 | OpenAI, DeepSeek, Kimi | Sans crédit | Pas de recharge |
 
+## Recherche approfondie du 13/10 (demande de Beau) : y a-t-il des IA « illimitées » à brancher ?
+
+**Réponse honnête : non.** Aucun service hébergé n'est vraiment illimité ; tous ont un plafond par minute et par jour. La seule vraie « illimitée » est une IA hébergée soi-même (voir plus bas), au prix d'un petit modèle et d'un débit faible. Le bon moyen d'en avoir beaucoup : **brancher plusieurs offres gratuites et passer de l'une à l'autre** quand une atteint sa limite (c'est déjà le principe du moteur commun de Léo).
+
+Source des chiffres : un comparatif publié par OpenRouter (juin 2026, mis à jour le 24/09, limites vérifiées en avril 2026) et des guides de tiers. **Annoncés, pas essayés** ; les limites changent souvent.
+
+| Offre | Limites annoncées | Carte exigée | Déjà dans Léo ? | Remarque |
+| --- | --- | --- | --- | --- |
+| **Cerebras** | environ 30 requêtes par minute, environ 1 million de jetons par jour | non | **non** | La plus généreuse en jetons ; une source parle d'une carte pour un crédit d'essai : à vérifier à l'inscription |
+| **OpenRouter** (modèles « :free ») | 20 par minute, 50 par jour | non | **non** | Peu par jour, mais donne accès à 20 modèles et sert de roue de secours |
+| **GitHub Models** | de 150 à 1 000 par jour selon le modèle | non | **non** | Lié à un compte GitHub (Beau en a déjà un) |
+| **NVIDIA NIM** | environ 1 000 par jour | non | **non** | Limites peu publiées |
+| Groq | 30 par minute, 1 000 par jour | non | oui | Des sources récentes disent que certains modèles Llama ont quitté l'offre gratuite |
+| Google AI Studio (Gemini) | de 5 à 15 par minute, de 20 à 1 500 par jour | non | oui, mais les crédits payants sont épuisés | **Les textes envoyés peuvent servir à l'entraînement hors Europe** : pas pour des données privées |
+| Mistral | environ 1 milliard de jetons par mois | non | oui, limite atteinte | L'offre gratuite demande d'accepter l'entraînement sur les données |
+| Cloudflare Workers AI | environ 10 000 « neurones » par jour | non | oui, épuisé tôt | Partagé entre tous les usages |
+| Cohere | environ 100 par jour | non | non | **Usage non commercial seulement : écarté** |
+| Hugging Face, Chutes | variable | non | non | Pas fiables pour la production |
+| SambaNova | 5 $ d'essai | oui | non | Pas une offre gratuite durable : écarté |
+
+**Auto-hébergement** (la seule piste réellement sans plafond) : une machine gratuite d'Oracle Cloud (4 cœurs Arm, 24 Go) peut faire tourner un petit modèle (de l'ordre de 8 à 12 jetons par seconde annoncés). Faible débit, capacité souvent indisponible dans certaines régions, conditions à relire : bon pour des tâches simples de fond, pas pour tout.
+
+**Ordre de branchement que je recommande** (Beau crée les comptes, c'est sa seule marche à suivre ; je branche le code après) :
+1. **Cerebras** : le plus de jetons par jour.
+2. **GitHub Models** : un compte qu'il a déjà.
+3. **OpenRouter** : la roue de secours à plusieurs modèles.
+Si un jour il faut payer un seul moteur : **DeepSeek** (Beau, 13/10), jamais sans son mot.
+
 ## Vidéo, voix : ce qui marche sans crédit
 
 | Piste | Statut | Détail |
