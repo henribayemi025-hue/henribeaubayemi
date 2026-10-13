@@ -21,3 +21,23 @@ ffmpeg. Aucune API, aucun crédit.
 
 Le fichier vidéo n'entre jamais dans le dépôt : il part à Beau avec
 `SendUserFile`.
+
+## Version « vraies photos » (13/10, demande de Beau : « fais les bonnes vidéos »)
+
+La première version (formes dessinées, voix locale) n'était pas assez bonne.
+Ce qui la remplace :
+
+- **Voix** : ElevenLabs, voix « Manon » (`m5U7XCsc8v988k2RJAqN`), modèle
+  `eleven_v4`, **une seule génération** (315 crédits, environ 0,06 $ pour 19 s).
+  Le crédit existait. Piper reste le secours si le crédit manque.
+- **Photos** : celles des vendeuses, publiées sur Finjaro (bucket public
+  `products`, URL `https://<projet>.supabase.co/storage/v1/object/public/products/<chemin>`).
+  Les Conditions d'utilisation (article 4) donnent à Finjaro une licence de
+  « promotion sur les supports de communication de Finjaro ». Pas de nom de
+  boutique à l'écran, pas de visage reconnaissable choisi à dessein.
+- **Écrans** : captures réelles de finjaro.net (`ecrans-reels.mjs`, 390 px, 2×).
+  Les photos des fiches sont servies depuis les copies locales par
+  `context.route` quand `/img/*` est en panne. Deux fuseaux (Douala, Paris)
+  montrent la vraie conversion de prix : 30 000 FCFA ou 45,73 €.
+- **Montage** : `page-vraies-photos.html` (une fonction `frame(t)` par séquence,
+  minutage calé sur les pauses de la voix mesurées avec `ffmpeg silencedetect`).
