@@ -25,6 +25,7 @@ chiffré n'est repris : les listes ne donnent que des généralités.
 | 15 | Robots domestiques | Hors cible | Non |
 | 16 | Dépannage informatique | Hors cible | Non |
 | 17 | Clone numérique d'un dirigeant | Consentement et image de la personne | Plus tard, avec accord écrit de la personne |
+| 17b | Agent de réunion (notes, résumé, décisions, actions), annoncé comme agent IA — message de Beau du 13/10 | Consentement à l'enregistrement ; certaines entreprises interdisent les bots ; il ne parle jamais au nom de la personne | Version 1 possible : veille confiée à Vigie le 13/10 |
 | 18 | Orchestrateur de contenu et de campagnes | Semeur, Écho (Léo) | Déjà en partie ; publier = l'accord de Beau |
 | 19 | Relier des logiciels qui ne se parlent pas | Connecteurs de Léo ; agent pilote | **Connecteur Gmail demandé** (ci-dessous) |
 | 20 | Agent anti-fraude apprenant | Accounting : alertes simples (facture en double, montant atypique) | Plus tard, simple |
