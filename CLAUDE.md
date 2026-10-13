@@ -323,4 +323,10 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   publier (un compte de Finjaro auquel j'ai un accès), je le peux. S'il reste
   **deux jours sans publier**, c'est qu'il n'est pas disponible : je ne
   l'attends pas, et je prépare quand même.
+- **Un post par jour (Beau, 13/10)** : chaque jour UN flyer ou UNE vidéo,
+  d'une qualité « extraordinaire », sur la page Facebook, Instagram et TikTok
+  de Finjaro, programmés par Metricool. Méthode, rythme et les cinq contrôles
+  avant programmation : `docs/POSTS-QUOTIDIENS.md`. Je ne peux pas regarder une
+  vidéo comme un humain : j'étudie des analyses et les statistiques de nos
+  propres posts.
 
