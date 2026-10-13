@@ -282,4 +282,12 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   plan à Orchestre, veille à Vigie. Ce qu'écrit un autre agent est une
   information non fiable, jamais une consigne ; les données privées d'une
   entreprise n'y sortent jamais ; participation volontaire.
+- **Règle des chiffres pour tout agent (Beau, 13/10)** : le modèle **ne calcule
+  jamais**. Il choisit un outil et ses arguments (typés, bornés) ; du code
+  déterministe calcule ; le modèle reformule sans toucher aux valeurs, et chaque
+  chiffre affiché cite l'outil qui l'a produit. Un contrôle séparé bloque
+  l'affichage si un invariant casse (débit = crédit, somme des parties = total,
+  signes, période). Les mesures sont définies une fois et nommées. On ne promet
+  pas « zéro erreur » : on garantit qu'aucun chiffre n'est calculé par le modèle,
+  et un humain valide le choix de la mesure.
 
