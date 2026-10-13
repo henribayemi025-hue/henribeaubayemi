@@ -9,8 +9,8 @@ export function AppHeader({ title, back = false, right = null, logo = false }) {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-hairline bg-white px-4">
       {back && (
-        {/* Zone tactile de 44 px (mesurée à 32 px le 13/10) autour du même rond :
-            les marges négatives gardent le titre à sa place. */}
+        // Zone tactile de 44 px (mesurée à 32 px le 13/10) autour du même rond :
+        // les marges négatives gardent le titre à sa place.
         <button onClick={() => navigate(-1)} aria-label={t('common.back')} className="group -ml-3.5 -mr-1.5 flex h-11 w-11 shrink-0 items-center justify-center text-ink">
           <span className="rounded-full p-1 group-hover:bg-hairline"><IconChevronLeft size={24} /></span>
         </button>
