@@ -25,6 +25,7 @@ avec lui).
 | Commandes depuis le 05/10 | 0 (dernière : 27/09 ; 28 au total, dont 2 d'un compte réel et 3 sans compte) |
 | Léo : tâches de l'entreprise Finjaro | 25 à faire, 34 en cours, **583 livrées en attente de relecture** (474 de plus de 3 jours), 238 faites (13/10) |
 | Prospection par e-mail | 309 contactés, 0 réponse positive, 4 refus, 32 adresses inexistantes |
+| Accounting : espaces actifs (mesure de Claudinette, 14/10) | **0 sur 7 jours, 2 sur 30**, dernier geste réel le 23/09 |
 | Dépense d'IA payante, octobre | 10,71 € au 12/10 ; crédits payants épuisés, **aucune recharge** (décision de Beau, 08/10 et 13/10) |
 | Stockage Supabase | 606 Mo (59,2 % du gratuit) |
 
