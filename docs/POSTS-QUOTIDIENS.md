@@ -19,6 +19,8 @@ de la place de marché avant le prochain.
 - Flyer : page HTML rendue en PNG par Playwright (mêmes couleurs : crème,
   terracotta, laiton ; grands titres).
 
+**Avant tout : lire `docs/MARKETING.md`** (Beau, 14/10 : « dis ce que les vendeurs veulent, pas nos règles internes »). Ce qui suit en est le complément.
+
 ## Avant de faire un post : l'objectif, puis un titre qui parle (Beau, 14/10)
 Beau a jugé nuls deux titres : « Ton prix dans ta monnaie, celui de l'acheteur dans la sienne » (une fonction,
 abstraite) et le titre éclaté du flyer. Règle :
