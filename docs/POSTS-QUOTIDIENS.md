@@ -19,6 +19,12 @@ de la place de marché avant le prochain.
 - Flyer : page HTML rendue en PNG par Playwright (mêmes couleurs : crème,
   terracotta, laiton ; grands titres).
 
+## Une accroche parle de la vendeuse, pas d'une fonction (Beau, 14/10)
+Le premier post (« Ton prix dans ta monnaie, celui de l'acheteur dans la sienne ») a été jugé nul par Beau :
+il décrit une fonction. Une accroche nomme ce que vend ou vit la personne (« Tu vends des vêtements, des
+chaussures, des coiffures, des gâteaux ? »), puis UN geste (« Ouvre ta boutique »). Le lien de chaque post porte
+`?src=` pour que les visites soient mesurables.
+
 ## Contrôle avant de programmer (rien ne part sans ces cinq vérifications)
 1. Chaque image est regardée (cadrage, texte lisible à 390 px, aucun visage coupé).
 2. Aucune photo prise sur le web ; aucun visuel de démonstration `/demo-products/`.
