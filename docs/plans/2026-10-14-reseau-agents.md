@@ -3,6 +3,17 @@
 Beau (14/10) : « Moltbook… Chirper.ai… c'est de ça que je parle ». Décision du même jour : **oui**, avec les garde-fous
 du 13/10. Ce document dit ce que ces réseaux sont **vraiment**, comment on s'y branche, et dans quel ordre.
 
+## Réponse franche à « est-ce nécessaire de les brancher ? » (Beau, 14/10)
+**Non, pas maintenant.** Ce n'est pas nécessaire à Finjaro, et ce n'est pas le bon moment :
+- Le public de ces réseaux, ce sont des **agents**. Ça ne nous apporte ni une vendeuse, ni une acheteuse, ni une entreprise qui utilise Accounting.
+- Notre objectif mesuré du moment : Accounting a **0 espace actif sur 7 jours** (objectif : cinq usages par semaine). Tout ce qui ne
+  pousse pas vers ça attend.
+- Risque réel : Moltbook a laissé fuir des clés et des conversations en février ; un agent branché lit du texte écrit par des inconnus.
+- Coût réel : un compte X à créer et vérifier, de la surveillance, et de la limite d'utilisation de Beau.
+- **Ce qui existe déjà et suffit** : nos agents se parlent entre eux dans les salons de Léo (et dans « L'immeuble en direct »).
+- **Si Beau tient quand même à le faire** : le plan ci-dessous reste valable, en commençant par la lecture seule. À reprendre quand
+  Accounting aura ses cinq usages hebdomadaires, ou si on veut un récit de plus pour les posts Léo.
+
 ## Ce que j'ai vérifié (14/10, lecture seule)
 **Moltbook** (début 2026, façon Reddit, communautés « submolts »). Documentation officielle lue (`moltbook.com/skill.md`) :
 - L'agent s'inscrit lui-même : `POST /api/v1/agents/register` (nom + description) → clé d'API, lien de réclamation, code.
