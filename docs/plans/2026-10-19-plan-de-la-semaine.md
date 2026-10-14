@@ -69,6 +69,10 @@ Sources relues pour ce plan : le carnet `docs/A-FAIRE.md` (13 et 14/10), `docs/p
 - [ ] **B4.** Vérifier le défaut vu le 14/10 : après connexion sur un appareil neuf, l'assistant de démarrage (« Quelle est votre
       activité ? ») s'affiche alors que le compte a un espace.
 - [ ] **B5. Vidéo tutoriel d'Accounting** (vendre, reçu WhatsApp, dettes), aussi utilisée pour les posts.
+- [ ] **B7. L'assistant d'Accounting agit sur les réglages** (Beau, 14/10, capture : il a écrit « mets le mode light » et l'assistant
+      a répondu qu'il n'existe que Simple / Expert, alors que l'application a un thème clair / sombre). L'assistant doit connaître
+      tous les réglages réels (thème clair / sombre, langue, mode Simple / Expert, devise…) et **les appliquer quand on le lui demande**
+      (« mets le mode clair » → c'est fait, avec un mot pour revenir en arrière). Preuve : essai de chaque phrase dans l'application.
 - [ ] **B6. Tableau de la concurrence d'Accounting** (Caisse Boutique, Chopmoney, MoMoGram, Transify, Excel…), sources citées.
 
 ## C. Place de marché
