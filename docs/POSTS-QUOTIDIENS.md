@@ -45,3 +45,33 @@ de la place de marché avant le prochain.
 ## Ce que je ne peux pas faire
 Regarder une vidéo comme un humain. J'étudie des analyses, des guides et les
 statistiques de nos propres posts, et j'ajuste.
+
+## Ce que disent les posts déjà faits (lu le 14/10)
+
+Seul TikTok a pu être lu (Metricool, 26 publications du 03/08 au 13/10, chiffres
+rendus tels quels). LinkedIn exige une connexion ; Instagram, Facebook et YouTube ne
+renvoient aucun post (anciens non importés ou page non lisible).
+
+| Date | Post (début) | Durée | Vues | J'aime |
+| --- | --- | --- | --- | --- |
+| 02/09 | « Même quand tu tombes, nous sommes là. » | 25 s | 20 987 | 2 058 |
+| 28/09 | « Tu galères à trouver une coiffeuse… » | 38 s | 15 837 | 27 |
+| 28/08 | « Finjaro beyond your dreams » | 60 s | 10 410 | 14 |
+| 06/08 | « Devenez vendeur… 100 % gratuite » | 43 s | 9 046 | 16 |
+| 04/09 | « Il n'y a pas de limites à ce qu'on peut faire. Au-delà des rêves. » | 20 s | 8 433 | 1 896 |
+| 13/10 | « Ton business sans Finjaro vs avec Finjaro » | 13 s | 544 | 4 |
+| 04/10 | « Mon pouce quand je suis sur Finjaro à 2h du mat » | 10 s | 401 | 10 |
+| 02/10 | « Et si vous pouviez tout contrôler ? » (Accounting) | 34 s | 309 | 13 |
+
+**Ce qu'on en tire** (lecture prudente : on ne voit ni les images ni le public) :
+- Les deux posts les plus aimés (2 058 et 1 896 J'aime) sont de courtes phrases de marque,
+  20 à 25 s, signées « Au-delà des rêves » : on les refait dans cet esprit.
+- Une vidéo très vue peut être très peu aimée (15 837 vues, 27 J'aime) : les vues seules
+  ne disent pas si le message touche.
+- Les posts d'octobre ne dépassent pas 544 vues : la cadence n'a pas suffi, le contenu doit changer.
+- À ne plus écrire : « des milliers de clients vous attendent déjà » (08/09, chiffre non
+  mesuré), les marques tagguées (Amazon, SHEIN, AliExpress), les hashtags de pays
+  (CLAUDE.md §1), le jeu « gagne 1 000 FCFA en invitant 100 personnes » (05/08).
+- Profil : la bio TikTok contient un drapeau de pays ; le nom de la page Facebook contient
+  une ville. À corriger par Beau (CLAUDE.md §1).
+
