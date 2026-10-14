@@ -108,6 +108,14 @@ Sources relues pour ce plan : le carnet `docs/A-FAIRE.md` (13 et 14/10), `docs/p
 Une tâche par bloc au moins, dont une difficile par jour : A2 (Ada), A6 (Mentor), B6 (Vigie), C4 (Atelier), D1 (Forge), D7 (Plume puis
 Atelier), relecture de textes (Miroir). Je relis chaque livrable, je reprends ce qui est juste, je corrige le reste et je le leur dis.
 
+## G. Le carnet : 216 lignes encore ouvertes (24/09 → 14/10)
+Ce plan ne couvre pas tout : le carnet garde **216 lignes sans ✅** (atelier de code de Léo, Jarvis, réceptionniste vocale,
+appels qui sonnent, agents sur les réseaux, connecteurs par utilisateur, espace code de Learn demandé dès le 02/10, clés à poser…).
+La liste complète est dans `docs/plans/2026-10-19-carnet-ouvert.md`.
+- [ ] **G1.** Lundi, après l'étape 0 : un verdict par ligne (fait / à faire / à Beau / dépassé), écrit dans le carnet.
+- [ ] **G2.** Les lignes « à faire » rejoignent ce plan à leur place ; on les fait avec les blocs qui touchent le même écran.
+- [ ] **G3.** Les lignes « à Beau » s'ajoutent à ses gestes, six au plus par jour, les plus importantes d'abord.
+
 ## Ce que j'avais laissé de côté (relu le 14/10)
 Les Espaces de Learn façon atelier (A1, demandé plusieurs fois), le mot de passe oublié de Learn (A8), la discussion interne d'abord sur
 la fiche article (C2), la démonstration de la place de marché (C3), la vidéo tutoriel et le tableau de concurrence d'Accounting (B5,
