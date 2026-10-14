@@ -6,7 +6,7 @@
 - `flux-inverse-stock-catalogue.sql` → `0242_finia_publier_article.sql` : colonne `products.accounting_ref` + fonction `finia_publier_article(p_workspace, p_article, p_shop)` (photo obligatoire, boutique choisie). Droit d'exécution : connectées seulement, pas anon. Ne fait rien tant qu'Accounting ne l'appelle pas.
 - Toujours en attente : la liaison mobile money (pas d'agrégateur), le `revoke execute` sur `finia_order_to_sale()` (à essayer d'abord sur la base de test), les statistiques vendeuses, le patch des 9 phrases serveur et celui du message honnête de Finou Chou.
 
-## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ⏳ avec le lot « nom Finou Chou »
+## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ✅ APPLIQUÉ le 14/10 avec le lot « nom Finou Chou » (ordre de Beau : « mets en ligne sans me demander ») : tests verts (592), syntaxe des quatre fonctions vérifiée, poussé sur staging (déploiement des fonctions communes)
 
 Constat (lu dans le code, `finou-chat/index.ts`, après le relais) : quand Google
 **et** tout le relais (Kimi, OpenAI, DeepSeek) échouent, la réponse est vide et

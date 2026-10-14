@@ -77,7 +77,7 @@ async function deciderCompetence(service: Service, entrepriseId: string, compete
 // éteint, marqué « ecarte », avec la raison (rien n'est supprimé).
 const PLATEFORME = '44bb201b-6787-4de0-8f7f-f9145d5c03e7'; // l'entreprise Finjaro dans Léo
 async function deciderSavoir(service: Service, entrepriseId: string, savoirId: string, decision: 'confirmer' | 'refuser', userId: string, raison?: string): Promise<{ statut: string; resultat: string }> {
-  if (entrepriseId !== PLATEFORME) return { statut: 'echec', resultat: 'Seule l’équipe Finjaro valide le savoir de Finia.' };
+  if (entrepriseId !== PLATEFORME) return { statut: 'echec', resultat: 'Seule l’équipe Finjaro valide le savoir de Finou Chou.' };
   if (!savoirId) return { statut: 'echec', resultat: 'Savoir non précisé.' };
   const { data: s } = await service.from('ia_savoirs_communs').select('id, titre, etat, actif, remplace').eq('id', savoirId).maybeSingle();
   if (!s) return { statut: 'echec', resultat: 'Savoir introuvable.' };
@@ -87,7 +87,7 @@ async function deciderSavoir(service: Service, entrepriseId: string, savoirId: s
     if (s.etat === 'ecarte') return { statut: 'refusee', resultat: `« ${s.titre} » était déjà écarté.` };
     const pourquoi = String(raison || '').trim().slice(0, 400);
     const { error } = await service.from('ia_savoirs_communs').update({ etat: 'ecarte', raison: pourquoi || 'Écarté par l’équipe.', valide_par: userId, valide_le: maintenant }).eq('id', s.id).eq('actif', false);
-    return error ? { statut: 'echec', resultat: error.message } : { statut: 'refusee', resultat: `Écarté${pourquoi ? ` : ${pourquoi}` : ''}. Finia ne s’en servira pas.` };
+    return error ? { statut: 'echec', resultat: error.message } : { statut: 'refusee', resultat: `Écarté${pourquoi ? ` : ${pourquoi}` : ''}. Finou Chou ne s’en servira pas.` };
   }
   if (s.actif) return { statut: 'faite', resultat: `« ${s.titre} » est déjà actif.` };
   if (s.etat !== 'propose') return { statut: 'echec', resultat: `« ${s.titre} » a été ${s.etat === 'ecarte' ? 'écarté' : 'retiré'}.` };
@@ -97,7 +97,7 @@ async function deciderSavoir(service: Service, entrepriseId: string, savoirId: s
   if (s.remplace) {
     await service.from('ia_savoirs_communs').update({ actif: false, etat: 'retire', raison: `Remplacé par « ${s.titre} ».` }).eq('id', s.remplace).neq('id', s.id);
   }
-  return { statut: 'faite', resultat: `Finia sait maintenant « ${s.titre} » (dans 5 minutes au plus)${s.remplace ? ', à la place de l’ancien savoir' : ''}.` };
+  return { statut: 'faite', resultat: `Finou Chou sait maintenant « ${s.titre} » (dans 5 minutes au plus)${s.remplace ? ', à la place de l’ancien savoir' : ''}.` };
 }
 
 Deno.serve(async (req: Request) => {

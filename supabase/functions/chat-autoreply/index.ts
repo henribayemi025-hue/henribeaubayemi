@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
         body: JSON.stringify({
           user_id: ownerId,
-          title: `Finia a répondu à ta place`,
+          title: `Finou Chou a répondu à ta place`,
           body: reponse.slice(0, 140),
           url: `/vendor/messages/${conversationId}`,
           tag: `autoreply-${conversationId}`,
