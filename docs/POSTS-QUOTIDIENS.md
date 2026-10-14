@@ -48,8 +48,10 @@ statistiques de nos propres posts, et j'ajuste.
 
 ## Ce que disent les posts déjà faits (lu le 14/10)
 
-Seul TikTok a pu être lu (Metricool, 26 publications du 03/08 au 13/10, chiffres
-rendus tels quels). LinkedIn exige une connexion ; Instagram, Facebook et YouTube ne
+Seul TikTok a pu être lu : **25 publications** (14 vidéos et 11 photos) du 03/08 au
+13/10, chiffres de Metricool rendus tels quels et recoupés avec le compteur de la page
+TikTok (25 vidéos). Total des vues : 75 662. Compte : 98 abonnés, 394 abonnements,
+4 384 J'aime au total. *(Erreur corrigée le 14/10 : j'avais écrit 26.)* LinkedIn exige une connexion ; Instagram, Facebook et YouTube ne
 renvoient aucun post (anciens non importés ou page non lisible).
 
 | Date | Post (début) | Durée | Vues | J'aime |

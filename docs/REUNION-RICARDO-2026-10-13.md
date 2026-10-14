@@ -47,3 +47,42 @@ réunion : **mercredi 21/10**.
 - Faire valider le parcours comptable d'Accounting par un comptable.
 - Espace cloud de l'entreprise (dossier partagé) : à créer avec lui, c'est un accès donné à un tiers.
 - Corriger la bio TikTok (drapeau) et le nom de la page Facebook (ville).
+
+## Le chat, en détail (relu le 14/10 à la demande de Beau)
+
+**Ce qui a été dit dans la réunion (trois passages) :**
+1. *Chat de la place de marché.* Beau demande si les vendeurs préfèrent WhatsApp (il économiserait du
+   stockage). Ricardo objecte : WhatsApp fait perdre les données, rend impossible la gestion des litiges et
+   la vérification des paiements. **Décision : tout reste dans le chat interne.**
+2. *Espace d'équipe d'Accounting.* Le propriétaire invite des collaborateurs par e-mail, voit qui est en ligne
+   et l'historique des actions. Beau le décrit comme un « chat professionnel » avec des discussions
+   séparées par projet et des accès par collaborateur.
+3. *Projets et messages.* Les projets servent à des cas précis (ouvrir une boutique, acheter du stock).
+   **Ricardo : garder le chat simple et basique**, une messagerie complète demandant trop de ressources et
+   éloignant du cœur du logiciel. Puis, sur le périmètre : **stock et finances seulement**, sans projets de
+   marketing, de service client ou de développement web.
+
+**Ce que fait vraiment le chat d'Accounting (lu dans le code) :** un canal « Général » et un canal par projet ;
+messages partagés en direct et conservés dans l'historique ; **photos jointes** (bucket privé `finia-chat`) ;
+**mention @assistant** : l'IA répond dans le fil avec le contexte du projet ; **une photo de facture déclenche
+l'IA**, qui propose d'enregistrer la dépense (clic pour valider) ; indicateur « n en ligne ». Ce n'est donc
+**pas un chat basique** : c'est déjà une messagerie avec IA. La lecture de photo ne marche pas aujourd'hui
+(plus de crédit Gemini).
+
+**Ce que fait la liste des projets :** sept types, dont **« Publicité ou lancement » (marketing)**. C'est le seul
+type que la décision « pas de marketing » écarte clairement ; les autres suivent des coûts (ouverture, chantier,
+événement, matériel, importation).
+
+**Mesuré en production le 14/10 (comptes réels seulement) :**
+- Accounting : **0 message, 0 photo de chat**. Les seules actions réelles jamais enregistrées : 17 mises à jour
+  de l'entreprise (6 espaces), 4 ventes (2 espaces, dernière le 23/09), 1 ouverture de session.
+- Place de marché, 30 derniers jours : **0 message** dans le chat interne (59 depuis le début) ; **16 intentions
+  de contact** : **12 par WhatsApp** (8 depuis le gros bouton, 4 depuis les questions toutes prêtes) et **4 par le
+  chat interne**.
+
+**Ce que ça change :**
+- Le débat « WhatsApp ou chat » se joue sur **aucun usage réel** : passer au chat interne seul est un
+  changement de comportement pour des vendeuses qui répondent sur WhatsApp. À faire avec un essai : chat
+  interne en premier, WhatsApp en second, et on mesure.
+- Pour Accounting, « garder le chat simple » veut dire **ne rien ajouter** ; retirer le type « Publicité ou
+  lancement » est une petite modification, à décider avec Claudinette.
