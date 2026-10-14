@@ -1,13 +1,13 @@
 // La photo d'un salon (Beau, 25/09 : « pas d'icône, même genre des photos »). Si le salon a sa
-// photo, on la montre ; sinon les VRAIS visages de ceux qui y travaillent — le département et ses
-// agents qui ont un portrait — en mosaïque. L'icône ne reste qu'en dernier recours, quand
-// personne n'a encore de visage.
+// photo, on la montre ; sinon le VRAI visage de son responsable (ou de celui qui a un portrait).
+// Un seul visage, plein cadre : la mosaïque de 2 à 4 visages a été retirée le 14/10 (Beau : « mélangé,
+// c'est pas beau, j'aime pas »). L'icône ne reste qu'en dernier recours, quand personne n'a de visage.
 export function visagesDu(salon, agents) {
   const nom = String(salon?.nom || '').trim().toLowerCase();
   return (agents || [])
     .filter((a) => !a.user_id && a.avatar_url && String(a.departement || '').trim().toLowerCase() === nom)
     .sort((a, b) => Number(!!b.est_directeur) - Number(!!a.est_directeur) || Number(!!b.actif) - Number(!!a.actif))
-    .slice(0, 4);
+    .slice(0, 1);
 }
 
 export function PhotoSalon({ salon, agents, Icone, taille = 36, arrondi = 'rounded-full', className = '' }) {
@@ -21,9 +21,8 @@ export function PhotoSalon({ salon, agents, Icone, taille = 36, arrondi = 'round
       </span>
     );
   }
-  // 1 visage : plein cadre ; 2 ou 3 : deux moitiés ; 4 : un carré de quatre.
-  const cases = v.length >= 4 ? v : v.length >= 2 ? v.slice(0, 2) : v;
-  const grille = cases.length === 4 ? 'grid-cols-2 grid-rows-2' : cases.length === 2 ? 'grid-cols-2' : 'grid-cols-1';
+  const cases = v;
+  const grille = 'grid-cols-1';
   return (
     <span style={style} className={`grid shrink-0 gap-px overflow-hidden bg-legion-line ${grille} ${arrondi} ${className}`}>
       {cases.map((a) => <img key={a.id} src={a.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover object-top" />)}

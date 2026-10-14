@@ -1898,6 +1898,19 @@
         "voir": "Watch the video",
         "voix": "Voice-over:"
       }
+    },
+    "accueilCourt": {
+      "agentsAllumes": "{{agents}} agents · {{allumes}} on",
+      "auTravail": "{{n}} at work",
+      "ouvertes": "Open tasks",
+      "chantiersEquipe": "Projects and team",
+      "tableau": "Agent dashboard",
+      "publications": "Posts to approve",
+      "missions": "Missions",
+      "plans": "Plans and roadmap",
+      "competences": "Skills",
+      "memoire": "Memory and decision log",
+      "reglages": "Access, connectors, documents, spending, credit and contact"
     }
   },
   "equipe": {
