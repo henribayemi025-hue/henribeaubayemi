@@ -110,3 +110,7 @@ Depuis la panne des crédits Google (03/10), les agents de Léo passent par Open
 ## fuite-outils-direction.patch (05/10) — ✅ EN LIGNE le 05/10 (1528e25, mot de Beau)
 
 Les outils `qui_a_fait` et `fiche_personne` lisent les **personnes de la place de marché Finjaro** : nom affiché, activité, ville, boutiques, commandes, mais jamais d'e-mail ni de téléphone. Ils ne s'ouvraient qu'en « Direction », sans regarder l'entreprise. La Direction de **n'importe quelle** entreprise de Léo pouvait donc les appeler. Mesuré : 26 appels depuis le 24/09 dans 3 vraies entreprises extérieures (PJ Hôtel 13, DataSoft Solution 8, Marvelous Startup 1), plus des entreprises de test. Correctif : ces outils exigent aussi le connecteur « Mesures Finjaro », que seule l'entreprise Finjaro possède. En plus, aucun outil non déclaré pour l'entreprise ne s'exécute (un nom reconstruit par un modèle de secours ne passe plus). `deno check` : 11 erreurs avant, 11 après, toutes anciennes. Fonction commune → phrase de Beau.
+
+## Essayé le 14/10 sur la base de test (non appliqué en production)
+
+- `revoke-finia-order-to-sale.sql` : retrait du droit d'exécution sur `finia_order_to_sale()` pour `anon` et `authenticated`. Essai : la livraison par la vendeuse passe toujours, aucun droit manquant. Touche la base commune (place de marché et Accounting) : à l'accord de Beau.
