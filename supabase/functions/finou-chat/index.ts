@@ -227,7 +227,7 @@ function systemPrompt(memoire?: string | null): string {
   // Finjaro dans une région et employait publiquement le mot « diaspora » —
   // les deux sont interdits (CLAUDE.md §1). Finjaro est mondiale; le point de
   // départ est une stratégie, pas une identité.
-  return `Tu es Finia, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
+  return `Tu es Finou Chou, l'assistante IA de Finjaro, une marketplace GÉNÉRALISTE
 et MONDIALE (produits ET services): mode, high-tech, alimentaire, véhicules,
 immobilier, et des prestataires à domicile (ménage, BTP, coiffure, traiteur…).
 Slogan: "Au-delà des rêves". Tu es chaleureuse, concise et utile.
@@ -482,7 +482,7 @@ Règles pour que ça reste agréable:
   propose immédiatement.
 
 NE JAMAIS PROMETTRE SANS AGIR — règle absolue, capture à l'appui: une personne
-a dû écrire « j'attends » à répétition parce que Finia disait « je regarde ce
+a dû écrire « j'attends » à répétition parce que Finou Chou disait « je regarde ce
 que je peux te trouver », « je vais chercher », « un instant »... puis
 n'appelait AUCUN outil — la recherche n'arrivait qu'au message SUIVANT, une
 fois relancée. C'est le pire défaut possible: ça donne l'impression d'un bug,
@@ -540,7 +540,7 @@ boutique, ses articles, ses commandes, comment ajouter, « ça ne marche pas »,
 et termine par "ACTION: vendor_space". Ne le laisse JAMAIS penser que sa
 boutique a disparu: elle est dans l'autre mode, dis-le.
 
-LE PARRAINAGE existe et Finia doit le savoir — la version precedente
+LE PARRAINAGE existe et Finou Chou doit le savoir — la version precedente
 repondait « je n'ai pas d'outil pour ca » a une vendeuse qui demandait
 justement ce mot: « Parrainage ». Ne JAMAIS dire que la fonction n'existe
 pas ou proposer de « transmettre la question a l'equipe Finjaro » — c'est
@@ -1746,7 +1746,7 @@ async function isOverBudget(sb: SupabaseClient): Promise<boolean> {
       body: JSON.stringify({
         user_id: ADMIN_USER_ID,
         title: 'Finjaro — budget IA atteint',
-        body: `Finia et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
+        body: `Finou Chou et Miroir AI sont en pause ce mois-ci (limite ${BUDGET_EUR}€ atteinte).`,
       }),
     }).catch(() => {});
   }
@@ -1929,6 +1929,8 @@ Deno.serve(async (req: Request) => {
     // Google n'a pas répondu (plafond de dépenses, 5xx, délai dépassé…) :
     // le relais prend la même conversation (voir plus bas).
     let googleEnPanne = false;
+    // Google ET tout le relais ont échoué: plus aucun moteur ne répond.
+    let aucunMoteur = false;
     // Finia a transmis une question à l'équipe faute de réponse
     // (contacter_finjaro, gravité « question ») : c'est un savoir qui manque.
     let transmiseSansReponse = false;
@@ -2029,6 +2031,7 @@ Deno.serve(async (req: Request) => {
         data = { candidates: [{ content: { parts: [{ text: relais.texte }] } }] };
       } else {
         console.error('finou-chat: relais en échec', relais.erreur);
+        aucunMoteur = true;
       }
     }
 
@@ -2054,7 +2057,16 @@ Deno.serve(async (req: Request) => {
           usage: data?.usageMetadata ?? null,
         })
       );
-      reply = "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
+      // Quand AUCUN moteur n'a répondu, ce n'est pas la question de la
+      // personne qui est en cause: lui demander de « reformuler » la fait
+      // réécrire pour rien et lui laisse croire qu'elle s'est mal exprimée.
+      // L'interface existe en français et en anglais: ce sont les deux
+      // langues, sans en supposer une autre (accept-language de l'appareil).
+      reply = aucunMoteur
+        ? (langueAppareil0.toLowerCase().startsWith('fr')
+          ? "Je ne peux pas te répondre pour le moment : mon moteur d'IA est indisponible. Ça vient de notre côté, pas de ta question. Tu peux réessayer plus tard. 💫"
+          : "I can't answer right now: my AI engine is unavailable. It's on our side, not because of your question. You can try again later. 💫")
+        : "Je n'ai pas bien compris, peux-tu reformuler ? 💫";
       repliTechnique = true;
     }
 

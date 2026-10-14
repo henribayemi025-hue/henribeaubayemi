@@ -6,7 +6,7 @@
 - `flux-inverse-stock-catalogue.sql` → `0242_finia_publier_article.sql` : colonne `products.accounting_ref` + fonction `finia_publier_article(p_workspace, p_article, p_shop)` (photo obligatoire, boutique choisie). Droit d'exécution : connectées seulement, pas anon. Ne fait rien tant qu'Accounting ne l'appelle pas.
 - Toujours en attente : la liaison mobile money (pas d'agrégateur), le `revoke execute` sur `finia_order_to_sale()` (à essayer d'abord sur la base de test), les statistiques vendeuses, le patch des 9 phrases serveur et celui du message honnête de Finou Chou.
 
-## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ⏳ avec le lot « nom Finou Chou »
+## Finou Chou dit la vérité quand plus aucun moteur ne répond (13/10) — `finou-chat` — ✅ APPLIQUÉ le 14/10 avec le lot « nom Finou Chou » (ordre de Beau : « mets en ligne sans me demander ») : tests verts (592), syntaxe des quatre fonctions vérifiée, poussé sur staging (déploiement des fonctions communes)
 
 Constat (lu dans le code, `finou-chat/index.ts`, après le relais) : quand Google
 **et** tout le relais (Kimi, OpenAI, DeepSeek) échouent, la réponse est vide et
@@ -110,3 +110,7 @@ Depuis la panne des crédits Google (03/10), les agents de Léo passent par Open
 ## fuite-outils-direction.patch (05/10) — ✅ EN LIGNE le 05/10 (1528e25, mot de Beau)
 
 Les outils `qui_a_fait` et `fiche_personne` lisent les **personnes de la place de marché Finjaro** : nom affiché, activité, ville, boutiques, commandes, mais jamais d'e-mail ni de téléphone. Ils ne s'ouvraient qu'en « Direction », sans regarder l'entreprise. La Direction de **n'importe quelle** entreprise de Léo pouvait donc les appeler. Mesuré : 26 appels depuis le 24/09 dans 3 vraies entreprises extérieures (PJ Hôtel 13, DataSoft Solution 8, Marvelous Startup 1), plus des entreprises de test. Correctif : ces outils exigent aussi le connecteur « Mesures Finjaro », que seule l'entreprise Finjaro possède. En plus, aucun outil non déclaré pour l'entreprise ne s'exécute (un nom reconstruit par un modèle de secours ne passe plus). `deno check` : 11 erreurs avant, 11 après, toutes anciennes. Fonction commune → phrase de Beau.
+
+## Essayé le 14/10 sur la base de test (non appliqué en production)
+
+- ✅ **APPLIQUÉ en production le 14/10** (ordre de Beau : « mets en ligne sans me demander ») : `0243_revoke_finia_order_to_sale.sql`, retrait du droit d'exécution sur `finia_order_to_sale()` pour `anon` et `authenticated`. Essai sur la base de test : la livraison par la vendeuse passe toujours. Vérifié en production après : droits retirés, déclencheur présent.
