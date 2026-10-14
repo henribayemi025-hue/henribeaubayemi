@@ -19,11 +19,19 @@ de la place de marché avant le prochain.
 - Flyer : page HTML rendue en PNG par Playwright (mêmes couleurs : crème,
   terracotta, laiton ; grands titres).
 
-## Une accroche parle de la vendeuse, pas d'une fonction (Beau, 14/10)
-Le premier post (« Ton prix dans ta monnaie, celui de l'acheteur dans la sienne ») a été jugé nul par Beau :
-il décrit une fonction. Une accroche nomme ce que vend ou vit la personne (« Tu vends des vêtements, des
-chaussures, des coiffures, des gâteaux ? »), puis UN geste (« Ouvre ta boutique »). Le lien de chaque post porte
-`?src=` pour que les visites soient mesurables.
+## Avant de faire un post : l'objectif, puis un titre qui parle (Beau, 14/10)
+Beau a jugé nuls deux titres : « Ton prix dans ta monnaie, celui de l'acheteur dans la sienne » (une fonction,
+abstraite) et le titre éclaté du flyer. Règle :
+1. **Écrire l'objectif en une ligne AVANT de dessiner** : qui on veut attirer (commerçante, vendeuse, acheteuse),
+   pour faire quoi (ouvrir sa boutique, essayer Accounting, acheter), avec quel produit (Finjaro, Finjaro Accounting, Léo).
+2. **Le titre dit ce que c'est et ce qu'on y gagne, avec le nom du produit** : une phrase qui se comprend seule, à
+   l'impératif, courte. Pas de mot d'initié, pas de demi-phrase, pas de titre coupé sur trois lignes.
+   - Accounting : « Gère ton stock et tes finances avec Finjaro Accounting. Gratuit pour démarrer. »
+   - Boutique : « Ouvre ta boutique sur Finjaro et vends avec tes propres photos. »
+3. **Seulement des promesses vraies** : « gratuit pour démarrer » est écrit dans l'application d'Accounting ; jamais « gratuit à vie »,
+   jamais un prix, jamais de date de fin (décisions du 13/10).
+4. Un seul appel à l'action, le lien avec `?src=` pour mesurer (`finjaro.net/?src=…`, `accounting.finjaro.net/?src=…`).
+5. Contrôle avant de programmer : lire le titre à voix haute ; s'il ne se comprend pas sans la vidéo, le réécrire.
 
 ## Contrôle avant de programmer (rien ne part sans ces cinq vérifications)
 1. Chaque image est regardée (cadrage, texte lisible à 390 px, aucun visage coupé).
