@@ -33,7 +33,7 @@ réunion : **mercredi 21/10**.
 
 ## À construire / à changer (ordre proposé ; Accounting d'abord)
 1. **Mot de passe oublié d'Accounting** : prêt sur une branche, en attente du « 1 » de Beau.
-2. **Liaison stock Accounting → catalogue Finjaro** : la fonction de publication d'un article existe (0242) ; il manque le **sens inverse du stock** (vente sur la place de marché qui baisse le stock d'Accounting) et l'écran qui l'appelle. Claudinette + Alpha.
+2. **Liaison stock Accounting → catalogue Finjaro** : la fonction de publication d'un article existe (0242) ; **✅ 14/10, moitié place de marché EN LIGNE (migration 0244, essayée puis posée)** : la vente livrée porte la référence Accounting de l'article (donc le stock d'Accounting baisse) et `finia_synchroniser_stock` remet le stock d'Accounting dans le catalogue sans survente (stock − commandes en cours). **⏳ Reste chez Claudinette** : l'écran « Publier sur Finjaro », l'appel de synchro après chaque mouvement, la reprise du coût (contrat écrit dans `A-FAIRE-PARTAGE`, 14/10). Essai du circuit complet quand elle a fini.
 3. **Chat interne en premier** sur la fiche article (WhatsApp en second). Alpha. ⚠️ À mesurer : les vendeuses répondent sur WhatsApp aujourd'hui ; vérifier que les notifications du chat les atteignent avant de retirer quoi que ce soit.
 4. **Démonstration de la place de marché** sans compte, sur le modèle de celle d'Accounting, avec boutique d'exemple exclue des statistiques.
 5. **Tutoriel vidéo d'Accounting** (démonstration : vendre, reçu WhatsApp, dettes) : Alpha, voix ElevenLabs ou Piper, aussi pour les posts.
