@@ -5,26 +5,13 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Finjaro Learn</title>
-    <script type="module" crossorigin src="/learn/assets/index-B64VIvO-.js"></script>
+      <!-- 14/10 (retours de Beau sur iPhone) : (1) un champ de saisie sous 16 px fait
+         zoomer iOS au toucher et la page reste zoomée ; (2) sur téléphone, la
+         bannière d'accueil prenait plus de la moitié de l'écran (format 4/5) :
+         même gabarit que la place de marché ; (3) barre du bas quasi opaque. -->
+    <style>input,textarea,select{font-size:16px!important}@media (width<=639px){section.rounded-3xl .snap-start{aspect-ratio:4/3!important}section.rounded-3xl .snap-start h2{font-size:1.25rem!important;line-height:1.15!important}section.rounded-3xl .snap-start>div.absolute.inset-x-0{padding:1rem 1rem 1.75rem!important}}.bottom-nav{background-color:#fffffff7!important}</style>
+    <script type="module" crossorigin src="/learn/assets/index-DjhhldNR.js"></script>
     <link rel="stylesheet" crossorigin href="/learn/assets/index-BIteKDFw.css">
-  <!-- 14/10 (retour de Beau, iPhone) : un champ de saisie sous 16 px fait zoomer iOS
-         quand on le touche, et la page reste zoomée (bords coupés, barre du bas
-         tronquée). Correctif posé ici en attendant le prochain import de Learn,
-         qui doit reprendre la règle dans sa feuille de style. -->
-    <style>input,textarea,select{font-size:16px !important}</style>
-    <!-- 14/10 (Beau : « trop grand, fais comme chez Finjaro ») : sur téléphone, la
-         bannière d'accueil prenait plus de la moitié de l'écran (format 4/5,
-         448 px). Même gabarit que la place de marché : plus basse, titre plus
-         petit. À reprendre dans le code de Learn au prochain import. -->
-    <style>
-      @media (max-width: 639px) {
-        section.rounded-3xl .snap-start { aspect-ratio: 4 / 3 !important; }
-        section.rounded-3xl .snap-start h2 { font-size: 1.25rem !important; line-height: 1.15 !important; }
-        section.rounded-3xl .snap-start > div.absolute.inset-x-0 { padding: 1rem 1rem 1.75rem !important; }
-      }
-      /* barre du bas quasi opaque : le texte défilait en transparence derrière les onglets */
-      .bottom-nav { background-color: rgba(255, 255, 255, 0.97) !important; }
-    </style>
   </head>
   <body>
     <div id="root"></div>
