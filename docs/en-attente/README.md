@@ -113,4 +113,4 @@ Les outils `qui_a_fait` et `fiche_personne` lisent les **personnes de la place d
 
 ## Essayé le 14/10 sur la base de test (non appliqué en production)
 
-- `revoke-finia-order-to-sale.sql` : retrait du droit d'exécution sur `finia_order_to_sale()` pour `anon` et `authenticated`. Essai : la livraison par la vendeuse passe toujours, aucun droit manquant. Touche la base commune (place de marché et Accounting) : à l'accord de Beau.
+- ✅ **APPLIQUÉ en production le 14/10** (ordre de Beau : « mets en ligne sans me demander ») : `0243_revoke_finia_order_to_sale.sql`, retrait du droit d'exécution sur `finia_order_to_sale()` pour `anon` et `authenticated`. Essai sur la base de test : la livraison par la vendeuse passe toujours. Vérifié en production après : droits retirés, déclencheur présent.
