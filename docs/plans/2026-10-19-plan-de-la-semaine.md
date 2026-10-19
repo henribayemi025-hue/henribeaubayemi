@@ -24,11 +24,11 @@ Sources relues pour ce plan : le carnet `docs/A-FAIRE.md` (13 et 14/10), `docs/p
   et le passage suivant reprend à la première case non cochée.
 
 ## Étape 0 — lundi 5 h : remettre la maison en marche
-- [ ] Réactiver les routines mises en pause le 14/10 (liste exacte en bas de ce fichier), à leur cadence d'avant la pause.
-- [ ] Créer le passage quotidien « continuer le plan » (5 h, heure de Douala) qui reprend à la première case non cochée, jusqu'à ce que
+- [x] ✅ 19/10 Réactiver les routines mises en pause le 14/10 (liste exacte en bas de ce fichier), à leur cadence d'avant la pause. **15 sur 16** : la revue du jeudi a été refusée par le système de sécurité (à Beau).
+- [x] ✅ 19/10 (`trig_01CA7NpwyN1zWutLEMS3BFEP`, 4 h 48 Douala) Créer le passage quotidien « continuer le plan » (5 h, heure de Douala) qui reprend à la première case non cochée, jusqu'à ce que
       tout soit coché.
-- [ ] Lire les réponses arrivées depuis le 14/10 (Claudinette, agents de Léo, boîte Finjaro) et les noter au carnet.
-- [ ] Vérifier la publication du 14/10 (18 h) sur les quatre réseaux, relever ses premiers chiffres, retirer
+- [x] ✅ 19/10 (boîte : rien de réel ; Claudinette : rien depuis le 14/10 ; agents : les 4 livrables du 14/10 attendent ma relecture, repris en A3, A6, D1, D7) Lire les réponses arrivées depuis le 14/10 (Claudinette, agents de Léo, boîte Finjaro) et les noter au carnet.
+- [x] ✅ 19/10 (publiée sur les 4 réseaux ; 1 visite venue de `?src=v1410` ; fichiers retirés) Vérifier la publication du 14/10 (18 h) sur les quatre réseaux, relever ses premiers chiffres, retirer
       `public/social/2026-10-14-boutique-v3.mp4` (et l'ancien fichier du 14/10) du dépôt.
 
 ## A. Finjaro Learn — en premier (demandé « mille et une fois »)
