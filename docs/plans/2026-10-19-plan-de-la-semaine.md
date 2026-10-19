@@ -56,17 +56,17 @@ Sources relues pour ce plan : le carnet `docs/A-FAIRE.md` (13 et 14/10), `docs/p
       finjaro.net tant que Beau ne l'a pas validé.
 
 ## B. Finjaro Accounting (priorité du 13/10)
-- [ ] **B1. Discussion « tout Google Chat »** sur la base posée le 14/10 (migration 0245, contrat dans `A-FAIRE-PARTAGE`). Si
+- [x] ✅ 19/10 jalon 1 et une partie du 2 (Accounting 264af43 : page Messages, à deux, groupes, Espaces, fils, réactions, épingles, @mentions et @tous, appels par lien, accusés « Vu » ; banc 1920/390 px, hauteur fixe à 2/50/200 messages). **Reste** : circuit réel à deux comptes de test (il n'existe qu'un compte de test), recherche, tâches, ajout de membres depuis l'écran, jalon 3. **B1. Discussion « tout Google Chat »** sur la base posée le 14/10 (migration 0245, contrat dans `A-FAIRE-PARTAGE`). Si
       Claudinette n'a pas livré l'écran : je le construis moi-même, en accord avec elle. Jalon 1 : nouvelle discussion à deux, de groupe,
       Espace nommé ; messages en temps réel ; non lus ; réactions ; @mentions ; épingler ; appel voix/vidéo par lien. Jalon 2 : fils,
       accusés de lecture, recherche, tâches assignées. Jalon 3 : historique réglable, résumé par l'IA, badge « Externe », alerte sur
       données sensibles, bots et webhooks. Preuve : circuit réel à deux comptes de test.
 - [ ] **B2. L'invitation part par e-mail** (fonction `finia-invitation`, Resend, sans toucher à l'authentification ni au Site URL),
       puis mesure : invitations → personnes « Actif ».
-- [ ] **B3. Flux inverse du stock** : écran « Publier sur Finjaro » (photo obligatoire, boutique choisie), synchro du stock après chaque
+- [ ] ◐ 19/10 partie Accounting livrée par Claudinette (09f52fc : « Publier sur Finjaro » depuis la fiche article, stock synchronisé après chaque mouvement, coût repris). **Reste** : mon essai du circuit complet. **B3. Flux inverse du stock** : écran « Publier sur Finjaro » (photo obligatoire, boutique choisie), synchro du stock après chaque
       mouvement, coût repris pour les articles connus (Claudinette) ; **essai du circuit complet** par moi (publier → commander → livrer
       → stock des deux côtés).
-- [ ] **B4.** Vérifier le défaut vu le 14/10 : après connexion sur un appareil neuf, l'assistant de démarrage (« Quelle est votre
+- [x] ✅ 19/10 (Accounting b8bb525 : cause trouvée, l'espace est choisi avant la relecture de son journal ; écran d'attente jusqu'au premier chargement). À confirmer par Beau sur son téléphone : le compte de test n'est pas installé, je n'ai pas pu rejouer son cas exact. **B4.** Vérifier le défaut vu le 14/10 : après connexion sur un appareil neuf, l'assistant de démarrage (« Quelle est votre
       activité ? ») s'affiche alors que le compte a un espace.
 - [ ] **B5. Vidéo tutoriel d'Accounting** (vendre, reçu WhatsApp, dettes), aussi utilisée pour les posts.
 - [ ] **B7. L'assistant d'Accounting agit sur les réglages** (Beau, 14/10, capture : il a écrit « mets le mode light » et l'assistant
