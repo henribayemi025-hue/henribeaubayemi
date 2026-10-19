@@ -32,27 +32,27 @@ Sources relues pour ce plan : le carnet `docs/A-FAIRE.md` (13 et 14/10), `docs/p
       `public/social/2026-10-14-boutique-v3.mp4` (et l'ancien fichier du 14/10) du dépôt.
 
 ## A. Finjaro Learn — en premier (demandé « mille et une fois »)
-- [ ] **A1. Les Espaces deviennent un atelier de groupe, comme l'Atelier de code de Léo.** Trois zones à l'ordinateur :
+- [x] ✅ 19/10 (Learn 939368e ; discussion de hauteur fixe à 2, 50 et 200 messages : 854 px à 1920, 567 px à 390 ; zone d'écriture toujours en bas ; agents appelés d'un clic ; 4 onglets au téléphone) **A1. Les Espaces deviennent un atelier de groupe, comme l'Atelier de code de Léo.** Trois zones à l'ordinateur :
       à gauche la liste (espaces, membres présents, agents IA, défis) ; au milieu l'espace de travail (éditeur de code partagé « Coder
       ensemble », console) ; à droite la discussion du groupe **et des agents IA** (on appelle Idris, Maya… par @), **hauteur fixe,
       défilement interne, zone d'écriture toujours en bas** (« plus je parle, plus le truc grossit » : fini). Téléphone : onglets en bas
       (Discussion · Code · Défis), comme l'Atelier. Réutiliser `atelier/AtelierProjet.tsx` (grille 220 px / centre / 380 px),
       `CoCode.tsx`, `Defis.tsx`, la logique de `Espaces.tsx`. Preuve : captures 1920 et 390 px, 50 messages sans que la page grandisse.
-- [ ] **A2. Même cadre pour travailler un sujet avec un agent** : quand on choisit « travailler avec les agents IA », la page de travail
+- [x] ✅ 19/10 (Learn 866368f ; bouton 🤖 dans la barre de la leçon ; page fixe à 1920 et 390 px avec 50 échanges) **A2. Même cadre pour travailler un sujet avec un agent** : quand on choisit « travailler avec les agents IA », la page de travail
       s'ouvre avec, au milieu, ce que demande le sujet : code (éditeur + console), prompts (prompt à gauche, réponse du modèle à
       droite), notes et schémas pour les sujets sans code (neurosciences…) ; à droite l'agent du sujet.
-- [ ] **A3. La leçon** (spécification d'Ada, tâche `c2d1ca0f`, à relire puis construire) : explication courte + un exemple + des
+- [x] ✅ 19/10 en partie (Learn 8f16cb5 : « J'ai terminé » toujours visible, vérifié par le code ; fin de module JavaScript 3 exercices + projet ; leçon visible au premier écran du téléphone, 870 → 670 px). **Reste** : les fins des autres modules (agents, avec `npm run test:exos`). Spécification d'Ada relue : la structure de page est juste ; les tables, l'ORM et les routes serveur sont faux pour Learn (contenu dans le code, vérification dans le navigateur). **A3. La leçon** (spécification d'Ada, tâche `c2d1ca0f`, à relire puis construire) : explication courte + un exemple + des
       exercices ; à la fin du module **3 exercices (facile, moyen, difficile)** puis **un projet complet validé par l'IA** (critères
       vérifiables exécutés par du code, le modèle ne calcule pas) ; toujours visible : où j'en suis, et le bouton « J'ai terminé » ; page
       plus courte ; « Start my first lesson » mène vraiment à la leçon.
-- [ ] **A4. Anglais intégral** : en mode anglais, plus aucun mot français, y compris les identifiants et libellés des exercices
+- [x] ✅ 19/10 en partie (Learn c51a520 : mécanisme `lessonsEn.ts`, Prompt engineering et JavaScript traduits, test 32/32). **Reste** : 52 leçons avec du français dans le code (liste : `node` sur `fr-scan`, voir le carnet). **A4. Anglais intégral** : en mode anglais, plus aucun mot français, y compris les identifiants et libellés des exercices
       (`construit(role, tache…)`, « Rôle : »).
-- [ ] **A5. Interactif** : quiz cliquables (choix, glisser, compléter) dans chaque leçon, comme Gemini.
-- [ ] **A6. Les modules qui manquent** (programmes de Mentor, tâche `b0d21a39`, à relire) : **SQL** (exécution dans le navigateur),
+- [x] ✅ 19/10 (Learn 367d244 : « compléter » sur les 206 leçons à exercice, « remettre dans l'ordre » sur 102, 0 défaut ; construits depuis la solution, sans modèle) **A5. Interactif** : quiz cliquables (choix, glisser, compléter) dans chaque leçon, comme Gemini.
+- [x] ✅ 19/10 SQL (Learn 2e519d8 : 7 leçons exécutées dans le navigateur, 7/7 en français et en anglais). C++ existait (lecture vérifiée par compilateur). **Reste** : R (webR, lourd : à essayer) et Power BI (ne s'exécute pas dans un navigateur : module de lecture DAX + équivalents pandas). Livrable de Mentor (`b0d21a39`) vide : à refaire. **A6. Les modules qui manquent** (programmes de Mentor, tâche `b0d21a39`, à relire) : **SQL** (exécution dans le navigateur),
       **R**, **C++**, **Power BI** — et dire honnêtement ce qui ne s'exécute pas dans le navigateur et quelle alternative on donne.
-- [ ] **A7. Le site n'est plus « laid »** : passe de design (typographie, cartes, espacement, cohérence avec le style de Finjaro).
-- [ ] **A8. Mot de passe oublié dans Learn** (absent ; un « lien par e-mail » existe).
-- [ ] **A9.** Réimporter Learn dans la place de marché (`scripts/importer-learn.sh`), vérifier sur staging ; Learn reste fermé sur
+- [x] ✅ 19/10 en partie (Learn 8e033fb : cartes de l'accueil allégées, 4 518 → 3 382 px). **A7. Le site n'est plus « laid »** : passe de design (typographie, cartes, espacement, cohérence avec le style de Finjaro).
+- [x] ✅ 19/10 (lien « Mot de passe oublié ? » qui envoie le lien de connexion existant ; aucun changement d'authentification) **A8. Mot de passe oublié dans Learn** (absent ; un « lien par e-mail » existe).
+- [x] ✅ 19/10 (Learn 8e033fb dans `public/learn`, staging) **A9.** Réimporter Learn dans la place de marché (`scripts/importer-learn.sh`), vérifier sur staging ; Learn reste fermé sur
       finjaro.net tant que Beau ne l'a pas validé.
 
 ## B. Finjaro Accounting (priorité du 13/10)
