@@ -99,7 +99,7 @@ Sources relues pour ce plan : le carnet `docs/A-FAIRE.md` (13 et 14/10), `docs/p
 - [ ] **D7. Site web de Finjaro** (vitrine du groupe) : relire le plan de Plume (tâche `bcfacff2`), puis le construire (Atelier).
 
 ## E. Publications (une par jour, `docs/MARKETING.md`)
-- [ ] **E1.** Lundi : vidéo **Accounting** (« Gère ton stock et tes finances avec Finjaro Accounting. Gratuit pour démarrer. »), 18 h
+- [ ] ✗ 19/10 vidéo faite puis **refusée par Beau** (« horrible, la vidéo et la voix » ; « si tu veux poster, convaincs-moi ») : rien n'est programmé sans son accord explicite (docs/DECISIONS.md, 19/10). **E1.** Lundi : vidéo **Accounting** (« Gère ton stock et tes finances avec Finjaro Accounting. Gratuit pour démarrer. »), 18 h
       Paris, quatre réseaux. Puis vidéo mardi, jeudi, samedi ; **flyer les autres jours : créer la routine des flyers** (elle n'existe pas).
 - [ ] **E2.** Les chiffres de chaque post le lendemain (vues, visites venues de `?src=`) au rapport du soir.
 - [ ] **E3.** LinkedIn (Léo seulement, Typefully) : publier les brouillons dès que Beau a dit « ok ».
