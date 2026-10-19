@@ -45,3 +45,10 @@ privé du Drive de Beau.
 Beau a refusé la vidéo Accounting du 19/10 (« horrible, la vidéo et la voix ») et la programmation Metricool. Désormais : aucun post
 programmé sans son « oui » explicite. Je prépare, je lui montre le fichier avec deux lignes qui disent pourquoi ça marchera ; s'il ne répond pas,
 rien ne part. La voix Piper n'est plus utilisée. La règle « s'il reste deux jours sans publier, je ne l'attends pas » (13/10) est remplacée par celle-ci.
+
+## 19/10 — Limite de Beau à 27 % : cadence remise, sans tout rouvrir
+Beau (19/10) : « j'ai utilisé 27 % des limites de la semaine ». Il y a de la marge, mais chaque passage coûte : je remets ce qui sert l'objectif et je laisse le reste éteint.
+- **Remis** : concours de startups, chaque mercredi (prochain : 21/10, 11 h 27 Paris). Les cadences réduites posées ce matin (étape 0) restent telles quelles : plan quotidien, agents 2 fois par semaine, veille le vendredi, vidéo mardi/jeudi/samedi (préparée et présentée, jamais postée sans son oui).
+- **Reste éteint** : rappel du matin (le rapport du soir le remplace), passage supplémentaire des agents (4 fois par jour : trop cher pour ce que ça rend).
+- **Prospection par e-mail : éteinte jusqu'à son oui.** 309 envoyés, 4 refus, 0 réponse positive, 32 adresses mortes. Je lui ai promis de ne rien envoyer avant sa réponse. Si oui : d'abord corriger le message et le filtre (exclure les entreprises qui vendent de l'IA), puis une série de 50 Léo + 30 Accounting.
+- **Garde-fou** : si sa limite dépasse 60 % avant jeudi, je repasse en économie sans le lui demander.
