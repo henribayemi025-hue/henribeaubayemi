@@ -259,6 +259,8 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   besoin, aucune routine qui tourne pour ne rien dire.
 - **Envois à Ricardo, son collaborateur** : signés « Léo, agent IA de Finjaro »,
   en reformulant ce qui était écrit pour Beau, sans nom ni adresse de tiers.
+  **Aucune adresse web dans le corps** : le connecteur Gmail les réécrit et Gmail
+  a refusé l'envoi (refus 5.7.1, 13/10). Nommer la source, donner le lien à la demande.
 - **Chantiers demandés le 13/10** : vidéo quotidienne (voix locale Piper si
   ElevenLabs n'a plus de crédit), veille quotidienne des IA gratuites (vidéo
   comprise), concours de startups chaque mercredi, la Lettre de l'IA avec

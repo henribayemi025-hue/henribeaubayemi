@@ -19,6 +19,22 @@ de la place de marché avant le prochain.
 - Flyer : page HTML rendue en PNG par Playwright (mêmes couleurs : crème,
   terracotta, laiton ; grands titres).
 
+**Avant tout : lire `docs/MARKETING.md`** (Beau, 14/10 : « dis ce que les vendeurs veulent, pas nos règles internes »). Ce qui suit en est le complément.
+
+## Avant de faire un post : l'objectif, puis un titre qui parle (Beau, 14/10)
+Beau a jugé nuls deux titres : « Ton prix dans ta monnaie, celui de l'acheteur dans la sienne » (une fonction,
+abstraite) et le titre éclaté du flyer. Règle :
+1. **Écrire l'objectif en une ligne AVANT de dessiner** : qui on veut attirer (commerçante, vendeuse, acheteuse),
+   pour faire quoi (ouvrir sa boutique, essayer Accounting, acheter), avec quel produit (Finjaro, Finjaro Accounting, Léo).
+2. **Le titre dit ce que c'est et ce qu'on y gagne, avec le nom du produit** : une phrase qui se comprend seule, à
+   l'impératif, courte. Pas de mot d'initié, pas de demi-phrase, pas de titre coupé sur trois lignes.
+   - Accounting : « Gère ton stock et tes finances avec Finjaro Accounting. Gratuit pour démarrer. »
+   - Boutique : « Ouvre ta boutique sur Finjaro et vends avec tes propres photos. »
+3. **Seulement des promesses vraies** : « gratuit pour démarrer » est écrit dans l'application d'Accounting ; jamais « gratuit à vie »,
+   jamais un prix, jamais de date de fin (décisions du 13/10).
+4. Un seul appel à l'action, le lien avec `?src=` pour mesurer (`finjaro.net/?src=…`, `accounting.finjaro.net/?src=…`).
+5. Contrôle avant de programmer : lire le titre à voix haute ; s'il ne se comprend pas sans la vidéo, le réécrire.
+
 ## Contrôle avant de programmer (rien ne part sans ces cinq vérifications)
 1. Chaque image est regardée (cadrage, texte lisible à 390 px, aucun visage coupé).
 2. Aucune photo prise sur le web ; aucun visuel de démonstration `/demo-products/`.
@@ -45,3 +61,35 @@ de la place de marché avant le prochain.
 ## Ce que je ne peux pas faire
 Regarder une vidéo comme un humain. J'étudie des analyses, des guides et les
 statistiques de nos propres posts, et j'ajuste.
+
+## Ce que disent les posts déjà faits (lu le 14/10)
+
+Seul TikTok a pu être lu : **25 publications** (14 vidéos et 11 photos) du 03/08 au
+13/10, chiffres de Metricool rendus tels quels et recoupés avec le compteur de la page
+TikTok (25 vidéos). Total des vues : 75 662. Compte : 98 abonnés, 394 abonnements,
+4 384 J'aime au total. *(Erreur corrigée le 14/10 : j'avais écrit 26.)* LinkedIn exige une connexion ; Instagram, Facebook et YouTube ne
+renvoient aucun post (anciens non importés ou page non lisible).
+
+| Date | Post (début) | Durée | Vues | J'aime |
+| --- | --- | --- | --- | --- |
+| 02/09 | « Même quand tu tombes, nous sommes là. » | 25 s | 20 987 | 2 058 |
+| 28/09 | « Tu galères à trouver une coiffeuse… » | 38 s | 15 837 | 27 |
+| 28/08 | « Finjaro beyond your dreams » | 60 s | 10 410 | 14 |
+| 06/08 | « Devenez vendeur… 100 % gratuite » | 43 s | 9 046 | 16 |
+| 04/09 | « Il n'y a pas de limites à ce qu'on peut faire. Au-delà des rêves. » | 20 s | 8 433 | 1 896 |
+| 13/10 | « Ton business sans Finjaro vs avec Finjaro » | 13 s | 544 | 4 |
+| 04/10 | « Mon pouce quand je suis sur Finjaro à 2h du mat » | 10 s | 401 | 10 |
+| 02/10 | « Et si vous pouviez tout contrôler ? » (Accounting) | 34 s | 309 | 13 |
+
+**Ce qu'on en tire** (lecture prudente : on ne voit ni les images ni le public) :
+- Les deux posts les plus aimés (2 058 et 1 896 J'aime) sont de courtes phrases de marque,
+  20 à 25 s, signées « Au-delà des rêves » : on les refait dans cet esprit.
+- Une vidéo très vue peut être très peu aimée (15 837 vues, 27 J'aime) : les vues seules
+  ne disent pas si le message touche.
+- Les posts d'octobre ne dépassent pas 544 vues : la cadence n'a pas suffi, le contenu doit changer.
+- À ne plus écrire : « des milliers de clients vous attendent déjà » (08/09, chiffre non
+  mesuré), les marques tagguées (Amazon, SHEIN, AliExpress), les hashtags de pays
+  (CLAUDE.md §1), le jeu « gagne 1 000 FCFA en invitant 100 personnes » (05/08).
+- Profil : la bio TikTok contient un drapeau de pays ; le nom de la page Facebook contient
+  une ville. À corriger par Beau (CLAUDE.md §1).
+

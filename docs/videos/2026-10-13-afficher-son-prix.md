@@ -9,5 +9,8 @@
 | 5 | « Et sur ton tableau de bord, une carte te montre les articles qui n'ont pas encore de prix. » | Carte « Articles sans prix » de l'espace vendeuse |
 | 6 | « Finjaro. Au-delà des rêves. » | Signature de Finjaro |
 
-Légende proposée (Beau poste lui-même) : « Ton prix dans ta monnaie, celui de
-l'acheteur dans la sienne. Ouvre ta boutique sur Finjaro. Au-delà des rêves. »
+Légende du 14/10, remplacée à la demande de Beau (« c'est nul, c'est quoi ça ») : la première
+(« Ton prix dans ta monnaie, celui de l'acheteur dans la sienne ») parlait d'une fonction, pas
+de la vendeuse. Nouvelle légende : « Tu vends des vêtements, des chaussures, des coiffures, des gâteaux ?
+Ouvre ta boutique sur Finjaro avec tes propres photos et mets ton prix : chaque acheteur le voit dans sa monnaie.
+finjaro.net/?src=v1410 — Au-delà des rêves. » Le lien porte `?src=v1410` pour mesurer les visites venues du post.

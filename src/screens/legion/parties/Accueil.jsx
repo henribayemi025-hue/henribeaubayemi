@@ -4,7 +4,7 @@ import { BandeAgents } from './BandeAgents';
 import {
   IconSparkles, IconSend, IconArrowRight, IconRobot, IconPower, IconLayoutKanban,
   IconBuildingSkyscraper, IconChevronRight, IconMessageCircle, IconCamera, IconAlertCircle,
-  IconHandGrab, IconChecklist,
+  IconHandGrab, IconChecklist, IconChevronDown,
 } from '@tabler/icons-react';
 import { Visage } from './Visage';
 import { Interrupteur } from './Interrupteur';
@@ -40,6 +40,31 @@ import { Membres, Journal, Marche } from './Securite';
 // visage, les tâches par colonne, les questions sans réponse. Le jour où on
 // mesurera la trésorerie, la carte est prête à la recevoir.
 
+// 14/10, Beau : « trop de texte, je dois descendre loin en bas pour trouver un truc, réduis de 80 % »
+// (déjà demandé le 13/10). L'accueil dit UNE chose : un ordre à donner, les grandes vues, trois
+// chiffres. Tout le reste est replié en une ligne chacun ; rien n'est retiré, rien n'est démonté
+// (chaque bloc garde son chargement et ses retours, ex. le retour de GitHub), il est seulement caché.
+const CLE_PLIS = 'leo-accueil-plis';
+function lirePlis() {
+  try { return JSON.parse(window.localStorage.getItem(CLE_PLIS) || '{}') || {}; } catch { return {}; }
+}
+
+function Pli({ id, titre, resume, ouvert, onBascule, children }) {
+  return (
+    <section id={`pli-${id}`}>
+      <button type="button" onClick={() => onBascule(id)} aria-expanded={!!ouvert}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-legion-line bg-legion-panel px-5 py-3.5 text-left transition hover:border-legion-gold/40">
+        <span className="text-body font-bold text-legion-ink">{titre}</span>
+        <span className="flex shrink-0 items-center gap-2 text-caption text-legion-muted">
+          {resume}
+          <IconChevronDown size={16} className={`transition ${ouvert ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+      <div className={ouvert ? 'space-y-6 pt-4' : 'hidden'}>{children}</div>
+    </section>
+  );
+}
+
 export function Accueil({
   entreprise, departements, agents, messages, taches, moi,
   onEntrer, onOuvrirSalon, onEcrireA, onFiche, onKanban,
@@ -49,6 +74,17 @@ export function Accueil({
   const [directive, setDirective] = useState('');
   const [cible, setCible] = useState(departements[0]?.id || '');
   const [envoi, setEnvoi] = useState(false);
+  const [plis, setPlis] = useState(() => {
+    const p = lirePlis();
+    // De retour de GitHub, le bloc des connecteurs doit être ouvert (il y affiche le résultat).
+    try { if (new URLSearchParams(window.location.search).get('github')) p.reglages = true; } catch { /* sans effet */ }
+    return p;
+  });
+  const basculer = (id) => setPlis((p) => {
+    const n = { ...p, [id]: !p[id] };
+    try { window.localStorage.setItem(CLE_PLIS, JSON.stringify(n)); } catch { /* sans effet */ }
+    return n;
+  });
 
   const machines = agents.filter((a) => !a.user_id);
   const allumes = machines.filter((a) => a.actif).length;
@@ -65,6 +101,8 @@ export function Accueil({
   const enAttente = messages.filter((m) => ['question', 'decision'].includes(m.genre) && !m.repondu_le).length;
   const libres = taches.filter((x) => !x.assigne_a && !x.termine_le).length;
   const faites = taches.filter((x) => statutDe(x) === 'fait').length;
+  // Beau, 14/10 : « 143 tâches, c'est beaucoup » — on montre celles qui restent, pas le cumul.
+  const ouvertes = taches.length - faites;
 
   async function envoyerDirective(e) {
     e.preventDefault();
@@ -98,8 +136,8 @@ export function Accueil({
                 {t('legion.heroTitre2')}
               </span>
             </h1>
-            <p className="text-body leading-relaxed text-legion-muted">
-              {t('legion.heroTexte', { departements: departements.length, agents: machines.length, allumes })}
+            <p className="text-caption text-legion-muted">
+              {t('legion.accueilCourt.agentsAllumes', { agents: machines.length, allumes })}
             </p>
             {/* Beau, 25/09 : « la tour de contrôle, ça doit défiler » — l'équipe passe, avec ce que
                 chacun fait maintenant. */}
@@ -113,7 +151,7 @@ export function Accueil({
               <button type="button" onClick={onKanban}
                 className="inline-flex items-center gap-2 rounded-card border border-legion-line bg-legion-card px-4 py-2.5 text-caption font-medium text-legion-ink transition hover:bg-legion-card-haut">
                 <IconLayoutKanban size={16} className="text-legion-gold" />
-                {t('legion.tableauTaches')} ({taches.length})
+                {t('legion.tableauTaches')} ({ouvertes})
               </button>
               {sansPhoto > 0 && (
                 <button type="button" onClick={() => onVraiesPhotos(null)} disabled={photosEnCours}
@@ -141,17 +179,9 @@ export function Accueil({
                 <p className="text-caption font-semibold text-legion-ink">
                   {tousAllumes ? t('legion.tousActifs') : t('legion.partiellementEnVeille')}
                 </p>
-                <p className="text-[11px] text-legion-muted">{t('legion.pretsARepondre', { n: allumes })}</p>
               </div>
               <Interrupteur on={allumes > 0} onChange={(v) => onAllumerTous(v)} label={t('legion.interrupteurGeneral')} />
             </div>
-            <p className="flex items-center justify-between border-t border-legion-line pt-2 text-[11px] text-legion-muted">
-              <span className="flex items-center gap-1">
-                <span className={`h-1.5 w-1.5 rounded-full ${allumes > 0 ? 'animate-pulse bg-legion-success' : 'bg-legion-muted'}`} />
-                {t('legion.moteur')}
-              </span>
-              <span className="font-mono">{ontChoisi}/{machines.length} {t('legion.ontLeurVisage')}</span>
-            </p>
           </div>
         </div>
       </section>
@@ -162,7 +192,6 @@ export function Accueil({
           <p className="flex items-center gap-2 text-caption font-semibold text-legion-ink">
             <IconSparkles size={15} className="text-legion-gold" /> {t('legion.directiveTitre')}
           </p>
-          <span className="hidden text-[11px] text-legion-muted sm:inline">{t('legion.directiveAide')}</span>
         </div>
         <form onSubmit={envoyerDirective} className="space-y-3">
           <div className="flex flex-col gap-2.5 sm:flex-row">
@@ -199,15 +228,15 @@ export function Accueil({
           vois comment ils travaillent ») */}
       {onOutil && (
         <button type="button" onClick={() => onOutil('bureau')}
-          className="flex w-full items-center gap-4 rounded-2xl border-2 border-legion-gold/60 bg-gradient-to-r from-legion-card via-legion-panel to-legion-card px-4 py-4 text-left shadow-lg transition hover:border-legion-gold">
+          className="flex w-full items-center gap-4 rounded-2xl border-2 border-legion-gold/60 bg-gradient-to-r from-legion-card via-legion-panel to-legion-card px-4 py-2.5 text-left shadow-lg transition hover:border-legion-gold">
           {/* Beau, 25/09 : « l'icône du building ne me plaît pas, je veux un truc réel » — l'immeuble,
               tel qu'il est filmé dans notre monde. */}
-          <img src="/monde3d/porte.jpg" alt="" className="h-14 w-14 shrink-0 rounded-card object-cover ring-1 ring-legion-gold/40" />
+          <img src="/monde3d/porte.jpg" alt="" className="h-10 w-10 shrink-0 rounded-card object-cover ring-1 ring-legion-gold/40" />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2 text-body font-bold text-legion-ink">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#E0664F]" /> {t('legion.immeuble.banniere')}
             </span>
-            <span className="block text-caption text-legion-muted">{t('legion.immeuble.banniereAide', { n: enDirect })}</span>
+            {enDirect > 0 && <span className="block text-caption text-legion-muted">{t('legion.accueilCourt.auTravail', { n: enDirect })}</span>}
           </span>
           <span className="shrink-0 rounded-pill bg-legion-gold px-3 py-1.5 text-caption font-bold text-legion-bg">{t('legion.immeuble.voir')}</span>
         </button>
@@ -223,50 +252,28 @@ export function Accueil({
             </button>
           ))}
           {/* Beau, 29/09 : « on doit trop descendre pour voir les connecteurs » — un raccourci en haut. */}
-          <button type="button" onClick={() => document.getElementById('connecteurs-leo')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          <button type="button" onClick={() => {
+              setPlis((p) => (p.reglages ? p : { ...p, reglages: true }));
+              setTimeout(() => document.getElementById('connecteurs-leo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+            }}
             className="flex shrink-0 items-center gap-2 rounded-card border border-legion-line bg-legion-panel px-3.5 py-2.5 text-caption font-semibold text-legion-ink transition hover:border-legion-gold/50">
             <span className="text-[18px]">🔌</span> {t('legion.vues.connecteurs', 'Connecteurs')}
           </button>
         </section>
       )}
 
-      {/* Crédit offert, Premium, nous contacter, suggestion (Beau, 29/09) */}
-      <CreditEtContact entreprise={entreprise} t={t} />
-
-      {/* 3. Les quatre compteurs — et QUE des chiffres mesurés */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 3. Trois chiffres mesurés, rien d'autre (Beau, 14/10 : trop de texte) */}
+      <section className="grid grid-cols-3 gap-3">
         <Compteur titre={t('legion.kpiAgents')} icone={<IconRobot size={15} className="text-legion-gold" />}
-          valeur={allumes} suffixe={`/ ${machines.length} ${t('legion.allumesMot')}`}
-          barre={machines.length ? (allumes / machines.length) * 100 : 0}
-          bas={t('legion.kpiDepartements', { n: departements.length })} t={t} />
-        <Compteur titre={t('legion.kpiVisages')} icone={<IconCamera size={15} className="text-legion-teal" />}
-          valeur={ontChoisi} suffixe={`/ ${machines.length}`}
-          barre={machines.length ? (ontChoisi / machines.length) * 100 : 0}
-          bas={aChoisir > 0 ? t('legion.kpiResteAChoisir', { n: aChoisir }) : t('legion.tousOntChoisi')} t={t} />
+          valeur={allumes} suffixe={`/ ${machines.length}`} />
         <Compteur titre={t('legion.kpiAttente')} icone={<IconAlertCircle size={15} className="text-legion-accent" />}
-          valeur={enAttente} bas={enAttente > 0 ? t('legion.kpiAttenteBas') : t('legion.kpiRienNAttend')} t={t} />
-        <Compteur titre={t('legion.kpiTaches')} icone={<IconChecklist size={15} className="text-legion-success" />}
-          valeur={taches.length} suffixe={`· ${faites} ${t('legion.faitesMot')}`}
-          barre={taches.length ? (faites / taches.length) * 100 : 0}
-          bas={libres > 0 ? t('legion.kpiLibres', { n: libres }) : t('legion.kpiToutesPrises')} t={t} />
+          valeur={enAttente} />
+        <Compteur titre={t('legion.accueilCourt.ouvertes')} icone={<IconChecklist size={15} className="text-legion-success" />}
+          valeur={ouvertes} suffixe={`· ${faites} ${t('legion.faitesMot')}`} />
       </section>
 
-      {/* 4. Les départements */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 text-section text-legion-ink">
-              <IconBuildingSkyscraper size={18} className="text-legion-gold" />
-              {t('legion.lesDepartements', { n: departements.length })}
-            </h2>
-            <p className="text-[11px] text-legion-muted">{t('legion.departementsAide')}</p>
-          </div>
-          <button type="button" onClick={() => onEntrer()}
-            className="flex items-center gap-1 text-[12px] font-medium text-legion-gold hover:brightness-110">
-            {t('legion.entrerQG')} <IconChevronRight size={14} />
-          </button>
-        </div>
-
+      {/* Les blocs suivants sont repliés (14/10) : un titre chacun, on ouvre ce dont on a besoin. */}
+      <Pli id="departements" titre={t('legion.lesDepartements', { n: departements.length })} ouvert={plis.departements} onBascule={basculer}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {departements.map((d) => {
             const Icone = iconeDept(d.cle, d.nom);
@@ -321,9 +328,9 @@ export function Accueil({
             );
           })}
         </div>
-      </section>
+      </Pli>
 
-      {/* 5. Les chantiers, et le trombinoscope */}
+      <Pli id="equipe" titre={t('legion.accueilCourt.chantiersEquipe')} resume={`${ouvertes} ${t('legion.accueilCourt.ouvertes').toLowerCase()}`} ouvert={plis.equipe} onBascule={basculer}>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <section className="space-y-3 rounded-2xl border border-legion-line bg-legion-panel p-5">
           <div className="flex items-center justify-between border-b border-legion-line pb-3">
@@ -380,61 +387,66 @@ export function Accueil({
         </section>
       </div>
 
+      </Pli>
+
       {/* 5 bis. Le tableau de bord : chaque agent, compté (24/09) */}
+      <Pli id="tableau" titre={t('legion.accueilCourt.tableau')} ouvert={plis.tableau} onBascule={basculer}>
       <TableauDeBord entreprise={entreprise} agents={agents} onFiche={onFiche} onVoteRemplacement={onVoteRemplacement} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
+      </Pli>
 
       {/* 5 ter. L'équipe réseaux sociaux : les publications à valider (08/10) */}
+      <Pli id="publications" titre={t('legion.accueilCourt.publications')} ouvert={plis.publications} onBascule={basculer}>
       <Publications entreprise={entreprise} agents={agents} moi={moi} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
+      </Pli>
 
       {/* 5 quater. La bibliothèque de missions (24/09) */}
+      <Pli id="missions" titre={t('legion.accueilCourt.missions')} ouvert={plis.missions} onBascule={basculer}>
       <Missions entreprise={entreprise} agents={agents} departements={departements} moi={moi} onLancee={onMissionLancee} langue={typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'fr'} t={t} />
+      </Pli>
 
       {/* 6. Les plans par département, et « Au travail maintenant » */}
+      <Pli id="plans" titre={t('legion.accueilCourt.plans')} ouvert={plis.plans} onBascule={basculer}>
       <FeuilleDeRoute entreprise={entreprise} agents={agents} langue={typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined} t={t} />
       <Plans entreprise={entreprise} t={t} />
+      </Pli>
 
       {/* 7. Les compétences: que l'équipe s'équipe (chantier 2) */}
+      <Pli id="competences" titre={t('legion.accueilCourt.competences')} ouvert={plis.competences} onBascule={basculer}>
       <EquiperEquipe entrepriseId={entreprise.id} agents={agents} t={t} />
+      </Pli>
 
-      {/* 8. La mémoire, les connecteurs, et ce que Legion coûte */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <Memoire entrepriseId={entreprise.id} t={t} />
-          {/* Le journal inaltérable et signé des décisions (0189) */}
-          <Journal entreprise={entreprise} agents={agents} t={t} />
-        </div>
-        <div className="space-y-6">
-          {entreprise.owner_id === moi?.user_id && <Inviter entreprise={entreprise} t={t} />}
-          <Membres entreprise={entreprise} moi={moi} t={t} />
-          <Marche entreprise={entreprise} moi={moi} t={t} />
-          <Connecteurs entreprise={entreprise} t={t} />
-          <Documents entreprise={entreprise} t={t} />
-          <Depense entreprise={entreprise} t={t} />
-        </div>
-      </div>
+      {/* 8. La mémoire, puis les accès, connecteurs, documents, dépenses, crédit et contact */}
+      <Pli id="memoire" titre={t('legion.accueilCourt.memoire')} ouvert={plis.memoire} onBascule={basculer}>
+        <Memoire entrepriseId={entreprise.id} t={t} />
+        {/* Le journal inaltérable et signé des décisions (0189) */}
+        <Journal entreprise={entreprise} agents={agents} t={t} />
+      </Pli>
+
+      <Pli id="reglages" titre={t('legion.accueilCourt.reglages')} ouvert={plis.reglages} onBascule={basculer}>
+        {/* Crédit offert, Premium, nous contacter, suggestion (Beau, 29/09) */}
+        <CreditEtContact entreprise={entreprise} t={t} />
+        {entreprise.owner_id === moi?.user_id && <Inviter entreprise={entreprise} t={t} />}
+        <Membres entreprise={entreprise} moi={moi} t={t} />
+        <Marche entreprise={entreprise} moi={moi} t={t} />
+        <Connecteurs entreprise={entreprise} t={t} />
+        <Documents entreprise={entreprise} t={t} />
+        <Depense entreprise={entreprise} t={t} />
+      </Pli>
     </div>
   );
 }
 
-function Compteur({ titre, icone, valeur, suffixe, barre, bas }) {
+function Compteur({ titre, icone, valeur, suffixe }) {
   return (
-    <div className="flex flex-col justify-between rounded-card border border-legion-line bg-legion-panel p-4 transition hover:border-legion-gold/30">
+    <div className="rounded-card border border-legion-line bg-legion-panel p-3.5">
       <div className="flex items-center justify-between text-legion-muted">
         <span className="text-[11px] font-semibold uppercase tracking-wider">{titre}</span>
         {icone}
       </div>
-      <div className="my-2.5">
-        <p className="flex items-baseline gap-1.5 text-2xl font-bold text-legion-ink">
-          {valeur}
-          {suffixe && <span className="text-caption font-normal text-legion-muted">{suffixe}</span>}
-        </p>
-        {typeof barre === 'number' && (
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-legion-card">
-            <div className="h-full rounded-full bg-legion-gold transition-all" style={{ width: `${Math.min(100, barre)}%` }} />
-          </div>
-        )}
-      </div>
-      <p className="border-t border-legion-line pt-1.5 text-[11px] text-legion-muted">{bas}</p>
+      <p className="mt-1.5 flex items-baseline gap-1.5 text-2xl font-bold text-legion-ink">
+        {valeur}
+        {suffixe && <span className="text-caption font-normal text-legion-muted">{suffixe}</span>}
+      </p>
     </div>
   );
 }

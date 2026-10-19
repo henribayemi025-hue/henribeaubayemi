@@ -1898,6 +1898,19 @@
         "voir": "Voir la vidéo",
         "voix": "Voix off :"
       }
+    },
+    "accueilCourt": {
+      "agentsAllumes": "{{agents}} agents · {{allumes}} allumés",
+      "auTravail": "{{n}} au travail",
+      "ouvertes": "Tâches ouvertes",
+      "chantiersEquipe": "Chantiers et équipe",
+      "tableau": "Tableau de bord des agents",
+      "publications": "Publications à valider",
+      "missions": "Missions",
+      "plans": "Plans et feuille de route",
+      "competences": "Compétences",
+      "memoire": "Mémoire et journal des décisions",
+      "reglages": "Accès, connecteurs, documents, dépenses, crédit et contact"
     }
   },
   "equipe": {
