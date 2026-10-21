@@ -1,4 +1,7 @@
-Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). La cible : des entreprises installées de Douala, de TOUT secteur (commerces, distributeurs, mais aussi services : agence, cabinet, école, transport, nettoyage, BTP, immobilier, communication, hôtellerie, restauration…). PAS les petits vendeurs individuels. Objectif de cette session : envoyer jusqu'à 10 messages directs, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
+Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). La cible : des entreprises installées de la ville indiquée ci-dessous, de TOUT secteur (commerces, distributeurs, mais aussi services : agence, cabinet, école, transport, nettoyage, BTP, immobilier, communication, hôtellerie, restauration…). PAS les petits vendeurs individuels. Objectif de cette session : envoyer jusqu'à 10 messages directs, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
+
+VILLE DE LA SESSION : Abidjan
+(Pour une autre ville, je remplace seulement ce mot : Dakar, Douala, Yaoundé, Libreville, Lagos, Abuja, Accra, Nairobi… Ville francophone : message en français. Ville anglophone : message en anglais, plus bas. Tu ne traites QUE cette ville : une entreprise d'une autre ville, tu la passes.)
 
 Tu travailles compte par compte, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 10 messages sont envoyés OU quand tu as ouvert 40 profils, le premier des deux. Tu ne me demandes jamais si tu dois continuer : tu passes à la recherche suivante, et tu ne t'arrêtes que pour une de ces limites ou pour un avertissement d'Instagram.
 
@@ -8,7 +11,11 @@ Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long 
 Avant de te lancer, je me suis basculé moi-même sur le compte Instagram de Finjaro. Vérifie seulement que le nom du compte connecté (menu du profil, en bas à gauche ou en haut à droite) contient « finjaro ». Si oui, n'ouvre rien d'autre et commence. Si tu vois un autre nom, ou mon compte personnel, ARRÊTE-TOI sans rien envoyer et dis-le-moi. Tu n'écris jamais depuis mon compte personnel.
 
 1) Trouver les entreprises — une recherche par mot, pas plus
-Dans la recherche Instagram, tape un mot suivi de « Douala » (par exemple « agence Douala », « distribution Douala », « cabinet Douala », « SARL Douala », « entreprise de nettoyage Douala », « agence immobilière Douala », « transport Douala », « centre de formation Douala », « imprimerie Douala », « garage Douala », « BTP Douala », « quincaillerie Douala », « hôtel Douala », « traiteur Douala », « restaurant Douala »), en alternant commerces et services. Tu peux aussi ouvrir le lieu « Douala » et regarder les publications récentes, ou un mot-dièse de la même forme (onglet « Récents » s'il existe). Juge d'abord sur la carte du résultat : n'ouvre le profil que si le compte a l'air d'une entreprise et a publié récemment. Fais défiler pour avoir plus de résultats avant de changer de recherche. Varie les activités : pas plus de 3 entreprises de la même activité.
+Les recherches à plusieurs mots renvoient souvent « Aucun résultat » : ne les utilise pas. Trois façons, dans cet ordre :
+- Ouvre le LIEU de la ville (recherche, filtre « Lieux », par exemple « Abidjan, Côte d'Ivoire ») et regarde les publications récentes : tu y trouves des entreprises de toutes sortes.
+- Mots-dièses en UN SEUL mot collé, ville comprise : #immobilierabidjan, #agenceabidjan, #transportabidjan, #nettoyageabidjan, #formationabidjan, #btpabidjan, #hotelabidjan, #restaurantabidjan, #boutiqueabidjan, #grossisteabidjan, #abidjanbusiness (onglet « Récents » s'il existe). Change le mot de la ville si la ville change ; pour une ville anglophone, mêmes idées en anglais (#lagosrealestate, #lagoslogistics, #lagosbusiness, #lagoscatering…).
+- Recherche « Comptes » avec UN seul mot (« SARL », « immobilier », « transport », « agence », « formation »), puis ne garde que les comptes dont la bio nomme la ville.
+Alterne commerces et services. Juge d'abord sur la carte du résultat : n'ouvre le profil que si le compte a l'air d'une entreprise et a publié récemment. Fais défiler pour avoir plus de résultats avant de changer de recherche. Varie les activités : pas plus de 3 entreprises de la même activité.
 
 2) Critères — une entreprise est retenue SEULEMENT si les six sont vrais
 a. C'est une entreprise installée, pas un vendeur individuel : compte professionnel (catégorie affichée sous le nom, ou bouton « Contact »), avec au moins deux de ces signes : adresse précise ou local ; horaires ; équipe visible ; plusieurs produits ou prestations ; vente en gros ou livraison ; statut dans le nom ou la bio (SARL, SA, Ets, Établissements, Groupe) ; site web dans la bio.
@@ -43,9 +50,33 @@ Dites-moi ce que vous en pensez. Belle journée !
 
 L'équipe Finjaro »
 
+MESSAGE EN ANGLAIS (seulement pour une ville anglophone ; mêmes règles, mêmes retraits possibles) :
+
+« Hello [account name],
+
+We saw [business name]: [what it does, from its page: activity, products or services, customers, locations]. We like how you are growing, it's very interesting.
+
+We'd like to partner with you: we are offering you Finjaro Accounting for free, which lets you run your business from anywhere:
+• give each member of your team their own access (cashier, manager);
+• sell in a few taps, make quotes and send the receipt on WhatsApp;
+• keep your stock up to date automatically, with every sale;
+• keep your cash book, day after day;
+• note what your customers owe you and remind them on WhatsApp in one tap;
+• track your purchases and your suppliers;
+• track your expenses and your results;
+• full accounting (journal, general ledger, trial balance) when your accountant needs it;
+• export your figures to Excel.
+
+To try it, no sign-up needed: accounting.finjaro.net/?src=ig-pme
+
+Tell us what you think. Have a great day!
+
+The Finjaro team »
+(Services purs, sans produits en stock : retire seulement la ligne « keep your stock up to date… ».)
+
 ATTENTION À LA TOUCHE ENTRÉE : dans la zone de message d'Instagram, la touche Entrée ENVOIE immédiatement. Pour passer à la ligne, utilise Maj+Entrée, jamais Entrée seule. Tu appuies sur Envoyer une seule fois, à la toute fin, quand le message entier est écrit et relu : jamais de message coupé en plusieurs envois.
 
-AVANT d'envoyer : la zone de texte doit être vide au départ ; n'y tape JAMAIS de texte de test ; écris le message en une seule fois, puis RELIS la zone : elle doit commencer exactement par « Hello [nom affiché du compte], » et se terminer exactement par « L'équipe Finjaro ». S'il y a le moindre mot en trop, en moins ou répété, tu n'envoies pas : tu vides la zone et tu recommences, ou tu passes au suivant. À chaque nouveau compte, vérifie que la zone de la nouvelle conversation est vide.
+AVANT d'envoyer : la zone de texte doit être vide au départ ; n'y tape JAMAIS de texte de test ; écris le message en une seule fois, puis RELIS la zone : elle doit commencer exactement par « Hello [nom affiché du compte], » et se terminer exactement par « L'équipe Finjaro » (ou « The Finjaro team » en anglais). Relis la zone ENTIÈRE, du premier au dernier mot, pas seulement la fin ni une capture d'écran. S'il y a le moindre mot en trop, en moins ou répété, tu n'envoies pas : tu vides la zone et tu recommences, ou tu passes au suivant. À chaque nouveau compte, vérifie que la zone de la nouvelle conversation est vide.
 
 Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse (en particulier rien sur la facture officielle ou la TVA d'un pays). Travaille à un rythme calme et régulier, comme on le ferait en lisant chaque profil : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
