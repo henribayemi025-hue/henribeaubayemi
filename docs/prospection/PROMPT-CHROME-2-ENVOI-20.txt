@@ -1,8 +1,8 @@
-VERSION À VALIDER PAR BEAU — rien n'est lancé tant qu'il n'a pas dit oui.
-
 Tu travailles dans ce navigateur, avec mes comptes Facebook et Instagram déjà connectés. Tu écris pour Finjaro Accounting, un outil de caisse, de stock et de comptabilité sur téléphone. Objectif de cette session : écrire à 20 commerces, un par un, depuis la Page Finjaro.
 
-Ville à traiter : [écris la ville ici, par exemple Douala]
+Ville à traiter : Douala
+
+Sois économe : ne fais aucune recherche en double, n'ouvre pas plus de Pages que nécessaire, ne prends pas de capture d'écran inutile, et si une Page ne convient pas après un coup d'œil, passe tout de suite à la suivante.
 
 1) Trouver les commerces
 Sur Facebook : barre de recherche, filtre « Pages », puis tape successivement : boutique [ville] · cosmétiques [ville] · pagne [ville] · prêt-à-porter [ville] · chaussures [ville] · pâtisserie [ville] · restaurant [ville] · quincaillerie [ville] · salon de coiffure [ville]. Quand une Page est bonne, regarde aussi les « Pages similaires ». Sur Instagram, seulement s'il manque des commerces : mots-dièses #boutique[ville], #mode[ville], comptes professionnels.
