@@ -10,13 +10,14 @@ Avant de te lancer, je me suis basculé moi-même sur la Page « Finjaro Net » 
 1) Trouver les PME — une recherche par type d'activité, pas plus
 Dans la barre de recherche Facebook, tape « grossiste Douala », choisis l'onglet « Publications » avec le filtre « Publications récentes » (ou le tri le plus récent). Juge d'abord sur la carte du résultat : n'ouvre la Page que si la publication date de moins de 7 jours ET vient d'une entreprise (pas d'un particulier). Fais défiler pour avoir plus de résultats avant de changer de recherche. Puis, successivement : distribution Douala · SARL Douala · établissements Douala · matériaux de construction Douala · quincaillerie Douala · imprimerie Douala · agroalimentaire Douala · transport Douala · garage Douala · restaurant Douala · hôtel Douala · boulangerie Douala. NE cherche PAS par l'onglet « Pages » : il remonte surtout des Pages abandonnées. Varie les activités : pas plus de 3 entreprises de la même activité.
 
-2) Critères — une PME est retenue SEULEMENT si les six sont vrais
+2) Critères — une PME est retenue SEULEMENT si les sept sont vrais
 a. C'est une entreprise installée, pas un vendeur individuel. Il faut au moins deux de ces signes : une adresse précise ou un local ; des horaires d'ouverture ; une équipe visible (photos du personnel, « notre équipe ») ; plusieurs points de vente ou plusieurs lignes de produits ; vente « en gros » ou livraison ; un statut dans le nom ou dans « À propos » (SARL, SA, SAS, Ets, Établissements, Groupe) ; un site web.
 b. Elle a publié dans les 30 derniers jours (vérifie cette date EN PREMIER ; au-delà, tu quittes la Page).
 c. Elle vend ou fournit quelque chose de suivi (produits en stock, commandes, clients réguliers). Le prix n'est PAS obligatoire.
 d. Elle affiche un bouton Messenger : on peut lui écrire.
 e. Ce n'est PAS un petit vendeur seul (e-boutique d'une personne, friperie individuelle, vendeur à domicile, page « boutique » sans adresse ni horaires), ni une grande chaîne ou multinationale (banque, opérateur télécom, grande surface nationale), ni une administration, ni une association.
 f. Elle ne vend pas elle-même du logiciel, de l'IA ou de la comptabilité, et ce n'est pas un commerce déjà contacté dans cette session. Deux Pages du même propriétaire : une seule.
+g. Elle compte au moins 1 000 abonnés (ou « J'aime ») affichés sur sa Page. En dessous, c'est trop petit pour cet outil : tu quittes la Page tout de suite. Vérifie le nombre d'abonnés juste après la date de dernière publication.
 Un critère manque : tu passes à la suivante. Tu ne forces jamais. Pas plus de deux minutes par Page.
 
 3) Envoyer — tout de suite après avoir retenu la Page
@@ -58,5 +59,6 @@ Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, 
 - Inventer quoi que ce soit : si tu ne sais pas, écris « inconnu ».
 
 6) Ce que tu me rends à la fin, une seule fois, en tableau compact
-nom de la Page | lien | activité (3 mots) | envoyé : oui ou non | heure | adresse e-mail GÉNÉRIQUE affichée sur la Page (info@, contact@, commercial@…) ou « aucune » — jamais une adresse qui porte le nom d'une personne
+nom de la Page | lien | abonnés | envoyé : oui ou non | adresse e-mail GÉNÉRIQUE affichée sur la Page (info@, contact@, commercial@…) ou « aucune » — jamais une adresse qui porte le nom d'une personne
+Reste bref : une ligne par Page, pas de commentaire.
 Puis une ligne : combien de messages envoyés, combien de Pages ouvertes, pourquoi tu t'es arrêté (20 envoyés, 60 Pages ouvertes, ou un avertissement de Facebook), et tout avertissement reçu.
