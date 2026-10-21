@@ -1,9 +1,9 @@
-Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session (un test) : envoyer jusqu'à 10 messages directs à des boutiques ou entreprises de tout secteur qui ont plus de 5 000 abonnés, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
+Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session (un test) : envoyer jusqu'à 5 messages directs à des boutiques ou entreprises de tout secteur qui ont plus de 5 000 abonnés, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
 
 ZONE DE LA SESSION : villes francophones d'Afrique, Abidjan d'abord, puis Dakar, Douala, Yaoundé, Libreville, Cotonou, Lomé, Bamako…
 (Message en français. Tu restes dans ces villes : un compte d'ailleurs, tu le passes. Pas d'envoi en anglais tant que je ne l'ai pas autorisé : le message en anglais plus bas est pour plus tard.)
 
-Tu travailles compte par compte, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 10 messages sont envoyés OU quand tu as ouvert 30 profils, le premier des deux. Tu ne me demandes jamais si tu dois continuer : tu passes à la recherche suivante, et tu ne t'arrêtes que pour une de ces limites ou pour un avertissement d'Instagram.
+Tu travailles compte par compte, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 5 messages sont envoyés OU quand tu as ouvert 20 profils, le premier des deux. Tu ne me demandes jamais si tu dois continuer : tu passes à la recherche suivante, et tu ne t'arrêtes que pour une de ces limites ou pour un avertissement d'Instagram.
 
 Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom du compte, envoyé oui ou non.
 
@@ -91,4 +91,4 @@ Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, 
 6) Ce que tu me rends à la fin, une seule fois, en tableau compact
 nom du compte | lien | abonnés | envoyé : oui ou non | adresse e-mail GÉNÉRIQUE affichée dans la bio (info@, contact@, commercial@…) ou « aucune » — jamais une adresse qui porte le nom d'une personne
 Reste bref : une ligne par compte, pas de commentaire.
-Puis une ligne : combien de messages envoyés, combien de profils ouverts, pourquoi tu t'es arrêté (10 envoyés, 30 profils ouverts, ou un avertissement d'Instagram), et tout avertissement reçu.
+Puis une ligne : combien de messages envoyés, combien de profils ouverts, pourquoi tu t'es arrêté (5 envoyés, 20 profils ouverts, ou un avertissement d'Instagram), et tout avertissement reçu.
