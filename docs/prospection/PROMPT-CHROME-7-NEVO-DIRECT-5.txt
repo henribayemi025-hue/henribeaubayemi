@@ -1,11 +1,11 @@
-Tu travailles dans ce navigateur, avec mes comptes déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer jusqu'à 5 messages (c'est un essai) à des boutiques qui vendent sur la marketplace « Nevo », directement par la messagerie de Nevo, en UNE SEULE passe, depuis le compte Nevo de Finjaro.
+Tu travailles dans ce navigateur, avec mes comptes déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer jusqu'à 5 messages (c'est un essai) à des boutiques qui vendent sur la marketplace « Nevo », directement par la messagerie de Nevo, en UNE SEULE passe, depuis le compte Nevo du fondateur de Finjaro (le message est signé « L'équipe Finjaro »).
 
 Tu travailles boutique par boutique : tu en trouves une, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 5 messages sont envoyés OU quand tu as examiné 15 boutiques, le premier des deux. Tu ne me demandes jamais si tu dois continuer.
 
 Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom de la boutique, envoyé oui ou non.
 
 ÉTAPE 0 — le compte, une seule fois, avant le premier message
-Nevo est ouvert dans un onglet. Vérifie seulement que tu es connecté avec le compte de Finjaro (le nom du compte, dans le menu du profil, contient « finjaro »). Si oui, commence. Si tu es déconnecté ou si c'est un autre compte, ARRÊTE-TOI sans rien écrire et dis-le-moi. Tu ne crées JAMAIS de compte, tu ne saisis JAMAIS de mot de passe, de code ou de coordonnées de paiement.
+Nevo est ouvert dans un onglet. Vérifie seulement que tu es connecté avec le compte du fondateur de Finjaro, « Henri bayemi » (c'est moi : je t'autorise à écrire depuis ce compte), ou avec un compte dont le nom contient « finjaro ». Si oui, commence. Si tu es déconnecté ou si c'est un autre nom, ARRÊTE-TOI sans rien écrire et dis-le-moi. Tu ne crées JAMAIS de compte, tu ne saisis JAMAIS de mot de passe, de code ou de coordonnées de paiement.
 
 1) Trouver les boutiques
 Commence par la section « Boutiques Sponsorisées » (badge « Boutique recommandée » ou badge vérifié), puis les boutiques des catégories (mode, beauté, téléphones, électronique, maison, alimentation…). Alterne les catégories : pas plus de 2 boutiques de la même catégorie. Ouvre la boutique pour voir ce qu'elle vend et chercher le bouton qui permet de LUI ÉCRIRE dans Nevo (« Contacter », « Message », « Discuter », une bulle de conversation…).
@@ -18,7 +18,7 @@ d. Tu peux dire une chose vraie et précise sur ce qu'elle vend, d'après sa bou
 Un critère manque : tu passes à la suivante, tu ne forces jamais. Pas plus de deux minutes par boutique.
 
 3) Envoyer — tout de suite après avoir retenu la boutique
-Tu écris en tant que Finjaro : tu ne fais PAS semblant d'être un acheteur, tu ne parles d'aucun achat, tu ne demandes aucun prix. Écris ce message en changeant seulement ce qui est entre crochets. Le début contient la chose vraie et précise que tu as lue (ce que vend la boutique), avec tes propres mots, différente d'une boutique à l'autre. Si tu ne peux pas la dire, tu passes à la suivante : tu n'inventes jamais un compliment.
+Tu écris pour Finjaro, le message est signé « L'équipe Finjaro » : tu ne fais PAS semblant d'être un acheteur, tu ne parles d'aucun achat, tu ne demandes aucun prix. Écris ce message en changeant seulement ce qui est entre crochets. Le début contient la chose vraie et précise que tu as lue (ce que vend la boutique), avec tes propres mots, différente d'une boutique à l'autre. Si tu ne peux pas la dire, tu passes à la suivante : tu n'inventes jamais un compliment.
 
 « Hello [nom exact de la boutique],
 
