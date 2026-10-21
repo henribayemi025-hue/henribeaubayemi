@@ -1,26 +1,25 @@
-Tu travailles dans ce navigateur, avec mes comptes Facebook et Instagram déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : écrire à 20 commerces, un par un, depuis la Page Finjaro.
+Tu travailles dans ce navigateur, avec mes comptes Facebook déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer 20 messages à 20 commerces de Douala, en UNE SEULE passe, depuis la Page « Finjaro Net ».
 
-Ville à traiter : Douala
+Tu travailles Page par Page, sans jamais refaire une recherche déjà faite : tu trouves un commerce, tu vérifies, tu envoies, tu passes au suivant. Tu t'arrêtes quand 20 messages sont envoyés OU quand tu as ouvert 60 Pages, le premier des deux. Si tu n'as pas pu en envoyer 20, tu n'insistes pas : tu me rends ce que tu as.
 
-Sois économe : ne fais aucune recherche en double, n'ouvre pas plus de Pages que nécessaire, ne prends pas de capture d'écran inutile, et si une Page ne convient pas après un coup d'œil, passe tout de suite à la suivante.
+Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom de la Page, envoyé oui ou non.
 
-1) Trouver les commerces
-Sur Facebook : barre de recherche, tape « boutique [ville] », puis choisis l'onglet « Publications » avec le filtre « Publications récentes » (ou le tri le plus récent, s'il existe) : tu ne gardes que les commerces qui ont publié ces 7 derniers jours, et tu ouvres leur Page. Recommence avec : cosmétiques [ville] · pagne [ville] · prêt-à-porter [ville] · chaussures [ville] · pâtisserie [ville] · restaurant [ville] · quincaillerie [ville] · salon de coiffure [ville]. Regarde aussi les « Pages similaires » des Pages qui conviennent. NE cherche PAS d'abord par l'onglet « Pages » : il remonte surtout des Pages abandonnées depuis des années. Sur Instagram, seulement s'il manque des commerces : mots-dièses #boutique[ville], #mode[ville], comptes professionnels.
-Varie les catégories : pas plus de 4 commerces de la même catégorie.
+ÉTAPE 0 — avant le premier message, une seule fois
+Au moment d'écrire à la première Page retenue, bascule vers la Page « Finjaro Net » si Facebook le propose, clique « Message », et vérifie que la zone de texte s'ouvre bien EN TANT QUE « Finjaro Net ». Si tu ne peux pas écrire en tant que Finjaro Net : n'envoie RIEN, arrête-toi et dis-le-moi. Tu n'écris jamais depuis mon compte personnel.
 
-2) Critères de sélection — garde un commerce SEULEMENT si les cinq sont vrais
-a. C'est un commerce qui vend des produits ou des prestations (pas un profil personnel, pas une église, pas une page d'actualité, pas un fan-club).
-b. Il a publié dans les 30 derniers jours.
-c. Elle montre des articles à vendre dans ses publications récentes (photos de produits). Le prix n'est PAS obligatoire : « prix en inbox » ou « prix sur demande » suffisent.
-d. Il affiche un bouton Messenger ou un moyen de contact public : on peut lui écrire.
-e. Ce n'est PAS une grande chaîne, ni une entreprise qui vend elle-même du logiciel, de l'IA ou de la comptabilité, ni une boutique déjà inscrite sur Finjaro.
-Si un seul critère manque, tu passes à la suivante. Tu ne forces jamais. Vérifie la date de la dernière publication EN PREMIER, avant tout le reste : si elle dépasse 30 jours, tu quittes la Page tout de suite. Pas plus de deux minutes par Page, et pas plus de 30 Pages ouvertes dans la session : si tu n'as pas assez de commerces, tu t'arrêtes et tu me le dis.
+1) Trouver les commerces — une recherche par catégorie, pas plus
+Dans la barre de recherche Facebook, tape « boutique Douala », choisis l'onglet « Publications » avec le filtre « Publications récentes » (ou le tri le plus récent s'il existe). Juge d'abord sur la carte du résultat : n'ouvre la Page que si la publication date de moins de 7 jours ET montre un article à vendre. Fais défiler les résultats vers le bas pour avoir plus de commerces avant de changer de recherche. Quand ils s'épuisent, passe à : cosmétiques Douala · pagne Douala · prêt-à-porter Douala · chaussures Douala · friperie Douala · pâtisserie Douala · restaurant Douala · quincaillerie Douala · salon de coiffure Douala. NE cherche PAS par l'onglet « Pages » : il remonte surtout des Pages abandonnées. Varie les catégories : pas plus de 4 commerces de la même catégorie. Sur Instagram, seulement s'il manque des commerces.
 
-3) Écrire — une Page à la fois
-- Écris depuis la Page Finjaro (bascule vers la Page si Facebook le propose). Si tu ne peux pas écrire en tant que Page Finjaro, ARRÊTE-TOI et dis-le-moi : tu n'écris jamais depuis mon compte personnel.
-- Avant d'écrire, lis la Page (« À propos » et trois publications). Le début du message doit contenir une chose vraie que tu as lue (ce que la Page vend), avec tes propres mots, différente d'une Page à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes à la suivante : tu n'inventes jamais un compliment.
-- Travaille à un rythme calme, comme une personne attentive : une Page à la fois, une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
-- Écris ce message. Tu changes seulement ce qui est entre crochets :
+2) Critères — un commerce est retenu SEULEMENT si les cinq sont vrais
+a. C'est un commerce qui vend des produits ou des prestations (pas un profil personnel, pas une église, pas une page d'actualité).
+b. Il a publié dans les 30 derniers jours (vérifie cette date EN PREMIER ; au-delà, tu quittes la Page).
+c. Il montre des articles à vendre dans ses publications récentes. Le prix n'est PAS obligatoire : « prix en inbox » ou « prix sur demande » suffisent.
+d. Il affiche un bouton Messenger : on peut lui écrire.
+e. Ce n'est PAS une grande chaîne, ni une entreprise qui vend du logiciel, de l'IA ou de la comptabilité, ni un commerce déjà contacté dans cette session. Deux Pages du même propriétaire : une seule.
+Un critère manque : tu passes à la suivante. Tu ne forces jamais. Pas plus de deux minutes par Page.
+
+3) Envoyer — tout de suite après avoir retenu la Page
+Lis « À propos » et deux publications. Écris ce message en changeant seulement ce qui est entre crochets. Le début doit contenir une chose vraie que tu as lue, avec tes propres mots, différente d'une Page à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes à la suivante : tu n'inventes jamais un compliment.
 
 « Hello [nom exact de la Page],
 
@@ -43,13 +42,12 @@ Dites-moi ce que vous en pensez. Belle journée !
 
 L'équipe Finjaro »
 
-Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse que ce qui est écrit ci-dessus.
+Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse. Travaille à un rythme calme : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
 4) Quand t'arrêter — sans exception
-- Dès que Facebook ou Instagram affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
+- Dès que Facebook affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
 - Si quelqu'un répond : tu ne réponds pas, tu me rapportes sa réponse mot pour mot. Une seule exception : si on te demande si tu es une personne ou une IA, tu ne mens pas : tu réponds en une phrase que le message vient de l'équipe Finjaro, qui utilise un assistant IA pour écrire les premiers messages, puis tu me préviens.
 - Si quelqu'un écrit « stop », « non » ou équivalent : tu me le dis, et on ne lui écrit plus jamais.
-- Maximum 20 messages envoyés dans la session.
 
 5) Ce que tu ne fais JAMAIS
 - Écrire à un profil personnel, rejoindre un groupe, ajouter quelqu'un, liker, commenter, partager.
@@ -58,6 +56,6 @@ Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, 
 - Publier un nom, un numéro, une adresse ou un lien sur GitHub (le dépôt est public).
 - Inventer quoi que ce soit : si tu ne sais pas, écris « inconnu ».
 
-6) Ce que tu me rends à la fin, en tableau, une ligne par Page contactée
-nom de la Page | lien | catégorie | ville ou quartier | ta première phrase (copiée) | envoyé : oui ou non | heure | réponse déjà visible : oui ou non
-Puis : combien de Pages ouvertes, combien contactées, pourquoi les autres ont été écartées, et tout avertissement reçu de Facebook ou d'Instagram.
+6) Ce que tu me rends à la fin, une seule fois, en tableau compact
+nom de la Page | lien | envoyé : oui ou non | heure
+Puis une ligne : combien de messages envoyés, combien de Pages ouvertes, pourquoi tu t'es arrêté (20 envoyés, 60 Pages ouvertes, ou un avertissement de Facebook), et tout avertissement reçu.
