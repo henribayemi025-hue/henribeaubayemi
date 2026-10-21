@@ -1,4 +1,4 @@
-Tu travailles dans ce navigateur, avec mes comptes Facebook et Instagram déjà connectés. Tu écris pour Finjaro Accounting, un outil de caisse, de stock et de comptabilité sur téléphone. Cette session est un ESSAI : tu repères 3 commerces et tu prépares le message de chacun, mais tu n'ENVOIES RIEN du tout. Tu montres chaque message dans ta réponse.
+Tu travailles dans ce navigateur, avec mes comptes Facebook et Instagram déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Cette session est un ESSAI : tu repères 3 commerces et tu prépares le message de chacun, mais tu n'ENVOIES RIEN du tout. Tu montres chaque message dans ta réponse.
 
 Ville à traiter : Douala
 
@@ -26,7 +26,7 @@ Si un seul critère manque, tu passes à la suivante. Tu ne forces jamais.
 
 J'ai vu votre [boutique / entreprise] : [ce qu'elle vend, d'après ses publications]. J'aime l'initiative, c'est très intéressant.
 
-Nous souhaitons être partenaires de votre démarche : nous vous proposons gratuitement pour démarrer Finjaro Accounting, un outil sur téléphone qui permet de :
+Nous souhaitons être partenaires de votre démarche : nous vous proposons gratuitement Finjaro Accounting, qui permet de gérer votre entreprise partout :
 • vendre en quelques touches et envoyer le reçu sur WhatsApp ;
 • garder votre stock à jour tout seul, à chaque vente ;
 • tenir votre caisse, jour après jour ;
@@ -39,9 +39,9 @@ Nous souhaitons être partenaires de votre démarche : nous vous proposons gratu
 
 Pour essayer, sans créer de compte : accounting.finjaro.net/?src=fb-page
 
-Dites-moi ce que vous en pensez. Si ça ne vous intéresse pas, dites-le simplement et je ne vous écrirai plus. Belle journée !
+Dites-moi ce que vous en pensez. Répondez « stop » et je ne vous écris plus. Belle journée !
 
-Léo, agent IA de Finjaro (une personne de l'équipe lit les réponses) »
+Léo de Finjaro (agent IA) »
 
 Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse que ce qui est écrit ci-dessus.
 
