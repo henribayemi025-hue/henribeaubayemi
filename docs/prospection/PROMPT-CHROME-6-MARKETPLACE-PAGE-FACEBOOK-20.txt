@@ -1,11 +1,11 @@
 SITE SOURCE DE LA SESSION : Nevo
 (Pour une autre marketplace, je remplace seulement ce mot : Jumia ou Glotelho. Partout où tu lis [SITE] ci-dessous, lis le nom de ce site. Pour Jumia, utilise le site Jumia du pays que je t'indique ; pour une boutique de ce site, ignore les « boutiques officielles » et les grandes marques : garde les vendeurs indépendants.)
 
-Tu travailles dans ce navigateur, avec mes comptes déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer jusqu'à 20 messages à des boutiques qui vendent déjà en ligne sur la marketplace « [SITE] », en UNE SEULE passe, depuis la Page Facebook « Finjaro Net ».
+Tu travailles dans ce navigateur, avec mes comptes déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer jusqu'à 5 messages à des boutiques qui vendent déjà en ligne sur la marketplace « [SITE] », en UNE SEULE passe, depuis la Page Facebook « Finjaro Net ».
 
 [SITE] n'est que ta LISTE : tu y repères des vendeurs sérieux, puis tu leur écris sur LEUR PROPRE Page Facebook. Tu n'écris jamais à travers [SITE], tu ne crées pas de compte [SITE], tu n'achètes rien, tu ne notes aucun numéro de téléphone.
 
-Tu travailles boutique par boutique : tu en trouves une, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 20 messages sont envoyés OU quand tu as examiné 40 boutiques [SITE], le premier des deux. Tu ne me demandes jamais si tu dois continuer.
+Tu travailles boutique par boutique : tu en trouves une, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 5 messages sont envoyés OU quand tu as examiné 20 boutiques [SITE], le premier des deux. Tu ne me demandes jamais si tu dois continuer.
 
 Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom de la boutique, envoyé oui ou non.
 
@@ -54,7 +54,7 @@ AVANT d'appuyer sur Envoyer : vide complètement la zone de texte (sélectionne 
 Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse. Travaille à un rythme calme et régulier : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
 4) Quand t'arrêter — sans exception
-- Dès que Facebook ou [SITE] affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
+- Dès que Facebook ou [SITE] affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité (par exemple « confirmez que vous êtes humain » : tu ne cliques sur rien) ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
 - Si quelqu'un répond : tu ne réponds pas, tu me rapportes sa réponse mot pour mot. Une seule exception : si on te demande si tu es une personne ou une IA, tu ne mens pas : tu réponds en une phrase que le message vient de l'équipe Finjaro, qui utilise un assistant IA pour écrire les premiers messages, puis tu me préviens.
 - Si quelqu'un écrit « stop », « non » ou équivalent : tu me le dis, et on ne lui écrit plus jamais.
 
@@ -69,4 +69,4 @@ Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, 
 6) Ce que tu me rends à la fin, une seule fois, en tableau compact
 boutique | lien de la Page Facebook | abonnés | envoyé : oui ou non | pourquoi pas (si non, trois mots)
 Reste bref : une ligne par boutique, pas de commentaire, aucun numéro de téléphone.
-Puis une ligne : combien de messages envoyés, combien de boutiques examinées, pourquoi tu t'es arrêté (20 envoyés, 40 boutiques examinées, ou un avertissement), et tout avertissement reçu.
+Puis une ligne : combien de messages envoyés, combien de boutiques examinées, pourquoi tu t'es arrêté (5 envoyés, 20 boutiques examinées, ou un avertissement), et tout avertissement reçu.

@@ -1,6 +1,6 @@
-Tu travailles dans ce navigateur, avec mes comptes Facebook déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer 20 messages à 20 commerces de Douala, en UNE SEULE passe, depuis la Page « Finjaro Net ».
+Tu travailles dans ce navigateur, avec mes comptes Facebook déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer 5 messages à 5 commerces de Douala, en UNE SEULE passe, depuis la Page « Finjaro Net ».
 
-Tu travailles Page par Page, sans jamais refaire une recherche déjà faite : tu trouves un commerce, tu vérifies, tu envoies, tu passes au suivant. Tu t'arrêtes quand 20 messages sont envoyés OU quand tu as ouvert 60 Pages, le premier des deux. Si tu n'as pas pu en envoyer 20, tu n'insistes pas : tu me rends ce que tu as.
+Tu travailles Page par Page, sans jamais refaire une recherche déjà faite : tu trouves un commerce, tu vérifies, tu envoies, tu passes au suivant. Tu t'arrêtes quand 5 messages sont envoyés OU quand tu as ouvert 20 Pages, le premier des deux. Si tu n'as pas pu en envoyer 5, tu n'insistes pas : tu me rends ce que tu as.
 
 Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom de la Page, envoyé oui ou non.
 
@@ -47,7 +47,7 @@ AVANT d'appuyer sur Envoyer : vide complètement la zone de texte (sélectionne 
 Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse. Travaille à un rythme calme : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
 4) Quand t'arrêter — sans exception
-- Dès que Facebook affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
+- Dès que Facebook affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité (par exemple « confirmez que vous êtes humain » : tu ne cliques sur rien) ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
 - Si quelqu'un répond : tu ne réponds pas, tu me rapportes sa réponse mot pour mot. Une seule exception : si on te demande si tu es une personne ou une IA, tu ne mens pas : tu réponds en une phrase que le message vient de l'équipe Finjaro, qui utilise un assistant IA pour écrire les premiers messages, puis tu me préviens.
 - Si quelqu'un écrit « stop », « non » ou équivalent : tu me le dis, et on ne lui écrit plus jamais.
 
@@ -60,4 +60,4 @@ Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, 
 
 6) Ce que tu me rends à la fin, une seule fois, en tableau compact
 nom de la Page | lien | envoyé : oui ou non | heure
-Puis une ligne : combien de messages envoyés, combien de Pages ouvertes, pourquoi tu t'es arrêté (20 envoyés, 60 Pages ouvertes, ou un avertissement de Facebook), et tout avertissement reçu.
+Puis une ligne : combien de messages envoyés, combien de Pages ouvertes, pourquoi tu t'es arrêté (5 envoyés, 20 Pages ouvertes, ou un avertissement de Facebook), et tout avertissement reçu.
