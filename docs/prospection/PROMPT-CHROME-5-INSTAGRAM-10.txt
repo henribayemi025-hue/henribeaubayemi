@@ -1,0 +1,67 @@
+Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). La cible : des entreprises installées de Douala, de TOUT secteur (commerces, distributeurs, mais aussi services : agence, cabinet, école, transport, nettoyage, BTP, immobilier, communication, hôtellerie, restauration…). PAS les petits vendeurs individuels. Objectif de cette session : envoyer jusqu'à 10 messages directs, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
+
+Tu travailles compte par compte, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 10 messages sont envoyés OU quand tu as ouvert 40 profils, le premier des deux. Tu ne me demandes jamais si tu dois continuer : tu passes à la recherche suivante, et tu ne t'arrêtes que pour une de ces limites ou pour un avertissement d'Instagram.
+
+Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom du compte, envoyé oui ou non.
+
+ÉTAPE 0 — l'identité d'envoi, une seule fois, avant le premier message
+Avant de te lancer, je me suis basculé moi-même sur le compte Instagram de Finjaro. Vérifie seulement que le nom du compte connecté (menu du profil, en bas à gauche ou en haut à droite) contient « finjaro ». Si oui, n'ouvre rien d'autre et commence. Si tu vois un autre nom, ou mon compte personnel, ARRÊTE-TOI sans rien envoyer et dis-le-moi. Tu n'écris jamais depuis mon compte personnel.
+
+1) Trouver les entreprises — une recherche par mot, pas plus
+Dans la recherche Instagram, tape un mot suivi de « Douala » (par exemple « agence Douala », « distribution Douala », « cabinet Douala », « SARL Douala », « entreprise de nettoyage Douala », « agence immobilière Douala », « transport Douala », « centre de formation Douala », « imprimerie Douala », « garage Douala », « BTP Douala », « quincaillerie Douala », « hôtel Douala », « traiteur Douala », « restaurant Douala »), en alternant commerces et services. Tu peux aussi ouvrir le lieu « Douala » et regarder les publications récentes, ou un mot-dièse de la même forme (onglet « Récents » s'il existe). Juge d'abord sur la carte du résultat : n'ouvre le profil que si le compte a l'air d'une entreprise et a publié récemment. Fais défiler pour avoir plus de résultats avant de changer de recherche. Varie les activités : pas plus de 3 entreprises de la même activité.
+
+2) Critères — une entreprise est retenue SEULEMENT si les six sont vrais
+a. C'est une entreprise installée, pas un vendeur individuel : compte professionnel (catégorie affichée sous le nom, ou bouton « Contact »), avec au moins deux de ces signes : adresse précise ou local ; horaires ; équipe visible ; plusieurs produits ou prestations ; vente en gros ou livraison ; statut dans le nom ou la bio (SARL, SA, Ets, Établissements, Groupe) ; site web dans la bio.
+b. Elle a publié dans les 30 derniers jours (vérifie cette date EN PREMIER ; au-delà, tu quittes le profil).
+c. Elle vend ou fournit quelque chose de suivi (produits, prestations de service, chantiers, commandes, clients réguliers). Le prix n'est PAS obligatoire.
+d. Le compte est public et affiche un bouton « Message » ou « Envoyer un message ». Compte privé : tu passes.
+e. Ce n'est PAS un petit vendeur seul (boutique d'une personne, vendeur à domicile, compte sans adresse ni horaires), ni une vraie grande chaîne ou multinationale, ni une administration, ni une association, ni une entreprise qui vend elle-même du logiciel, de l'IA ou de la comptabilité. Pas de compte déjà contacté dans cette session. Deux comptes du même propriétaire : un seul.
+f. Elle compte au moins 1 000 abonnés (affichés en haut du profil). En dessous, c'est trop petit pour cet outil : tu quittes le profil tout de suite.
+Un critère manque : tu passes au suivant. Tu ne forces jamais. Pas plus de deux minutes par profil.
+
+3) Envoyer — tout de suite après avoir retenu le compte
+Lis la bio et deux publications. Écris ce message en changeant seulement ce qui est entre crochets. Le début doit contenir une chose vraie et précise que tu as lue (ce que fait l'entreprise), avec tes propres mots, différente d'un compte à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes au suivant : tu n'inventes jamais un compliment. Une seule exception au texte : si l'entreprise ne vend aucun produit en stock (services purs), tu retires la ligne « garder votre stock à jour tout seul… » et rien d'autre.
+
+« Hello [nom affiché du compte],
+
+Nous avons vu [nom de l'entreprise] : [ce qu'elle fait, d'après son compte : activité, produits ou services, clients, points de vente]. Nous aimons votre développement, c'est très intéressant.
+
+Nous souhaitons être partenaires de votre démarche : nous vous proposons gratuitement Finjaro Accounting, qui permet de gérer votre entreprise partout :
+• donner un accès à chaque personne de votre équipe (caissier, gérant) ;
+• vendre en quelques touches, faire vos devis et envoyer le reçu sur WhatsApp ;
+• garder votre stock à jour tout seul, à chaque vente ;
+• tenir votre caisse, jour après jour, avec un livre de caisse ;
+• noter ce que vos clients vous doivent et les relancer sur WhatsApp en un geste ;
+• suivre vos achats et vos fournisseurs ;
+• suivre vos dépenses et vos résultats ;
+• la comptabilité complète (journal, grand livre, balance) quand votre comptable en a besoin ;
+• sortir vos chiffres en Excel.
+
+Pour essayer, sans créer de compte : accounting.finjaro.net/?src=ig-pme
+
+Dites-moi ce que vous en pensez. Belle journée !
+
+L'équipe Finjaro »
+
+ATTENTION À LA TOUCHE ENTRÉE : dans la zone de message d'Instagram, la touche Entrée ENVOIE immédiatement. Pour passer à la ligne, utilise Maj+Entrée, jamais Entrée seule. Tu appuies sur Envoyer une seule fois, à la toute fin, quand le message entier est écrit et relu : jamais de message coupé en plusieurs envois.
+
+AVANT d'envoyer : la zone de texte doit être vide au départ ; n'y tape JAMAIS de texte de test ; écris le message en une seule fois, puis RELIS la zone : elle doit commencer exactement par « Hello [nom affiché du compte], » et se terminer exactement par « L'équipe Finjaro ». S'il y a le moindre mot en trop, en moins ou répété, tu n'envoies pas : tu vides la zone et tu recommences, ou tu passes au suivant. À chaque nouveau compte, vérifie que la zone de la nouvelle conversation est vide.
+
+Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse (en particulier rien sur la facture officielle ou la TVA d'un pays). Travaille à un rythme calme et régulier, comme on le ferait en lisant chaque profil : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
+
+4) Quand t'arrêter — sans exception
+- Dès qu'Instagram affiche un avertissement, une limite, « Action bloquée », « Nous limitons certaines activités », « Réessayez plus tard », une demande de confirmation d'identité, un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
+- Si quelqu'un répond : tu ne réponds pas, tu me rapportes sa réponse mot pour mot. Une seule exception : si on te demande si tu es une personne ou une IA, tu ne mens pas : tu réponds en une phrase que le message vient de l'équipe Finjaro, qui utilise un assistant IA pour écrire les premiers messages, puis tu me préviens.
+- Si quelqu'un écrit « stop », « non » ou équivalent : tu me le dis, et on ne lui écrit plus jamais.
+
+5) Ce que tu ne fais JAMAIS
+- Écrire à un compte personnel, s'abonner, liker, commenter, partager, répondre à une story, rejoindre quoi que ce soit.
+- Écrire par WhatsApp, par e-mail ou par téléphone, même si le numéro est affiché.
+- Écrire deux fois au même compte.
+- Publier un nom, un numéro, une adresse ou un lien sur GitHub (le dépôt est public).
+- Inventer quoi que ce soit : si tu ne sais pas, écris « inconnu ».
+
+6) Ce que tu me rends à la fin, une seule fois, en tableau compact
+nom du compte | lien | abonnés | envoyé : oui ou non | adresse e-mail GÉNÉRIQUE affichée dans la bio (info@, contact@, commercial@…) ou « aucune » — jamais une adresse qui porte le nom d'une personne
+Reste bref : une ligne par compte, pas de commentaire.
+Puis une ligne : combien de messages envoyés, combien de profils ouverts, pourquoi tu t'es arrêté (10 envoyés, 40 profils ouverts, ou un avertissement d'Instagram), et tout avertissement reçu.
