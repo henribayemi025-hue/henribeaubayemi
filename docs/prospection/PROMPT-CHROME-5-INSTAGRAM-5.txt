@@ -29,17 +29,15 @@ Lis la bio et deux publications. Écris ce message en changeant seulement ce qui
 
 « Hello [nom affiché du compte],
 
-Nous avons vu [nom de l'entreprise] : [ce qu'elle fait, d'après son compte : activité, produits ou services, clients, points de vente]. Nous aimons votre développement, c'est très intéressant.
+Nous avons vu [nom de l'entreprise] : [ce qu'elle fait, en une courte phrase]. Nous aimons votre développement, c'est très intéressant.
 
 Nous souhaitons être partenaires de votre démarche : nous vous proposons gratuitement Finjaro Accounting, qui permet de gérer votre entreprise partout :
-• donner un accès à chaque personne de votre équipe (caissier, gérant) ;
-• vendre en quelques touches, faire vos devis et envoyer le reçu sur WhatsApp ;
-• garder votre stock à jour tout seul, à chaque vente ;
-• tenir votre caisse, jour après jour, avec un livre de caisse ;
-• noter ce que vos clients vous doivent et les relancer sur WhatsApp en un geste ;
-• suivre vos achats et vos fournisseurs ;
+• vendre en quelques touches et envoyer le reçu sur WhatsApp ;
+• garder votre stock à jour tout seul ;
+• tenir votre caisse et faire vos devis ;
+• noter ce que vos clients vous doivent et les relancer en un geste ;
 • suivre vos dépenses et vos résultats ;
-• la comptabilité complète (journal, grand livre, balance) quand votre comptable en a besoin ;
+• donner un accès à chaque personne de votre équipe ;
 • sortir vos chiffres en Excel.
 
 Pour essayer, sans créer de compte : accounting.finjaro.net/?src=ig-pme
@@ -47,6 +45,8 @@ Pour essayer, sans créer de compte : accounting.finjaro.net/?src=ig-pme
 Dites-moi ce que vous en pensez. Belle journée !
 
 L'équipe Finjaro »
+
+LONGUEUR : Instagram refuse un message de plus de 1 000 caractères. Celui-ci en fait environ 800 une fois rempli. Reste sous 950 : si ta phrase « ce qu'elle fait » est longue, raccourcis cette phrase, jamais les puces.
 
 MESSAGE EN ANGLAIS (NE PAS UTILISER pour l'instant, seulement quand je l'aurai autorisé pour une ville anglophone) :
 
