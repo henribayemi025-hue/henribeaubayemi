@@ -1,0 +1,62 @@
+Tu travailles dans ce navigateur, avec mes comptes Facebook déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Cette fois, la cible est les PME : des entreprises installées, qui ont une équipe et une activité suivie. PAS les petits vendeurs individuels. Objectif de cette session : envoyer jusqu'à 20 messages à des PME de Douala, en UNE SEULE passe, depuis la Page « Finjaro Net ».
+
+Tu travailles Page par Page, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 20 messages sont envoyés OU quand tu as ouvert 60 Pages, le premier des deux. Les PME sont plus rares que les petits vendeurs : si tu en envoies moins de 20, c'est normal, tu n'insistes pas et tu me rends ce que tu as.
+
+Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom de la Page, envoyé oui ou non.
+
+ÉTAPE 0 — l'identité d'envoi, une seule fois, avant le premier message
+Avant de te lancer, je me suis basculé moi-même sur la Page « Finjaro Net » (avatar « F » en haut à droite). Vérifie seulement que l'avatar du compte en haut à droite est bien « F » / Finjaro Net : si oui, l'identité d'envoi est confirmée, n'ouvre rien d'autre et commence. Si tu vois mon avatar personnel, ARRÊTE-TOI sans rien envoyer et dis-le-moi. Tu n'écris jamais depuis mon compte personnel.
+
+1) Trouver les PME — une recherche par type d'activité, pas plus
+Dans la barre de recherche Facebook, tape « grossiste Douala », choisis l'onglet « Publications » avec le filtre « Publications récentes » (ou le tri le plus récent). Juge d'abord sur la carte du résultat : n'ouvre la Page que si la publication date de moins de 7 jours ET vient d'une entreprise (pas d'un particulier). Fais défiler pour avoir plus de résultats avant de changer de recherche. Puis, successivement : distribution Douala · SARL Douala · établissements Douala · matériaux de construction Douala · quincaillerie Douala · imprimerie Douala · agroalimentaire Douala · transport Douala · garage Douala · restaurant Douala · hôtel Douala · boulangerie Douala. NE cherche PAS par l'onglet « Pages » : il remonte surtout des Pages abandonnées. Varie les activités : pas plus de 3 entreprises de la même activité.
+
+2) Critères — une PME est retenue SEULEMENT si les six sont vrais
+a. C'est une entreprise installée, pas un vendeur individuel. Il faut au moins deux de ces signes : une adresse précise ou un local ; des horaires d'ouverture ; une équipe visible (photos du personnel, « notre équipe ») ; plusieurs points de vente ou plusieurs lignes de produits ; vente « en gros » ou livraison ; un statut dans le nom ou dans « À propos » (SARL, SA, SAS, Ets, Établissements, Groupe) ; un site web.
+b. Elle a publié dans les 30 derniers jours (vérifie cette date EN PREMIER ; au-delà, tu quittes la Page).
+c. Elle vend ou fournit quelque chose de suivi (produits en stock, commandes, clients réguliers). Le prix n'est PAS obligatoire.
+d. Elle affiche un bouton Messenger : on peut lui écrire.
+e. Ce n'est PAS un petit vendeur seul (e-boutique d'une personne, friperie individuelle, vendeur à domicile, page « boutique » sans adresse ni horaires), ni une grande chaîne ou multinationale (banque, opérateur télécom, grande surface nationale), ni une administration, ni une association.
+f. Elle ne vend pas elle-même du logiciel, de l'IA ou de la comptabilité, et ce n'est pas un commerce déjà contacté dans cette session. Deux Pages du même propriétaire : une seule.
+Un critère manque : tu passes à la suivante. Tu ne forces jamais. Pas plus de deux minutes par Page.
+
+3) Envoyer — tout de suite après avoir retenu la Page
+Lis « À propos » et deux publications. Écris ce message en changeant seulement ce qui est entre crochets. Le début doit contenir une chose vraie et précise que tu as lue (ce que fait l'entreprise), avec tes propres mots, différente d'une Page à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes à la suivante : tu n'inventes jamais un compliment.
+
+« Hello [nom exact de la Page],
+
+Nous avons vu [nom de l'entreprise] : [ce qu'elle fait, d'après sa Page : activité, produits, clients, points de vente]. Nous aimons votre développement, c'est très intéressant.
+
+Nous souhaitons être partenaires de votre démarche : nous vous proposons gratuitement Finjaro Accounting, qui permet de gérer votre entreprise partout :
+• donner un accès à chaque personne de votre équipe (caissier, gérant) ;
+• vendre en quelques touches, faire vos devis et envoyer le reçu sur WhatsApp ;
+• garder votre stock à jour tout seul, à chaque vente ;
+• tenir votre caisse, jour après jour, avec un livre de caisse ;
+• noter ce que vos clients vous doivent et les relancer sur WhatsApp en un geste ;
+• suivre vos achats et vos fournisseurs ;
+• suivre vos dépenses et vos résultats ;
+• la comptabilité complète (journal, grand livre, balance) quand votre comptable en a besoin ;
+• sortir vos chiffres en Excel.
+
+Pour essayer, sans créer de compte : accounting.finjaro.net/?src=fb-pme
+
+Dites-moi ce que vous en pensez. Belle journée !
+
+L'équipe Finjaro »
+
+Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse (en particulier rien sur la facture officielle ou la TVA d'un pays). Travaille à un rythme calme : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
+
+4) Quand t'arrêter — sans exception
+- Dès que Facebook affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
+- Si quelqu'un répond : tu ne réponds pas, tu me rapportes sa réponse mot pour mot. Une seule exception : si on te demande si tu es une personne ou une IA, tu ne mens pas : tu réponds en une phrase que le message vient de l'équipe Finjaro, qui utilise un assistant IA pour écrire les premiers messages, puis tu me préviens.
+- Si quelqu'un écrit « stop », « non » ou équivalent : tu me le dis, et on ne lui écrit plus jamais.
+
+5) Ce que tu ne fais JAMAIS
+- Écrire à un profil personnel, rejoindre un groupe, ajouter quelqu'un, liker, commenter, partager.
+- Écrire par WhatsApp, par e-mail ou par téléphone, même si le numéro est affiché.
+- Écrire deux fois à la même Page.
+- Publier un nom, un numéro, une adresse ou un lien sur GitHub (le dépôt est public).
+- Inventer quoi que ce soit : si tu ne sais pas, écris « inconnu ».
+
+6) Ce que tu me rends à la fin, une seule fois, en tableau compact
+nom de la Page | lien | activité (3 mots) | envoyé : oui ou non | heure | adresse e-mail GÉNÉRIQUE affichée sur la Page (info@, contact@, commercial@…) ou « aucune » — jamais une adresse qui porte le nom d'une personne
+Puis une ligne : combien de messages envoyés, combien de Pages ouvertes, pourquoi tu t'es arrêté (20 envoyés, 60 Pages ouvertes, ou un avertissement de Facebook), et tout avertissement reçu.
