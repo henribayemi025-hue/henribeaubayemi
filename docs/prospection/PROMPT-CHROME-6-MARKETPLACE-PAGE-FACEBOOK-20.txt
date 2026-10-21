@@ -1,27 +1,30 @@
-Tu travailles dans ce navigateur, avec mes comptes déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer jusqu'à 20 messages à des boutiques qui vendent déjà en ligne sur la marketplace « Nevo », en UNE SEULE passe, depuis la Page Facebook « Finjaro Net ».
+SITE SOURCE DE LA SESSION : Nevo
+(Pour une autre marketplace, je remplace seulement ce mot : Jumia ou Glotelho. Partout où tu lis [SITE] ci-dessous, lis le nom de ce site. Pour Jumia, utilise le site Jumia du pays que je t'indique ; pour une boutique de ce site, ignore les « boutiques officielles » et les grandes marques : garde les vendeurs indépendants.)
 
-Nevo n'est que ta LISTE : tu y repères des vendeurs sérieux, puis tu leur écris sur LEUR PROPRE Page Facebook. Tu n'écris jamais à travers Nevo, tu ne crées pas de compte Nevo, tu n'achètes rien, tu ne notes aucun numéro de téléphone.
+Tu travailles dans ce navigateur, avec mes comptes déjà connectés. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session : envoyer jusqu'à 20 messages à des boutiques qui vendent déjà en ligne sur la marketplace « [SITE] », en UNE SEULE passe, depuis la Page Facebook « Finjaro Net ».
 
-Tu travailles boutique par boutique : tu en trouves une, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 20 messages sont envoyés OU quand tu as examiné 40 boutiques Nevo, le premier des deux. Tu ne me demandes jamais si tu dois continuer.
+[SITE] n'est que ta LISTE : tu y repères des vendeurs sérieux, puis tu leur écris sur LEUR PROPRE Page Facebook. Tu n'écris jamais à travers [SITE], tu ne crées pas de compte [SITE], tu n'achètes rien, tu ne notes aucun numéro de téléphone.
+
+Tu travailles boutique par boutique : tu en trouves une, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 20 messages sont envoyés OU quand tu as examiné 40 boutiques [SITE], le premier des deux. Tu ne me demandes jamais si tu dois continuer.
 
 Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom de la boutique, envoyé oui ou non.
 
 ÉTAPE 0 — l'identité d'envoi, une seule fois, avant le premier message
 Je me suis basculé moi-même sur la Page « Finjaro Net » (avatar « F » en haut à droite sur Facebook). Vérifie seulement que l'avatar est bien « F » / Finjaro Net : si oui, n'ouvre rien d'autre et commence. Si tu vois mon avatar personnel, ARRÊTE-TOI sans rien envoyer et dis-le-moi. Tu n'écris jamais depuis mon compte personnel.
 
-1) Trouver les boutiques — sur Nevo
-J'ai laissé la page d'accueil de Nevo ouverte dans un onglet. Commence par la section « Boutiques Sponsorisées » (badge « Boutique recommandée » ou badge vérifié), puis les boutiques des catégories (mode, beauté, téléphones, électronique, maison, alimentation…). Alterne les catégories : pas plus de 4 boutiques de la même catégorie. Ouvre la boutique pour voir ce qu'elle vend et si elle indique SA Page Facebook (ou son compte Instagram). Sinon, cherche le nom exact de la boutique dans la recherche Facebook, onglet « Pages ». Si la Page trouvée n'est pas à coup sûr la même entreprise (même nom, mêmes produits ou même logo), tu passes.
+1) Trouver les boutiques — sur [SITE]
+J'ai laissé la page d'accueil de [SITE] ouverte dans un onglet. S'il existe, commence par la section « Boutiques Sponsorisées » (badge « Boutique recommandée » ou badge vérifié), puis les boutiques des catégories (mode, beauté, téléphones, électronique, maison, alimentation…). Alterne les catégories : pas plus de 4 boutiques de la même catégorie. Ouvre la boutique pour voir ce qu'elle vend et si elle indique SA Page Facebook (ou son compte Instagram). Sinon, cherche le nom exact de la boutique dans la recherche Facebook, onglet « Pages ». Si la Page trouvée n'est pas à coup sûr la même entreprise (même nom, mêmes produits ou même logo), tu passes.
 
 2) Critères — une boutique est retenue SEULEMENT si les cinq sont vrais
-a. Sur Nevo, elle a au moins 10 articles en vente (ou un badge sponsorisé / recommandé / vérifié) : c'est un vendeur actif.
+a. Sur [SITE], elle a au moins 10 articles en vente (ou un badge sponsorisé / recommandé / vérifié) : c'est un vendeur actif.
 b. Sa Page Facebook a une publication de moins de 30 jours (vérifie cette date EN PREMIER ; au-delà, tu passes).
 c. Sa Page affiche un bouton Messenger.
-d. C'est bien la même entreprise que sur Nevo.
+d. C'est bien la même entreprise que sur [SITE].
 e. Ce n'est PAS une grande chaîne, ni une entreprise qui vend du logiciel, de l'IA ou de la comptabilité, ni une boutique déjà contactée dans cette session. Deux Pages du même propriétaire : une seule.
 Un critère manque : tu passes à la suivante, tu ne forces jamais. Pas plus de deux minutes par boutique. Si une boutique n'affiche que WhatsApp ou un téléphone, tu passes : on n'écrit jamais par WhatsApp ni par téléphone.
 
 3) Envoyer — tout de suite après avoir retenu la boutique
-Lis la Page et deux publications. Écris ce message en changeant seulement ce qui est entre crochets. Le début doit contenir une chose vraie et précise que tu as lue (ce que vend la boutique), avec tes propres mots, différente d'une boutique à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes à la suivante : tu n'inventes jamais un compliment. Tu ne nommes JAMAIS Nevo dans le message et tu ne dis rien sur d'autres plateformes.
+Lis la Page et deux publications. Écris ce message en changeant seulement ce qui est entre crochets. Le début doit contenir une chose vraie et précise que tu as lue (ce que vend la boutique), avec tes propres mots, différente d'une boutique à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes à la suivante : tu n'inventes jamais un compliment. Tu ne nommes JAMAIS [SITE] dans le message et tu ne dis rien sur d'autres plateformes.
 
 « Hello [nom exact de la Page],
 
@@ -51,15 +54,15 @@ AVANT d'appuyer sur Envoyer : vide complètement la zone de texte (sélectionne 
 Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse. Travaille à un rythme calme et régulier : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
 4) Quand t'arrêter — sans exception
-- Dès que Facebook ou Nevo affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
+- Dès que Facebook ou [SITE] affiche un avertissement, une limite, un « action bloquée », un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
 - Si quelqu'un répond : tu ne réponds pas, tu me rapportes sa réponse mot pour mot. Une seule exception : si on te demande si tu es une personne ou une IA, tu ne mens pas : tu réponds en une phrase que le message vient de l'équipe Finjaro, qui utilise un assistant IA pour écrire les premiers messages, puis tu me préviens.
 - Si quelqu'un écrit « stop », « non » ou équivalent : tu me le dis, et on ne lui écrit plus jamais.
 
 5) Ce que tu ne fais JAMAIS
-- Écrire par la messagerie de Nevo, par WhatsApp, par e-mail ou par téléphone, même si le numéro est affiché ; recopier un numéro ou une adresse.
+- Écrire par la messagerie de [SITE], par WhatsApp, par e-mail ou par téléphone, même si le numéro est affiché ; recopier un numéro ou une adresse.
 - Écrire à un profil personnel, rejoindre un groupe, ajouter quelqu'un, liker, commenter, partager.
 - Écrire deux fois à la même Page.
-- Dire du mal de Nevo ou proposer à une boutique de le quitter.
+- Dire du mal de [SITE] ou proposer à une boutique de le quitter.
 - Publier un nom, un numéro, une adresse ou un lien sur GitHub (le dépôt est public).
 - Inventer quoi que ce soit : si tu ne sais pas, écris « inconnu ».
 
