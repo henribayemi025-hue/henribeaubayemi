@@ -42,6 +42,8 @@ Dites-moi ce que vous en pensez. Belle journée !
 
 L'équipe Finjaro »
 
+AVANT d'appuyer sur Envoyer : vide complètement la zone de texte (sélectionne tout, supprime), n'y tape JAMAIS de texte de test, écris le message en une seule fois, puis RELIS la zone : elle doit commencer exactement par « Hello [nom de la Page], » et se terminer exactement par « L'équipe Finjaro ». S'il y a le moindre mot en trop, en moins ou répété (par exemple « Hello test » collé devant), tu n'envoies pas : tu corriges, ou tu passes à la Page suivante. Quand tu changes de Page, vérifie que la zone de texte de la nouvelle fenêtre est vide avant de commencer.
+
 Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse. Travaille à un rythme calme : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
 4) Quand t'arrêter — sans exception
