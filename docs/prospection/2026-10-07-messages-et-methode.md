@@ -18,6 +18,8 @@ par Beau lui-même.
 
 ## Messages
 
+> **21/10 — fin des modèles 6, 6-EN, 7 et 7-EN changée sur le choix de Beau** (option B) : plus de « commencer sans payer » ni de « répondez à cet e-mail pour l'accès » ; une phrase sur la décision (« rien n'est fait en votre nom sans votre accord »), puis une question (« quelle tâche vous prend le plus de temps chaque semaine ? ») et la promesse de montrer ce que l'équipe d'agents ferait pour l'entreprise. Signature : « Léo, agent IA de Finjaro ». Les modèles 1 à 5 sont remplacés ; ne plus les envoyer. **Aucun envoi tant que Beau n'a pas relancé la prospection.**
+
 Règles : pas de prénom (« nous faisons partie de Finjaro »), aucun chiffre
 non mesuré, aucune phrase qui enferme Finjaro dans un pays, et toujours une
 façon simple de dire non.
@@ -237,14 +239,17 @@ l'entreprise.
 > - un agent {rôle}, qui {tâche} ;
 > - un agent {rôle}, qui {tâche}.
 >
-> Chaque soir, ils vous rendent compte de leur travail. Vous gardez la main :
-> rien ne part sans votre accord.
+> Chaque soir, ils vous rendent compte de leur travail.
 >
 > Finjaro fait aussi Finjaro Accounting : votre caisse, votre stock et ce que
 > vos clients vous doivent, suivis depuis votre téléphone.
 >
-> On peut commencer sans payer : répondez à cet e-mail et l'équipe vous envoie
-> l'accès.
+> Vous gardez toujours la décision : rien n'est fait en votre nom sans votre
+> accord.
+>
+> Répondez en une phrase : quelle tâche vous prend le plus de temps chaque
+> semaine ? Je vous montre ce que l'équipe d'agents ferait pour {entreprise},
+> sur votre cas.
 >
 > Une personne de l'équipe Finjaro lit toutes les réponses.
 >
@@ -269,14 +274,16 @@ l'entreprise.
 > - a {role} agent, who {task};
 > - a {role} agent, who {task}.
 >
-> Every evening, they report back on their work. You stay in control: nothing
-> goes out without your approval.
+> Every evening, they report back on their work.
 >
 > Finjaro also makes Finjaro Accounting: your cash, your stock and what your
 > customers owe you, tracked from your phone.
 >
-> You can start for free: reply to this e-mail and the team will send you the
-> access.
+> You always keep the decision: nothing is done in your name without your
+> approval.
+>
+> Reply in one sentence: which task takes you the most time each week? I'll
+> show you what a team of agents would do for {company}, on your own case.
 >
 > A person from the Finjaro team reads every reply.
 >
@@ -333,10 +340,14 @@ aujourd'hui : Accounting n'affiche aucun prix).
 >
 > Et si vous voulez aller plus loin, Léo vous donne une équipe d'agents IA comme
 > moi : un agent qui prépare les réponses à vos clients, un qui suit vos
-> concurrents, un qui rédige vos documents. Vous gardez toujours la main.
+> concurrents, un qui rédige vos documents.
 >
-> On peut commencer sans payer : répondez à cet e-mail et l'équipe vous envoie
-> l'accès.
+> Vous gardez toujours la décision : rien n'est fait en votre nom sans votre
+> accord.
+>
+> Répondez en une phrase : quelle tâche vous prend le plus de temps chaque
+> semaine ? Je vous montre ce que l'équipe d'agents ferait pour {entreprise},
+> sur votre cas.
 >
 > Une personne de l'équipe Finjaro lit toutes les réponses.
 >
@@ -379,10 +390,13 @@ normalisée FNE).
 >
 > And if you want to go further, Léo gives you a team of AI agents like me: one
 > who prepares replies to your customers, one who keeps watch on your
-> competitors, one who drafts your documents. You always stay in control.
+> competitors, one who drafts your documents.
 >
-> You can start for free: reply to this e-mail and the team will send you the
-> access.
+> You always keep the decision: nothing is done in your name without your
+> approval.
+>
+> Reply in one sentence: which task takes you the most time each week? I'll
+> show you what a team of agents would do for {company}, on your own case.
 >
 > A person from the Finjaro team reads every reply.
 >
