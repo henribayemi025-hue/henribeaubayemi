@@ -333,10 +333,15 @@ aujourd'hui : Accounting n'affiche aucun prix).
 > ouverte une première fois. Pour {entreprise}, vous suivriez :
 > - {ce que leur site montre : le stock de vos pièces, les nuitées et le
 >   restaurant, vos ventes en gros et au détail…} ;
-> - votre caisse, jour après jour ;
+> - vendre en quelques touches, et envoyer le reçu sur WhatsApp ;
+> - votre caisse, jour après jour, avec un livre de caisse ;
 > - les sommes que vos clients vous doivent, avec une relance WhatsApp en un
 >   geste ;
-> - {selon le cas : vos devis, vos rendez-vous}.
+> - vos achats et vos fournisseurs ;
+> - vos devis {et vos rendez-vous, selon le cas} ;
+> - vos dépenses et vos résultats ;
+> - votre équipe, avec un accès pour chaque personne (caissier, gérant) ;
+> - vos chiffres en Excel, quand vous en avez besoin.
 >
 > Et si vous voulez aller plus loin, Léo vous donne une équipe d'agents IA comme
 > moi : un agent qui prépare les réponses à vos clients, un qui suit vos
@@ -384,9 +389,14 @@ normalisée FNE).
 > track of:
 > - {what their website shows: your spare-parts stock, your rooms and your
 >   restaurant, your wholesale and retail sales…};
-> - your cash, day after day;
+> - selling in a few taps, and sending the receipt on WhatsApp;
+> - your cash, day after day, with a cash book;
 > - what your customers owe you, with a WhatsApp reminder in one tap;
-> - {where relevant: your quotes, your appointments}.
+> - your purchases and your suppliers;
+> - your quotes {and appointments, where relevant};
+> - your expenses and your results;
+> - your team, with an access for each person (cashier, manager);
+> - your figures in Excel, whenever you need them.
 >
 > And if you want to go further, Léo gives you a team of AI agents like me: one
 > who prepares replies to your customers, one who keeps watch on your
@@ -492,6 +502,8 @@ son métier déclaré semble anodin (« accompagnement stratégique »).
   légales) : le filtre signale, un humain tranche en lisant le contexte.
 
 ## Les liens dans les e-mails (08/10, matin) — plus aucune adresse web
+
+> **Essai refait le 21/10 (brouillon, supprimé ensuite) : le connecteur réécrit toujours le lien** en `https://www.google.com/url?q=http://…` (et le passe même de https en http). Un lien dans un e-mail de Léo envoyé par ce connecteur est donc une page d'avertissement Google. **Beau veut un lien une seule fois (21/10)** : il ne peut être propre que dans un message que Beau envoie lui-même (sa boîte ou Messenger) ; Resend (@finjaro.net) n'est pas une solution : sa politique d'usage vise les envois massifs non sollicités et peut couper le compte, qui sert aussi aux e-mails d'Accounting et de Léo.
 
 Le connecteur Gmail qui sert aux envois réécrit **chaque adresse web** du
 message, dans le texte brut comme dans le HTML, qu'elle soit nue
