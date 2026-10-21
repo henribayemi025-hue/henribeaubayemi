@@ -1,30 +1,26 @@
-Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). La cible : des entreprises installées de la ville indiquée ci-dessous, de TOUT secteur (commerces, distributeurs, mais aussi services : agence, cabinet, école, transport, nettoyage, BTP, immobilier, communication, hôtellerie, restauration…). PAS les petits vendeurs individuels. Objectif de cette session : envoyer jusqu'à 10 messages directs, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
+Tu travailles dans ce navigateur, avec Instagram déjà connecté. Tu écris pour Finjaro Accounting, un logiciel de gestion d'entreprise (caisse, stock, comptabilité). Objectif de cette session (un test) : envoyer jusqu'à 10 messages directs à des boutiques ou entreprises de tout secteur qui ont plus de 5 000 abonnés, en UNE SEULE passe, depuis le compte Instagram de Finjaro.
 
-VILLE DE LA SESSION : Abidjan
-(Pour une autre ville, je remplace seulement ce mot : Dakar, Douala, Yaoundé, Libreville, Lagos, Abuja, Accra, Nairobi… Ville francophone : message en français. Ville anglophone : message en anglais, plus bas. Tu ne traites QUE cette ville : une entreprise d'une autre ville, tu la passes.)
+ZONE DE LA SESSION : villes francophones d'Afrique, Abidjan d'abord, puis Dakar, Douala, Yaoundé, Libreville, Cotonou, Lomé, Bamako…
+(Message en français. Tu restes dans ces villes : un compte d'ailleurs, tu le passes. Pas d'envoi en anglais tant que je ne l'ai pas autorisé : le message en anglais plus bas est pour plus tard.)
 
-Tu travailles compte par compte, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 10 messages sont envoyés OU quand tu as ouvert 40 profils, le premier des deux. Tu ne me demandes jamais si tu dois continuer : tu passes à la recherche suivante, et tu ne t'arrêtes que pour une de ces limites ou pour un avertissement d'Instagram.
+Tu travailles compte par compte, sans jamais refaire une recherche déjà faite : tu trouves une entreprise, tu vérifies, tu envoies, tu passes à la suivante. Tu t'arrêtes quand 10 messages sont envoyés OU quand tu as ouvert 30 profils, le premier des deux. Tu ne me demandes jamais si tu dois continuer : tu passes à la recherche suivante, et tu ne t'arrêtes que pour une de ces limites ou pour un avertissement d'Instagram.
 
 Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de long raisonnement, pas de capture d'écran inutile, pas de tableau intermédiaire, aucune recherche en double. Garde seulement en tête une liste courte : nom du compte, envoyé oui ou non.
 
 ÉTAPE 0 — l'identité d'envoi, une seule fois, avant le premier message
 Avant de te lancer, je me suis basculé moi-même sur le compte Instagram de Finjaro. Vérifie seulement que le nom du compte connecté (menu du profil, en bas à gauche ou en haut à droite) contient « finjaro ». Si oui, n'ouvre rien d'autre et commence. Si tu vois un autre nom, ou mon compte personnel, ARRÊTE-TOI sans rien envoyer et dis-le-moi. Tu n'écris jamais depuis mon compte personnel.
 
-1) Trouver les entreprises — une recherche par mot, pas plus
-Les recherches à plusieurs mots renvoient souvent « Aucun résultat » : ne les utilise pas. Trois façons, dans cet ordre :
-- COMMENCE TOUJOURS par le LIEU de la ville (recherche, filtre « Lieux », par exemple « Abidjan, Côte d'Ivoire »), onglet « Récents » s'il existe, sinon les publications les plus récentes. Chaque publication affiche sa date : n'ouvre un profil QUE si la publication a moins de 7 jours et vient d'une entreprise. Fais défiler longuement ce lieu avant de passer à autre chose, et essaie aussi les lieux voisins de la même ville (quartiers, par exemple Cocody, Marcory, Plateau, Yopougon, Treichville à Abidjan).
-- Seulement si le lieu ne donne plus rien : mots-dièses en UN SEUL mot collé, ville comprise (ils ramènent souvent des comptes d'autres pays : vérifie que la bio nomme la ville de la session) : #immobilierabidjan, #agenceabidjan, #transportabidjan, #nettoyageabidjan, #formationabidjan, #btpabidjan, #hotelabidjan, #restaurantabidjan, #boutiqueabidjan, #grossisteabidjan, #abidjanbusiness (onglet « Récents » s'il existe). Change le mot de la ville si la ville change ; pour une ville anglophone, mêmes idées en anglais (#lagosrealestate, #lagoslogistics, #lagosbusiness, #lagoscatering…).
-- Recherche « Comptes » avec UN seul mot (« SARL », « immobilier », « transport », « agence », « formation »), puis ne garde que les comptes dont la bio nomme la ville.
-Alterne commerces et services. Juge d'abord sur la carte du résultat : n'ouvre le profil que si le compte a l'air d'une entreprise et a publié récemment. Fais défiler pour avoir plus de résultats avant de changer de recherche. Varie les activités : pas plus de 3 entreprises de la même activité.
+1) Trouver les comptes
+Les recherches à plusieurs mots renvoient souvent « Aucun résultat » : ne les utilise pas. Dans cet ordre :
+- Le LIEU de la ville (recherche, filtre « Lieux », par exemple « Abidjan, Côte d'Ivoire »), onglet « Récents » ou « Populaires » : regarde les comptes qui publient et ouvre ceux qui ont l'air d'une boutique ou d'une entreprise. Fais défiler longuement, puis passe aux lieux voisins (quartiers : Cocody, Marcory, Plateau, Yopougon, Treichville…) et aux autres villes de la zone.
+- Mots-dièses en UN SEUL mot collé, ville comprise : #boutiqueabidjan, #grossisteabidjan, #immobilierabidjan, #agenceabidjan, #restaurantabidjan, #abidjanbusiness… (ils ramènent parfois des comptes d'autres pays : tu restes dans la zone).
+- Recherche « Comptes » avec UN seul mot (« boutique », « SARL », « immobilier », « agence »).
+Le nombre d'abonnés est affiché en haut du profil : regarde-le dès l'ouverture. Alterne les activités : pas plus de 3 comptes de la même activité.
 
-2) Critères — une entreprise est retenue SEULEMENT si les six sont vrais
-a. C'est une entreprise installée, pas un vendeur individuel : compte professionnel (catégorie affichée sous le nom, ou bouton « Contact »), avec au moins deux de ces signes : adresse précise ou local ; horaires ; équipe visible ; plusieurs produits ou prestations ; vente en gros ou livraison ; statut dans le nom ou la bio (SARL, SA, Ets, Établissements, Groupe) ; site web dans la bio.
-b. Elle a publié dans les 30 derniers jours (vérifie cette date EN PREMIER ; au-delà, tu quittes le profil).
-c. Elle vend ou fournit quelque chose de suivi (produits, prestations de service, chantiers, commandes, clients réguliers). Le prix n'est PAS obligatoire.
-d. Le compte est public et affiche un bouton « Message » ou « Envoyer un message ». Compte privé : tu passes.
-e. Ce n'est PAS un petit vendeur seul (boutique d'une personne, vendeur à domicile, compte sans adresse ni horaires), ni une vraie grande chaîne ou multinationale, ni une administration, ni une association, ni une entreprise qui vend elle-même du logiciel, de l'IA ou de la comptabilité. Pas de compte déjà contacté dans cette session. Deux comptes du même propriétaire : un seul.
-f. Elle compte au moins 1 000 abonnés (affichés en haut du profil). En dessous, c'est trop petit pour cet outil : tu quittes le profil tout de suite.
-Un critère manque : tu passes au suivant. Tu ne forces jamais. Pas plus de deux minutes par profil.
+2) Critères — deux seulement
+a. C'est une boutique ou une entreprise (compte professionnel), pas un compte personnel.
+b. Elle a plus de 5 000 abonnés. Sinon tu quittes le profil tout de suite.
+Pour pouvoir écrire, le compte doit être public et afficher un bouton « Message » ou « Envoyer un message » : sinon tu passes (ce n'est pas un critère, c'est une condition technique). Tu ignores aussi : les grandes marques et multinationales, les administrations, les associations, les entreprises qui vendent elles-mêmes du logiciel, de l'IA ou de la comptabilité, les comptes déjà contactés dans cette session, un deuxième compte du même propriétaire. Tu ne forces jamais. Pas plus de deux minutes par profil.
 
 3) Envoyer — tout de suite après avoir retenu le compte
 Lis la bio et deux publications. Écris ce message en changeant seulement ce qui est entre crochets. Le début doit contenir une chose vraie et précise que tu as lue (ce que fait l'entreprise), avec tes propres mots, différente d'un compte à l'autre. Si tu ne peux pas dire une chose vraie et précise, tu passes au suivant : tu n'inventes jamais un compliment. Une seule exception au texte : si l'entreprise ne vend aucun produit en stock (services purs), tu retires la ligne « garder votre stock à jour tout seul… » et rien d'autre.
@@ -50,7 +46,7 @@ Dites-moi ce que vous en pensez. Belle journée !
 
 L'équipe Finjaro »
 
-MESSAGE EN ANGLAIS (seulement pour une ville anglophone ; mêmes règles, mêmes retraits possibles) :
+MESSAGE EN ANGLAIS (NE PAS UTILISER pour l'instant, seulement quand je l'aurai autorisé pour une ville anglophone) :
 
 « Hello [account name],
 
@@ -78,7 +74,7 @@ ATTENTION À LA TOUCHE ENTRÉE : dans la zone de message d'Instagram, la touche 
 
 AVANT d'envoyer : la zone de texte doit être vide au départ ; n'y tape JAMAIS de texte de test ; écris le message en une seule fois, puis RELIS la zone : elle doit commencer exactement par « Hello [nom affiché du compte], » et se terminer exactement par « L'équipe Finjaro » (ou « The Finjaro team » en anglais). Relis la zone ENTIÈRE, du premier au dernier mot, pas seulement la fin ni une capture d'écran. S'il y a le moindre mot en trop, en moins ou répété, tu n'envoies pas : tu vides la zone et tu recommences, ou tu passes au suivant. À chaque nouveau compte, vérifie que la zone de la nouvelle conversation est vide.
 
-Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse (en particulier rien sur la facture officielle ou la TVA d'un pays). Travaille à un rythme calme et régulier, comme on le ferait en lisant chaque profil : une à deux minutes entre deux messages, jamais deux messages identiques mot pour mot.
+Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, ni chiffre, ni autre promesse (en particulier rien sur la facture officielle ou la TVA d'un pays). Travaille à un rythme calme et régulier, comme on le ferait en lisant chaque profil : deux à trois minutes entre deux messages, jamais deux messages identiques mot pour mot.
 
 4) Quand t'arrêter — sans exception
 - Dès qu'Instagram affiche un avertissement, une limite, « Action bloquée », « Nous limitons certaines activités », « Réessayez plus tard », une demande de confirmation d'identité, un contrôle de sécurité ou un captcha : tu t'arrêtes immédiatement, tu ne réessaies pas, tu ne contournes rien, et tu me le dis.
@@ -95,4 +91,4 @@ Le lien n'apparaît qu'une seule fois, tel quel. Tu n'ajoutes ni prix, ni date, 
 6) Ce que tu me rends à la fin, une seule fois, en tableau compact
 nom du compte | lien | abonnés | envoyé : oui ou non | adresse e-mail GÉNÉRIQUE affichée dans la bio (info@, contact@, commercial@…) ou « aucune » — jamais une adresse qui porte le nom d'une personne
 Reste bref : une ligne par compte, pas de commentaire.
-Puis une ligne : combien de messages envoyés, combien de profils ouverts, pourquoi tu t'es arrêté (10 envoyés, 40 profils ouverts, ou un avertissement d'Instagram), et tout avertissement reçu.
+Puis une ligne : combien de messages envoyés, combien de profils ouverts, pourquoi tu t'es arrêté (10 envoyés, 30 profils ouverts, ou un avertissement d'Instagram), et tout avertissement reçu.
