@@ -110,19 +110,22 @@ enseignes, les pages qui ne vendent rien (fan clubs, actualité, églises).
 
 ---
 
-## Le message à envoyer ensuite (Beau l'envoie lui-même)
+## Le message à envoyer ensuite (Beau l'envoie lui-même) — version du 21/10
 
-Par Messenger depuis la Page Finjaro — **pas par WhatsApp**. Court, et avec
-une phrase pour dire non (la loi camerounaise l'exige).
+Par Messenger depuis la Page Finjaro — **pas par WhatsApp**. Écrit à la main
+par Beau, donc le lien reste propre (le connecteur Gmail, lui, le réécrit).
+**Le lien n'apparaît qu'une seule fois**, avec son étiquette de mesure.
 
 > Bonjour ! On a vu votre page, vos articles sont beaux. Nous faisons partie
 > de Finjaro. On a fait un outil pour les boutiques comme la vôtre : vous
-> tapez le montant quand vous vendez, et il tient votre caisse et vos
-> comptes tout seul. Pas besoin de remplir un catalogue avant. C'est gratuit
-> jusqu'en novembre : accounting.finjaro.net
+> touchez les articles pour vendre, le reçu part sur WhatsApp, votre stock se
+> met à jour tout seul, et vous gardez votre caisse, ce que vos clients vous
+> doivent, vos achats et vos devis au même endroit. Gratuit pour démarrer.
+> À essayer sans créer de compte : accounting.finjaro.net/?src=fb-page
 > Si ça ne vous intéresse pas, dites-le-moi et je ne vous écrirai plus.
 
-**Ce qui ne bouge pas :** « gratuit jusqu'en novembre » toujours avec la
-date ; aucun chiffre non mesuré (« des centaines de boutiques », jamais) ;
-aucune phrase qui enferme Finjaro dans un pays ; rien ne part avant que
-Beau l'ait dit.
+**Ce qui ne bouge pas :** aucune date de fin et aucun prix (décision du
+13/10) ; aucun chiffre non mesuré (« des centaines de boutiques », jamais) ;
+aucune phrase qui enferme Finjaro dans un pays ; rien ne part avant que Beau
+l'ait dit. (« Gratuit jusqu'en novembre » et « gratuit à vie » ne sont plus
+écrits dans ce message tant que Beau n'a pas tranché entre les deux.)

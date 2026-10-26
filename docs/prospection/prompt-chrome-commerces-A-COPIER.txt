@@ -1,0 +1,28 @@
+Tu travailles dans ce navigateur, avec mes comptes Facebook et Instagram déjà connectés. Objectif : repérer 15 commerces qui ont de fortes chances d'adopter un outil simple de caisse et de comptabilité (Finjaro Accounting).
+
+Ville à traiter : [écris la ville ici, par exemple Douala]
+
+Comment chercher
+1. Sur Facebook : dans la barre de recherche, filtre « Pages », puis tape successivement : boutique [ville] · cosmétiques [ville] · pagne [ville] · prêt-à-porter [ville] · chaussures [ville] · pâtisserie [ville] · restaurant [ville] · quincaillerie [ville] · salon de coiffure [ville]. Quand une Page est bonne, regarde aussi les « Pages similaires » que Facebook propose à côté.
+2. Sur Instagram, seulement s'il manque des commerces : ouvre des mots-dièses comme #boutique[ville] ou #mode[ville] et relève les comptes professionnels (ceux qui affichent un bouton « Contact ») qui ont publié récemment.
+
+Garde un commerce seulement si :
+1. il vend des produits ou des prestations ;
+2. il a publié dans les 30 derniers jours ;
+3. ses publications montrent des articles avec un prix, ou une liste de prix ;
+4. il affiche un moyen de contact public (dans « À propos » ou sur son compte professionnel) : WhatsApp, téléphone, e-mail ou Messenger.
+
+Écarte : les profils personnels, les grandes chaînes, les pages inactives depuis plus d'un mois, tout ce qui n'est pas un commerce, les entreprises qui vendent elles-mêmes du logiciel, de l'IA ou de la comptabilité, et les boutiques déjà inscrites sur Finjaro.
+
+Ce que tu me rends, en tableau, une ligne par commerce :
+nom | lien | catégorie | ville ou quartier | contact affiché (WhatsApp / téléphone / e-mail / Messenger) | date de la dernière publication | articles avec prix : oui ou non | une phrase : ce qui te fait penser qu'il est preneur
+
+Arrête-toi à 15 commerces retenus.
+
+Ce que tu ne fais PAS :
+- tu n'envoies aucun message, tu n'ajoutes personne, tu ne rejoins aucun groupe, tu ne likes ni ne commentes rien ;
+- tu n'ouvres aucun profil personnel et tu ne relèves aucune liste de membres : seulement des commerces, et seulement les contacts qu'ils affichent eux-mêmes pour qu'on leur écrive ;
+- tu ne publies aucun nom, numéro, e-mail ou lien sur GitHub (le dépôt est public) ;
+- tu n'inventes rien : si tu ne sais pas, écris « inconnu ».
+
+À la fin, dis-moi combien de commerces tu as ouverts, combien tu en as gardés, et pourquoi tu as écarté les autres.

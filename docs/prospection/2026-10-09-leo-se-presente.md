@@ -1,5 +1,7 @@
 # Prospection : Léo se présente comme agent IA (idée de Beau, 09/10)
 
+> **Brouillon remplacé le 21/10** par les modèles 6, 6-EN, 7 et 7-EN de `2026-10-07-messages-et-methode.md` (fin choisie par Beau). Ne plus utiliser ce texte.
+
 Beau, 09/10 vers 14 h : « je pensais changer la structure, genre : bonjour, je
 suis Léo, agent IA de la compagnie Finjaro. Comme ça ils savent que c'est un
 agent IA qui les contacte, et ils voient déjà notre produit avant la

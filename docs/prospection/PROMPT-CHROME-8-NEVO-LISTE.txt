@@ -1,0 +1,19 @@
+Tu travailles dans ce navigateur. Objectif de cette session : dresser UNE SEULE liste de boutiques de la marketplace « Nevo » (elle est ouverte dans un onglet), avec, quand Nevo l'affiche, le lien vers leur Page Facebook. Tu n'écris à personne.
+
+Règles de cette session :
+- Tu ne cliques sur aucun bouton d'achat, de contact ou de connexion. Tu ne crées pas de compte et tu ne saisis rien.
+- Tu n'ouvres AUCUNE Page Facebook, aucun compte Instagram ou TikTok, aucun site extérieur : tu notes seulement le lien affiché sur Nevo.
+- Tu ne relèves JAMAIS un numéro de téléphone ou de WhatsApp, une adresse e-mail ou un nom de personne : seulement le nom de la boutique.
+- Sois très économe, c'est ma limite d'utilisation qui est en jeu : pas de capture d'écran inutile, pas de long raisonnement, aucune boutique ouverte deux fois. Tu ne me demandes jamais si tu dois continuer.
+
+Comment faire
+1. Commence par la section « Boutiques Sponsorisées » (« Voir tout »), puis les boutiques des catégories de l'accueil (mode, beauté, téléphones, électronique, maison, alimentation…). Alterne les catégories : pas plus de 6 boutiques de la même catégorie.
+2. Pour chaque boutique, ouvre sa fiche UNE fois et relève : le nom exact, la catégorie, le nombre d'articles (approximatif), et le lien Facebook, Instagram ou site que la fiche affiche elle-même, ou « aucun ».
+3. Ignore : les grandes marques et « boutiques officielles », les boutiques de moins de 10 articles, une deuxième boutique du même propriétaire.
+4. Arrête-toi à 30 boutiques examinées, ou si tu as fait le tour de ce que Nevo montre.
+5. Arrête-toi tout de suite si Nevo affiche un avertissement, un captcha, une limite ou demande de se connecter : ne contourne rien, recopie le texte exact et dis-le-moi.
+
+Ce que tu me rends, une seule fois, en tableau compact
+boutique | catégorie | articles | lien Facebook / Instagram / site affiché sur Nevo, ou « aucun »
+Une ligne par boutique, pas de commentaire.
+Puis une ligne : combien de boutiques examinées, combien affichent un lien Facebook, combien n'affichent aucun lien, et tout avertissement reçu.

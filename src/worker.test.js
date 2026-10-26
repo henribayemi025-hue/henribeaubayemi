@@ -61,12 +61,13 @@ describe('en-têtes de sécurité (M-1)', () => {
   });
 });
 
-describe('Learn réservé à la préproduction', () => {
-  it.each([['/learn'], ['/learn/'], ['/learn/assets/index.js'], ['/learn/visages/maya.webp']])(
-    'finjaro.net renvoie %s vers l’accueil', async (chemin) => {
+describe('Learn servi sur finjaro.net comme sur staging', () => {
+  it.each([['/learn'], ['/learn/'], ['/learn/assets/index.js']])(
+    'finjaro.net sert %s (plus de renvoi vers l’accueil)', async (chemin) => {
+      env.ASSETS.fetch.mockClear();
       const r = await demande(chemin);
-      expect(r.status).toBe(302);
-      expect(r.headers.get('Location')).toBe('/');
+      expect(r.status).toBe(200);
+      expect(env.ASSETS.fetch).toHaveBeenCalled();
     });
 
   it('la préproduction sert Learn', async () => {

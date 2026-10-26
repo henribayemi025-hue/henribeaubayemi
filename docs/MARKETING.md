@@ -33,6 +33,8 @@ Chaque phrase doit pouvoir être rattachée à quelque chose de **vrai aujourd'h
 | **Finir avec le cahier** | « Ta caisse, ton stock et tes dettes au même endroit. » | écrans Vendre, Stock, Dettes & crédits |
 | **Que le client reçoive un reçu** | « Le reçu part sur WhatsApp. » | reçu WhatsApp dans la démonstration d'Accounting |
 | **Trouver près de chez elle** (acheteuse) | « Trouve des boutiques près de toi. » | rubrique « Boutiques près de vous » sur l'accueil |
+| **Ne plus recompter son stock** (commerçante) | « Ton stock se met à jour tout seul. » | une vente dans Accounting crée les mouvements de stock (−1, −2 vus dans la démonstration le 19/10) |
+| **Vendre vite au comptoir** | « Tu vends en quelques touches. » | écran Vendre : toucher les articles, puis Encaisser (démonstration, 19/10) |
 
 À compléter à chaque nouveau post : une ligne ajoutée dans ce tableau, avec sa preuve.
 

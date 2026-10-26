@@ -25,11 +25,9 @@ IA_JETON_SHA256 = "ede16ea3f92fc3baf752f76a573ebb46720516389a502475c893157d34f06
 directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Learn (public/learn) reste réservé à la préproduction tant que Beau ne l'a
-# pas décidé (01/10 : « laisse Learn sur staging, on ne se presse pas »). Ses
-# fichiers passent donc d'abord par le Worker, qui les refuse sur finjaro.net
-# (voir learnFerme dans src/worker.js). /csp-rapport reçoit les rapports de la
-# CSP en mode rapport (M-1).
+# Learn (public/learn) est ouvert sur finjaro.net depuis le 26/10 (décision de
+# Beau). Ses fichiers passent par le Worker, qui y ajoute la CSP propre à Learn.
+# /csp-rapport reçoit les rapports de la CSP en mode rapport (M-1).
 # 13/10 : /img/* et /sitemap.xml ajoutés. Sans eux, Cloudflare répond la page
 # d'accueil (HTML, code 200) à la place du Worker : toutes les photos d'articles
 # (servies par /img/{bucket}/{chemin}) s'affichaient comme une icône grise, et
