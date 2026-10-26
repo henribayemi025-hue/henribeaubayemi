@@ -9,6 +9,7 @@ Chaque fichier a été regardé avant d'être gardé. Identifiant Unsplash = ima
 | parcours/prog.jpg | 1461749280684-dccba630e2f6 |
 | parcours/data.jpg | 1551288049-bebda4e38f71 |
 | parcours/dl.jpg | 1507413245164-6160d8298b31 |
+| parcours/rech.jpg | 1507413245164-6160d8298b31 (même photo que dl.jpg) |
 | parcours/eng.jpg | 1580894908361-967195033215 |
 | parcours/prompt.jpg | 1591453089816-0fbb971b454c |
 | parcours/compil.jpg | 1555949963-ff9fe0c870eb |
