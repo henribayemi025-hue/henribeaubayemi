@@ -141,17 +141,9 @@ export function geoDuVisiteur(request) {
   });
 }
 
-// Finjaro Learn est servi sous /learn/ sur la préproduction seulement : Beau
-// (01/10) « laisse Learn sur staging, on ne se presse pas ». Comme finjaro.net
-// reprend tout staging à chaque mise en ligne, ses fichiers y partiraient avec
-// n'importe quel autre changement ; sur la production on renvoie donc à
-// l'accueil. Pour ouvrir Learn sur finjaro.net : retirer ce verrou (et la
-// ligne run_worker_first de wrangler.toml), sur décision de Beau.
-export function learnFerme(url) {
-  const learn = url.pathname === '/learn' || url.pathname.startsWith('/learn/');
-  const preproduction = url.hostname.endsWith('.workers.dev') || url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-  return learn && !preproduction;
-}
+// Finjaro Learn est servi sous /learn/ sur staging ET sur finjaro.net depuis le
+// 26/10 (Beau : « mets-le en ligne sur finjaro.net »). Le verrou du 01/10
+// (« laisse Learn sur staging ») est retiré sur sa décision.
 
 export default {
   async fetch(request, env, ctx) {
@@ -168,10 +160,6 @@ export default {
     // L'IA gratuite de Cloudflare pour Léo et Finia (src/ia.js).
     if (url.pathname === '/ia/chat/completions') {
       return securiser(await servirIa(request, env));
-    }
-
-    if (learnFerme(url)) {
-      return securiser(new Response(null, { status: 302, headers: { Location: '/', 'Cache-Control': 'no-store' } }));
     }
 
     if (url.pathname.startsWith('/img/')) {
