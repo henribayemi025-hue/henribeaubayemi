@@ -340,3 +340,24 @@ temps vérifier. » Beau travaille à côté et n'est pas disponible dans la jou
   d'être entretenue (correctifs, mises en ligne déjà prêtes), sans nouveau
   chantier tant qu'Accounting n'a pas ses cinq usages hebdomadaires.
 
+
+## 13. Le niveau attendu — ordre de Beau (27/10)
+
+« Quand je dis : fais un truc comme VS Code, Codex ou Cursor, ce n'est pas à moi
+de te dire chaque détail : tu les connais. » J'avais livré un espace code
+« de 2002 » : pas de boutons « + », pas de connecteurs, pas d'explorateur, pas
+de bibliothèques (même `import pandas` ne marchait pas). Idem pour la pub
+Léo, jugée la plus laide qu'il ait vue.
+
+- **Je fais le maximum, pas le minimum.** Une référence nommée (VS Code,
+  Cursor, Codex, Linear, une vraie pub) veut dire : tout ce que ce produit
+  contient d'ordinaire, à son niveau de finition. Je liste d'abord ce que la
+  référence a, puis je construis cette liste, sans attendre que Beau la dicte.
+- **Les basiques d'abord**, avant la décoration : bibliothèques usuelles
+  (pandas, numpy, matplotlib), explorateur, onglets, boutons « + », connecteurs,
+  état d'erreur, état vide, téléphone.
+- **Je compare à un professionnel, pas à « ça marche ».** Avant de livrer :
+  capture, regard critique (« est-ce que Cursor sortirait ça ? »), essai réel
+  dans le navigateur connecté.
+- Un défaut signalé une fois (import, icône, texte) se cherche **partout**
+  dans le produit, pas seulement à l'endroit montré.
