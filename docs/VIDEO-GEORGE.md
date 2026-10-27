@@ -1,18 +1,17 @@
-# Vidéo « George » — idée de Beau (27/10), version proposée
+# Vidéo « George » — la scène de Beau (27/10), telle qu'il l'a dite
 
-Court et direct, 15 à 20 s, vertical. Rien n'est tourné ni généré avant le mot de Beau (génération = crédits).
+Court et direct, 15 à 20 s, vertical. Rien n'est tourné ni généré avant son mot (génération = crédits).
 
-## Scène
-1. (0-3 s) Canapé, soir. George, au téléphone, sourit. Le téléphone vibre : notification de vente. Pas de texte.
-2. (3-8 s) Gros plan sur l'écran : l'écran réel de la boutique sur finjaro.net, le compteur « ventes d'aujourd'hui ». Voix féminine : « Une vente de plus aujourd'hui. »
-3. (8-13 s) Plan large : George se lève, lève le poing, va à la fenêtre. Voix : « Vos produits se vendent sur finjaro.net, même quand vous vous reposez. »
-4. (13-18 s) Carton final : logo Finjaro + « Vends sur finjaro.net ». Une seule action.
+## Scène (sans rien changer à ce qu'il a demandé)
+1. **Plan d'ouverture** : l'image qu'il a envoyée. George est déjà sur son canapé, déjà au téléphone, il sourit déjà. Voix narrative : « C'est George. »
+2. **Plan 2** : George regarde le nombre de produits vendus aujourd'hui (insert sur l'écran du téléphone).
+3. **Voix féminine** (elle reprend) : « Gagné environ 100 euros de plus pour la vente de vos produits sur finjaro.net. »
+4. **Conclusion** (voix) : « Vendez sur finjaro.net. » On change de plan : George se lève, va à la fenêtre.
+5. **Carton final** : logo Finjaro + « Vends sur finjaro.net ».
 
-## Ce que j'ai changé par rapport à la demande, et pourquoi
-- « Environ 100 euros de plus » : retiré. C'est un gain annoncé, donc un chiffre non mesuré (CLAUDE.md §3), et l'euro suppose un pays. On montre le compteur de ventes de l'écran réel, rien d'autre.
-- L'écran du téléphone vient d'une vraie boutique (ou de la démo), jamais d'un faux écran.
-- Les visuels de produits viennent des vendeuses ou de Beau, pas du web.
+## Deux points à voir (un seul regard, Beau décide)
+- **« environ 100 euros »** : c'est un gain annoncé, non mesuré, et l'euro est une monnaie, pas toutes (CLAUDE.md §3 et §1). Si on garde la phrase, il faut une mention à l'écran « Exemple » pendant le plan 2, et on peut dire « environ 100 de plus » dans la monnaie de la personne qui regarde. Variante sans chiffre : « Une vente de plus aujourd'hui. »
+- **L'image** : elle ressemble à une photo de banque d'images. Pour la mettre dans une pub, il faut avoir la licence (ou la regénérer / la filmer nous-mêmes).
 
 ## À décider par Beau
-- Le sujet : place de marché (vendeurs) ou Accounting ? Priorité du 13/10 : Accounting d'abord. L'idée Accounting reste dans `docs/VIDEO-ACCOUNTING-IDEE.md`.
-- George : un vrai acteur filmé par Beau, ou une personne générée par IA (crédits à dépenser : son mot).
+- Sujet : place de marché (vendeurs) ou Accounting d'abord ? (priorité du 13/10 : Accounting). L'idée Accounting reste dans `docs/VIDEO-ACCOUNTING-IDEE.md`.
