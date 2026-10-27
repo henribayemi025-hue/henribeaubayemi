@@ -17,3 +17,20 @@ Court et direct, 15 à 20 s, vertical. Rien n'est tourné ni généré avant son
 
 ## À décider par Beau
 - Sujet : place de marché (vendeurs) ou Accounting d'abord ? (priorité du 13/10 : Accounting). L'idée Accounting reste dans `docs/VIDEO-ACCOUNTING-IDEE.md`.
+
+## Le speech (voix off seulement, George ne parle pas) — 17 s environ
+
+| Plan | Image | Voix |
+| --- | --- | --- |
+| 1 (0-3 s) | George sur son canapé, au téléphone, il sourit déjà | Narrateur : « Voici George. » |
+| 2 (3-7 s) | Même plan, puis insert sur l'écran : ses produits vendus aujourd'hui (mention « Exemple ») | Narrateur : « Il est tranquille sur son canapé… pendant que ses produits se vendent. » |
+| 3 (7-13 s) | Gros plan de son sourire, puis il se lève | Voix féminine : « Aujourd'hui, George a gagné environ 100 euros de plus, grâce à la vente de ses produits sur finjaro.net. » |
+| 4 (13-17 s) | Il va à la fenêtre, puis carton final Finjaro | Voix féminine : « Et vos produits ? Vendez-les sur finjaro.net. » |
+
+English version (same plans):
+1. « Meet George. »
+2. « He's relaxing on his couch… while his products sell. »
+3. « Today, George earned about 100 more, from selling his products on finjaro.net. »
+4. « And your products? Sell them on finjaro.net. »
+
+Notes : le mot « euros » devient « 100 de plus » dans la version anglaise (monnaie de la personne). Voix : deux voix, une narrative et une féminine ; voix locale Piper si ElevenLabs n'a plus de crédit.
