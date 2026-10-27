@@ -3,6 +3,8 @@
 Court et direct, 15 à 20 s, vertical. Rien n'est tourné ni généré avant son mot (génération = crédits).
 
 ## Scène (sans rien changer à ce qu'il a demandé)
+**George ne parle à aucun moment** : on l'entend seulement au téléphone sans paroles audibles ; tout passe par les voix off (narration, puis la voix féminine).
+
 1. **Plan d'ouverture** : l'image qu'il a envoyée. George est déjà sur son canapé, déjà au téléphone, il sourit déjà. Voix narrative : « C'est George. »
 2. **Plan 2** : George regarde le nombre de produits vendus aujourd'hui (insert sur l'écran du téléphone).
 3. **Voix féminine** (elle reprend) : « Gagné environ 100 euros de plus pour la vente de vos produits sur finjaro.net. »
