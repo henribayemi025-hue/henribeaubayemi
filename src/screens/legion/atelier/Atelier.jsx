@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag, IconListCheck, IconUserCheck } from '@tabler/icons-react';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
@@ -820,6 +821,9 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
           {projets.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
           <option value="+">+ {t('legion.atelier.nouveauProjet')}</option>
         </select>
+        <Link to="/legion/espace-python" className="flex items-center gap-1 rounded-pill border border-legion-line px-3 py-1.5 text-[12px] font-semibold text-legion-ink hover:border-legion-gold">
+          <IconCode size={14} className="text-legion-gold" /> {t('legion.atelier.espacePython')}
+        </Link>
 
         {vue && (
           <>
