@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- ✅ 01/11 (soir) — Passage Léo : 7 livrables relus ; 4 renvoyés (chiffres faux : 73/50/4 au lieu de 75/53/29, objectifs +10 % inventés, volumes inventés), 3 acceptés. Pour Beau : « Confirmer » sur le calendrier de publication de Contenu, et décision sur le schéma multidevise de Tirelire (base partagée). Pas de nouvelle tâche : les agents ont déjà des renvois à refaire.
 - ✅ 31/10 (soir) — Passage Léo : 4 livrables relus ; 2 renvoyés à l'agent (Rigo : conclusion fausse sur 11 fiches ≈ 3 % des vues ; le stagiaire tests : essais de navigateur inventés), 1 accepté (Balance : brouillon de CGU), 1 non relu (Données). Pour Beau : le texte juridique de Balance et la migration Mobile Money d'Ada attendent ton « Confirmer » ; je n'applique rien.
 - ✅ 30/10 (soir) — Passage Léo : aucun livrable en revue, toutes les tâches (4 de Claude + 6 plus anciennes) restent « à faire » ; chaque agent a déjà une tâche ouverte, donc pas de nouvelle tâche aujourd'hui (une par jour et par agent). Rien à signaler pour Beau.
 - ✅ 30/10 — « Porte l'espace code dans Léo » : étape 1 faite. Page `/legion/espace-python` (toutes les entreprises ; bouton « Espace Python » dans l'atelier de Léo) = l'espace de Learn (pandas, numpy, matplotlib, terminal, explorateur, agents), même compte. Étape 2 à faire : bibliothèques/pip et palette dans l'atelier natif de Léo.
