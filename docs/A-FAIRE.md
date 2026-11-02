@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- ✅ 02/11 (soir) — Passage Léo : 4 livrables relus ; 1 renvoyé (message aux vendeuses : 73/50/4 faux et taux de 8 % inventé), 3 acceptés (publications de la semaine, tableau KPI, modèle multidevise). Pour Beau : « Confirmer » sur les textes de publication de la semaine ; décision sur la marge de conversion multidevise. 4 autres livrables en revue sont des doublons d'anciens, non retouchés. Pas de nouvelle tâche.
 - ✅ 02/11 — Beau : programme de la semaine, suivi à cocher, programme de sport et onglet Mesures écrits dans son Sheet ; tout le fil (où est quoi, décisions, en attente) est dans `docs/VIE-DE-BEAU.md` pour survivre à un compactage.
 - 02/11 — Beau : « et personne n'a utilisé Accounting ? » puis « oui demande à Claudinette ». Dernière mesure 14/10 : 0 actif sur 7 j. Demande écrite dans `docs/DEMANDE-CLAUDINETTE.md` ; aucune session Claudinette joignable ce soir, donc réponse en attente.
 - 02/11 — Beau : (1) bilan de la semaine des agents de Léo (donné dans la réponse du jour) ; (2) refaire son programme de la semaine à partir du Google Sheet « Programme beau » (lun-ven : réveil 5 h, sport matin → 7 h 10, travail 9-17 h, viande + airfryer, salle le soir, guitare 10 min, nouvelles 10 min ; jeudi = prière jusqu'à ~23 h ; samedi sport 8 h puis réunion 10 h ; soirs de samedi/dimanche = fête ; adoration et confession à caser jeudi ou vendredi midi). Proposition faite ; à écrire dans le Sheet seulement sur son oui.
