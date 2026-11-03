@@ -49,3 +49,8 @@ Demande de Beau (02/11) : « sur une conversation comme ça, il faut que tu note
 ## 03/11 (nuit) : « go » donné, Sheet mis à jour
 Onglets créés dans « Programme beau » (verts) : `Repas nov` (menu mardi 3 → dimanche 8 + séances décalées), `Courses & stock` (courses du soir 25 €, suivi du stock de viande congelée), `Banque de plats` (33 plats, note 1-5, case Testé), `Desserts` (40 desserts). Chaque semaine, quand Beau demande de mettre à jour son programme : tirer au hasard dans `Banque de plats` et `Desserts`, remplir `Repas nov`, en évitant les plats déjà notés mal.
 Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendredi 06/11 (seul repas du matin ?), samedi 07/11 (retraite : dîner à la maison ou repas à emporter).
+
+## 03/11 (nuit, suite) : retours de Beau sur la mise en forme
+- Il n'aime pas le « grillage » (lignes alternées, quadrillage) dans les feuilles et ne veut pas trop d'onglets, et a demandé de supprimer les inutiles.
+- Fait : bandes retirées, quadrillage masqué sur mes onglets ; `Desserts` fusionné dans `Plats et desserts` ; ancien onglet `Semaine 2 nov` (grille) supprimé, `Suivi 2 nov` renommé `Semaine 2 nov`. Mes onglets : Semaine 2 nov, Sport nov, Mesures, Repas nov, Courses & stock, Plats et desserts.
+- Courses jour par jour ajoutées dans `Courses & stock` (mer, ven, sam+dim ; jeudi sans courses). Ses anciens onglets (Dashboard, Progression, Courses, Repas, Eau…) ne sont PAS supprimés sans son accord.
