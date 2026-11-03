@@ -39,3 +39,8 @@ Demande de Beau (02/11) : « sur une conversation comme ça, il faut que tu note
 - Vendredi 06/11 : congé posé, pas de travail ; sport plus tard ; à confirmer : mange-t-il seulement le matin ce jour-là ? il prépare quand même des repas pour son frère.
 - Lundi 02/11 : tout n'a pas été fait ; à reporter sur le reste de la semaine (séance Push décalée).
 - À faire après son accord : onglets `Repas nov` (menu mardi → dimanche + courses + stock congélateur), séances décalées dans `Sport nov`.
+
+## 03/11 (soir) : banque de plats et tirage au sort hebdomadaire
+- Plats validés par Beau : soya (aussi au four), ndomba, mbongo tchobi, poulet DG, yassa, porc fumé en petite quantité, poisson braisé, kédjénou, pepper soup. Écartés (« gras ») : ngombo/gombo, sauce jaune, kondré, eru, ndolé.
+- Demande : une feuille « Banque de plats » dans son Sheet (plat, version légère, ingrédients, temps, note de Beau). Chaque semaine, quand il demande de mettre à jour son programme, je tire au hasard dans la banque pour le menu de la semaine, il teste et note.
+- Questions de Beau : les desserts sont-ils gras ? (réponse : peu, sauf pépites, miel, huile). Sheet toujours pas modifié pour les repas : il attend d'avoir fini de discuter.
