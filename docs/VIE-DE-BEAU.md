@@ -31,3 +31,11 @@ Demande de Beau (02/11) : « sur une conversation comme ça, il faut que tu note
 - Budget : 25 € de tickets resto par jour, à dépenser en courses ; acheter surtout de la viande et en congeler au moins une portion par jour pour un stock en janvier.
 - Pesée du 03/11 matin : notée dans l'onglet `Poids`. Objectif de perte réaliste : environ 0,5 à 1 kg par semaine, pas 4 ; je lui ai dit.
 - À faire : si Beau le veut, onglets `Repas nov` (plats légers, courses) et `Stock congélateur`.
+
+## 03/11 (suite) : repas, sport décalé. Sheet PAS encore mis à jour (Beau : « on discute, tu notes, ensuite tu mets tout à jour »)
+- Beau est camerounais : il aime d'abord les plats du Cameroun. Eru et ndolé abandonnés (sa sœur refuse : trop d'huile). Gardés : poulet DG, porc fumé (petite quantité), poulet yassa. À proposer : poisson braisé, kédjénou, pepper soup, sauce gombo, sauce jaune.
+- Pâtisseries : il a un four ; pour l'airfryer, moules en silicone ou caissettes. Goût sucré : bananes mûres, compote, dattes, cannelle, vanille, un peu de miel ou édulcorant.
+- Horaires du soir : retour ~18 h 10, courses 20 min, installation 5 min, 1 h de préparation avant le sport (départ ~19 h 40).
+- Vendredi 06/11 : congé posé, pas de travail ; sport plus tard ; à confirmer : mange-t-il seulement le matin ce jour-là ? il prépare quand même des repas pour son frère.
+- Lundi 02/11 : tout n'a pas été fait ; à reporter sur le reste de la semaine (séance Push décalée).
+- À faire après son accord : onglets `Repas nov` (menu mardi → dimanche + courses + stock congélateur), séances décalées dans `Sport nov`.
