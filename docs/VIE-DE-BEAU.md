@@ -45,3 +45,7 @@ Demande de Beau (02/11) : « sur une conversation comme ça, il faut que tu note
 - Demande : une feuille « Banque de plats » dans son Sheet (plat, version légère, ingrédients, temps, note de Beau). Chaque semaine, quand il demande de mettre à jour son programme, je tire au hasard dans la banque pour le menu de la semaine, il teste et note.
 - Questions de Beau : les desserts sont-ils gras ? (réponse : peu, sauf pépites, miel, huile). Sheet toujours pas modifié pour les repas : il attend d'avoir fini de discuter.
 - 03/11 (nuit) : Beau veut une très longue liste de pâtisseries healthy (il en trouve peu) ; liste étendue donnée dans la conversation, à copier dans la feuille « Banque de plats » (onglet Desserts) à son « go ».
+
+## 03/11 (nuit) : « go » donné, Sheet mis à jour
+Onglets créés dans « Programme beau » (verts) : `Repas nov` (menu mardi 3 → dimanche 8 + séances décalées), `Courses & stock` (courses du soir 25 €, suivi du stock de viande congelée), `Banque de plats` (33 plats, note 1-5, case Testé), `Desserts` (40 desserts). Chaque semaine, quand Beau demande de mettre à jour son programme : tirer au hasard dans `Banque de plats` et `Desserts`, remplir `Repas nov`, en évitant les plats déjà notés mal.
+Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendredi 06/11 (seul repas du matin ?), samedi 07/11 (retraite : dîner à la maison ou repas à emporter).
