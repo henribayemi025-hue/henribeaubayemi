@@ -25,3 +25,9 @@ Demande de Beau (02/11) : « sur une conversation comme ça, il faut que tu note
 - Première ligne de `Mesures` (départ du 02/11).
 - Confirmer : adoration jeudi midi, confession vendredi midi.
 - Ordre/dates de ses photos s'il veut une comparaison.
+
+## 03/11 : cuisine et poids
+- Beau est fatigué de se priver (effet yoyo, « monstre » le soir). Il veut maigrir en mangeant bien, cuisiner les plats qu'il aime en version légère (poulet DG au airfryer, porc fumé, eru, ndolé), et des pâtisseries légères.
+- Budget : 25 € de tickets resto par jour, à dépenser en courses ; acheter surtout de la viande et en congeler au moins une portion par jour pour un stock en janvier.
+- Pesée du 03/11 matin : notée dans l'onglet `Poids`. Objectif de perte réaliste : environ 0,5 à 1 kg par semaine, pas 4 ; je lui ai dit.
+- À faire : si Beau le veut, onglets `Repas nov` (plats légers, courses) et `Stock congélateur`.
