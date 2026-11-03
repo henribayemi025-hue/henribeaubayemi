@@ -63,3 +63,10 @@ Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendred
 - À la demande de Beau, supprimés aussi les onglets masqués : Semaine type, Programme sport, Courses, Repas, Paramètres. **Finances** gardé (masqué).
 - Onglets restants du Sheet « Programme beau » : Semaine 2 nov, Sport nov, Mesures, Repas nov, Courses & stock, Plats et desserts, Planning de la semaine, Poids, Tâches, Planning Finjaro, Finances (masqué).
 - Les dates/poids de départ (145 kg le 20/09, objectif 115 kg le 20/12, jalons 140 kg le 04/10, 135 kg le 25/10) étaient dans Paramètres, maintenant supprimé : ils restent dans ce fichier.
+
+## 03/11 (soir) : prix réalistes, Carrefour
+- Beau fait ses courses au **Carrefour** (tickets resto, 25 €/jour, pas le dimanche). Ses retours : mes premiers prix étaient irréalistes.
+- Je ne peux pas lire carrefour.fr (403) ni de prix à jour : prix de la semaine = estimations réalistes (poulet ~7 €/kg, bœuf haché 5 % ~16 €/kg, skyr ~7 €/kg, dinde ~13 €/kg). Totaux : mar 24,50 ; mer 25 ; jeu 25 ; ven 24 ; sam+dim 47,20 (sur 50).
+- À faire dès qu'il envoie son ticket de caisse : remplacer tous les prix par les vrais (onglet `Courses & stock`, `Repas nov`), puis refaire les totaux.
+- Onglet `Planning de la semaine` et `Planning Finjaro` : suppression refusée par le système tant que Beau n'a pas écrit « supprime-les » ; il avait seulement dit « okay ».
+- Réponses encore attendues : ce qu'il n'a pas fait lundi (hors sport), vendredi (seul repas du matin ?), samedi (dîner à la maison ou repas à emporter ?).
