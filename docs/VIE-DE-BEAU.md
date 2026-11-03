@@ -58,3 +58,8 @@ Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendred
 ## 03/11 (nuit, suite 2)
 - Supprimés à la demande de Beau : onglets Dashboard, Progression, Eau. Restent masqués (non supprimés, à lui demander) : Semaine type, Programme sport, Courses, Repas, Paramètres, Finances. Attention : Finances = ses finances, Paramètres = dates et poids de départ ; ne rien supprimer sans son accord.
 - `Repas nov` refait : une colonne « Plat à préparer ce soir », « Dessert », « Courses à acheter ce jour-là », budget, séance. Règle hebdomadaire : du lundi au samedi, un plat différent par soir, tiré de `Plats et desserts`, avec la liste de courses du jour dans 25 € (une viande à congeler chaque jour) ; dimanche sans courses (tickets inutilisables), donc courses du dimanche le samedi.
+
+## 03/11 (nuit, suite 3)
+- À la demande de Beau, supprimés aussi les onglets masqués : Semaine type, Programme sport, Courses, Repas, Paramètres. **Finances** gardé (masqué).
+- Onglets restants du Sheet « Programme beau » : Semaine 2 nov, Sport nov, Mesures, Repas nov, Courses & stock, Plats et desserts, Planning de la semaine, Poids, Tâches, Planning Finjaro, Finances (masqué).
+- Les dates/poids de départ (145 kg le 20/09, objectif 115 kg le 20/12, jalons 140 kg le 04/10, 135 kg le 25/10) étaient dans Paramètres, maintenant supprimé : ils restent dans ce fichier.
