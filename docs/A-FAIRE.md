@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- ✅ 03/11 (soir) — Passage Léo : 1 livrable en revue (vérification de la devise des fiches et paniers), renvoyé : l'agent cite des lignes de currency.js et un champ country_currency qui n'existent pas. Pas de nouvelle tâche (les agents ont déjà des renvois). Rien pour Beau.
 - ✅ 02/11 (soir) — Passage Léo : 4 livrables relus ; 1 renvoyé (message aux vendeuses : 73/50/4 faux et taux de 8 % inventé), 3 acceptés (publications de la semaine, tableau KPI, modèle multidevise). Pour Beau : « Confirmer » sur les textes de publication de la semaine ; décision sur la marge de conversion multidevise. 4 autres livrables en revue sont des doublons d'anciens, non retouchés. Pas de nouvelle tâche.
 - ✅ 02/11 — Beau : programme de la semaine, suivi à cocher, programme de sport et onglet Mesures écrits dans son Sheet ; tout le fil (où est quoi, décisions, en attente) est dans `docs/VIE-DE-BEAU.md` pour survivre à un compactage.
 - 02/11 — Beau : « et personne n'a utilisé Accounting ? » puis « oui demande à Claudinette ». Dernière mesure 14/10 : 0 actif sur 7 j. Demande écrite dans `docs/DEMANDE-CLAUDINETTE.md` ; aucune session Claudinette joignable ce soir, donc réponse en attente.
