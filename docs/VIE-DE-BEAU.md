@@ -54,3 +54,7 @@ Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendred
 - Il n'aime pas le « grillage » (lignes alternées, quadrillage) dans les feuilles et ne veut pas trop d'onglets, et a demandé de supprimer les inutiles.
 - Fait : bandes retirées, quadrillage masqué sur mes onglets ; `Desserts` fusionné dans `Plats et desserts` ; ancien onglet `Semaine 2 nov` (grille) supprimé, `Suivi 2 nov` renommé `Semaine 2 nov`. Mes onglets : Semaine 2 nov, Sport nov, Mesures, Repas nov, Courses & stock, Plats et desserts.
 - Courses jour par jour ajoutées dans `Courses & stock` (mer, ven, sam+dim ; jeudi sans courses). Ses anciens onglets (Dashboard, Progression, Courses, Repas, Eau…) ne sont PAS supprimés sans son accord.
+
+## 03/11 (nuit, suite 2)
+- Supprimés à la demande de Beau : onglets Dashboard, Progression, Eau. Restent masqués (non supprimés, à lui demander) : Semaine type, Programme sport, Courses, Repas, Paramètres, Finances. Attention : Finances = ses finances, Paramètres = dates et poids de départ ; ne rien supprimer sans son accord.
+- `Repas nov` refait : une colonne « Plat à préparer ce soir », « Dessert », « Courses à acheter ce jour-là », budget, séance. Règle hebdomadaire : du lundi au samedi, un plat différent par soir, tiré de `Plats et desserts`, avec la liste de courses du jour dans 25 € (une viande à congeler chaque jour) ; dimanche sans courses (tickets inutilisables), donc courses du dimanche le samedi.
