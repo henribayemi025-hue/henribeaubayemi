@@ -44,3 +44,4 @@ Demande de Beau (02/11) : « sur une conversation comme ça, il faut que tu note
 - Plats validés par Beau : soya (aussi au four), ndomba, mbongo tchobi, poulet DG, yassa, porc fumé en petite quantité, poisson braisé, kédjénou, pepper soup. Écartés (« gras ») : ngombo/gombo, sauce jaune, kondré, eru, ndolé.
 - Demande : une feuille « Banque de plats » dans son Sheet (plat, version légère, ingrédients, temps, note de Beau). Chaque semaine, quand il demande de mettre à jour son programme, je tire au hasard dans la banque pour le menu de la semaine, il teste et note.
 - Questions de Beau : les desserts sont-ils gras ? (réponse : peu, sauf pépites, miel, huile). Sheet toujours pas modifié pour les repas : il attend d'avoir fini de discuter.
+- 03/11 (nuit) : Beau veut une très longue liste de pâtisseries healthy (il en trouve peu) ; liste étendue donnée dans la conversation, à copier dans la feuille « Banque de plats » (onglet Desserts) à son « go ».
