@@ -93,3 +93,6 @@ renvoient aucun post (anciens non importés ou page non lisible).
 - Profil : la bio TikTok contient un drapeau de pays ; le nom de la page Facebook contient
   une ville. À corriger par Beau (CLAUDE.md §1).
 
+
+## Semaine du 04 au 10/11 (fait le 04/11)
+Sept flyers : 04, 05, 07, 08, 10 = Accounting ; 06 et 09 = place de marché. Fabrication : fond abstrait ElevenLabs (1 génération, 190 crédits), texte rendu par une page HTML (Outfit + Plus Jakarta Sans, orange #ff6b00, terracotta foncé #c2410c) pour que le français soit exact. Programmés à 18 h Paris sur Facebook, Instagram (déclaré « généré par IA » pour le fond) et TikTok ; légende avec `?src=flyerJJMM`. Metricool n'a pas de post en attente avant cela. Les jeudi et samedi devraient être des vidéos : non faites cette semaine. À mesurer : visites avec `?src=flyer…`.
