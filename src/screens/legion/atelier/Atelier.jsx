@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag, IconListCheck, IconUserCheck } from '@tabler/icons-react';
+import { resumerPowerBI } from '../../../lib/powerbi';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche, Points, Entretien } from './Parties';
@@ -455,7 +456,20 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f || !pid) return;
-    if (f.size > 1_000_000) { setErreur(t('legion.atelier.jointTropGros')); return; }
+    // Beau (04/11) : « enlève cette contrainte pour l'instant ». Plus de limite
+    // de 1 Mo ici : le projet entier accepte 5 Mo côté serveur, qui répond lui-même
+    // si c'est trop.
+    // Un rapport Power BI (.pbix, .pbit) : on y lit un résumé (pages, visuels, champs,
+    // requêtes, mesures) et c'est ce texte qui entre dans le projet.
+    if (/\.(pbix|pbit)$/i.test(f.name)) {
+      try {
+        const { texte: resume } = await resumerPowerBI(f);
+        const nom = `${f.name.replace(/\.[^.]+$/, '')}-resume-powerbi.txt`;
+        await agir(() => appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: nom, contenu: resume } }));
+        setTexte((x) => `${x}${x ? '\n' : ''}${t('legion.atelier.jointMention', { nom })}`);
+      } catch (err) { setErreur(err.message); }
+      return;
+    }
     const texteF = await f.text();
     if (/\u0000/.test(texteF.slice(0, 2000))) { setErreur(t('legion.atelier.jointBinaire', { nom: f.name })); return; }
     await agir(() => appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: f.name, contenu: texteF } }));

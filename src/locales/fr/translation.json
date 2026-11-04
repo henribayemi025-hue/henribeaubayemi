@@ -1069,7 +1069,7 @@
       "telecharger": "Télécharger ce fichier",
       "joindre": "Joindre un fichier (il est déposé dans le projet)",
       "jointTropGros": "Fichier trop gros (1 Mo au plus pour l'instant).",
-      "jointBinaire": "« {{nom}} » n'est pas un fichier texte : les Excel, PDF et images arrivent bientôt dans l'atelier.",
+      "jointBinaire": "« {{nom}} » n'est pas un fichier texte : les Excel, PDF et images arrivent bientôt dans l'atelier (les rapports Power BI .pbix et .pbit, eux, sont lus).",
       "jointMention": "(Fichier joint : {{nom}} — il est dans le projet.)",
       "ouvrirAPart": "Ouvrir la page à part, en grand",
       "mode_accepter": "Accepter les modifs",
