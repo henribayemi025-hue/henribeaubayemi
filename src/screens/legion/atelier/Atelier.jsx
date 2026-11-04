@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconPlayerStopFilled, IconDownload, IconHistory, IconGitCompare, IconPresentation, IconSend, IconPlus, IconDeviceFloppy, IconFiles, IconCode, IconMessages, IconLoader2, IconEye, IconRefresh, IconDeviceMobile, IconDeviceDesktop, IconPaperclip, IconExternalLink, IconPlayerPlayFilled, IconPlayerTrackNextFilled, IconSearch, IconBrandGithub, IconFileSearch, IconFlag, IconListCheck, IconUserCheck } from '@tabler/icons-react';
+import { resumerPowerBI } from '../../../lib/powerbi';
 import { appel, ErreurAtelier, definirEntreprise } from './api';
 import { construireArbre, dollars } from './arbre';
 import { Arbre, Carte, Modifications, Journal, NouveauProjet, EnvoyerGithub, Recherche, Points, Entretien } from './Parties';
@@ -101,6 +102,8 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
   const [projets, setProjets] = useState([]);
   definirEntreprise(entrepriseId);
   const cleProjet = `atelier:projet:${entrepriseId || 'aucune'}`;
+  const cleVue = (p) => `atelier:vue:${entrepriseId || 'aucune'}:${p}`;
+  const vueRestauree = useRef(false);
   const [pid, setPid] = useState(() => lire(cleProjet));
   const [vueBrute, setVue] = useState(null);
   // « Revoir la séance » (Beau, 25/09 : « je ne vois pas comment elle code ») :
@@ -202,7 +205,25 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     setFichier(null);
     setOnglets([]);
     charger(pid);
+    // Beau (04/11) : « quand je recharge, ça revient au début ; je dois rester où
+    // j'étais ». On rouvre le fichier et l'onglet où il se trouvait dans ce projet.
+    vueRestauree.current = false;
+    let sauvee = null;
+    try { sauvee = JSON.parse(lire(cleVue(pid)) || 'null'); } catch { /* rien */ }
+    if (sauvee?.chemin) {
+      appel(`/projets/${pid}/fichier?chemin=${encodeURIComponent(sauvee.chemin)}`)
+        .then((r) => setFichier((f) => f || { chemin: r.chemin, contenu: r.contenu, brouillon: r.contenu }))
+        .catch(() => { /* le fichier n'existe plus : on reste sur la conversation */ });
+    }
+    if (sauvee?.onglet && (sauvee.chemin || sauvee.onglet !== 'editeur')) setOnglet(sauvee.onglet);
+    vueRestauree.current = true;
   }, [acces, pid, charger]);
+
+  // On retient l'onglet et le fichier ouvert, projet par projet, pour le rechargement.
+  useEffect(() => {
+    if (!pid || !vueRestauree.current) return;
+    ecrire(cleVue(pid), JSON.stringify({ onglet, chemin: fichier?.chemin || null }));
+  }, [pid, onglet, fichier?.chemin]);
 
   // Pendant que l'agent travaille, on suit le journal et le coût.
   useEffect(() => {
@@ -455,7 +476,20 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f || !pid) return;
-    if (f.size > 1_000_000) { setErreur(t('legion.atelier.jointTropGros')); return; }
+    // Beau (04/11) : « enlève cette contrainte pour l'instant ». Plus de limite
+    // de 1 Mo ici : le projet entier accepte 5 Mo côté serveur, qui répond lui-même
+    // si c'est trop.
+    // Un rapport Power BI (.pbix, .pbit) : on y lit un résumé (pages, visuels, champs,
+    // requêtes, mesures) et c'est ce texte qui entre dans le projet.
+    if (/\.(pbix|pbit)$/i.test(f.name)) {
+      try {
+        const { texte: resume } = await resumerPowerBI(f);
+        const nom = `${f.name.replace(/\.[^.]+$/, '')}-resume-powerbi.txt`;
+        await agir(() => appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: nom, contenu: resume } }));
+        setTexte((x) => `${x}${x ? '\n' : ''}${t('legion.atelier.jointMention', { nom })}`);
+      } catch (err) { setErreur(err.message); }
+      return;
+    }
     const texteF = await f.text();
     if (/\u0000/.test(texteF.slice(0, 2000))) { setErreur(t('legion.atelier.jointBinaire', { nom: f.name })); return; }
     await agir(() => appel(`/projets/${pid}/fichier`, { methode: 'PUT', corps: { chemin: f.name, contenu: texteF } }));
@@ -750,10 +784,17 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             </div>
           );
         })() : a.qui === 'action' ? (
-          <div key={a.id} className="flex items-center gap-2 px-1 font-mono text-[11px] text-legion-muted">
-            <span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>●</span>
-            <span className="min-w-0 truncate">{t(`legion.atelier.outil_${a.outil}`, a.outil)} {a.resume}</span>
-            <span className="shrink-0">{t(`legion.atelier.decision_${a.decision}`, a.decision)}</span>
+          <div key={a.id} className="px-1">
+            <div className="flex items-center gap-2 font-mono text-[11px] text-legion-muted">
+              <span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>●</span>
+              <span className="min-w-0 truncate">{t(`legion.atelier.outil_${a.outil}`, a.outil)} {a.resume}</span>
+              <span className="shrink-0">{t(`legion.atelier.decision_${a.decision}`, a.decision)}</span>
+            </div>
+            {a.image && (
+              <a href={a.image} target="_blank" rel="noreferrer" className="mt-1.5 block w-fit max-w-full">
+                <img src={a.image} alt={t('legion.atelier.captureAlt', 'Capture de la page')} className="max-h-72 max-w-full rounded-card border border-legion-line" />
+              </a>
+            )}
           </div>
         ) : a.qui === 'agent' ? (
           <div key={a.id} className="flex max-w-[96%] items-start gap-2">

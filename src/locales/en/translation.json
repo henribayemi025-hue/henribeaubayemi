@@ -1190,6 +1190,7 @@
       "outil_confier_a_collegue": "hands off to",
       "outil_recruter": "hires",
       "outil_equipe": "looks at the team",
+      "outil_voir_ecran": "looks at the page",
       "outil_travail_collegues": "reads teammates’ work",
       "avecLui": "Working with {{nom}}",
       "confieA": "{{nom}} handed a task to {{collegue}}",

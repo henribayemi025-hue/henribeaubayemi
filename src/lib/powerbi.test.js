@@ -49,6 +49,20 @@ describe('lecture d\'un rapport Power BI', () => {
     expect(texte).toContain('Mesure Total = SUM(Ventes[Montant])');
   });
 
+
+  it('lit les pages et visuels du nouveau format (PBIR)', async () => {
+    const page = { displayName: 'Ventes mensuelles' };
+    const visuel = { visual: { visualType: 'lineChart', query: { queryState: { Y: { projections: [{ field: { Measure: { Expression: { SourceRef: { Entity: 'Ventes' } }, Property: 'Total' } } }] } } }, visualContainerObjects: { title: [{ properties: { text: { expr: { Literal: { Value: "'Tendance'" } } } } }] } } };
+    const f = new File([zip({
+      'Report/definition/pages/pages.json': JSON.stringify({ pageOrder: ['p1'] }),
+      'Report/definition/pages/p1/page.json': JSON.stringify(page),
+      'Report/definition/pages/p1/visuals/v1/visual.json': JSON.stringify(visuel),
+    })], 'rapport.pbit');
+    const { texte } = await resumerPowerBI(f);
+    expect(texte).toContain('Page 1 : Ventes mensuelles — 1 visuel(s)');
+    expect(texte).toContain('lineChart « Tendance » : Ventes.Total');
+  });
+
   it('refuse un fichier qui n\'est pas une archive', async () => {
     await expect(resumerPowerBI(new File(['pas un zip'], 'x.pbix'))).rejects.toThrow();
   });

@@ -36,6 +36,10 @@ export const OUTILS = {
     description: 'Montre quelque chose à l\'humain sur SON écran, tout de suite : « apercu » ouvre l\'aperçu de la page web du projet ; « fichier » ouvre un fichier dans l\'éditeur. Quand l\'humain veut voir la page ou un fichier, fais-le avec cet outil au lieu de lui dire où toucher.',
     parameters: { type: 'object', properties: { quoi: { type: 'string', enum: ['apercu', 'fichier'] }, chemin: { type: 'string', description: 'Pour « fichier » : le fichier à ouvrir.' } }, required: ['quoi'] },
   },
+  voir_ecran: {
+    description: 'Ouvre une page web PUBLIQUE (adresse https, sans connexion, sans clic) dans un vrai navigateur et en rapporte ce qu\'une personne y voit : le texte affiché après le JavaScript. L\'humain voit la capture dans la conversation ; toi, tu reçois le texte. Utilise-le quand on te demande de « voir », « faire un screen » ou « regarder » une page, ou pour vérifier une page que tu as publiée. Il ne marche pas pour une page qui demande un compte (Power BI en ligne, messagerie…).',
+    parameters: { type: 'object', properties: { adresse: { type: 'string', description: 'L\'adresse complète, en https.' }, largeur: { type: 'string', enum: ['telephone', 'ordinateur'], description: 'telephone (390 px) par défaut.' } }, required: ['adresse'] },
+  },
   lire_fichier: {
     description: 'Lit un fichier du projet.',
     parameters: { type: 'object', properties: { chemin: { type: 'string' } }, required: ['chemin'] },
@@ -148,6 +152,7 @@ Règles qui ne changent jamais :
   4. Quand la séance approche de 80 % de son plafond, préviens l'humain et propose de finir proprement (bilan, fichiers en état) plutôt que de t'arrêter au milieu.
   5. En fin de séance, un bilan des fichiers : créés, modifiés, ce qui reste à faire, comment vérifier.
 - QUAND TU FAIS UN ÉCRAN (page web, application), vise le niveau d'un vrai studio, pas celui d'un exercice. Avant d'écrire : choisis une direction visuelle qui vient du sujet (4 à 6 couleurs en variables CSS, deux polices Google Fonts qui vont ensemble, une échelle de tailles). Puis : une vraie hiérarchie (en-tête, section principale forte, sections qui respirent), une grille de 8 px, une largeur de lecture maîtrisée, des cartes aux mêmes bords et aux mêmes espacements, des états survol et focus visibles, un contraste lisible, et un rendu propre à 390 px de large comme sur grand écran. Des icônes en SVG, jamais des émojis en guise d'icônes. Du vrai contenu plausible, jamais de « lorem ipsum ». Aucune photo prise sur le web : des dégradés, des formes, ou un emplacement « photo de la vendeuse » clairement marqué. AUCUNE statistique ni preuve sociale inventée : pas de « 12 400 annonces », de « 98 % de satisfaits », de note moyenne, d'avis, d'étoiles, de badge « vérifié » ou de nom de client — l'entreprise n'a pas ces chiffres (Awa l'a fait le 25/09, c'est interdit). Si la maquette a besoin d'un exemple (une annonce, un prix), il porte visiblement la mention « Exemple ». Une fois écrit, relis ton code comme un directeur artistique exigeant et corrige ce qui fait « modèle par défaut » avant d'annoncer.
+- Tu peux voir une page web PUBLIQUE avec l'outil « voir_ecran » (texte affiché, et l'humain voit la capture). Pour une page qui demande un compte, dis-le.
 - L'écran de l'atelier a un aperçu qui affiche la page web du projet (index.html avec ses .css et .js) en direct. Quand l'humain veut « voir » la page (ou un fichier), MONTRE-LA-LUI toi-même avec l'outil « montrer » — ne lui dis pas où toucher, et ne dis jamais que c'est impossible. Toi, tu ne vois pas l'écran : ne décris pas le rendu comme si tu l'avais vu.${blocEquipe(equipe)}`;
   if (etat.mode === 'reflechir') {
     return `${base}
@@ -208,6 +213,7 @@ export function compacter(msgs, limite = MAX_CONVERSATION) {
 function resumeAppel(outil, args) {
   if (outil === 'commande') return normaliserCommande(args?.commande);
   if (outil === 'chercher') return `« ${args?.texte ?? ''} » dans ${args?.chemin || '.'}`;
+  if (outil === 'voir_ecran') return resumer(args?.adresse, 200);
   if (outil === 'montrer') return args?.quoi === 'fichier' ? (args?.chemin || '.') : 'apercu';
   if (outil === 'confier_a_collegue') return `${args?.collegue ?? '?'} : ${resumer(args?.tache, 160)}`;
   if (outil === 'recruter') return `${args?.nom ?? '?'} (${args?.poste ?? '?'})`;
@@ -277,6 +283,16 @@ async function executer(outil, args, etat, deps) {
       return { ok: true, texte: `Le fichier ${chemin} est ouvert sous les yeux de l'humain.` };
     }
     return { ok: true, texte: 'L\'aperçu de la page est ouvert sous les yeux de l\'humain. Tu ne vois pas son écran : ne décris pas le rendu comme si tu l\'avais vu.' };
+  }
+  if (outil === 'voir_ecran') {
+    if (!deps.voirEcran) return { ok: false, texte: 'La vue d\'une page web n\'est pas branchée ici.' };
+    const r = await deps.voirEcran(args?.adresse, args?.largeur === 'ordinateur' ? 'ordinateur' : 'telephone');
+    if (r.erreur) return { ok: false, texte: `Je n'ai pas pu voir la page : ${r.erreur}` };
+    return {
+      ok: true,
+      image: `data:image/jpeg;base64,${r.capture_jpeg_base64}`,
+      texte: `${DONNEES}Page vue : ${r.titre || '(sans titre)'}\nAdresse : ${r.adresse} (statut ${r.statut ?? '?'}, largeur ${r.largeur})\nLa capture est montrée à l'humain dans la conversation ; tu ne la vois pas, seulement le texte ci-dessous. Ne décris pas les couleurs ni la mise en page comme si tu les avais vues.\n\nTexte affiché :\n${r.texte}`,
+    };
   }
   if (outil === 'lire_fichier') {
     const { chemin } = cheminSur(args.chemin);
@@ -374,7 +390,8 @@ async function traiter(etat, deps, appel, outil, args, decision, ev) {
   // Le texte écrit est gardé (60 000 caractères au plus) pour « Revoir la
   // séance » : Beau, 25/09, arrivé après la fin, n'avait vu que le résultat.
   const ecrit = outil === 'ecrire_fichier' && resultat.ok && typeof args?.contenu === 'string' && args.contenu.length <= MAX_CONTENU_REJEU ? { contenu: args.contenu } : {};
-  etat.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil, resume: resumeAppel(outil, args), decision, ok: resultat.ok, quand, ...(resultat.terminal ? { terminal: resultat.terminal } : {}), ...ecrit });
+  if (resultat.image) for (const a of etat.affichage) delete a.image; // une seule capture gardée : le stockage est limité
+  etat.affichage.push({ id: crypto.randomUUID(), qui: 'action', outil, resume: resumeAppel(outil, args), decision, ok: resultat.ok, quand, ...(resultat.terminal ? { terminal: resultat.terminal } : {}), ...(resultat.image ? { image: resultat.image } : {}), ...ecrit });
   await deps.journal({
     acteur: decision === 'refuse' || decision.startsWith('autorise') ? 'humain' : 'outil',
     outil, entree_resumee: resumer(resumeAppel(outil, args), 500), resultat_resume: resumer(resultat.texte.replace(DONNEES, ''), 500),

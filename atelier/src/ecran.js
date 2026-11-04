@@ -23,11 +23,11 @@ export function ecranPermis(brut) {
   return u;
 }
 
-export async function voirEcran(env, brut, largeur = 'telephone') {
+export async function voirEcran(env, brut, largeur = 'telephone', echelle = null) {
   const u = ecranPermis(brut);
   if (!u) return { erreur: 'adresse refusée : une page publique en https, sans adresse IP ni réseau interne' };
   if (!env.BROWSER) return { erreur: 'le navigateur n\'est pas branché sur ce Worker' };
-  const vue = LARGEURS[largeur] || LARGEURS.telephone;
+  const vue = { ...(LARGEURS[largeur] || LARGEURS.telephone), ...(echelle ? { deviceScaleFactor: echelle } : {}) };
   const navigateur = await puppeteer.launch(env.BROWSER);
   try {
     const page = await navigateur.newPage();
