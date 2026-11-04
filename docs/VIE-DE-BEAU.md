@@ -72,3 +72,6 @@ Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendred
 - Réponses encore attendues : ce qu'il n'a pas fait lundi (hors sport), vendredi (seul repas du matin ?), samedi (dîner à la maison ou repas à emporter ?).
 
 ## 04/11 : Beau a remis le mode automatique (ne plus demander d'autorisation pour chaque geste). Routine quotidienne 18 h : e-mails Accounting + flyers.
+
+## 04/11 (soir) : règle de Beau — « tu n'as pas besoin de me demander pour tout »
+Pour le Sheet, les repas, les courses, le sport, les flyers et les e-mails du soir : je décide, je fais, puis je dis ce qui a été fait. Je ne demande plus « je mets dans le Sheet ? » ni « ça te va ? ». Je m'arrête seulement pour : l'argent, l'authentification et les accès, la suppression de ses données (hors onglets que j'ai créés), et tout ce qui se publie en son nom hors de l'ordre déjà donné.
