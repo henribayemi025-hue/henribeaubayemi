@@ -497,7 +497,7 @@
       "aide": "Conditions de vente, FAQ, tarifs, procédures : les agents répondent à partir d’eux et citent leur source ; quand la réponse n’y est pas, ils le disent. Les fichiers se lisent avec leur lien : n’y mets pas de données personnelles de clients.",
       "deposer": "Déposer un document (PDF, Excel, CSV, texte)",
       "lecture": "Lecture du document…",
-      "formats": "PDF, Excel, CSV ou texte seulement.",
+      "formats": "PDF, Excel, CSV, texte ou Power BI (.pbix, .pbit) seulement.",
       "titreTexte": "Titre (ex. : Questions fréquentes)",
       "coller": "Ou colle un texte ici (FAQ, conditions, procédure…)",
       "ajouterTexte": "Ajouter ce texte",

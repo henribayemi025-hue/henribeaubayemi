@@ -1,3 +1,4 @@
+import { resumerPowerBI } from '../../../lib/powerbi';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChoixModele } from './ChoixModele';
 import {
@@ -1096,11 +1097,27 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
   async function documentChoisi(e) {
     const f = e.target.files?.[0]; e.target.value = '';
     if (!f) return;
-    if (f.size > MAX_OCTETS) { alert(t('legion.tropLourd', 'Trop lourd: 10 Mo au plus.')); return; }
     const ext = (f.name.split('.').pop() || '').toLowerCase();
+    // Un rapport Power BI (Beau, 04/11) : on en lit le résumé ici, dans le
+    // navigateur, et c'est ce texte qui part à l'agent (le fichier lui-même
+    // peut faire plusieurs dizaines de Mo).
+    if (ext === 'pbix' || ext === 'pbit') {
+      if (f.size > 200 * 1024 * 1024) { alert(t('legion.tropLourd', 'Trop lourd.')); return; }
+      setDepot('fichier');
+      try {
+        const { texte: resume } = await resumerPowerBI(f);
+        const nom = `${f.name.replace(/\.[^.]+$/, '')} (résumé Power BI).txt`;
+        const url = await deposer(new Blob([resume], { type: 'text/plain' }), 'txt', 'text/plain');
+        await onEnvoyer({ texte: texte.trim() || '📊', genre, meta: { pieces: [{ type: 'fichier', url, nom, mime: 'text/plain' }] } });
+        setTexte('');
+      } catch (err) { alert(err.message); }
+      finally { setDepot(null); }
+      return;
+    }
+    if (f.size > MAX_OCTETS) { alert(t('legion.tropLourd', 'Trop lourd: 10 Mo au plus.')); return; }
     const MIMES = { xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv', pdf: 'application/pdf', txt: 'text/plain' };
     const mime = MIMES[ext];
-    if (!mime) { alert(t('legion.fichierNonPris', 'Excel, CSV, PDF ou texte seulement.')); return; }
+    if (!mime) { alert(t('legion.fichierNonPris', 'Excel, CSV, PDF, texte ou Power BI seulement.')); return; }
     setDepot('fichier');
     try {
       const url = await deposer(f, ext, mime);
@@ -1263,7 +1280,7 @@ function Composeur({ moi, agents, entrepriseId, t, reponseA, onAnnulerReponse, p
           </button>
         )}
         <input ref={fichier} type="file" accept="image/*" className="hidden" onChange={photoChoisie} />
-        <input ref={document_} type="file" accept=".xlsx,.xls,.csv,.pdf,.txt" className="hidden" onChange={documentChoisi} />
+        <input ref={document_} type="file" accept=".xlsx,.xls,.csv,.pdf,.txt,.pbix,.pbit" className="hidden" onChange={documentChoisi} />
         {aEcrit ? (
           <button type="submit" disabled={!moi} aria-label={t('equipe.envoyer')}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-legion-gold text-legion-bg shadow-md transition active:scale-95 disabled:opacity-50">

@@ -1,3 +1,4 @@
+import { resumerPowerBI } from '../../../lib/powerbi';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { IconFileText, IconTrash, IconUpload, IconCopy, IconCheck, IconInbox } from '@tabler/icons-react';
 import { supabase } from '../../../lib/supabase';
@@ -81,6 +82,14 @@ export function Documents({ entreprise, t }) {
     const f = e.target.files?.[0]; e.target.value = '';
     if (!f) return;
     const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (ext === 'pbix' || ext === 'pbit') {
+      if (f.size > 200 * 1024 * 1024) { setErreur(t('legion.tropLourd', 'Trop lourd.')); return; }
+      try {
+        const { texte: resume } = await resumerPowerBI(f);
+        await ajouter(new Blob([resume], { type: 'text/plain' }), `${f.name.replace(/\.[^.]+$/, '')} (Power BI)`, 'txt');
+      } catch (err) { setErreur(err.message); }
+      return;
+    }
     if (!MIMES[ext]) { setErreur(t('legion.docs.formats')); return; }
     if (f.size > 10 * 1024 * 1024) { setErreur(t('legion.tropLourd', 'Trop lourd: 10 Mo au plus.')); return; }
     await ajouter(f, f.name.replace(/\.[^.]+$/, ''), ext);
@@ -133,7 +142,7 @@ export function Documents({ entreprise, t }) {
           className="inline-flex items-center gap-1.5 rounded-pill bg-legion-gold px-3 py-1.5 text-[13px] font-semibold text-legion-bg disabled:opacity-50">
           <IconUpload size={15} /> {occupe === 'ajout' ? t('legion.docs.lecture') : t('legion.docs.deposer')}
         </button>
-        <input ref={fichier} type="file" accept=".pdf,.xlsx,.xls,.csv,.txt" className="hidden" onChange={fichierChoisi} />
+        <input ref={fichier} type="file" accept=".pdf,.xlsx,.xls,.csv,.txt,.pbix,.pbit" className="hidden" onChange={fichierChoisi} />
       </div>
       <form onSubmit={collerTexte} className="mt-2 space-y-1.5">
         <input value={titreTexte} onChange={(e) => setTitreTexte(e.target.value)} maxLength={120} placeholder={t('legion.docs.titreTexte')} className={champ} />
