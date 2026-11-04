@@ -93,3 +93,13 @@ renvoient aucun post (anciens non importés ou page non lisible).
 - Profil : la bio TikTok contient un drapeau de pays ; le nom de la page Facebook contient
   une ville. À corriger par Beau (CLAUDE.md §1).
 
+
+## Semaine du 04 au 10/11 (fait le 04/11)
+Sept flyers : 04, 05, 07, 08, 10 = Accounting ; 06 et 09 = place de marché. Fabrication : fond abstrait ElevenLabs (1 génération, 190 crédits), texte rendu par une page HTML (Outfit + Plus Jakarta Sans, orange #ff6b00, terracotta foncé #c2410c) pour que le français soit exact. Programmés à 18 h Paris sur Facebook, Instagram (déclaré « généré par IA » pour le fond) et TikTok ; légende avec `?src=flyerJJMM`. Metricool n'a pas de post en attente avant cela. Les jeudi et samedi devraient être des vidéos : non faites cette semaine. À mesurer : visites avec `?src=flyer…`.
+
+## Mesurer l'effet des posts (base de départ du 04/11, avant le premier flyer)
+**Place de marché** (table `events`, type `visit`, visiteurs uniques = `meta->>'anon_id'`) : 27/10 : 19 ; 28/10 : 92 ; 29/10 : 27 ; 30/10 : 128 ; 31/10 : 357 ; 01/11 : 131 ; 02/11 : 127 ; 03/11 : 521. Presque tout « direct » (7 jours : 1 345 uniques directs, 2 venus de Google, 1 de Facebook), **0 avec étiquette `src`** (5 événements `v1410` en 30 jours). 0 commande depuis le 17/10. Les pics du 31/10 et du 03/11 ne viennent d'aucun post connu : à ne pas attribuer sans preuve.
+**Réseaux** (Metricool, brand 7400752) : abonnés TikTok 101, Instagram 220, Facebook 158 ; vues de la page Facebook 6 à 14 par jour (100 le 29/10, jour du dernier post) ; vues Instagram 0 à 2 par jour.
+**Accounting** (tables partagées, comptage seulement) : 9 espaces réels, 0 actif sur 7 jours, 1 sur 30 jours, dernier geste 17/10 ; `finia_visites` : 9 visites au total, la dernière le 21/10.
+**Méthode** : chaque flyer a son étiquette `?src=flyerJJMM`. Le lendemain : visites avec cette étiquette (`events.meta->>'src'` pour finjaro.net, `finia_visites.src` pour Accounting), abonnés et vues Metricool, comparés à cette base. Un post n'est dit « efficace » que si ses visites étiquetées sont comptées ; sinon on écrit « aucun effet mesuré ».
+**Correction du 04/11** : j'avais écrit « 0 visite » en lisant `finia_visites`, qui ne compte que les visites d'Accounting. Les visites de la place de marché sont dans `events`.

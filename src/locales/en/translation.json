@@ -497,7 +497,7 @@
       "aide": "Terms of sale, FAQ, prices, procedures: agents answer from them and cite their source; when the answer is not there, they say so. Files are readable through their link: do not put customers’ personal data in them.",
       "deposer": "Upload a document (PDF, Excel, CSV, text)",
       "lecture": "Reading the document…",
-      "formats": "PDF, Excel, CSV or text only.",
+      "formats": "PDF, Excel, CSV, text or Power BI (.pbix, .pbit) only.",
       "titreTexte": "Title (e.g. Frequently asked questions)",
       "coller": "Or paste a text here (FAQ, terms, procedure…)",
       "ajouterTexte": "Add this text",
