@@ -784,10 +784,17 @@ export default function Atelier({ t, langue = 'fr', codeur = null, entrepriseId 
             </div>
           );
         })() : a.qui === 'action' ? (
-          <div key={a.id} className="flex items-center gap-2 px-1 font-mono text-[11px] text-legion-muted">
-            <span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>●</span>
-            <span className="min-w-0 truncate">{t(`legion.atelier.outil_${a.outil}`, a.outil)} {a.resume}</span>
-            <span className="shrink-0">{t(`legion.atelier.decision_${a.decision}`, a.decision)}</span>
+          <div key={a.id} className="px-1">
+            <div className="flex items-center gap-2 font-mono text-[11px] text-legion-muted">
+              <span className={a.decision?.startsWith('refuse') ? 'text-legion-danger' : a.ok ? 'text-legion-success' : 'text-legion-gold'}>●</span>
+              <span className="min-w-0 truncate">{t(`legion.atelier.outil_${a.outil}`, a.outil)} {a.resume}</span>
+              <span className="shrink-0">{t(`legion.atelier.decision_${a.decision}`, a.decision)}</span>
+            </div>
+            {a.image && (
+              <a href={a.image} target="_blank" rel="noreferrer" className="mt-1.5 block w-fit max-w-full">
+                <img src={a.image} alt={t('legion.atelier.captureAlt', 'Capture de la page')} className="max-h-72 max-w-full rounded-card border border-legion-line" />
+              </a>
+            )}
           </div>
         ) : a.qui === 'agent' ? (
           <div key={a.id} className="flex max-w-[96%] items-start gap-2">

@@ -27,7 +27,7 @@ export const MODES = ['demander', 'accepter', 'auto', 'reflechir', 'visite'];
 export const MODES_ACTION = ['demander', 'accepter', 'auto'];
 // « montrer » ne touche à rien : il demande à l'écran d'ouvrir l'aperçu ou un
 // fichier (Beau, 25/09 : « il doit tout faire lui-même »).
-export const OUTILS_LECTURE = ['lister', 'lire_fichier', 'chercher', 'montrer'];
+export const OUTILS_LECTURE = ['lister', 'lire_fichier', 'chercher', 'montrer', 'voir_ecran'];
 export const OUTILS_ECRITURE = ['ecrire_fichier', 'supprimer_fichier'];
 export const OUTILS_COMMANDE = ['commande'];
 // L'ÉQUIPE (Beau, 25/09 : « elle ne peut pas les voir, leur parler, les

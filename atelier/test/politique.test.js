@@ -120,7 +120,7 @@ describe('le mode Demander', () => {
 describe('les modes lecture seule', () => {
   for (const mode of ['reflechir', 'visite']) {
     it(`${mode} : on lit, on ne touche à rien`, () => {
-      expect(outilsPourMode(mode)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer']);
+      expect(outilsPourMode(mode)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer', 'voir_ecran']);
       expect(evaluer('lire_fichier', { chemin: 'a' }, { mode }).decision).toBe('auto');
       expect(evaluer('ecrire_fichier', { chemin: 'a', contenu: '' }, { mode }).decision).toBe('refuser');
       expect(evaluer('commande', { commande: 'ls' }, { mode }).decision).toBe('refuser');
@@ -167,7 +167,7 @@ describe('l\'équipe de Léo (25/09)', () => {
   it('les outils d\'équipe n\'apparaissent que si le projet a une entreprise', () => {
     expect(outilsPourMode('demander')).not.toContain('equipe');
     expect(outilsPourMode('demander', true)).toEqual(expect.arrayContaining(['equipe', 'travail_collegues', 'confier_a_collegue', 'recruter']));
-    expect(outilsPourMode('visite', true)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer', 'equipe', 'travail_collegues']);
+    expect(outilsPourMode('visite', true)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer', 'voir_ecran', 'equipe', 'travail_collegues']);
   });
   it('voir et lire : libre ; confier : libre en mode action ; recruter : TOUJOURS une carte', () => {
     expect(evaluer('equipe', {}, { mode: 'reflechir' }).decision).toBe('auto');

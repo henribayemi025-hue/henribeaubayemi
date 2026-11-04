@@ -141,7 +141,7 @@ describe('la boucle en mode Demander', () => {
     const m = monter([{ texte: 'Plan : 1. … 2. …' }]);
     m.etat.mode = 'reflechir';
     await envoyer(m.etat, m.deps, 'que proposes-tu ?');
-    expect(m.modele.requetes[0].corps.tools.map((t) => t.function.name)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer']);
+    expect(m.modele.requetes[0].corps.tools.map((t) => t.function.name)).toEqual(['lister', 'lire_fichier', 'chercher', 'montrer', 'voir_ecran']);
   });
 
   it('un clic ne l\'emporte pas sur un mode passé en lecture seule entre-temps', async () => {
@@ -154,5 +154,31 @@ describe('la boucle en mode Demander', () => {
     await decider(m.etat, m.deps, m.etat.demande.id, 'une_fois');
     expect(m.f.m.has('a.js')).toBe(false);
     expect(m.journal.find((j) => j.outil === 'ecrire_fichier').decision).toBe('refuse_par_outil');
+  });
+});
+
+
+describe('voir_ecran (04/11) : l\'agent de l\'atelier regarde une page publique', () => {
+  it('le texte va à l\'agent, la capture à l\'écran, une seule capture gardée', async () => {
+    const m = monter([
+      { outils: [['voir_ecran', { adresse: 'https://exemple.org/', largeur: 'telephone' }]] },
+      { outils: [['voir_ecran', { adresse: 'https://exemple.org/autre' }]] },
+      { texte: 'Vu.' },
+    ]);
+    let n = 0;
+    m.deps.voirEcran = async (adresse) => (adresse.includes('autre')
+      ? { erreur: 'adresse refusée : une page publique en https' }
+      : { titre: 'Exemple', adresse, statut: 200, largeur: '390 px', texte: `Bonjour ${++n}`, capture_jpeg_base64: 'QUJD' });
+    await envoyer(m.etat, m.deps, 'regarde la page');
+    const actions = m.etat.affichage.filter((a) => a.qui === 'action' && a.outil === 'voir_ecran');
+    expect(actions).toHaveLength(2);
+    expect(actions[0].image).toBe('data:image/jpeg;base64,QUJD');
+    expect(actions[1].ok).toBe(false);
+    expect(actions[1].image).toBeUndefined();
+    const retour = m.etat.conversation.filter((c) => c.role === 'tool').map((c) => c.content);
+    expect(retour[0]).toContain('Texte affiché');
+    expect(retour[0]).toContain('Bonjour 1');
+    expect(retour[0]).not.toContain('QUJD'); // l'image ne va pas dans la conversation du modèle
+    expect(retour[1]).toContain('refusée');
   });
 });

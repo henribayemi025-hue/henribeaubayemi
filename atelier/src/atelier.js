@@ -14,6 +14,7 @@ import { getSandbox } from '@cloudflare/sandbox';
 import { nouvelEtat, nouvelleSession, envoyer, decider, arreter, coutSession, compacter, chercherDans } from './boucle.js';
 import { executant, assurer } from './bac.js';
 import { disponibles, modelesRelais, MODELES } from './moteur.js';
+import { voirEcran } from './ecran.js';
 import { prixMachineParSeconde, arrondi } from './cout.js';
 import { cheminSur, MODES, normaliserCommande, commandeInterdite, RACINE } from './politique.js';
 import { enveloppe, lireDossier, retenir } from './terminal.js';
@@ -143,6 +144,7 @@ export class Atelier extends DurableObject {
     let bac = null;
     return {
       env,
+      voirEcran: (adresse, largeur) => voirEcran(env, adresse, largeur, 1),
       leo: acces.leo || null,
       jeton: acces.jeton || null,
       relais: acces.relais || [],
