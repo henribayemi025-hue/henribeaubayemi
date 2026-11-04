@@ -70,3 +70,5 @@ Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendred
 - À faire dès qu'il envoie son ticket de caisse : remplacer tous les prix par les vrais (onglet `Courses & stock`, `Repas nov`), puis refaire les totaux.
 - Onglet `Planning de la semaine` et `Planning Finjaro` : suppression refusée par le système tant que Beau n'a pas écrit « supprime-les » ; il avait seulement dit « okay ».
 - Réponses encore attendues : ce qu'il n'a pas fait lundi (hors sport), vendredi (seul repas du matin ?), samedi (dîner à la maison ou repas à emporter ?).
+
+## 04/11 : Beau a remis le mode automatique (ne plus demander d'autorisation pour chaque geste). Routine quotidienne 18 h : e-mails Accounting + flyers.
