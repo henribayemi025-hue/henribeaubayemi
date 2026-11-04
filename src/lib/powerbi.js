@@ -7,7 +7,8 @@
 // modèle (DataModel) sont compressées par Power BI : elles ne se lisent pas
 // ici, et le résumé le dit au lieu de les inventer.
 
-const MAX_TEXTE = 120_000;
+const MAX_TEXTE = 150_000;
+const MAX_MESURE = 1_200; // une mesure de rendu (SVG, couleurs) peut faire des milliers de signes
 
 function u16(d, o) { return d[o] | (d[o + 1] << 8); }
 function u32(d, o) { return (d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24)) >>> 0; }
@@ -80,6 +81,52 @@ function resumerLayout(layout) {
   return lignes.join('\n');
 }
 
+// Nouveau format de rapport (PBIR) : une page = Report/definition/pages/<id>/page.json,
+// un visuel = .../visuals/<id>/visual.json. Les champs sont dans query.queryState.
+function nomChamp(p) {
+  if (p.queryRef) return joli(p.queryRef);
+  const f = p.field || {};
+  const col = f.Column || f.Measure || f.Aggregation?.Expression?.Column || f.HierarchyLevel;
+  const ent = col?.Expression?.SourceRef?.Entity;
+  const prop = col?.Property || col?.Level;
+  return ent && prop ? `${ent}.${prop}` : '';
+}
+
+async function resumerPages(entrees, lire) {
+  const cles = [...entrees.keys()];
+  const pagesJson = json(texteDe(await lire('Report/definition/pages/pages.json') || new Uint8Array()));
+  const ordre = pagesJson?.pageOrder || [];
+  const ids = cles.map((c) => /^Report\/definition\/pages\/([^/]+)\/page\.json$/.exec(c)?.[1]).filter(Boolean);
+  ids.sort((a, b) => (ordre.indexOf(a) < 0 ? 999 : ordre.indexOf(a)) - (ordre.indexOf(b) < 0 ? 999 : ordre.indexOf(b)));
+  if (!ids.length) return '';
+  const lignes = [`PAGES DU RAPPORT (${ids.length})`];
+  let n = 0;
+  for (const id of ids) {
+    n += 1;
+    const page = json(texteDe(await lire(`Report/definition/pages/${id}/page.json`)));
+    const visuels = cles.filter((c) => c.startsWith(`Report/definition/pages/${id}/visuals/`) && c.endsWith('/visual.json'));
+    lignes.push(`\nPage ${n} : ${page?.displayName || id} — ${visuels.length} visuel(s)`);
+    for (const c of visuels) {
+      const v = json(texteDe(await lire(c)));
+      const vis = v?.visual;
+      if (!vis) { if (v?.visualGroup) lignes.push(`  - groupe « ${v.visualGroup.displayName || ''} »`); continue; }
+      const champs = [];
+      for (const r of Object.values(vis.query?.queryState || {})) for (const p of r.projections || []) { const c2 = nomChamp(p); if (c2) champs.push(c2); }
+      const titre = vis.visualContainerObjects?.title?.[0]?.properties?.text?.expr?.Literal?.Value;
+      lignes.push(`  - ${vis.visualType || 'visuel'}${titre ? ` « ${String(titre).replace(/^'|'$/g, '')} »` : ''}${champs.length ? ` : ${[...new Set(champs)].join(', ')}` : ''}`);
+    }
+  }
+  const signets = cles.filter((c) => /\.bookmark\.json$/.test(c));
+  if (signets.length) {
+    const noms = [];
+    for (const c of signets) { const b = json(texteDe(await lire(c))); if (b?.displayName) noms.push(b.displayName); }
+    if (noms.length) lignes.push(`\nSIGNETS (${noms.length}) : ${noms.join(', ')}`);
+  }
+  const perso = [...new Set(cles.map((c) => /^Report\/CustomVisuals\/([^/]+)\//.exec(c)?.[1]).filter(Boolean))];
+  if (perso.length) lignes.push(`\nVISUELS PERSONNALISÉS (${perso.length}) : ${perso.join(', ')}`);
+  return lignes.join('\n');
+}
+
 function resumerModele(modele) {
   const m = modele?.model || modele;
   const tables = m?.tables || [];
@@ -92,7 +139,8 @@ function resumerModele(modele) {
     if (cols.length) lignes.push(`  Colonnes : ${cols.join(', ')}`);
     (t.measures || []).forEach((x) => {
       const expr = Array.isArray(x.expression) ? x.expression.join('\n') : x.expression;
-      lignes.push(`  Mesure ${x.name} = ${String(expr || '').trim()}`);
+      const e = String(expr || '').trim();
+      lignes.push(`  Mesure ${x.name} = ${e.length > MAX_MESURE ? `${e.slice(0, MAX_MESURE)}\n  [… mesure coupée : ${e.length} caractères au total]` : e}`);
     });
   });
   const rel = m?.relationships || [];
@@ -131,6 +179,9 @@ export async function resumerPowerBI(fichier) {
   if (layout) {
     const l = json(texteDe(layout));
     if (l) parties.push(resumerLayout(l));
+  } else {
+    const pages = await resumerPages(entrees, lire);
+    if (pages) parties.push(pages);
   }
   const schema = await lire('DataModelSchema');
   if (schema) {
