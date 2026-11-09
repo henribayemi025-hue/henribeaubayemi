@@ -1,0 +1,780 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1C2856"><title>Me &amp; PDD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : application mobile d'abord (barre d'onglets en bas) ; sur grand écran, colonne de navigation à gauche et contenu en colonne de lecture. Bleu nuit du soir de prière, or des médailles. */
+:root{
+  --bg:#F5F6FA; --surface:#FFFFFF; --sunk:#EDF0F7; --line:#DCE1EC;
+  --ink:#141B33; --muted:#5B637F;
+  --brand:#1C2856; --brand-2:#2A3A78; --on-brand:#FFFFFF; --brand-soft:#E6EAF6;
+  --gold:#B8862A; --gold-ink:#8A6216; --gold-soft:#F5EBD5;
+  --ok:#1F7A4D; --ok-soft:#DFF2E7; --warn:#9A5B0B; --warn-soft:#FBEBD3; --late:#B42318; --late-soft:#FDE4E1; --info:#215E9E; --info-soft:#E1ECF8;
+  --bronze:#A8672F; --argent:#8D97A8; --or:#C49A1C; --platine:#5E9AAE;
+  --shadow:0 1px 2px rgba(20,27,51,.05),0 8px 24px rgba(20,27,51,.06);
+  --f-display:"Newsreader","Iowan Old Style",Georgia,serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px; --r-lg:20px;
+}
+:root[data-theme="dark"]{
+  --bg:#0B1020; --surface:#121931; --sunk:#0F1529; --line:#25304F;
+  --ink:#E8ECF8; --muted:#9AA3C2;
+  --brand:#1A2550; --brand-2:#2B3B7C; --on-brand:#FFFFFF; --brand-soft:#1A2347;
+  --gold:#E0B24F; --gold-ink:#EBC271; --gold-soft:#2E2715;
+  --ok:#5CC48C; --ok-soft:#13301F; --warn:#E5A55A; --warn-soft:#3A2A15; --late:#F08C86; --late-soft:#3D1D1F; --info:#7FB3EA; --info-soft:#15263D;
+  --bronze:#C98A55; --argent:#B3BCCB; --or:#E3BC3E; --platine:#8CC3D6;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:50;background:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg{width:1.15em;height:1.15em;flex:none;vertical-align:-.18em}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:2rem;letter-spacing:-.01em}
+h2{font-size:1.4rem}
+h3{font-size:1.12rem}
+p{margin:0}
+.num{font-variant-numeric:lining-nums tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink);font-weight:700}
+
+.demo{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--brand);color:var(--on-brand);font-size:.78rem;display:flex;gap:8px;align-items:center;justify-content:center;padding-block:6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));text-align:center}
+.demo b{color:#F1D79A;font-weight:600}
+.demo .dot{width:6px;height:6px;border-radius:50%;background:#F1D79A;flex:none}
+
+.shell{display:grid;grid-template-columns:1fr;min-height:calc(100% - 30px)}
+.side{display:none}
+.main{min-width:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 112px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand .mark{width:36px;height:36px;flex:none}
+.brand .t{font-family:var(--f-display);font-size:1.25rem;font-weight:700;line-height:1;white-space:nowrap}
+.brand .s{font-size:.72rem;color:var(--muted);letter-spacing:.04em}
+.switch{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px}
+.switch button{border:0;background:transparent;padding:6px 11px;border-radius:999px;font-size:.8rem;font-weight:600;color:var(--muted)}
+.switch button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
+.tabbar button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.7rem;color:var(--muted);padding:4px 0;font-weight:600;min-width:0}
+.tabbar button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.tabbar button[aria-current="page"]{color:var(--brand-2)}
+:root[data-theme="dark"] .tabbar button[aria-current="page"]{color:var(--gold-ink)}
+.tabbar svg{width:22px;height:22px}
+
+@media (min-width:960px){
+  .shell{grid-template-columns:272px 1fr}
+  .side{display:flex;flex-direction:column;gap:20px;position:sticky;top:30px;height:calc(100vh - 30px);overflow:auto;padding:24px 18px;border-right:1px solid var(--line);background:var(--surface)}
+  .main{padding-block:28px 60px;padding-left:40px;padding-right:max(40px,env(safe-area-inset-right,0px))}
+  .tabbar,.topbar{display:none}
+  h1{font-size:2.5rem}
+}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.side .grp{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 10px 6px;font-weight:700}
+.navlink{display:flex;align-items:center;gap:10px;border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:10px;color:var(--ink);font-weight:500;width:100%}
+.navlink svg{width:19px;height:19px;color:var(--muted);flex:none}
+.navlink:hover{background:var(--sunk)}
+.navlink[aria-current="page"]{background:var(--brand-soft)}
+.navlink[aria-current="page"] svg{color:var(--brand-2)}
+.navlink .badge{margin-left:auto}
+.side .foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;font-size:.8rem;color:var(--muted)}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);min-width:0}
+.flat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.hero{background:var(--brand);color:var(--on-brand);border-radius:var(--r-lg);padding:22px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(241,215,154,.28),transparent 70%);pointer-events:none}
+.hero .eyebrow{color:#F1D79A}
+.hero .muted{color:rgba(255,255,255,.74)}
+.row{display:flex;gap:12px;align-items:center;min-width:0}
+.between{justify-content:space-between}
+.wrapflex{flex-wrap:wrap}
+.stack{display:flex;flex-direction:column;gap:12px;min-width:0}
+.stack-s{display:flex;flex-direction:column;gap:6px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.link{color:var(--brand-2);font-weight:700;font-size:.88rem;background:none;border:0;padding:0}
+:root[data-theme="dark"] .link{color:var(--gold-ink)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid transparent;padding:11px 16px;font-weight:700;font-size:.95rem;min-height:44px}
+.btn:active{transform:scale(.98)}
+.btn svg{width:18px;height:18px}
+.btn-primary{background:var(--brand);color:var(--on-brand)}
+:root[data-theme="dark"] .btn-primary{background:var(--gold);color:#16120A}
+.btn-gold{background:#F1D79A;color:#1C2856}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{background:var(--sunk)}
+.btn-block{width:100%}
+.btn-s{min-height:36px;padding:6px 12px;font-size:.84rem;border-radius:10px}
+
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font-size:.75rem;font-weight:700;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-late{background:var(--late-soft);color:var(--late)}
+.p-info{background:var(--info-soft);color:var(--info)}
+.p-mute{background:var(--sunk);color:var(--muted)}
+.p-gold{background:var(--gold-soft);color:var(--gold-ink)}
+
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line);min-width:0}
+.li:first-child{border-top:0}
+.li .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--sunk);color:var(--brand-2)}
+:root[data-theme="dark"] .li .ic{color:var(--gold-ink)}
+.li .ic svg{width:19px;height:19px}
+.li .body{flex:1;min-width:0}
+.li .body .t{font-weight:600;overflow-wrap:anywhere}
+.li .body .s{font-size:.82rem;color:var(--muted)}
+.li .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+button.li{width:100%;background:transparent;border-left:0;border-right:0;border-bottom:0;text-align:left}
+button.li:hover{background:var(--sunk)}
+
+.prog{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.prog>span{display:block;height:100%;background:var(--brand-2);border-radius:99px}
+:root[data-theme="dark"] .prog>span{background:var(--gold)}
+.prog.ok>span{background:var(--ok)}
+
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.lbl{font-size:.84rem;font-weight:700}
+.input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px}
+.input:focus{outline:2px solid var(--gold);outline-offset:0;border-color:transparent}
+.hint{font-size:.8rem;color:var(--muted)}
+
+.choice{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.choice[aria-checked="true"]{border-color:var(--gold);background:var(--gold-soft)}
+.choice .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center}
+.choice[aria-checked="true"] .radio{border-color:var(--gold)}
+.choice[aria-checked="true"] .radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--gold)}
+.choice .body{flex:1;min-width:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.9rem;min-height:40px}
+.chip[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft)}
+
+.toggle{width:46px;height:28px;border-radius:99px;background:var(--line);border:0;position:relative;flex:none}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}
+.toggle[aria-checked="true"]{background:var(--ok)}
+.toggle[aria-checked="true"]::after{left:21px}
+
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--muted);font-weight:700;padding:4px 0;font-size:.9rem;align-self:flex-start}
+.back svg{width:18px;height:18px}
+.note{display:flex;gap:10px;align-items:flex-start;background:var(--sunk);border-radius:var(--r);padding:12px 14px;font-size:.86rem;color:var(--muted)}
+.note svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--gold-ink)}
+
+/* Fiche de prière */
+.fiche{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow)}
+.fiche-h{background:var(--gold-soft);padding:16px 18px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.fiche-b{padding:6px 18px 16px;display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:640px){.fiche-b{grid-template-columns:1fr 1fr}}
+.reading{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-top:1px dashed var(--line)}
+.reading:first-of-type{border-top:0}
+.reading .k{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;width:86px;flex:none}
+.reading .v{font-family:var(--f-display);font-size:1.08rem;font-weight:600}
+.ex{display:flex;gap:10px;align-items:center;width:100%;border:0;background:transparent;text-align:left;padding:8px 0;border-top:1px dashed var(--line)}
+.ex:first-of-type{border-top:0}
+.ex .box{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.ex[aria-checked="true"] .box{background:var(--ok);border-color:var(--ok);color:#fff}
+.ex[aria-checked="true"] .lbl2{text-decoration:line-through;color:var(--muted)}
+.ex .box svg{width:14px;height:14px}
+
+/* Médailles */
+.medals{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:640px){.medals{grid-template-columns:repeat(4,1fr)}}
+.medal{border:1.5px solid var(--line);border-radius:var(--r);padding:14px 12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:var(--surface);min-width:0}
+.medal .disc{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--f-display);font-weight:700;font-size:1rem;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.medal.got{border-color:var(--ok)}
+.medal.next{border-color:var(--gold);background:var(--gold-soft)}
+.medal .v{font-weight:700;font-variant-numeric:tabular-nums}
+.medal .x{font-size:.75rem;color:var(--muted)}
+
+.stat{display:flex;flex-direction:column;gap:2px;padding:14px;min-width:0}
+.stat .v{font-family:var(--f-display);font-size:1.6rem;font-weight:600;line-height:1.05;font-variant-numeric:tabular-nums}
+.stat .k{font-size:.8rem;color:var(--muted)}
+.bus{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center}
+.seats{display:flex;gap:3px;flex-wrap:wrap}
+.seats i{width:9px;height:9px;border-radius:2px;background:var(--line)}
+.seats i.t{background:var(--brand-2)}
+:root[data-theme="dark"] .seats i.t{background:var(--gold)}
+
+.tablewrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+table.t th,table.t td{padding:10px 12px;border-top:1px solid var(--line);text-align:left;white-space:nowrap}
+table.t thead th{border-top:0;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+/* Onboarding */
+.onb{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:20px;padding-block:8px}
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:4px;border-radius:9px;background:var(--line)}
+.steps i.on{background:var(--gold)}
+
+/* Feuille */
+.scrim{position:fixed;inset:0;background:rgba(8,12,28,.5);z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:16px}
+@media (min-width:640px){.scrim{align-items:center}.sheet{border-radius:22px}}
+.grab{width:40px;height:4px;border-radius:9px;background:var(--line);align-self:center}
+.paybtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 16px;font-weight:700;min-height:54px;text-align:left}
+.paybtn:hover{border-color:var(--gold)}
+.paybtn .sub{font-weight:500;font-size:.78rem;color:var(--muted)}
+.spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:spin .8s linear infinite;align-self:center}
+.success{width:64px;height:64px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;align-self:center}
+.success svg{width:32px;height:32px}
+.receipt{border:1px dashed var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.receipt .row{justify-content:space-between}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--brand);color:var(--on-brand);padding:11px 16px;border-radius:12px;z-index:80;font-size:.9rem;box-shadow:var(--shadow);max-width:calc(100% - 32px);display:flex;gap:8px;align-items:center}
+.toast svg{width:18px;height:18px;color:#F1D79A;flex:none}
+@media (min-width:960px){.toast{bottom:28px}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head><body><div class="demo" role="note"><span class="dot"></span><span id="demo-txt"></span></div>
+<div class="shell">
+  <aside class="side" id="side"></aside>
+  <main class="main"><div class="wrap"><div class="topbar" id="topbar"></div><div id="view" class="stack" style="gap:22px"></div></div></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Navigation"></nav>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- Icônes ---------- */
+const P={
+  news:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7 9h7M7 13h7M7 16h4"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><path d="M16 4.8a3 3 0 0 1 0 6"/><path d="M18 14.6c1.7.6 2.7 2.2 3 5.4"/>',
+  mountain:'<path d="m3 20 6.5-11 4 6.5L16 12l5 8z"/><circle cx="17" cy="6" r="2"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1.2"/><path d="M6 6l9-3 1.5 3"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+  shield:'<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  left:'<path d="m15 6-6 6 6 6"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  book:'<path d="M4 5c3-1.5 5.5-1.2 8 1v14c-2.5-2.2-5-2.5-8-1z"/><path d="M20 5c-3-1.5-5.5-1.2-8 1v14c2.5-2.2 5-2.5 8-1z"/>',
+  bus:'<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14.5" r="1"/><circle cx="16" cy="14.5" r="1"/>',
+  car:'<path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="13.5" r="1"/><circle cx="16.5" cy="13.5" r="1"/>',
+  house:'<path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-5h6v5"/>',
+  medal:'<circle cx="12" cy="15" r="5"/><path d="M8.5 11 6 3h4l2 5 2-5h4l-2.5 8"/>',
+  repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+  heart:'<path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/>',
+  doc:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  send:'<path d="M21 3 3 10.5l7 3 3 7z"/><path d="m10 13.5 4-4"/>',
+  chart:'<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/>',
+  checks:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  megaphone:'<path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M17 8a5 5 0 0 1 0 8"/>'
+};
+const ic=(n,c='')=>`<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||''}</svg>`;
+const MARK=`<svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#1C2856"/><path d="M20 8v24M13.5 15h13" stroke="#F1D79A" stroke-width="2.4" stroke-linecap="round"/><path d="M9 29c3.5-2.4 7-3 11-3s7.5.6 11 3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Langues ---------- */
+const T={
+ fr:{demo:'<b>Maquette de démonstration</b> — aucun paiement réel · données fictives',
+  tagline:'Ma vie au groupe Parole de Dieu',
+  nav_actus:'Actus',nav_groupe:'Mon groupe',nav_retraites:'Retraites',nav_contrib:'Mes contributions',nav_contrib_s:'Contributions',nav_hist:'Historique et reçus',nav_rappels:'Rappels',nav_profil:'Profil et langue',nav_plus:'Plus',
+  space_m:'Membre',space_r:'Responsable',grp_me:'Mon espace',grp_resp:'Espace responsable',
+  r_publier:'Publier une actu',r_payes:'Qui a payé',r_transport:'Bus et covoiturage',r_presence:'Présence',
+  hello:'Bonjour',fiche:'Fiche de prière du jour',lectures:'Lectures',exercices:'Exercices du jour',done_of:'faits',
+  today_grp:'Aujourd\'hui dans mon groupe',announces:'Annonces',rappels_due:'À ne pas oublier',see_all:'Tout voir',
+  pay:'Payer',reserve:'Réserver',register:'S\'inscrire',
+  theme_l:'Thème clair',theme_d:'Thème sombre',
+  sim:'Simulation : aucun paiement réel',
+ },
+ en:{demo:'<b>Demo mock-up</b> — no real payment · sample data',
+  tagline:'My life in the Parole de Dieu group',
+  nav_actus:'News',nav_groupe:'My group',nav_retraites:'Retreats',nav_contrib:'My contributions',nav_contrib_s:'Giving',nav_hist:'History & receipts',nav_rappels:'Reminders',nav_profil:'Profile & language',nav_plus:'More',
+  space_m:'Member',space_r:'Leader',grp_me:'My space',grp_resp:'Leader space',
+  r_publier:'Post news',r_payes:'Who has paid',r_transport:'Bus & car-sharing',r_presence:'Attendance',
+  hello:'Hello',fiche:'Today\'s prayer sheet',lectures:'Readings',exercices:'Today\'s exercises',done_of:'done',
+  today_grp:'Today in my group',announces:'Announcements',rappels_due:'Don\'t forget',see_all:'See all',
+  pay:'Pay',reserve:'Book',register:'Register',
+  theme_l:'Light theme',theme_d:'Dark theme',
+  sim:'Simulation: no real payment',
+ }
+};
+const t=k=>(T[S.lang]&&T[S.lang][k])||T.fr[k]||k;
+const L=o=>o==null?'':(typeof o==='string'?o:(o[S.lang]||o.fr));
+
+/* ---------- Pays, monnaies, groupes (données fictives) ---------- */
+const COUNTRIES={
+ fr:{name:{fr:'France',en:'France'},cur:'EUR',pay:['Carte bancaire','PayPal','Apple Pay'],regions:[
+   {id:'idf',name:'Île-de-France',groups:['Brétigny','Bezons','Blanc-Mesnil','Paris','Virtuel (en ligne)']},
+   {id:'hdf',name:'Hauts-de-France',groups:['Lille']}],bus:['Paris · Porte de Bercy','Brétigny · gare RER']},
+ cm:{name:{fr:'Cameroun',en:'Cameroon'},cur:'XAF',pay:['Orange Money','MTN Mobile Money','Carte bancaire'],regions:[
+   {id:'lit',name:'Littoral',groups:['Douala Akwa','Douala Bonamoussadi']},
+   {id:'cen',name:'Centre',groups:['Yaoundé Bastos','Yaoundé Mvog-Mbi']}],bus:['Douala · Akwa','Yaoundé · Poste centrale']},
+ be:{name:{fr:'Belgique',en:'Belgium'},cur:'EUR',pay:['Carte bancaire','Bancontact','PayPal'],regions:[
+   {id:'bxl',name:'Bruxelles-Capitale',groups:['Bruxelles Ixelles']}],bus:['Bruxelles · Gare du Midi']}
+};
+/* Prix fictifs par monnaie : chaque pays a ses propres tarifs, rien n'est converti sauf les médailles (montants fixés en FCFA). */
+const PRICE={
+ EUR:{dortoir:160,double:280,indiv:300,bus:25,cotisation:10,coVoit:8,centre:{etu:5,tpar:12,tp:25,fam:35},don:[10,20,50,100],virement:[10,25,50]},
+ XAF:{dortoir:60000,double:100000,indiv:125000,bus:5000,cotisation:5000,coVoit:2000,centre:{etu:2000,tpar:5000,tp:10000,fam:15000},don:[2000,5000,10000,25000],virement:[5000,10000,25000]}
+};
+const XAF_PER_EUR=655.957; /* parité fixe FCFA / euro */
+const MEDALS=[
+ {id:'bronze',name:{fr:'Bronze',en:'Bronze'},xaf:500000,color:'var(--bronze)'},
+ {id:'argent',name:{fr:'Argent',en:'Silver'},xaf:1000000,color:'var(--argent)'},
+ {id:'or',name:{fr:'Or',en:'Gold'},xaf:2500000,color:'var(--or)'},
+ {id:'platine',name:{fr:'Platine',en:'Platinum'},xaf:5000000,color:'var(--platine)'}
+];
+
+const S={
+ lang:'fr', onboarded:false, onbStep:0,
+ country:'fr', region:'idf', group:'Brétigny',
+ space:'membre', screen:'actus', stack:[], param:null,
+ me:{first:'Grâce',last:'N.',statut:'tp'},
+ exDone:{0:true},
+ paidCentreXAF:640000, /* déjà versé pour le centre (médailles), en FCFA */
+ monthly:{paid:false},
+ virement:null,
+ attending:{m1:true},
+ retreatSel:{room:'double',plan:'once',bus:null,car:null,solid:0},
+ myRegs:{},
+ reminders:{cotisation:true,centre:true,retraite:true,reunion:true,fiche:true},
+ history:[],
+ toast:null
+};
+const C=()=>COUNTRIES[S.country];
+const CUR=()=>C().cur;
+const PR=()=>PRICE[CUR()];
+const LOC=()=>S.lang==='en'?'en-GB':'fr-FR';
+const money=v=>new Intl.NumberFormat(LOC(),{style:'currency',currency:CUR(),maximumFractionDigits:0}).format(v);
+const fcfa=v=>new Intl.NumberFormat(LOC(),{style:'currency',currency:'XAF',maximumFractionDigits:0}).format(v);
+const fromXAF=x=>CUR()==='XAF'?x:Math.round(x/XAF_PER_EUR);
+
+/* Historique de départ (selon la monnaie) */
+function seedHistory(){
+ const p=PR();
+ S.history=[
+  {id:'PDD-0412',date:'2026-11-02',kind:'centre',title:{fr:'Centre de retraite · novembre',en:'Retreat centre · November'},amt:p.centre[S.me.statut],method:C().pay[0]},
+  {id:'PDD-0398',date:'2026-10-27',kind:'don',title:{fr:'Don · fonds de solidarité',en:'Gift · solidarity fund'},amt:p.don[0],method:C().pay[1]},
+  {id:'PDD-0371',date:'2026-10-10',kind:'cotisation',title:{fr:'Contribution mensuelle · octobre',en:'Monthly contribution · October'},amt:p.cotisation,method:C().pay[0]},
+  {id:'PDD-0355',date:'2026-10-02',kind:'centre',title:{fr:'Centre de retraite · octobre',en:'Retreat centre · October'},amt:p.centre[S.me.statut],method:C().pay[0]},
+  {id:'PDD-0301',date:'2026-09-09',kind:'cotisation',title:{fr:'Contribution mensuelle · septembre',en:'Monthly contribution · September'},amt:p.cotisation,method:C().pay[1]}
+ ];
+}
+
+/* ---------- Contenus fictifs ---------- */
+const FICHE={
+ date:{fr:'Lundi 9 novembre',en:'Monday 9 November'},
+ theme:{fr:'« Aimez-vous les uns les autres d\'un amour sincère »',en:'“Let love be genuine”'},
+ readings:[
+  {k:{fr:'Psaume',en:'Psalm'},v:'Psaume 34 (33)'},
+  {k:{fr:'Épître',en:'Epistle'},v:'Romains 12, 9-21'},
+  {k:{fr:'Évangile',en:'Gospel'},v:'Matthieu 5, 1-12'}],
+ exercises:[
+  {fr:'Louange · 10 min',en:'Praise · 10 min'},
+  {fr:'Lecture méditée de l\'Évangile · 15 min',en:'Meditated Gospel reading · 15 min'},
+  {fr:'Intercession pour le groupe',en:'Intercession for the group'},
+  {fr:'Un geste de service aujourd\'hui',en:'One act of service today'}]
+};
+const MEETINGS=[
+ {id:'m1',when:{fr:'Aujourd\'hui · 19 h 30',en:'Today · 7:30 pm'},title:{fr:'Réunion de prière',en:'Prayer meeting'},place:{fr:'Salle Saint-Paul (exemple)',en:'Saint-Paul hall (sample)'},consigne:{fr:'Apporter sa Bible et la fiche du jour. Arriver 10 min avant.',en:'Bring your Bible and today\'s sheet. Arrive 10 min early.'},today:true},
+ {id:'m2',when:{fr:'Mercredi · 20 h',en:'Wednesday · 8 pm'},title:{fr:'Enseignement en ligne',en:'Online teaching'},place:{fr:'Lien envoyé le jour même',en:'Link sent on the day'},consigne:{fr:'Thème : la prière d\'intercession.',en:'Theme: intercessory prayer.'}},
+ {id:'m3',when:{fr:'Samedi · 21 h',en:'Saturday · 9 pm'},title:{fr:'Veillée de prière',en:'Prayer vigil'},place:{fr:'Chez Joseph A. (exemple)',en:'At Joseph A.\'s (sample)'},consigne:{fr:'Jeûne recommandé jusqu\'à 15 h, selon ses possibilités.',en:'Fasting recommended until 3 pm, as you are able.'}}
+];
+const ATTEND=[
+ {k:{fr:'Réunions de groupe',en:'Group meetings'},d:9,n:12},
+ {k:{fr:'Veillées de prière',en:'Prayer vigils'},d:4,n:6},
+ {k:{fr:'Retraites',en:'Retreats'},d:2,n:3},
+ {k:{fr:'Journées de service',en:'Service days'},d:1,n:2}
+];
+function RETREATS(){
+ const p=PR();
+ return [
+  {id:'noel',name:{fr:'Retraite de Noël',en:'Christmas retreat'},dates:{fr:'18 – 20 décembre 2026',en:'18 – 20 December 2026'},place:{fr:'Domaine de la Source (exemple)',en:'Domaine de la Source (sample)'},deadline:{fr:'Inscription avant le 1er décembre',en:'Register by 1 December'},tag:'open',
+   rooms:[{id:'dortoir',name:{fr:'Dortoir',en:'Dormitory'},desc:{fr:'8 lits, sanitaires à l\'étage',en:'8 beds, shared bathrooms'},price:p.dortoir,total:40,taken:22},{id:'double',name:{fr:'Chambre double',en:'Double room'},desc:{fr:'2 lits, salle d\'eau',en:'2 beds, shower room'},price:p.double,total:16,taken:11},{id:'indiv',name:{fr:'Chambre individuelle',en:'Single room'},desc:{fr:'1 lit, salle d\'eau',en:'1 bed, shower room'},price:p.indiv,total:8,taken:8}],
+   bus:[{id:'b1',from:C().bus[0],time:{fr:'Ven. 18 déc. · 17 h',en:'Fri 18 Dec · 5 pm'},seats:50,taken:38,price:p.bus},{id:'b2',from:C().bus[1]||C().bus[0],time:{fr:'Ven. 18 déc. · 18 h',en:'Fri 18 Dec · 6 pm'},seats:30,taken:29,price:p.bus}],
+   cars:[{id:'c1',driver:'Joseph A.',from:S.group,time:{fr:'Ven. 17 h 30',en:'Fri 5:30 pm'},seats:4,left:2,part:p.coVoit},{id:'c2',driver:'Esther N.',from:C().regions[0].groups[1]||S.group,time:{fr:'Ven. 18 h 15',en:'Fri 6:15 pm'},seats:3,left:1,part:p.coVoit},{id:'c3',driver:'Samuel B.',from:C().regions[0].groups[0],time:{fr:'Sam. 8 h',en:'Sat 8 am'},seats:4,left:0,part:p.coVoit}]},
+  {id:'careme',name:{fr:'Retraite de Carême',en:'Lent retreat'},dates:{fr:'12 – 14 mars 2027',en:'12 – 14 March 2027'},place:{fr:'Maison Sainte-Marthe (exemple)',en:'Maison Sainte-Marthe (sample)'},deadline:{fr:'Préinscriptions ouvertes',en:'Pre-registration open'},tag:'pre',
+   rooms:[{id:'dortoir',name:{fr:'Dortoir',en:'Dormitory'},desc:{fr:'6 lits',en:'6 beds'},price:p.dortoir,total:30,taken:4},{id:'double',name:{fr:'Chambre double',en:'Double room'},desc:{fr:'2 lits, salle d\'eau',en:'2 beds, shower room'},price:p.double,total:12,taken:2},{id:'indiv',name:{fr:'Chambre individuelle',en:'Single room'},desc:{fr:'1 lit, salle d\'eau',en:'1 bed, shower room'},price:p.indiv,total:6,taken:1}],
+   bus:[{id:'b3',from:C().bus[0],time:{fr:'Ven. 12 mars · 17 h',en:'Fri 12 Mar · 5 pm'},seats:50,taken:6,price:p.bus}],cars:[]},
+  {id:'grande',name:{fr:'Grande retraite',en:'Great retreat'},dates:{fr:'9 – 15 juillet 2027',en:'9 – 15 July 2027'},place:{fr:'Centre de retraite PDD (en construction)',en:'PDD retreat centre (under construction)'},deadline:{fr:'Annonce du programme en février',en:'Programme announced in February'},tag:'soon',
+   rooms:[{id:'dortoir',name:{fr:'Dortoir',en:'Dormitory'},desc:{fr:'Tarif semaine',en:'Weekly rate'},price:p.dortoir*2,total:80,taken:0},{id:'double',name:{fr:'Chambre double',en:'Double room'},desc:{fr:'Tarif semaine',en:'Weekly rate'},price:p.double*2,total:30,taken:0},{id:'indiv',name:{fr:'Chambre individuelle',en:'Single room'},desc:{fr:'Tarif semaine',en:'Weekly rate'},price:p.indiv*2,total:12,taken:0}],bus:[],cars:[]}
+ ];
+}
+function NEWS(){
+ const p=PR();
+ return [
+  {icon:'mountain',kind:{fr:'Retraite',en:'Retreat'},title:{fr:'Retraite de Noël : les inscriptions sont ouvertes',en:'Christmas retreat: registration is open'},body:{fr:`18 – 20 décembre. Chambres dès ${money(p.dortoir)}, paiement en 3 fois possible. Bus au départ de ${C().bus[0]}.`,en:`18 – 20 December. Rooms from ${money(p.dortoir)}, can be paid in 3 instalments. Bus from ${C().bus[0]}.`},when:{fr:'Il y a 2 h',en:'2 h ago'},go:['retraite','noel'],cta:{fr:'S\'inscrire',en:'Register'}},
+  {icon:'megaphone',kind:{fr:'Consigne',en:'Guidance'},title:{fr:'Consigne de la semaine pour tous les groupes',en:'This week\'s guidance for all groups'},body:{fr:'Jeûne du vendredi jusqu\'à 15 h, selon ses possibilités. Lecture continue de l\'épître aux Romains.',en:'Friday fast until 3 pm, as you are able. Continuous reading of Romans.'},when:{fr:'Hier',en:'Yesterday'}},
+  {icon:'house',kind:{fr:'Centre de retraite',en:'Retreat centre'},title:{fr:'Chantier du centre : la toiture est financée',en:'Centre building: the roof is funded'},body:{fr:'Merci à tous les donateurs. Prochaine étape : les chambres. Voir ma médaille.',en:'Thank you to every donor. Next step: the rooms. See my medal.'},when:{fr:'Il y a 3 jours',en:'3 days ago'},go:['contrib'],cta:{fr:'Ma médaille',en:'My medal'}},
+  {icon:'bus',kind:{fr:'Transport',en:'Transport'},title:{fr:'Bus pour la retraite de Noël : 12 places restantes',en:'Christmas retreat bus: 12 seats left'},body:{fr:`Départ ${C().bus[0]}, ${money(p.bus)} aller-retour.`,en:`From ${C().bus[0]}, ${money(p.bus)} return.`},when:{fr:'Il y a 4 jours',en:'4 days ago'},go:['retraite','noel'],cta:{fr:'Réserver',en:'Book'}}
+ ];
+}
+
+/* ---------- Navigation ---------- */
+const NAV={
+ membre:[{id:'actus',k:'nav_actus',icon:'news'},{id:'groupe',k:'nav_groupe',icon:'users'},{id:'retraites',k:'nav_retraites',icon:'mountain'},{id:'contrib',k:'nav_contrib',ks:'nav_contrib_s',icon:'wallet'},{id:'historique',k:'nav_hist',icon:'clock'},{id:'rappels',k:'nav_rappels',icon:'bell'},{id:'profil',k:'nav_profil',icon:'user'}],
+ resp:[{id:'r-publier',k:'r_publier',icon:'send'},{id:'r-payes',k:'r_payes',icon:'checks'},{id:'r-transport',k:'r_transport',icon:'bus'},{id:'r-presence',k:'r_presence',icon:'chart'}]
+};
+const TABS={membre:['actus','groupe','retraites','contrib'],resp:['r-publier','r-payes','r-transport','r-presence']};
+const rootOf=s=>({retraite:'retraites'})[s]||s;
+function go(screen,param,push=true){ if(push&&(S.screen!==screen||S.param!==param)) S.stack.push([S.screen,S.param]); S.screen=screen; S.param=param??null; render(); window.scrollTo({top:0}); }
+function back(){ const p=S.stack.pop(); if(p){S.screen=p[0];S.param=p[1];} else {S.screen=S.space==='membre'?'actus':'r-publier';S.param=null;} render(); window.scrollTo({top:0}); }
+function isDark(){ const d=document.documentElement.dataset.theme; if(d) return d==='dark'; return false; }
+const cur=id=>(S.screen===id||rootOf(S.screen)===id)?'aria-current="page"':'';
+
+function shell(){
+ document.getElementById('demo-txt').innerHTML=t('demo');
+ const items=NAV.membre, resp=NAV.resp;
+ const navHtml=(arr)=>arr.map(it=>`<button class="navlink" data-go="${it.id}" ${cur(it.id)}>${ic(it.icon)}<span>${t(it.k)}</span>${it.id==='rappels'?`<span class="pill p-warn badge">2</span>`:''}</button>`).join('');
+ const spaceSw=`<div class="switch" role="group" aria-label="Espace"><button data-space="membre" aria-pressed="${S.space==='membre'}">${t('space_m')}</button><button data-space="resp" aria-pressed="${S.space==='resp'}">${t('space_r')}</button></div>`;
+ const dark=isDark();
+ document.getElementById('side').innerHTML=`
+  <div class="brand">${MARK}<div><div class="t">Me &amp; PDD</div><div class="s">${esc(t('tagline'))}</div></div></div>
+  ${spaceSw}
+  <nav aria-label="Navigation">${S.space==='membre'?`<div class="grp">${t('grp_me')}</div>${navHtml(items)}`:`<div class="grp">${t('grp_resp')}</div>${navHtml(resp)}`}</nav>
+  <div class="foot">
+   <div class="who"><div class="avatar">${S.space==='membre'?'GN':'JA'}</div><div style="min-width:0"><div style="color:var(--ink);font-weight:700">${S.space==='membre'?'Grâce N.':'Joseph A.'}</div><div>${esc(S.group)} · ${esc(L(C().name))}</div></div></div>
+   <button class="btn btn-ghost btn-s" data-theme-toggle>${ic(dark?'sun':'moon')}${dark?t('theme_l'):t('theme_d')}</button>
+  </div>`;
+ document.getElementById('topbar').innerHTML=`<div class="brand">${MARK}<div><div class="t">Me &amp; PDD</div><div class="s">${esc(S.group)} · ${esc(L(C().name))}</div></div></div>${spaceSw}`;
+ const tabs=TABS[S.space].map(id=>(S.space==='membre'?items:resp).find(i=>i.id===id));
+ const inTabs=TABS[S.space].includes(rootOf(S.screen));
+ const tb=document.getElementById('tabbar');
+ tb.hidden=!S.onboarded;
+ tb.style.gridTemplateColumns=`repeat(${tabs.length+(S.space==='membre'?1:0)},1fr)`;
+ tb.innerHTML=tabs.map(it=>`<button data-go="${it.id}" ${cur(it.id)}>${ic(it.icon)}<span>${t(it.ks||it.k)}</span></button>`).join('')+(S.space==='membre'?`<button data-go="plus" ${inTabs?'':'aria-current="page"'}>${ic('more')}<span>${t('nav_plus')}</span></button>`:'');
+}
+
+/* ---------- Écrans ---------- */
+const V={};
+
+V.onboarding=()=>{
+ const st=S.onbStep, c=C();
+ const steps=`<div class="steps">${[0,1,2].map(i=>`<i class="${i<=st?'on':''}"></i>`).join('')}</div>`;
+ let body='';
+ if(st===0) body=`
+  <div class="stack-s"><p class="eyebrow">${S.lang==='en'?'Welcome':'Bienvenue'}</p><h1>${S.lang==='en'?'Choose your language and country':'Choisis ta langue et ton pays'}</h1><p class="muted">${S.lang==='en'?'Amounts appear in your country\'s currency.':'Les montants s\'affichent dans la monnaie de ton pays.'}</p></div>
+  <div class="stack-s"><span class="lbl">${S.lang==='en'?'Language':'Langue'}</span><div class="chips"><button class="chip" data-lang="fr" aria-pressed="${S.lang==='fr'}">Français</button><button class="chip" data-lang="en" aria-pressed="${S.lang==='en'}">English</button></div></div>
+  <div class="stack" role="radiogroup" aria-label="Pays">${Object.entries(COUNTRIES).map(([id,x])=>`<button class="choice" role="radio" aria-checked="${S.country===id}" data-country="${id}"><span class="radio"></span><span class="body"><b>${esc(L(x.name))}</b><span class="muted small" style="display:block">${x.cur==='XAF'?'FCFA':'Euro'} · ${x.regions.reduce((a,r)=>a+r.groups.length,0)} ${S.lang==='en'?'groups':'groupes'}</span></span></button>`).join('')}</div>`;
+ if(st===1) body=`
+  <div class="stack-s"><p class="eyebrow">${esc(L(c.name))}</p><h1>${S.lang==='en'?'Your region':'Ta région'}</h1></div>
+  <div class="stack" role="radiogroup">${c.regions.map(r=>`<button class="choice" role="radio" aria-checked="${S.region===r.id}" data-region="${r.id}"><span class="radio"></span><span class="body"><b>${esc(r.name)}</b><span class="muted small" style="display:block">${r.groups.length} ${S.lang==='en'?'groups':'groupes'}</span></span></button>`).join('')}</div>`;
+ if(st===2){ const r=c.regions.find(x=>x.id===S.region)||c.regions[0]; body=`
+  <div class="stack-s"><p class="eyebrow">${esc(r.name)}</p><h1>${S.lang==='en'?'Your group':'Ton groupe'}</h1><p class="muted">${S.lang==='en'?'You will see its meetings, guidance and news.':'Tu verras ses réunions, ses consignes et ses actus.'}</p></div>
+  <div class="stack" role="radiogroup">${r.groups.map(g=>`<button class="choice" role="radio" aria-checked="${S.group===g}" data-group="${esc(g)}"><span class="radio"></span><span class="body"><b>${esc(g)}</b></span></button>`).join('')}</div>`;}
+ return `<div class="onb">
+  <div class="brand">${MARK}<div><div class="t">Me &amp; PDD</div><div class="s">${esc(t('tagline'))}</div></div></div>
+  ${steps}${body}
+  <div class="row between">${st>0?`<button class="btn btn-ghost" data-onb="-1">${ic('left')}${S.lang==='en'?'Back':'Retour'}</button>`:'<span></span>'}
+   <button class="btn btn-primary" data-onb="1">${st<2?(S.lang==='en'?'Continue':'Continuer'):(S.lang==='en'?'Enter':'Entrer')}</button></div>
+ </div>`;
+};
+
+function ficheBlock(){
+ const n=Object.values(S.exDone).filter(Boolean).length;
+ return `<section class="fiche" aria-label="${t('fiche')}">
+  <div class="fiche-h"><div class="stack-s"><span class="eyebrow">${t('fiche')} · ${esc(L(FICHE.date))}</span><h2 style="font-style:italic">${esc(L(FICHE.theme))}</h2></div><span class="pill ${n===FICHE.exercises.length?'p-ok':'p-gold'}">${n}/${FICHE.exercises.length} ${t('done_of')}</span></div>
+  <div class="fiche-b">
+   <div><p class="lbl" style="margin:10px 0 2px">${t('lectures')}</p>${FICHE.readings.map(r=>`<div class="reading"><span class="k">${esc(L(r.k))}</span><span class="v">${esc(r.v)}</span></div>`).join('')}</div>
+   <div><p class="lbl" style="margin:10px 0 2px">${t('exercices')}</p>${FICHE.exercises.map((e,i)=>`<button class="ex" role="checkbox" aria-checked="${!!S.exDone[i]}" data-ex="${i}"><span class="box">${S.exDone[i]?ic('check'):''}</span><span class="lbl2">${esc(L(e))}</span></button>`).join('')}</div>
+  </div></section>`;
+}
+
+V.actus=()=>{
+ const m=MEETINGS[0], p=PR();
+ const dues=[];
+ if(!S.monthly.paid) dues.push({icon:'users',t:{fr:'Contribution mensuelle de novembre',en:'November monthly contribution'},s:{fr:'Avant le 10 novembre',en:'Due by 10 November'},amt:p.cotisation,act:'monthly'});
+ dues.push({icon:'mountain',t:{fr:'Retraite de Noël',en:'Christmas retreat'},s:{fr:'Inscription avant le 1er décembre',en:'Register by 1 December'},act:'noel'});
+ return `
+ <div class="stack-s"><p class="eyebrow">${esc(L(FICHE.date))}</p><h1>${t('hello')} ${esc(S.me.first)}</h1><p class="muted">${esc(S.group)} · ${esc(L(C().name))}</p></div>
+ ${ficheBlock()}
+ <section class="hero stack" aria-label="${t('today_grp')}">
+  <div class="row between wrapflex" style="align-items:flex-start"><div class="stack-s"><span class="eyebrow">${t('today_grp')}</span><h2 style="color:var(--on-brand)">${esc(L(m.title))} · ${esc((L(m.when).split('·')[1]||'').trim())}</h2></div>
+  <span class="pill" style="background:rgba(255,255,255,.14);color:#fff">${S.attending[m.id]?(S.lang==='en'?'I\'ll be there':'Je serai là'):(S.lang==='en'?'Not confirmed':'Pas confirmé')}</span></div>
+  <p class="muted small" style="margin-top:-8px">${esc(L(m.place))}</p>
+  <p style="position:relative;z-index:1"><b style="color:#F1D79A">${S.lang==='en'?'Guidance':'Consigne'} :</b> ${esc(L(m.consigne))}</p>
+  <div class="row wrapflex" style="position:relative;z-index:1"><button class="btn btn-gold btn-s" data-attend="${m.id}">${S.attending[m.id]?(S.lang==='en'?'Cancel':'Annuler ma venue'):(S.lang==='en'?'I\'ll be there':'Je serai là')}</button><button class="btn btn-s" style="color:#fff;border-color:rgba(255,255,255,.3)" data-go="groupe">${S.lang==='en'?'Group agenda':'Agenda du groupe'}</button></div>
+ </section>
+ <section class="stack"><div class="sec-h"><h2>${t('rappels_due')}</h2></div>
+  <div class="flat list">${dues.map(d=>`<div class="li"><div class="ic">${ic(d.icon)}</div><div class="body"><div class="t">${esc(L(d.t))}</div><div class="s">${esc(L(d.s))}</div></div>${d.amt?`<div class="stack-s" style="align-items:flex-end"><span class="amt">${money(d.amt)}</span><button class="btn btn-primary btn-s" data-pay-monthly>${t('pay')}</button></div>`:`<button class="btn btn-ghost btn-s" data-go="retraite" data-param="noel">${t('register')}</button>`}</div>`).join('')}</div>
+ </section>
+ <section class="stack"><div class="sec-h"><h2>${t('announces')}</h2><span class="muted small">${S.lang==='en'?'From the leaders':'Publiées par les responsables'}</span></div>
+  ${NEWS().map(n=>`<article class="card stack-s">
+   <div class="row between"><span class="row" style="gap:8px"><span class="ic" style="width:30px;height:30px;border-radius:9px;background:var(--sunk);display:grid;place-items:center;color:var(--gold-ink)">${ic(n.icon)}</span><span class="eyebrow">${esc(L(n.kind))}</span></span><span class="muted small">${esc(L(n.when))}</span></div>
+   <h3>${esc(L(n.title))}</h3><p class="muted">${esc(L(n.body))}</p>
+   ${n.go?`<button class="link" style="align-self:flex-start;margin-top:4px" data-go="${n.go[0]}" ${n.go[1]?`data-param="${n.go[1]}"`:''}>${esc(L(n.cta))} →</button>`:''}
+  </article>`).join('')}
+ </section>`;
+};
+
+V.groupe=()=>{
+ const tot=ATTEND.reduce((a,x)=>a+x.d,0), all=ATTEND.reduce((a,x)=>a+x.n,0), pct=Math.round(tot/all*100);
+ return `
+ <div class="stack-s"><p class="eyebrow">${esc(L(C().name))} · ${esc((C().regions.find(r=>r.id===S.region)||{}).name||'')}</p><h1>${esc(S.group)}</h1><p class="muted">${S.lang==='en'?'Leader':'Responsable'} : Joseph A. · ${S.lang==='en'?'contact in the real app':'contact dans la vraie appli'}</p></div>
+ <section class="stack"><div class="sec-h"><h2>${S.lang==='en'?'Meetings and activities':'Réunions et activités'}</h2></div>
+  ${MEETINGS.map(m=>`<div class="card stack-s">
+   <div class="row between wrapflex"><span class="eyebrow">${esc(L(m.when))}</span>${S.attending[m.id]?`<span class="pill p-ok">${S.lang==='en'?'Attending':'Je serai là'}</span>`:''}</div>
+   <h3>${esc(L(m.title))}</h3>
+   <p class="muted small row" style="gap:6px">${ic('pin')}${esc(L(m.place))}</p>
+   <div class="note" style="margin-top:4px">${ic('info')}<span><b>${S.lang==='en'?'Guidance':'Consigne'} :</b> ${esc(L(m.consigne))}</span></div>
+   <button class="btn ${S.attending[m.id]?'btn-ghost':'btn-primary'} btn-s" style="align-self:flex-start;margin-top:4px" data-attend="${m.id}">${S.attending[m.id]?(S.lang==='en'?'Cancel':'Annuler'):(S.lang==='en'?'I\'ll be there':'Je serai là')}</button>
+  </div>`).join('')}
+ </section>
+ <section class="stack"><div class="sec-h"><h2>${S.lang==='en'?'My attendance':'Ma présence'}</h2><span class="muted small">${S.lang==='en'?'Since September':'Depuis septembre'}</span></div>
+  <div class="card stack">
+   <div class="row between"><span class="muted">${S.lang==='en'?'Overall':'Au total'}</span><span class="num" style="font-family:var(--f-display);font-size:1.8rem;font-weight:600">${pct} %</span></div>
+   ${ATTEND.map(a=>`<div class="stack-s"><div class="row between small"><span>${esc(L(a.k))}</span><span class="num muted">${a.d} / ${a.n}</span></div><div class="prog"><span style="width:${a.d/a.n*100}%"></span></div></div>`).join('')}
+   <p class="hint">${S.lang==='en'?'Visible only to you and your group leader.':'Visible seulement par toi et ton responsable de groupe.'}</p>
+  </div>
+ </section>`;
+};
+
+function retreatCard(r){
+ const left=r.rooms.reduce((a,x)=>a+Math.max(0,x.total-x.taken),0), min=Math.min(...r.rooms.map(x=>x.price)), reg=S.myRegs[r.id];
+ const tag=reg?`<span class="pill p-ok">${S.lang==='en'?'Registered':'Inscrit·e'}</span>`:r.tag==='open'?`<span class="pill p-info">${left} ${S.lang==='en'?'places':'places'}</span>`:r.tag==='pre'?`<span class="pill p-gold">${S.lang==='en'?'Pre-registration':'Préinscription'}</span>`:`<span class="pill p-mute">${S.lang==='en'?'Coming soon':'Bientôt'}</span>`;
+ return `<button class="card stack" style="text-align:left;width:100%" data-go="retraite" data-param="${r.id}">
+  <div class="row between wrapflex" style="align-items:flex-start"><div class="stack-s"><span class="eyebrow">${esc(L(r.dates))}</span><h3 style="font-size:1.35rem">${esc(L(r.name))}</h3><span class="muted small">${esc(L(r.place))}</span></div>${tag}</div>
+  <div class="row between wrapflex small"><span class="muted">${S.lang==='en'?'From':'Dès'} <b style="color:var(--ink)">${money(min)}</b>${r.bus.length?` · ${S.lang==='en'?'bus & car-sharing':'bus et covoiturage'}`:''}</span><span class="muted">${esc(L(r.deadline))}</span></div>
+ </button>`;
+}
+V.retraites=()=>`
+ <div class="stack-s"><p class="eyebrow">${S.lang==='en'?'Organised retreats':'Retraites organisées'}</p><h1>${t('nav_retraites')}</h1><p class="muted">${S.lang==='en'?'Choose your room and your transport, pay online, get your confirmation straight away.':'Choisis ta chambre et ton transport, paie en ligne, ta place est confirmée tout de suite.'}</p></div>
+ <section class="stack">${RETREATS().map(retreatCard).join('')}</section>`;
+
+V.retraite=()=>{
+ const r=RETREATS().find(x=>x.id===S.param)||RETREATS()[0], sel=S.retreatSel, p=PR();
+ if(!r.rooms.find(x=>x.id===sel.room&&x.taken<x.total)) sel.room=(r.rooms.find(x=>x.taken<x.total)||r.rooms[0]).id;
+ const room=r.rooms.find(x=>x.id===sel.room);
+ const bus=r.bus.find(b=>b.id===sel.bus), car=r.cars.find(c=>c.id===sel.car);
+ const transport=(bus?bus.price:0)+(car?car.part:0);
+ const base=room.price, first=sel.plan==='3x'?Math.ceil(base/3):base;
+ const total=first+transport+sel.solid;
+ const soon=r.tag==='soon';
+ return `
+ <button class="back" data-back>${ic('left')}${t('nav_retraites')}</button>
+ <div class="stack-s"><p class="eyebrow">${esc(L(r.dates))}</p><h1>${esc(L(r.name))}</h1><p class="muted">${esc(L(r.place))} · ${esc(L(r.deadline))}</p></div>
+ ${S.myRegs[r.id]?`<div class="note">${ic('check')}<span>${S.lang==='en'?'You are registered. Your receipt is in History.':'Tu es inscrit·e. Ton reçu est dans l\'historique.'}</span></div>`:''}
+ <section class="stack" role="radiogroup" aria-label="Chambre"><div class="sec-h"><h2>1. ${S.lang==='en'?'Room':'La chambre'}</h2><span class="muted small">${S.lang==='en'?'Prices set by the leaders':'Prix fixés par les responsables'}</span></div>
+  ${r.rooms.map(x=>{const left=x.total-x.taken;return `<button class="choice" role="radio" aria-checked="${x.id===sel.room}" data-room="${x.id}" ${left<=0?'aria-disabled="true"':''}><span class="radio"></span><span class="body"><span class="row between wrapflex"><b>${esc(L(x.name))}</b><b class="num" style="font-family:var(--f-display);font-size:1.3rem">${money(x.price)}</b></span><span class="muted small">${esc(L(x.desc))}</span><span class="row between wrapflex small" style="margin-top:6px"><span class="prog" style="flex:1;min-width:110px"><span style="width:${x.taken/x.total*100}%"></span></span>${left>0?`<span class="pill ${left<=3?'p-warn':'p-info'}">${left} ${S.lang==='en'?'left':'restantes'}</span>`:`<span class="pill p-late">${S.lang==='en'?'Full':'Complet'}</span>`}</span></span></button>`;}).join('')}
+ </section>
+ ${soon?`<div class="note">${ic('info')}<span>${S.lang==='en'?'Registration opens when the programme is announced. You will get a reminder.':'Les inscriptions ouvrent à l\'annonce du programme. Tu recevras un rappel.'}</span></div>`:`
+ <section class="stack"><div class="sec-h"><h2>2. ${S.lang==='en'?'How to pay':'Comment payer'}</h2></div>
+  <div class="grid2" role="radiogroup"><button class="choice" role="radio" aria-checked="${sel.plan==='once'}" data-plan="once"><span class="radio"></span><span class="body"><b>${S.lang==='en'?'In full':'En une fois'}</b><span class="muted small" style="display:block">${money(base)}</span></span></button>
+  <button class="choice" role="radio" aria-checked="${sel.plan==='3x'}" data-plan="3x"><span class="radio"></span><span class="body"><b>${S.lang==='en'?'In 3 instalments':'En 3 fois'}</b><span class="muted small" style="display:block">${money(Math.ceil(base/3))} ${S.lang==='en'?'today, then 2 monthly':'aujourd\'hui, puis 2 mensualités'}</span></span></button></div>
+ </section>
+ <section class="stack"><div class="sec-h"><h2>3. ${S.lang==='en'?'Getting there':'Le transport'}</h2></div>
+  ${r.bus.length?`<div class="flat list">${r.bus.map(b=>{const left=b.seats-b.taken;return `<div class="li" style="align-items:flex-start"><div class="ic">${ic('bus')}</div><div class="body stack-s"><div class="t">${S.lang==='en'?'Bus':'Bus'} · ${esc(b.from)}</div><div class="s">${esc(L(b.time))} · ${money(b.price)} ${S.lang==='en'?'return':'aller-retour'}</div><div class="seats" aria-label="${b.taken} / ${b.seats}">${Array.from({length:b.seats},(_,i)=>`<i class="${i<b.taken?'t':''}"></i>`).join('')}</div><div class="s">${left>0?`${left} ${S.lang==='en'?(left>1?'seats left of':'seat left of'):(left>1?'places restantes sur':'place restante sur')} ${b.seats}`:(S.lang==='en'?'Full':'Complet')}</div></div><button class="btn ${sel.bus===b.id?'btn-primary':'btn-ghost'} btn-s" data-bus="${b.id}" ${left<=0&&sel.bus!==b.id?'disabled':''}>${sel.bus===b.id?(S.lang==='en'?'Chosen':'Choisi'):t('reserve')}</button></div>`;}).join('')}</div>`:''}
+  <div class="card stack"><div class="row between wrapflex"><h3>${ic('car','')}${S.lang==='en'?' Car-sharing':' Covoiturage'}</h3><button class="btn btn-ghost btn-s" data-offer-car>${ic('plus')}${S.lang==='en'?'Offer a ride':'Proposer un trajet'}</button></div>
+   ${r.cars.length?`<div class="list">${r.cars.map(c=>`<div class="li" style="padding-inline:0"><div class="avatar" style="width:34px;height:34px;font-size:.78rem">${esc(c.driver.split(' ').map(x=>x[0]).join(''))}</div><div class="body"><div class="t">${esc(c.driver)} · ${S.lang==='en'?'from':'depuis'} ${esc(c.from)}</div><div class="s">${esc(L(c.time))} · ${c.left}/${c.seats} ${S.lang==='en'?'seats':'places'} · ${S.lang==='en'?'share':'participation'} ${money(c.part)}</div></div>${c.left>0?`<button class="btn ${sel.car===c.id?'btn-primary':'btn-ghost'} btn-s" data-car="${c.id}">${sel.car===c.id?(S.lang==='en'?'Asked':'Demandé'):(S.lang==='en'?'Ask':'Demander')}</button>`:`<span class="pill p-mute">${S.lang==='en'?'Full':'Complet'}</span>`}</div>`).join('')}</div>`:`<p class="muted small">${S.lang==='en'?'No rides offered yet.':'Aucun trajet proposé pour l\'instant.'}</p>`}
+  </div>
+ </section>
+ <section class="stack"><div class="sec-h"><h2>4. ${S.lang==='en'?'Solidarity fund':'Fonds de solidarité'}</h2></div>
+  <div class="card stack-s"><p class="muted small">${S.lang==='en'?'Helps members who cannot pay for their retreat. Optional.':'Aide les membres qui ne peuvent pas payer leur retraite. Facultatif.'}</p>
+  <div class="chips" style="margin-top:6px">${[0,...p.don.slice(0,3)].map(v=>`<button class="chip" aria-pressed="${sel.solid===v}" data-solid="${v}">${v?'+ '+money(v):(S.lang==='en'?'No thanks':'Non merci')}</button>`).join('')}</div></div>
+ </section>
+ <section class="card stack" style="border-color:var(--gold)">
+  <div class="stack-s small">
+   <div class="row between"><span class="muted">${esc(L(room.name))}${sel.plan==='3x'?(S.lang==='en'?' · 1st instalment':' · 1re échéance'):''}</span><span class="num">${money(first)}</span></div>
+   ${bus?`<div class="row between"><span class="muted">Bus</span><span class="num">${money(bus.price)}</span></div>`:''}
+   ${car?`<div class="row between"><span class="muted">${S.lang==='en'?'Car-sharing':'Covoiturage'}</span><span class="num">${money(car.part)}</span></div>`:''}
+   ${sel.solid?`<div class="row between"><span class="muted">${S.lang==='en'?'Solidarity':'Solidarité'}</span><span class="num">${money(sel.solid)}</span></div>`:''}
+  </div>
+  <div class="row between"><b>Total</b><b class="num" style="font-family:var(--f-display);font-size:1.6rem">${money(total)}</b></div>
+  <button class="btn btn-primary btn-block" data-pay-retreat="${r.id}" data-amt="${total}">${t('pay')} ${money(total)}</button>
+ </section>`}`;
+};
+
+V.contrib=()=>{
+ const p=PR(), rate=p.centre[S.me.statut], paid=fromXAF(S.paidCentreXAF);
+ const got=MEDALS.filter(m=>S.paidCentreXAF>=m.xaf), next=MEDALS.find(m=>S.paidCentreXAF<m.xaf);
+ const toNext=next?fromXAF(next.xaf-S.paidCentreXAF):0;
+ const STAT={etu:{fr:'Étudiant·e',en:'Student'},tpar:{fr:'Temps partiel',en:'Part-time'},tp:{fr:'Temps plein',en:'Full-time'},fam:{fr:'Couple ou famille',en:'Couple or family'}};
+ return `
+ <div class="stack-s"><p class="eyebrow">${S.lang==='en'?'In':'En'} ${CUR()==='XAF'?'FCFA':'euros'}</p><h1>${t('nav_contrib')}</h1></div>
+ <section class="hero stack">
+  <div class="row between wrapflex" style="align-items:flex-end;position:relative;z-index:1">
+   <div class="stack-s"><span class="eyebrow">${S.lang==='en'?'Given to the retreat centre':'Versé pour le centre de retraite'}</span><span class="num" style="font-family:var(--f-display);font-size:2.8rem;font-weight:600;line-height:1">${money(paid)}</span>${CUR()!=='XAF'?`<span class="muted small">${fcfa(S.paidCentreXAF)}</span>`:''}</div>
+   <div class="stack-s" style="align-items:flex-end"><span class="eyebrow">${S.lang==='en'?'My medal':'Ma médaille'}</span><span style="font-family:var(--f-display);font-size:1.6rem;font-weight:600">${got.length?esc(L(got[got.length-1].name)):'—'}</span></div>
+  </div>
+  ${next?`<div class="stack-s" style="position:relative;z-index:1"><div class="prog" style="background:rgba(255,255,255,.18)"><span style="width:${Math.min(100,S.paidCentreXAF/next.xaf*100)}%;background:#F1D79A"></span></div><span class="muted small">${S.lang==='en'?'Still':'Encore'} ${money(toNext)} ${S.lang==='en'?'for':'pour la médaille'} ${esc(L(next.name))}</span></div>`:''}
+ </section>
+ <section class="stack"><div class="sec-h"><h2>${S.lang==='en'?'Medals for the retreat centre':'Médailles du centre de retraite'}</h2><span class="muted small">${S.lang==='en'?'Sample amounts':'Montants fictifs'}</span></div>
+  <div class="medals">${MEDALS.map(m=>{const ok=S.paidCentreXAF>=m.xaf, isN=next&&next.id===m.id;return `<div class="medal ${ok?'got':isN?'next':''}"><span class="disc" style="background:${m.color}">${esc(L(m.name)[0])}</span><b>${esc(L(m.name))}</b><span class="v">${money(fromXAF(m.xaf))}</span>${CUR()!=='XAF'?`<span class="x">${fcfa(m.xaf)}</span>`:''}${ok?`<span class="pill p-ok">${S.lang==='en'?'Reached':'Obtenue'}</span>`:isN?`<span class="pill p-gold">${S.lang==='en'?'Next':'Prochaine'}</span>`:''}</div>`;}).join('')}</div>
+  ${CUR()!=='XAF'?`<p class="hint">${S.lang==='en'?'Medal amounts are set in FCFA and shown in euros at the fixed rate: 1 € = 655.957 FCFA.':'Les médailles sont fixées en FCFA et affichées en euros à la parité fixe : 1 € = 655,957 FCFA.'}</p>`:''}
+  <button class="btn btn-primary" style="align-self:flex-start" data-pay-don="centre">${ic('house')}${S.lang==='en'?'Give to the centre':'Donner pour le centre'}</button>
+ </section>
+ <section class="grid2">
+  <div class="card stack-s"><span class="eyebrow">${S.lang==='en'?'Centre: my monthly rate':'Centre : mon taux mensuel'}</span><span class="num" style="font-family:var(--f-display);font-size:1.7rem;font-weight:600">${money(rate)} <span class="muted small" style="font-family:var(--f-body)">/ ${S.lang==='en'?'month':'mois'}</span></span><span class="muted small">${S.lang==='en'?'Based on my status':'Selon mon statut'} : ${esc(L(STAT[S.me.statut]))}</span>
+   <div class="chips" style="margin-top:6px">${Object.keys(STAT).map(k=>`<button class="chip" aria-pressed="${S.me.statut===k}" data-statut="${k}" style="min-height:34px;padding:5px 11px;font-size:.8rem">${esc(L(STAT[k]))}</button>`).join('')}</div></div>
+  <div class="card stack-s"><span class="eyebrow">${S.lang==='en'?'Monthly contribution':'Contribution mensuelle'}</span><span class="num" style="font-family:var(--f-display);font-size:1.7rem;font-weight:600">${money(p.cotisation)}</span><span class="muted small">${S.lang==='en'?'November · group':'Novembre · groupe'} ${esc(S.group)}</span>
+   ${S.monthly.paid?`<span class="pill p-ok" style="align-self:flex-start">${S.lang==='en'?'Paid':'Payée'}</span>`:`<span class="pill p-warn" style="align-self:flex-start">${S.lang==='en'?'Due by 10 Nov.':'Avant le 10 nov.'}</span><button class="btn btn-primary btn-s" style="align-self:flex-start;margin-top:4px" data-pay-monthly>${t('pay')}</button>`}</div>
+ </section>
+ <section class="card stack"><div class="row between wrapflex"><h3>${ic('repeat','')} ${S.lang==='en'?'Standing order':'Virement permanent'}</h3>${S.virement?`<span class="pill p-ok">${S.lang==='en'?'Active':'Actif'}</span>`:''}</div>
+  ${S.virement?`<p class="muted">${money(S.virement.amt)} ${S.lang==='en'?'on day':'le'} ${S.virement.day} ${S.lang==='en'?'of each month for':'de chaque mois pour'} ${esc(S.virement.fund)}. ${S.lang==='en'?'Each payment gets its receipt.':'Chaque versement reçoit son reçu.'}</p><button class="btn btn-ghost btn-s" style="align-self:flex-start" data-vir-stop>${S.lang==='en'?'Stop':'Arrêter'}</button>`:`
+  <p class="muted small">${S.lang==='en'?'Give the same amount every month without thinking about it. You can stop at any time.':'Donne le même montant chaque mois sans y penser. Tu peux arrêter à tout moment.'}</p>
+  <div class="grid2"><div class="field"><label for="vir-fund">${S.lang==='en'?'For':'Pour'}</label><select class="input" id="vir-fund"><option>${S.lang==='en'?'Retreat centre':'Centre de retraite'}</option><option>${S.lang==='en'?'Monthly contribution':'Contribution mensuelle'}</option><option>${S.lang==='en'?'Solidarity fund':'Fonds de solidarité'}</option></select></div>
+  <div class="field"><label for="vir-day">${S.lang==='en'?'Day of the month':'Jour du mois'}</label><select class="input" id="vir-day">${[1,5,10,15,25].map(d=>`<option ${d===5?'selected':''}>${d}</option>`).join('')}</select></div></div>
+  <div class="chips">${p.virement.map((v,i)=>`<button class="chip" aria-pressed="${i===1}" data-vir-amt="${v}">${money(v)}</button>`).join('')}</div>
+  <button class="btn btn-primary" style="align-self:flex-start" data-vir-start>${S.lang==='en'?'Set up the standing order':'Mettre en place'}</button>`}
+ </section>
+ <section class="card stack"><h3>${ic('heart','')} ${S.lang==='en'?'Make a gift':'Faire un don'}</h3>
+  <div class="chips">${p.don.map(v=>`<button class="chip" data-pay-don="libre" data-amt="${v}">${money(v)}</button>`).join('')}</div>
+  <p class="hint">${S.lang==='en'?'To the retreat centre, the solidarity fund or your group: you choose at payment.':'Au centre de retraite, au fonds de solidarité ou à ton groupe : tu choisis au paiement.'}</p>
+ </section>`;
+};
+
+V.historique=()=>`
+ <div class="stack-s"><p class="eyebrow">${S.lang==='en'?'Everything I have paid':'Tout ce que j\'ai payé'}</p><h1>${t('nav_hist')}</h1></div>
+ <div class="grid2"><div class="card stat"><span class="k">${S.lang==='en'?'Paid in 2026':'Payé en 2026'}</span><span class="v">${money(S.history.reduce((a,h)=>a+h.amt,0))}</span></div><div class="card stat"><span class="k">${S.lang==='en'?'Receipts':'Reçus'}</span><span class="v">${S.history.length}</span></div></div>
+ <div class="flat list">${S.history.map(h=>`<button class="li" data-receipt="${h.id}"><div class="ic">${ic({centre:'house',don:'heart',cotisation:'users',retraite:'mountain'}[h.kind]||'doc')}</div><div class="body"><div class="t">${esc(L(h.title))}</div><div class="s">${new Date(h.date+'T12:00').toLocaleDateString(LOC(),{day:'numeric',month:'long'})} · ${esc(h.method)}</div></div><span class="amt">${money(h.amt)}</span>${ic('chev')}</button>`).join('')}</div>`;
+
+V.rappels=()=>{
+ const R=[['cotisation',{fr:'Contribution mensuelle',en:'Monthly contribution'},{fr:'3 jours avant l\'échéance',en:'3 days before it is due'}],['centre',{fr:'Centre de retraite',en:'Retreat centre'},{fr:'Le 1er de chaque mois',en:'On the 1st of each month'}],['retraite',{fr:'Retraites',en:'Retreats'},{fr:'Ouverture des inscriptions et échéances',en:'Registration opening and instalments'}],['reunion',{fr:'Réunions du groupe',en:'Group meetings'},{fr:'La veille à 18 h',en:'The day before at 6 pm'}],['fiche',{fr:'Fiche de prière du jour',en:'Daily prayer sheet'},{fr:'Chaque matin à 6 h 30',en:'Every morning at 6:30 am'}]];
+ return `<div class="stack-s"><p class="eyebrow">${S.lang==='en'?'Automatic':'Automatiques'}</p><h1>${t('nav_rappels')}</h1><p class="muted">${S.lang==='en'?'By notification and e-mail. Nothing to do yourself.':'Par notification et par e-mail. Rien à faire de ton côté.'}</p></div>
+ <div class="flat list">${R.map(([k,a,b])=>`<div class="li"><div class="body"><div class="t">${esc(L(a))}</div><div class="s">${esc(L(b))}</div></div><button class="toggle" role="switch" aria-checked="${!!S.reminders[k]}" aria-label="${esc(L(a))}" data-rem="${k}"></button></div>`).join('')}</div>`;
+};
+
+V.profil=()=>`
+ <div class="stack-s"><p class="eyebrow">${S.lang==='en'?'My account':'Mon compte'}</p><h1>${t('nav_profil')}</h1></div>
+ <div class="card stack">
+  <div class="row"><div class="avatar">GN</div><div><b>Grâce N.</b><div class="muted small">${esc(S.group)} · ${esc(L(C().name))}</div></div></div>
+  <div class="stack-s"><span class="lbl">${S.lang==='en'?'Language':'Langue'}</span><div class="chips"><button class="chip" data-lang="fr" aria-pressed="${S.lang==='fr'}">Français</button><button class="chip" data-lang="en" aria-pressed="${S.lang==='en'}">English</button></div></div>
+  <button class="btn btn-ghost" style="align-self:flex-start" data-reonb>${ic('globe')}${S.lang==='en'?'Change country, region or group':'Changer de pays, de région ou de groupe'}</button>
+ </div>
+ <div class="note">${ic('shield')}<span>${S.lang==='en'?'Belonging to a prayer group is sensitive personal data. Each member only sees their own group; amounts are visible to the member and the treasurer only.':'Appartenir à un groupe de prière est une donnée personnelle sensible. Chacun ne voit que son groupe ; les montants ne sont visibles que par le membre et le trésorier.'}</span></div>`;
+
+V.plus=()=>`<div class="stack-s"><h1>${t('nav_plus')}</h1></div>
+ <div class="flat list">${['historique','rappels','profil'].map(id=>{const it=NAV.membre.find(x=>x.id===id);return `<button class="li" data-go="${id}"><div class="ic">${ic(it.icon)}</div><div class="body"><div class="t">${t(it.k)}</div></div>${ic('chev')}</button>`;}).join('')}
+ <button class="li" data-space="resp"><div class="ic">${ic('shield')}</div><div class="body"><div class="t">${t('grp_resp')}</div><div class="s">${S.lang==='en'?'For group leaders and the treasurer':'Pour les responsables et le trésorier'}</div></div>${ic('chev')}</button>
+ <button class="li" data-theme-toggle><div class="ic">${ic(isDark()?'sun':'moon')}</div><div class="body"><div class="t">${isDark()?t('theme_l'):t('theme_d')}</div></div></button></div>`;
+
+/* ---------- Espace responsable ---------- */
+const MEMBERS=[['Grâce N.','ok','ok','reg'],['Joseph A.','ok','ok','reg'],['Esther N.','late','ok','reg'],['Samuel B.','ok','wait','no'],['Ruth O.','wait','ok','reg'],['Daniel S.','ok','late','no'],['Myriam V.','ok','ok','reg'],['Noé G.','late','wait','no']];
+const pillOf=s=>({ok:`<span class="pill p-ok">${S.lang==='en'?'Paid':'Payé'}</span>`,wait:`<span class="pill p-warn">${S.lang==='en'?'Pending':'En attente'}</span>`,late:`<span class="pill p-late">${S.lang==='en'?'Late':'En retard'}</span>`,reg:`<span class="pill p-ok">${S.lang==='en'?'Registered':'Inscrit'}</span>`,no:`<span class="pill p-mute">—</span>`})[s];
+V['r-publier']=()=>`
+ <div class="stack-s"><p class="eyebrow">${t('grp_resp')} · ${esc(S.group)}</p><h1>${t('r_publier')}</h1><p class="muted">${S.lang==='en'?'It appears at the top of News for the people you choose.':'Elle apparaît en haut des Actus pour les personnes choisies.'}</p></div>
+ <form class="card stack" id="pub-form">
+  <div class="field"><label for="pub-type">${S.lang==='en'?'Type':'Type'}</label><select class="input" id="pub-type"><option>${S.lang==='en'?'Guidance':'Consigne'}</option><option>${S.lang==='en'?'Retreat':'Retraite'}</option><option>${S.lang==='en'?'Meeting':'Réunion'}</option><option>${S.lang==='en'?'Retreat centre':'Centre de retraite'}</option><option>Transport</option></select></div>
+  <div class="field"><label for="pub-title">${S.lang==='en'?'Title':'Titre'}</label><input class="input" id="pub-title" value="${S.lang==='en'?'Vigil moved to Saturday 10 pm':'Veillée décalée à samedi 22 h'}"></div>
+  <div class="field"><label for="pub-body">${S.lang==='en'?'Message':'Message'}</label><textarea class="input" id="pub-body" rows="3">${S.lang==='en'?'Same place. Bring a candle.':'Même lieu. Apportez une bougie.'}</textarea></div>
+  <div class="stack-s"><span class="lbl">${S.lang==='en'?'Who sees it':'Qui la voit'}</span><div class="chips"><button type="button" class="chip" aria-pressed="true" data-aud>${esc(S.group)}</button><button type="button" class="chip" aria-pressed="false" data-aud>${esc((C().regions.find(r=>r.id===S.region)||{}).name||'')}</button><button type="button" class="chip" aria-pressed="false" data-aud>${esc(L(C().name))}</button><button type="button" class="chip" aria-pressed="false" data-aud>${S.lang==='en'?'All countries':'Tous les pays'}</button></div></div>
+  <button class="btn btn-primary" style="align-self:flex-start" type="submit">${ic('send')}${S.lang==='en'?'Publish':'Publier'}</button>
+ </form>`;
+V['r-payes']=()=>`
+ <div class="stack-s"><p class="eyebrow">${S.lang==='en'?'November':'Novembre'} · ${esc(S.group)}</p><h1>${t('r_payes')}</h1></div>
+ <div class="grid2"><div class="card stat"><span class="k">${S.lang==='en'?'Monthly contributions paid':'Contributions payées'}</span><span class="v">5 / 8</span></div><div class="card stat"><span class="k">${S.lang==='en'?'Registered for Christmas':'Inscrits à Noël'}</span><span class="v">5 / 8</span></div></div>
+ <div class="flat tablewrap"><table class="t"><thead><tr><th>${S.lang==='en'?'Member':'Membre'}</th><th>${S.lang==='en'?'Monthly':'Mensuelle'}</th><th>${S.lang==='en'?'Centre':'Centre'}</th><th>${S.lang==='en'?'Christmas':'Noël'}</th><th></th></tr></thead><tbody>
+  ${MEMBERS.map(m=>`<tr><td><b>${esc(m[0])}</b></td><td>${pillOf(m[1])}</td><td>${pillOf(m[2])}</td><td>${pillOf(m[3])}</td><td>${(m[1]!=='ok'||m[2]!=='ok')?`<button class="btn btn-ghost btn-s" data-relance="${esc(m[0])}">${S.lang==='en'?'Remind':'Relancer'}</button>`:''}</td></tr>`).join('')}
+ </tbody></table></div>
+ <p class="hint">${S.lang==='en'?'A reminder is a kind automatic message, never public.':'Une relance est un message automatique et bienveillant, jamais public.'}</p>`;
+V['r-transport']=()=>{const r=RETREATS()[0];return `
+ <div class="stack-s"><p class="eyebrow">${esc(L(r.name))}</p><h1>${t('r_transport')}</h1></div>
+ ${r.bus.map(b=>`<div class="card stack-s"><div class="row between wrapflex"><b>${ic('bus','')} ${esc(b.from)}</b><span class="num">${b.taken} / ${b.seats}</span></div><div class="prog"><span style="width:${b.taken/b.seats*100}%"></span></div><span class="muted small">${esc(L(b.time))} · ${money(b.price)} · ${S.lang==='en'?'collected':'encaissé'} ${money(b.taken*b.price)}</span></div>`).join('')}
+ <button class="btn btn-ghost" style="align-self:flex-start" data-toast="${S.lang==='en'?'New bus added (simulation)':'Nouveau bus ajouté (simulation)'}">${ic('plus')}${S.lang==='en'?'Add a bus':'Ajouter un bus'}</button>
+ <div class="card stack-s"><b>${S.lang==='en'?'Car-sharing':'Covoiturage'}</b><span class="muted small">${r.cars.length} ${S.lang==='en'?'rides offered':'trajets proposés'} · ${r.cars.reduce((a,c)=>a+(c.seats-c.left),0)} ${S.lang==='en'?'passengers':'passagers'}</span></div>`;};
+V['r-presence']=()=>`
+ <div class="stack-s"><p class="eyebrow">${esc(S.group)}</p><h1>${t('r_presence')}</h1><p class="muted">${S.lang==='en'?'Last 3 months, by activity.':'Les 3 derniers mois, par activité.'}</p></div>
+ <div class="card stack">${[[{fr:'Réunions de prière',en:'Prayer meetings'},78],[{fr:'Enseignements en ligne',en:'Online teachings'},61],[{fr:'Veillées',en:'Vigils'},54],[{fr:'Retraite de Carême',en:'Lent retreat'},88]].map(([k,v])=>`<div class="stack-s"><div class="row between small"><span>${esc(L(k))}</span><span class="num">${v} %</span></div><div class="prog"><span style="width:${v}%"></span></div></div>`).join('')}</div>`;
+
+/* ---------- Paiement (simulation) ---------- */
+let PAY=null;
+function openPay(o){ PAY={...o,step:'choose'}; renderLayer(); }
+function renderLayer(){
+ const el=document.getElementById('layer');
+ let h='';
+ if(PAY){
+  const head=`<div class="grab"></div><div class="row between"><h2>${PAY.step==='done'?(S.lang==='en'?'Thank you':'Merci'):(S.lang==='en'?'Payment':'Paiement')}</h2><button class="back" data-close aria-label="Fermer">${ic('x')}</button></div>`;
+  if(PAY.step==='choose') h=`${head}
+   <div class="receipt"><div class="row"><span class="muted">${esc(PAY.label)}</span><b class="num">${money(PAY.amt)}</b></div></div>
+   ${PAY.fundChoice?`<div class="chips">${[{fr:'Centre de retraite',en:'Retreat centre'},{fr:'Fonds de solidarité',en:'Solidarity fund'},{fr:'Mon groupe',en:'My group'}].map((f,i)=>`<button class="chip" aria-pressed="${(PAY.fund||0)===i}" data-fund="${i}">${esc(L(f))}</button>`).join('')}</div>`:''}
+   <div class="stack-s">${C().pay.map(m=>`<button class="paybtn" data-method="${esc(m)}"><span>${esc(m)}<span class="sub" style="display:block">${S.lang==='en'?'Simulation':'Simulation'}</span></span>${ic('chev')}</button>`).join('')}</div>
+   <p class="hint">${t('sim')}</p>`;
+  if(PAY.step==='wait') h=`${head}<div class="spinner"></div><p class="muted" style="text-align:center">${S.lang==='en'?'Confirming…':'Confirmation…'}</p>`;
+  if(PAY.step==='done') h=`${head}<div class="success">${ic('check')}</div>
+   <div class="receipt"><div class="row"><span class="muted">${S.lang==='en'?'Receipt':'Reçu'}</span><b>${PAY.id}</b></div><div class="row"><span class="muted">${esc(PAY.label)}</span><b class="num">${money(PAY.amt)}</b></div><div class="row"><span class="muted">${S.lang==='en'?'Method':'Moyen'}</span><span>${esc(PAY.method)}</span></div></div>
+   <p class="muted small">${S.lang==='en'?'The receipt is in History and sent by e-mail.':'Le reçu est dans l\'historique et envoyé par e-mail.'}</p>
+   <button class="btn btn-primary btn-block" data-close>${S.lang==='en'?'Done':'Terminé'}</button>`;
+  h=`<div class="scrim" data-scrim><div class="sheet" role="dialog" aria-modal="true">${h}</div></div>`;
+ }
+ if(RECEIPT){ const r=S.history.find(x=>x.id===RECEIPT);
+  h+=`<div class="scrim" data-scrim><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="row between"><h2>${S.lang==='en'?'Receipt':'Reçu'} ${esc(r.id)}</h2><button class="back" data-close aria-label="Fermer">${ic('x')}</button></div>
+  <div class="receipt"><div class="row"><span class="muted">${S.lang==='en'?'Association':'Association'}</span><b>Parole de Dieu</b></div><div class="row"><span class="muted">${S.lang==='en'?'Member':'Membre'}</span><span>Grâce N. · ${esc(S.group)}</span></div><div class="row"><span class="muted">${S.lang==='en'?'For':'Objet'}</span><span style="text-align:right">${esc(L(r.title))}</span></div><div class="row"><span class="muted">Date</span><span>${new Date(r.date+'T12:00').toLocaleDateString(LOC())}</span></div><div class="row"><span class="muted">${S.lang==='en'?'Method':'Moyen'}</span><span>${esc(r.method)}</span></div><div class="row" style="border-top:1px solid var(--line);padding-top:8px"><b>${S.lang==='en'?'Amount':'Montant'}</b><b class="num">${money(r.amt)}</b></div></div>
+  <button class="btn btn-ghost btn-block" data-toast="${S.lang==='en'?'In the real app, the PDF receipt is sent by e-mail.':'Dans la vraie appli, le reçu PDF part par e-mail.'}">${ic('doc')}${S.lang==='en'?'Receive the PDF by e-mail':'Recevoir le PDF par e-mail'}</button></div></div>`;}
+ if(S.toast) h+=`<div class="toast" role="status">${ic('check')}<span>${esc(S.toast)}</span></div>`;
+ el.innerHTML=h;
+}
+let RECEIPT=null;
+function toast(m){ S.toast=m; renderLayer(); clearTimeout(toast._t); toast._t=setTimeout(()=>{S.toast=null;renderLayer();},2600); }
+
+/* ---------- Rendu ---------- */
+function render(){
+ document.documentElement.lang=S.lang;
+ shell();
+ const v=document.getElementById('view');
+ if(!S.onboarded){ document.querySelector('.side').style.visibility='hidden'; v.innerHTML=V.onboarding(); return; }
+ document.querySelector('.side').style.visibility='';
+ v.innerHTML=(V[S.screen]||V.actus)();
+}
+
+/* ---------- Événements ---------- */
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button'); if(!b) { if(e.target.matches('[data-scrim]')){PAY=null;RECEIPT=null;renderLayer();} return; }
+ const d=b.dataset;
+ if('themeToggle' in d){ document.documentElement.dataset.theme=isDark()?'light':'dark'; render(); return; }
+ if(d.lang){ S.lang=d.lang; seedHistory(); render(); return; }
+ if(d.country){ S.country=d.country; S.region=C().regions[0].id; S.group=C().regions[0].groups[0]; seedHistory(); render(); return; }
+ if(d.region){ S.region=d.region; S.group=C().regions.find(r=>r.id===d.region).groups[0]; render(); return; }
+ if(d.group){ S.group=d.group; render(); return; }
+ if(d.onb){ const s=S.onbStep+Number(d.onb); if(s<0) return; if(s>2){ S.onboarded=true; S.screen='actus'; S.stack=[]; seedHistory(); try{localStorage.setItem('mepdd',JSON.stringify({c:S.country,r:S.region,g:S.group,l:S.lang}));}catch(_){} } else S.onbStep=s; render(); window.scrollTo({top:0}); return; }
+ if('reonb' in d){ S.onboarded=false; S.onbStep=0; render(); return; }
+ if(d.space){ S.space=d.space; S.stack=[]; S.screen=d.space==='membre'?'actus':'r-publier'; render(); window.scrollTo({top:0}); return; }
+ if(d.go){ go(d.go,d.param); return; }
+ if('back' in d){ back(); return; }
+ if(d.ex!=null){ S.exDone[d.ex]=!S.exDone[d.ex]; render(); return; }
+ if(d.attend){ S.attending[d.attend]=!S.attending[d.attend]; render(); if(S.attending[d.attend]) toast(S.lang==='en'?'Your leader knows you are coming.':'Ton responsable sait que tu viens.'); return; }
+ if(d.room){ if(b.getAttribute('aria-disabled')==='true') return; S.retreatSel.room=d.room; render(); return; }
+ if(d.plan){ S.retreatSel.plan=d.plan; render(); return; }
+ if(d.bus){ S.retreatSel.bus=S.retreatSel.bus===d.bus?null:d.bus; render(); return; }
+ if(d.car){ S.retreatSel.car=S.retreatSel.car===d.car?null:d.car; render(); if(S.retreatSel.car) toast(S.lang==='en'?'Request sent to the driver.':'Demande envoyée au conducteur.'); return; }
+ if('offerCar' in d){ toast(S.lang==='en'?'In the real app: departure, time, seats.':'Dans la vraie appli : départ, heure, places.'); return; }
+ if(d.solid!=null){ S.retreatSel.solid=Number(d.solid); render(); return; }
+ if(d.statut){ S.me.statut=d.statut; render(); return; }
+ if(d.rem){ S.reminders[d.rem]=!S.reminders[d.rem]; render(); return; }
+ if(d.virAmt){ document.querySelectorAll('[data-vir-amt]').forEach(x=>x.setAttribute('aria-pressed',x===b)); return; }
+ if('virStart' in d){ const a=document.querySelector('[data-vir-amt][aria-pressed="true"]'); S.virement={amt:Number(a?a.dataset.virAmt:PR().virement[1]),day:document.getElementById('vir-day').value,fund:document.getElementById('vir-fund').value}; render(); toast(S.lang==='en'?'Standing order set up (simulation).':'Virement permanent mis en place (simulation).'); return; }
+ if('virStop' in d){ S.virement=null; render(); return; }
+ if('payMonthly' in d){ openPay({label:L({fr:'Contribution mensuelle · novembre',en:'Monthly contribution · November'}),amt:PR().cotisation,kind:'cotisation'}); return; }
+ if(d.payRetreat){ const r=RETREATS().find(x=>x.id===d.payRetreat); openPay({label:L(r.name),amt:Number(d.amt),kind:'retraite',retreat:r.id}); return; }
+ if(d.payDon){ openPay({label:L({fr:'Don',en:'Gift'}),amt:Number(d.amt||PR().don[2]),kind:'don',fundChoice:d.payDon==='libre',fund:d.payDon==='centre'?0:0}); return; }
+ if(d.fund!=null&&PAY){ PAY.fund=Number(d.fund); renderLayer(); return; }
+ if(d.method&&PAY){ PAY.method=d.method; PAY.step='wait'; renderLayer(); setTimeout(()=>{ PAY.step='done'; PAY.id='PDD-'+(1000+S.history.length+Math.floor(Math.random()*9000));
+   S.history.unshift({id:PAY.id,date:'2026-11-09',kind:PAY.kind,title:{fr:PAY.label,en:PAY.label},amt:PAY.amt,method:PAY.method});
+   if(PAY.kind==='cotisation') S.monthly.paid=true;
+   if(PAY.kind==='retraite') S.myRegs[PAY.retreat]=true;
+   if(PAY.kind==='don'&&(PAY.fund||0)===0) S.paidCentreXAF+=CUR()==='XAF'?PAY.amt:Math.round(PAY.amt*XAF_PER_EUR);
+   renderLayer(); render(); },1100); return; }
+ if('close' in d){ PAY=null; RECEIPT=null; renderLayer(); return; }
+ if(d.receipt){ RECEIPT=d.receipt; renderLayer(); return; }
+ if(d.relance){ toast((S.lang==='en'?'Reminder sent to ':'Relance envoyée à ')+d.relance+' (simulation)'); return; }
+ if('aud' in d){ b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true'); return; }
+ if(d.toast){ toast(d.toast); return; }
+});
+document.addEventListener('submit',e=>{ e.preventDefault(); toast(S.lang==='en'?'Published. Members get a notification (simulation).':'Publié. Les membres reçoivent une notification (simulation).'); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&(PAY||RECEIPT)){PAY=null;RECEIPT=null;renderLayer();} });
+
+
+try{ const s=JSON.parse(localStorage.getItem('mepdd')||'null'); if(s&&COUNTRIES[s.c]){ S.country=s.c; S.region=s.r; S.group=s.g; S.lang=s.l||'fr'; S.onboarded=true; } }catch(_){}
+seedHistory();
+render();
+})();
+</script>
+</body></html>
