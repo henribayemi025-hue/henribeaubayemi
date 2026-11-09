@@ -75,3 +75,10 @@ Encore à confirmer par Beau : ce qu'il n'a pas fait lundi (hors sport), vendred
 
 ## 04/11 (soir) : règle de Beau — « tu n'as pas besoin de me demander pour tout »
 Pour le Sheet, les repas, les courses, le sport, les flyers et les e-mails du soir : je décide, je fais, puis je dis ce qui a été fait. Je ne demande plus « je mets dans le Sheet ? » ni « ça te va ? ». Je m'arrête seulement pour : l'argent, l'authentification et les accès, la suppression de ses données (hors onglets que j'ai créés), et tout ce qui se publie en son nom hors de l'ordre déjà donné.
+
+## 09/11 — Point de Beau (à la voix)
+- Poids ce matin : 145,6 kg. Lun→jeu sport et repas tenus, ven→dim écart. Ne veut plus « retomber ».
+- Objectif dit : -10 kg/mois (non réaliste : repère sûr 0,5 à 1 kg/semaine, à lui dire avec douceur).
+- Argent : compte dans le rouge, 8 500 € d'études restants, 4 500 € à payer pour fin de semestre ; plafond de dépenses voulu jusqu'à fin de mois : 250 €. Prêt de 1 000 € demandé. Chiffres exacts des comptes : ne pas recopier ici.
+- À faire (sa liste) : titre de séjour, mutuelle/assurance maladie, LinkedIn, candidatures, hygiène, programme alimentaire, apprendre à coder / choisir sa voie, guitare, développement personnel.
+- Ton : il se juge très durement (« bête », « faible »). Répondre calmement, sans leçon, une étape à la fois.
