@@ -49,3 +49,11 @@ Environ 60 s, vertical, même méthode que l'épisode 1 (5 scènes de 12 s, narr
 4. **Lowood.** Un bâtiment gris sous la neige. Un réfectoire immense, des rangées de fillettes en robe brune, du porridge brûlé, le froid. Narratrice : « Quatre-vingts filles. Un seul feu. »
 5. **Helen.** Dans la cour, une fille plus âgée lit, assise sur un banc de pierre, et lève les yeux en souriant : « Je m'appelle Helen. » Jane s'assoit à côté d'elle. Narratrice : « Pour la première fois, quelqu'un me regardait sans mépris. » Carton « À suivre… ».
 Coût attendu : ≈ 55 000 à 68 000 crédits (5 scènes + reprises éventuelles), d'après l'épisode 1.
+
+## Règle audio (Beau, 13/11 soir) — à appliquer dès l'épisode 2
+Problème constaté : les voix générées avec la vidéo sont parfois incohérentes (voix qui change, bouche qui ne parle pas vraiment, mots mal articulés). Ce n'est pas « pro ».
+1. **Vidéo sans dialogue.** Les scènes sont générées pour l'image seulement (pas de réplique dans le prompt, audio d'ambiance seulement).
+2. **Voix séparées, une par personnage, toujours la même** (liste de voix ElevenLabs choisie une fois pour la série), générées à part, contrôlées par transcription avant montage.
+3. **Pas de bouche visible pendant une réplique** : le personnage est de dos, hors champ, en gros plan sur les yeux ou les mains, ou c'est la narratrice. Une voix d'enfant générée n'est pas fiable : Jane enfant ne parle presque pas, la narratrice (Jane adulte) parle à sa place.
+4. **Sous-titres sur chaque réplique** (déjà fait).
+5. **Contrôle avant d'envoyer** : transcription locale de toute la piste ; toute phrase mal comprise est refaite ou retirée.
