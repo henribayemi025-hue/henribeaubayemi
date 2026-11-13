@@ -40,3 +40,12 @@ Une jeune diplômée décroche un poste dans une grande entreprise. Le matin, en
 9. Recueillie à Moor House ; l'héritage ; la proposition de St John.
 10. L'appel entendu dans la nuit, le retour : Thornfield en ruines, les retrouvailles.
 Le nombre est une proposition : 8 serait plus serré, 12 plus fidèle. Le coût en crédits dépend du moteur choisi (non mesuré).
+
+## Jane Eyre — épisode 2 « Lowood » : scénario prêt (13/11, pas encore généré)
+Environ 60 s, vertical, même méthode que l'épisode 1 (5 scènes de 12 s, narratrice, musique, sous-titres). Les répliques d'enfant restent courtes ou passent par la narratrice : la voix d'enfant générée s'est révélée mal articulée dans l'épisode 1.
+1. **Le réveil.** Jane ouvre les yeux dans son lit, Bessie à son chevet, une bougie. Narratrice : « Je me suis réveillée dans mon lit. Quelque chose en moi avait changé. »
+2. **Le verdict.** Salon. Mrs Reed assise ; un homme en noir, très grand, M. Brocklehurst, regarde Jane de haut. Brocklehurst : « Cette enfant ira à Lowood. On y apprend l'humilité. » Mrs Reed : « Emmenez-la. »
+3. **Le départ.** Aube glacée, une diligence devant le manoir. Jane monte seule, une petite malle. Bessie la serre dans ses bras : « Adieu, mademoiselle Jane. » Personne d'autre à la porte.
+4. **Lowood.** Un bâtiment gris sous la neige. Un réfectoire immense, des rangées de fillettes en robe brune, du porridge brûlé, le froid. Narratrice : « Quatre-vingts filles. Un seul feu. »
+5. **Helen.** Dans la cour, une fille plus âgée lit, assise sur un banc de pierre, et lève les yeux en souriant : « Je m'appelle Helen. » Jane s'assoit à côté d'elle. Narratrice : « Pour la première fois, quelqu'un me regardait sans mépris. » Carton « À suivre… ».
+Coût attendu : ≈ 55 000 à 68 000 crédits (5 scènes + reprises éventuelles), d'après l'épisode 1.
