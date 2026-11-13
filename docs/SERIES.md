@@ -57,3 +57,12 @@ Problème constaté : les voix générées avec la vidéo sont parfois incohére
 3. **Pas de bouche visible pendant une réplique** : le personnage est de dos, hors champ, en gros plan sur les yeux ou les mains, ou c'est la narratrice. Une voix d'enfant générée n'est pas fiable : Jane enfant ne parle presque pas, la narratrice (Jane adulte) parle à sa place.
 4. **Sous-titres sur chaque réplique** (déjà fait).
 5. **Contrôle avant d'envoyer** : transcription locale de toute la piste ; toute phrase mal comprise est refaite ou retirée.
+
+## Réduire le coût (Beau, 13/11 : « ça coûte près de 15 € pour une histoire et demie »)
+Mesure : l'épisode 1 a coûté ≈ 68 700 crédits ElevenLabs, soit environ 83 % de la recharge de 15 €.
+Pistes, à tester dès que les connecteurs reviennent (chiffrer avec `estimate_only`, gratuit) :
+1. **Images fixes animées** pour les plans calmes : une image coûte ≈ 190 crédits contre ≈ 11 000 pour un plan vidéo de 12 s ; mouvement de caméra et effet de profondeur faits au montage (gratuit).
+2. **Vidéo seulement pour les moments forts**, plans de 4 à 6 s au lieu de 12 s.
+3. **Comparer les modèles vidéo** disponibles chez ElevenLabs (autres que Seedance Mini) au même prix par seconde.
+4. **Autres connecteurs de la session** (Figma, Canva) : ils proposent de la génération d'images/vidéos sur leurs propres crédits ; prix non vérifié, à essayer quand ils se reconnectent.
+5. Aucun moteur de vidéo local gratuit : le serveur de la session n'a pas de carte graphique (non vérifié en détail).
