@@ -18,7 +18,7 @@ Une jeune diplômée décroche un poste dans une grande entreprise. Le matin, en
 - Épisodes de 15 s en vertical, accroche à la fin de chacun.
 - Un épisode par jour au plus, sur les moteurs gratuits tant que le crédit ElevenLabs est épuisé (≈ 700 restants le 13/11, aucune recharge).
 - Aucune photo prise sur le web ; aucun chiffre inventé dans les textes d'accompagnement.
-- La fille trop petite : c'est une histoire, pas un message (Beau, 13/11). Seule précaution pratique, à son choix : les plateformes sociales limitent les contenus sur la privation de nourriture, donc ne pas la montrer comme un conseil.
+- La fille trop petite : une histoire, racontée telle quelle (Beau, 13/11). Aucune précaution ajoutée.
 - La romance : c'est une histoire, aucun message à passer (Beau, 13/11). Rien à ajouter.
 
 ## Prochaines étapes
@@ -26,3 +26,17 @@ Une jeune diplômée décroche un poste dans une grande entreprise. Le matin, en
 2. Pour chaque film : synopsis en épisodes, puis le nombre d'épisodes que ça prend.
 3. Premier film : Jane Eyre — découpage, personnages, premier épisode.
 4. Moteurs gratuits d'image et de vidéo : lesquels tiennent le rythme (voir `docs/moteurs-gratuits.md`).
+
+## Jane Eyre — découpage proposé (13/11, à valider par Beau)
+10 épisodes d'environ 1 minute (≈ 10 minutes au total), un par jour, accroche à la fin de chacun.
+1. Gateshead : l'orpheline maltraitée, la chambre rouge.
+2. Lowood : l'école dure, l'amie Helen Burns.
+3. Départ de Lowood, arrivée à Thornfield.
+4. Rencontre avec M. Rochester (le cheval, la chute).
+5. Les rires étranges la nuit, l'incendie.
+6. Rochester et Jane se rapprochent ; la demande en mariage.
+7. Le mariage interrompu : la femme cachée au grenier.
+8. La fuite de Jane, seule sur la lande.
+9. Recueillie à Moor House ; l'héritage ; la proposition de St John.
+10. L'appel entendu dans la nuit, le retour : Thornfield en ruines, les retrouvailles.
+Le nombre est une proposition : 8 serait plus serré, 12 plus fidèle. Le coût en crédits dépend du moteur choisi (non mesuré).
