@@ -66,3 +66,17 @@ Pistes, à tester dès que les connecteurs reviennent (chiffrer avec `estimate_o
 3. **Comparer les modèles vidéo** disponibles chez ElevenLabs (autres que Seedance Mini) au même prix par seconde.
 4. **Autres connecteurs de la session** (Figma, Canva) : ils proposent de la génération d'images/vidéos sur leurs propres crédits ; prix non vérifié, à essayer quand ils se reconnectent.
 5. Aucun moteur de vidéo local gratuit : le serveur de la session n'a pas de carte graphique (non vérifié en détail).
+
+## Jane Eyre — plan révisé (13/11 soir) : 12 épisodes, pas 10
+Beau : « je sens que ça va dépasser 6 épisodes ». Oui : les 3 premiers ne couvrent que l'enfance. Coût mesuré avec la méthode « voix à part » : ≈ 40 000 crédits par épisode de 45 s (épisode 2).
+- Faits : 1 La chambre rouge · 2 Lowood · 3 Helen (version courte, 3 scènes ; il manque « la nuit » et « huit ans plus tard »).
+- À faire : 4 Thornfield (l'arrivée, Mrs Fairfax, Adèle, un rire dans le couloir) · 5 L'inconnu sur la route (le cheval, la chute, Rochester) · 6 Le feu (les rires la nuit, le lit en flammes) · 7 Les invités (Blanche Ingram, la bohémienne, Mason blessé) · 8 La demande (le verger, l'orage, le marronnier fendu) · 9 Le mariage interrompu (la femme du grenier) · 10 La fuite (la lande, Moor House) · 11 L'héritage (St John, « Jane ! Jane ! Jane ! ») · 12 Le retour (Thornfield en ruines, Ferndean).
+- Reste : 9 épisodes ≈ 360 000 crédits, plus ≈ 18 300 pour finir l'épisode 3.
+
+### Épisode 4 « Thornfield » — scénario prêt (pas généré : 65 crédits restants le 13/11)
+Jane adulte = image de référence `hjGfiY7vYhY5wUd5pEWu` (flow lksM34VyejCb2L89t7P9). Vidéo sans réplique, voix à part.
+1. **Huit ans plus tard** (scène déjà écrite, nœud `NQybEb7g2i8knMx9kJ9o`) : Jane à la fenêtre, la lettre, le départ. Narratrice : « Huit ans ont passé. J'avais dix-huit ans, et je voulais voir le monde. » (voix déjà enregistrée).
+2. **La route de nuit** : une voiture sur la lande, une lanterne ; un grand manoir sombre aux créneaux. Narratrice : « On m'attendait dans une maison appelée Thornfield. »
+3. **Mrs Fairfax** : une vieille dame douce en bonnet, un petit salon chaleureux, un feu, un chat. Mrs Fairfax (voix hors champ, sur le visage de Jane) : « Vous devez être gelée. Approchez du feu. »
+4. **Adèle** : au matin, une petite fille en robe claire danse dans la galerie ; Jane lui tend un livre. Narratrice : « Mon élève s'appelait Adèle. Le maître, lui, n'était jamais là. »
+5. **Le rire** : Jane seule dans le couloir du troisième étage, une porte fermée au fond ; elle s'arrête net, tourne la tête. Narratrice : « C'est là que j'ai entendu rire pour la première fois. Un rire qui n'avait rien de joyeux. » Carton « À suivre… ».
