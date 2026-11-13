@@ -18,8 +18,8 @@ Une jeune diplômée décroche un poste dans une grande entreprise. Le matin, en
 - Épisodes de 15 s en vertical, accroche à la fin de chacun.
 - Un épisode par jour au plus, sur les moteurs gratuits tant que le crédit ElevenLabs est épuisé (≈ 700 restants le 13/11, aucune recharge).
 - Aucune photo prise sur le web ; aucun chiffre inventé dans les textes d'accompagnement.
-- La fille trop petite : pas de glorification de la privation ni de l'opération ; message d'aide en fin d'épisode.
-- La romance : pas de scène explicite ; l'infidélité est montrée comme destructrice, pas comme un modèle.
+- La fille trop petite : c'est une histoire, pas un message (Beau, 13/11). Seule précaution pratique, à son choix : les plateformes sociales limitent les contenus sur la privation de nourriture, donc ne pas la montrer comme un conseil.
+- La romance : c'est une histoire, aucun message à passer (Beau, 13/11). Rien à ajouter.
 
 ## Prochaines étapes
 1. Beau confirme le nom de la chaîne et lance la suite (il passe sur Fable 5.2).
