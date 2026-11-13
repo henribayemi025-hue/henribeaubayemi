@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- ⏳ 13/11 — Beau : « vas-y avec l’épisode 1 » de Jane Eyre (La chambre rouge), en français, réaliste, « digne d’un très grand réalisateur », transitions, détails et voix propres. Budget : les ≈ 83 000 crédits rechargés, ou moins. Non publié sans son mot.
 - ⏳ 13/11 — Beau a rechargé 15 € sur ElevenLabs (capture : 121 075 utilisés / 204 122 → ≈ 83 000 crédits restants ≈ 90 s de vidéo au tarif mesuré de ≈ 916 crédits/s). Budget voulu : ≈ 15 € ou moins. Conséquence : 1 épisode de Jane Eyre (≈ 60 s) possible, pas 10 ; durée par épisode à trancher (1 min jugée trop courte / trop rapide par Beau). Il passera sur Fable 5.2 pour lancer l’épisode 1 après mon accord.
 - ⏳ 13/11 — Jane Eyre : découpage proposé à Beau = 10 épisodes d’environ 1 minute (voir `docs/SERIES.md`), à valider ; 8 ou 12 possibles. Rien produit.
 - ⏳ 13/11 — Beau : ses films sont des histoires, pas des messages ; je n'y ajoute pas de morale. Séries de Beau : ordre décidé = 1 Jane Eyre, 2 sa romance (stagiaire / patron marié, fin et titre à trouver), 3 Oliver Twist, 4 La fille trop petite, 5 Orgueil et Préjugés (noté), 6 La double face de Beau (quand la chaîne a de l'audience). Plan écrit dans `docs/SERIES.md`. Beau lancera la suite avec Fable 5.2 quand le plan lui convient. Rien produit ni publié.
