@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- ⏳ 13/11 — Séries de Beau : ordre décidé = 1 Jane Eyre, 2 sa romance (stagiaire / patron marié, fin et titre à trouver), 3 Oliver Twist, 4 La fille trop petite, 5 Orgueil et Préjugés (noté), 6 La double face de Beau (quand la chaîne a de l'audience). Plan écrit dans `docs/SERIES.md`. Beau lancera la suite avec Fable 5.2 quand le plan lui convient. Rien produit ni publié.
 - ✅ 13/11 — Décision de Beau : Jane Eyre et Oliver Twist restent DANS L'ÉPOQUE (pas de transposition). Il demande d'autres romans célèbres du domaine public à adapter : liste proposée dans la réponse du jour, choix à venir.
 - ⏳ 13/11 — 4e film demandé par Beau : « Oliver Twist » (roman de Charles Dickens, 1838, dans le domaine public). Même choix qu'avec Jane Eyre : fidèle à l'époque ou transposé. Rien produit ni publié.
 - ⏳ 13/11 — 3e film demandé par Beau : l'histoire de « Jane Eyre » (roman de Charlotte Brontë, 1847, dans le domaine public : adaptation libre possible). Choix à faire avec lui : fidèle à l'époque ou transposée à aujourd'hui, nombre d'épisodes. Rien produit ni publié.
