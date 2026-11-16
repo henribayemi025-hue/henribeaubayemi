@@ -48,13 +48,19 @@ try {
     const lieu = fetch('/geo', { signal: AbortSignal.timeout?.(2500) })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null);
-    lieu.then((g) => track('visit', null, {
+    lieu.then((g) => {
+      // Un visiteur venu d'un hébergeur est marqué robot : la visite ET tout ce
+      // qu'il fait ensuite dans cet onglet (voir track.js).
+      if (g?.robot) { try { sessionStorage.setItem('finjaro-robot', '1'); } catch { /* sans stockage : la visite seule est marquée */ } }
+      return track('visit', null, {
       path: window.location.pathname,
       ref,
       ...(g?.pays ? { pays: g.pays } : {}),
       ...(g?.ville ? { ville: g.ville } : {}),
       ...(g?.region ? { region: g.region } : {}),
-    }));
+      ...(g?.robot ? { robot: true } : {}),
+      });
+    });
   }
 } catch {
   /* sessionStorage unavailable (private mode) — skip, non-critical */

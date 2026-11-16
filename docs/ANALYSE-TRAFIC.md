@@ -41,3 +41,9 @@ Humain probable = a fait un geste sur le site (intro fermée, cookies, clic arti
 - Cloudflare n'est pas connecté à cette session (connecteur à autoriser par Beau). Nos chiffres viennent de notre propre table `events`.
 - On connaît pays, ville, provenance, écrans vus. On ne connaît **jamais l'identité** d'un visiteur non connecté ; seul un compte (connexion) donne une identité.
 - Cloudflare apporterait un tri robots/humains fait par eux et les pays, pas des noms.
+
+## Robots écartés (16/11, décision de Beau : « oui, écarte les robots du comptage »)
+- **À l'arrivée** (`src/worker.js`) : Cloudflare donne le nom de l'organisation du réseau du visiteur ; un hébergeur (Amazon, Google, Microsoft, OVH, Hetzner…) marque la visite `robot: true`, et tout ce que fait ce visiteur dans l'onglet porte la marque (`src/lib/track.js`). Rien n'est jeté, tout est marqué.
+- **Dans la base** : vue `public.events_humains` (migration 0248, ajout seul, lecture réservée au serveur). Elle écarte les visiteurs marqués robot ET, pour l'historique d'avant la marque, les visiteurs américains sans aucun geste ni connexion.
+- **Résultat sur les 30 derniers jours** : 7 456 lignes d'événements → 603 ; 98 visiteurs avec une visite (au lieu de ≈ 3 560) ; 41 vues de fiches (au lieu de 2 679).
+- **Limites** : la règle d'historique sous-compte quelques vrais Américains passifs ; l'Allemagne (28 visiteurs, 10 à une seule action) n'est pas écartée et contient probablement aussi des robots. À revoir dans une semaine avec la marque `robot` posée.
