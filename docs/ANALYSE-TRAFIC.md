@@ -20,3 +20,24 @@ Source : la table `events`, que NOTRE code remplit (pays, région, ville, proven
 1. Ne jamais citer « visiteurs uniques » tels quels : à citer avec « humains probables » (geste ou connecté).
 2. Les décisions (flyers, séries, Accounting) se jugent sur ≈ 2 humains par jour, pas sur les centaines affichées.
 3. À faire (code, avec accord de Beau) : écarter les robots du comptage (villes de centres de données, absence de geste) pour que les agents et les rapports ne lisent plus de faux chiffres.
+
+## Posts Metricool contre visites réelles (26/10 → 16/11)
+Humain probable = a fait un geste sur le site (intro fermée, cookies, clic article, recherche, WhatsApp, panier…) ou est connecté (donc compte Beau et tests inclus). Source des posts : Metricool, marque 7400752.
+
+| Période | Posts | Humains probables par jour (moyenne) |
+|---|---|---|
+| 26/10 → 03/11 (avant les flyers) | aucun flyer | 2,0 |
+| 04/11 → 11/11 (flyers Instagram + Facebook à 17 h chaque jour) | 8 | 3,3 |
+| 12/11 → 16/11 (flyers en pause) | 0 | 1,0 |
+
+- **Instagram** (8 images, 04 → 11/11) : portée de 7 à 14 personnes par image (≈ 80 en tout), 11 interactions au total.
+- **Facebook** (mêmes jours) : portée de 0 à 2, 0 clic sur lien, 0 réaction.
+- **TikTok** (3 vidéos sur la période) : 29/10 = 782 vues ; 11/11 = 1 791 vues ; 13/11 = 719 vues. Le jour des 1 791 vues, le site a eu 4 humains probables ; aucun ne vient d'un lien TikTok identifié (TikTok n'envoie pas toujours sa provenance).
+- Visiteurs arrivés d'un réseau social identifié : 2 sur 3 semaines (01/11 et 10/11).
+- **Lecture honnête** : l'écart « avec posts / sans posts » est de 1 à 2 personnes par jour, trop petit pour être prouvé. Les flyers n'ont touché que quelques dizaines de personnes. La seule vraie audience mesurée est TikTok (centaines à milliers de vues), mais elle ne se transforme pas en visites mesurables : le lien vers le site n'est pas cliqué ou pas tracé.
+- Pic de 9 humains le 09/11 : non expliqué (peut être des essais internes).
+
+## Qui est venu ? (Cloudflare)
+- Cloudflare n'est pas connecté à cette session (connecteur à autoriser par Beau). Nos chiffres viennent de notre propre table `events`.
+- On connaît pays, ville, provenance, écrans vus. On ne connaît **jamais l'identité** d'un visiteur non connecté ; seul un compte (connexion) donne une identité.
+- Cloudflare apporterait un tri robots/humains fait par eux et les pays, pas des noms.
