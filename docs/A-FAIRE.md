@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Beau a dicté le vrai épisode 1 (cuisine Victoria + amie, regard entre Laurent et l’amie, Naomi en retard, accueil, présentation à l’équipe, rencontre avec Laurent) : docs/SERIES.md. Lèvres qui bougent quand on parle. Qualité avant quantité. Bande-annonce 8 épisodes faite à la fin.
 - 17/11 — Beau : la bande-annonce doit raconter les 8 épisodes (proposition en 9 temps envoyée, à valider) ; fin = titre + COMING SOON (v3 faite). Épisode 1 mis en pause pour le refaire scène par scène avec lui : 7 plans Runway faits (A1→D1/D2), 6 plans de fin lancés sur ElevenLabs (Kling 2.5 Turbo, ≈ 12 700 crédits).
 - 17/11 — ElevenLabs débloqué (Starter, 40 058 crédits). Voix françaises choisies : Naomi = Morgane, Laurent = Nova, Victoria = Koraly (Credible), Sandra = Claire (Conversationnel), investisseur = Charles Pestel. 19 répliques faites (≈ 1 100 crédits). Bande-annonce v2 avec ces voix envoyée. Épisode 1 long : 22 images faites, vidéos Kling en cours (il manquera ≈ 150 crédits Runway, Beau rajoute 1 000).
 - 17/11 — Retour de Beau sur la novela : la v1 = BANDE-ANNONCE (voix à changer puis publier) ; voix « horribles, trop IA » ; épisode 1 à refaire long et suivi (métro, mauvais bureau, réunion investisseurs, photo de famille, objet tombé) — détail dans docs/SERIES.md ; jusqu’à 30 épisodes, pas de précipitation ; scènes chaudes façon novela (suggérées) ; pas de téléportation entre plans. Ensuite : Jane Eyre et autres vidéos.

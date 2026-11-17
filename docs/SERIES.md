@@ -160,3 +160,13 @@ F. Le mauvais bureau — F1 Elle entre ; Laurent lève les yeux de son bureau. (
 G. La réunion des investisseurs — G1 Salle vitrée, investisseurs assis ; Naomi entre avec son ordinateur. G2 Elle présente avec assurance (« Si on regroupe les livraisons, on économise douze pour cent dès ce trimestre. »). G3 Les investisseurs approuvent ; un investisseur : « Qui est cette jeune femme ? » ; Laurent et Naomi échangent un regard.
 H. La photo — H1 Fin d'après-midi, elle frappe au bureau vide de Laurent pour déposer un dossier, entre. H2 Sur le bureau : photo de Laurent, Victoria et leurs deux enfants (« Marié… deux enfants. Évidemment. »).
 I. Le soir — I1 Les bureaux se vident, elle se dépêche. I2 Dans le hall, son dossier lui échappe, les feuilles s'éparpillent. I3 Ils s'accroupissent en même temps, leurs mains se touchent, leurs visages tout près (« Vous partez déjà ? »). I4 Le téléphone de Laurent vibre : « Victoria ». Il ne décroche pas. Noir. « À suivre… »
+
+### Épisode 1 — version de Beau (17/11, dictée) — REMPLACE les versions précédentes
+
+Règles : peu de scènes mais vraiment intéressantes (« même une infime partie, qu'elle soit vraiment intéressante ») ; les personnages parlent à l'écran, les lèvres bougent (synchronisation labiale) ; pas de saut d'un moment à l'autre ; la bande-annonce sera faite à la fin, comme la somme des 8 épisodes.
+
+1. La cuisine, le matin. Victoria, assise, se confie à son amie (nom à choisir) : il a tellement changé, rien n'est plus pareil, il n'est plus attentionné ; il y a des rumeurs au bureau, il coucherait avec toutes les stagiaires, toutes les nouvelles ; « je n'en peux plus ». L'amie : il ne faut pas croire tout ce qu'on dit… mais c'est vrai que certaines choses sont différentes. Victoria : « D'accord. »
+2. Laurent descend l'escalier : « Bonne journée » à sa femme. Il croise le regard de l'amie : regard amoureux, elle aussi. Victoria : « C'est quoi, ça ? » L'amie : « Non, rien, rien, rien. » Laurent monte en voiture et part.
+3. Naomi se lève : « Il faut que je parte… aujourd'hui, je ne peux pas être en retard. C'est mon premier jour. » Le métro.
+4. L'accueil : la réceptionniste lui remet son badge (« Bienvenue parmi nous »). Sa manager descend la chercher, la présente à l'équipe.
+5. « Et je vais te présenter… » Naomi se retourne et voit Laurent. Son cœur s'emballe : comme il est beau. Il la regarde. La manager : « Je te présente le directeur, Laurent. » Il la regarde dans les yeux ; la tension monte… fin de l'épisode 1.
