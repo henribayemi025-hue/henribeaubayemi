@@ -179,3 +179,18 @@ Nouveaux personnages : le frère de Laurent ; la secrétaire de Laurent.
 3. Laurent : « Alors, ta première journée ? » Pendant qu'elle raconte, il se lève, tourne autour d'elle, la regarde d'un regard de prédateur (référence de Beau : la série « The Polygamist »).
 4. Naomi voit le cadre de sa femme et de ses enfants sur le bureau : « C'est ta femme ? » Laurent : « Pfff… je ne peux pas vraiment le dire. On est en instance de divorce. » Naomi sourit, son humeur revient.
 Durée estimée : ≈ 2 min. Fin à renforcer d'un suspense (proposé à Beau).
+
+### Changement d'histoire (Beau, 17/11) — remplace la « fin 2 »
+
+- Victoria N'A PAS fait embaucher Naomi : ce retournement est abandonné.
+- La secrétaire de Laurent (nom provisoire Josiane) a été folle amoureuse de lui. Il l'a utilisée, puis a continué à faire venir des filles dans son bureau. Un jour, la voyant parler avec un nouvel employé, il a renvoyé ce dernier et l'a menacée : « Tu n'es rien. Tu es à moi et à personne d'autre. » Blessée, elle a payé des gens pour le frapper.
+- Fin de l'épisode 2 : Naomi sort du bureau en souriant ; la secrétaire décroche : « Bonjour… J'ai changé d'avis. Je maintiens le plan pour ce soir. »
+
+### Épisode 3 — dicté par Beau (17/11)
+
+1. Le soir, Laurent rentre ; des hommes l'encerclent et le frappent. Il se retrouve à l'hôpital ; sa femme est là.
+2. Le lendemain, Naomi arrive au bureau : Laurent n'est pas là. « Il s'est fait taper. » — « Par qui ? Mon Dieu… » Inquiète, elle part ; les collègues la regardent (« T'es qui, toi, pour y aller ? Sa femme est déjà là-bas. ») ; elle répond qu'elle veut juste se rassurer.
+3. À l'hôpital, elle tombe sur Victoria : « Bonjour, je viens voir Laurent. » Victoria : « T'es qui, toi ? T'es malade ? Il ne veut voir personne. » Naomi insiste ; le ton monte.
+4. Laurent, de son lit : « Laisse-la entrer… t'inquiète. Victoria, ne crie pas, tu me fais mal à la tête. »
+5. Naomi entre, lui touche la main ; Victoria regarde comment ils se parlent. Naomi : « Je n'allais pas supporter… j'avais trop mal. » Victoria explose : « Tu vas sortir d'ici ! » Naomi sort en murmurant : « Je le comprends… elle est trop toxique, cette femme. »
+6. Victoria : « Qu'est-ce que tu me veux, Laurent ? Je n'en peux plus. » Laurent : « Arrête de bavarder, tu me fais mal à la tête. » Victoria s'assoit par terre dans le couloir de l'hôpital, désespérée, enlève sa perruque et pleure. Fin.
