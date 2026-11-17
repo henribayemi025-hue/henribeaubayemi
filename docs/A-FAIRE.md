@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Beau publiera scène par scène puis l’épisode entier : livrer chaque scène séparée (1→5) + l’épisode 1 complet.
 - 17/11 — Scène 2 de l’épisode 1 (Laurent descend, regard avec Clarisse, « C’est quoi, ça ? ») faite, 31 s, envoyée. Beau a ajouté 20 € sur ElevenLabs. Il demande : envoyer chaque scène, puis enchaîner scènes 3, 4, 5. Images des scènes 3–5 faites (sc3/).
 - 17/11 — Scène 1 de l’épisode 1 (cuisine, Victoria se confie à Clarisse) faite : 31 s, lèvres synchronisées (OmniHuman sur ElevenLabs), voix Koraly / Mylène, musique piano. Envoyée à Beau, non publiée. Clarisse = l’amie de Victoria (nom validé).
 - 17/11 — Beau a dicté le vrai épisode 1 (cuisine Victoria + amie, regard entre Laurent et l’amie, Naomi en retard, accueil, présentation à l’équipe, rencontre avec Laurent) : docs/SERIES.md. Lèvres qui bougent quand on parle. Qualité avant quantité. Bande-annonce 8 épisodes faite à la fin.
