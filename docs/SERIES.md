@@ -108,3 +108,25 @@ Plan en 10 épisodes de 1 à 1 min 30 (chaque fin = suspense)
 10. Le retournement. Victoria explique calmement : elle savait depuis le premier jour, elle a recruté Naomi pour avoir les preuves. Divorce, l'entreprise reste à elle, Laurent sort avec un carton. Dernier plan : Victoria tend une carte à Naomi — « Vous êtes douée. Je vous embauche. » Noir.
 
 Règle : c'est une histoire, sans morale ni avertissement (Beau, 13/11).
+
+### Épisode 1 — « Le premier jour » (≈ 70 s, 9 plans, vertical 9:16)
+
+Règle audio : vidéo sans paroles, voix enregistrées à part ; quand quelqu'un parle, on voit son dos, ses mains ou l'autre personnage qui écoute (jamais la bouche).
+
+1. (6 s) Matin, tour de verre d'une grande ville. Naomi, tailleur simple, badge « STAGIAIRE » à la main, lève les yeux vers l'immeuble. Musique douce, cœur qui bat.
+   Voix intérieure de Naomi : « Six mois. Six mois pour changer ma vie. »
+2. (7 s) Hall d'accueil. Sandra (RH) lui tend un dossier, sourire poli. Gros plan sur le dossier : la signature « V. » en bas de la page (indice, une seconde, on ne s'y arrête pas).
+   Sandra (de dos) : « Bienvenue, Naomi. Vous commencez au dernier étage. »
+3. (7 s) Ascenseur. Naomi seule, se regarde dans le miroir, respire. Les portes s'ouvrent sur un open space lumineux.
+4. (8 s) Le bureau de direction, porte vitrée. Laurent, costume sombre, au téléphone, tourné vers la fenêtre. Il se retourne, la voit. Ralenti léger. Coup de musique.
+5. (7 s) Gros plan sur les yeux de Laurent, puis sur Naomi qui baisse les siens. Les mains de Laurent posent son téléphone.
+   Laurent (hors champ) : « C'est vous, la stagiaire dont tout le monde parle ? »
+6. (8 s) Réunion d'équipe. Naomi corrige un chiffre sur l'écran ; tout le monde se tourne vers elle. Laurent, au fond, sourit à moitié.
+   Naomi (de dos, face à l'écran) : « Excusez-moi… le total est faux. »
+7. (7 s) Fin de journée. Les bureaux se vident. Naomi range ses affaires. Sur le bureau de Laurent, une photo de mariage : Laurent et Victoria. Naomi la remarque.
+8. (8 s) Victoria, seule dans une voiture noire garée devant l'immeuble, regarde les fenêtres du dernier étage. Elle raccroche un téléphone. Visage calme, impossible à lire.
+9. (9 s) Naomi enfile son manteau. Une main se pose sur la porte : Laurent, derrière elle.
+   Laurent (hors champ, voix basse) : « Restez ce soir. J'ai besoin de vous. »
+   Gros plan sur le visage de Naomi. Coup de musique. Noir. Titre : « Ce que sa femme ne sait pas ». Texte : « Épisode 2 bientôt ».
+
+Coût estimé : ≈ 67 s de vidéo × 916 ≈ 61 000 crédits + voix et images ≈ 3 000.
