@@ -132,10 +132,25 @@ async function recevoirRapportCsp(request) {
 // ville approximative déduits de l'adresse IP (request.cf) ; on les rend au
 // site, qui les joint à l'événement « visit ». Rien d'autre : ni l'adresse IP,
 // ni les coordonnées, ni rien qui désigne une personne. Jamais mis en cache.
+//
+// ROBOTS (Beau, 16/11 : « écarte les robots du comptage »). Sur 30 jours,
+// 97 % des « visiteurs » venaient de centres de données américains et ne
+// faisaient aucun geste (docs/ANALYSE-TRAFIC.md). Cloudflare donne, pour
+// chaque requête, le NOM de l'organisation qui possède le réseau
+// (`asOrganization`) : une vraie personne arrive par un opérateur (Orange,
+// MTN, Comcast…), un robot d'exploration par un hébergeur (Amazon, Google
+// Cloud, Microsoft…). On MARQUE la visite `robot: true`, on ne la jette pas :
+// rien n'est perdu, les comptages l'écartent.
+const HEBERGEURS = /amazon|aws|google (llc|cloud)|googleusercontent|microsoft|azure|digitalocean|ovh|hetzner|linode|akamai|oracle|alibaba|tencent|vultr|scaleway|contabo|leaseweb|choopa|datacamp|m247|fastly/i;
+export function visiteurRobot(cf) {
+  const org = typeof cf?.asOrganization === 'string' ? cf.asOrganization : '';
+  return HEBERGEURS.test(org);
+}
+
 export function geoDuVisiteur(request) {
   const cf = request.cf || {};
   const propre = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
-  const corps = { pays: propre(cf.country, 2), ville: propre(cf.city, 80), region: propre(cf.region, 80) };
+  const corps = { pays: propre(cf.country, 2), ville: propre(cf.city, 80), region: propre(cf.region, 80), robot: visiteurRobot(cf) };
   return new Response(JSON.stringify(corps), {
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' },
   });

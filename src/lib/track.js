@@ -38,12 +38,16 @@ export function track(type, targetId = null, meta = {}) {
     const anonId = getAnonId();
     // Le canal qui a amené la personne (?src= du lien partagé, 02/10).
     const o = origine();
+    // Robot reconnu à l'arrivée (hébergeur, voir worker.js) : tout ce qu'il fait
+    // dans cet onglet porte la marque, pour que les comptages l'écartent.
+    let robot = false;
+    try { robot = sessionStorage.getItem('finjaro-robot') === '1'; } catch { /* sans stockage */ }
     supabase
       .from('events')
       .insert({
         type,
         target_id: targetId != null ? String(targetId) : null,
-        meta: { ...(anonId ? { anon_id: anonId } : {}), ...(o ? { src: o.src, ...(o.medium ? { medium: o.medium } : {}), ...(o.campagne ? { campagne: o.campagne } : {}), ...(o.premiere ? { src_premiere: true } : {}) } : {}), ...meta },
+        meta: { ...(anonId ? { anon_id: anonId } : {}), ...(o ? { src: o.src, ...(o.medium ? { medium: o.medium } : {}), ...(o.campagne ? { campagne: o.campagne } : {}), ...(o.premiere ? { src_premiere: true } : {}) } : {}), ...(robot ? { robot: true } : {}), ...meta },
       })
       .then(
         () => {},

@@ -124,13 +124,23 @@ describe('/geo — pays et ville du visiteur (05/10)', () => {
   it('rend le pays, la ville et la région donnés par Cloudflare, sans cache', async () => {
     const r = await geo({ country: 'CM', city: 'Douala', region: 'Littoral', latitude: '4.05', longitude: '9.7' });
     expect(r.headers.get('Cache-Control')).toBe('no-store');
-    expect(await r.json()).toEqual({ pays: 'CM', ville: 'Douala', region: 'Littoral' });
+    expect(await r.json()).toEqual({ pays: 'CM', ville: 'Douala', region: 'Littoral', robot: false });
+  });
+
+  it("marque « robot » un visiteur venu d'un hébergeur, jamais un opérateur grand public", async () => {
+    const hebergeur = await (await geo({ country: 'US', city: 'Ashburn', asOrganization: 'Amazon.com, Inc.' })).json();
+    expect(hebergeur.robot).toBe(true);
+    const google = await (await geo({ country: 'US', city: 'Council Bluffs', asOrganization: 'Google LLC' })).json();
+    expect(google.robot).toBe(true);
+    for (const org of ['Orange Cameroun', 'MTN Cameroon', 'Orange S.A.', 'Comcast Cable Communications, LLC', 'Free SAS', undefined]) {
+      expect((await (await geo({ country: 'CM', asOrganization: org })).json()).robot).toBe(false);
+    }
   });
 
   it("ne rend jamais les coordonnées, et des champs vides sans information", async () => {
     const r = await geo(undefined);
     const corps = await r.json();
-    expect(corps).toEqual({ pays: null, ville: null, region: null });
+    expect(corps).toEqual({ pays: null, ville: null, region: null, robot: false });
     expect(JSON.stringify(corps)).not.toMatch(/latitude|longitude/);
   });
 });
