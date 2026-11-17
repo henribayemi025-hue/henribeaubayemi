@@ -130,3 +130,19 @@ Règle audio : vidéo sans paroles, voix enregistrées à part ; quand quelqu'un
    Gros plan sur le visage de Naomi. Coup de musique. Noir. Titre : « Ce que sa femme ne sait pas ». Texte : « Épisode 2 bientôt ».
 
 Coût estimé : ≈ 67 s de vidéo × 916 ≈ 61 000 crédits + voix et images ≈ 3 000.
+
+### Retour de Beau sur la v1 (17/11) — À RESPECTER pour la suite
+
+- La v1 de 61 s n'est PAS l'épisode 1 : c'est la **bande-annonce**. On la garde comme bande-annonce, en changeant les voix, puis on la publie.
+- **Voix** : celles de la v1 sont « horribles », trop IA (voix anglaises de Runway qui parlent français). Il faut des voix françaises naturelles, avec émotion. À tester : voix natives françaises d'ElevenLabs (bibliothèque ou voix conçues) une fois la facture réglée.
+- **Pas de précipitation** : la série peut faire 30 épisodes. Chaque épisode doit être consistant et suivi : les scènes s'enchaînent, on voit les actions se faire (elle marche, ouvre la porte, monte), personne n'apparaît ni ne disparaît d'un plan à l'autre « comme de la sorcellerie ».
+- **Piment, comme dans les novelas** : scènes chaudes et sensuelles (lui torse nu, elle très séduisante, tension physique), suggérées, sans nudité.
+- **Épisode 1 voulu par Beau** :
+  1. Le matin : Naomi en retard, elle court dans les transports, le métro, la foule.
+  2. Elle arrive à la tour, voix intérieure : « Mon premier jour… je suis tellement excitée ! »
+  3. L'ascenseur, elle se trompe d'étage et de bureau : elle entre par erreur dans le bureau du patron.
+  4. Laurent : « C'est votre bureau, ici ? » Elle, confuse : non. Il appelle quelqu'un pour la guider.
+  5. La réunion avec les investisseurs : Naomi doit y présenter un petit point dès son premier jour. Elle le présente très bien. Les regards entre eux, l'alchimie monte.
+  6. Dans son propre bureau : elle voit la photo — il est marié, il a des enfants.
+  7. Le soir, pressée de partir, elle fait tomber quelque chose ; ils se baissent en même temps pour le ramasser, leurs regards se croisent. Suspense.
+- Ensuite : les autres épisodes, la suite de Jane Eyre, les autres vidéos.
