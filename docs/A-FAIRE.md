@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — ✅ Épisode 2 terminé (1 min 15, 4 scènes + complet) : docs/videos/rendus/2026-11-17-ce-que-sa-femme-ne-sait-pas-ep2-*. Envoyé, non publié. Défaut connu : au plan de la photo (repris de l’ép. 1), Naomi porte son trench. ElevenLabs ≈ 17 000 crédits restants.
 - 17/11 — Beau : avec les ≈ 17 000 crédits ElevenLabs restants, faire une scène de l’épisode 3 (l’agression). Idée : écrire des prompts vidéo à coller dans Gemini (Veo) pour des vidéos Finjaro — à préparer (marché mondial, aucun chiffre inventé).
 - 17/11 — Beau change l’intrigue : plus de complot de Victoria ; c’est la secrétaire (amante utilisée, menacée) qui fait frapper Laurent. Fin ép. 2 = appel de la secrétaire ; ép. 3 = agression, hôpital, Naomi face à Victoria, Victoria enlève sa perruque et pleure. Détail : docs/SERIES.md.
 - 17/11 — Beau a dicté l’épisode 2 (frère de Laurent, secrétaire qui met en garde Naomi, regard prédateur, « on est en instance de divorce ») : docs/SERIES.md. ElevenLabs : 65 987 crédits restants (capture de Beau).
