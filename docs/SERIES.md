@@ -203,3 +203,9 @@ Durée estimée : ≈ 2 min. Fin à renforcer d'un suspense (proposé à Beau).
 5. Son trop propre : voix sans réverbération de la pièce, peu de bruitages (balle, pas, porte).
 6. Sous-titres trop longs (3 lignes) et trop petits pour un téléphone.
 Méthode corrigée : plan au sol de chaque scène avant de générer (qui est où), plans de réaction intercalés pendant les tirades, plans larges de rappel, bruitages, sous-titres 2 lignes max en gros.
+
+### Demandes de Beau (17/11, fin d'après-midi)
+- Épisode 3, agression : pas suggérée. Montrer vraiment la bagarre (les coups, la boxe, Laurent qui se défend puis tombe), même si ça coûte des crédits. Sans sang excessif.
+- Changement : c'est la stagiaire (Naomi) qui le trouve / vient à lui ; à l'hôpital elle l'embrasse « pour le guérir », puis sa femme arrive.
+- Remontage gratuit de toutes les scènes « comme un vrai film » (méthode de l'autocritique), à faire à partir de 17 h 40.
+- Livraison : scènes regroupées deux par deux (1+2, 3+4…) pour que ce ne soit pas trop court, puis les épisodes complets.

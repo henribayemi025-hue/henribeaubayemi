@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Beau : vraie scène de bagarre pour l’agression ; Naomi embrasse Laurent à l’hôpital puis Victoria arrive ; à 17 h 40 remonter toutes les scènes façon film ; livrer par paires de scènes puis épisodes complets.
 - 17/11 — Retour d’une spectatrice : « vidéos encore à travailler ». Beau : la conversation des deux frères (ép. 2) est ratée. Autocritique et méthode corrigée dans docs/SERIES.md. Scène 1 de l’ép. 3 (agression) faite, 24 s.
 - 17/11 — ✅ Épisode 2 terminé (1 min 15, 4 scènes + complet) : docs/videos/rendus/2026-11-17-ce-que-sa-femme-ne-sait-pas-ep2-*. Envoyé, non publié. Défaut connu : au plan de la photo (repris de l’ép. 1), Naomi porte son trench. ElevenLabs ≈ 17 000 crédits restants.
 - 17/11 — Beau : avec les ≈ 17 000 crédits ElevenLabs restants, faire une scène de l’épisode 3 (l’agression). Idée : écrire des prompts vidéo à coller dans Gemini (Veo) pour des vidéos Finjaro — à préparer (marché mondial, aucun chiffre inventé).
