@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Beau a dicté l’épisode 2 (frère de Laurent, secrétaire qui met en garde Naomi, regard prédateur, « on est en instance de divorce ») : docs/SERIES.md. ElevenLabs : 65 987 crédits restants (capture de Beau).
 - 17/11 — ✅ Épisode 1 de « Ce que sa femme ne sait pas » terminé : 5 scènes séparées + épisode complet (2 min 16), docs/videos/rendus/2026-11-17-ce-que-sa-femme-ne-sait-pas-ep1-*. Envoyé à Beau, non publié (il publie scène par scène puis l’épisode).
 - 17/11 — Beau publiera scène par scène puis l’épisode entier : livrer chaque scène séparée (1→5) + l’épisode 1 complet.
 - 17/11 — Scène 2 de l’épisode 1 (Laurent descend, regard avec Clarisse, « C’est quoi, ça ? ») faite, 31 s, envoyée. Beau a ajouté 20 € sur ElevenLabs. Il demande : envoyer chaque scène, puis enchaîner scènes 3, 4, 5. Images des scènes 3–5 faites (sc3/).

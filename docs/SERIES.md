@@ -170,3 +170,12 @@ Règles : peu de scènes mais vraiment intéressantes (« même une infime parti
 3. Naomi se lève : « Il faut que je parte… aujourd'hui, je ne peux pas être en retard. C'est mon premier jour. » Le métro.
 4. L'accueil : la réceptionniste lui remet son badge (« Bienvenue parmi nous »). Sa manager descend la chercher, la présente à l'équipe.
 5. « Et je vais te présenter… » Naomi se retourne et voit Laurent. Son cœur s'emballe : comme il est beau. Il la regarde. La manager : « Je te présente le directeur, Laurent. » Il la regarde dans les yeux ; la tension monte… fin de l'épisode 1.
+
+### Épisode 2 — dicté par Beau (17/11)
+
+Nouveaux personnages : le frère de Laurent ; la secrétaire de Laurent.
+1. Bureau de Laurent. Assis dans son fauteuil, il lance une balle de tennis contre le mur, distrait. Son frère lui parle ; Laurent ne répond pas, il pense à Naomi. Le frère : « Mais où t'as la tête aujourd'hui ? C'est la nouvelle, c'est ça ? J'ai vu comment tu la regardais. Laurent, n'oublie pas que t'as déjà trop fait souffrir Victoria avec tes bêtises. » Laurent : « T'inquiète, t'inquiète… je gère. » Le frère sort.
+2. Laurent demande à sa secrétaire d'appeler Naomi dans son bureau. La secrétaire sait déjà comment ça va finir. Devant la porte, elle arrête la main de Naomi : « Fais attention. Ne t'embarque pas là-dedans. » Naomi la regarde : « Celle-ci, elle me veut quoi ? » Elle entre en souriant.
+3. Laurent : « Alors, ta première journée ? » Pendant qu'elle raconte, il se lève, tourne autour d'elle, la regarde d'un regard de prédateur (référence de Beau : la série « The Polygamist »).
+4. Naomi voit le cadre de sa femme et de ses enfants sur le bureau : « C'est ta femme ? » Laurent : « Pfff… je ne peux pas vraiment le dire. On est en instance de divorce. » Naomi sourit, son humeur revient.
+Durée estimée : ≈ 2 min. Fin à renforcer d'un suspense (proposé à Beau).
