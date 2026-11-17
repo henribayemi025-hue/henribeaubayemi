@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Scène 1 de l’épisode 1 (cuisine, Victoria se confie à Clarisse) faite : 31 s, lèvres synchronisées (OmniHuman sur ElevenLabs), voix Koraly / Mylène, musique piano. Envoyée à Beau, non publiée. Clarisse = l’amie de Victoria (nom validé).
 - 17/11 — Beau a dicté le vrai épisode 1 (cuisine Victoria + amie, regard entre Laurent et l’amie, Naomi en retard, accueil, présentation à l’équipe, rencontre avec Laurent) : docs/SERIES.md. Lèvres qui bougent quand on parle. Qualité avant quantité. Bande-annonce 8 épisodes faite à la fin.
 - 17/11 — Beau : la bande-annonce doit raconter les 8 épisodes (proposition en 9 temps envoyée, à valider) ; fin = titre + COMING SOON (v3 faite). Épisode 1 mis en pause pour le refaire scène par scène avec lui : 7 plans Runway faits (A1→D1/D2), 6 plans de fin lancés sur ElevenLabs (Kling 2.5 Turbo, ≈ 12 700 crédits).
 - 17/11 — ElevenLabs débloqué (Starter, 40 058 crédits). Voix françaises choisies : Naomi = Morgane, Laurent = Nova, Victoria = Koraly (Credible), Sandra = Claire (Conversationnel), investisseur = Charles Pestel. 19 répliques faites (≈ 1 100 crédits). Bande-annonce v2 avec ces voix envoyée. Épisode 1 long : 22 images faites, vidéos Kling en cours (il manquera ≈ 150 crédits Runway, Beau rajoute 1 000).
