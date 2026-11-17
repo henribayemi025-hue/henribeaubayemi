@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 📊 17/11 — Routine 18 h : 16/11 = 1 visiteur humain (vue events_humains), visites étiquetées flyer 2 j : 0 ; Accounting : 1 visite en novembre ; 1 commande (FJ-HZFZVA). E-mails : 0 envoyé (0 prospect à adresse générique). Flyers en pause. Relecture Léo non faite (requête refusée par Beau). Épisode 2 remonté (v2 : paires 1+2, 3+4, complet), envoyé.
 - 17/11 — Beau : vraie scène de bagarre pour l’agression ; Naomi embrasse Laurent à l’hôpital puis Victoria arrive ; à 17 h 40 remonter toutes les scènes façon film ; livrer par paires de scènes puis épisodes complets.
 - 17/11 — Retour d’une spectatrice : « vidéos encore à travailler ». Beau : la conversation des deux frères (ép. 2) est ratée. Autocritique et méthode corrigée dans docs/SERIES.md. Scène 1 de l’ép. 3 (agression) faite, 24 s.
 - 17/11 — ✅ Épisode 2 terminé (1 min 15, 4 scènes + complet) : docs/videos/rendus/2026-11-17-ce-que-sa-femme-ne-sait-pas-ep2-*. Envoyé, non publié. Défaut connu : au plan de la photo (repris de l’ép. 1), Naomi porte son trench. ElevenLabs ≈ 17 000 crédits restants.
