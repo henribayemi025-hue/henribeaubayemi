@@ -10,6 +10,8 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — ✅ Entretien CDI de Beau : Excel « Cas pratiques comptables » (régularisations CCA/PCA/FNP/PAR, recouvrement RECHERCHEV/RECHERCHEX/SOMME.SI.ENS/NB.SI.ENS, balance âgée, dépréciation SI.CONDITIONS, écritures), EXERCICES + CORRIGE (contrôles à 0, recalcul LibreOffice sans erreur) dans docs/entrainement/ ; vidéo explicative 9 min voix Fish envoyée.
+- 17/11 — Beau : faire un Excel « compliqué » de cas pratiques comptables (régularisations, recouvrement, RECHERCHEV, RECHERCHEX, SOMME.SI.ENS…) avec corrigés, + vidéo explicative avec voix Fish (comme le cours Chanel).
 - 17/11 — ✅ Cours Excel « Chanel Eyewear » (14 min 36) : voix off Fish posée sur la vidéo muette de Beau, calée sur ses sous-titres (voix « Le narrateur », homme posé). Envoyé.
 - 17/11 — ✅ Fish Audio rebranché pour les voix off de vidéos : fonction `voix-studio` (Supabase, clé Fish déjà posée, accès par jeton). Essai OK ; crédit Fish : 1,94 $. Beau : il m’enverra une vidéo, je pose la voix et je la renvoie.
 - 📊 17/11 — Routine 18 h : 16/11 = 1 visiteur humain (vue events_humains), visites étiquetées flyer 2 j : 0 ; Accounting : 1 visite en novembre ; 1 commande (FJ-HZFZVA). E-mails : 0 envoyé (0 prospect à adresse générique). Flyers en pause. Relecture Léo non faite (requête refusée par Beau). Épisode 2 remonté (v2 : paires 1+2, 3+4, complet), envoyé.
