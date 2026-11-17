@@ -84,3 +84,27 @@ Jane adulte = image de référence `hjGfiY7vYhY5wUd5pEWu` (flow lksM34VyejCb2L89
 ## Style télénovela / micro-drama (idée de Beau, 17/11)
 
 Épisodes verticaux de 1 à 2 min, gros plans sur les visages, zooms brusques au moment des révélations, coup de musique, trahisons et secrets, chaque épisode finit sur un suspense. Histoire candidate : la romance stagiaire / patron marié (titre et fin à décider par Beau).
+
+## « Ce que sa femme ne sait pas » — choisi par Beau le 17/11
+
+Style télénovela vertical. Titre 2, fin 2 (le retournement : l'épouse savait tout depuis le début et avait fait embaucher la stagiaire pour obtenir des preuves, divorcer et garder l'entreprise).
+
+Personnages (noms provisoires, à confirmer par Beau)
+- Naomi, 24 ans, stagiaire brillante, sans argent, six mois de contrat.
+- Laurent, 45 ans, directeur de l'entreprise, marié, charmeur, sûr de lui.
+- Victoria, 42 ans, son épouse, élégante, calme, actionnaire principale (l'entreprise vient de son père).
+- Sandra, responsable des ressources humaines, discrète.
+
+Plan en 10 épisodes de 1 à 1 min 30 (chaque fin = suspense)
+1. Le premier jour. Naomi arrive, Laurent la remarque. Indice caché : sur le dossier d'embauche, la signature « V. ». Fin : Laurent lui dit « Restez ce soir, j'ai besoin de vous. »
+2. La soirée de travail. Rapprochement, premier baiser dans le bureau vide. Fin : une lumière s'éteint au bout du couloir — quelqu'un était là.
+3. Victoria au bureau. Elle invite Naomi à déjeuner, aimable. Fin : « Mon mari vous apprécie beaucoup. »
+4. Le secret. Hôtel, messages cachés, mensonges. Indice : Sandra envoie un message à un contact nommé « V ». Fin : le téléphone de Laurent sonne, « Victoria », en pleine nuit.
+5. Le cadeau. Laurent offre un collier à Naomi. Fin : Victoria porte le même au dîner de l'entreprise.
+6. La peur. Naomi croit que Victoria sait. Laurent la rassure : « Elle ne sait rien. » Fin : Victoria, seule, regarde des photos de Naomi et Laurent… et sourit.
+7. La promesse. Laurent promet de quitter sa femme à la fin du stage. Fin : Naomi découvre qu'elle n'est pas la première stagiaire.
+8. Le doute. Naomi fouille, trouve le dossier d'embauche, la signature « V. Laurent-… ». Fin : « C'est elle qui m'a choisie ? »
+9. Le pot de départ. Tout le bureau réuni, Victoria prend la parole. Fin : elle projette les photos.
+10. Le retournement. Victoria explique calmement : elle savait depuis le premier jour, elle a recruté Naomi pour avoir les preuves. Divorce, l'entreprise reste à elle, Laurent sort avec un carton. Dernier plan : Victoria tend une carte à Naomi — « Vous êtes douée. Je vous embauche. » Noir.
+
+Règle : c'est une histoire, sans morale ni avertissement (Beau, 13/11).

@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Beau choisit « Ce que sa femme ne sait pas » + fin 2 (l’épouse savait tout). Plan 10 épisodes écrit dans docs/SERIES.md ; noms provisoires Naomi / Laurent / Victoria / Sandra, à confirmer.
 - 17/11 — Beau : envie d’un autre style de vidéo, façon télénovela / micro-drama vertical. Proposé : sa romance stagiaire/patron marié dans ce style. ElevenLabs à 65 crédits (scène JE3-3 refusée, 9 162 requis, rien facturé).
 - 17/11 — Commande réelle FJ-HZFZVA (16/11, 30 000 FCFA, invité au numéro allemand, retrait, paiement à la remise) chez « La vitrine de Rachelle » : toujours « nouvelle », aucune relance partie (followup_stage 0). E-mail à la vendeuse REFUSÉ (adresse masquée Apple) → Beau doit lui écrire sur WhatsApp. À faire : comprendre pourquoi la relance automatique n’est pas partie ; vendeuses avec adresse Apple masquée = injoignables par e-mail.
 - 17/11 — Beau : objectif 100 kg à mi-mai 2027 (contrôle 17/01 : 128-131 kg), 1 400-1 500 kcal, sucre coupé ; ses paliers 142·139·137·134·131·127·122-120·115·113·106 notés dans le Sheet « Objectif poids » (A63:B69) ; prise de sang conseillée.
