@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Beau a une clé API Runway (dev.runwayml.com). Formulaire sécurisé refusé (session trop longue) → la clé s’ajoute dans les réglages de l’environnement (secret réseau, hôte api.dev.runwayml.com, en-tête Authorization: Bearer). Puis : 1 scène test novela ép.1 en gen4_turbo (0,05 $/s) vs ElevenLabs (0,17 $/s). ElevenLabs bloqué : facture annuelle ouverte 534,60 $ à faire annuler par le support (ne pas payer).
 - 17/11 — Beau choisit « Ce que sa femme ne sait pas » + fin 2 (l’épouse savait tout). Plan 10 épisodes écrit dans docs/SERIES.md ; noms provisoires Naomi / Laurent / Victoria / Sandra, à confirmer.
 - 17/11 — Beau : envie d’un autre style de vidéo, façon télénovela / micro-drama vertical. Proposé : sa romance stagiaire/patron marié dans ce style. ElevenLabs à 65 crédits (scène JE3-3 refusée, 9 162 requis, rien facturé).
 - 17/11 — Commande réelle FJ-HZFZVA (16/11, 30 000 FCFA, invité au numéro allemand, retrait, paiement à la remise) chez « La vitrine de Rachelle » : toujours « nouvelle », aucune relance partie (followup_stage 0). E-mail à la vendeuse REFUSÉ (adresse masquée Apple) → Beau doit lui écrire sur WhatsApp. À faire : comprendre pourquoi la relance automatique n’est pas partie ; vendeuses avec adresse Apple masquée = injoignables par e-mail.
