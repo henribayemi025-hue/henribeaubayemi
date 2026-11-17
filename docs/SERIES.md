@@ -80,3 +80,7 @@ Jane adulte = image de référence `hjGfiY7vYhY5wUd5pEWu` (flow lksM34VyejCb2L89
 3. **Mrs Fairfax** : une vieille dame douce en bonnet, un petit salon chaleureux, un feu, un chat. Mrs Fairfax (voix hors champ, sur le visage de Jane) : « Vous devez être gelée. Approchez du feu. »
 4. **Adèle** : au matin, une petite fille en robe claire danse dans la galerie ; Jane lui tend un livre. Narratrice : « Mon élève s'appelait Adèle. Le maître, lui, n'était jamais là. »
 5. **Le rire** : Jane seule dans le couloir du troisième étage, une porte fermée au fond ; elle s'arrête net, tourne la tête. Narratrice : « C'est là que j'ai entendu rire pour la première fois. Un rire qui n'avait rien de joyeux. » Carton « À suivre… ».
+
+## Style télénovela / micro-drama (idée de Beau, 17/11)
+
+Épisodes verticaux de 1 à 2 min, gros plans sur les visages, zooms brusques au moment des révélations, coup de musique, trahisons et secrets, chaque épisode finit sur un suspense. Histoire candidate : la romance stagiaire / patron marié (titre et fin à décider par Beau).
