@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — Runway API branchée (clé dans l’environnement). Solde 1 000 → 945 crédits. Test plan 4 ép.1 novela : image gpt_image_2_5_sunburst 5 cr + vidéo gen4_turbo 10 s 50 cr = 0,55 $ (bonne image ; il porte le téléphone à l’oreille au lieu de le baisser). seedance2_mini via Runway refusé par la modération (visages réels en image de départ), remboursé. Prix Runway : seedance2_mini 720p 0,15 $/s, gen4_turbo 0,05 $/s, kling3.0_standard 0,09 $/s, voix eleven_v4 0,05 $/1 000 caractères.
 - 17/11 — Beau a une clé API Runway (dev.runwayml.com). Formulaire sécurisé refusé (session trop longue) → la clé s’ajoute dans les réglages de l’environnement (secret réseau, hôte api.dev.runwayml.com, en-tête Authorization: Bearer). Puis : 1 scène test novela ép.1 en gen4_turbo (0,05 $/s) vs ElevenLabs (0,17 $/s). ElevenLabs bloqué : facture annuelle ouverte 534,60 $ à faire annuler par le support (ne pas payer).
 - 17/11 — Beau choisit « Ce que sa femme ne sait pas » + fin 2 (l’épouse savait tout). Plan 10 épisodes écrit dans docs/SERIES.md ; noms provisoires Naomi / Laurent / Victoria / Sandra, à confirmer.
 - 17/11 — Beau : envie d’un autre style de vidéo, façon télénovela / micro-drama vertical. Proposé : sa romance stagiaire/patron marié dans ce style. ElevenLabs à 65 crédits (scène JE3-3 refusée, 9 162 requis, rien facturé).
