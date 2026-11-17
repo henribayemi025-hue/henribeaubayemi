@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 17/11 — ✅ Cours Excel « Chanel Eyewear » (14 min 36) : voix off Fish posée sur la vidéo muette de Beau, calée sur ses sous-titres (voix « Le narrateur », homme posé). Envoyé.
 - 17/11 — ✅ Fish Audio rebranché pour les voix off de vidéos : fonction `voix-studio` (Supabase, clé Fish déjà posée, accès par jeton). Essai OK ; crédit Fish : 1,94 $. Beau : il m’enverra une vidéo, je pose la voix et je la renvoie.
 - 📊 17/11 — Routine 18 h : 16/11 = 1 visiteur humain (vue events_humains), visites étiquetées flyer 2 j : 0 ; Accounting : 1 visite en novembre ; 1 commande (FJ-HZFZVA). E-mails : 0 envoyé (0 prospect à adresse générique). Flyers en pause. Relecture Léo non faite (requête refusée par Beau). Épisode 2 remonté (v2 : paires 1+2, 3+4, complet), envoyé.
 - 17/11 — Beau : vraie scène de bagarre pour l’agression ; Naomi embrasse Laurent à l’hôpital puis Victoria arrive ; à 17 h 40 remonter toutes les scènes façon film ; livrer par paires de scènes puis épisodes complets.
