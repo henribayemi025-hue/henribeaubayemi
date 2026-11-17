@@ -194,3 +194,12 @@ Durée estimée : ≈ 2 min. Fin à renforcer d'un suspense (proposé à Beau).
 4. Laurent, de son lit : « Laisse-la entrer… t'inquiète. Victoria, ne crie pas, tu me fais mal à la tête. »
 5. Naomi entre, lui touche la main ; Victoria regarde comment ils se parlent. Naomi : « Je n'allais pas supporter… j'avais trop mal. » Victoria explose : « Tu vas sortir d'ici ! » Naomi sort en murmurant : « Je le comprends… elle est trop toxique, cette femme. »
 6. Victoria : « Qu'est-ce que tu me veux, Laurent ? Je n'en peux plus. » Laurent : « Arrête de bavarder, tu me fais mal à la tête. » Victoria s'assoit par terre dans le couloir de l'hôpital, désespérée, enlève sa perruque et pleure. Fin.
+
+### Autocritique après retour d'une spectatrice (17/11) — défauts à corriger
+1. Géographie qui saute : dans l'ép. 2 scène 1, Marc est debout à la fenêtre sur le plan large, puis penché sur le bureau en gros plan, puis sort d'un autre endroit. Sur le plan large, Marc tient lui aussi une balle.
+2. Monologue figé : la tirade de Marc (8 s) est un seul plan fixe, sans plan de réaction de Laurent.
+3. Plans parlants trop statiques (OmniHuman) : caméra fixe, corps immobile, même cadrage ; on sent la machine.
+4. Coupes au métronome (5 s), peu de plans de réaction, peu de plans larges pour situer.
+5. Son trop propre : voix sans réverbération de la pièce, peu de bruitages (balle, pas, porte).
+6. Sous-titres trop longs (3 lignes) et trop petits pour un téléphone.
+Méthode corrigée : plan au sol de chaque scène avant de générer (qui est où), plans de réaction intercalés pendant les tirades, plans larges de rappel, bruitages, sous-titres 2 lignes max en gros.
