@@ -146,3 +146,17 @@ Coût estimé : ≈ 67 s de vidéo × 916 ≈ 61 000 crédits + voix et images �
   6. Dans son propre bureau : elle voit la photo — il est marié, il a des enfants.
   7. Le soir, pressée de partir, elle fait tomber quelque chose ; ils se baissent en même temps pour le ramasser, leurs regards se croisent. Suspense.
 - Ensuite : les autres épisodes, la suite de Jane Eyre, les autres vidéos.
+
+### Épisode 1 « Le premier jour » — version longue (17/11, d'après Beau)
+
+≈ 2 min, 22 plans, scènes enchaînées (chaque action se voit : elle court, ouvre, entre). Voix ajoutées à la fin (ElevenLabs, voix françaises naturelles).
+
+A. Le réveil — A1 Le réveil sonne, Naomi se redresse d'un bond (« Non, non, non… pas aujourd'hui ! »). A2 Elle s'habille en vitesse, attrape son sac, claque la porte.
+B. Laurent, le même matin (piment) — B1 Grand appartement, Laurent torse nu devant le miroir, il enfile sa chemise blanche, alliance au doigt.
+C. Le métro — C1 Naomi dévale l'escalier du métro, se glisse entre les portes qui se ferment. C2 Dans la rame bondée, elle regarde l'heure : 8 h 52.
+D. La tour — D1 Elle sort en courant, lève les yeux vers la tour, sourire (« Mon premier jour… je suis tellement excitée ! »). D2 Elle passe les portiques avec son badge.
+E. L'erreur — E1 Ascenseur : elle appuie sur un bouton, arrange ses cheveux dans le miroir. E2 Couloir du dernier étage, elle lit les portes, ouvre une grande porte.
+F. Le mauvais bureau — F1 Elle entre ; Laurent lève les yeux de son bureau. (« Je peux vous aider ? » — « Pardon… je cherche le service finances. ») F2 Gros plans, gêne et sourires. (« C'est votre bureau, ici ? » — « Non… je crois que je me suis trompée. ») F3 Il décroche son téléphone en la regardant (« Sandra ? Votre nouvelle stagiaire s'est perdue… chez moi. »). F4 Sandra vient la chercher ; Laurent la regarde partir.
+G. La réunion des investisseurs — G1 Salle vitrée, investisseurs assis ; Naomi entre avec son ordinateur. G2 Elle présente avec assurance (« Si on regroupe les livraisons, on économise douze pour cent dès ce trimestre. »). G3 Les investisseurs approuvent ; un investisseur : « Qui est cette jeune femme ? » ; Laurent et Naomi échangent un regard.
+H. La photo — H1 Fin d'après-midi, elle frappe au bureau vide de Laurent pour déposer un dossier, entre. H2 Sur le bureau : photo de Laurent, Victoria et leurs deux enfants (« Marié… deux enfants. Évidemment. »).
+I. Le soir — I1 Les bureaux se vident, elle se dépêche. I2 Dans le hall, son dossier lui échappe, les feuilles s'éparpillent. I3 Ils s'accroupissent en même temps, leurs mains se touchent, leurs visages tout près (« Vous partez déjà ? »). I4 Le téléphone de Laurent vibre : « Victoria ». Il ne décroche pas. Noir. « À suivre… »
