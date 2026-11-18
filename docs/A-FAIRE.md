@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 18/11 — Beau : « cherche les PME pour Accounting ». Essai : recherche web = annuaires (Kompass, 118000), aucune adresse générique vérifiée ; lecture de la table prospects refusée deux fois par l’outil. Piste : session Chrome PME (docs/prospection/PROMPT-CHROME-4-PME-20.txt), 5 messages par ville, depuis la Page Finjaro Net.
 - 18/11 — Pesée du matin (à jeun) : 142,4 kg (17/11 après sport : 144,2). Notée dans le Sheet « Objectif poids ». Premier palier de Beau (142) en vue.
 - 17/11 — ✅ Entretien CDI de Beau : Excel « Cas pratiques comptables » (régularisations CCA/PCA/FNP/PAR, recouvrement RECHERCHEV/RECHERCHEX/SOMME.SI.ENS/NB.SI.ENS, balance âgée, dépréciation SI.CONDITIONS, écritures), EXERCICES + CORRIGE (contrôles à 0, recalcul LibreOffice sans erreur) dans docs/entrainement/ ; vidéo explicative 9 min voix Fish envoyée.
 - 17/11 — Beau : faire un Excel « compliqué » de cas pratiques comptables (régularisations, recouvrement, RECHERCHEV, RECHERCHEX, SOMME.SI.ENS…) avec corrigés, + vidéo explicative avec voix Fish (comme le cours Chanel).
