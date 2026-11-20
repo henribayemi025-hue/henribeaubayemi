@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 🤖 20/11 — Passage Léo (1er depuis le 14/11) : 1 livrable en revue relu, celui de Plume (publications du 23/11) → renvoyé : « 5 commandes aujourd’hui » faux (0 ; 1 en 7 jours), chiffres périmés (base : 76 boutiques dont 54 avec article, 248/534 articles sans prix), « a doublé ses ventes » inventé, « avant fin octobre » expiré, 3 textes non rédigés. Pas de nouvelles tâches : 19 tâches du 18/11 sont encore à faire. POUR BEAU : DeepSeek et Kimi ont coupé (solde épuisé) → les agents ralentissent ; aucune recharge sans ton mot.
 - 📊 19/11 — Routine 18 h : 18/11 = 3 visiteurs humains, 19/11 = 16 (journée presque finie), visites étiquetées flyer sur 3 jours : 0 ; Accounting : 5 visites en novembre (1 au 17/11) ; commandes depuis le 17/11 : 0. E-mails : 0 envoyé (0 prospect à adresse générique, pas de nouvelle recherche). Flyers : en pause (09/11). Relecture Léo : non faite.
 - 18/11 — Beau : « cherche les PME pour Accounting ». Essai : recherche web = annuaires (Kompass, 118000), aucune adresse générique vérifiée ; lecture de la table prospects refusée deux fois par l’outil. Piste : session Chrome PME (docs/prospection/PROMPT-CHROME-4-PME-20.txt), 5 messages par ville, depuis la Page Finjaro Net.
 - 18/11 — Pesée du matin (à jeun) : 142,4 kg (17/11 après sport : 144,2). Notée dans le Sheet « Objectif poids ». Premier palier de Beau (142) en vue.
