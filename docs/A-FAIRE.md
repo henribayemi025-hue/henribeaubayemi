@@ -10,6 +10,7 @@ rangées dans `docs/vestiaire/` (une fiche chacune)._
 
 ### 0.1 En attente d'une réponse de Beau
 
+- 📊 19/11 — Routine 18 h : 18/11 = 3 visiteurs humains, 19/11 = 16 (journée presque finie), visites étiquetées flyer sur 3 jours : 0 ; Accounting : 5 visites en novembre (1 au 17/11) ; commandes depuis le 17/11 : 0. E-mails : 0 envoyé (0 prospect à adresse générique, pas de nouvelle recherche). Flyers : en pause (09/11). Relecture Léo : non faite.
 - 18/11 — Beau : « cherche les PME pour Accounting ». Essai : recherche web = annuaires (Kompass, 118000), aucune adresse générique vérifiée ; lecture de la table prospects refusée deux fois par l’outil. Piste : session Chrome PME (docs/prospection/PROMPT-CHROME-4-PME-20.txt), 5 messages par ville, depuis la Page Finjaro Net.
 - 18/11 — Pesée du matin (à jeun) : 142,4 kg (17/11 après sport : 144,2). Notée dans le Sheet « Objectif poids ». Premier palier de Beau (142) en vue.
 - 17/11 — ✅ Entretien CDI de Beau : Excel « Cas pratiques comptables » (régularisations CCA/PCA/FNP/PAR, recouvrement RECHERCHEV/RECHERCHEX/SOMME.SI.ENS/NB.SI.ENS, balance âgée, dépréciation SI.CONDITIONS, écritures), EXERCICES + CORRIGE (contrôles à 0, recalcul LibreOffice sans erreur) dans docs/entrainement/ ; vidéo explicative 9 min voix Fish envoyée.
