@@ -4375,7 +4375,8 @@
     "waiting": "La boutique a reçu ta demande. Elle te répond sur WhatsApp pour confirmer, puis cette page avance avec elle.",
     "total": "Total à régler à la boutique",
     "seeShop": "Voir la boutique",
-    "keep": "Garde ce lien : il montre toujours où en est ta commande. Pour la livraison et le paiement, la boutique t’écrit sur WhatsApp."
+    "keep": "Garde ce lien : il montre toujours où en est ta commande. Pour la livraison et le paiement, la boutique t’écrit sur WhatsApp.",
+    "mineHint": "Voir où en est chaque demande envoyée aux boutiques"
   },
   "statut": {
     "cardTitle": "Ton statut WhatsApp du jour",

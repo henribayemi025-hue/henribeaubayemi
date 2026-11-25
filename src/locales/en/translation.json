@@ -4375,7 +4375,8 @@
     "waiting": "The shop has received your request. It will reply on WhatsApp to confirm, and this page moves forward with it.",
     "total": "Total to pay the shop",
     "seeShop": "See the shop",
-    "keep": "Keep this link: it always shows where your order is. For delivery and payment, the shop writes to you on WhatsApp."
+    "keep": "Keep this link: it always shows where your order is. For delivery and payment, the shop writes to you on WhatsApp.",
+    "mineHint": "See where each request sent to a shop stands"
   },
   "statut": {
     "cardTitle": "Your WhatsApp status of the day",

@@ -12,6 +12,7 @@ import { AppHeader } from '../../components/AppHeader';
 import { Button } from '../../components/Button';
 import { SmartImage } from '../../components/SmartImage';
 import { EmptyState } from '../../components/states';
+import { MesDemandesLien } from '../../components/MesDemandesLien';
 
 export default function UserProfile() {
   const { t } = useTranslation();
@@ -44,6 +45,7 @@ export default function UserProfile() {
     return (
       <div>
         <AppHeader title={t('profile.title')} />
+        <MesDemandesLien className="m-4 mb-0" />
         {/* Direct vers /auth — PAS requireLogin(). requireLogin() ouvre la
             popup "il faut être connecté pour faire ça", pensée pour une
             action protégée tentée par surprise (suivre, écrire...). Ici la

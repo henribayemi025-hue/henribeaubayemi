@@ -9,6 +9,7 @@ import { Button } from '../../components/Button';
 import { Price } from '../../components/Price';
 import { SmartImage } from '../../components/SmartImage';
 import { EmptyState } from '../../components/states';
+import { MesDemandesLien } from '../../components/MesDemandesLien';
 import { storageUrl, storageThumbUrl} from '../../lib/supabase';
 
 export default function Cart() {
@@ -33,6 +34,7 @@ export default function Cart() {
     return (
       <div>
         <AppHeader title={t('cart.title')} back />
+        <MesDemandesLien className="m-4 mb-0" />
         <EmptyState
           icon={IconShoppingCart}
           title={t('cart.empty')}
@@ -48,6 +50,7 @@ export default function Cart() {
     <div>
       <AppHeader title={t('cart.title')} back />
       <div className="space-y-4 p-4">
+        <MesDemandesLien />
         {/* Dire POURQUOI il y a un bouton par boutique.
             Un testeur, capture à l'appui: « je ne vois pas de bouton pour
             passer les deux commandes, je dois les passer une par une ? » —
