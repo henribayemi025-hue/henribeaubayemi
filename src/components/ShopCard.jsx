@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { IconStarFilled } from '@tabler/icons-react';
 import { ShopAvatar } from './ShopAvatar';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -7,6 +8,7 @@ import { estEnAvant } from '../lib/featured';
 
 // Compact shop avatar card used in horizontal scrollers and Near You lists.
 export function ShopCard({ shop, distanceKm }) {
+  const { t } = useTranslation();
   const avatar = shop.avatar_url ? storageThumbUrl('shops', shop.avatar_url) : null;
   const avatarFallback = shop.avatar_url ? storageUrl('shops', shop.avatar_url) : null;
   return (
@@ -27,8 +29,18 @@ export function ShopCard({ shop, distanceKm }) {
         {shop.is_verified && <VerifiedBadge size={13} />}
       </span>
       <span className="mt-0.5 flex items-center gap-1 text-caption text-muted">
-        <IconStarFilled size={12} className="text-brass" />
-        {Number(shop.rating || 0).toFixed(1)}
+        {/* 25/11 (retour d'une testeuse : « les étoiles sont à zéro partout »).
+            Sans note, on dit « Nouveau » au lieu d'afficher une étoile à 0.0. */}
+        {Number(shop.rating || 0) > 0 ? (
+          <>
+            <IconStarFilled size={12} className="text-brass" />
+            {Number(shop.rating).toFixed(1)}
+          </>
+        ) : (
+          <span className="rounded-pill bg-teal-light px-1.5 py-px text-[10px] font-semibold text-teal">
+            {t('provider.isNew')}
+          </span>
+        )}
         {distanceKm != null && <span>· {distanceKm} km</span>}
         {/* Réunion du 10/10 : sur le profil public, seules les étoiles. Le nombre
             d'abonnés reste connu de l'équipe, il ne s'affiche plus ici. */}
